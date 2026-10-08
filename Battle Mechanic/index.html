@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undertale Battle Prototype</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+
+        body {
+            background-color: black;
+            color: white;
+            font-family: 'VT323', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+
+        canvas {
+            background-color: black;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+
+        #instructions {
+            margin-top: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+
+    <canvas id="gameCanvas" width="640" height="480"></canvas>
+    <div id="instructions">Use ARROW KEYS to move.<br>Stay determined!</div>
+
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+
+    // Game states
+    let gameOver = false;
+    let score = 0;
+    let frameCount = 0;
+
+
+    // Battle Box constraints
+    const box = {
+        x: 200,
+        y: 200,
+        width: 240,
+        height: 150,
+        thickness: 4
+    };
+
+
+    // Player (The Soul)
+    const player = {
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+        size: 16,
+        speed: 3,
+        color: "red",
+        dx: 0,
+        dy: 0
+    };
+
+
+    // Bullets (Attacks)
+    let bullets = [];
+
+
+    // Input handling
+    const keys = {
+        ArrowUp: false,
+        ArrowDown: false,
+        ArrowLeft: false,
+        ArrowRight: false
+    };
+
+
+    window.addEventListener("keydown", (e) => {
+        if (keys.hasOwnProperty(e.code)) {
+            keys[e.code] = true;
+            e.preventDefault();
+        }
+        if (e.code === "Space" && gameOver) {
+            resetGame();
+        }
+    });
+
+
+    window.addEventListener("keyup", (e) => {
+        if (keys.hasOwnProperty(e.code)) {
+            keys[e.code] = false;
+            e.preventDefault();
+        }
+    });
+
+
+    function drawHeart(x, y, size, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        const topCurveHeight = size * 0.3;
+        ctx.moveTo(x, y + topCurveHeight);
+        // top left curve
+        ctx.bezierCurveTo(
+            x, y, 
+            x - size / 2, y, 
+            x - size / 2, y + topCurveHeight
+        );
+        // bottom left
+        ctx.bezierCurveTo(
+            x - size / 2, y + (size + topCurveHeight) / 2, 
+            x, y + (size + topCurveHeight) / 2, 
+            x, y + size
+        );
+        // bottom right
+        ctx.bezierCurveTo(
+            x, y + (size + topCurveHeight) / 2, 
+            x + size / 2, y + (size + topCurveHeight) / 2, 
+            x + size / 2, y + topCurveHeight
+        );
+        // top right curve
+        ctx.bezierCurveTo(
+            x + size / 2, y, 
+            x, y, 
+            x, y + topCurveHeight
+        );
+        ctx.closePath();
+        ctx.fill();
+    }
+
+
+    function drawBox() {
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = box.thickness;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+    }
+
+
+    function drawUI() {
+        ctx.fillStyle = "white";
+        ctx.font = "30px 'VT323', monospace";
+        
+        // Mock UI Buttons
+        const btnY = 420;
+        ctx.strokeStyle = "#ff9900";
+        ctx.strokeRect(40, btnY - 25, 110, 40);
+        ctx.fillStyle = "#ff9900";
+        ctx.fillText("FIGHT", 60, btnY);
+        
+        ctx.strokeStyle = "white";
+        ctx.fillStyle = "white";
+        ctx.strokeRect(180, btnY - 25, 110, 40);
+        ctx.fillText("ACT", 215, btnY);
+        
+        ctx.strokeRect(320, btnY - 25, 110, 40);
+        ctx.fillText("ITEM", 345, btnY);
+        
+        ctx.strokeRect(460, btnY - 25, 110, 40);
+        ctx.fillText("MERCY", 480, btnY);
+
+
+        // Stats
+        ctx.fillText("LV 1", 40, 380);
+        ctx.fillText("HP 20/20", 200, 380);
+        ctx.fillText(`TIME SURVIVED: ${Math.floor(score/60)}`, 400, 380);
+
+
+        // Enemy Name
+        ctx.font = "40px 'VT323', monospace";
+        ctx.fillText("* Dummy attacks!", box.x, box.y - 40);
+    }
+
+
+    function spawnBullet() {
+        const side = Math.floor(Math.random() * 4);
+        let bx, by, bdx, bdy;
+        const speed = 2 + Math.random() * 2;
+        const size = 6 + Math.random() * 6;
+
+
+        if (side === 0) { // Top
+            bx = box.x + Math.random() * box.width;
+            by = box.y - 20;
+            bdx = (Math.random() - 0.5) * 2;
+            bdy = speed;
+        } else if (side === 1) { // Bottom
+            bx = box.x + Math.random() * box.width;
+            by = box.y + box.height + 20;
+            bdx = (Math.random() - 0.5) * 2;
+            bdy = -speed;
+        } else if (side === 2) { // Left
+            bx = box.x - 20;
+            by = box.y + Math.random() * box.height;
+            bdx = speed;
+            bdy = (Math.random() - 0.5) * 2;
+        } else { // Right
+            bx = box.x + box.width + 20;
+            by = box.y + Math.random() * box.height;
+            bdx = -speed;
+            bdy = (Math.random() - 0.5) * 2;
+        }
+
+
+        bullets.push({ x: bx, y: by, dx: bdx, dy: bdy, radius: size });
+    }
+
+
+    function update() {
+        if (gameOver) return;
+
+
+        // Player movement
+        if (keys.ArrowUp) player.y -= player.speed;
+        if (keys.ArrowDown) player.y += player.speed;
+        if (keys.ArrowLeft) player.x -= player.speed;
+        if (keys.ArrowRight) player.x += player.speed;
+
+
+        // Constrain player to box (accounting for heart size)
+        const halfSize = player.size / 2;
+        if (player.x < box.x + halfSize) player.x = box.x + halfSize;
+        if (player.x > box.x + box.width - halfSize) player.x = box.x + box.width - halfSize;
+        if (player.y < box.y) player.y = box.y; // Top curve compensation
+        if (player.y > box.y + box.height - player.size) player.y = box.y + box.height - player.size;
+
+
+        // Bullet logic
+        frameCount++;
+        score++;
+        
+        // Increase difficulty over time
+        let spawnRate = Math.max(10, 40 - Math.floor(score / 300));
+        if (frameCount % spawnRate === 0) {
+            spawnBullet();
+        }
+
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.x += b.dx;
+            b.y += b.dy;
+
+
+            // Remove bullets far out of bounds
+            if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+                bullets.splice(i, 1);
+                continue;
+            }
+
+
+            // Simple Circle-to-Circle Collision Approximation (Soul center to Bullet center)
+            const distX = (player.x) - b.x;
+            const distY = (player.y + player.size/2) - b.y; // approximate center of heart
+            const distance = Math.sqrt(distX * distX + distY * distY);
+
+
+            if (distance < (player.size/2.5) + b.radius) {
+                gameOver = true;
+            }
+        }
+    }
+
+
+    function draw() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+        drawBox();
+        drawUI();
+
+
+        // Draw Player
+        if (!gameOver) {
+            drawHeart(player.x, player.y, player.size, player.color);
+        } else {
+            // Broken heart
+            drawHeart(player.x - 4, player.y, player.size, "gray");
+            drawHeart(player.x + 4, player.y + 4, player.size, "gray");
+            
+            ctx.fillStyle = "white";
+            ctx.font = "40px 'VT323', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 50);
+            ctx.font = "20px 'VT323', monospace";
+            ctx.fillText("Press SPACE to stay determined.", canvas.width / 2, canvas.height / 2);
+            ctx.textAlign = "left";
+        }
+
+
+        // Draw Bullets
+        ctx.fillStyle = "white";
+        for (let b of bullets) {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+
+    function resetGame() {
+        gameOver = false;
+        score = 0;
+        frameCount = 0;
+        bullets = [];
+        player.x = box.x + box.width / 2;
+        player.y = box.y + box.height / 2;
+    }
+
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+
+    // Start game
+    gameLoop();
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Brown E Clicker</title>
+   <script src="https://cdn.tailwindcss.com"></script>
+   <style>
+       /* Custom styles for animations and specific UI tweaks */
+       body {
+           /* Prevent text selection while furiously clicking */
+           user-select: none;
+           -webkit-user-select: none;
+           overflow: hidden;
+       }
+
+
+       .brown-text {
+           color: #5C4033; /* Rich dark brown */
+       }
+      
+       .bg-brown {
+           background-color: #5C4033;
+       }
+
+
+       .bg-brown-hover:hover:not(:disabled) {
+           background-color: #4A332A;
+       }
+
+
+       /* The floating +1 text animation */
+       @keyframes floatUp {
+           0% {
+               opacity: 1;
+               transform: translateY(0) scale(1);
+           }
+           100% {
+               opacity: 0;
+               transform: translateY(-80px) scale(1.5);
+           }
+       }
+
+
+       .floating-text {
+           position: absolute;
+           color: #8B4513; /* Saddle brown */
+           font-weight: 900;
+           font-size: 1.75rem;
+           pointer-events: none; /* So it doesn't block clicks */
+           animation: floatUp 0.8s ease-out forwards;
+           z-index: 50;
+           text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;
+       }
+
+
+       /* Custom scrollbar for the shop */
+       ::-webkit-scrollbar {
+           width: 8px;
+       }
+       ::-webkit-scrollbar-track {
+           background: #292524;
+       }
+       ::-webkit-scrollbar-thumb {
+           background: #44403c;
+           border-radius: 4px;
+       }
+       ::-webkit-scrollbar-thumb:hover {
+           background: #57534e;
+       }
+   </style>
+</head>
+<body class="bg-stone-900 text-stone-100 h-screen w-screen font-sans overflow-hidden">
+
+
+   <!-- MAIN MENU -->
+   <div id="main-menu" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-stone-900">
+       <h1 class="text-6xl md:text-8xl font-black text-[#5C4033] tracking-widest mb-2 drop-shadow-lg text-center relative">
+           <span class="absolute inset-0 bg-white blur-3xl opacity-60 rounded-full -z-10"></span>
+           BROWN E
+       </h1>
+       <p class="text-stone-400 text-xl tracking-widest uppercase mb-4">Clicker</p>
+       <div id="main-menu-wins" class="text-[#8B4513] font-black text-2xl mb-8 hidden tracking-widest bg-[#F3E8E0] px-4 py-2 rounded-2xl shadow-inner border-2 border-[#8B4513] flex flex-col items-center justify-center">
+           <div>WINS: <span id="main-menu-wins-count">0</span></div>
+           <div id="main-menu-win-buff" class="text-green-600 font-bold text-sm tracking-normal"></div>
+       </div>
+       <button id="start-btn" class="bg-[#5C4033] hover:bg-[#4A332A] text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transition-transform active:scale-95 hover:scale-105 border-4 border-[#8B4513]">
+           START
+       </button>
+   </div>
+
+
+   <!-- WIN MODAL -->
+   <div id="win-modal" class="fixed inset-0 z-[70] bg-white/10 backdrop-blur-md flex items-center justify-center hidden">
+       <div class="bg-stone-900 border-4 border-[#8B4513] p-10 rounded-3xl max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
+           <div class="absolute inset-0 bg-[#5C4033] blur-3xl opacity-20 -z-10"></div>
+           <h2 class="text-6xl mb-4">🏆</h2>
+           <h3 class="text-4xl font-black text-white mb-2 tracking-wide" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.5);">YOU WIN!</h3>
+           <p class="text-stone-300 mb-8 text-lg">You have purchased <span class="text-[#8B4513] font-bold bg-white px-2 py-0.5 rounded">The Final E</span> and conquered the game.</p>
+           <button id="play-again-btn" class="w-full py-4 rounded-xl bg-gradient-to-r from-[#5C4033] to-[#8B4513] hover:from-[#4A332A] hover:to-[#5C4033] text-white font-black text-xl transition-all active:scale-95 shadow-lg border border-[#8B4513]">
+               Ascend & Play Again
+           </button>
+       </div>
+   </div>
+
+
+   <!-- RESET MODAL -->
+   <div id="reset-modal" class="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center hidden">
+       <div class="bg-stone-900 border border-stone-700 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+           <h3 class="text-2xl font-bold text-red-500 mb-4">Wipe Save?</h3>
+           <p class="text-stone-300 mb-6">Are you sure you want to delete all your progress? This cannot be undone.</p>
+           <div class="flex gap-4 justify-center">
+               <button id="cancel-reset-btn" class="px-4 py-2 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-bold transition-colors">Cancel</button>
+               <button id="confirm-reset-btn" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition-colors">Yes, Delete It</button>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- GAME SCREEN -->
+   <div id="game-screen" class="w-full h-full flex flex-col md:flex-row hidden">
+       <!-- LEFT SIDE: The Clicking Area -->
+       <div class="w-full md:w-1/2 h-1/2 md:h-full flex flex-col items-center justify-center border-b-4 md:border-b-0 md:border-r-4 border-stone-800 relative p-4">
+          
+           <div class="absolute top-6 text-center w-full">
+               <div id="in-game-wins" class="absolute left-4 top-0 text-[#8B4513] font-black text-sm hidden tracking-widest bg-stone-800 border border-[#8B4513] px-3 py-1 rounded-xl shadow-sm flex flex-col items-start z-20">
+                   <div>WINS: <span id="in-game-wins-count">0</span></div>
+                   <div id="in-game-win-buff" class="text-green-400 font-bold text-[0.65rem] tracking-normal"></div>
+               </div>
+               <h1 class="text-3xl font-black text-stone-500 uppercase tracking-widest mb-2">Brown E Clicker</h1>
+              
+               <!-- Main Score Counter -->
+               <div class="bg-stone-800/80 backdrop-blur-sm rounded-2xl py-3 px-8 inline-block shadow-sm border border-stone-700">
+                   <div class="text-5xl font-black text-[#5C4033] drop-shadow-sm" style="text-shadow: 2px 2px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;" id="score">0</div>
+                   <div class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-1">Brown E's</div>
+               </div>
+              
+               <!-- BPS Counter -->
+               <div class="mt-3 text-stone-400 font-semibold bg-stone-800 py-1 px-4 rounded-full inline-block text-sm border border-stone-700">
+                   <span id="bps">0.0</span> E's per second
+               </div>
+           </div>
+
+
+           <!-- THE BIG E -->
+           <div id="big-e-container" class="relative mt-24 md:mt-16 w-48 h-48 md:w-64 md:h-64 flex items-center justify-center cursor-pointer transition-transform duration-75 active:scale-90 hover:scale-105">
+               <!-- Drop shadow element (Now White for contrast) -->
+               <div class="absolute inset-0 bg-white rounded-full blur-2xl opacity-70 transform translate-y-2 scale-110"></div>
+               <!-- The E itself -->
+               <span class="text-9xl md:text-[15rem] font-black text-[#5C4033] relative z-10" style="line-height: 1;">E</span>
+           </div>
+          
+           <div class="absolute bottom-6 text-stone-500 text-sm font-medium flex items-center gap-2">
+               Click Power: <span id="click-power" class="text-white font-bold text-base">1</span>
+           </div>
+       </div>
+
+
+       <!-- RIGHT SIDE: The Shop -->
+       <div class="w-full md:w-1/2 h-1/2 md:h-full bg-stone-900 flex flex-col">
+           <div class="p-6 pb-2 border-b border-stone-800 bg-stone-900 shadow-sm z-10 shrink-0">
+               <h2 class="text-2xl font-black text-[#5C4033] tracking-tight flex justify-between items-center" style="text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">
+                   The E-Shop
+                   <div class="flex items-center gap-3">
+                       <span id="save-status" class="text-xs text-stone-500 font-normal tracking-normal normal-case opacity-0 transition-opacity">Game Saved</span>
+                       <button id="reset-btn" class="text-xs bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300 px-2 py-1 rounded border border-red-900/50 transition-colors shadow-none font-normal" style="text-shadow: none;">Reset Save</button>
+                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-white"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                   </div>
+               </h2>
+               <p class="text-sm text-stone-400 mt-1 mb-2">Spend your Brown E's to get more Brown E's.</p>
+
+
+               <!-- GENERAL UPGRADES PANEL -->
+               <div class="bg-stone-800 rounded-xl p-3 border border-[#8B4513]/50 shadow-inner mb-2 flex-shrink-0">
+                   <h3 class="text-xs font-black text-stone-400 uppercase tracking-widest mb-2 text-center">General Upgrades (+10%)</h3>
+                   <div class="flex gap-2">
+                       <button id="upgrade-click-btn" class="flex-1 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 disabled:cursor-not-allowed border border-stone-600 rounded-lg p-2 text-left transition-colors active:scale-95 flex flex-col justify-between">
+                           <span class="text-white font-bold text-sm">Click Power <span class="text-green-400 text-xs ml-1" id="click-multi-display">x1.0</span></span>
+                           <span class="text-stone-400 text-xs font-medium mt-1">Cost: <span id="upgrade-click-cost" class="text-[#8B4513] bg-white px-1 rounded font-bold">10K</span></span>
+                       </button>
+                       <button id="upgrade-bps-btn" class="flex-1 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 disabled:cursor-not-allowed border border-stone-600 rounded-lg p-2 text-left transition-colors active:scale-95 flex flex-col justify-between">
+                           <span class="text-white font-bold text-sm">E's Per Sec <span class="text-green-400 text-xs ml-1" id="bps-multi-display">x1.0</span></span>
+                           <span class="text-stone-400 text-xs font-medium mt-1">Cost: <span id="upgrade-bps-cost" class="text-[#8B4513] bg-white px-1 rounded font-bold">10K</span></span>
+                       </button>
+                   </div>
+               </div>
+           </div>
+
+
+           <!-- Shop Items Container -->
+           <div id="shop-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+               <!-- Shop items will be injected here by JavaScript -->
+           </div>
+       </div>
+   </div>
+
+
+   <script>
+       // --- GAME STATE ---
+       let state = {
+           brownEs: 0,
+           clickPower: 1,
+           bps: 0, // Brown E's Per Second
+           clickMultiLevel: 0,
+           bpsMultiLevel: 0,
+           wins: 0
+       };
+
+
+       // --- SHOP DATA ---
+       // Balanced to be much fairer, faster, and more rewarding!
+       const shopItems = [
+           { id: 'pointer', name: 'Pointer Finger', desc: 'Auto-clicks the E for you.', cost: 15, type: 'bps', amount: 1, owned: 0, costMultiplier: 1.15, icon: '👆' },
+           { id: 'mouse', name: 'Bigger Mouse', desc: 'Makes your manual clicks stronger.', cost: 100, type: 'click', amount: 2, owned: 0, costMultiplier: 1.35, icon: '🖱️' },
+           { id: 'farm', name: 'E-Farm', desc: 'Harvests free-range Brown E\'s.', cost: 350, type: 'bps', amount: 10, owned: 0, costMultiplier: 1.15, icon: '🌾' },
+           { id: 'mech', name: 'Mech Keyboard', desc: 'Loud clicks generate more E.', cost: 800, type: 'click', amount: 15, owned: 0, costMultiplier: 1.35, icon: '⌨️' },
+           { id: 'factory', name: 'E-Factory', desc: 'Mass-produces Brown E\'s on a belt.', cost: 1500, type: 'bps', amount: 50, owned: 0, costMultiplier: 1.15, icon: '🏭' },
+           { id: 'gaming', name: 'Gaming Mouse', desc: 'RGB lighting makes clicks huge.', cost: 4000, type: 'click', amount: 100, owned: 0, costMultiplier: 1.35, icon: '🖱️✨' },
+           { id: 'router', name: 'E-nternet Router', desc: 'Downloads Brown E\'s from the web.', cost: 6000, type: 'bps', amount: 250, owned: 0, costMultiplier: 1.15, icon: '🌐' },
+           { id: 'bank', name: 'E-Bank', desc: 'Generates interest in Brown E\'s.', cost: 25000, type: 'bps', amount: 1200, owned: 0, costMultiplier: 1.15, icon: '🏦' },
+           { id: 'implant', name: 'Brain Implant', desc: 'Think of E, and it appears.', cost: 60000, type: 'click', amount: 1500, owned: 0, costMultiplier: 1.35, icon: '🧠' },
+           { id: 'temple', name: 'Temple of E', desc: 'Pray to the big brown letter.', cost: 100000, type: 'bps', amount: 6000, owned: 0, costMultiplier: 1.15, icon: '🏛️' },
+           { id: 'corp', name: 'Mega E-Corp', desc: 'Synergistic corporate E generation.', cost: 500000, type: 'bps', amount: 35000, owned: 0, costMultiplier: 1.15, icon: '🏢' },
+           { id: 'planet', name: 'Planet E', desc: 'An entire world made of E.', cost: 2500000, type: 'bps', amount: 200000, owned: 0, costMultiplier: 1.15, icon: '🌍' },
+           { id: 'galaxy', name: 'Galactic E-Empire', desc: 'Conquering the stars for E.', cost: 15000000, type: 'bps', amount: 1500000, owned: 0, costMultiplier: 1.15, icon: '🌌' },
+           { id: 'blackhole', name: 'E-Black Hole', desc: 'Spaghettifying matter into E.', cost: 100000000, type: 'bps', amount: 10000000, owned: 0, costMultiplier: 1.15, icon: '🕳️' },
+           { id: 'dimension', name: 'Dimensional E-Rift', desc: 'Pulling E\'s from the multiverse.', cost: 800000000, type: 'bps', amount: 75000000, owned: 0, costMultiplier: 1.15, icon: '🌀' },
+           { id: 'dyson', name: 'E-Dyson Sphere', desc: 'Harnessing a star for pure E.', cost: 10000000000, type: 'bps', amount: 1000000000, owned: 0, costMultiplier: 1.15, icon: '☀️' },
+           { id: 'multiverse', name: 'E-Multiverse', desc: 'Infinite realities of Brown E.', cost: 500000000000, type: 'bps', amount: 60000000000, owned: 0, costMultiplier: 1.15, icon: '🌠' },
+           { id: 'quantum', name: 'Quantum E-Matrix', desc: 'E exists everywhere at once.', cost: 25000000000000, type: 'bps', amount: 4000000000000, owned: 0, costMultiplier: 1.15, icon: '⚛️' },
+           { id: 'bigbang', name: 'E-Big Bang', desc: 'The creation of a new E universe.', cost: 800000000000000, type: 'bps', amount: 150000000000000, owned: 0, costMultiplier: 1.15, icon: '💥' },
+           { id: 'god', name: 'The Final E', desc: 'Buy this to beat the game.', cost: 1000000000000000, type: 'win', amount: 0, owned: 0, costMultiplier: 1, icon: '🏆' }
+       ];
+
+
+       // --- DOM ELEMENTS ---
+       const scoreEl = document.getElementById('score');
+       const bpsEl = document.getElementById('bps');
+       const clickPowerEl = document.getElementById('click-power');
+       const bigEContainer = document.getElementById('big-e-container');
+       const shopContainer = document.getElementById('shop-container');
+       const saveStatusEl = document.getElementById('save-status');
+
+
+       // Multiplier DOM Elements
+       const upgradeClickBtn = document.getElementById('upgrade-click-btn');
+       const upgradeBpsBtn = document.getElementById('upgrade-bps-btn');
+       const clickMultiDisplay = document.getElementById('click-multi-display');
+       const bpsMultiDisplay = document.getElementById('bps-multi-display');
+       const upgradeClickCost = document.getElementById('upgrade-click-cost');
+       const upgradeBpsCost = document.getElementById('upgrade-bps-cost');
+
+
+       // Win DOM Elements
+       const mainMenuWins = document.getElementById('main-menu-wins');
+       const mainMenuWinsCount = document.getElementById('main-menu-wins-count');
+       const inGameWins = document.getElementById('in-game-wins');
+       const inGameWinsCount = document.getElementById('in-game-wins-count');
+       const winModal = document.getElementById('win-modal');
+
+
+       // --- UTILITY FUNCTIONS ---
+       // Format large numbers nicely (e.g., 1.5M, 2.3B, 1.0Q)
+       const BASE_COSTS = shopItems.map(i => i.cost);
+       function winBoost(wins) { return 1 + wins; }
+
+       // Start a fresh run in place (works even where the browser blocks saving)
+       function resetRun(keepWins) {
+           state = { brownEs: 0, clickPower: 1, bps: 0, clickMultiLevel: 0, bpsMultiLevel: 0, wins: keepWins ? state.wins : 0 };
+           shopItems.forEach((item, i) => { item.owned = 0; item.cost = BASE_COSTS[i]; });
+           saveGame();
+           recalculateStats();
+           updateDisplay();
+           initShop();
+       }
+
+       function formatNumber(num) {
+           if (num >= 1e15) return (num / 1e15).toFixed(2) + 'Q';
+           if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+           if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+           if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+           return Math.floor(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+       }
+
+
+       function getMultiplierCost(level) {
+           // Lowered growth from 3.0 to 1.8 so upgrades don't instantly cost 1Q!
+           return Math.floor(10000 * Math.pow(1.8, level));
+       }
+
+
+       // Recalculate totals based on owned items and multipliers
+       function recalculateStats() {
+           let baseClick = 1;
+           let baseBps = 0;
+
+
+           shopItems.forEach(item => {
+               if (item.type === 'click') baseClick += item.amount * item.owned;
+               if (item.type === 'bps') baseBps += item.amount * item.owned;
+           });
+
+
+           const clickMulti = 1 + (state.clickMultiLevel * 0.10);
+           const bpsMulti = 1 + (state.bpsMultiLevel * 0.10);
+          
+           // Buff for Winning: every win adds +100% to ALL production (1 win = 2x, 2 wins = 3x, 3 wins = 4x...)
+           // (it used to be 10x PER win, which made every run after the first trivial)
+           const winMultiplier = winBoost(state.wins);
+
+
+           state.clickPower = Math.floor(baseClick * clickMulti * winMultiplier);
+           state.bps = baseBps * bpsMulti * winMultiplier;
+       }
+
+
+       // --- CORE LOGIC ---
+       // Update the main UI numbers
+       function updateDisplay() {
+           scoreEl.textContent = formatNumber(state.brownEs);
+           bpsEl.textContent = formatNumber(state.bps);
+           clickPowerEl.textContent = formatNumber(state.clickPower);
+          
+           // Update Multiplier UI
+           clickMultiDisplay.textContent = `x${(1 + state.clickMultiLevel * 0.1).toFixed(1)}`;
+           bpsMultiDisplay.textContent = `x${(1 + state.bpsMultiLevel * 0.1).toFixed(1)}`;
+          
+           const nextClickCost = getMultiplierCost(state.clickMultiLevel);
+           const nextBpsCost = getMultiplierCost(state.bpsMultiLevel);
+          
+           upgradeClickCost.textContent = formatNumber(nextClickCost);
+           upgradeBpsCost.textContent = formatNumber(nextBpsCost);
+
+
+           upgradeClickBtn.disabled = state.brownEs < nextClickCost;
+           upgradeBpsBtn.disabled = state.brownEs < nextBpsCost;
+
+
+           // Update Wins UI
+           if (state.wins > 0) {
+               const winMultiValue = formatNumber(winBoost(state.wins));
+               mainMenuWins.classList.remove('hidden');
+               mainMenuWinsCount.textContent = state.wins;
+               document.getElementById('main-menu-win-buff').textContent = `(x${winMultiValue} Production Boost)`;
+              
+               inGameWins.classList.remove('hidden');
+               inGameWinsCount.textContent = state.wins;
+               document.getElementById('in-game-win-buff').textContent = `x${winMultiValue} Boost`;
+           } else {
+               mainMenuWins.classList.add('hidden');
+               inGameWins.classList.add('hidden');
+           }
+          
+           // Check shop buttons affordabilty
+           updateShopUI();
+       }
+
+
+       // Handle clicking the Big E
+       function clickBigE(event) {
+           // Add currency
+           state.brownEs += state.clickPower;
+          
+           // Visual feedback (Floating Text)
+           createFloatingText(event);
+          
+           // Update UI immediately
+           updateDisplay();
+       }
+
+
+       // Create the floating number animation
+       function createFloatingText(event) {
+           const floatEl = document.createElement('div');
+           floatEl.textContent = `+${formatNumber(state.clickPower)}`;
+           floatEl.className = 'floating-text';
+          
+           // If it's a simulated click (no event passed) just spawn it in the middle
+           let x, y;
+           if (event && event.clientX) {
+               // Add some randomness to the click position so they don't perfectly overlap
+               const randomXOffset = (Math.random() - 0.5) * 40;
+               x = event.clientX + randomXOffset;
+               y = event.clientY;
+           } else {
+               const rect = bigEContainer.getBoundingClientRect();
+               x = rect.left + rect.width / 2;
+               y = rect.top + rect.height / 2;
+           }
+
+
+           floatEl.style.left = `${x}px`;
+           floatEl.style.top = `${y}px`;
+          
+           document.body.appendChild(floatEl);
+          
+           // Clean up the element after animation ends
+           setTimeout(() => {
+               floatEl.remove();
+           }, 800);
+       }
+
+
+       // --- SHOP LOGIC ---
+       // Initialize the shop UI
+       function initShop() {
+           shopContainer.innerHTML = ''; // Clear container
+          
+           shopItems.forEach((item, index) => {
+               const itemEl = document.createElement('div');
+               itemEl.className = 'bg-stone-800 rounded-xl p-4 shadow-sm border border-stone-700 flex justify-between items-center transition-all duration-200';
+               itemEl.id = `shop-item-${index}`;
+              
+               let statsText = '';
+               if (item.type === 'bps') statsText = `+${formatNumber(item.amount)} E/sec`;
+               else if (item.type === 'click') statsText = `+${formatNumber(item.amount)} Click Power`;
+               else if (item.type === 'win') statsText = `Win The Game`;
+
+
+               // Give the final E a special gold glow
+               const isWinItem = item.type === 'win';
+               if (isWinItem) {
+                   itemEl.classList.add('border-yellow-600', 'bg-yellow-900/20');
+               }
+
+
+               itemEl.innerHTML = `
+                   <div class="flex items-center gap-4">
+                       <div class="text-4xl ${isWinItem ? 'bg-yellow-800/50 border-yellow-600' : 'bg-stone-700 border-stone-600'} w-16 h-16 rounded-lg flex items-center justify-center border shadow-inner shrink-0">
+                           ${item.icon}
+                       </div>
+                       <div>
+                           <h3 class="font-bold text-lg ${isWinItem ? 'text-yellow-400' : 'text-stone-100'} leading-tight">${item.name}</h3>
+                           <p class="text-xs text-stone-400 font-medium mb-1">${item.desc}</p>
+                           <p class="text-xs font-bold ${isWinItem ? 'text-yellow-900 bg-yellow-400' : 'text-[#5C4033] bg-white'} inline-block px-2 py-0.5 rounded whitespace-nowrap">${statsText}</p>
+                       </div>
+                   </div>
+                   <div class="flex flex-col items-end gap-2 shrink-0 ml-2">
+                       ${isWinItem ? '' : `<div class="text-3xl font-black ${item.owned > 0 ? 'text-white' : 'text-stone-600'}" id="owned-${index}">${item.owned}</div>`}
+                       <button id="buy-btn-${index}" class="${isWinItem ? 'bg-yellow-600 hover:bg-yellow-500 text-stone-900' : 'bg-[#5C4033] hover:bg-[#4A332A] text-white'} font-bold py-2 px-4 rounded-lg shadow disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center gap-1 border ${isWinItem ? 'border-yellow-400' : 'border-stone-600'}">
+                           Cost: <span id="cost-${index}">${formatNumber(item.cost)}</span>
+                       </button>
+                   </div>
+               `;
+              
+               shopContainer.appendChild(itemEl);
+              
+               // Add purchase event listener
+               document.getElementById(`buy-btn-${index}`).addEventListener('click', () => buyItem(index));
+           });
+          
+           updateShopUI();
+       }
+
+
+       // Handle buying an item
+       function buyItem(index) {
+           const item = shopItems[index];
+          
+           if (state.brownEs >= item.cost) {
+               // Deduct cost
+               state.brownEs -= item.cost;
+              
+               if (item.type === 'win') {
+                   triggerWin();
+                   return;
+               }
+
+
+               // Increase owned amount
+               item.owned += 1;
+              
+               // Increase cost
+               item.cost = Math.ceil(item.cost * item.costMultiplier);
+              
+               // Recalculate stats dynamically
+               recalculateStats();
+
+
+               // Update specific DOM elements for this item to avoid full re-render
+               const ownedEl = document.getElementById(`owned-${index}`);
+               if (ownedEl) {
+                   ownedEl.textContent = item.owned;
+                   ownedEl.classList.remove('text-stone-600');
+                   ownedEl.classList.add('text-white'); // Highlight when owned
+               }
+               document.getElementById(`cost-${index}`).textContent = formatNumber(item.cost);
+              
+               updateDisplay();
+           }
+       }
+
+
+       // Enable/Disable shop buttons based on current funds
+       function updateShopUI() {
+           shopItems.forEach((item, index) => {
+               const btn = document.getElementById(`buy-btn-${index}`);
+               if (btn) {
+                   if (state.brownEs >= item.cost) {
+                       btn.disabled = false;
+                   } else {
+                       btn.disabled = true;
+                   }
+               }
+           });
+       }
+
+
+       // Buy General Multipliers
+       upgradeClickBtn.addEventListener('click', () => {
+           const cost = getMultiplierCost(state.clickMultiLevel);
+           if (state.brownEs >= cost) {
+               state.brownEs -= cost;
+               state.clickMultiLevel++;
+               recalculateStats();
+               updateDisplay();
+           }
+       });
+
+
+       upgradeBpsBtn.addEventListener('click', () => {
+           const cost = getMultiplierCost(state.bpsMultiLevel);
+           if (state.brownEs >= cost) {
+               state.brownEs -= cost;
+               state.bpsMultiLevel++;
+               recalculateStats();
+               updateDisplay();
+           }
+       });
+
+
+       // --- WIN LOGIC ---
+       function triggerWin() {
+           state.wins += 1;
+           saveGame(); // Save the win immediately
+           winModal.classList.remove('hidden');
+       }
+
+
+       document.getElementById('play-again-btn').addEventListener('click', () => {
+           // Keep wins, reset everything else
+           winModal.classList.add('hidden');
+           resetRun(true);
+       });
+
+
+       // --- LOCAL STORAGE SAVING ---
+       function saveGame() {
+           const saveData = {
+               state: state,
+               shopItems: shopItems.map(item => ({ owned: item.owned, cost: item.cost }))
+           };
+
+
+           try {
+               localStorage.setItem('brownEClickerSave', JSON.stringify(saveData));
+               showSaveStatus();
+           } catch (e) {
+               console.error("Error saving game:", e);
+           }
+       }
+
+
+       function loadGame() {
+           try {
+               const savedString = localStorage.getItem('brownEClickerSave');
+               if (savedString) {
+                   const data = JSON.parse(savedString);
+                   // Merge state, ensuring new variables are captured if undefined in old save
+                   if (data.state) {
+                       state.brownEs = data.state.brownEs || 0;
+                       state.clickMultiLevel = data.state.clickMultiLevel || 0;
+                       state.bpsMultiLevel = data.state.bpsMultiLevel || 0;
+                       state.wins = data.state.wins || 0;
+                       // Ignore saved clickPower and bps, we recalculate them
+                   }
+                   if (data.shopItems) {
+                       data.shopItems.forEach((savedItem, index) => {
+                           if (shopItems[index]) {
+                               shopItems[index].owned = savedItem.owned || 0;
+                               shopItems[index].cost = savedItem.cost || shopItems[index].cost;
+                           }
+                       });
+                   }
+               }
+           } catch (e) {
+               console.error("Error loading game:", e);
+           }
+          
+           // Recalculate stats based on loaded items and levels
+           recalculateStats();
+           updateDisplay();
+           initShop();
+       }
+
+
+       function showSaveStatus() {
+           saveStatusEl.style.opacity = '1';
+           setTimeout(() => {
+               saveStatusEl.style.opacity = '0';
+           }, 2000);
+       }
+
+
+       // Auto-save every 10 seconds
+       setInterval(saveGame, 10000);
+
+
+       // Load game on startup
+       loadGame();
+
+
+       // Hard Reset Logic
+       const resetModal = document.getElementById('reset-modal');
+       document.getElementById('reset-btn').addEventListener('click', () => {
+           resetModal.classList.remove('hidden');
+       });
+      
+       document.getElementById('cancel-reset-btn').addEventListener('click', () => {
+           resetModal.classList.add('hidden');
+       });
+
+
+       document.getElementById('confirm-reset-btn').addEventListener('click', () => {
+           resetModal.classList.add('hidden');
+           // Full wipe including wins
+           resetRun(false);
+       });
+
+
+
+
+       // --- GAME LOOP ---
+       // Runs 10 times a second
+       const tickRate = 10;
+       setInterval(() => {
+           if (state.bps > 0) {
+               // Add a fraction of the BPS every tick
+               state.brownEs += state.bps / tickRate;
+               updateDisplay();
+           }
+       }, 1000 / tickRate);
+
+
+
+
+       // --- EVENT LISTENERS ---
+       // Mouse/Touch events for the Big E
+       bigEContainer.addEventListener('mousedown', (e) => {
+           e.preventDefault();
+           clickBigE(e);
+       });
+
+
+       bigEContainer.addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           const touch = e.touches[0];
+           clickBigE(touch);
+       });
+
+
+       // Initialize the game
+       initShop();
+       updateDisplay();
+
+
+       // --- MAIN MENU START LOGIC ---
+       document.getElementById('start-btn').addEventListener('click', () => {
+           document.getElementById('main-menu').classList.add('hidden');
+           document.getElementById('game-screen').classList.remove('hidden');
+       });
+
+
+   </script>
+</body>
+</html>

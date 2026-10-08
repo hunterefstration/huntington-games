@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Dash: Ultimate Edition</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #020205; 
+            overflow: hidden; 
+            font-family: 'Courier New', Courier, monospace; 
+            color: #fff;
+            user-select: none;
+        }
+
+
+        /* Screen Management */
+        .screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #020205;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+
+        /* Typography & UI */
+        h1 {
+            color: #0ff;
+            font-size: 48px;
+            text-shadow: 0 0 20px #0ff;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #f0f;
+            text-shadow: 0 0 15px #f0f;
+            margin-bottom: 30px;
+        }
+
+
+        .btn {
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-weight: bold;
+            width: 280px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        .btn:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 20px #0ff;
+        }
+        .btn.disabled {
+            border-color: #333;
+            color: #555;
+            cursor: not-allowed;
+            pointer-events: none;
+            box-shadow: none;
+        }
+        .btn.secondary {
+            border-color: #f0f;
+            color: #f0f;
+        }
+        .btn.secondary:hover {
+            background: #f0f;
+            color: #000;
+            box-shadow: 0 0 20px #f0f;
+        }
+
+
+        /* Game Elements */
+        canvas { 
+            border: 3px solid #0ff; 
+            box-shadow: 0 0 30px #0ff; 
+            background: #000; 
+            border-radius: 8px; 
+            max-width: 95vw;
+        }
+        #gameUI { 
+            display: flex;
+            justify-content: space-between;
+            width: 800px;
+            max-width: 95vw;
+            color: #0ff; 
+            font-size: 24px; 
+            text-shadow: 0 0 10px #0ff; 
+            margin-bottom: 10px; 
+            font-weight: bold; 
+        }
+        #timerDisplay {
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+        }
+        #levelMsg { 
+            position: absolute; 
+            color: #fff; 
+            font-size: 50px; 
+            font-weight: bold; 
+            text-shadow: 0 0 25px #fff; 
+            opacity: 0; 
+            transition: opacity 0.3s; 
+            pointer-events: none; 
+            z-index: 10; 
+            text-transform: uppercase; 
+            text-align: center;
+        }
+
+
+        /* Leaderboard */
+        #leaderboardContainer {
+            width: 80%;
+            max-width: 500px;
+            border: 2px solid #f0f;
+            padding: 20px;
+            box-shadow: 0 0 20px #f0f;
+            border-radius: 10px;
+            background: rgba(20, 0, 20, 0.5);
+            margin-bottom: 30px;
+        }
+        .score-entry { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin: 12px 0; 
+            border-bottom: 1px solid #505; 
+            font-size: 20px; 
+            padding-bottom: 8px; 
+            color: #e0e0e0;
+        }
+        .score-entry span:nth-child(2) {
+            color: #0ff;
+            font-weight: bold;
+            text-shadow: 0 0 5px #0ff;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Delete Button */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ff0055;
+            font-size: 20px;
+            font-weight: bold;
+            margin-left: 15px;
+            cursor: pointer;
+            transition: color 0.2s, text-shadow 0.2s;
+        }
+        .delete-btn:hover {
+            color: #ff5555;
+            text-shadow: 0 0 10px #ff5555;
+        }
+
+
+        /* Level Grid */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+    </style>
+</head>
+<body>
+
+
+    <!-- MAIN MENU -->
+    <div id="menuScreen" class="screen active">
+        <h1>Neon Dash</h1>
+        <div class="btn" onclick="showScreen('levelScreen')">Campaign (Levels)</div>
+        <div class="btn" onclick="startGame('endless')">Endless Mode</div>
+        <div class="btn secondary" onclick="showLeaderboard()">Hall of Fame</div>
+    </div>
+
+
+    <!-- LEVEL SELECT -->
+    <div id="levelScreen" class="screen">
+        <h1>Select Level</h1>
+        <div class="level-grid" id="levelGrid">
+            <!-- Buttons injected by JS -->
+        </div>
+        <div class="btn secondary" onclick="showScreen('menuScreen')">Back to Menu</div>
+    </div>
+
+
+    <!-- LEADERBOARD -->
+    <div id="leaderboardScreen" class="screen">
+        <h1>Hall of Fame</h1>
+        <div style="display: flex; gap: 40px; width: 90%; max-width: 800px; justify-content: center; flex-wrap: wrap;">
+            <div id="leaderboardContainer" style="margin-bottom: 0;">
+                <h2>Endless Top Scores</h2>
+                <div id="scoreList">No scores yet!</div>
+            </div>
+            <div id="leaderboardContainer" style="margin-bottom: 0;">
+                <h2>Campaign Speedruns</h2>
+                <div id="speedrunList">No runs yet!</div>
+            </div>
+        </div>
+        <div class="btn secondary" onclick="showScreen('menuScreen')" style="margin-top: 30px;">Back to Menu</div>
+    </div>
+
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="screen">
+        <div id="gameUI">
+            <div id="modeDisplay">Endless</div>
+            <div id="timerDisplay"></div>
+            <div id="scoreDisplay">Score: 0</div>
+        </div>
+        <div id="levelMsg">LEVEL UP!</div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+
+<script>
+    // --- UI Management ---
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        if (screenId === 'menuScreen') {
+            updateLevelGrid();
+            isSpeedrunning = false; // Cancel active speedrun if returning to menu
+            gameState = 'MENU';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        }
+    }
+
+
+    // --- Core Game Variables ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const modeDisplay = document.getElementById('modeDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const levelMsg = document.getElementById('levelMsg');
+    const scoreList = document.getElementById('scoreList');
+    const speedrunList = document.getElementById('speedrunList');
+
+
+    canvas.width = 800;
+    canvas.height = 400;
+
+
+    let score = 0;
+    let gameActive = false;
+    let gameState = 'MENU'; // MENU, PLAYING, GAMEOVER, VICTORY
+    let gameSpeed = 6.5;
+    let frameCount = 0;
+    let nextObstacleFrame = 0;
+    let godMode = false;
+    
+    let currentMode = 'endless'; // 'endless' or 'level'
+    let activeLevel = 1;
+    let highestUnlockedLevel = parseInt(localStorage.getItem('neonMaxLevel')) || 1;
+
+
+    let rotation = 0;
+    let targetRotation = 0;
+    let animationFrameId = null;
+
+
+    // --- Speedrun & PRNG Variables ---
+    let runStartTime = 0;
+    let isSpeedrunning = false;
+    let finalRunTime = 0;
+    
+    // 100% Cross-Device Deterministic Seed
+    let deterministicSeed = 1;
+
+
+    function getSeededRandom() {
+        // Linear Congruential Generator (LCG)
+        // Uses unsigned 32-bit integer math: guarantees exact same sequence on ANY device.
+        deterministicSeed = (deterministicSeed * 1664525 + 1013904223) >>> 0;
+        return deterministicSeed / 4294967296;
+    }
+
+
+    function formatTime(ms) {
+        let mins = Math.floor(ms / 60000);
+        let secs = Math.floor((ms % 60000) / 1000);
+        let millis = Math.floor((ms % 1000) / 10);
+        return `${mins}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(2, '0')}`;
+    }
+
+
+    // --- Level Configurations ---
+    const levelData = [
+        { target: 15, speed: 5.5, spawnMulti: 1.3, types: ['single'], color: '#0ff' }, // Lvl 1
+        { target: 25, speed: 6.5, spawnMulti: 1.1, types: ['single', 'double'], color: '#0f5' }, // Lvl 2
+        { target: 40, speed: 7.5, spawnMulti: 0.9, types: ['single', 'double'], color: '#ff0' }, // Lvl 3
+        { target: 50, speed: 8.5, spawnMulti: 0.8, types: ['double', 'triple'], color: '#f50' }, // Lvl 4
+        { target: 60, speed: 10.0, spawnMulti: 0.65, types: ['single', 'double', 'triple'], color: '#f0f' } // Lvl 5 (Demon)
+    ];
+
+
+    // --- Entities ---
+    const stars = Array.from({ length: 50 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * 300,
+        size: Math.random() * 2,
+        speed: Math.random() * 0.5 + 0.1
+    }));
+
+
+    const particles = [];
+    const player = {
+        x: 80, y: 350, width: 32, height: 32, color: '#0ff',
+        dy: 0, jumpForce: 14.5, gravity: 0.75, grounded: false,
+        visualWidth: 32, visualHeight: 32
+    };
+    const obstacles = [];
+
+
+    // --- Menu & Progression Functions ---
+    function updateLevelGrid() {
+        const grid = document.getElementById('levelGrid');
+        grid.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const btn = document.createElement('div');
+            const isUnlocked = i <= highestUnlockedLevel;
+            btn.className = `btn ${isUnlocked ? '' : 'disabled'}`;
+            btn.innerText = `Level ${i}`;
+            if (isUnlocked) {
+                btn.onclick = () => startGame('level', i);
+            } else {
+                btn.innerText += " (Locked)";
+            }
+            grid.appendChild(btn);
+        }
+    }
+
+
+    function showLeaderboard() {
+        const scores = JSON.parse(localStorage.getItem('neonScores')) || [];
+        if (scores.length === 0) {
+            scoreList.innerHTML = '<div style="text-align:center; color:#888;">No scores yet!</div>';
+        } else {
+            scoreList.innerHTML = scores
+                .map((s, idx) => `
+                    <div class="score-entry">
+                        <span>#${idx+1} ${s.name}</span>
+                        <span>${Number(s.val).toLocaleString()} <button class="delete-btn" onclick="deleteEntry('scores', ${idx})" title="Delete entry">✕</button></span>
+                    </div>`)
+                .join('');
+        }
+
+
+        const runs = JSON.parse(localStorage.getItem('neonSpeedruns')) || [];
+        if (runs.length === 0) {
+            speedrunList.innerHTML = '<div style="text-align:center; color:#888;">No speedruns yet! Beat Lvl 1-5.</div>';
+        } else {
+            speedrunList.innerHTML = runs
+                .map((s, idx) => `
+                    <div class="score-entry">
+                        <span>#${idx+1} ${s.name}</span>
+                        <span>${formatTime(s.val)} <button class="delete-btn" onclick="deleteEntry('runs', ${idx})" title="Delete entry">✕</button></span>
+                    </div>`)
+                .join('');
+        }
+        showScreen('leaderboardScreen');
+    }
+
+
+    // --- Leaderboard Logic (Improved to update existing names) ---
+    function saveScore(newName, newScore) {
+        let scores = JSON.parse(localStorage.getItem('neonScores')) || [];
+        // Check if player name already exists
+        let existingPlayerIndex = scores.findIndex(s => s.name.toUpperCase() === newName.toUpperCase());
+        
+        if (existingPlayerIndex !== -1) {
+            // Update only if the new score is strictly better (higher is better for Endless)
+            if (newScore > scores[existingPlayerIndex].val) {
+                scores[existingPlayerIndex].val = newScore;
+            }
+        } else {
+            // New player
+            scores.push({ name: newName, val: newScore });
+        }
+
+
+        // Sort descending and keep top 10
+        scores.sort((a, b) => b.val - a.val);
+        localStorage.setItem('neonScores', JSON.stringify(scores.slice(0, 10)));
+    }
+
+
+    function saveSpeedrun(newName, timeMs) {
+        let runs = JSON.parse(localStorage.getItem('neonSpeedruns')) || [];
+        let existingPlayerIndex = runs.findIndex(s => s.name.toUpperCase() === newName.toUpperCase());
+        
+        if (existingPlayerIndex !== -1) {
+            // Update only if the new time is strictly better (lower is better for Speedrun)
+            if (timeMs < runs[existingPlayerIndex].val) {
+                runs[existingPlayerIndex].val = timeMs;
+            }
+        } else {
+            runs.push({ name: newName, val: timeMs });
+        }
+
+
+        // Sort ascending (lower time is better) and keep top 10
+        runs.sort((a, b) => a.val - b.val);
+        localStorage.setItem('neonSpeedruns', JSON.stringify(runs.slice(0, 10)));
+    }
+
+
+    function deleteEntry(type, index) {
+        if (confirm("Are you sure you want to delete this score?")) {
+            if (type === 'scores') {
+                let scores = JSON.parse(localStorage.getItem('neonScores')) || [];
+                scores.splice(index, 1);
+                localStorage.setItem('neonScores', JSON.stringify(scores));
+            } else if (type === 'runs') {
+                let runs = JSON.parse(localStorage.getItem('neonSpeedruns')) || [];
+                runs.splice(index, 1);
+                localStorage.setItem('neonSpeedruns', JSON.stringify(runs));
+            }
+            showLeaderboard(); // Refresh the list
+        }
+    }
+
+
+    // --- Game Triggers ---
+    function showLevelUp(text = "LEVEL UP!") {
+        levelMsg.innerText = text;
+        levelMsg.style.opacity = "1";
+        setTimeout(() => { levelMsg.style.opacity = "0"; }, 1200);
+    }
+
+
+    function startGame(mode, level = 1) {
+        showScreen('gameScreen');
+        currentMode = mode;
+        activeLevel = level;
+        
+        // Prevent multiple game loops from stacking
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+
+        // Speedrun Tracker (Only starts fresh if clicking Level 1 from Menu)
+        if (currentMode === 'level' && level === 1 && gameState !== 'GAMEOVER' && gameState !== 'VICTORY') {
+            isSpeedrunning = true;
+            runStartTime = Date.now();
+        }
+
+
+        // Preset Level Seeding (Ensures exact same level layout every time)
+        // Hardcoded seeds for Levels 1 through 5
+        const levelSeeds = [0, 42069, 13371337, 8675309, 31415926, 27182818];
+        if (currentMode === 'level') {
+            deterministicSeed = levelSeeds[level];
+        }
+
+
+        // Reset state
+        score = 0;
+        obstacles.length = 0;
+        particles.length = 0;
+        player.y = 350;
+        player.dy = 0;
+        player.color = currentMode === 'level' ? levelData[level-1].color : '#0ff';
+        rotation = 0;
+        targetRotation = 0;
+        frameCount = 0;
+        nextObstacleFrame = 0;
+        godMode = false;
+        
+        if (currentMode === 'endless') {
+            gameSpeed = 6.5;
+            modeDisplay.innerText = "ENDLESS MODE";
+        } else {
+            gameSpeed = levelData[level-1].speed;
+            modeDisplay.innerText = `LEVEL ${level} (Target: ${levelData[level-1].target})`;
+        }
+
+
+        gameState = 'PLAYING';
+        gameActive = true;
+        update();
+    }
+
+
+    function jump() {
+        if (player.grounded && gameActive && gameState === 'PLAYING') {
+            player.dy = -player.jumpForce;
+            player.grounded = false;
+            targetRotation += Math.PI / 2;
+            player.visualWidth = 24;
+            player.visualHeight = 40;
+        } else if (!gameActive && gameState === 'GAMEOVER') {
+            // Restart current mode quickly
+            startGame(currentMode, activeLevel);
+        } else if (!gameActive && gameState === 'VICTORY') {
+            // Go to menu or next level
+            if (activeLevel < 5) {
+                startGame('level', activeLevel + 1);
+            } else {
+                showScreen('menuScreen');
+            }
+        }
+    }
+
+
+    // --- Input Handling (Keyboard & Touch) ---
+    window.addEventListener('keydown', (e) => {
+        if (document.getElementById('gameScreen').classList.contains('active')) {
+            if (e.code === 'Space' || e.code === 'ArrowUp') jump();
+            if (e.key === 'c' || e.key === 'C') {
+                score = 10000;
+                player.color = '#ffd700';
+                godMode = true;
+                showLevelUp("LEGEND MODE");
+            }
+            if (e.code === 'Escape') showScreen('menuScreen');
+        }
+    });
+
+
+    // Touch support for mobile browsers
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        jump();
+    }, {passive: false});
+    canvas.addEventListener('mousedown', jump);
+
+
+
+
+    // --- Game Logic ---
+    function spawnObstacle() {
+        if (frameCount > nextObstacleFrame) {
+            let type = 'single';
+            let color = '#f0f';
+            let gapBase = 75;
+
+
+            if (currentMode === 'endless') {
+                const rand = Math.random();
+                if (rand < 0.15) { type = 'triple'; color = '#ffcc00'; gapBase = 180; } 
+                else if (rand < 0.45) { type = 'double'; color = '#ff0055'; gapBase = 115; }
+                nextObstacleFrame = frameCount + (gapBase + Math.random() * 40) / (gameSpeed/6.5);
+                
+                const size = 32 + Math.random() * 8;
+                obstacles.push({ x: canvas.width, width: size, height: size, color: color, type: type });
+            } else {
+                // Level Mode Spawning logic uses strictly Seeded RNG
+                const conf = levelData[activeLevel-1];
+                const types = conf.types;
+                
+                const randType = getSeededRandom();
+                type = types[Math.floor(randType * types.length)];
+                
+                if (type === 'triple') { color = '#ffcc00'; gapBase = 160; }
+                else if (type === 'double') { color = '#ff0055'; gapBase = 100; }
+                else { color = '#f0f'; gapBase = 70; }
+
+
+                nextObstacleFrame = frameCount + ((gapBase + getSeededRandom() * 30) * conf.spawnMulti) / (gameSpeed/6.5);
+                
+                const size = 32 + getSeededRandom() * 8;
+                obstacles.push({ x: canvas.width, width: size, height: size, color: color, type: type });
+            }
+        }
+    }
+
+
+    function drawSpikeSet(o) {
+        ctx.shadowColor = o.color;
+        ctx.fillStyle = o.color;
+        ctx.shadowBlur = 10;
+        
+        const count = o.type === 'triple' ? 3 : (o.type === 'double' ? 2 : 1);
+        const spacing = o.width * 0.82;
+
+
+        for (let i = 0; i < count; i++) {
+            const curX = o.x + (i * spacing);
+            ctx.beginPath();
+            ctx.moveTo(curX, 380);
+            ctx.lineTo(curX + o.width / 2, 380 - o.height);
+            ctx.lineTo(curX + o.width, 380);
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+
+    function triggerGameOver() {
+        gameActive = false;
+        gameState = 'GAMEOVER';
+        
+        setTimeout(() => {
+            if (currentMode === 'endless') {
+                const name = prompt(`SYSTEM OVERLOAD! Score: ${score}\nEnter Name for Hall of Fame:`, "Player 1");
+                if (name && name.trim() !== "") saveScore(name.trim(), score);
+                showScreen('leaderboardScreen');
+            }
+        }, 100);
+    }
+
+
+    function triggerVictory() {
+        gameActive = false;
+        gameState = 'VICTORY';
+        
+        if (activeLevel >= highestUnlockedLevel && activeLevel < 5) {
+            highestUnlockedLevel = activeLevel + 1;
+            localStorage.setItem('neonMaxLevel', highestUnlockedLevel);
+        }
+
+
+        if (activeLevel === 5 && isSpeedrunning) {
+            finalRunTime = Date.now() - runStartTime;
+            setTimeout(() => {
+                const name = prompt(`CAMPAIGN COMPLETE!\nSpeedrun Time: ${formatTime(finalRunTime)}\nEnter Name for Hall of Fame:`, "Player 1");
+                if (name && name.trim() !== "") saveSpeedrun(name.trim(), finalRunTime);
+                isSpeedrunning = false;
+                showLeaderboard();
+            }, 600);
+        }
+    }
+
+
+    // --- Main Game Loop ---
+    function update() {
+        if (!document.getElementById('gameScreen').classList.contains('active')) return; // Stop if not on game screen
+
+
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+        // Draw Stars (Parallax)
+        ctx.fillStyle = '#fff';
+        stars.forEach(s => {
+            s.x -= s.speed * (gameSpeed / 5);
+            if (s.x < 0) s.x = canvas.width;
+            ctx.shadowBlur = 0;
+            ctx.fillRect(s.x, s.y, s.size, s.size);
+        });
+
+
+        if (gameActive) {
+            frameCount++;
+
+
+            // Particles
+            if (frameCount % 3 === 0) {
+                particles.push({
+                    x: player.x,
+                    y: player.y + Math.random() * player.height,
+                    size: Math.random() * 4 + 2,
+                    life: 1.0,
+                    color: player.color
+                });
+            }
+        }
+
+
+        // Render Particles
+        particles.forEach((p, i) => {
+            if(gameActive) p.x -= gameSpeed * 0.5;
+            p.life -= 0.02;
+            ctx.globalAlpha = Math.max(0, p.life);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+            if (p.life <= 0) particles.splice(i, 1);
+        });
+        ctx.globalAlpha = 1.0;
+
+
+        // Player Physics
+        if (gameActive) {
+            player.dy += player.gravity;
+            player.y += player.dy;
+            player.visualWidth += (32 - player.visualWidth) * 0.2;
+            player.visualHeight += (32 - player.visualHeight) * 0.2;
+
+
+            if (player.y + player.height > 380) {
+                if (!player.grounded) {
+                    player.visualWidth = 42;
+                    player.visualHeight = 22;
+                    rotation = targetRotation;
+                }
+                player.y = 380 - player.height;
+                player.dy = 0;
+                player.grounded = true;
+            }
+        }
+
+
+        // Draw Player
+        ctx.save();
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = player.color;
+        ctx.fillStyle = player.color;
+        
+        if (gameActive) {
+            if (godMode) rotation += 0.15;
+            else rotation += (targetRotation - rotation) * 0.12;
+        }
+
+
+        ctx.translate(player.x + 16, player.y + 16);
+        ctx.rotate(rotation);
+        ctx.fillRect(-player.visualWidth/2, -player.visualHeight/2, player.visualWidth, player.visualHeight);
+        ctx.restore();
+
+
+        // Draw Floor
+        ctx.shadowBlur = 15;
+        ctx.strokeStyle = player.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, 382);
+        ctx.lineTo(canvas.width, 382);
+        ctx.stroke();
+
+
+        // Obstacles
+        if (gameActive) spawnObstacle();
+
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let o = obstacles[i];
+            if (gameActive) o.x -= gameSpeed;
+            drawSpikeSet(o);
+
+
+            const totalWidth = o.width + (o.type === 'triple' ? o.width * 1.64 : (o.type === 'double' ? o.width * 0.82 : 0));
+            const hPadding = 10;
+            
+            // Collision Logic
+            if (gameActive && !godMode &&
+                player.x + player.width - hPadding > o.x &&
+                player.x + hPadding < o.x + totalWidth &&
+                player.y + player.height - 4 > 380 - o.height) {
+                
+                triggerGameOver();
+            }
+
+
+            // Score logic
+            if (o.x + totalWidth < 0) {
+                obstacles.splice(i, 1);
+                if (gameActive) {
+                    score++;
+                    
+                    // Endless scaling logic (capped speed to fix bug)
+                    if (currentMode === 'endless' && score > 0 && score % 10 === 0) {
+                        if (gameSpeed < 12.5) gameSpeed += 0.2;
+                        showLevelUp();
+                    }
+                    
+                    // Campaign mode win condition
+                    if (currentMode === 'level' && score >= levelData[activeLevel-1].target) {
+                        triggerVictory();
+                    }
+                }
+            }
+        }
+
+
+        // UI Updates
+        if (isSpeedrunning) {
+            timerDisplay.innerText = (gameState === 'VICTORY' && activeLevel === 5) ? formatTime(finalRunTime) : formatTime(Date.now() - runStartTime);
+        } else {
+            timerDisplay.innerText = "";
+        }
+
+
+        if (currentMode === 'endless') {
+            scoreDisplay.innerText = `Score: ${score}`;
+        } else {
+            let target = levelData[activeLevel-1].target;
+            scoreDisplay.innerText = `Progress: ${Math.min(score, target)} / ${target}`;
+        }
+        
+        // Draw Overlays
+        if (gameState === 'GAMEOVER') {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "rgba(10, 0, 5, 0.85)";
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff0055";
+            ctx.textAlign = "center";
+            ctx.font = "bold 40px Courier New";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#ff0055";
+            ctx.fillText("SYSTEM OVERLOAD", canvas.width/2, canvas.height/2 - 20);
+            ctx.fillStyle = "#fff";
+            ctx.font = "20px Courier New";
+            ctx.shadowBlur = 0;
+            ctx.fillText("TAP OR PRESS SPACE TO RESTART", canvas.width/2, canvas.height/2 + 30);
+        } else if (gameState === 'VICTORY') {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "rgba(0, 15, 10, 0.85)";
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00ff55";
+            ctx.textAlign = "center";
+            ctx.font = "bold 40px Courier New";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00ff55";
+            ctx.fillText("LEVEL CLEARED!", canvas.width/2, canvas.height/2 - 20);
+            ctx.fillStyle = "#fff";
+            ctx.font = "20px Courier New";
+            ctx.shadowBlur = 0;
+            if (activeLevel < 5) {
+                ctx.fillText("TAP OR PRESS SPACE FOR NEXT LEVEL", canvas.width/2, canvas.height/2 + 30);
+            } else {
+                ctx.fillText("CAMPAIGN COMPLETE! YOU ARE A LEGEND.", canvas.width/2, canvas.height/2 + 30);
+                ctx.fillText("TAP TO RETURN TO MENU", canvas.width/2, canvas.height/2 + 60);
+            }
+        }
+
+
+        if (gameState === 'PLAYING' || gameState === 'GAMEOVER' || gameState === 'VICTORY') {
+            animationFrameId = requestAnimationFrame(update);
+        }
+    }
+
+
+    // Initialize Grid on load
+    updateLevelGrid();
+
+
+</script>
+</body>
+</html>

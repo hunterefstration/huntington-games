@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <title>NEON DRIFT: SHADOW REIGN</title>
+   <style>
+       body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+       #game-wrap { position: relative; border: 4px solid #ff00ff; width: 800px; height: 500px; box-shadow: 0 0 50px rgba(255, 0, 255, 0.3); }
+       canvas { background: #050505; display: block; }
+      
+       .ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.92); z-index: 10; text-align: center; }
+       .hidden { display: none !important; }
+      
+       .hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; font-size: 22px; font-weight: 900; color: #00faff; text-shadow: 0 0 10px #00faff; pointer-events: none; z-index: 5; }
+      
+       h1 { font-size: 45px; margin: 0; color: #ff00ff; text-shadow: 0 0 20px #ff00ff; font-style: italic; letter-spacing: 5px; }
+       .high-score-tag { color: #ffcc00; font-size: 16px; margin-top: 5px; font-weight: bold; border: 1px solid #ffcc00; padding: 2px 10px; border-radius: 4px; }
+
+
+       .garage { display: flex; gap: 10px; margin: 25px 0; flex-wrap: wrap; justify-content: center; max-width: 750px; }
+       .car-card { border: 2px solid #333; padding: 10px; background: #111; cursor: pointer; width: 130px; transition: 0.3s; border-radius: 12px; position: relative; }
+       .car-card:hover { border-color: #00faff; }
+       .car-card.selected { border-color: #ff00ff; background: #1a0a1a; box-shadow: 0 0 25px rgba(255, 0, 255, 0.4); }
+      
+       .ability-tag { font-size: 9px; font-weight: bold; margin-top: 8px; text-transform: uppercase; padding: 2px 5px; border-radius: 3px; }
+       .pulse-tag { color: #fff; border: 1px solid #fff; }
+       .tank-tag { color: #ffcc00; border: 1px solid #ffcc00; }
+       .wraith-tag { color: #a0ff00; border: 1px solid #a0ff00; }
+       .speedster-tag { color: #ff0055; border: 1px solid #ff0055; }
+       .buggy-tag { color: #8d6e63; border: 1px solid #8d6e63; }
+       .power-tag { color: #e040fb; border: 1px solid #e040fb; }
+
+
+       .btn { background: #ff00ff; border: none; color: #000; padding: 15px 50px; font-size: 20px; cursor: pointer; font-weight: bold; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); transition: 0.2s; }
+       .btn:hover { background: #fff; transform: scale(1.05); }
+
+
+       #fuel-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; height: 10px; background: #111; border: 1px solid #333; border-radius: 5px; overflow: hidden; }
+       #fuel-fill { height: 100%; background: linear-gradient(90deg, #ff00ff, #00faff); width: 100%; transition: width 0.1s; }
+       #flash { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; opacity: 0; z-index: 20; transition: opacity 0.1s; }
+   </style>
+</head>
+<body>
+
+
+<div id="game-wrap">
+   <div id="flash"></div>
+   <div class="hud">
+       <div>SCORE: <span id="score-val">0</span></div>
+       <div id="speed-val">0 KM/H</div>
+       <div id="special-ui" style="display:none;">STATUS: NORMAL</div>
+   </div>
+   <div id="fuel-container"><div id="fuel-fill"></div></div>
+   <canvas id="c"></canvas>
+
+
+   <div id="menu" class="ui">
+       <h1>NEON DRIFT</h1>
+       <div class="high-score-tag">RECORD: <span id="home-high-score">0</span></div>
+      
+       <div class="garage">
+           <div class="car-card selected" onclick="selectCar('pulse', this)">
+               <div style="width:30px; height:45px; background:#fff; margin:0 auto; border-radius:4px; border-top:8px solid #00faff;"></div>
+               <h3>PULSE</h3>
+               <div class="ability-tag pulse-tag">MOMENTUM: 2X SCORE</div>
+           </div>
+           <div class="car-card" onclick="selectCar('tank', this)">
+               <div style="width:40px; height:50px; background:#ffcc00; margin:0 auto; border-radius:6px; border-top:6px solid #444;"></div>
+               <h3>JUGGERNAUT</h3>
+               <div class="ability-tag tank-tag">3 GRENADES (SPACE)</div>
+           </div>
+           <div class="car-card" onclick="selectCar('wraith', this)">
+               <div style="width:22px; height:45px; background:#a0ff00; margin:0 auto; border-radius:2px; border-top:12px solid #fff;"></div>
+               <h3>WRAITH</h3>
+               <div class="ability-tag wraith-tag">3 ORBS = PHANTOM</div>
+           </div>
+           <div class="car-card" onclick="selectCar('speedster', this)">
+               <div style="width:26px; height:50px; background:#ff0055; margin:0 auto; border-radius:5px; border-bottom:10px solid #fff;"></div>
+               <h3>SPEEDSTER</h3>
+               <div class="ability-tag speedster-tag">VELOCITY: EXP SCORING</div>
+           </div>
+           <div class="car-card" onclick="selectCar('powerhouse', this)">
+               <div style="width:55px; height:55px; background:#4a148c; margin:0 auto; border-radius:4px; border-left:8px solid #e040fb; border-right:8px solid #e040fb;"></div>
+               <h3>POWERHOUSE</h3>
+               <div class="ability-tag power-tag">2X FUEL & SLOW DRAIN</div>
+           </div>
+           <div class="car-card" onclick="selectCar('buggy', this)">
+               <div style="width:35px; height:35px; background:#8d6e63; margin:10px auto; border-radius:8px; border:3px solid #5d4037;"></div>
+               <h3>BUGGY</h3>
+               <div class="ability-tag buggy-tag">DULL: 0.5X SCORE</div>
+           </div>
+       </div>
+       <button class="btn" onclick="start()">IGNITE ENGINE</button>
+   </div>
+
+
+   <div id="over" class="ui hidden">
+       <h1 id="over-msg">WRECKED</h1>
+       <div style="font-size: 24px; margin: 10px 0;">FINAL SCORE: <span id="final-score" style="color:#ff00ff">0</span></div>
+       <button class="btn" onclick="location.reload()">RETURN TO GARAGE</button>
+   </div>
+</div>
+
+
+<script>
+   const canvas = document.getElementById('c');
+   const ctx = canvas.getContext('2d');
+   canvas.width = 800; canvas.height = 500;
+
+
+   let player, enemies, fuelCans, projectiles, score, speed, active = false, fuel = 100, maxFuel = 100, frame = 0, flashTimer = 0;
+   let armor = 0, ammo = 0, orbCount = 0, phantomTimer = 0;
+   const lanes = [180, 310, 490, 620];
+   const keys = {};
+
+
+   const carData = {
+       pulse: { w: 42, h: 75, color: '#fff', glow: '#00faff', acc: 1.0, friction: 0.92, fR: 0.08 },
+       tank: { w: 58, h: 85, color: '#ffcc00', glow: '#ffcc00', acc: 0.5, friction: 0.97, fR: 0.05 },
+       wraith: { w: 28, h: 70, color: '#a0ff00', glow: '#a0ff00', acc: 2.2, friction: 0.90, fR: 0.12 },
+       speedster: { w: 32, h: 65, color: '#ff0055', glow: '#ff0055', acc: 1.8, friction: 0.88, fR: 0.15 },
+       powerhouse: { w: 65, h: 95, color: '#4a148c', glow: '#e040fb', acc: 0.25, friction: 0.985, fR: 0.015 },
+       buggy: { w: 45, h: 60, color: '#8d6e63', glow: '#5d4037', acc: 0.45, friction: 0.96, fR: 0.03 }
+   };
+   let chosenType = 'pulse';
+
+
+   let highScore = localStorage.getItem('neonDriftScore') || 0;
+   document.getElementById('home-high-score').innerText = highScore;
+
+
+   window.onkeydown = e => {
+       keys[e.code] = true;
+       if (e.code === 'Space' && active && chosenType === 'tank' && ammo > 0) {
+           ammo--;
+           projectiles.push({ x: player.x, y: player.y - 20, v: 10 });
+           triggerFlash('#fff');
+           updateUI();
+       }
+   };
+   window.onkeyup = e => keys[e.code] = false;
+
+
+   function selectCar(type, el) {
+       chosenType = type;
+       document.querySelectorAll('.car-card').forEach(c => c.classList.remove('selected'));
+       el.classList.add('selected');
+   }
+
+
+   function triggerFlash(color) {
+       const f = document.getElementById('flash');
+       f.style.background = color;
+       f.style.opacity = 0.4;
+       flashTimer = 10;
+       setTimeout(() => f.style.opacity = 0, 100);
+   }
+
+
+   function updateUI() {
+       const ui = document.getElementById('special-ui');
+       ui.style.display = 'block';
+       if (chosenType === 'tank') {
+           ui.style.color = '#ffcc00';
+           ui.innerHTML = `SHIELD: ${armor > 0 ? 'ON' : 'OFF'} | AMMO: ${ammo}`;
+       } else if (chosenType === 'wraith') {
+           ui.style.color = '#a0ff00';
+           ui.innerHTML = phantomTimer > 0 ? `PHANTOM MODE: ${Math.ceil(phantomTimer/60)}s` : `ORBS: ${orbCount}/3`;
+       } else if (chosenType === 'powerhouse') {
+           ui.style.color = '#e040fb';
+           ui.innerHTML = `TITAN CLASS - HIGH ENDURANCE`;
+       } else {
+           ui.style.display = 'none';
+       }
+   }
+
+
+   function start() {
+       document.getElementById('menu').classList.add('hidden');
+       player = { x: 400, y: 400, vx: 0, tilt: 0, ...carData[chosenType] };
+       enemies = []; fuelCans = []; projectiles = []; score = 0; frame = 0;
+       orbCount = 0; phantomTimer = 0;
+      
+       maxFuel = (chosenType === 'powerhouse') ? 200 : 100;
+       fuel = maxFuel;
+       speed = (chosenType === 'speedster') ? 12.5 : (chosenType === 'powerhouse') ? 4 : (chosenType === 'buggy') ? 1.67 : 8;
+       armor = (chosenType === 'tank') ? 1 : 0;
+       ammo = (chosenType === 'tank') ? 3 : 0;
+      
+       updateUI();
+       active = true;
+       requestAnimationFrame(loop);
+   }
+
+
+   function loop() {
+       if (!active) return;
+       frame++; ctx.clearRect(0,0,800,500);
+
+
+       // Movement
+       if (keys['KeyA'] || keys['ArrowLeft']) player.vx -= player.acc;
+       if (keys['KeyD'] || keys['ArrowRight']) player.vx += player.acc;
+       player.vx *= player.friction;
+       player.x += player.vx;
+       player.tilt = player.vx * 0.05;
+       player.x = Math.max(150, Math.min(650, player.x));
+
+
+       // Fuel and Speed
+       if (phantomTimer > 0) phantomTimer--;
+       else if (fuel > 0) fuel -= player.fR;
+
+
+       speed += (chosenType === 'buggy') ? 0.0005 : (chosenType === 'powerhouse') ? 0.001 : 0.003;
+      
+       // Scoring
+       let scoreGain = Math.floor(speed / 3);
+       if (chosenType === 'pulse') score += scoreGain * 2;
+       else if (chosenType === 'speedster') score += Math.floor(scoreGain * (speed / 6));
+       else if (chosenType === 'buggy') score += Math.floor(scoreGain * 0.5);
+       else score += scoreGain;
+
+
+       if (fuel <= 0) endGame("OUT OF ENERGY");
+
+
+       drawEnvironment();
+
+
+       // Projectiles (Tank only)
+       projectiles.forEach((p, pi) => {
+           p.y -= p.v;
+           ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill();
+           enemies.forEach((e, ei) => {
+               if (Math.abs(p.x - e.x) < 30 && Math.abs(p.y - e.y) < 50) {
+                   enemies.splice(ei, 1); projectiles.splice(pi, 1);
+                   score += 500; triggerFlash('#ff0000');
+               }
+           });
+       });
+
+
+       // Draw Player
+       ctx.save();
+       ctx.translate(player.x, player.y + player.h/2);
+       ctx.rotate(player.tilt);
+       ctx.globalAlpha = (phantomTimer > 0) ? 0.3 : 1.0;
+       ctx.shadowBlur = (phantomTimer > 0) ? 40 : 20;
+       ctx.shadowColor = (phantomTimer > 0) ? '#a0ff00' : player.glow;
+       ctx.fillStyle = player.color;
+       ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+       ctx.restore();
+       ctx.globalAlpha = 1.0;
+
+
+       let worldSpeedMult = (chosenType === 'buggy') ? 0.5 : 1.3;
+
+
+       // Fuel Orbs
+       fuelCans.forEach((f, i) => {
+           f.y += speed * worldSpeedMult;
+           ctx.fillStyle = '#ff00ff'; ctx.shadowBlur = 15; ctx.shadowColor = '#ff00ff';
+           ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+           if (Math.hypot(player.x - f.x, player.y - f.y) < (player.w/2 + f.r)) {
+               fuel = Math.min(maxFuel, fuel + ((chosenType === 'wraith') ? 65 : 35));
+               fuelCans.splice(i, 1);
+               if (chosenType === 'wraith' && phantomTimer === 0) {
+                   orbCount++;
+                   if (orbCount >= 3) { orbCount = 0; phantomTimer = 300; triggerFlash('#a0ff00'); }
+                   updateUI();
+               }
+           }
+       });
+
+
+       // Enemies
+       enemies.forEach((e, i) => {
+           e.y += speed * worldSpeedMult;
+           ctx.fillStyle = '#111'; ctx.strokeStyle = '#00faff'; ctx.lineWidth = 3;
+           ctx.fillRect(e.x - e.w/2, e.y, e.w, e.h);
+           ctx.strokeRect(e.x - e.w/2, e.y, e.w, e.h);
+          
+           if (Math.abs(player.x - e.x) < (player.w + e.w)/2 - 5 && Math.abs(player.y - e.y) < (player.h + e.h)/2 - 5) {
+               if (phantomTimer <= 0) {
+                   if (armor > 0) { armor--; enemies.splice(i, 1); triggerFlash('#ff0000'); updateUI(); }
+                   else endGame("COLLISION");
+               }
+           }
+           if (e.y > 600) enemies.splice(i, 1);
+       });
+
+
+       // Spawn logic
+       let spawnRate = Math.max(15, Math.floor(85 - speed/2));
+       if (frame % spawnRate === 0) enemies.push({ x: lanes[Math.floor(Math.random()*4)], y: -100, w: 52, h: 90 });
+       if (frame % 150 === 0) fuelCans.push({ x: lanes[Math.floor(Math.random()*4)], y: -100, r: 18 });
+
+
+       document.getElementById('score-val').innerText = score;
+       document.getElementById('speed-val').innerText = Math.floor(speed * 12) + " KM/H";
+       document.getElementById('fuel-fill').style.width = (fuel / maxFuel * 100) + "%";
+       requestAnimationFrame(loop);
+   }
+
+
+   function drawEnvironment() {
+       ctx.strokeStyle = '#151515'; ctx.shadowBlur = 0;
+       let visualMult = (chosenType === 'buggy') ? 0.5 : 1.0;
+       for (let i = 0; i < 10; i++) {
+           let y = (frame * speed * visualMult % 80) + (i * 80);
+           ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(800, y); ctx.stroke();
+       }
+       ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2; ctx.setLineDash([30, 30]);
+       ctx.lineDashOffset = -frame * speed * visualMult;
+       [250, 400, 550].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 500); ctx.stroke(); });
+       ctx.setLineDash([]);
+   }
+
+
+   function endGame(r) {
+       active = false;
+       if (score > highScore) { highScore = score; localStorage.setItem('neonDriftScore', highScore); }
+       document.getElementById('over').classList.remove('hidden');
+       document.getElementById('over-msg').innerText = r;
+       document.getElementById('final-score').innerText = score;
+   }
+</script>
+</body>
+</html>

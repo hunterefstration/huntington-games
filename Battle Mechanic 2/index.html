@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undertale: The Dummy's Patience</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+
+        body {
+            background-color: black;
+            color: white;
+            font-family: 'VT323', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+
+        canvas {
+            background-color: black;
+            border: 2px solid #333;
+        }
+
+
+        #instructions {
+            margin-top: 20px;
+            font-size: 24px;
+            text-align: center;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+
+    <canvas id="gameCanvas" width="640" height="480"></canvas>
+    <div id="instructions">ARROW KEYS to Move | Stay Determined.</div>
+
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+
+    // --- Game State ---
+    let gameOver = false;
+    let gameWin = false;
+    let score = 0; // Acts as our timer (60 per second)
+    let frameCount = 0;
+    let dialogueIndex = 0;
+    let displayedText = "";
+    
+    // --- Story Content ---
+    // At 60fps, 3600 = 1 minute. 36000 = 10 minutes.
+    const storyContent = [
+        { text: "It's just a regular Training Dummy.", trigger: 0 },
+        { text: "Dummy: '...'", trigger: 600 },
+        { text: "Dummy: 'You're still here?'", trigger: 1800 },
+        { text: "Dummy: 'Most people just hit me and leave.'", trigger: 3600 },
+        { text: "Dummy: 'You've got a lot of... patience.'", trigger: 7200 },
+        { text: "The Dummy looks slightly impressed.", trigger: 10800 },
+        { text: "Dummy: 'Let's see if you can keep it up.'", trigger: 14400 },
+        { text: "The air grows heavy with cotton dust.", trigger: 20000 },
+        { text: "Dummy: 'Nearly there. Don't lose focus now.'", trigger: 28000 },
+        { text: "Dummy: 'Alright, alright! I'm out of ideas.'", trigger: 35000 },
+        { text: "YOU WON! You showed true Mercy.", trigger: 36000 }
+    ];
+
+
+    const box = {
+        x: 200, y: 200,
+        width: 240, height: 160,
+        thickness: 4
+    };
+
+
+    const player = {
+        x: 320, y: 280,
+        size: 16,
+        speed: 3.5,
+        color: "red"
+    };
+
+
+    let bullets = [];
+    const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+
+    // --- Listeners ---
+    window.addEventListener("keydown", e => {
+        if (keys.hasOwnProperty(e.code)) { keys[e.code] = true; e.preventDefault(); }
+        if (e.code === "Space" && (gameOver || gameWin)) resetGame();
+    });
+    window.addEventListener("keyup", e => {
+        if (keys.hasOwnProperty(e.code)) { keys[e.code] = false; e.preventDefault(); }
+    });
+
+
+    function resetGame() {
+        gameOver = false; gameWin = false;
+        score = 0; frameCount = 0; dialogueIndex = 0;
+        displayedText = ""; bullets = [];
+        player.x = 320; player.y = 280;
+    }
+
+
+    // --- Logic ---
+    function update() {
+        if (gameOver || gameWin) return;
+
+
+        // Timer and Story
+        score++;
+        frameCount++;
+
+
+        // Typewriter effect
+        let targetText = storyContent[dialogueIndex].text;
+        if (frameCount % 2 === 0 && displayedText.length < targetText.length) {
+            displayedText += targetText.charAt(displayedText.length);
+        }
+
+
+        // Advance story based on triggers
+        if (dialogueIndex < storyContent.length - 1) {
+            if (score >= storyContent[dialogueIndex + 1].trigger) {
+                dialogueIndex++;
+                displayedText = ""; 
+            }
+        } else if (score >= 36000) {
+            gameWin = true;
+        }
+
+
+        // Movement
+        if (keys.ArrowUp) player.y -= player.speed;
+        if (keys.ArrowDown) player.y += player.speed;
+        if (keys.ArrowLeft) player.x -= player.speed;
+        if (keys.ArrowRight) player.x += player.speed;
+
+
+        // Box Constraints
+        player.x = Math.max(box.x + 10, Math.min(player.x, box.x + box.width - 10));
+        player.y = Math.max(box.y + 10, Math.min(player.y, box.y + box.height - 10));
+
+
+        // Attack Patterns
+        if (score < 7200) { // Phase 1: Slow
+            if (frameCount % 45 === 0) spawnBullet(2);
+        } else if (score < 20000) { // Phase 2: Medium
+            if (frameCount % 25 === 0) spawnBullet(3.5);
+        } else { // Phase 3: Intense
+            if (frameCount % 15 === 0) spawnBullet(5);
+        }
+
+
+        // Bullet Physics & Collision
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.x += b.dx; b.y += b.dy;
+
+
+            // Collision (Tight Hitbox)
+            let dist = Math.hypot(player.x - b.x, (player.y) - b.y);
+            if (dist < 8) gameOver = true;
+
+
+            if (b.x < -50 || b.x > 700 || b.y < -50 || b.y > 550) bullets.splice(i, 1);
+        }
+    }
+
+
+    function spawnBullet(speed) {
+        const side = Math.floor(Math.random() * 4);
+        let bx, by, bdx, bdy;
+        if (side === 0) { bx = box.x + Math.random() * box.width; by = -20; bdx = 0; bdy = speed; }
+        else if (side === 1) { bx = box.x + Math.random() * box.width; by = 500; bdx = 0; bdy = -speed; }
+        else if (side === 2) { bx = -20; by = box.y + Math.random() * box.height; bdx = speed; bdy = 0; }
+        else { bx = 660; by = box.y + Math.random() * box.height; bdx = -speed; bdy = 0; }
+        bullets.push({ x: bx, y: by, dx: bdx, dy: bdy });
+    }
+
+
+    // --- Drawing ---
+    function drawHeart(x, y, color) {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 4);
+        ctx.bezierCurveTo(x, y, x - 8, y, x - 8, y + 4);
+        ctx.bezierCurveTo(x - 8, y + 10, x, y + 14, x, y + 18);
+        ctx.bezierCurveTo(x, y + 14, x + 8, y + 10, x + 8, y + 4);
+        ctx.bezierCurveTo(x + 8, y, x, y, x, y + 4);
+        ctx.fill();
+    }
+
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+        // Dialogue
+        ctx.fillStyle = "white";
+        ctx.font = "28px 'VT323'";
+        ctx.fillText("* " + displayedText, box.x, box.y - 40);
+
+
+        // Battle Box
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+
+        // Bullets
+        ctx.fillStyle = "white";
+        bullets.forEach(b => {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+
+        // Player
+        if (!gameOver) {
+            drawHeart(player.x, player.y - 8, player.color);
+        }
+
+
+        // UI
+        ctx.fillStyle = "white";
+        ctx.font = "24px 'VT323'";
+        ctx.fillText("HP  20 / 20", 250, 400);
+        let timeRemaining = Math.max(0, Math.ceil((36000 - score) / 60));
+        ctx.fillText("PATIENCE: " + timeRemaining + "s", 400, 400);
+
+
+        // Screens
+        if (gameOver) {
+            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillRect(0,0,640,480);
+            ctx.fillStyle = "red";
+            ctx.font = "60px 'VT323'";
+            ctx.textAlign = "center";
+            ctx.fillText("GAME OVER", 320, 220);
+            ctx.font = "30px 'VT323'";
+            ctx.fillStyle = "white";
+            ctx.fillText("Don't give up! Press SPACE", 320, 280);
+            ctx.textAlign = "left";
+        }
+
+
+        if (gameWin) {
+            ctx.fillStyle = "rgba(0,0,0,0.9)";
+            ctx.fillRect(0,0,640,480);
+            ctx.fillStyle = "yellow";
+            ctx.font = "60px 'VT323'";
+            ctx.textAlign = "center";
+            ctx.fillText("YOU SURVIVED", 320, 220);
+            ctx.font = "30px 'VT323'";
+            ctx.fillStyle = "white";
+            ctx.fillText("The Dummy has been spared. (SPACE to restart)", 320, 280);
+            ctx.textAlign = "left";
+        }
+    }
+
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+
+    gameLoop();
+</script>
+</body>
+</html>

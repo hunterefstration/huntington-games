@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market & Life: Pro Edition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #334155;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #334155;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .stat-label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-value { font-size: 1.1rem; font-weight: bold; font-family: monospace; }
+        
+        .section-title { font-size: 0.9rem; color: #94a3b8; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+
+        .stock-item, .shop-item, .minigame-card, .business-card {
+            background: #1e293b;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        
+        .flex-row { display: flex; justify-content: space-between; align-items: center; }
+
+
+        .progress-bg { 
+            background: #0f172a; 
+            height: 28px; 
+            border-radius: 14px; 
+            border: 2px solid #334155;
+            overflow: hidden; 
+            margin-bottom: 12px; 
+        }
+        #work-progress { 
+            background: linear-gradient(90deg, #6366f1, #a855f7); 
+            width: 0%; 
+            height: 100%; 
+            transition: width 0.1s ease-out; 
+        }
+
+
+        .price { font-size: 1rem; font-weight: bold; color: #10b981; }
+        .price.down { color: #ef4444; }
+        
+        .controls button, .btn-work, .btn-reset, .btn-biz {
+            padding: 8px 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .btn-buy { background: #10b981; color: white; margin-left: 5px; }
+        .btn-sell { background: #ef4444; color: white; margin-left: 5px; }
+        .btn-shop { background: #6366f1; color: white; }
+        .btn-work { background: #8b5cf6; color: white; width: 100%; padding: 12px; font-size: 1rem; }
+        .btn-reset { background: #475569; color: #f1f5f9; font-size: 0.7rem; }
+        .btn-biz { background: #f59e0b; color: white; min-width: 140px; }
+        
+        button:active { transform: scale(0.95); }
+        button:disabled { opacity: 0.2; cursor: not-allowed; transform: none; }
+
+
+        #log {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            height: 100px;
+            overflow-y: auto;
+            color: #94a3b8;
+            border-top: 1px solid #334155;
+            padding-top: 10px;
+        }
+        .pb-label { font-size: 0.65rem; color: #fbbf24; font-weight: bold; margin-top: 5px; }
+        .salary-alert { color: #fbbf24; font-weight: bold; }
+        .tax-alert { color: #f43f5e; font-weight: bold; }
+        .boost-alert { color: #38bdf8; font-weight: bold; }
+        
+        .biz-level-badge {
+            background: #475569;
+            color: #f8fafc;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+
+        #market { display: grid; grid-template-columns: 1fr; gap: 5px; }
+        .index { border: 1px solid #fbbf24 !important; background: #2d2613 !important; }
+    </style>
+</head>
+<body>
+
+
+<div class="container">
+    <div class="header">
+        <h1 style="margin:0">Market & Life</h1>
+        <div class="flex-row" style="justify-content: center; gap: 15px; margin-top: 5px;">
+            <div id="day-display" style="color: #94a3b8;">Day 1</div>
+            <button class="btn-reset" onclick="startNewRound()">RESET DATA</button>
+        </div>
+    </div>
+
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-label">Cash</div>
+            <div id="cash" class="stat-value" style="color: #10b981;">$1000.00</div>
+        </div>
+        <div class="stat-card" style="border: 1px solid #475569;">
+            <div class="stat-label">Net Worth</div>
+            <div id="net-worth" class="stat-value">$1000.00</div>
+            <div id="pb-money" class="pb-label">Best: $0</div>
+        </div>
+        <div class="stat-card" style="border: 1px solid #38bdf8;">
+            <div class="stat-label">Life Score</div>
+            <div id="life-score" class="stat-value" style="color: #38bdf8;">0</div>
+            <div id="pb-score" class="pb-label">Best: 0</div>
+        </div>
+    </div>
+
+
+    <div class="section-title">Career Path</div>
+    <div class="business-card flex-row" style="border-left: 4px solid #8b5cf6;">
+        <div>
+            <div id="job-title" style="font-weight:bold; color: #a855f7;">Intern</div>
+            <div id="career-stats" style="font-size:0.7rem; color:#94a3b8">Salary: $100/wk</div>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.65rem; color: #94a3b8;">Promotion Progress</div>
+            <div id="next-rank-progress" style="font-size: 0.8rem; font-weight: bold; color: #fbbf24;">0 / 100</div>
+        </div>
+    </div>
+
+
+    <div class="section-title">Business Ventures</div>
+    <div id="business-box" class="business-card flex-row">
+        <div style="flex-grow: 1;">
+            <div style="display: flex; align-items: center;">
+                <span style="font-weight:bold">Startup Inc.</span>
+                <span id="biz1-level-display" class="biz-level-badge" style="display:none">LVL 1</span>
+            </div>
+            <div id="biz1-status" style="font-size:0.7rem; color:#94a3b8; margin-top: 4px;">Cost: $2000 | Profit: $300/wk</div>
+        </div>
+        <button id="btn-buy-biz1" class="btn-biz" onclick="handleBusiness1()">FOUND BIZ</button>
+    </div>
+
+
+    <div id="enterprise-box" class="business-card flex-row" style="border-top: 2px solid #38bdf8;">
+        <div style="flex-grow: 1;">
+            <div style="display: flex; align-items: center;">
+                <span style="font-weight:bold; color: #38bdf8;">Conglomerate Corp.</span>
+                <span id="biz2-level-display" class="biz-level-badge" style="display:none; background:#0369a1">LVL 1</span>
+            </div>
+            <div id="biz2-status" style="font-size:0.7rem; color:#94a3b8; margin-top: 4px;">Cost: $15000 | Profit: $2000/wk</div>
+        </div>
+        <button id="btn-buy-biz2" class="btn-biz" style="background:#0369a1" onclick="handleBusiness2()">FOUND CORP</button>
+    </div>
+
+
+    <div class="section-title">Overtime</div>
+    <div class="minigame-card">
+        <div class="progress-bg"><div id="work-progress"></div></div>
+        <button class="btn-work" onclick="doOvertime()">WORK OVERTIME</button>
+    </div>
+
+
+    <div class="section-title">Investments</div>
+    <div id="market"></div>
+
+
+    <div class="section-title">Life Shop</div>
+    <div id="shop"></div>
+
+
+    <div id="log"></div>
+</div>
+
+
+<script>
+    const MONTHLY_TAX = 200;
+    const BIZ1_INIT_COST = 2000;
+    const BIZ1_INIT_PROFIT = 300;
+    const BIZ2_INIT_COST = 15000;
+    const BIZ2_INIT_PROFIT = 2000;
+    
+    const JOB_TITLES = ["Intern", "Junior Associate", "Senior Associate", "Lead Specialist", "Manager", "Director", "Vice President", "Senior VP", "CEO", "Board Chairman"];
+
+
+    let cash, day, lifeScore, workProgress, stocks, indexStock;
+    let hasBiz1, biz1Level, hasBiz2, biz2Level;
+    let pbScore, pbMoney, totalWorkCompleted, promotionCount, currentSalary;
+
+
+    function initGame() {
+        const savedData = localStorage.getItem('marketLifeSave');
+        pbScore = localStorage.getItem('lifeScorePB') || 0;
+        pbMoney = localStorage.getItem('netWorthPB') || 0;
+        
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            cash = data.cash; day = data.day; lifeScore = data.lifeScore;
+            stocks = data.stocks; indexStock = data.indexStock;
+            hasBiz1 = data.hasBiz1 || false; biz1Level = data.biz1Level || 1;
+            hasBiz2 = data.hasBiz2 || false; biz2Level = data.biz2Level || 1;
+            totalWorkCompleted = data.totalWorkCompleted || 0;
+            promotionCount = data.promotionCount || 0; currentSalary = data.currentSalary || 100;
+        } else {
+            resetState();
+        }
+        workProgress = 0;
+        updateUI();
+    }
+
+
+    function resetState() {
+        cash = 1000; day = 1; lifeScore = 0; 
+        hasBiz1 = false; biz1Level = 1;
+        hasBiz2 = false; biz2Level = 1;
+        totalWorkCompleted = 0; promotionCount = 0; currentSalary = 100;
+        stocks = [
+            { id: 'NVDA', name: 'Nvidia-ish', price: 150, prevPrice: 150, owned: 0, volatility: 0.06, trend: 0.01 },
+            { id: 'GOLD', name: 'Safe Haven', price: 200, prevPrice: 200, owned: 0, volatility: 0.01, trend: 0.002 },
+            { id: 'DOGE', name: 'MemeCoin', price: 5, prevPrice: 5, owned: 0, volatility: 0.30, trend: -0.01 },
+            { id: 'FRUIT', name: 'Pear Computer', price: 180, prevPrice: 180, owned: 0, volatility: 0.03, trend: 0.005 },
+            { id: 'TSLA', name: 'Electro-Car', price: 120, prevPrice: 120, owned: 0, volatility: 0.08, trend: 0.008 },
+            { id: 'AMZN', name: 'Jungle Retail', price: 140, prevPrice: 140, owned: 0, volatility: 0.04, trend: 0.006 },
+            { id: 'OIL', name: 'Black Gold', price: 90, prevPrice: 90, owned: 0, volatility: 0.05, trend: -0.002 },
+            { id: 'UTEL', name: 'Utility Grid', price: 110, prevPrice: 110, owned: 0, volatility: 0.01, trend: 0.003 },
+            { id: 'GAME', name: 'GME-Stop', price: 25, prevPrice: 25, owned: 0, volatility: 0.25, trend: -0.02 },
+            { id: 'AI', name: 'Neural-Net', price: 300, prevPrice: 300, owned: 0, volatility: 0.12, trend: 0.015 }
+        ];
+        indexStock = { id: 'TOP2', name: 'TOP2 Index', price: 450, prevPrice: 450, owned: 0, isIndex: true };
+    }
+
+
+    function startNewRound() {
+        if (confirm("Completely reset your progress?")) {
+            resetState(); saveGame(cash); updateUI(); logMessage("--- DATA RESET ---");
+        }
+    }
+
+
+    function saveGame(currentNetWorth) {
+        const saveData = { cash, day, lifeScore, stocks, indexStock, hasBiz1, biz1Level, hasBiz2, biz2Level, totalWorkCompleted, promotionCount, currentSalary };
+        localStorage.setItem('marketLifeSave', JSON.stringify(saveData));
+        if (lifeScore > pbScore) { pbScore = lifeScore; localStorage.setItem('lifeScorePB', pbScore); }
+        if (currentNetWorth > pbMoney) { pbMoney = currentNetWorth; localStorage.setItem('netWorthPB', pbMoney); }
+    }
+
+
+    function updateUI() {
+        let netWorth = cash;
+        stocks.forEach(s => netWorth += s.price * s.owned);
+        netWorth += indexStock.price * indexStock.owned;
+
+
+        document.getElementById('cash').innerText = `$${cash.toFixed(2)}`;
+        document.getElementById('net-worth').innerText = `$${netWorth.toFixed(2)}`;
+        document.getElementById('life-score').innerText = lifeScore;
+        document.getElementById('pb-score').innerText = `Best: ${pbScore}`;
+        document.getElementById('pb-money').innerText = `Best: $${parseFloat(pbMoney).toFixed(0)}`;
+        document.getElementById('day-display').innerText = `Day ${day}`;
+        document.getElementById('work-progress').style.width = workProgress + '%';
+        
+        const jobIndex = Math.min(promotionCount, JOB_TITLES.length - 1);
+        document.getElementById('job-title').innerText = JOB_TITLES[jobIndex];
+        document.getElementById('career-stats').innerText = `Salary: $${currentSalary}/wk`;
+        document.getElementById('next-rank-progress').innerText = `${totalWorkCompleted % 100} / 100`;
+
+
+        // BIZ 1 UI
+        const b1Btn = document.getElementById('btn-buy-biz1');
+        const b1Status = document.getElementById('biz1-status');
+        const b1Badge = document.getElementById('biz1-level-display');
+        if (!hasBiz1) {
+            b1Btn.innerText = "FOUND BIZ";
+            b1Btn.disabled = cash < BIZ1_INIT_COST;
+            b1Status.innerText = `Cost: $${BIZ1_INIT_COST} | Profit: $${BIZ1_INIT_PROFIT}/wk`;
+            b1Badge.style.display = 'none';
+        } else {
+            let cost = Math.floor(1500 * Math.pow(1.5, biz1Level - 1));
+            let profit = BIZ1_INIT_PROFIT + (biz1Level - 1) * 150;
+            b1Badge.innerText = `LVL ${biz1Level}`;
+            b1Badge.style.display = 'inline-block';
+            b1Btn.innerText = `UPGRADE ($${cost})`;
+            b1Btn.disabled = cash < cost;
+            b1Status.innerHTML = `Profit: <span style="color:#10b981">$${profit}/wk</span>`;
+        }
+
+
+        // BIZ 2 UI
+        const b2Btn = document.getElementById('btn-buy-biz2');
+        const b2Status = document.getElementById('biz2-status');
+        const b2Badge = document.getElementById('biz2-level-display');
+        if (!hasBiz2) {
+            b2Btn.innerText = "FOUND CORP";
+            b2Btn.disabled = cash < BIZ2_INIT_COST;
+            b2Status.innerText = `Cost: $${BIZ2_INIT_COST} | Profit: $${BIZ2_INIT_PROFIT}/wk`;
+            b2Badge.style.display = 'none';
+        } else {
+            let cost = Math.floor(10000 * Math.pow(1.6, biz2Level - 1));
+            let profit = BIZ2_INIT_PROFIT + (biz2Level - 1) * 1000;
+            b2Badge.innerText = `LVL ${biz2Level}`;
+            b2Badge.style.display = 'inline-block';
+            b2Btn.innerText = `UPGRADE ($${cost})`;
+            b2Btn.disabled = cash < cost;
+            b2Status.innerHTML = `Profit: <span style="color:#10b981">$${profit}/wk</span>`;
+        }
+
+
+        const marketDiv = document.getElementById('market');
+        marketDiv.innerHTML = '';
+        [indexStock, ...stocks].forEach(stock => {
+            const isDown = stock.price < stock.prevPrice;
+            const card = document.createElement('div');
+            card.className = `stock-item flex-row ${stock.isIndex ? 'index' : ''}`;
+            card.innerHTML = `
+                <div>
+                    <div style="font-weight:bold">${stock.name}</div>
+                    <div class="price ${isDown ? 'down' : ''}">$${stock.price.toFixed(2)}</div>
+                    <div style="font-size:0.7rem; color:#94a3b8">Owned: ${stock.owned}</div>
+                </div>
+                <div class="controls">
+                    <button class="btn-buy" onclick="buyStock('${stock.id}')" ${cash < stock.price ? 'disabled' : ''}>BUY</button>
+                    <button class="btn-sell" onclick="sellStock('${stock.id}')" ${stock.owned <= 0 ? 'disabled' : ''}>SELL</button>
+                </div>`;
+            marketDiv.appendChild(card);
+        });
+
+
+        const shopDiv = document.getElementById('shop');
+        shopDiv.innerHTML = '';
+        [{ id: 'food', name: 'Fancy Dinner', price: 50, icon: '🍕', boost: 5 },
+         { id: 'gift', name: 'Birthday Gift', price: 150, icon: '🎁', boost: 15 },
+         { id: 'pet', name: 'Golden Retriever', price: 800, icon: '🦮', boost: 100 },
+         { id: 'house', name: 'Suburban House', price: 5000, icon: '🏠', boost: 1000 }].forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'shop-item flex-row';
+            card.innerHTML = `
+                <div><div>${item.icon} ${item.name}</div><div style="font-size:0.7rem; color:#38bdf8">$${item.price} | +${item.boost} Score</div></div>
+                <button class="btn-shop" onclick="buyShopItem('${item.id}', ${item.price}, ${item.boost}, '${item.name}')" ${cash < item.price ? 'disabled' : ''}>BUY</button>`;
+            shopDiv.appendChild(card);
+        });
+        saveGame(netWorth);
+    }
+
+
+    function handleBusiness1() {
+        if (!hasBiz1) {
+            if (cash >= BIZ1_INIT_COST) { cash -= BIZ1_INIT_COST; hasBiz1 = true; lifeScore += 500; updateUI(); logMessage("🚀 Startup Founded!"); }
+        } else {
+            let cost = Math.floor(1500 * Math.pow(1.5, biz1Level - 1));
+            if (cash >= cost) { cash -= cost; biz1Level++; lifeScore += 200; updateUI(); logMessage(`📈 Startup to LVL ${biz1Level}!`); }
+        }
+    }
+
+
+    function handleBusiness2() {
+        if (!hasBiz2) {
+            if (cash >= BIZ2_INIT_COST) { cash -= BIZ2_INIT_COST; hasBiz2 = true; lifeScore += 2500; updateUI(); logMessage("🏢 Conglomerate Founded!"); }
+        } else {
+            let cost = Math.floor(10000 * Math.pow(1.6, biz2Level - 1));
+            if (cash >= cost) { cash -= cost; biz2Level++; lifeScore += 1000; updateUI(); logMessage(`🏙️ Corp to LVL ${biz2Level}!`); }
+        }
+    }
+
+
+    function doOvertime() {
+        workProgress += 12.5; 
+        if (workProgress >= 100) {
+            let bonus = 25 + Math.floor(Math.random() * 30); cash += bonus; workProgress = 0; totalWorkCompleted++;
+            logMessage(`🛠️ Overtime: +$${bonus}`);
+            if (totalWorkCompleted % 100 === 0) {
+                promotionCount++; currentSalary += 50; lifeScore += 250;
+                logMessage(`🎊 PROMOTED! New Salary: $${currentSalary}`, "boost-alert");
+            }
+        }
+        updateUI();
+    }
+
+
+    function buyStock(id) {
+        const asset = (id === 'TOP2') ? indexStock : stocks.find(s => s.id === id);
+        if (cash >= asset.price) { cash -= asset.price; asset.owned++; updateUI(); }
+    }
+
+
+    function sellStock(id) {
+        const asset = (id === 'TOP2') ? indexStock : stocks.find(s => s.id === id);
+        if (asset.owned > 0) { cash += asset.price; asset.owned--; updateUI(); }
+    }
+
+
+    function buyShopItem(id, price, boost, name) { if (cash >= price) { cash -= price; lifeScore += boost; logMessage(`Bought ${name}!`, 'boost-alert'); updateUI(); } }
+    function logMessage(msg, type = '') { const log = document.getElementById('log'); const entry = document.createElement('div'); if(type) entry.className = type; entry.innerText = `[D${day}] ${msg}`; log.prepend(entry); }
+
+
+    function marketTick() {
+        day++;
+        if (day % 7 === 0) {
+            let b1p = hasBiz1 ? (BIZ1_INIT_PROFIT + (biz1Level - 1) * 150) : 0;
+            let b2p = hasBiz2 ? (BIZ2_INIT_PROFIT + (biz2Level - 1) * 1000) : 0;
+            let totalPay = currentSalary + b1p + b2p;
+            cash += totalPay; 
+            logMessage(`💰 WEEKLY PAY: +$${totalPay}`, 'salary-alert');
+        }
+        if (day % 30 === 0) { cash -= MONTHLY_TAX; logMessage(`⚖️ MONTHLY TAXES: -$${MONTHLY_TAX}`, 'tax-alert'); }
+        stocks.forEach(stock => {
+            stock.prevPrice = stock.price;
+            let mult = Math.random() > 0.98 ? 1.4 : (Math.random() < 0.02 ? 0.6 : 1);
+            const change = ((Math.random() - 0.5) * 2 * stock.volatility + stock.trend) * mult;
+            stock.price = Math.max(0.5, stock.price * (1 + change));
+        });
+        indexStock.prevPrice = indexStock.price;
+        const sorted = [...stocks].sort((a, b) => b.price - a.price);
+        indexStock.price = (sorted[0].price + sorted[1].price) * 0.85;
+        updateUI();
+    }
+
+
+    setInterval(marketTick, 3000);
+    initGame();
+</script>
+</body>
+</html>

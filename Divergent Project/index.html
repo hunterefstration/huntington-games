@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIVERGENT: Fear Landscape — Tris's Simulation</title>
+    <meta name="description" content="Enter Tris Prior's fear landscape simulation.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="screen-effects"></div>
+<div id="loading-screen">
+    <div class="loading-content">
+        <div class="loading-ring"></div>
+        <p class="loading-text">INITIALIZING SIMULATION</p>
+        <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+</div>
+<div id="cutscene-overlay" class="hidden">
+    <div id="cutscene-text"></div>
+</div>
+
+
+
+
+<div id="hud" class="hidden">
+    <div id="hud-top-left">
+        <div id="bpm-container"><span id="heart-icon" class="heart-icon">♥</span><span id="bpm-value">100</span><span class="bpm-label">BPM</span></div>
+        <div id="hr-bar-container"><div id="hr-bar"></div><div id="hr-bar-threshold"></div></div>
+        <canvas id="ecg-canvas" width="280" height="60"></canvas>
+    </div>
+    <div id="hud-top-right"><div id="fear-title">FEAR 1/5</div><div id="fear-name">THE CROWS</div></div>
+    <div id="hud-bottom"><div id="narrative-text"></div><div id="interaction-prompt" class="hidden"></div></div>
+    <div id="crosshair"><div class="crosshair-dot"></div></div>
+</div>
+<div id="breathing-guide" class="hidden">
+    <div class="breath-ring-container" style="position:relative; width:160px; height:160px; margin:0 auto 16px;">
+        <div class="breath-ring" style="position:absolute; top:0; left:0; width:100%; height:100%; margin:0;"></div>
+        <div class="breath-circle" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); margin:0;"></div>
+    </div>
+    <div class="breath-text">BREATHE IN</div>
+    <div class="breath-timing-bar"><div class="breath-timing-fill"></div></div>
+</div>
+<div id="transition-overlay" class="hidden"><div class="glitch-lines"></div><div class="transition-text">ENTERING NEXT SIMULATION</div></div>
+<div id="fear-conquered" class="hidden">
+    <div class="conquered-icon">✓</div><div class="conquered-title">FEAR CONQUERED</div>
+    <div class="conquered-stats"><span id="conquered-time"></span><span id="conquered-peak-hr"></span></div>
+</div>
+<div id="results-screen" class="hidden">
+    <div class="results-content">
+        <div class="results-badge">SIMULATION COMPLETE</div>
+        <h1 class="results-title">DIVERGENT</h1>
+        <div id="results-stats"></div>
+        <button id="restart-btn" class="btn-primary"><span class="btn-text">RE-ENTER SIMULATION</span><span class="btn-glow"></span></button>
+    </div>
+</div>
+<div id="fail-screen" class="hidden">
+    <div class="fail-content">
+        <div class="fail-icon">✕</div>
+        <h1 class="fail-title">DESYNCHRONIZED</h1>
+        <p class="fail-subtitle">Heart rate exceeded critical threshold</p>
+        <p class="fail-detail">You must learn to control your fear.</p>
+        <button id="retry-btn" class="btn-danger"><span class="btn-text">TRY AGAIN</span><span class="btn-glow"></span></button>
+    </div>
+</div>
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module" src="bundle.js"></script>
+</body>
+</html>

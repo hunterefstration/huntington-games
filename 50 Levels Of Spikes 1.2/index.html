@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>50 Levels of Spikes - One Life</title>
+    <style>
+        :root {
+            --bg-top: #0f172a;
+            --bg-bottom: #1e1b4b;
+            --primary-color: #38bdf8;
+            --danger-color: #f43f5e;
+            --success-color: #10b981;
+            --platform-color: #334155;
+            --text-color: #f8fafc;
+        }
+
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: var(--text-color);
+        }
+
+
+        #gameWrapper {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 16 / 9;
+            background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 2px solid rgba(56, 189, 248, 0.1);
+        }
+
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+
+        .hidden {
+            display: none !important;
+        }
+
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px var(--primary-color);
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+
+        p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+
+        .mode-selection {
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px 30px;
+            border-radius: 12px;
+        }
+
+
+        label {
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+        }
+
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 5px 0 #0284c7;
+        }
+
+
+        button:active {
+            transform: translateY(5px);
+            box-shadow: 0 0px 0 #0284c7;
+        }
+
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 5;
+            display: flex;
+            gap: 20px;
+        }
+
+
+        .stat-deaths { color: var(--danger-color); }
+        .stat-mode { color: #facc15; font-size: 0.8em; align-self: center; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; }
+
+
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: none;
+            justify-content: space-between;
+            z-index: 5;
+            user-select: none;
+        }
+
+
+        .control-group { display: flex; gap: 15px; }
+
+
+        .touch-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.7);
+            touch-action: none;
+        }
+
+
+        .touch-btn:active, .touch-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+
+        @media (max-width: 768px) {
+            #mobileControls { display: flex; }
+            h1 { font-size: 2rem; }
+            p { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+
+<div id="gameWrapper">
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+   
+    <div id="hud" class="hidden">
+        <div id="levelDisplay">Level: 1/50</div>
+        <div id="deathDisplay" class="stat-deaths">Deaths: 0</div>
+        <div id="modeDisplay" class="stat-mode"></div>
+    </div>
+
+
+    <div id="startScreen" class="overlay">
+        <h1>50 Levels of Spikes</h1>
+        <p>A precision platformer that gets harder every level.</p>
+        
+        <div class="mode-selection">
+            <label>
+                <input type="checkbox" id="oneLifeToggle"> 
+                One Life Mode (Reset to Level 1 on death)
+            </label>
+            <label>
+                <input type="checkbox" id="endlessToggle"> 
+                Endless Mode (No level limit)
+            </label>
+        </div>
+
+
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+
+    <div id="deathScreen" class="overlay hidden">
+        <h1 id="deathHeader" style="color: var(--danger-color); text-shadow: 0 0 15px var(--danger-color);">You Died</h1>
+        <p id="deathMessage">You hit a spike or fell into the void!</p>
+        <button id="retryBtn" onclick="retryLevel()" style="background-color: var(--danger-color); box-shadow: 0 5px 0 #be123c;">Try Again</button>
+    </div>
+
+
+    <div id="victoryScreen" class="overlay hidden">
+        <h1 style="color: var(--success-color); text-shadow: 0 0 15px var(--success-color);">You Survived!</h1>
+        <p>Congratulations! You have conquered all 50 levels.</p>
+        <p id="finalStats">Total Deaths: 0</p>
+        <button onclick="resetGame()" style="background-color: var(--success-color); box-shadow: 0 5px 0 #047857;">Play Again</button>
+    </div>
+
+
+    <div id="mobileControls">
+        <div class="control-group">
+            <div class="touch-btn" id="btnLeft">←</div>
+            <div class="touch-btn" id="btnRight">→</div>
+        </div>
+        <div class="touch-btn" id="btnJump">↑</div>
+    </div>
+</div>
+
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+
+const startScreen = document.getElementById('startScreen');
+const deathScreen = document.getElementById('deathScreen');
+const victoryScreen = document.getElementById('victoryScreen');
+const hud = document.getElementById('hud');
+const levelDisplay = document.getElementById('levelDisplay');
+const deathDisplay = document.getElementById('deathDisplay');
+const modeDisplay = document.getElementById('modeDisplay');
+const oneLifeToggle = document.getElementById('oneLifeToggle');
+const endlessToggle = document.getElementById('endlessToggle');
+
+
+const GRAVITY = 0.6;
+const TERMINAL_VELOCITY = 15;
+const FRICTION = 0.8;
+const ACCELERATION = 1.2;
+const MAX_SPEED = 6;
+const JUMP_FORCE = -11.5;
+const MAX_LEVELS = 50;
+
+
+let gameState = 'MENU'; 
+let currentLevel = 1;
+let totalDeaths = 0;
+let isOneLife = false;
+let isEndless = false;
+let lastTime = 0;
+let camera = { x: 0, y: 0 };
+
+
+let player = {
+    x: 50, y: 300, w: 24, h: 24,
+    vx: 0, vy: 0,
+    grounded: false,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0
+};
+let platforms = [];
+let spikes = [];
+let goal = { x: 0, y: 0, w: 40, h: 60 };
+let particles = [];
+
+
+const keys = { left: false, right: false, jump: false };
+
+
+function handleKey(e, isDown) {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = isDown;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = isDown;
+    if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') {
+        if (isDown && !keys.jump) player.jumpBufferTimer = 8;
+        keys.jump = isDown;
+    }
+}
+
+
+window.addEventListener('keydown', (e) => {
+    if (gameState === 'PLAYING') handleKey(e, true);
+});
+window.addEventListener('keyup', (e) => handleKey(e, false));
+
+
+function setupTouch(id, keyProp) {
+    const btn = document.getElementById(id);
+    const press = (e) => {
+        e.preventDefault();
+        keys[keyProp] = true;
+        btn.classList.add('active');
+        if (keyProp === 'jump') player.jumpBufferTimer = 8;
+    };
+    const release = (e) => {
+        e.preventDefault();
+        keys[keyProp] = false;
+        btn.classList.remove('active');
+    };
+    btn.addEventListener('touchstart', press, {passive: false});
+    btn.addEventListener('touchend', release, {passive: false});
+    btn.addEventListener('touchcancel', release, {passive: false});
+}
+
+
+setupTouch('btnLeft', 'left');
+setupTouch('btnRight', 'right');
+setupTouch('btnJump', 'jump');
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+
+function generateLevel(levelNum) {
+    platforms = [];
+    spikes = [];
+    particles = [];
+   
+    const segments = 4 + Math.floor(levelNum * 0.7);
+    const minGap = 20 + (levelNum * 1.5);
+    const maxGap = Math.min(220, 80 + (levelNum * 3));
+    const platformMinWidth = Math.max(30, 150 - (levelNum * 2.5));
+    const platformMaxWidth = Math.max(80, 250 - (levelNum * 3));
+    const spikeChance = Math.min(0.85, 0.1 + (levelNum * 0.015));
+   
+    let curX = 0;
+    let curY = 400; 
+    platforms.push({ x: -100, y: curY, w: 300, h: 400 });
+    curX = 200;
+
+
+    for (let i = 0; i < segments; i++) {
+        let gapX = minGap + Math.random() * (maxGap - minGap);
+        let heightVariation = (Math.random() * 160) - 80;
+        let nextY = curY + heightVariation;
+        if (nextY < 150) nextY = 150 + Math.random() * 50;
+        if (nextY > 480) nextY = 480 - Math.random() * 50;
+        let pWidth = platformMinWidth + Math.random() * (platformMaxWidth - platformMinWidth);
+        curX += gapX;
+        platforms.push({ x: curX, y: nextY, w: pWidth, h: 600 });
+        if (Math.random() < spikeChance) {
+            let maxSpikes = Math.floor((pWidth - 20) / 25);
+            if (maxSpikes > 0) {
+                let numSpikes = 1 + Math.floor(Math.random() * Math.min(maxSpikes, Math.ceil(levelNum/8)));
+                let clusterWidth = numSpikes * 24;
+                let maxOffset = pWidth - clusterWidth - 10;
+                let startOffset = 5 + (Math.random() * maxOffset);
+                for(let s = 0; s < numSpikes; s++) {
+                    spikes.push({
+                        x: curX + startOffset + (s * 24),
+                        y: nextY - 20,
+                        w: 24, h: 20
+                    });
+                }
+            }
+        }
+        curX += pWidth;
+        curY = nextY;
+    }
+    curX += (60 + Math.random() * 60);
+    platforms.push({ x: curX, y: curY, w: 200, h: 600 });
+    goal.x = curX + 80;
+    goal.y = curY - goal.h;
+    player.x = 50;
+    player.y = 300;
+    player.vx = 0;
+    player.vy = 0;
+    camera.x = 0;
+
+
+    levelDisplay.textContent = isEndless ? `Level: ${levelNum}` : `Level: ${levelNum}/${MAX_LEVELS}`;
+    deathDisplay.textContent = `Deaths: ${totalDeaths}`;
+    
+    let modeText = "";
+    if (isOneLife) modeText = "ONE LIFE";
+    if (isEndless) modeText = modeText ? "ONE LIFE ENDLESS" : "ENDLESS";
+    modeDisplay.textContent = modeText;
+}
+
+
+function checkCollision(r1, r2) {
+    return r1.x < r2.x + r2.w &&
+           r1.x + r1.w > r2.x &&
+           r1.y < r2.y + r2.h &&
+           r1.y + r1.h > r2.y;
+}
+
+
+function updatePhysics() {
+    if (keys.left) player.vx -= ACCELERATION;
+    else if (keys.right) player.vx += ACCELERATION;
+    else player.vx *= FRICTION;
+
+
+    if (player.vx > MAX_SPEED) player.vx = MAX_SPEED;
+    if (player.vx < -MAX_SPEED) player.vx = -MAX_SPEED;
+    if (Math.abs(player.vx) < 0.1) player.vx = 0;
+
+
+    player.x += player.vx;
+    for (let p of platforms) {
+        if (checkCollision(player, p)) {
+            if (player.vx > 0) player.x = p.x - player.w;
+            else if (player.vx < 0) player.x = p.x + p.w;
+            player.vx = 0;
+        }
+    }
+
+
+    player.vy += GRAVITY;
+    if (player.vy > TERMINAL_VELOCITY) player.vy = TERMINAL_VELOCITY;
+    player.y += player.vy;
+   
+    player.grounded = false;
+    for (let p of platforms) {
+        if (checkCollision(player, p)) {
+            if (player.vy > 0) {
+                player.y = p.y - player.h;
+                player.vy = 0;
+                player.grounded = true;
+            } else if (player.vy < 0) {
+                player.y = p.y + p.h;
+                player.vy = 0;
+            }
+        }
+    }
+
+
+    if (player.grounded) player.coyoteTimer = 6;
+    else player.coyoteTimer--;
+
+
+    if (player.jumpBufferTimer > 0) player.jumpBufferTimer--;
+
+
+    if (player.jumpBufferTimer > 0 && player.coyoteTimer > 0) {
+        player.vy = JUMP_FORCE;
+        player.jumpBufferTimer = 0;
+        player.coyoteTimer = 0;
+        player.grounded = false;
+        createParticles(player.x + player.w/2, player.y + player.h, 5, '#cbd5e1');
+    }
+
+
+    if (!keys.jump && player.vy < -4) player.vy *= 0.6;
+    if (player.y > canvas.height + 100) { triggerDeath(); return; }
+
+
+    let playerHitbox = { x: player.x + 3, y: player.y + 3, w: player.w - 6, h: player.h - 3 };
+    for (let s of spikes) {
+        let spikeHitbox = { x: s.x + 4, y: s.y + 8, w: s.w - 8, h: s.h - 8 };
+        if (checkCollision(playerHitbox, spikeHitbox)) { triggerDeath(); return; }
+    }
+    if (checkCollision(player, goal)) levelComplete();
+
+
+    let targetCamX = player.x - canvas.width / 3;
+    if (targetCamX < 0) targetCamX = 0;
+    camera.x += (targetCamX - camera.x) * 0.1;
+}
+
+
+function startGame() {
+    currentLevel = 1;
+    totalDeaths = 0;
+    isOneLife = oneLifeToggle.checked;
+    isEndless = endlessToggle.checked;
+    gameState = 'PLAYING';
+    startScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    generateLevel(currentLevel);
+    requestAnimationFrame(gameLoop);
+}
+
+
+function triggerDeath() {
+    gameState = 'DEAD';
+    totalDeaths++;
+    deathDisplay.textContent = `Deaths: ${totalDeaths}`;
+    createParticles(player.x + player.w/2, player.y + player.h/2, 30, '#38bdf8');
+    
+    if (isOneLife) {
+        currentLevel = 1;
+        document.getElementById('deathHeader').textContent = "LIFE LOST";
+        document.getElementById('deathMessage').textContent = "One Life Mode: Progress reset to Level 1.";
+        document.getElementById('retryBtn').textContent = "Restart Journey";
+    } else {
+        document.getElementById('deathHeader').textContent = "You Died";
+        document.getElementById('deathMessage').textContent = "You hit a spike or fell into the void!";
+        document.getElementById('retryBtn').textContent = "Try Again";
+    }
+
+
+    setTimeout(() => { deathScreen.classList.remove('hidden'); }, 500);
+}
+
+
+function retryLevel() {
+    deathScreen.classList.add('hidden');
+    gameState = 'PLAYING';
+    generateLevel(currentLevel);
+}
+
+
+function levelComplete() {
+    createParticles(goal.x + goal.w/2, goal.y + goal.h/2, 50, '#10b981');
+    
+    if (!isEndless && currentLevel >= MAX_LEVELS) {
+        gameState = 'VICTORY';
+        let modeType = isOneLife ? "One Life" : "Normal";
+        document.getElementById('finalStats').textContent = `Total Deaths: ${totalDeaths} (${modeType})`;
+        setTimeout(() => {
+            victoryScreen.classList.remove('hidden');
+            hud.classList.add('hidden');
+        }, 1000);
+    } else {
+        currentLevel++;
+        generateLevel(currentLevel);
+    }
+}
+
+
+function resetGame() {
+    victoryScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+}
+
+
+function createParticles(x, y, amount, color) {
+    for (let i = 0; i < amount; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            life: 1.0,
+            decay: 0.02 + Math.random() * 0.03,
+            color: color,
+            size: 2 + Math.random() * 4
+        });
+    }
+}
+
+
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= p.decay;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+
+function draw() {
+    let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#0f172a');
+    gradient.addColorStop(1, '#1e1b4b');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)';
+    ctx.lineWidth = 1;
+    let bgOffsetX1 = -(camera.x * 0.1) % 100;
+    for (let x = bgOffsetX1; x < canvas.width; x += 100) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
+    let bgOffsetX2 = -(camera.x * 0.3) % 60;
+    for (let x = bgOffsetX2; x < canvas.width; x += 60) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
+    ctx.restore();
+
+
+    ctx.save();
+    ctx.translate(Math.floor(-camera.x), Math.floor(-camera.y));
+
+
+    ctx.fillStyle = '#334155';
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 2;
+    for (let p of platforms) {
+        if (p.x + p.w > camera.x && p.x < camera.x + canvas.width) {
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.strokeRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(p.x, p.y, p.w, 4);
+            ctx.fillStyle = '#334155';
+        }
+    }
+
+
+    ctx.fillStyle = '#f43f5e';
+    for (let s of spikes) {
+        if (s.x + s.w > camera.x && s.x < camera.x + canvas.width) {
+            ctx.beginPath();
+            ctx.moveTo(s.x, s.y + s.h);
+            ctx.lineTo(s.x + s.w / 2, s.y);
+            ctx.lineTo(s.x + s.w, s.y + s.h);
+            ctx.closePath();
+            ctx.shadowColor = '#f43f5e';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+
+    ctx.fillStyle = '#10b981';
+    ctx.shadowColor = '#10b981';
+    ctx.shadowBlur = 20 + Math.sin(Date.now() / 150) * 10;
+    ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
+    ctx.fillStyle = '#047857';
+    ctx.fillRect(goal.x + 10, goal.y + 10, goal.w - 20, goal.h - 20);
+    ctx.shadowBlur = 0;
+    if (Math.random() < 0.2) createParticles(goal.x + Math.random() * goal.w, goal.y + Math.random() * goal.h, 1, '#34d399');
+
+
+    for (let p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1.0;
+
+
+    if (gameState !== 'DEAD') {
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 15;
+        let stretchY = 1 + (player.vy * 0.02);
+        let stretchX = 1 - (Math.abs(player.vy) * 0.01);
+        if (player.grounded) { stretchX = 1; stretchY = 1; }
+        let drawW = player.w * stretchX;
+        let drawH = player.h * stretchY;
+        let drawX = player.x + (player.w - drawW) / 2;
+        let drawY = player.y + (player.h - drawH);
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 0;
+        let eyeOffsetX = player.vx > 0 ? 4 : (player.vx < 0 ? -4 : 0);
+        ctx.fillRect(drawX + 4 + eyeOffsetX, drawY + 4, 4, 4);
+        ctx.fillRect(drawX + 16 + eyeOffsetX, drawY + 4, 4, 4);
+    }
+
+
+    ctx.restore();
+}
+
+
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+    if (gameState === 'PLAYING') updatePhysics();
+    updateParticles();
+    draw();
+    if (gameState === 'PLAYING' || gameState === 'DEAD' || gameState === 'VICTORY') {
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+
+generateLevel(1);
+draw();
+</script>
+</body>

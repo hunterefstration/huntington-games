@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endless, Level, Flight & Boss Tower Jumper</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #121215;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+    canvas {
+      border: 4px solid #3a3a40;
+      box-shadow: 0 0 25px rgba(0,0,0,0.8);
+      background: #09090c;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+
+<canvas id="gameCanvas" width="440" height="640"></canvas>
+
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+
+const WALL_WIDTH = 24;
+const CANVAS_WIDTH = canvas.width;
+const CANVAS_HEIGHT = canvas.height;
+
+
+const keys = {};
+const keyState = {};
+window.addEventListener('keydown', (e) => {
+  if (!keys[e.code]) keyState[e.code] = true;
+  keys[e.code] = true;
+});
+window.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+  keyState[e.code] = false;
+});
+
+
+let gameState = 'MENU';
+let gameMode = 'ENDLESS'; // 'ENDLESS', 'LEVELS', 'FLIGHT', 'BOSS'
+let currentDifficulty = 'medium';
+let selectedLevel = 1;
+let selectedBoss = 1;
+let score = 0;
+let gameTime = 0;
+let player = {};
+let platforms = [];
+let obstacles = [];
+let flightObstacles = [];
+let particles = [];
+let goalPlatform = null;
+
+
+// Boss Fight Variables
+let boss = null;
+let lava = { y: CANVAS_HEIGHT + 100, speed: 0.7, surgeTimer: 0 };
+let bullets = [];
+let bossProjectiles = [];
+
+
+const BOSS_CONFIGS = {
+  1: { name: 'FLAME GOLEM', hp: 120, color: '#e67e22', subColor: '#d35400', lavaSpeed: 0.65, attackRate: 120, width: 90, height: 60 },
+  2: { name: 'CYBER CORE', hp: 220, color: '#00cec9', subColor: '#0984e3', lavaSpeed: 0.85, attackRate: 100, width: 80, height: 70 },
+  3: { name: 'SHADOW TITAN', hp: 350, color: '#a29bfe', subColor: '#6c5ce7', lavaSpeed: 1.05, attackRate: 85, width: 100, height: 75 }
+};
+
+
+// Seeded PRNG for Deterministic Preset Levels
+let levelSeed = 1;
+function seedRnd() {
+  let t = levelSeed += 0x6D2B79F5;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+
+function levelRnd() {
+  return gameMode === 'LEVELS' ? seedRnd() : Math.random();
+}
+
+
+// Preset Levels Configuration
+const LEVEL_CONFIGS = {
+  1: { targetHeight: 500, diff: 'easy', label: 'Lvl 1: Training Climb', platformMult: 1.3, hazards: 0.1, seed: 104729 },
+  2: { targetHeight: 900, diff: 'medium', label: 'Lvl 2: Rising Spikes', platformMult: 1.1, hazards: 0.35, seed: 224737 },
+  3: { targetHeight: 1400, diff: 'medium', label: 'Lvl 3: Moving Steps', platformMult: 1.0, hazards: 0.5, seed: 349781 },
+  4: { targetHeight: 2000, diff: 'hard', label: 'Lvl 4: Laser Gauntlet', platformMult: 0.85, hazards: 0.7, seed: 486111 },
+  5: { targetHeight: 2800, diff: 'hard', label: 'Lvl 5: Ultimate Summit', platformMult: 0.7, hazards: 0.85, seed: 591559 }
+};
+
+
+// Standard Modifiers (Endless / Levels)
+const modifiers = [
+  { id: 'lightsOut', name: 'Lights Out', active: false },
+  { id: 'turboSpeed', name: 'Turbo Speed', active: false },
+  { id: 'moonGravity', name: 'Moon Gravity', active: false },
+  { id: 'heavyGravity', name: 'Heavy Gravity', active: false },
+  { id: 'icePhysics', name: 'Ice Physics', active: false },
+  { id: 'doubleJump', name: 'Double Jump', active: false },
+  { id: 'tinyPlayer', name: 'Tiny Player', active: false },
+  { id: 'giantPlayer', name: 'Giant Player', active: false },
+  { id: 'bouncyWorld', name: 'Bouncy World', active: false },
+  { id: 'invertedControls', name: 'Inverted Keys', active: false },
+  { id: 'ghostPlatforms', name: 'Ghost Platforms', active: false },
+  { id: 'autoScroll', name: 'Forced Scroll', active: false },
+  { id: 'noObstacles', name: 'Peace Mode', active: false },
+  { id: 'chaosMode', name: 'Chaos Hazards', active: false },
+  { id: 'timeWarp', name: 'Slow Motion', active: false },
+  { id: 'stickyFeet', name: 'Instant Stop', active: false },
+  { id: 'jetpack', name: 'Jetpack Jump', active: false },
+  { id: 'screenTilt', name: 'Screen Wobble', active: false },
+  { id: 'fragilePlatforms', name: 'Fragile Steps', active: false },
+  { id: 'mirrorWorld', name: 'Mirror Mode', active: false }
+];
+
+
+// Flight-Exclusive Modifiers
+const flightModifiers = [
+  { id: 'afterburner', name: 'Afterburner (+Speed)', active: false },
+  { id: 'energyShield', name: 'Energy Shield (1 Hit)', active: false },
+  { id: 'highDrag', name: 'High Drag (Instant Stop)', active: false },
+  { id: 'miniDrone', name: 'Mini Drone (Tiny Size)', active: false },
+  { id: 'overdrive', name: 'Overdrive (2x Pts / Faster)', active: false },
+  { id: 'thermalThrusters', name: 'Thermal Trail (Flame)', active: false },
+  { id: 'turbulence', name: 'Turbulence (Wind Jitter)', active: false },
+  { id: 'phantomDash', name: 'Phantom Dash (Spacebar)', active: false },
+  { id: 'radarGlitch', name: 'Radar Glitch (Stealth)', active: false },
+  { id: 'repulsorField', name: 'Repulsor (Push Hazards)', active: false }
+];
+
+
+const DIFFICULTY_CONFIG = {
+  easy: { label: 'EASY', color: '#2ecc71', platformWidthMult: 1.25, obstacleChance: 0.2, speedMult: 0.7 },
+  medium: { label: 'MEDIUM', color: '#f39c12', platformWidthMult: 1.0, obstacleChance: 0.45, speedMult: 1.0 },
+  hard: { label: 'HARD', color: '#e74c3c', platformWidthMult: 0.75, obstacleChance: 0.7, speedMult: 1.45 }
+};
+
+
+const PLATFORM_TYPES = [
+  { type: 'normal', minW: 120, maxW: 160, height: 18, color: '#4e9f3d', shadow: '#1e5128', weight: 3 },
+  { type: 'big', minW: 200, maxW: 240, height: 22, color: '#2b767d', shadow: '#1b494e', weight: 2 },
+  { type: 'tiny', minW: 50, maxW: 70, height: 18, color: '#e67e22', shadow: '#a04d08', weight: 2 },
+  { type: 'vertical', minW: 35, maxW: 45, height: 90, color: '#8e44ad', shadow: '#5b2c6f', weight: 1 },
+  { type: 'bouncy', minW: 110, maxW: 140, height: 18, color: '#e84393', shadow: '#fd79a8', weight: 2 },
+  { type: 'falling', minW: 110, maxW: 140, height: 18, color: '#d63031', shadow: '#ff7675', weight: 2 },
+  { type: 'moving', minW: 110, maxW: 140, height: 18, color: '#0984e3', shadow: '#74b9ff', weight: 2 }
+];
+
+
+const OBSTACLE_TYPES = [
+  'fireball', 'spikes', 'laser', 'sawblade', 'pendulum', 
+  'falling_rock', 'zap_orb', 'ghost', 'turret', 'toxic_cloud'
+];
+
+
+const FLIGHT_OBSTACLE_TYPES = [
+  'seeker_missile', 'plasma_wall', 'black_hole', 'laser_grid',
+  'asteroid_shower', 'lightning_beam', 'drone_pulse', 'blade_storm',
+  'wind_gust', 'mine_field'
+];
+
+
+// UI Buttons Configuration
+const modeBtns = {
+  endless: { x: 15, y: 42, w: 195, h: 28 },
+  levels: { x: 220, y: 42, w: 195, h: 28 },
+  flight: { x: 15, y: 75, w: 195, h: 28 },
+  boss: { x: 220, y: 75, w: 195, h: 28 }
+};
+
+
+const levelBtns = [];
+for (let l = 1; l <= 5; l++) {
+  levelBtns.push({ x: 20 + (l - 1) * 80, y: 115, w: 72, h: 30, levelNum: l });
+}
+
+
+const bossBtns = [
+  { x: 20, y: 115, w: 125, h: 30, bossNum: 1, label: 'BOSS 1: GOLEM' },
+  { x: 157, y: 115, w: 125, h: 30, bossNum: 2, label: 'BOSS 2: CYBER' },
+  { x: 295, y: 115, w: 125, h: 30, bossNum: 3, label: 'BOSS 3: TITAN' }
+];
+
+
+const diffBtns = {
+  easy: { x: 20, y: 115, w: 125, h: 30 },
+  medium: { x: 157, y: 115, w: 125, h: 30 },
+  hard: { x: 295, y: 115, w: 125, h: 30 }
+};
+
+
+const modifierBtns = [];
+for (let i = 0; i < 20; i++) {
+  const col = i % 2;
+  const row = Math.floor(i / 2);
+  modifierBtns.push({
+    x: col === 0 ? 15 : 225,
+    y: 180 + row * 23,
+    w: 200,
+    h: 20,
+    modIndex: i
+  });
+}
+
+
+const flightModifierBtns = [];
+for (let i = 0; i < 10; i++) {
+  const col = i % 2;
+  const row = Math.floor(i / 2);
+  flightModifierBtns.push({
+    x: col === 0 ? 15 : 225,
+    y: 180 + row * 28,
+    w: 200,
+    h: 24,
+    modIndex: i
+  });
+}
+
+
+const buttons = {
+  start: { x: 120, y: 418, w: 200, h: 42 },
+  menuReturn: { x: 120, y: 420, w: 200, h: 45 },
+  nextLevel: { x: 120, y: 365, w: 200, h: 45 }
+};
+
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+
+  if (gameState === 'MENU') {
+    if (isInside(mouseX, mouseY, modeBtns.endless)) { gameMode = 'ENDLESS'; return; }
+    if (isInside(mouseX, mouseY, modeBtns.levels)) { gameMode = 'LEVELS'; return; }
+    if (isInside(mouseX, mouseY, modeBtns.flight)) { gameMode = 'FLIGHT'; return; }
+    if (isInside(mouseX, mouseY, modeBtns.boss)) { gameMode = 'BOSS'; return; }
+
+
+    if (gameMode === 'LEVELS') {
+      for (let btn of levelBtns) {
+        if (isInside(mouseX, mouseY, btn)) { selectedLevel = btn.levelNum; return; }
+      }
+    } else if (gameMode === 'BOSS') {
+      for (let btn of bossBtns) {
+        if (isInside(mouseX, mouseY, btn)) { selectedBoss = btn.bossNum; return; }
+      }
+    } else {
+      if (isInside(mouseX, mouseY, diffBtns.easy)) { currentDifficulty = 'easy'; return; }
+      if (isInside(mouseX, mouseY, diffBtns.medium)) { currentDifficulty = 'medium'; return; }
+      if (isInside(mouseX, mouseY, diffBtns.hard)) { currentDifficulty = 'hard'; return; }
+    }
+
+
+    if (gameMode === 'FLIGHT') {
+      for (let btn of flightModifierBtns) {
+        if (isInside(mouseX, mouseY, btn)) {
+          flightModifiers[btn.modIndex].active = !flightModifiers[btn.modIndex].active;
+          return;
+        }
+      }
+    } else if (gameMode !== 'BOSS') {
+      for (let btn of modifierBtns) {
+        if (isInside(mouseX, mouseY, btn)) {
+          modifiers[btn.modIndex].active = !modifiers[btn.modIndex].active;
+          return;
+        }
+      }
+    }
+
+
+    if (isInside(mouseX, mouseY, buttons.start)) startGame();
+
+
+  } else if (gameState === 'GAMEOVER' || gameState === 'WIN') {
+    if (gameState === 'WIN' && isInside(mouseX, mouseY, buttons.nextLevel)) {
+      if (gameMode === 'LEVELS' && selectedLevel < 5) selectedLevel++;
+      if (gameMode === 'BOSS' && selectedBoss < 3) selectedBoss++;
+      startGame();
+    } else if (isInside(mouseX, mouseY, buttons.menuReturn)) {
+      gameState = 'MENU';
+    }
+  }
+});
+
+
+function isInside(x, y, btn) {
+  return x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h;
+}
+
+
+function isModActive(id) {
+  const mod = modifiers.find(m => m.id === id);
+  return mod ? mod.active : false;
+}
+
+
+function isFlightModActive(id) {
+  const mod = flightModifiers.find(m => m.id === id);
+  return mod ? mod.active : false;
+}
+
+
+function spawnParticle(x, y, color, size, vx, vy, life) {
+  particles.push({ x, y, color, size, vx, vy, life, maxLife: life });
+}
+
+
+function startGame() {
+  if (gameMode === 'LEVELS') {
+    currentDifficulty = LEVEL_CONFIGS[selectedLevel].diff;
+    levelSeed = LEVEL_CONFIGS[selectedLevel].seed;
+  }
+
+
+  score = 0;
+  gameTime = 0;
+  platforms = [];
+  obstacles = [];
+  flightObstacles = [];
+  bossProjectiles = [];
+  bullets = [];
+  particles = [];
+  goalPlatform = null;
+
+
+  let size = 30;
+  if (gameMode === 'FLIGHT') {
+    if (isFlightModActive('miniDrone')) size = 14;
+  } else {
+    if (isModActive('tinyPlayer')) size = 16;
+    if (isModActive('giantPlayer')) size = 48;
+  }
+
+
+  const baseSpeed = isModActive('turboSpeed') ? 10 : 6;
+  const baseJump = isModActive('moonGravity') ? -10.5 : (isModActive('heavyGravity') ? -15.5 : -13);
+
+
+  player = {
+    x: CANVAS_WIDTH / 2 - size / 2,
+    y: gameMode === 'FLIGHT' ? CANVAS_HEIGHT / 2 : CANVAS_HEIGHT - 70,
+    width: size,
+    height: size,
+    vx: 0,
+    vy: 0,
+    speed: baseSpeed,
+    jumpStrength: baseJump,
+    grounded: false,
+    canDoubleJump: false,
+    shield: (gameMode === 'FLIGHT' && isFlightModActive('energyShield')) ? 1 : 0,
+    invulnTimer: 0,
+    dashCooldown: 0,
+    shootCooldown: 0
+  };
+
+
+  if (gameMode === 'BOSS') {
+    const bConf = BOSS_CONFIGS[selectedBoss];
+    boss = {
+      id: selectedBoss,
+      name: bConf.name,
+      hp: bConf.hp,
+      maxHp: bConf.hp,
+      x: CANVAS_WIDTH / 2,
+      y: 90,
+      width: bConf.width,
+      height: bConf.height,
+      color: bConf.color,
+      subColor: bConf.subColor,
+      vx: 2.2,
+      attackTimer: 0,
+      attackRate: bConf.attackRate,
+      currentAttack: 0
+    };
+    lava = {
+      y: CANVAS_HEIGHT + 40,
+      speed: bConf.lavaSpeed,
+      surgeTimer: 0
+    };
+  }
+
+
+  if (gameMode !== 'FLIGHT') {
+    platforms.push({
+      x: WALL_WIDTH,
+      y: CANVAS_HEIGHT - 35,
+      homeY: CANVAS_HEIGHT - 35,
+      width: CANVAS_WIDTH - (WALL_WIDTH * 2),
+      height: 20,
+      type: 'normal',
+      color: '#4e9f3d',
+      shadow: '#1e5128',
+      vx: 0,
+      state: 'idle',
+      fallSpeed: 0,
+      respawnTimer: 0
+    });
+    generatePlatforms();
+  }
+
+
+  gameState = 'PLAYING';
+}
+
+
+function getRandomType() {
+  const pool = [];
+  PLATFORM_TYPES.forEach(t => {
+    for (let i = 0; i < t.weight; i++) pool.push(t);
+  });
+  return pool[Math.floor(levelRnd() * pool.length)];
+}
+
+
+function spawnObstacle(pY, platform) {
+  if (isModActive('noObstacles') || gameMode === 'BOSS') return;
+
+
+  let chance = DIFFICULTY_CONFIG[currentDifficulty].obstacleChance;
+  if (gameMode === 'LEVELS') chance = LEVEL_CONFIGS[selectedLevel].hazards;
+  if (isModActive('chaosMode')) chance = Math.min(0.95, chance * 1.8);
+
+
+  if (score < 80 || levelRnd() > chance) return;
+
+
+  const obsType = OBSTACLE_TYPES[Math.floor(levelRnd() * OBSTACLE_TYPES.length)];
+  const speed = DIFFICULTY_CONFIG[currentDifficulty].speedMult * (isModActive('turboSpeed') ? 1.5 : 1.0);
+
+
+  if (obsType === 'fireball') {
+    obstacles.push({ type: 'fireball', x: WALL_WIDTH + 10, y: pY - 35, width: 22, height: 22, vx: 2.5 * speed });
+  } else if (obsType === 'spikes' && platform.width >= 70 && platform.type !== 'vertical') {
+    obstacles.push({ type: 'spikes', x: platform.x + Math.floor(platform.width / 4), y: platform.y - 14, width: Math.floor(platform.width / 2), height: 14, platformRef: platform });
+  } else if (obsType === 'laser') {
+    obstacles.push({ type: 'laser', x: WALL_WIDTH, y: pY - 50, width: CANVAS_WIDTH - WALL_WIDTH * 2, height: 8, timer: 0, active: false });
+  } else if (obsType === 'sawblade') {
+    obstacles.push({ type: 'sawblade', x: WALL_WIDTH + 20, y: pY - 30, width: 30, height: 30, vx: 3 * speed, angle: 0 });
+  } else if (obsType === 'pendulum') {
+    obstacles.push({ type: 'pendulum', anchorX: CANVAS_WIDTH / 2, anchorY: pY - 80, x: CANVAS_WIDTH / 2, y: pY - 20, width: 28, height: 28, timer: levelRnd() * Math.PI, speed: 0.04 * speed });
+  } else if (obsType === 'falling_rock') {
+    obstacles.push({ type: 'falling_rock', x: Math.floor(levelRnd() * (CANVAS_WIDTH - WALL_WIDTH * 2 - 26)) + WALL_WIDTH, y: pY - 180, width: 26, height: 26, vy: 0, triggered: false });
+  } else if (obsType === 'zap_orb') {
+    obstacles.push({ type: 'zap_orb', x: Math.floor(levelRnd() * (CANVAS_WIDTH - WALL_WIDTH * 2 - 22)) + WALL_WIDTH, y: pY - 45, originY: pY - 45, width: 22, height: 22, vy: 1.5 * speed });
+  } else if (obsType === 'ghost') {
+    obstacles.push({ type: 'ghost', x: CANVAS_WIDTH / 2 - 12, y: pY - 40, width: 24, height: 26, speed: 0.9 * speed, floatTimer: 0 });
+  } else if (obsType === 'turret') {
+    const side = levelRnd() < 0.5 ? 'left' : 'right';
+    obstacles.push({ type: 'turret', side: side, x: side === 'left' ? WALL_WIDTH : CANVAS_WIDTH - WALL_WIDTH - 18, y: pY - 30, width: 18, height: 22, timer: 0, speed: speed });
+  } else if (obsType === 'toxic_cloud') {
+    obstacles.push({ type: 'toxic_cloud', x: CANVAS_WIDTH / 2, y: pY - 45, radius: 20, timer: 0 });
+  }
+}
+
+
+function spawnFlightObstacle() {
+  const type = FLIGHT_OBSTACLE_TYPES[Math.floor(Math.random() * FLIGHT_OBSTACLE_TYPES.length)];
+  let speedMult = DIFFICULTY_CONFIG[currentDifficulty].speedMult;
+  if (isFlightModActive('overdrive')) speedMult *= 1.4;
+
+
+  if (type === 'seeker_missile') {
+    flightObstacles.push({ type: 'seeker_missile', x: Math.random() < 0.5 ? -20 : CANVAS_WIDTH + 20, y: Math.random() * CANVAS_HEIGHT, width: 18, height: 18, vx: 0, vy: 0, speed: 2.8 * speedMult });
+  } else if (type === 'plasma_wall') {
+    const gapHeight = 110;
+    const gapY = Math.random() * (CANVAS_HEIGHT - gapHeight - 100) + 50;
+    flightObstacles.push({ type: 'plasma_wall', x: CANVAS_WIDTH + 10, gapY: gapY, gapHeight: gapHeight, width: 24, vx: -2.2 * speedMult });
+  } else if (type === 'black_hole') {
+    flightObstacles.push({ type: 'black_hole', x: Math.random() * (CANVAS_WIDTH - 100) + 50, y: -40, radius: 28, vy: 1.8 * speedMult, pullStrength: 0.35 });
+  } else if (type === 'laser_grid') {
+    flightObstacles.push({ type: 'laser_grid', y: Math.random() * (CANVAS_HEIGHT - 60) + 30, height: 12, timer: 0, active: false, maxTime: 160 });
+  } else if (type === 'asteroid_shower') {
+    for (let i = 0; i < 3; i++) {
+      flightObstacles.push({ type: 'asteroid', x: Math.random() * CANVAS_WIDTH, y: -30 - (i * 40), width: 22, height: 22, vx: (Math.random() - 0.5) * 3, vy: (2.5 + Math.random() * 2) * speedMult });
+    }
+  } else if (type === 'lightning_beam') {
+    flightObstacles.push({ type: 'lightning_beam', x: Math.random() * (CANVAS_WIDTH - 80) + 40, width: 30, timer: 0, maxTime: 90 });
+  } else if (type === 'drone_pulse') {
+    flightObstacles.push({ type: 'drone_pulse', x: -30, y: Math.random() * (CANVAS_HEIGHT - 100) + 50, width: 24, height: 24, vx: 2.2 * speedMult, pulseTimer: 0 });
+  } else if (type === 'blade_storm') {
+    flightObstacles.push({ type: 'blade_storm', x: Math.random() * CANVAS_WIDTH, y: -30, width: 32, height: 32, vx: (Math.random() - 0.5) * 4, vy: 3 * speedMult, angle: 0 });
+  } else if (type === 'wind_gust') {
+    flightObstacles.push({ type: 'wind_gust', dir: Math.random() < 0.5 ? 1 : -1, timer: 120, force: 0.45 * speedMult });
+  } else if (type === 'mine_field') {
+    flightObstacles.push({ type: 'mine_field', x: Math.random() * (CANVAS_WIDTH - 60) + 30, y: -30, radius: 14, vy: 1.5 * speedMult, pulse: 0 });
+  }
+}
+
+
+function generatePlatforms() {
+  const diffConfig = DIFFICULTY_CONFIG[currentDifficulty];
+  let widthMult = diffConfig.platformWidthMult;
+  
+  if (gameMode === 'LEVELS') widthMult *= LEVEL_CONFIGS[selectedLevel].platformMult;
+
+
+  while (platforms.length < 9) {
+    const highestPlatform = platforms[platforms.length - 1];
+    
+    if (gameMode === 'LEVELS' && score >= LEVEL_CONFIGS[selectedLevel].targetHeight && !goalPlatform) {
+      const pY = highestPlatform.y - 120;
+      goalPlatform = {
+        x: WALL_WIDTH + 20, y: pY, homeY: pY,
+        width: CANVAS_WIDTH - WALL_WIDTH * 2 - 40, height: 26,
+        type: 'goal', color: '#f1c40f', shadow: '#f39c12',
+        vx: 0, state: 'idle', fallSpeed: 0, respawnTimer: 0, opacity: 1.0
+      };
+      platforms.push(goalPlatform);
+      break;
+    }
+
+
+    const pConfig = getRandomType();
+    let pWidth = Math.floor(levelRnd() * (pConfig.maxW - pConfig.minW + 1)) + pConfig.minW;
+    pWidth = Math.floor(pWidth * widthMult);
+
+
+    const maxX = CANVAS_WIDTH - WALL_WIDTH - pWidth;
+    const minX = WALL_WIDTH;
+    const pX = Math.floor(levelRnd() * (maxX - minX + 1)) + minX;
+    
+    const verticalGap = pConfig.type === 'vertical' ? 120 : Math.floor(levelRnd() * 30) + 90;
+    const pY = highestPlatform.y - verticalGap;
+    
+    const speedMult = diffConfig.speedMult * (isModActive('turboSpeed') ? 1.5 : 1.0);
+    const moveSpeed = pConfig.type === 'moving' ? (levelRnd() < 0.5 ? 2.5 : -2.5) * speedMult : 0;
+
+
+    const newPlatform = {
+      x: pX, y: pY, homeY: pY, width: pWidth, height: pConfig.height,
+      type: pConfig.type, color: pConfig.color, shadow: pConfig.shadow,
+      vx: moveSpeed, state: 'idle', fallSpeed: 0, respawnTimer: 0,
+      opacity: 1.0, breakTimer: -1
+    };
+
+
+    platforms.push(newPlatform);
+    spawnObstacle(pY, newPlatform);
+  }
+}
+
+
+function checkCollision(rect1, rect2) {
+  return (
+    rect1.x < rect2.x + rect2.width &&
+    rect1.x + rect1.width > rect2.x &&
+    rect1.y < rect2.y + rect2.height &&
+    rect1.y + rect1.height > rect2.y
+  );
+}
+
+
+function triggerFlightHit() {
+  if (player.invulnTimer > 0) return;
+  if (player.shield > 0) {
+    player.shield--;
+    player.invulnTimer = 45;
+    for (let k = 0; k < 15; k++) {
+      spawnParticle(player.x + player.width / 2, player.y + player.height / 2, '#00d2d3', 5, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 20);
+    }
+  } else {
+    gameState = 'GAMEOVER';
+  }
+}
+
+
+// BOSS FIGHT ATTACKS LOGIC (10 ATTACKS)
+function triggerBossAttack(attackIndex) {
+  const bx = boss.x;
+  const by = boss.y + boss.height / 2;
+
+
+  switch (attackIndex) {
+    case 0: // 1. Triple Fireball Spread
+      for (let angle of [-0.4, 0, 0.4]) {
+        bossProjectiles.push({ type: 'orb', x: bx, y: by, width: 16, height: 16, vx: Math.sin(angle) * 3.5, vy: Math.cos(angle) * 3.5 + 2, color: '#e67e22' });
+      }
+      break;
+
+
+    case 1: // 2. Targeted Vertical Laser
+      bossProjectiles.push({ type: 'laser_beam', x: player.x + player.width / 2 - 15, width: 30, timer: 0, active: false, maxTimer: 90 });
+      break;
+
+
+    case 2: // 3. Meteor Shower
+      for (let i = 0; i < 4; i++) {
+        bossProjectiles.push({ type: 'meteor', x: WALL_WIDTH + Math.random() * (CANVAS_WIDTH - WALL_WIDTH * 2 - 20), y: -20 - (i * 30), width: 22, height: 22, vy: 3.8 + Math.random() * 1.5, color: '#e74c3c' });
+      }
+      break;
+
+
+    case 3: // 4. Homing Energy Spheres
+      bossProjectiles.push({ type: 'homing', x: bx - 20, y: by, width: 18, height: 18, vx: 0, vy: 1.5, speed: 2.2, color: '#9b59b6' });
+      bossProjectiles.push({ type: 'homing', x: bx + 20, y: by, width: 18, height: 18, vx: 0, vy: 1.5, speed: 2.2, color: '#9b59b6' });
+      break;
+
+
+    case 4: // 5. Expanding Shockwave Ring
+      bossProjectiles.push({ type: 'shockwave', x: bx, y: by, radius: 10, maxRadius: 180, growth: 3.5, color: '#f1c40f' });
+      break;
+
+
+    case 5: // 6. Minion Turret Drone Spawn
+      bossProjectiles.push({ type: 'drone', x: Math.random() < 0.5 ? WALL_WIDTH + 10 : CANVAS_WIDTH - WALL_WIDTH - 30, y: 160 + Math.random() * 100, width: 20, height: 20, vx: 2, shootTimer: 0 });
+      break;
+
+
+    case 6: // 7. Lava Surge
+      lava.surgeTimer = 120;
+      break;
+
+
+    case 7: // 8. Spike Drop Cluster
+      for (let i = 0; i < 5; i++) {
+        bossProjectiles.push({ type: 'spike', x: WALL_WIDTH + 30 + i * 70, y: -20, width: 14, height: 20, vy: 4.5, color: '#ecf0f1' });
+      }
+      break;
+
+
+    case 8: // 9. 360 Ring Pulse Burst
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        bossProjectiles.push({ type: 'orb', x: bx, y: by, width: 14, height: 14, vx: Math.cos(a) * 3, vy: Math.sin(a) * 3, color: '#1abc9c' });
+      }
+      break;
+
+
+    case 9: // 10. Toxic Rain Drops
+      for (let i = 0; i < 6; i++) {
+        bossProjectiles.push({ type: 'rain', x: WALL_WIDTH + Math.random() * (CANVAS_WIDTH - WALL_WIDTH * 2), y: 0, width: 10, height: 14, vy: 3 + Math.random() * 2, color: '#2ecc71' });
+      }
+      break;
+  }
+}
+
+
+function updateBossMode() {
+  // Move Boss back and forth horizontally
+  boss.x += boss.vx;
+  if (boss.x - boss.width / 2 <= WALL_WIDTH + 10 || boss.x + boss.width / 2 >= CANVAS_WIDTH - WALL_WIDTH - 10) {
+    boss.vx *= -1;
+  }
+
+
+  // Boss Attack Timer Cycle
+  boss.attackTimer++;
+  if (boss.attackTimer >= boss.attackRate) {
+    boss.attackTimer = 0;
+    triggerBossAttack(boss.currentAttack);
+    boss.currentAttack = (boss.currentAttack + 1) % 10;
+  }
+
+
+  // Rising Lava Logic
+  let currentLavaSpeed = lava.speed;
+  if (lava.surgeTimer > 0) {
+    lava.surgeTimer--;
+    currentLavaSpeed *= 2.2;
+  }
+  lava.y -= currentLavaSpeed;
+
+
+  // Auto-shoot bullets straight up
+  player.shootCooldown++;
+  if (player.shootCooldown >= 10) {
+    player.shootCooldown = 0;
+    bullets.push({
+      x: player.x + player.width / 2 - 3,
+      y: player.y,
+      width: 6,
+      height: 14,
+      vy: -12
+    });
+  }
+
+
+  // Update Player Bullets & Collision with Boss
+  const bossRect = { x: boss.x - boss.width / 2, y: boss.y - boss.height / 2, width: boss.width, height: boss.height };
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    let b = bullets[i];
+    b.y += b.vy;
+
+
+    if (checkCollision(b, bossRect)) {
+      boss.hp -= 2;
+      for (let k = 0; k < 4; k++) {
+        spawnParticle(b.x, b.y, boss.color, 4, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, 12);
+      }
+      bullets.splice(i, 1);
+
+
+      if (boss.hp <= 0) {
+        gameState = 'WIN';
+        return;
+      }
+    } else if (b.y < -20) {
+      bullets.splice(i, 1);
+    }
+  }
+
+
+  // Update Boss Projectiles
+  for (let i = bossProjectiles.length - 1; i >= 0; i--) {
+    let bp = bossProjectiles[i];
+
+
+    if (bp.type === 'orb' || bp.type === 'meteor' || bp.type === 'spike' || bp.type === 'rain') {
+      bp.x += bp.vx || 0;
+      bp.y += bp.vy || 0;
+      if (checkCollision(player, bp)) gameState = 'GAMEOVER';
+      if (bp.y > CANVAS_HEIGHT + 30 || bp.x < -20 || bp.x > CANVAS_WIDTH + 20) bossProjectiles.splice(i, 1);
+
+
+    } else if (bp.type === 'laser_beam') {
+      bp.timer++;
+      if (bp.timer > 40) bp.active = true;
+      if (bp.active) {
+        const beamBox = { x: bp.x, y: 0, width: bp.width, height: CANVAS_HEIGHT };
+        if (checkCollision(player, beamBox)) gameState = 'GAMEOVER';
+      }
+      if (bp.timer >= bp.maxTimer) bossProjectiles.splice(i, 1);
+
+
+    } else if (bp.type === 'homing') {
+      const dx = (player.x + player.width / 2) - bp.x;
+      const dy = (player.y + player.height / 2) - bp.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        bp.vx = (dx / dist) * bp.speed;
+        bp.vy = (dy / dist) * bp.speed;
+      }
+      bp.x += bp.vx;
+      bp.y += bp.vy;
+      if (checkCollision(player, bp)) gameState = 'GAMEOVER';
+      if (bp.y > CANVAS_HEIGHT + 30) bossProjectiles.splice(i, 1);
+
+
+    } else if (bp.type === 'shockwave') {
+      bp.radius += bp.growth;
+      const dx = (player.x + player.width / 2) - bp.x;
+      const dy = (player.y + player.height / 2) - bp.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (Math.abs(dist - bp.radius) < 12) gameState = 'GAMEOVER';
+      if (bp.radius >= bp.maxRadius) bossProjectiles.splice(i, 1);
+
+
+    } else if (bp.type === 'drone') {
+      bp.x += bp.vx;
+      if (bp.x <= WALL_WIDTH + 10 || bp.x + bp.width >= CANVAS_WIDTH - WALL_WIDTH - 10) bp.vx *= -1;
+      bp.shootTimer++;
+      if (bp.shootTimer % 45 === 0) {
+        bossProjectiles.push({ type: 'orb', x: bp.x + bp.width / 2, y: bp.y + bp.height, width: 12, height: 12, vx: 0, vy: 3.5, color: '#3498db' });
+      }
+      if (checkCollision(player, bp)) gameState = 'GAMEOVER';
+    }
+  }
+
+
+  // Player Lava Collision
+  if (player.y + player.height >= lava.y) {
+    gameState = 'GAMEOVER';
+  }
+}
+
+
+function updateFlightMode() {
+  let moveLeft = keys['ArrowLeft'] || keys['KeyA'];
+  let moveRight = keys['ArrowRight'] || keys['KeyD'];
+  let moveUp = keys['ArrowUp'] || keys['KeyW'];
+  let moveDown = keys['ArrowDown'] || keys['KeyS'];
+
+
+  let flySpeed = 5.0;
+  if (isFlightModActive('afterburner')) flySpeed *= 1.7;
+
+
+  // Phantom Dash (Spacebar)
+  if (isFlightModActive('phantomDash') && keyState['Space'] && player.dashCooldown <= 0) {
+    player.invulnTimer = 20;
+    player.dashCooldown = 60;
+    const dx = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
+    const dy = (moveDown ? 1 : 0) - (moveUp ? 1 : 0);
+    player.vx += (dx || (moveLeft ? -1 : 1)) * 12;
+    player.vy += dy * 12;
+    keyState['Space'] = false;
+  }
+
+
+  if (player.dashCooldown > 0) player.dashCooldown--;
+  if (player.invulnTimer > 0) player.invulnTimer--;
+
+
+  // High Drag Mode
+  if (isFlightModActive('highDrag')) {
+    player.vx = moveLeft ? -flySpeed : (moveRight ? flySpeed : 0);
+    player.vy = moveUp ? -flySpeed : (moveDown ? flySpeed : 0);
+  } else {
+    if (moveLeft) player.vx = -flySpeed;
+    else if (moveRight) player.vx = flySpeed;
+    else player.vx *= 0.82;
+
+
+    if (moveUp) player.vy = -flySpeed;
+    else if (moveDown) player.vy = flySpeed;
+    else player.vy *= 0.82;
+  }
+
+
+  // Turbulence Jitter
+  if (isFlightModActive('turbulence')) {
+    player.vx += (Math.random() - 0.5) * 1.3;
+    player.vy += (Math.random() - 0.5) * 1.3;
+  }
+
+
+  player.x += player.vx;
+  player.y += player.vy;
+
+
+  // Thermal Thruster Particles
+  if (isFlightModActive('thermalThrusters')) {
+    if (Math.random() < 0.7) {
+      spawnParticle(player.x + player.width / 2, player.y + player.height / 2, '#ff4757', 6, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2 + 2, 16);
+    }
+  }
+
+
+  // Standard Particles
+  if (Math.random() < 0.5) {
+    spawnParticle(player.x + player.width / 2, player.y + player.height, '#00d2d3', 4, (Math.random() - 0.5) * 2, 2, 12);
+  }
+
+
+  // Repulsor Field
+  if (isFlightModActive('repulsorField')) {
+    const px = player.x + player.width / 2;
+    const py = player.y + player.height / 2;
+    for (let obs of flightObstacles) {
+      if (obs.x !== undefined && obs.y !== undefined) {
+        const dx = obs.x - px;
+        const dy = obs.y - py;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 90 && dist > 0) {
+          obs.x += (dx / dist) * 2.8;
+          obs.y += (dy / dist) * 2.8;
+        }
+      }
+    }
+  }
+
+
+  // Bounds
+  if (player.x < 10) player.x = 10;
+  if (player.x + player.width > CANVAS_WIDTH - 10) player.x = CANVAS_WIDTH - 10 - player.width;
+  if (player.y < 10) player.y = 10;
+  if (player.y + player.height > CANVAS_HEIGHT - 10) player.y = CANVAS_HEIGHT - 10 - player.height;
+
+
+  // Score multiplier
+  score += isFlightModActive('overdrive') ? 2 : 1;
+
+
+  // Spawn flight obstacles randomly
+  if (gameTime % 60 === 0) spawnFlightObstacle();
+
+
+  // Update Flight Obstacles
+  for (let i = flightObstacles.length - 1; i >= 0; i--) {
+    let obs = flightObstacles[i];
+
+
+    if (obs.type === 'seeker_missile') {
+      const dx = (player.x + player.width / 2) - obs.x;
+      const dy = (player.y + player.height / 2) - obs.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+        obs.vx = (dx / dist) * obs.speed;
+        obs.vy = (dy / dist) * obs.speed;
+      }
+      obs.x += obs.vx;
+      obs.y += obs.vy;
+      spawnParticle(obs.x + 9, obs.y + 9, '#ff4757', 3, -obs.vx * 0.2, -obs.vy * 0.2, 10);
+      if (checkCollision(player, obs)) triggerFlightHit();
+
+
+    } else if (obs.type === 'plasma_wall') {
+      obs.x += obs.vx;
+      const topWall = { x: obs.x, y: 0, width: obs.width, height: obs.gapY };
+      const botWall = { x: obs.x, y: obs.gapY + obs.gapHeight, width: obs.width, height: CANVAS_HEIGHT - (obs.gapY + obs.gapHeight) };
+      if (checkCollision(player, topWall) || checkCollision(player, botWall)) triggerFlightHit();
+      if (obs.x < -40) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'black_hole') {
+      obs.y += obs.vy;
+      const dx = (obs.x) - (player.x + player.width / 2);
+      const dy = (obs.y) - (player.y + player.height / 2);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 180) {
+        player.x += (dx / dist) * obs.pullStrength * 4;
+        player.y += (dy / dist) * obs.pullStrength * 4;
+      }
+      if (dist < obs.radius + player.width / 2) triggerFlightHit();
+      if (obs.y > CANVAS_HEIGHT + 50) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'laser_grid') {
+      obs.timer++;
+      obs.active = obs.timer > 40 && obs.timer < 120;
+      if (obs.active) {
+        const box = { x: 0, y: obs.y, width: CANVAS_WIDTH, height: obs.height };
+        if (checkCollision(player, box)) triggerFlightHit();
+      }
+      if (obs.timer > obs.maxTime) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'asteroid') {
+      obs.x += obs.vx;
+      obs.y += obs.vy;
+      if (checkCollision(player, obs)) triggerFlightHit();
+      if (obs.y > CANVAS_HEIGHT + 40) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'lightning_beam') {
+      obs.timer++;
+      if (obs.timer > 30 && obs.timer < 70) {
+        const box = { x: obs.x, y: 0, width: obs.width, height: CANVAS_HEIGHT };
+        if (checkCollision(player, box)) triggerFlightHit();
+      }
+      if (obs.timer > obs.maxTime) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'drone_pulse') {
+      obs.x += obs.vx;
+      obs.pulseTimer += 0.08;
+      const radius = 25 + Math.sin(obs.pulseTimer) * 15;
+      const dx = (player.x + player.width / 2) - obs.x;
+      const dy = (player.y + player.height / 2) - obs.y;
+      if (Math.sqrt(dx * dx + dy * dy) < radius + player.width / 2) triggerFlightHit();
+      if (obs.x > CANVAS_WIDTH + 50) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'blade_storm') {
+      obs.x += obs.vx;
+      obs.y += obs.vy;
+      obs.angle += 0.3;
+      if (checkCollision(player, obs)) triggerFlightHit();
+      if (obs.y > CANVAS_HEIGHT + 40) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'wind_gust') {
+      obs.timer--;
+      player.x += obs.dir * obs.force * 3;
+      if (obs.timer <= 0) flightObstacles.splice(i, 1);
+
+
+    } else if (obs.type === 'mine_field') {
+      obs.y += obs.vy;
+      obs.pulse += 0.1;
+      const dx = (player.x + player.width / 2) - obs.x;
+      const dy = (player.y + player.height / 2) - obs.y;
+      if (Math.sqrt(dx * dx + dy * dy) < obs.radius + player.width / 2) triggerFlightHit();
+      if (obs.y > CANVAS_HEIGHT + 40) flightObstacles.splice(i, 1);
+    }
+  }
+}
+
+
+function update() {
+  if (gameState !== 'PLAYING') return;
+
+
+  if (isModActive('timeWarp') && gameTime % 2 === 0) {
+    gameTime++;
+    return;
+  }
+  gameTime++;
+
+
+  if (gameMode === 'FLIGHT') {
+    updateFlightMode();
+    return;
+  }
+
+
+  if (gameMode === 'BOSS') {
+    updateBossMode();
+  }
+
+
+  // Standard Jumping Modes & Boss Mode Vertical Physics
+  let moveLeft = keys['ArrowLeft'] || keys['KeyA'];
+  let moveRight = keys['ArrowRight'] || keys['KeyD'];
+  if (isModActive('invertedControls') && gameMode !== 'BOSS') {
+    const temp = moveLeft;
+    moveLeft = moveRight;
+    moveRight = temp;
+  }
+
+
+  if (isModActive('stickyFeet') && gameMode !== 'BOSS') {
+    if (moveLeft) player.vx = -player.speed;
+    else if (moveRight) player.vx = player.speed;
+    else player.vx = 0;
+  } else if (isModActive('icePhysics') && gameMode !== 'BOSS') {
+    if (moveLeft) player.vx -= 0.6;
+    else if (moveRight) player.vx += 0.6;
+    else player.vx *= 0.94;
+    player.vx = Math.max(-player.speed * 1.2, Math.min(player.speed * 1.2, player.vx));
+  } else {
+    if (moveLeft) player.vx = -player.speed;
+    else if (moveRight) player.vx = player.speed;
+    else player.vx = 0;
+  }
+
+
+  const jumpHeld = keys['Space'] || keys['ArrowUp'] || keys['KeyW'];
+  const jumpTriggered = keyState['Space'] || keyState['ArrowUp'] || keyState['KeyW'];
+
+
+  if (isModActive('jetpack') && jumpHeld && !player.grounded && gameMode !== 'BOSS') {
+    player.vy -= 0.75;
+    spawnParticle(player.x + player.width / 2, player.y + player.height, '#e67e22', 4, (Math.random() - 0.5) * 2, 3, 10);
+  }
+
+
+  if (jumpTriggered) {
+    if (player.grounded) {
+      player.vy = player.jumpStrength;
+      player.grounded = false;
+      player.canDoubleJump = isModActive('doubleJump') || gameMode === 'BOSS';
+    } else if (player.canDoubleJump) {
+      player.vy = player.jumpStrength * 0.9;
+      player.canDoubleJump = false;
+      for (let i = 0; i < 8; i++) spawnParticle(player.x + player.width / 2, player.y + player.height, '#3498db', 3, (Math.random() - 0.5) * 4, 1, 12);
+    }
+    keyState['Space'] = keyState['ArrowUp'] = keyState['KeyW'] = false;
+  }
+
+
+  const currentGravity = isModActive('moonGravity') ? 0.25 : (isModActive('heavyGravity') ? 0.95 : 0.55);
+  player.vy += currentGravity;
+
+
+  player.x += player.vx;
+  player.y += player.vy;
+
+
+  if (player.x < WALL_WIDTH) player.x = WALL_WIDTH;
+  else if (player.x + player.width > CANVAS_WIDTH - WALL_WIDTH) player.x = CANVAS_WIDTH - WALL_WIDTH - player.width;
+
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+
+  for (let p of platforms) {
+    if (p.type === 'moving') {
+      p.x += p.vx;
+      if (p.x <= WALL_WIDTH || p.x + p.width >= CANVAS_WIDTH - WALL_WIDTH) p.vx *= -1;
+    }
+
+
+    if (isModActive('ghostPlatforms') && p.type !== 'goal' && gameMode !== 'BOSS') {
+      p.opacity = 0.3 + 0.7 * Math.abs(Math.sin(gameTime * 0.04 + p.y * 0.01));
+    } else {
+      p.opacity = 1.0;
+    }
+
+
+    if (p.breakTimer > 0) {
+      p.breakTimer--;
+      if (p.breakTimer === 0) p.state = 'falling';
+    }
+
+
+    if (p.type === 'falling' || p.state === 'falling') {
+      if (p.state === 'falling') {
+        p.y += p.fallSpeed;
+        p.fallSpeed += 0.55;
+        if (Math.random() < 0.4) spawnParticle(p.x + Math.random() * p.width, p.y, '#e74c3c', 3, (Math.random() - 0.5), -1, 15);
+        if (p.y > CANVAS_HEIGHT + 100) {
+          p.state = 'respawning';
+          p.respawnTimer = 150;
+          p.breakTimer = -1;
+        }
+      } else if (p.state === 'respawning') {
+        p.respawnTimer--;
+        if (p.respawnTimer <= 0) {
+          p.state = 'idle';
+          p.y = p.homeY;
+          p.fallSpeed = 0;
+          for (let i = 0; i < 10; i++) spawnParticle(p.x + Math.random() * p.width, p.y, '#2ecc71', 4, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3, 20);
+        }
+      }
+    }
+  }
+
+
+  for (let obs of obstacles) {
+    if (obs.type === 'fireball') {
+      obs.x += obs.vx;
+      if (obs.x <= WALL_WIDTH || obs.x + obs.width >= CANVAS_WIDTH - WALL_WIDTH) obs.vx *= -1;
+      spawnParticle(obs.x + obs.width / 2, obs.y + obs.height / 2, '#ff4400', Math.random() * 5 + 2, -obs.vx * 0.3, (Math.random() - 0.5), 15);
+    } else if (obs.type === 'spikes') {
+      obs.x = obs.platformRef.x + Math.floor(obs.platformRef.width / 4);
+      obs.y = obs.platformRef.y - obs.height;
+    } else if (obs.type === 'laser') {
+      obs.timer = (obs.timer + 1) % 150;
+      obs.active = obs.timer > 75;
+    } else if (obs.type === 'sawblade') {
+      obs.x += obs.vx;
+      if (obs.x <= WALL_WIDTH || obs.x + obs.width >= CANVAS_WIDTH - WALL_WIDTH) obs.vx *= -1;
+      obs.angle += 0.25;
+    } else if (obs.type === 'pendulum') {
+      obs.timer += obs.speed;
+      obs.x = obs.anchorX + Math.sin(obs.timer) * 115 - obs.width / 2;
+      obs.y = obs.anchorY + Math.cos(obs.timer) * 30 + 60;
+    } else if (obs.type === 'falling_rock') {
+      if (!obs.triggered && Math.abs(player.y - obs.y) < 220) obs.triggered = true;
+      if (obs.triggered) {
+        obs.vy += 0.45;
+        obs.y += obs.vy;
+      }
+    } else if (obs.type === 'zap_orb') {
+      obs.y += obs.vy;
+      if (Math.abs(obs.y - obs.originY) > 35) obs.vy *= -1;
+    } else if (obs.type === 'ghost') {
+      obs.floatTimer += 0.05;
+      if (player.x + player.width / 2 > obs.x + obs.width / 2) obs.x += obs.speed;
+      else obs.x -= obs.speed;
+      obs.y += Math.sin(obs.floatTimer) * 0.5;
+    } else if (obs.type === 'turret') {
+      obs.timer++;
+      if (obs.timer % Math.floor(100 / obs.speed) === 0) {
+        const pX = obs.side === 'left' ? WALL_WIDTH + 18 : CANVAS_WIDTH - WALL_WIDTH - 28;
+        const pVx = (obs.side === 'left' ? 5 : -5) * obs.speed;
+        obstacles.push({ type: 'proj', x: pX, y: obs.y + 6, width: 12, height: 8, vx: pVx });
+      }
+    } else if (obs.type === 'toxic_cloud') {
+      obs.timer += 0.05;
+      obs.radius = 20 + Math.sin(obs.timer) * 8;
+    } else if (obs.type === 'proj') {
+      obs.x += obs.vx;
+    }
+
+
+    let hit = false;
+    if (obs.type === 'laser') {
+      if (obs.active && checkCollision(player, obs)) hit = true;
+    } else if (obs.type === 'toxic_cloud') {
+      const dx = (player.x + player.width / 2) - obs.x;
+      const dy = (player.y + player.height / 2) - obs.y;
+      if (Math.sqrt(dx * dx + dy * dy) < obs.radius + player.width / 2) hit = true;
+    } else {
+      if (checkCollision(player, obs)) hit = true;
+    }
+
+
+    if (hit) gameState = 'GAMEOVER';
+  }
+
+
+  player.grounded = false;
+  for (let p of platforms) {
+    if (p.state === 'respawning' || (isModActive('ghostPlatforms') && p.opacity < 0.4 && p.type !== 'goal')) continue;
+
+
+    if (
+      player.x + player.width > p.x &&
+      player.x < p.x + p.width &&
+      player.y + player.height >= p.y &&
+      player.y + player.height <= p.y + p.height + player.vy &&
+      player.vy >= 0
+    ) {
+      if (p.type === 'goal') {
+        gameState = 'WIN';
+        return;
+      }
+      if (p.type === 'bouncy' || isModActive('bouncyWorld')) {
+        player.vy = player.jumpStrength * 1.6;
+        player.canDoubleJump = isModActive('doubleJump') || gameMode === 'BOSS';
+        for (let i = 0; i < 8; i++) spawnParticle(player.x + player.width / 2, player.y + player.height, '#fd79a8', 3, (Math.random() - 0.5) * 4, -2, 15);
+      } else {
+        player.y = p.y - player.height;
+        player.vy = 0;
+        player.grounded = true;
+        player.canDoubleJump = isModActive('doubleJump') || gameMode === 'BOSS';
+        if (p.type === 'moving') player.x += p.vx;
+        if (p.type === 'falling' && p.state === 'idle') p.state = 'falling';
+        if (isModActive('fragilePlatforms') && p.breakTimer === -1 && p.type !== 'falling') p.breakTimer = 25;
+      }
+    }
+  }
+
+
+  if (isModActive('autoScroll') && gameMode !== 'BOSS') {
+    player.y += 0.8;
+    score += 1;
+    for (let p of platforms) { p.y += 0.8; p.homeY += 0.8; }
+    for (let obs of obstacles) {
+      obs.y += 0.8;
+      if (obs.originY) obs.originY += 0.8;
+      if (obs.anchorY) obs.anchorY += 0.8;
+    }
+  }
+
+
+  if (player.y < CANVAS_HEIGHT / 2) {
+    const deltaY = CANVAS_HEIGHT / 2 - player.y;
+    player.y += deltaY;
+    score += Math.floor(deltaY);
+
+
+    if (gameMode === 'BOSS') lava.y += deltaY;
+
+
+    for (let p of platforms) { p.y += deltaY; p.homeY += deltaY; }
+    for (let obs of obstacles) {
+      obs.y += deltaY;
+      if (obs.originY) obs.originY += deltaY;
+      if (obs.anchorY) obs.anchorY += deltaY;
+    }
+    for (let pt of particles) pt.y += deltaY;
+  }
+
+
+  for (let i = platforms.length - 1; i >= 0; i--) {
+    if (platforms[i].y > CANVAS_HEIGHT + 140 && platforms[i].state !== 'falling') platforms.splice(i, 1);
+  }
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    if (obstacles[i].y > CANVAS_HEIGHT + 150) obstacles.splice(i, 1);
+  }
+
+
+  generatePlatforms();
+
+
+  if (player.y > CANVAS_HEIGHT) gameState = 'GAMEOVER';
+}
+
+
+function drawMenu() {
+  ctx.fillStyle = '#09090c';
+  ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 22px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('TOWER JUMPER', CANVAS_WIDTH / 2, 28);
+
+
+  const modes = [
+    { btn: modeBtns.endless, id: 'ENDLESS', text: 'ENDLESS' },
+    { btn: modeBtns.levels, id: 'LEVELS', text: 'LEVELS' },
+    { btn: modeBtns.flight, id: 'FLIGHT', text: 'FLIGHT MODE' },
+    { btn: modeBtns.boss, id: 'BOSS', text: 'BOSS FIGHT' }
+  ];
+
+
+  for (let m of modes) {
+    const active = gameMode === m.id;
+    ctx.fillStyle = active ? '#0984e3' : '#2d3436';
+    ctx.fillRect(m.btn.x, m.btn.y, m.btn.w, m.btn.h);
+    ctx.strokeStyle = active ? '#74b9ff' : '#636e72';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(m.btn.x, m.btn.y, m.btn.w, m.btn.h);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px Arial';
+    ctx.fillText(m.text, m.btn.x + m.btn.w / 2, m.btn.y + 18);
+  }
+
+
+  if (gameMode === 'LEVELS') {
+    ctx.fillStyle = '#a0a0a0';
+    ctx.font = 'bold 11px Arial';
+    ctx.fillText(`CHOOSE LEVEL (STATIC LAYOUT)`, CANVAS_WIDTH / 2, 110);
+
+
+    for (let btn of levelBtns) {
+      const active = selectedLevel === btn.levelNum;
+      ctx.fillStyle = active ? '#e67e22' : '#2d3436';
+      ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.strokeStyle = active ? '#f39c12' : '#636e72';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(`LVL ${btn.levelNum}`, btn.x + btn.w / 2, btn.y + 19);
+    }
+  } else if (gameMode === 'BOSS') {
+    ctx.fillStyle = '#a0a0a0';
+    ctx.font = 'bold 11px Arial';
+    ctx.fillText(`CHOOSE BOSS:`, CANVAS_WIDTH / 2, 110);
+
+
+    for (let btn of bossBtns) {
+      const active = selectedBoss === btn.bossNum;
+      ctx.fillStyle = active ? '#d63031' : '#2d3436';
+      ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.strokeStyle = active ? '#ff7675' : '#636e72';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px Arial';
+      ctx.fillText(btn.label, btn.x + btn.w / 2, btn.y + 19);
+    }
+  } else {
+    ctx.fillStyle = '#a0a0a0';
+    ctx.font = 'bold 11px Arial';
+    ctx.fillText('SELECT DIFFICULTY:', CANVAS_WIDTH / 2, 110);
+
+
+    const diffs = [
+      { btn: diffBtns.easy, id: 'easy', label: 'EASY', color: '#2ecc71' },
+      { btn: diffBtns.medium, id: 'medium', label: 'MEDIUM', color: '#f39c12' },
+      { btn: diffBtns.hard, id: 'hard', label: 'HARD', color: '#e74c3c' }
+    ];
+
+
+    for (let d of diffs) {
+      const active = currentDifficulty === d.id;
+      ctx.fillStyle = active ? d.color : '#2d3436';
+      ctx.fillRect(d.btn.x, d.btn.y, d.btn.w, d.btn.h);
+      ctx.strokeStyle = active ? '#ffffff' : '#636e72';
+      ctx.lineWidth = active ? 2 : 1;
+      ctx.strokeRect(d.btn.x, d.btn.y, d.btn.w, d.btn.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(d.label, d.btn.x + d.btn.w / 2, d.btn.y + 19);
+    }
+  }
+
+
+  ctx.fillStyle = '#a0a0a0';
+  ctx.font = 'bold 11px Arial';
+
+
+  if (gameMode === 'FLIGHT') {
+    ctx.fillText('SELECT FLIGHT MODIFIERS:', CANVAS_WIDTH / 2, 168);
+    for (let btn of flightModifierBtns) {
+      const mod = flightModifiers[btn.modIndex];
+      ctx.fillStyle = mod.active ? '#00b894' : '#2d3436';
+      ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.strokeStyle = mod.active ? '#55efc4' : '#636e72';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px Arial';
+      ctx.fillText(`${mod.active ? '[ON] ' : ''}${mod.name}`, btn.x + btn.w / 2, btn.y + 16);
+    }
+  } else if (gameMode === 'BOSS') {
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = 'bold 13px Arial';
+    ctx.fillText('★ RISING LAVA & 10 UNIQUE BOSS ATTACKS ★', CANVAS_WIDTH / 2, 220);
+    ctx.fillStyle = '#ecf0f1';
+    ctx.font = '12px Arial';
+    ctx.fillText('Scale the tower, dodge attacks, and shoot up to defeat the boss!', CANVAS_WIDTH / 2, 250);
+  } else {
+    ctx.fillText('SELECT MODIFIERS (OPTIONAL):', CANVAS_WIDTH / 2, 168);
+    for (let btn of modifierBtns) {
+      const mod = modifiers[btn.modIndex];
+      ctx.fillStyle = mod.active ? '#00b894' : '#2d3436';
+      ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.strokeStyle = mod.active ? '#55efc4' : '#636e72';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px Arial';
+      ctx.fillText(`${mod.active ? '[ON] ' : ''}${mod.name}`, btn.x + btn.w / 2, btn.y + 14);
+    }
+  }
+
+
+  ctx.fillStyle = '#2ecc71';
+  ctx.fillRect(buttons.start.x, buttons.start.y, buttons.start.w, buttons.start.h);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px Arial';
+  ctx.fillText('START GAME', buttons.start.x + buttons.start.w / 2, buttons.start.y + 27);
+}
+
+
+function drawGame() {
+  ctx.save();
+
+
+  if (isModActive('screenTilt') && gameMode !== 'FLIGHT' && gameMode !== 'BOSS') {
+    ctx.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+    ctx.rotate(Math.sin(gameTime * 0.05) * 0.05);
+    ctx.translate(-CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2);
+  }
+
+
+  if (isModActive('mirrorWorld') && gameMode !== 'FLIGHT' && gameMode !== 'BOSS') {
+    ctx.translate(CANVAS_WIDTH, 0);
+    ctx.scale(-1, 1);
+  }
+
+
+  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+
+  ctx.fillStyle = '#2c2c30';
+  ctx.fillRect(0, 0, WALL_WIDTH, CANVAS_HEIGHT);
+  ctx.fillRect(CANVAS_WIDTH - WALL_WIDTH, 0, WALL_WIDTH, CANVAS_HEIGHT);
+
+
+  // Platforms (Non-flight)
+  if (gameMode !== 'FLIGHT') {
+    for (let p of platforms) {
+      if (p.state === 'respawning') continue;
+
+
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+      ctx.fillStyle = p.shadow;
+      ctx.fillRect(p.x, p.y + p.height - 4, p.width, 4);
+
+
+      if (p.type === 'bouncy' || isModActive('bouncyWorld')) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(p.x + p.width / 2 - 12, p.y + 3, 24, 4);
+      } else if (p.type === 'goal') {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('★ FINISH GOAL ★', p.x + p.width / 2, p.y + 18);
+      }
+      ctx.globalAlpha = 1.0;
+    }
+  }
+
+
+  // BOSS FIGHT RENDER
+  if (gameMode === 'BOSS' && boss) {
+    // Draw Boss
+    ctx.fillStyle = boss.color;
+    ctx.fillRect(boss.x - boss.width / 2, boss.y - boss.height / 2, boss.width, boss.height);
+    ctx.fillStyle = boss.subColor;
+    ctx.fillRect(boss.x - boss.width / 2 + 10, boss.y - boss.height / 2 + 10, boss.width - 20, boss.height - 20);
+
+
+    // Boss Eyes
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(boss.x - 18, boss.y - 10, 10, 10);
+    ctx.fillRect(boss.x + 8, boss.y - 10, 10, 10);
+
+
+    // Player Bullets
+    ctx.fillStyle = '#f1c40f';
+    for (let b of bullets) {
+      ctx.fillRect(b.x, b.y, b.width, b.height);
+    }
+
+
+    // Boss Projectiles Render
+    for (let bp of bossProjectiles) {
+      if (bp.type === 'orb' || bp.type === 'homing' || bp.type === 'meteor' || bp.type === 'spike' || bp.type === 'rain') {
+        ctx.fillStyle = bp.color || '#e74c3c';
+        ctx.fillRect(bp.x - bp.width / 2, bp.y - bp.height / 2, bp.width, bp.height);
+      } else if (bp.type === 'laser_beam') {
+        ctx.fillStyle = bp.active ? '#ff0055' : 'rgba(255, 0, 85, 0.3)';
+        ctx.fillRect(bp.x, 0, bp.width, CANVAS_HEIGHT);
+      } else if (bp.type === 'shockwave') {
+        ctx.strokeStyle = bp.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(bp.x, bp.y, bp.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (bp.type === 'drone') {
+        ctx.fillStyle = '#00cec9';
+        ctx.fillRect(bp.x, bp.y, bp.width, bp.height);
+      }
+    }
+
+
+    // Draw Rising Lava
+    const lavaGrad = ctx.createLinearGradient(0, lava.y, 0, CANVAS_HEIGHT);
+    lavaGrad.addColorStop(0, '#ff3838');
+    lavaGrad.addColorStop(1, '#ff9f1a');
+    ctx.fillStyle = lavaGrad;
+    ctx.fillRect(0, lava.y, CANVAS_WIDTH, CANVAS_HEIGHT - lava.y + 100);
+
+
+    // Lava Surface Bubbles
+    ctx.fillStyle = '#fff200';
+    for (let i = 0; i < 6; i++) {
+      const bx = (gameTime * (2 + i) + i * 70) % (CANVAS_WIDTH - WALL_WIDTH * 2) + WALL_WIDTH;
+      ctx.beginPath();
+      ctx.arc(bx, lava.y + 4, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+
+    // Boss Health Bar HUD
+    const barWidth = 260;
+    const barX = CANVAS_WIDTH / 2 - barWidth / 2;
+    const barY = 12;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(barX - 4, barY - 4, barWidth + 8, 20);
+
+
+    const hpPercent = Math.max(0, boss.hp / boss.maxHp);
+    ctx.fillStyle = boss.color;
+    ctx.fillRect(barX, barY, barWidth * hpPercent, 12);
+    ctx.strokeStyle = '#ffffff';
+    ctx.strokeRect(barX, barY, barWidth, 12);
+
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${boss.name} (${Math.ceil(boss.hp)} / ${boss.maxHp})`, CANVAS_WIDTH / 2, barY + 10);
+  }
+
+
+  // Flight Mode Obstacles Render
+  if (gameMode === 'FLIGHT') {
+    for (let obs of flightObstacles) {
+      if (isFlightModActive('radarGlitch')) {
+        ctx.globalAlpha = 0.3 + 0.7 * Math.abs(Math.sin(gameTime * 0.15 + (obs.y || 0)));
+      } else {
+        ctx.globalAlpha = 1.0;
+      }
+
+
+      if (obs.type === 'seeker_missile') {
+        ctx.fillStyle = '#ff4757';
+        ctx.beginPath();
+        ctx.arc(obs.x + 9, obs.y + 9, 9, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'plasma_wall') {
+        ctx.fillStyle = '#00d2d3';
+        ctx.fillRect(obs.x, 0, obs.width, obs.gapY);
+        ctx.fillRect(obs.x, obs.gapY + obs.gapHeight, obs.width, CANVAS_HEIGHT - (obs.gapY + obs.gapHeight));
+      } else if (obs.type === 'black_hole') {
+        ctx.fillStyle = '#8e44ad';
+        ctx.beginPath();
+        ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#9b59b6';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (obs.type === 'laser_grid') {
+        ctx.fillStyle = obs.active ? '#ff0055' : 'rgba(255, 0, 85, 0.3)';
+        ctx.fillRect(0, obs.y, CANVAS_WIDTH, obs.height);
+      } else if (obs.type === 'asteroid') {
+        ctx.fillStyle = '#a4b0be';
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      } else if (obs.type === 'lightning_beam') {
+        ctx.fillStyle = obs.timer > 30 && obs.timer < 70 ? '#f1c40f' : 'rgba(241, 196, 15, 0.25)';
+        ctx.fillRect(obs.x, 0, obs.width, CANVAS_HEIGHT);
+      } else if (obs.type === 'drone_pulse') {
+        const radius = 25 + Math.sin(obs.pulseTimer) * 15;
+        ctx.fillStyle = 'rgba(231, 76, 60, 0.4)';
+        ctx.beginPath();
+        ctx.arc(obs.x, obs.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#c0392b';
+        ctx.fillRect(obs.x - 12, obs.y - 12, 24, 24);
+      } else if (obs.type === 'blade_storm') {
+        ctx.save();
+        ctx.translate(obs.x + 16, obs.y + 16);
+        ctx.rotate(obs.angle);
+        ctx.fillStyle = '#dfe4ea';
+        ctx.fillRect(-16, -4, 32, 8);
+        ctx.fillRect(-4, -16, 8, 32);
+        ctx.restore();
+      } else if (obs.type === 'wind_gust') {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      } else if (obs.type === 'mine_field') {
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+    }
+  }
+
+
+  // Standard Obstacles Render
+  if (gameMode !== 'FLIGHT' && gameMode !== 'BOSS') {
+    for (let obs of obstacles) {
+      if (obs.type === 'fireball') {
+        ctx.fillStyle = '#ff3838';
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'spikes') {
+        ctx.fillStyle = '#dcdde1';
+        const spikeCount = 4;
+        const step = obs.width / spikeCount;
+        for (let s = 0; s < spikeCount; s++) {
+          ctx.beginPath();
+          ctx.moveTo(obs.x + s * step, obs.y + obs.height);
+          ctx.lineTo(obs.x + (s + 0.5) * step, obs.y);
+          ctx.lineTo(obs.x + (s + 1) * step, obs.y + obs.height);
+          ctx.fill();
+        }
+      } else if (obs.type === 'laser') {
+        ctx.fillStyle = obs.active ? '#ff0055' : 'rgba(255, 0, 85, 0.25)';
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      } else if (obs.type === 'sawblade') {
+        ctx.save();
+        ctx.translate(obs.x + obs.width / 2, obs.y + obs.height / 2);
+        ctx.rotate(obs.angle);
+        ctx.fillStyle = '#7f8c8d';
+        ctx.beginPath();
+        ctx.arc(0, 0, obs.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (obs.type === 'pendulum') {
+        ctx.strokeStyle = '#95a5a6';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(obs.anchorX, obs.anchorY);
+        ctx.lineTo(obs.x + obs.width / 2, obs.y + obs.height / 2);
+        ctx.stroke();
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'falling_rock') {
+        ctx.fillStyle = '#576574';
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'zap_orb') {
+        ctx.fillStyle = '#00d2d3';
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'ghost') {
+        ctx.fillStyle = 'rgba(236, 240, 241, 0.85)';
+        ctx.beginPath();
+        ctx.arc(obs.x + obs.width / 2, obs.y + 10, 11, Math.PI, 0, false);
+        ctx.lineTo(obs.x + obs.width, obs.y + obs.height);
+        ctx.lineTo(obs.x, obs.y + obs.height);
+        ctx.fill();
+      } else if (obs.type === 'turret') {
+        ctx.fillStyle = '#34495e';
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      } else if (obs.type === 'toxic_cloud') {
+        ctx.fillStyle = 'rgba(46, 204, 113, 0.45)';
+        ctx.beginPath();
+        ctx.arc(obs.x, obs.y, obs.radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (obs.type === 'proj') {
+        ctx.fillStyle = '#ff9f43';
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+      }
+    }
+  }
+
+
+  // Particles
+  for (let pt of particles) {
+    ctx.fillStyle = pt.color;
+    ctx.globalAlpha = pt.life / pt.maxLife;
+    ctx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+    ctx.globalAlpha = 1.0;
+  }
+
+
+  // Player
+  if (gameMode === 'FLIGHT') {
+    if (player.invulnTimer % 4 < 2) {
+      ctx.fillStyle = '#00cec9';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+    if (player.shield > 0) {
+      ctx.strokeStyle = '#00d2d3';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(player.x + player.width / 2, player.y + player.height / 2, player.width * 0.9, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = '#ff4b5c';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+  }
+
+
+  // Lights Out
+  if (isModActive('lightsOut') && gameMode !== 'FLIGHT' && gameMode !== 'BOSS') {
+    const px = player.x + player.width / 2;
+    const py = player.y + player.height / 2;
+    const grad = ctx.createRadialGradient(px, py, 20, px, py, 110);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.98)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
+
+
+  // HUD
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 15px Arial';
+  ctx.textAlign = 'left';
+
+
+  if (gameMode === 'LEVELS') {
+    const target = LEVEL_CONFIGS[selectedLevel].targetHeight;
+    ctx.fillText(`Lvl ${selectedLevel}: ${score}/${target}`, WALL_WIDTH + 10, 30);
+  } else if (gameMode !== 'BOSS') {
+    ctx.fillText(`Score: ${score}`, WALL_WIDTH + 10, 30);
+  }
+
+
+  ctx.fillStyle = DIFFICULTY_CONFIG[currentDifficulty].color;
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'right';
+  ctx.fillText(gameMode, CANVAS_WIDTH - WALL_WIDTH - 10, 30);
+
+
+  // Game Over Screen
+  if (gameState === 'GAMEOVER') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, 240);
+
+
+    ctx.font = '18px Arial';
+    ctx.fillText(gameMode === 'BOSS' ? `Boss Defeated: 0/1` : `Final Score: ${score}`, CANVAS_WIDTH / 2, 290);
+
+
+    const btn = buttons.menuReturn;
+    ctx.fillStyle = '#0984e3';
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText('MAIN MENU', btn.x + btn.w / 2, btn.y + 28);
+  }
+
+
+  // Level Victory Screen
+  if (gameState === 'WIN') {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = 'bold 28px Arial';
+    ctx.textAlign = 'center';
+
+
+    if (gameMode === 'BOSS') {
+      ctx.fillText(`${boss.name} DEFEATED!`, CANVAS_WIDTH / 2, 230);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '16px Arial';
+      ctx.fillText(`Boss Level ${selectedBoss} Cleared!`, CANVAS_WIDTH / 2, 275);
+    } else {
+      ctx.fillText(`LEVEL ${selectedLevel} CLEARED!`, CANVAS_WIDTH / 2, 230);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '16px Arial';
+      ctx.fillText(`Goal Reached: ${LEVEL_CONFIGS[selectedLevel].targetHeight} Height`, CANVAS_WIDTH / 2, 275);
+    }
+
+
+    if ((gameMode === 'LEVELS' && selectedLevel < 5) || (gameMode === 'BOSS' && selectedBoss < 3)) {
+      const btnNext = buttons.nextLevel;
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(btnNext.x, btnNext.y, btnNext.w, btnNext.h);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px Arial';
+      ctx.fillText('NEXT STAGE', btnNext.x + btnNext.w / 2, btnNext.y + 28);
+    }
+
+
+    const btnMenu = buttons.menuReturn;
+    ctx.fillStyle = '#0984e3';
+    ctx.fillRect(btnMenu.x, btnMenu.y, btnMenu.w, btnMenu.h);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 15px Arial';
+    ctx.fillText('MAIN MENU', btnMenu.x + btnMenu.w / 2, btnMenu.y + 28);
+  }
+
+
+  ctx.restore();
+}
+
+
+function gameLoop() {
+  if (gameState === 'MENU') {
+    drawMenu();
+  } else {
+    update();
+    drawGame();
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+
+gameLoop();
+</script>
+</body>
+</html>
