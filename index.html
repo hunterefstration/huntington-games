@@ -54,15 +54,17 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
 <div id="player">
-  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><button id="full" title="Fullscreen">Fullscreen</button><a id="newtab" target="_blank" rel="noopener">New tab</a></div>
+  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
   <iframe id="frame" allow="fullscreen; pointer-lock; autoplay; gamepad" allowfullscreen></iframe>
 </div>
 <script>
-// Where the games live. Opened from the website (or the folder on your computer) it uses the games next to it;
-// anywhere else (jsbin, a Google Doc copy...) it loads them from the website.
-var SITE = 'https://hunterefstration.github.io/huntington-games/';
+// Where the games live. Opened from the website (or the folder on your computer) the games load directly.
+// Anywhere else (jsbin, a copy from the Google Doc...) the game code is fetched from the jsDelivr CDN mirror of
+// the GitHub repo and written into the frame, so the browser never navigates to github.io (school Chromebooks
+// often block that). Same trick as the Hollow Knight web port.
+var REPO = 'hunterefstration/huntington-games@main/';
+var MIRRORS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/', 'https://gcore.jsdelivr.net/gh/', 'https://testingcf.jsdelivr.net/gh/'].map(function (m) { return m + REPO; });
 var local = location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
-var BASE = local ? '' : SITE;
 
 var GAMES = [
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter', img: 'blocky', tags: ['3D', 'Multiplayer'], desc: 'Zombie wave shooter: 8 maps, ranks, an armory, and online co-op or PvP with 6-digit party codes.' },
@@ -75,7 +77,7 @@ var GAMES = [
   { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.' }
 ];
 var EXPERIMENTAL = [
-  { dir: 'Divergent Project', name: 'Divergent: Fear Landscape', desc: '3D. Face your fears in Tris\'s simulation.' },
+  { dir: 'Divergent Project', file: 'jsbin.html', name: 'Divergent: Fear Landscape', desc: '3D. Face your fears in Tris\'s simulation.' },
   { dir: 'Tower Jumper', name: 'Tower Jumper', desc: 'Endless, level, flight and boss modes.' },
   { dir: 'Neon Drift By Levi Beta 1.9', name: 'Neon Drift: Shadow Reign', desc: 'By Levi.' },
   { dir: 'Levi Dash By Levi 2.0', name: 'Neon Dash 2.0', desc: 'By Levi.' },
@@ -86,14 +88,18 @@ var EXPERIMENTAL = [
   { dir: 'Battle Mechanic 2', name: 'The Dummy\'s Patience', desc: 'Undertale-style battle against a very patient dummy.' }
 ];
 
-function url(g) { return BASE + encodeURI(g.dir) + '/index.html'; }
+function path(g) { return encodeURI(g.dir) + '/' + (local ? 'index.html' : (g.file || 'index.html')); }
 function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 function render() {
   var grid = document.getElementById('grid');
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
-    img.alt = g.name; img.loading = 'lazy'; img.src = BASE + 'hub/' + g.img + '.jpg';
-    img.onerror = function () { shot.innerHTML = ''; shot.appendChild(el('div', 'fallback', g.name)); };
+    var m = 0;
+    img.alt = g.name; img.loading = 'lazy'; img.src = (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg';
+    img.onerror = function () {
+      if (!local && ++m < MIRRORS.length) { img.src = MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
+      shot.innerHTML = ''; shot.appendChild(el('div', 'fallback', g.name));
+    };
     shot.appendChild(img); b.appendChild(shot);
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div><div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { play(g); };
@@ -106,25 +112,64 @@ function render() {
     list.appendChild(r);
   });
 }
+var frame = document.getElementById('frame'), current = null, loadId = 0;
+function message(text) {
+  return '<!DOCTYPE html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#8b949e;font:16px Segoe UI,sans-serif;text-align:center;padding:20px;box-sizing:border-box">' + text + '</body></html>';
+}
+// Try each CDN mirror until one answers. Resolves to { html, base }.
+function fetchGame(g) {
+  var i = 0;
+  function next() {
+    if (i >= MIRRORS.length) return Promise.reject(new Error('all mirrors failed'));
+    var base = MIRRORS[i++];
+    return fetch(base + path(g)).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).then(function (html) { return { html: html, base: base }; }, next);
+  }
+  return next();
+}
+function withBase(html, href) {
+  var tag = '<base href="' + href + '">';
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
+}
 function play(g) {
+  var id = ++loadId;
+  current = { game: g, html: null };
   document.getElementById('ptitle').textContent = g.name;
-  document.getElementById('frame').src = url(g);
-  document.getElementById('newtab').href = url(g);
   document.getElementById('player').classList.add('open');
   try { history.replaceState(null, '', '#' + encodeURIComponent(g.dir)); } catch (e) {}
+  if (local) { frame.removeAttribute('srcdoc'); frame.src = path(g); return; }
+  frame.srcdoc = message('Loading ' + g.name + '...');
+  fetchGame(g).then(function (r) {
+    if (id !== loadId) return;
+    current.html = withBase(r.html, r.base + encodeURI(g.dir) + '/');
+    frame.srcdoc = current.html;
+  }, function () {
+    if (id !== loadId) return;
+    frame.srcdoc = message('Could not download ' + g.name + '.<br>The game CDN (cdn.jsdelivr.net) may be blocked on this network.');
+  });
 }
 function closePlayer() {
+  loadId++; current = null;
   document.getElementById('player').classList.remove('open');
-  document.getElementById('frame').src = 'about:blank';
+  frame.removeAttribute('srcdoc'); frame.src = 'about:blank';
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
 }
+// New tab: a direct link when local, otherwise a copy of the downloaded game.
+document.getElementById('newtab').onclick = function () {
+  if (!current) return;
+  if (local) { window.open(path(current.game), '_blank'); return; }
+  if (!current.html) return;
+  try { window.open(URL.createObjectURL(new Blob([current.html], { type: 'text/html' })), '_blank'); } catch (e) {}
+};
 document.getElementById('back').onclick = closePlayer;
 document.getElementById('full').onclick = function () { var p = document.getElementById('player'); if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(function () {}); };
 document.addEventListener('fullscreenchange', function () { document.getElementById('ptop').classList.toggle('hide', !!document.fullscreenElement); });
 document.getElementById('exp-btn').onclick = function () { document.getElementById('exp').classList.add('open'); };
 document.getElementById('exp-close').onclick = function () { document.getElementById('exp').classList.remove('open'); };
 document.getElementById('exp').onclick = function (e) { if (e.target.id === 'exp') e.target.classList.remove('open'); };
-document.getElementById('note').textContent = BASE ? 'Games load from ' + BASE : '';
+document.getElementById('note').textContent = local ? '' : 'Games load from the jsDelivr CDN.';
 render();
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
