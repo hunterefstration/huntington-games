@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tower Defense - Version 2.4</title>
+<title>Tower Defense - Version 2.5</title>
 <style>
 :root { --bg: #0f1216; --panel: rgba(18, 22, 28, 0.92); --line: rgba(255,255,255,0.10); --text: #e8ecf1; --dim: #9aa4b2; --gold: #f1c40f; --red: #e74c3c; --green: #2ecc71; --blue: #3498db; --purple: #9b59b6; --orange: #e67e22; }
 * { box-sizing: border-box; }
@@ -48,6 +48,24 @@ kbd { font-family: monospace; font-size: 11px; background: rgba(255,255,255,0.1)
 .map-card canvas { width: 100%; height: auto; border-radius: 4px; display: block; background: #1d3a24; }
 .map-card .mname { font-size: 13px; margin-top: 5px; }
 .stars { color: var(--gold); letter-spacing: 1px; font-size: 12px; }
+/* ---------- save slots (2.5) ---------- */
+.slot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.slot-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 2px solid #2c3a49; border-radius: 10px; background: rgba(255,255,255,0.03); min-width: 0; }
+.slot-card.cur { border-color: var(--green); }
+.slot-card.empty { border-style: dashed; }
+.slot-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 900; letter-spacing: 1px; font-size: 15px; }
+.slot-tag { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #fff; padding: 2px 8px; border-radius: 4px; background: #555; }
+.slot-rows { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; }
+.slot-rows span { color: var(--dim); } .slot-rows b { text-align: right; overflow-wrap: anywhere; }
+.slot-msg { font-size: 13px; color: var(--dim); padding: 8px 0; }
+.slot-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 8px; }
+.slot-btns .btn { flex: 1 1 auto; min-height: 38px; }
+.slot-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.slot-pick .btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; white-space: normal; padding: 10px 12px; }
+.slot-pick .btn small { font-weight: 500; color: var(--dim); font-size: 11px; }
+.slot-warn { position: sticky; bottom: 0; margin-top: 12px; padding: 12px 14px; background: #2b2410; border: 2px solid #c49b0b; border-radius: 8px; font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; z-index: 5; }
+.slot-warn span { flex: 1 1 220px; }
+@media (max-width: 700px) { .slot-grid, .slot-pick { grid-template-columns: 1fr; } .menu-card { padding: 20px 16px; } }
 .version { color: #5b6573; font-size: 11px; margin-top: 18px; letter-spacing: 1px; }
 
 /* ---------- game layout ---------- */
@@ -185,6 +203,7 @@ table.stats th { color: var(--dim); font-weight: 700; }
     <p class="subtitle">Made by Huntington Games</p>
     <div class="menu-buttons">
       <button class="btn btn-green btn-big" id="btn-continue">&#9654; Continue</button>
+      <button class="btn btn-blue btn-big" id="btn-slots">Save Slots</button>
       <button class="btn btn-gold btn-big" id="btn-new">New Game</button>
       <button class="btn btn-big" data-open="codex">Codex</button>
       <button class="btn btn-big" data-open="achievements">Achievements</button>
@@ -194,11 +213,23 @@ table.stats th { color: var(--dim); font-weight: 700; }
     <div id="menu-note" class="subtitle" style="font-style:normal;color:#ffd54f"></div>
     <div class="section-title">Your records</div>
     <div id="records" class="subtitle" style="font-style:normal"></div>
-    <div class="version">VERSION 2.4 &middot; 1900 AND BEYOND</div>
+    <div class="version">VERSION 2.5 &middot; 1900 AND BEYOND</div>
+  </div>
+
+  <div class="menu-card hidden" id="menu-slots" style="width:min(980px,100%)">
+    <h1 class="title" style="font-size:34px">SAVE SLOTS</h1>
+    <p class="subtitle">Three separate games. Each one autosaves to its own slot after every wave.</p>
+    <div class="slot-grid" id="slot-list"></div>
+    <div id="slot-note" class="subtitle" style="font-style:normal;color:#ffd54f;margin-top:12px"></div>
+    <div class="menu-buttons" style="margin-top:16px">
+      <button class="btn" id="btn-slots-back">&#8592; Back</button>
+    </div>
   </div>
 
   <div class="menu-card hidden" id="menu-new">
     <h1 class="title" style="font-size:34px">NEW GAME</h1>
+    <div class="section-title">Save to slot</div>
+    <div class="slot-pick" id="slot-choices"></div>
     <div class="section-title">Game mode</div>
     <div class="gm-row" id="gm-choices"></div>
     <div class="section-title">Difficulty</div>
@@ -209,6 +240,7 @@ table.stats th { color: var(--dim); font-weight: 700; }
     <div class="choice-row" id="variant-choices"></div>
     <div class="section-title">Map</div>
     <div class="map-grid" id="map-choices"></div>
+    <div class="slot-warn hidden" id="slot-warn"></div>
     <div class="menu-buttons" style="margin-top:16px">
       <button class="btn" id="btn-new-back">&#8592; Back</button>
     </div>
@@ -298,14 +330,14 @@ table.stats th { color: var(--dim); font-weight: 700; }
 <script>
 'use strict';
 // =====================================================================
-//  TOWER DEFENSE 2.4  -  Huntington Games
+//  TOWER DEFENSE 2.5  -  Huntington Games
 //  One file, no libraries. The world is a fixed 960 x 600 board that is
 //  scaled to fit any window. Logic runs at a fixed 60 ticks a second.
 //  Setting: war from 1900 onward - world wars, modern armies and near-future
 //  sci-fi (energy weapons, cryo, plasma, shields, robots and mechs).
 // =====================================================================
 const W = 960, H = 600, TPS = 60;
-const VERSION = '2.4';
+const VERSION = '2.5';
 
 // ---------------------------------------------------------------------
 //  GAME MODES (new in 2.4)
@@ -830,7 +862,13 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} }
 };
-const KEYS = { settings: 'td2_settings', save: 'td2_save', saveBackup: 'td2_save_backup', stars: 'td2_stars', ach: 'td2_ach', records: 'td2_records', menu: 'td2_menu' };
+const KEYS = { settings: 'td2_settings', save: 'td2_save', saveBackup: 'td2_save_backup', stars: 'td2_stars', ach: 'td2_ach', records: 'td2_records', menu: 'td2_menu', slotActive: 'td2_slot_active', slotsMigrated: 'td2_slots_migrated' };
+// 2.5: three save slots, stored as td2_slot1..3 (backup copy of each: td2_slot1_bak..3_bak). td2_save / td2_save_backup are the pre-2.5 single save: read once for migration and never deleted.
+const SLOT_COUNT = 3;
+const slotKey = (n) => 'td2_slot' + n;
+const slotBakKey = (n) => 'td2_slot' + n + '_bak';
+let activeSlot = 0;       // the slot the running game autosaves to (0 = none)
+let migrationNote = '';
 // ---- defensive helpers: nothing read from storage is trusted ----
 const own = (o, k) => o != null && typeof k === 'string' && Object.prototype.hasOwnProperty.call(o, k);
 const isNum = (v) => typeof v === 'number' && isFinite(v);
@@ -1954,17 +1992,64 @@ function unlock(id) {
 //  save that cannot be repaired is backed up and replaced by a fresh game.
 // =====================================================================
 const REFUND_RATE = 1;     // retired items give back everything that was invested
+function rawGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function rawSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+function rawDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
 function saveGame() {
-  if (!G || G.opts.mode === 'sandbox' || G.over) return;
-  store.set(KEYS.save, {
-    v: 3, ver: VERSION, gm: G.gm, opts: G.opts, seed: G.seed, wave: G.wave, money: G.money, lives: G.lives, stats: G.stats, endless: G.endlessContinued,
+  if (!G || G.opts.mode === 'sandbox' || G.over || !activeSlot) return;
+  store.set(slotKey(activeSlot), {
+    v: 3, ver: VERSION, ts: Date.now(), gm: G.gm, opts: G.opts, seed: G.seed, wave: G.wave, money: G.money, lives: G.lives, stats: G.stats, endless: G.endlessContinued,
     abilities: G.abilities, auto: G.auto,
     towers: G.towers.filter(g => !g.auto && !(g.def.kind === 'mine' && g.used)).map(g => ({ d: g.def.id, x: g.x, y: g.y, t: g.targeting, s: g.sticky, hp: g.hp, rally: g.rally, u: g.units.map(u => [u.level, u.spec, Math.round(u.invested), Math.round(u.dealt), u.kills]) }))
   });
 }
-function backupSave(why) {
-  try { const raw = localStorage.getItem(KEYS.save); if (raw != null) localStorage.setItem(KEYS.saveBackup, raw); } catch (e) {}
-  warnTD('save backed up (' + why + ')');
+function parseSave(raw) { try { return cleanSave(JSON.parse(raw)); } catch (err) { warnTD('save check failed: ' + err); return null; } }
+// Keeps a copy of a slot's save in its backup key. A damaged save never replaces a backup that is still readable.
+function backupSlot(n, why) {
+  const raw = rawGet(slotKey(n)); if (raw == null) return;
+  const bak = rawGet(slotBakKey(n));
+  if (bak != null && bak !== raw && !parseSave(raw) && parseSave(bak)) { warnTD('slot ' + n + ': damaged save, good backup kept (' + why + ')'); return; }
+  rawSet(slotBakKey(n), raw);
+  warnTD('slot ' + n + ' backed up (' + why + ')');
+}
+// Moves the pre-2.5 single save into the first empty slot (Slot 1) once. The old keys are left exactly as they were.
+function migrateSaves() {
+  if (rawGet(KEYS.slotsMigrated) != null) return;
+  const legacy = rawGet(KEYS.save), legacyBak = rawGet(KEYS.saveBackup);
+  if (legacy != null || legacyBak != null) {
+    let n = 0; for (let i = 1; i <= SLOT_COUNT && !n; i++) if (rawGet(slotKey(i)) == null) n = i;
+    if (n) {
+      let ok = true;
+      if (legacy != null) ok = rawSet(slotKey(n), legacy) && rawGet(slotKey(n)) === legacy;
+      if (ok && legacyBak != null && rawGet(slotBakKey(n)) == null) rawSet(slotBakKey(n), legacyBak);
+      if (!ok) return;       // could not write: try again next time, nothing was changed
+      if (legacy != null) migrationNote = 'Your saved game was moved to Slot ' + n + '.';
+    }
+  }
+  rawSet(KEYS.slotsMigrated, '1');
+}
+// state: 'empty' | 'ok' (c = repaired save) | 'bad' (unreadable). Reading never changes anything except a safety backup of a damaged save.
+function slotInfo(n) {
+  const raw = rawGet(slotKey(n));
+  if (raw == null) return { n, state: 'empty', hasBak: !!(rawGet(slotBakKey(n)) != null && parseSave(rawGet(slotBakKey(n)))) };
+  let ts = 0; try { const j = JSON.parse(raw); if (isPlainObj(j) && isNum(j.ts)) ts = j.ts; } catch (e) {}
+  const c = parseSave(raw);
+  if (c) return { n, state: 'ok', c, ts };
+  backupSlot(n, 'unusable save');
+  const b = rawGet(slotBakKey(n));
+  return { n, state: 'bad', hasBak: !!(b != null && b !== raw && parseSave(b)) };
+}
+function allSlots() { const a = []; for (let i = 1; i <= SLOT_COUNT; i++) a.push(slotInfo(i)); return a; }
+function setActiveSlot(n) { activeSlot = n; if (n) rawSet(KEYS.slotActive, String(n)); }
+// Empties a slot (a copy of what was there is kept in its backup key).
+function clearSlot(n) { backupSlot(n, 'cleared'); rawDel(slotKey(n)); }
+// Puts a slot's backup copy back. If the slot has something unreadable in it, that is kept in the backup key instead.
+function restoreSlotBackup(n) {
+  const bak = rawGet(slotBakKey(n)); if (bak == null || !parseSave(bak)) return false;
+  const cur = rawGet(slotKey(n));
+  if (!rawSet(slotKey(n), bak)) return false;
+  if (cur != null && cur !== bak) rawSet(slotBakKey(n), cur);
+  return true;
 }
 // Returns a repaired copy of a saved game, or null when nothing can be salvaged.
 function cleanSave(s) {
@@ -2052,29 +2137,27 @@ function applySave(c) {
   toast(msg, color, ms);
   return msg;
 }
-// Reads the stored save as text, so even unparseable data can be backed up. Returns null (no save), { bad: true } (it was damaged and has been backed up and cleared) or the repaired save.
-function checkStoredSave() {
-  let raw = null;
-  try { raw = localStorage.getItem(KEYS.save); } catch (e) { return null; }
-  if (raw == null) return null;
-  let c = null;
-  try { c = cleanSave(JSON.parse(raw)); } catch (err) { warnTD('save check failed: ' + err); c = null; }
-  if (!c) { backupSave('unusable save'); store.del(KEYS.save); return { bad: true }; }
-  return c;
-}
-// true = handled (a game started, or a message was shown); false = there is no saved game
-function loadGame() {
-  const c = checkStoredSave();
-  if (!c) return false;
-  if (c.bad) { showMenu('main'); menuNote('Your saved game was damaged. A backup copy was kept.'); return true; }
+// true = handled (a game started, or a message was shown); false = that slot has no usable saved game
+function loadSlot(n) {
+  const info = slotInfo(n);
+  if (info.state !== 'ok') return false;
+  const c = info.c;
+  setActiveSlot(n);
   try { applySave(c); return true; }
   catch (err) {
     console.error('[TD] loading the save failed', err);
-    backupSave('load failed'); store.del(KEYS.save);
-    try { startGame(Object.assign({}, c.opts)); } catch (e2) { console.error('[TD] fresh start failed', e2); showMenu('main'); }
+    backupSlot(n, 'load failed'); rawDel(slotKey(n));
+    try { startGame(Object.assign({}, c.opts)); } catch (e2) { console.error('[TD] fresh start failed', e2); showMenu('slots'); }
     toast('Your saved game could not be loaded, so a fresh game was started. A backup copy was kept.', '#ff8a80', 6000);
     return true;
   }
+}
+// The slot Continue should open: the most recently played one.
+function latestSlot() {
+  const list = allSlots().filter(s => s.state === 'ok'); if (!list.length) return null;
+  let best = list[0]; for (const s of list) if (s.ts > best.ts) best = s;
+  if (list.every(s => !s.ts)) { const a = +rawGet(KEYS.slotActive); const m = list.find(s => s.n === a); if (m) best = m; }
+  return best;
 }
 </script>
 <script>
@@ -3545,7 +3628,7 @@ function cycleSpeed() { G.speed = G.speed >= 3 ? 1 : G.speed + 1; updateHUD(); }
 function toggleRanges() { G.showRanges = !G.showRanges; updateHUD(); }
 function setPaused(p) {
   paused = p; $('modal-pause').classList.toggle('hidden', !p);
-  if (p && G) $('pause-body').innerHTML = statsHTML() + '<p style="color:var(--dim);font-size:12px">Tip: ' + pick(tipList()) + '</p>';
+  if (p && G) $('pause-body').innerHTML = '<p style="color:var(--dim);font-size:13px;margin:0 0 8px">Save slot: <b style="color:var(--text)">' + (activeSlot ? 'Slot ' + activeSlot : 'none (not saving)') + '</b> &middot; autosaves after every wave</p>' + statsHTML() + '<p style="color:var(--dim);font-size:12px">Tip: ' + pick(tipList()) + '</p>';
   if (!p) initAudio();
 }
 function statsHTML() {
@@ -4185,19 +4268,64 @@ if (!PICKABLE_MODES.includes(menuPrefs.gm)) menuPrefs.gm = 'tower';
 if (!own(DIFFICULTIES, menuPrefs.diff)) menuPrefs.diff = 'normal';
 if (!own(MODES, menuPrefs.mode)) menuPrefs.mode = 'classic';
 if (!own(VARIANTS, menuPrefs.variant)) menuPrefs.variant = 'normal';
+const SLOT_MODE_NAME = { tower: 'Tower', troop: 'Troop', legacy: 'Mixed' };
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fmtWhen(ts) {
+  if (!ts) return 'before 2.5';
+  try { const d = new Date(ts); if (isNaN(d.getTime())) return 'unknown'; const m = d.getMinutes(); return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getHours() + ':' + (m < 10 ? '0' : '') + m; } catch (e) { return 'unknown'; }
+}
+function slotLine(s) { return s.state === 'ok' ? SLOT_MODE_NAME[s.c.opts.gm] + ', ' + MAPS[s.c.opts.map].name + ', wave ' + s.c.wave : s.state === 'bad' ? 'Damaged save' : 'Empty'; }
+let slotArm = null;             // { n, kind: 'del' | 'new' }: a button waiting for its second tap
+let slotArmTimer = 0;
+let newSlot = 1, newOk = false, newPending = -1;   // New Game view: chosen slot, replace already confirmed, map waiting for a confirmation
+function armSlot(n, kind) { slotArm = n ? { n, kind } : null; clearTimeout(slotArmTimer); if (n) slotArmTimer = setTimeout(() => { slotArm = null; if (!$('menu-slots').classList.contains('hidden')) renderSlots(); }, 4000); }
 function showMenu(which) {
   $('game-screen').classList.add('hidden'); $('menu-screen').classList.remove('hidden');
-  $('menu-main').classList.toggle('hidden', which !== 'main'); $('menu-new').classList.toggle('hidden', which !== 'new');
+  for (const k of ['main', 'slots', 'new']) $('menu-' + k).classList.toggle('hidden', which !== k);
+  if (which !== 'slots') armSlot(0);
   if (which === 'main') {
-    const chk = checkStoredSave(); const c = chk && !chk.bad ? chk : null;
-    menuNote(chk && chk.bad ? 'Your saved game was damaged. A backup copy was kept.' : '');
-    $('btn-continue').classList.toggle('hidden', !c);
-    $('continue-info').textContent = c ? 'Saved game: ' + GAME_MODES[c.opts.gm].name + ', ' + MAPS[c.opts.map].name + ', wave ' + c.wave + ', ' + DIFFICULTIES[c.opts.diff].name + ', ' + money$(c.money) : '';
+    const best = latestSlot();
+    menuNote(migrationNote);
+    $('btn-continue').classList.toggle('hidden', !best);
+    const bad = allSlots().filter(s => s.state === 'bad').length;
+    $('continue-info').textContent = best ? 'Continue: Slot ' + best.n + ' - ' + slotLine(best) + ', ' + DIFFICULTIES[best.c.opts.diff].name + ', ' + money$(best.c.money) : '';
+    if (bad) menuNote((migrationNote ? migrationNote + ' ' : '') + (bad === 1 ? 'One save slot is damaged. A backup copy was kept.' : bad + ' save slots are damaged. Backup copies were kept.'));
     const r = getRecords();
     const stars = getStars(); const nStars = Object.values(stars).reduce((a, b) => a + b, 0);
     $('records').innerHTML = 'Best wave: Tower <b>' + r.bestTower + '</b> &middot; Troop <b>' + r.bestTroop + '</b> &middot; Best endless: Tower <b>' + r.bestEndlessTower + '</b> &middot; Troop <b>' + r.bestEndlessTroop + '</b> &middot; Games: <b>' + r.games + '</b> &middot; Kills: <b>' + fmt(r.kills) + '</b> &middot; Stars: <b>' + nStars + ' / ' + MAPS.length * 3 + '</b>';
   }
+  if (which === 'slots') renderSlots();
   if (which === 'new') renderNewGame();
+}
+function renderSlots() {
+  const box = $('slot-list'); box.innerHTML = '';
+  $('slot-note').textContent = migrationNote;
+  allSlots().forEach(s => {
+    const card = document.createElement('div'); card.className = 'slot-card' + (s.state === 'empty' ? ' empty' : '') + (s.n === activeSlot ? ' cur' : ''); card.dataset.slot = s.n;
+    const mc = s.state === 'ok' ? GAME_MODES[s.c.opts.gm] : null;
+    card.innerHTML = '<div class="slot-head"><span>SLOT ' + s.n + '</span>' + (mc ? '<span class="slot-tag" style="background:' + mc.color + '">' + SLOT_MODE_NAME[s.c.opts.gm].toUpperCase() + '</span>' : s.state === 'bad' ? '<span class="slot-tag" style="background:#c0392b">DAMAGED</span>' : '<span class="slot-tag">EMPTY</span>') + '</div>';
+    if (s.state === 'ok') {
+      const c = s.c, rows = [['Mode', SLOT_MODE_NAME[c.opts.gm]], ['Map', MAPS[c.opts.map].name], ['Difficulty', DIFFICULTIES[c.opts.diff].name], ['Wave', String(c.wave)], ['Money', money$(c.money)], ['Lives', String(Math.floor(c.lives))], ['Last played', fmtWhen(s.ts)]];
+      const d = document.createElement('div'); d.className = 'slot-rows'; d.innerHTML = rows.map(r => '<span>' + r[0] + '</span><b>' + r[1] + '</b>').join(''); card.appendChild(d);
+    } else {
+      const m = document.createElement('div'); m.className = 'slot-msg';
+      m.textContent = s.state === 'bad' ? 'This save could not be read. A backup copy was kept.' + (s.hasBak ? ' A good older backup is available.' : '') : 'No saved game here.' + (s.hasBak ? ' A backup copy of an earlier game is available.' : '');
+      card.appendChild(m);
+    }
+    const btns = document.createElement('div'); btns.className = 'slot-btns'; card.appendChild(btns);
+    const mk = (txt, cls, fn, attr) => { const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = txt; b.dataset.act = attr; b.onclick = fn; btns.appendChild(b); return b; };
+    if (s.state === 'ok') mk('Continue', 'btn-green', () => { if (!loadSlot(s.n)) { toast('No saved game'); renderSlots(); } }, 'continue');
+    if (s.state !== 'ok' && s.hasBak) mk('Restore backup', 'btn-blue', () => { restoreSlotBackup(s.n); renderSlots(); }, 'restore');
+    const full = s.state !== 'empty';
+    const armedNew = slotArm && slotArm.n === s.n && slotArm.kind === 'new';
+    mk(armedNew ? 'Tap again: replace' : 'New Game here', 'btn-gold', () => {
+      if (full && !armedNew) { armSlot(s.n, 'new'); renderSlots(); return; }
+      armSlot(0); newSlot = s.n; newOk = true; newPending = -1; showMenu('new');
+    }, 'new');
+    if (full) { const armedDel = slotArm && slotArm.n === s.n && slotArm.kind === 'del';
+      mk(armedDel ? 'Tap again: delete' : 'Delete', 'btn-red', () => { if (!armedDel) { armSlot(s.n, 'del'); renderSlots(); return; } armSlot(0); clearSlot(s.n); if (activeSlot === s.n) setActiveSlot(0); renderSlots(); }, 'delete'); }
+    box.appendChild(card);
+  });
 }
 function choiceRow(el, obj, key) {
   el.innerHTML = '';
@@ -4215,7 +4343,32 @@ function renderGmCards() {
     box.appendChild(b);
   }
 }
+function renderSlotPick() {
+  const box = $('slot-choices'); box.innerHTML = '';
+  allSlots().forEach(s => {
+    const b = document.createElement('button'); b.className = 'btn' + (newSlot === s.n ? ' on' : ''); b.dataset.slot = s.n;
+    b.innerHTML = 'Slot ' + s.n + '<small>' + slotLine(s) + (s.state !== 'empty' ? ' (replaces it)' : '') + '</small>';
+    b.onclick = () => { newSlot = s.n; newOk = false; newPending = -1; renderNewGame(); };
+    box.appendChild(b);
+  });
+  const w = $('slot-warn'); w.classList.toggle('hidden', newPending < 0);
+  if (newPending >= 0) {
+    const s = slotInfo(newSlot); w.innerHTML = '';
+    const t = document.createElement('span'); t.textContent = 'Slot ' + newSlot + ' already has a saved game (' + slotLine(s) + '). Starting here replaces it; a backup copy is kept.'; w.appendChild(t);
+    const y = document.createElement('button'); y.className = 'btn btn-gold'; y.dataset.act = 'replace'; y.textContent = 'Replace Slot ' + newSlot; y.onclick = () => { newOk = true; const m = newPending; newPending = -1; beginNewGame(m); }; w.appendChild(y);
+    const n = document.createElement('button'); n.className = 'btn'; n.dataset.act = 'cancel'; n.textContent = 'Cancel'; n.onclick = () => { newPending = -1; renderNewGame(); }; w.appendChild(n);
+  }
+}
+function beginNewGame(i) {
+  setActiveSlot(newSlot);
+  startGame({ gm: menuPrefs.gm, diff: menuPrefs.diff, mode: menuPrefs.mode, variant: menuPrefs.variant, map: i });
+}
+function chooseMap(i) {
+  if (slotInfo(newSlot).state !== 'empty' && !newOk) { newPending = i; renderNewGame(); const w = $('slot-warn'); if (w.scrollIntoView) try { w.scrollIntoView({ block: 'nearest' }); } catch (e) {} return; }
+  beginNewGame(i);
+}
 function renderNewGame() {
+  renderSlotPick();
   renderGmCards();
   choiceRow($('diff-choices'), DIFFICULTIES, 'diff'); choiceRow($('mode-choices'), MODES, 'mode'); choiceRow($('variant-choices'), VARIANTS, 'variant');
   const grid = $('map-choices'); grid.innerHTML = ''; const stars = getStars();
@@ -4224,7 +4377,7 @@ function renderNewGame() {
     const c = document.createElement('canvas'); c.width = 192; c.height = 120; drawMapPreview(c, m); b.appendChild(c);
     const n = document.createElement('div'); n.className = 'mname'; const s = stars[i] || 0;
     n.innerHTML = (i + 1) + '. ' + m.name + ' <span class="stars">' + '&#9733;'.repeat(s) + '&#9734;'.repeat(3 - s) + '</span>' + (m.note ? '<small style="display:block;color:var(--dim);font-weight:500;font-size:11px;white-space:normal">' + m.note + '</small>' : '');
-    b.appendChild(n); b.onclick = () => startGame({ gm: menuPrefs.gm, diff: menuPrefs.diff, mode: menuPrefs.mode, variant: menuPrefs.variant, map: i });
+    b.appendChild(n); b.onclick = () => chooseMap(i);
     grid.appendChild(b);
   });
 }
@@ -4234,10 +4387,12 @@ function drawMapPreview(c, m) {
   for (const [w, col] of [[11, th.edge], [8, th.path]]) for (const p of m.paths) { x.strokeStyle = col; x.lineWidth = w; x.beginPath(); p.forEach(([px, py], j) => j ? x.lineTo(px * sx, py * sy) : x.moveTo(px * sx, py * sy)); x.stroke(); }
   const e = m.paths[0][m.paths[0].length - 1]; x.fillStyle = '#795548'; x.fillRect(e[0] * sx - 7, e[1] * sy - 7, 14, 14);
 }
-$('btn-new').onclick = () => showMenu('new');
+$('btn-new').onclick = () => { const sl = allSlots(); const e = sl.find(s => s.state === 'empty'); newSlot = e ? e.n : (activeSlot || 1); newOk = false; newPending = -1; showMenu('new'); };
+$('btn-slots').onclick = () => showMenu('slots');
+$('btn-slots-back').onclick = () => showMenu('main');
 $('btn-new-back').onclick = () => showMenu('main');
-$('btn-continue').onclick = () => { if (!loadGame()) { toast('No saved game'); showMenu('main'); } };
-function toMenu() { applyModeCosts('legacy'); G = null; paused = false; parts.length = 0; showMenu('main'); }
+$('btn-continue').onclick = () => { const s = latestSlot(); if (!s || !loadSlot(s.n)) { toast('No saved game'); showMenu('main'); } };
+function toMenu() { applyModeCosts('legacy'); G = null; activeSlot = 0; paused = false; parts.length = 0; showMenu('main'); }
 
 // =====================================================================
 //  START
@@ -4251,7 +4406,7 @@ function startGame(opts, loading) {
   paused = false; ['pause', 'end', 'confirm'].forEach(closeModal);
   requestAnimationFrame(() => { resize(); });
   resize();
-  if (!loading) { G.nextWave = buildWave(1); store.del(KEYS.save); }
+  if (!loading) { G.nextWave = buildWave(1); if (!activeSlot) { const e = allSlots().find(s => s.state === 'empty'); if (e) setActiveSlot(e.n); } if (activeSlot) clearSlot(activeSlot); }
   shopTab = gmTabs()[0]; buildTabs(); $('b-boxmode').classList.toggle('hidden', G.gm === 'tower'); boxMode = 'auto'; $('b-boxmode').textContent = 'Box: Auto'; $('b-boxmode').classList.remove('on'); { const hm = $('h-mode'); hm.textContent = GAME_MODES[G.gm].tag; hm.style.color = GAME_MODES[G.gm].color; } specOpen = null; specScope = null; rebuildShop(true); $('abilities').innerHTML = ''; renderAbilities(); refreshSelection(); updateHUD(true);
   if (!loading) { announce(G.map.name, GAME_MODES[G.gm].name + ' &middot; ' + DIFFICULTIES[opts.diff].name + ' &middot; ' + MODES[opts.mode].name + (G.variantUsed !== 'normal' ? ' &middot; ' + G.variantUsed : ''), '#fff'); if (S.showTips) setTimeout(() => G && toast('Tip: ' + tipList()[0]), 2600); }
 }
@@ -4293,6 +4448,7 @@ function loop(now) {
   if (now - uiT > 200) { uiT = now; guarded(() => { updateHUD(); refreshShopState(); renderAbilities(); renderSelPanel(); updateHoverTooltip(); }); }
   if (S.showTips && now - tipT > 45000 && G.wave > 1) { tipT = now; toast('Tip: ' + pick(tipList()), '#9fd3ff'); }
 }
+migrateSaves();
 showMenu('main');
 requestAnimationFrame(loop);
 </script>
