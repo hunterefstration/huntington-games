@@ -83,8 +83,8 @@ b{font-weight:700}
 .phead.wide{flex:1;width:auto;border-right:0;padding-right:0}
 .ph1{display:flex;gap:7px;align-items:center;min-width:0}
 .pic{width:36px;height:36px;border-radius:8px;background:#0d1620 center/contain no-repeat;border:1px solid #3a4f66;flex:none}
-.pt{font-weight:800;font-size:14.5px;line-height:1.15;min-width:0}
-.pt small{display:block;font-weight:600;color:var(--dim);font-size:12px;margin-top:1px}
+.pt{font-weight:800;font-size:14.5px;line-height:1.15;min-width:0;overflow:hidden}
+.pt small{display:block;font-weight:600;color:var(--dim);font-size:12px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pm{font-size:12px;color:var(--dim);line-height:1.2;max-height:30px;overflow:hidden}
 .pm b{color:var(--gold2)}
 .hpbar{height:7px;width:100%;background:#000a;border-radius:5px;overflow:hidden;border:1px solid #ffffff22;flex:none}
@@ -120,6 +120,8 @@ b{font-weight:700}
 .card.lock .cc{color:#c4d0dd}
 .card.go{border-color:var(--gold);background:linear-gradient(180deg,#6b4d12,#3d2a08)}
 .card.on{border-color:var(--gold);box-shadow:0 0 10px #f6c04e88}
+.card.stk{position:sticky;right:0;z-index:3;box-shadow:-12px 0 12px -8px rgba(0,0,0,.85)}
+.cards.compact .card.stk{grid-row:1/span 2}
 .card .pg{position:absolute;left:0;bottom:0;height:4px;background:var(--gold)}
 .card.c2 .hk{display:none}
 .card.c2{width:172px;flex-direction:row;align-items:center;gap:6px;padding:3px 6px}
@@ -140,8 +142,8 @@ b{font-weight:700}
 .qb .bd{position:absolute;right:3px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
 /* popovers */
 .pop{position:absolute;z-index:9;background:var(--panel);border:1px solid var(--gold);border-radius:var(--r);padding:10px;box-shadow:0 8px 30px #000a}
-#sup{right:8px;bottom:130px;display:flex;gap:8px;max-width:calc(100vw - 16px);overflow-x:auto}
-#sup .card{width:150px;min-height:96px}
+#sup{right:8px;bottom:130px;display:grid;grid-template-columns:repeat(4,150px);gap:8px;max-width:calc(100vw - 16px);max-height:calc(100vh - 200px);overflow:auto}
+#sup .card{width:auto;min-height:92px}
 #sup .card .cd{max-height:none}
 #specp{left:50%;transform:translateX(-50%);bottom:132px;width:min(720px,98vw)}
 .spgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
@@ -209,7 +211,7 @@ input[type=text]{user-select:text;-webkit-user-select:text}
 .kv{display:grid;grid-template-columns:auto auto;gap:4px 24px;font-size:14px}
 .kv b{text-align:right;color:var(--gold2)}
 kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border-radius:5px;background:#1b2a3c;border:1px solid #46617c;border-bottom-width:2px;font:700 12px system-ui,sans-serif;color:#fff}
-.tech{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;margin-top:10px}
+.tech{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;margin-top:10px}
 .tcol h5{margin:0 0 6px;color:var(--gold2);font-size:14px;letter-spacing:.08em;text-transform:uppercase}
 .tcard{position:relative;border:1px solid #3f5b78;border-radius:10px;background:#12202f;padding:8px 9px;margin-bottom:7px;font-size:12.5px;line-height:1.3;cursor:pointer;color:#cfdbe8}
 .tcard b{display:block;font-size:14px;color:#fff;margin-bottom:2px}
@@ -284,7 +286,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
  .card.c2{width:140px}
  #fps{bottom:auto;top:90px}
  #chatbox,#chatin{bottom:200px}
- #sup{bottom:176px}
+ #sup{bottom:176px;left:8px;right:8px;grid-template-columns:repeat(2,minmax(0,1fr));max-height:calc(100vh - 270px)}
  #specp{bottom:176px}
  .toast{bottom:200px}
  .tech{grid-template-columns:repeat(2,1fr)}
@@ -308,7 +310,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
  .card.c2{width:140px}
  #quick{grid-template-columns:repeat(3,56px);gap:3px}.qb{font-size:10px}.qb .ic{width:17px;height:17px}
  #camctl{bottom:auto;top:84px;flex-direction:row}#camctl .tbtn{width:38px;min-height:38px}
- #fps{bottom:100px}#chatbox,#chatin{bottom:100px}#sup{bottom:98px}#specp{bottom:98px}.toast{bottom:104px}
+ #fps{bottom:100px}#chatbox,#chatin{bottom:100px}#sup{bottom:98px;max-height:calc(100vh - 106px);grid-template-columns:repeat(4,minmax(0,1fr));left:8px}#sup .card{min-height:60px}#specp{bottom:98px}.toast{bottom:104px}
  #tut .tcard{top:80px;padding:8px 10px;width:min(300px,50vw)}#tut h3{font-size:16px}#tut p{font-size:13px;margin-bottom:5px}
 }
 @media (max-width:700px) and (min-height:521px){
@@ -356,10 +358,10 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <script type="module">
 import * as THREE from 'three';
 // =====================================================================
-//  FRONTLINE: COMMAND 2.0  -  single file RTS for Huntington Games
-//  Real-world armies, 1900s to modern. Capture flags, hold more than the enemy.
+//  FRONTLINE: COMMAND 2.1  -  single file RTS for Huntington Games
+//  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.0';
+const VERSION = '2.1';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -394,47 +396,56 @@ const VETDMG = [1, 1.1, 1.2, 1.32], VETHP = [1, 1.1, 1.22, 1.38];
 const VETNAME = ['Recruit', 'Veteran', 'Elite', 'Hero'];
 function Wp(wt, dmg, cd, rng, o) { return Object.assign({ wt, dmg, cd, rng, minr: 0, spl: 0, ps: 0, arc: 0, shots: 1, scat: 0, g: WTD[wt], k: WKIND[wt] }, o || {}); }
 
-// ---------------- units (real-world, 1900s to modern) ----------------
+// ---------------- units (1900s to the far future) ----------------
 const UT = {};
 function defU(id, o) { o.id = id; o.src = o.src || []; o.r = o.r || 1; o.vis = o.vis || 26; o.air = o.cls === 3; o.cap = o.cap !== false && !o.air; UT[id] = o; return o; }
 // d = one-line card text, info = longer text for the Field Guide
 defU('rifleman', { n: 'Rifleman', role: 'Soldier', cls: 0, pop: 1, cost: 50, bt: 7, hp: 70, spd: 6, vis: 26, r: .9, w: Wp('bullet', 8, .75, 17), src: [['barracks', 1], ['hq', 1]], d: 'Cheap. Good vs soldiers.', info: 'A cheap all-rounder. Good against soldiers, weak against tanks.' });
 defU('rocket', { n: 'Bazooka Team', role: 'Anti-tank', cls: 0, pop: 1, cost: 90, bt: 10, hp: 65, spd: 5.5, vis: 26, r: .9, w: Wp('rocket', 55, 2.6, 22, { ps: 38 }), src: [['barracks', 1]], d: 'Great vs tanks. Cannot hit planes.', info: 'Shoulder-fired rockets destroy vehicles and buildings. Cannot hit aircraft.' });
 defU('engineer', { n: 'Engineer', role: 'Builder', cls: 0, pop: 1, cost: 70, bt: 9, hp: 60, spd: 5.5, vis: 24, r: .9, w: Wp('bullet', 4, 1, 10), eng: 1, src: [['barracks', 1], ['hq', 1]], d: 'Builds fast, repairs, captures flags.', info: 'Repairs vehicles and buildings, speeds up construction, captures flags faster and can build a Sandbag Nest.' });
+defU('scout', { n: 'Scout', role: 'Runner', cls: 0, pop: 1, cost: 40, bt: 5, hp: 40, spd: 9.5, vis: 44, r: .8, w: Wp('bullet', 4, .8, 14), src: [['barracks', 2]], d: 'Very fast. Grabs flags, sees far.', info: 'A cheap, very fast runner that sees far. Great for grabbing empty flags and spotting the enemy, but it is not much of a fighter.' });
 defU('heavy', { n: 'Machine Gunner', role: 'Heavy infantry', cls: 0, pop: 1, cost: 110, bt: 12, hp: 150, spd: 4.8, vis: 26, r: 1, w: Wp('bullet', 6, .2, 18), src: [['barracks', 2]], d: 'Shreds soldiers and low planes.', info: 'Tough soldier with a belt-fed machine gun. Melts soldiers and shoots at low aircraft.' });
 defU('sniper', { n: 'Sniper', role: 'Marksman', cls: 0, pop: 1, cost: 130, bt: 13, hp: 50, spd: 5, vis: 44, r: .9, w: Wp('snipe', 72, 3.2, 42), sf: 1, src: [['barracks', 2]], d: 'Long range. Picks off soldiers.', info: 'Kills soldiers from far away in 1-2 shots. Useless against vehicles. Must stand still to fire.' });
 defU('mortar', { n: 'Mortar Team', role: 'Light artillery', cls: 0, pop: 1, cost: 100, bt: 11, hp: 70, spd: 5.2, vis: 30, r: .9, w: Wp('shell', 40, 3.2, 54, { minr: 12, spl: 4.5, ps: 24, arc: 1 }), sf: 1, src: [['barracks', 2]], d: 'Lobs shells at groups of soldiers.', info: 'Drops shells on groups from a distance. Cannot hit targets that are very close. Stands still to fire.' });
-defU('medic', { n: 'Medic', role: 'Healer', cls: 0, pop: 1, cost: 80, bt: 9, hp: 55, spd: 6, vis: 24, r: .9, heal: 16, src: [['barracks', 2]], d: 'Heals nearby soldiers.', info: 'Heals wounded soldiers nearby automatically.' });
+defU('grenadier', { n: 'Grenadier', role: 'Grenade thrower', cls: 0, pop: 1, cost: 100, bt: 11, hp: 85, spd: 5.2, vis: 26, r: .9, w: Wp('shell', 42, 2.3, 22, { spl: 4.5, ps: 22, arc: 1 }), src: [['barracks', 3]], d: 'Tosses grenades at groups.', info: 'Lobs grenades that hurt groups of soldiers and buildings. Short range, but it keeps moving while it fights.' });
+defU('commando', { n: 'Commando', role: 'Elite soldier', cls: 0, pop: 2, cost: 240, bt: 16, hp: 175, spd: 7.5, vis: 30, r: 1, w: Wp('comm', 14, .55, 20), src: [['barracks', 3, 'elite']], d: 'Elite fighter. Wrecks buildings.', info: 'A tough, fast elite soldier with demolition charges. Strong against everything on the ground and brilliant against buildings. Needs the Veteran Training upgrade on a Level 3 Barracks.' });
+defU('medic', { n: 'Medic', role: 'Healer', cls: 0, pop: 1, cost: 80, bt: 9, hp: 55, spd: 6, vis: 24, r: .9, heal: 16, src: [['barracks', 2], ['medical', 1]], d: 'Heals nearby soldiers.', info: 'Heals wounded soldiers nearby automatically.' });
+defU('merc', { n: 'Mercenary', role: 'Hired gun', cls: 0, pop: 0, cost: 0, bt: 0, hp: 125, spd: 6.5, vis: 28, r: 1, w: Wp('bullet', 11, .55, 20), nobuild: 1, d: 'Hired soldier. Leaves after 2 minutes.', info: 'A hired veteran with a rifle. Arrives by parachute with the Hire Mercenaries power, takes no army space and leaves when the contract ends.' });
 defU('jeep', { n: 'Scout Car', role: 'Fast scout', cls: 1, pop: 2, cost: 100, bt: 9, hp: 140, spd: 12, vis: 34, r: 1.5, w: Wp('bullet', 5, .25, 17), src: [['factory', 1]], d: 'Very fast. Great for taking flags.', info: 'A fast, light car with a machine gun. Excellent at grabbing flags and chasing down weak units.' });
 defU('apc', { n: 'APC', role: 'Armored carrier', cls: 1, pop: 3, cost: 170, bt: 12, hp: 480, spd: 8.5, vis: 28, r: 1.7, tur: 1, w: Wp('bullet', 7, .2, 19), src: [['factory', 1]], d: 'Tough. Great vs soldiers.', info: 'An armored troop carrier with a roof-mounted machine gun. Tough and strong against soldiers, weak against bazookas.' });
 defU('lighttank', { n: 'Light Tank', role: 'Tank', cls: 1, pop: 3, cost: 220, bt: 15, hp: 400, spd: 8, vis: 28, r: 1.8, tur: 1, w: Wp('cannon', 36, 1.5, 25, { ps: 60 }), src: [['factory', 2]], d: 'Fast. Good vs cars and tanks.', info: 'A mobile cannon platform. Good against vehicles and buildings.' });
 defU('tank', { n: 'Main Battle Tank', role: 'Heavy tank', cls: 2, pop: 4, cost: 400, bt: 22, hp: 800, spd: 6.5, vis: 28, r: 2.1, tur: 1, w: Wp('cannon', 85, 2.2, 29, { ps: 70 }), src: [['factory', 3]], d: 'Strongest tank. Weak vs bazookas.', info: 'Very hard to kill and hits hard. Beats most things, but bazooka teams and groups of soldiers can bring it down.' });
 defU('artillery', { n: 'Self-Propelled Gun', role: 'Artillery', cls: 1, pop: 3, cost: 270, bt: 18, hp: 230, spd: 5, vis: 26, r: 1.9, tur: 1, w: Wp('shell', 78, 4.5, 72, { minr: 24, spl: 7, ps: 30, arc: 1 }), sf: 1, src: [['factory', 2]], d: 'Huge range. Hits groups.', info: 'Long-range shells with a big blast. Needs something to see the target and cannot hit enemies up close.' });
 defU('aa', { n: 'Anti-Air Gun', role: 'Anti-aircraft', cls: 1, pop: 2, cost: 200, bt: 14, hp: 270, spd: 8, vis: 30, r: 1.7, tur: 1, w: Wp('flak', 8, .2, 34, { ps: 0 }), src: [['factory', 2]], d: 'Shoots down planes and helicopters.', info: 'Rapid-fire flak guns. Deadly against aircraft and almost useless against ground targets.' });
+defU('mlrs', { n: 'Rocket Battery', role: 'Rocket artillery', cls: 1, pop: 4, cost: 380, bt: 22, hp: 300, spd: 6, vis: 26, r: 1.9, tur: 1, w: Wp('shell', 26, 9, 90, { minr: 30, spl: 5, ps: 34, arc: 1, shots: 8, scat: 6 }), sf: 1, src: [['factory', 3, 'artillery']], d: 'Fires a huge rocket volley.', info: 'Launches eight rockets at once over a huge range. Great against groups and buildings. Needs something to see the target and cannot hit enemies up close. Needs the Long-Range Guns upgrade on a Level 3 Motor Pool.' });
+defU('titan', { n: 'Titan', role: 'Walking mech', cls: 2, pop: 6, cost: 700, bt: 32, hp: 1700, spd: 5, vis: 30, r: 2.5, tur: 1, walker: 1, w: Wp('cannon', 135, 2.6, 30, { ps: 70 }), w2: Wp('bullet', 7, .2, 22), src: [['factory', 3, 'heavy']], d: 'Giant walking mech. Super tough.', info: 'A giant walking war machine with a heavy cannon and a machine gun. It takes a huge beating, but bazooka teams, gunships and air power can bring it down. Needs the Extra Armor upgrade on a Level 3 Motor Pool.' });
 defU('drone', { n: 'Recon Drone', role: 'Flying scout', cls: 3, pop: 1, cost: 90, bt: 7, hp: 55, spd: 15, vis: 46, r: 1, alt: 9, w: Wp('bullet', 4, .3, 16), src: [['airfield', 1]], d: 'Cheap flying scout.', info: 'A small flying scout with a light gun. Sees very far.' });
 defU('strike', { n: 'Attack Drone', role: 'One-shot flyer', cls: 3, pop: 1, cost: 60, bt: 6, hp: 35, spd: 20, vis: 30, r: 1, alt: 8, kami: 1, w: Wp('bomb', 100, 0, 2.2, { spl: 5.5 }), src: [['airfield', 1]], d: 'Crashes into a target. One use.', info: 'An explosive drone that dives into its target and blows up.' });
 defU('heli', { n: 'Attack Helicopter', role: 'Gunship', cls: 3, pop: 3, cost: 320, bt: 18, hp: 380, spd: 12, vis: 34, r: 1.8, alt: 10, rotor: 1, w: Wp('rocket', 58, 2.4, 30, { ps: 50 }), w2: Wp('bullet', 6, .22, 24), src: [['airfield', 2]], d: 'Fast. Rockets hurt tanks.', info: 'A fast helicopter with anti-tank rockets and a chain gun. Vulnerable to Anti-Air Guns.' });
+defU('gunship', { n: 'Gunship', role: 'Heavy flyer', cls: 3, pop: 5, cost: 650, bt: 28, hp: 950, spd: 9, vis: 34, r: 2.4, alt: 11, rotor: 1, w: Wp('cannon', 52, .7, 32, { ps: 70 }), w2: Wp('rocket', 38, 1.3, 28, { ps: 48 }), src: [['airfield', 3, 'gunship']], d: 'Armored flyer. Cannon and rockets.', info: 'A flying fortress with an autocannon and rockets. Very tough and strong against ground targets. Cannot hit aircraft, and Anti-Air Guns hurt it. Needs the Combat Pilots upgrade on a Level 3 Airfield.' });
+defU('interceptor', { n: 'Sky Hunter', role: 'Air fighter', cls: 3, pop: 3, cost: 300, bt: 16, hp: 300, spd: 17, vis: 36, r: 1.6, alt: 12, rotor: 1, w: Wp('aam', 60, 1, 38, { ps: 70 }), src: [['airfield', 3, 'superiority']], d: 'Fast jet. Only hits aircraft.', info: 'A very fast jet fighter with air-to-air missiles. It only attacks aircraft, so keep it away from the ground fight. Needs the Better Engines upgrade on a Level 3 Airfield.' });
+
 
 // ---------------- buildings ----------------
 const BT = {};
 function defB(id, o) { o.id = id; BT[id] = o; return o; }
 const SPEC_COST = 250, SPEC_TIME = 16;
 // hq1 = HQ level needed before you can build it
-defB('hq', { n: 'Headquarters', sz: 8, hp: [7000, 9000, 11500], cost: [0, 260, 480], bt: [0, 35, 50], d: 'Your base. Lose it and you lose.', info: 'Your base. Trains basic soldiers. If it is destroyed you lose. Upgrading raises income and unlocks new buildings, Upgrades and Support powers.', up: ['More money. Unlocks new stuff.', 'Even more money. More Support powers.'], upl: ['More money. Unlocks the Airfield, Artillery Battery, Upgrades and the first Support powers.', 'Even more money. Unlocks the strongest Support powers.'], specs: [
+defB('hq', { n: 'Headquarters', sz: 8, hp: [7000, 9000, 11500], cost: [0, 260, 480], bt: [0, 35, 50], d: 'Your base. Lose it and you lose.', info: 'Your base. Trains basic soldiers. If it is destroyed you lose. Upgrading raises income and unlocks new buildings, Upgrades and Support powers.', up: ['More money. Unlocks new stuff.', 'Even more money. More Support powers.'], upl: ['More money. Unlocks the Airfield, Artillery Battery, Medical Tent, Radar, Upgrades and the first Support powers.', 'Even more money. Unlocks Fortified Walls and the strongest Support powers.'], specs: [
   { id: 'fortress', n: 'Hardened HQ', d: 'Much tougher, plus a machine gun to defend your base.' },
   { id: 'logi', n: 'Supply Lines', d: '+25% money and every unit costs 8% less.' },
   { id: 'warroom', n: 'Staff Officers', d: 'Support powers recharge faster. Units rank up faster.' }] });
-defB('barracks', { n: 'Barracks', sz: 5.5, hp: [700, 950, 1250], cost: [160, 130, 210], bt: [14, 16, 20], hq1: 1, d: 'Trains soldiers.', info: 'Trains soldiers. Level 2 unlocks Machine Gunner, Sniper, Mortar and Medic.', up: ['Unlocks 4 new soldiers.', 'Pick 1 of 3 upgrades.'], upl: ['Unlocks Machine Gunner, Sniper, Mortar Team and Medic.', 'Stronger building. Pick 1 of 3 upgrades.'], specs: [
-  { id: 'elite', n: 'Veteran Training', d: 'New soldiers start as Veterans (stronger).' },
+defB('barracks', { n: 'Barracks', sz: 5.5, hp: [700, 950, 1250], cost: [160, 130, 210], bt: [14, 16, 20], hq1: 1, d: 'Trains soldiers.', info: 'Trains soldiers. Level 2 unlocks Machine Gunner, Sniper, Mortar, Scout and Medic. Level 3 unlocks the Grenadier. The Veteran Training upgrade also unlocks the Commando.', up: ['Unlocks 5 new soldiers.', 'Unlocks the Grenadier. Pick 1 of 3 upgrades.'], upl: ['Unlocks Machine Gunner, Sniper, Mortar Team, Scout and Medic.', 'Stronger building. Unlocks the Grenadier. Then pick 1 of 3 upgrades.'], specs: [
+  { id: 'elite', n: 'Veteran Training', d: 'New soldiers start as Veterans (stronger). Also unlocks the Commando.' },
   { id: 'conscript', n: 'Mass Recruiting', d: 'Trains 40% faster. Soldiers cost 15% less.' },
   { id: 'shock', n: 'Assault Training', d: 'New soldiers get +20% health, +10% speed, +10% damage.' }] });
-defB('factory', { n: 'Motor Pool', sz: 6.5, hp: [900, 1250, 1650], cost: [260, 200, 300], bt: [18, 20, 24], hq1: 1, d: 'Builds cars and tanks.', info: 'Builds vehicles. Level 2: Light Tank, Self-Propelled Gun, Anti-Air Gun. Level 3: Main Battle Tank.', up: ['Unlocks 3 new vehicles.', 'Unlocks the Main Battle Tank.'], upl: ['Unlocks Light Tank, Self-Propelled Gun and Anti-Air Gun.', 'Unlocks the Main Battle Tank. Then pick 1 of 3 upgrades.'], specs: [
-  { id: 'heavy', n: 'Extra Armor', d: 'Vehicles built here have +25% health.' },
+defB('factory', { n: 'Motor Pool', sz: 6.5, hp: [900, 1250, 1650], cost: [260, 200, 300], bt: [18, 20, 24], hq1: 1, d: 'Builds cars and tanks.', info: 'Builds vehicles. Level 2: Light Tank, Self-Propelled Gun, Anti-Air Gun. Level 3: Main Battle Tank. Its upgrades unlock the giant Titan mech or the Rocket Battery.', up: ['Unlocks 3 new vehicles.', 'Unlocks the Main Battle Tank.'], upl: ['Unlocks Light Tank, Self-Propelled Gun and Anti-Air Gun.', 'Unlocks the Main Battle Tank. Then pick 1 of 3 upgrades.'], specs: [
+  { id: 'heavy', n: 'Extra Armor', d: 'Vehicles built here have +15% health. Also unlocks the Titan mech.' },
   { id: 'rapid', n: 'Assembly Line', d: 'Builds 50% faster. Vehicles cost 15% less.' },
-  { id: 'artillery', n: 'Long-Range Guns', d: 'Self-Propelled Guns built here shoot 20% farther.' }] });
-defB('airfield', { n: 'Airfield', sz: 7, hp: [800, 1100, 1450], cost: [300, 220, 320], bt: [18, 20, 24], hq1: 2, d: 'Builds drones and helicopters.', info: 'Builds drones and helicopters. Level 2 unlocks the Attack Helicopter.', up: ['Unlocks the Attack Helicopter.', 'Pick 1 of 3 upgrades.'], upl: ['Unlocks the Attack Helicopter.', 'Stronger building. Pick 1 of 3 upgrades.'], specs: [
-  { id: 'gunship', n: 'Combat Pilots', d: 'All your aircraft deal +15% damage.' },
-  { id: 'superiority', n: 'Better Engines', d: 'All your aircraft fly 15% faster.' },
+  { id: 'artillery', n: 'Long-Range Guns', d: 'Self-Propelled Guns shoot 20% farther. Also unlocks the Rocket Battery.' }] });
+defB('airfield', { n: 'Airfield', sz: 7, hp: [800, 1100, 1450], cost: [300, 220, 320], bt: [18, 20, 24], hq1: 2, d: 'Builds drones and helicopters.', info: 'Builds drones and helicopters. Level 2 unlocks the Attack Helicopter. Its upgrades unlock the Gunship or the Sky Hunter jet.', up: ['Unlocks the Attack Helicopter.', 'Pick 1 of 3 upgrades.'], upl: ['Unlocks the Attack Helicopter.', 'Stronger building. Pick 1 of 3 upgrades.'], specs: [
+  { id: 'gunship', n: 'Combat Pilots', d: 'All your aircraft deal +15% damage. Also unlocks the Gunship.' },
+  { id: 'superiority', n: 'Better Engines', d: 'All your aircraft fly 15% faster. Also unlocks the Sky Hunter jet.' },
   { id: 'swarm', n: 'Drone Factory', d: 'Drones cost 40% less. Attack Drones come in pairs.' }] });
 defB('depot', { n: 'Supply Depot', sz: 4.5, hp: [500, 700, 950], cost: [120, 100, 150], bt: [10, 12, 14], hq1: 1, d: 'Makes extra money.', info: 'Generates extra money every second.', inc: [2.5, 4.5, 7], up: ['Makes more money.', 'Even more money.'], upl: ['Makes more money.', 'Makes even more money. Then pick 1 of 3 upgrades.'], specs: [
   { id: 'trade', n: 'Trade Post', d: '+60% money from this depot.' },
@@ -444,17 +455,28 @@ defB('turret', { n: 'MG Bunker', sz: 3.6, hp: [520, 800, 1100], cost: [140, 110,
   { id: 'twin', n: 'Twin Machine Guns', d: 'Almost twice the fire rate. Great vs soldiers.' },
   { id: 'at', n: 'Anti-Tank Gun', d: 'Long-range cannon that kills vehicles.' },
   { id: 'flak', n: 'Anti-Aircraft Gun', d: 'Flak cannon that shoots down aircraft.' }] });
+defB('medical', { n: 'Medical Tent', sz: 5, hp: [450, 650, 850], cost: [130, 100, 160], bt: [11, 12, 14], hq1: 2, d: 'Heals soldiers nearby.', info: 'Trains Medics and slowly heals friendly soldiers around it. Healing grows with each level.', up: ['Heals faster.', 'Heals fastest. Pick an upgrade.'], specs: [
+  { id: 'triage', n: 'Triage Ward', d: 'Double healing. Nearby soldiers take 15% less damage.' },
+  { id: 'stim', n: 'Stim Lab', d: 'Nearby soldiers shoot 20% faster and run 10% faster.' },
+  { id: 'motor', n: 'Repair Bay', d: 'Also repairs vehicles and aircraft nearby.' }] });
 defB('arty', { n: 'Artillery Battery', sz: 4.5, hp: [520, 760, 1000], cost: [260, 200, 260], bt: [16, 18, 20], hq1: 2, d: 'Shells enemies from far away.', info: 'Long-range guns. They need a unit or building nearby to see the target.', up: ['Stronger guns, more health.', 'Strongest. Pick an upgrade.'], specs: [
   { id: 'howitzer', n: 'Heavy Howitzer', d: 'Bigger shells and longer range, slower reload.' },
   { id: 'salvo', n: 'Rocket Barrage', d: 'Fires four rockets at once.' },
   { id: 'shock', n: 'Smoke Shells', d: 'Shells slow enemy units for a few seconds.' }] });
-defB('wall', { n: 'Trench Line', sz: 0, hp: [900, 1800, 3200], cost: [120, 150, 200], bt: [10, 12, 14], d: 'Unused.', red: [.15, .25, .35], specs: [] });
+defB('radar', { n: 'Radar Station', sz: 4.5, hp: [400, 600, 800], cost: [180, 140, 220], bt: [13, 14, 16], hq1: 2, d: 'Sees far. Unlocks the Cruise Missile.', info: 'A radar dish that shows a wide area (most useful with Fog of war on). A Level 3 Radar Station unlocks the Cruise Missile Support power.', vis: [55, 80, 110], up: ['Sees farther.', 'Sees farthest. Unlocks the Cruise Missile. Pick an upgrade.'], specs: [
+  { id: 'scan', n: 'Deep Scan', d: 'Radar sees 60% farther.' },
+  { id: 'jammer', n: 'Jammer Field', d: 'Enemies within range shoot 20% weaker.' },
+  { id: 'aircon', n: 'Air Control', d: 'Recon and Airstrike recharge 40% faster. Airstrikes drop 50% more bombs.' }] });
+defB('wall', { n: 'Fortified Walls', sz: 0, hp: [900, 1800, 3200], cost: [120, 150, 200], bt: [10, 12, 14], hq1: 3, d: 'Rings a flag with walls.', info: 'A ring of walls with four gates around a flag. Your troops inside take less ranged damage, and enemies have to go through the gates. Click the wall ring to level it up.', red: [.15, .25, .35], up: ['Taller, stronger walls.', 'Strongest walls. Pick an upgrade.'], specs: [
+  { id: 'bulwark', n: 'Bulwark', d: 'Walls have 80% more health. Your troops inside take 10% less damage.' },
+  { id: 'mines', n: 'Minefield', d: 'Hidden mines at the gates blast enemy ground units.' },
+  { id: 'wire', n: 'Razor Wire', d: 'Enemy soldiers near the walls are slowed and hurt.' }] });
 defB('nest', { n: 'Sandbag Nest', sz: 2.2, hp: [320, 320, 320], cost: [60, 0, 0], bt: [6, 0, 0], d: 'Engineer-built machine gun nest.', specs: [], free: 1 });
-const BUILDABLE = ['barracks', 'factory', 'depot', 'turret', 'arty', 'airfield'];
+const BUILDABLE = ['barracks', 'factory', 'depot', 'turret', 'medical', 'airfield', 'arty', 'radar', 'wall'];
 
 // ---------------- upgrades (global research) ----------------
 const TBR = [
-  { id: 'wpn', n: 'Weapons' }, { id: 'arm', n: 'Armor' }, { id: 'eco', n: 'Money' }, { id: 'mob', n: 'Speed' }];
+  { id: 'wpn', n: 'Weapons' }, { id: 'arm', n: 'Armor' }, { id: 'eco', n: 'Money' }, { id: 'mob', n: 'Speed' }, { id: 'opt', n: 'Vision', adv: 1 }, { id: 'cmd', n: 'Command', adv: 1 }];
 const TECH = [];
 function defT(id, br, tier, n, d, mod) { TECH.push({ id, br, tier, n, d, mod, cost: [150, 260, 420][tier - 1], time: [22, 32, 46][tier - 1] }); }
 defT('w1', 'wpn', 1, 'Better Rifles', 'Bullets do 10% more damage.', { dmgBul: .10 });
@@ -469,24 +491,38 @@ defT('e3', 'eco', 3, 'War Economy', 'Earn 15% more money and raise the army limi
 defT('m1', 'mob', 1, 'Forced March', 'Soldiers walk 10% faster.', { spdInf: .10 });
 defT('m2', 'mob', 2, 'Better Engines', 'Vehicles drive 10% faster. Buildings train 10% faster.', { spdVeh: .10, prod: .10 });
 defT('m3', 'mob', 3, 'Rapid Deployment', 'Buildings train 15% faster. Aircraft fly 10% faster.', { prod: .15, spdAir: .10 });
+defT('o1', 'opt', 1, 'Binoculars', 'Your units see 15% farther.', { vis: .15 });
+defT('o2', 'opt', 2, 'Targeting Computers', 'All weapons reach 8% farther.', { rng: .08 });
+defT('o3', 'opt', 3, 'Fire Control', 'Weapons are more accurate and do 10% more damage to buildings.', { acc: .15, bldDmg: .10 });
+defT('c1', 'cmd', 1, 'Drill Instructors', 'Troops rank up 30% faster.', { xp: .30 });
+defT('c2', 'cmd', 2, 'Field Hospitals', 'Medics heal 30% faster. Support powers recharge 15% faster.', { heal: .30, callCd: -.15 });
+defT('c3', 'cmd', 3, 'Supreme Command', 'Support powers recharge 15% faster and cost 20% less.', { callCd: -.15, callCost: -.20 });
 const TECHBY = {}; TECH.forEach(t => TECHBY[t.id] = t);
 
 // ---------------- support powers ----------------
 const CALL = {
-  air: { n: 'Airstrike', cost: 220, cd: 70, req: ['hq', 2], rad: 22, key: 'F1', col: '#ff8a5a', ic: 'A', d: 'Bombers hit a long strip of ground. Great vs groups and buildings.' },
-  supply: { n: 'Supply Drop', cost: 150, cd: 60, req: ['hq', 2], rad: 28, key: 'F2', col: '#8ff0c0', ic: 'S', d: 'Crates land and heal your troops in the area.' },
-  barrage: { n: 'Artillery Barrage', cost: 280, cd: 90, req: ['hq', 3], rad: 24, key: 'F3', col: '#ff5a5a', ic: 'B', d: 'Heavy shells rain down on an area for six seconds.' },
-  para: { n: 'Paratroopers', cost: 180, cd: 60, req: ['hq', 3], rad: 14, key: 'F4', col: '#7be08a', ic: 'P', d: 'Drops 5 riflemen and a medic anywhere you can see.' }
+  recon: { n: 'Recon Flyover', cost: 80, cd: 40, req: ['hq', 2], rad: 44, col: '#5ad1ff', ic: 'R', fogOnly: 1, d: 'A jet sweeps the area and shows everything there for 22 seconds. Only needed when Fog of war is on.' },
+  air: { n: 'Airstrike', cost: 220, cd: 70, req: ['hq', 2], rad: 22, col: '#ff8a5a', ic: 'A', d: 'Bombers hit a long strip of ground. Great vs groups and buildings.' },
+  supply: { n: 'Supply Drop', cost: 150, cd: 60, req: ['hq', 2], rad: 28, col: '#8ff0c0', ic: 'S', d: 'Crates land and heal your troops in the area.' },
+  merc: { n: 'Hire Mercenaries', cost: 250, cd: 75, req: ['hq', 2], rad: 12, col: '#ffcf5a', ic: 'M', d: 'Four hired soldiers parachute in. They leave after 2 minutes and take no army space.' },
+  para: { n: 'Paratroopers', cost: 180, cd: 60, req: ['hq', 3], rad: 14, col: '#7be08a', ic: 'P', d: 'Drops 5 riflemen and a medic anywhere you can see.' },
+  barrage: { n: 'Artillery Barrage', cost: 280, cd: 90, req: ['hq', 3], rad: 24, col: '#ff5a5a', ic: 'B', d: 'Heavy shells rain down on an area for six seconds.' },
+  armor: { n: 'Armor Drop', cost: 520, cd: 120, req: ['hq', 3], rad: 14, col: '#c9d0ff', ic: 'T', d: 'Two Main Battle Tanks are dropped in anywhere you can see.' },
+  cruise: { n: 'Cruise Missile', cost: 700, cd: 240, req: ['radar', 3], rad: 22, col: '#ff3b3b', ic: 'X', d: 'A huge guided missile wipes out everything in a wide area. Needs a Level 3 Radar Station.' }
 };
-const CALLORDER = ['air', 'supply', 'barrage', 'para'];
+const CALLORDER = ['recon', 'air', 'supply', 'merc', 'para', 'barrage', 'armor', 'cruise'];
+const CALLKEYS = ['F1', 'F2', 'F3', 'F4', 'F6', 'F7', 'F8', 'F9'];
+CALLORDER.forEach((id, i) => { CALL[id].key = CALLKEYS[i]; });
+const FKEYS = {}; CALLORDER.forEach(id => { FKEYS[CALL[id].key.toLowerCase()] = id; });
+const callReqText = C => C.req[0] === 'hq' ? 'HQ Lv ' + C.req[1] : BT[C.req[0]].n.replace(' Station', '') + ' Lv ' + C.req[1];
 
 // ---------------- AI personalities ----------------
 const AIP = {
-  vex: { id: 'vex', name: 'Col. Vex', title: 'Rusher', desc: 'Attacks early with lots of cheap soldiers and cars.', aggr: 1.5, expand: 1.2, eco: .8, tech: .5, army: 5, uw: { rifleman: 3, rocket: 1, jeep: 2, apc: 1.2, heavy: 1.2, mortar: .5, lighttank: 1, sniper: .3, medic: .5 }, bld: ['barracks', 'barracks', 'depot', 'factory', 'barracks', 'turret', 'depot', 'airfield'], spec: { barracks: ['conscript', 'shock', 'elite'], factory: ['rapid'], depot: ['trade'], hq: ['warroom'], turret: ['twin'] }, tech: ['w1', 'm1', 'a1', 'w2', 'm2', 'e1'], calls: ['para', 'air', 'barrage'] },
-  stone: { id: 'stone', name: 'Gen. Stone', title: 'Defender', desc: 'Digs in with bunkers and artillery, then rolls out with tanks.', aggr: .55, expand: .9, eco: 1.1, tech: 1.1, army: 11, uw: { rifleman: 1.2, rocket: 1.5, tank: 2.5, lighttank: 1.5, artillery: 2, aa: 1, heavy: 1.2, engineer: .8, medic: .6, apc: .8, sniper: .8, mortar: 1 }, bld: ['depot', 'barracks', 'turret', 'factory', 'arty', 'turret', 'depot', 'factory', 'airfield'], spec: { factory: ['artillery', 'heavy'], turret: ['at', 'flak', 'twin'], arty: ['howitzer'], hq: ['fortress'], depot: ['logistics', 'trade'] }, tech: ['a1', 'e1', 'w2', 'a2', 'w1', 'e2', 'a3', 'w3'], calls: ['barrage', 'supply', 'air'] },
-  hale: { id: 'hale', name: 'Maj. Hale', title: 'All-rounder', desc: 'Balanced commander who counters what you build.', aggr: 1, expand: 1.1, eco: 1, tech: 1, army: 8, uw: { rifleman: 1.5, rocket: 1.4, heavy: 1, sniper: .8, lighttank: 1.3, tank: 1.5, artillery: .8, aa: .8, heli: 1.2, medic: .7, apc: .8, jeep: .7, mortar: .7, drone: .3 }, bld: ['barracks', 'depot', 'factory', 'depot', 'barracks', 'airfield', 'turret', 'factory', 'depot', 'arty'], spec: { barracks: ['elite', 'shock'], factory: ['heavy', 'rapid'], airfield: ['gunship'], depot: ['trade', 'logistics'], hq: ['logi'], turret: ['at'], arty: ['salvo'] }, tech: ['e1', 'w1', 'a1', 'w2', 'm2', 'e2', 'a2', 'w3'], calls: ['air', 'supply', 'para', 'barrage'] },
-  kruger: { id: 'kruger', name: 'Mshl. Kruger', title: 'Tank Commander', desc: 'Masses tanks behind a strong economy.', aggr: .9, expand: 1, eco: 1.2, tech: 1.2, army: 9, uw: { rifleman: .8, rocket: 1, lighttank: 2, tank: 3.5, apc: 1, artillery: 1, aa: .8, engineer: .6, jeep: .5 }, bld: ['depot', 'factory', 'barracks', 'factory', 'depot', 'factory', 'turret', 'arty', 'airfield'], spec: { factory: ['heavy', 'rapid', 'artillery'], depot: ['trade'], hq: ['logi'], turret: ['at'], barracks: ['conscript'] }, tech: ['e1', 'a2', 'w2', 'e2', 'm2', 'a3', 'w1', 'e3'], calls: ['barrage', 'supply', 'air'] },
-  voss: { id: 'voss', name: 'Adm. Voss', title: 'Air Commander', desc: 'Rules the skies with helicopters and drones.', aggr: 1, expand: 1, eco: 1, tech: 1.1, army: 7, uw: { rifleman: 1, rocket: .8, aa: .8, heli: 3.5, drone: 1.2, strike: 1.4, heavy: .6, medic: .5, jeep: .5 }, bld: ['depot', 'airfield', 'barracks', 'airfield', 'depot', 'factory', 'airfield', 'turret'], spec: { airfield: ['gunship', 'superiority', 'swarm'], depot: ['trade'], hq: ['warroom'], turret: ['flak'] }, tech: ['e1', 'm2', 'w1', 'm3', 'a3', 'w2', 'e2'], calls: ['air', 'supply', 'para'] }
+  vex: { id: 'vex', name: 'Col. Vex', title: 'Rusher', desc: 'Attacks early with lots of cheap soldiers, scouts and cars.', aggr: 1.5, expand: 1.2, eco: .8, tech: .5, army: 5, uw: { rifleman: 3, rocket: 1, scout: .6, jeep: 2, apc: 1.2, heavy: 1.2, mortar: .5, grenadier: .8, lighttank: 1, commando: 1.2, sniper: .3, medic: .5 }, bld: ['barracks', 'barracks', 'depot', 'factory', 'barracks', 'turret', 'depot', 'medical', 'airfield', 'radar'], spec: { barracks: ['conscript', 'shock', 'elite'], factory: ['rapid'], depot: ['trade'], hq: ['warroom'], medical: ['stim'], turret: ['twin'] }, tech: ['w1', 'm1', 'a1', 'w2', 'm2', 'e1'], calls: ['para', 'merc', 'air', 'barrage'] },
+  stone: { id: 'stone', name: 'Gen. Stone', title: 'Defender', desc: 'Digs in with bunkers, walls and artillery, then rolls out with tanks and giant mechs.', aggr: .55, expand: .9, eco: 1.1, tech: 1.1, army: 11, uw: { rifleman: 1.2, rocket: 1.5, tank: 2.5, lighttank: 1.5, artillery: 2, aa: 1, heavy: 1.2, engineer: .8, medic: .6, apc: .8, sniper: .8, mortar: 1, mlrs: 1.2, titan: 1.5 }, bld: ['depot', 'barracks', 'turret', 'factory', 'arty', 'turret', 'radar', 'depot', 'wall', 'factory', 'medical', 'airfield'], spec: { factory: ['artillery', 'heavy'], turret: ['at', 'flak', 'twin'], arty: ['howitzer'], hq: ['fortress'], radar: ['jammer'], wall: ['bulwark'], depot: ['logistics', 'trade'] }, tech: ['a1', 'e1', 'w2', 'a2', 'w1', 'e2', 'a3', 'w3'], calls: ['barrage', 'supply', 'merc', 'air', 'cruise'] },
+  hale: { id: 'hale', name: 'Maj. Hale', title: 'All-rounder', desc: 'Balanced commander who counters what you build.', aggr: 1, expand: 1.1, eco: 1, tech: 1, army: 8, uw: { rifleman: 1.5, rocket: 1.4, heavy: 1, sniper: .8, lighttank: 1.3, tank: 1.5, artillery: .8, aa: .8, heli: 1.2, medic: .7, apc: .8, jeep: .7, mortar: .7, drone: .3, scout: .5, grenadier: .7, gunship: .6 }, bld: ['barracks', 'depot', 'factory', 'depot', 'barracks', 'radar', 'airfield', 'medical', 'turret', 'factory', 'depot', 'arty'], spec: { barracks: ['elite', 'shock'], factory: ['heavy', 'rapid'], airfield: ['gunship'], depot: ['trade', 'logistics'], hq: ['logi'], medical: ['triage'], radar: ['aircon', 'scan'], turret: ['at'], arty: ['salvo'] }, tech: ['e1', 'w1', 'a1', 'o1', 'w2', 'm2', 'e2', 'a2', 'c1', 'w3'], calls: ['air', 'supply', 'merc', 'para', 'barrage', 'cruise', 'armor'] },
+  kruger: { id: 'kruger', name: 'Mshl. Kruger', title: 'Tank Commander', desc: 'Masses tanks and Titan mechs behind a strong economy.', aggr: .9, expand: 1, eco: 1.2, tech: 1.2, army: 9, uw: { rifleman: .8, rocket: 1, lighttank: 2, tank: 3.5, titan: 2.2, apc: 1, artillery: 1, mlrs: 1, aa: .8, engineer: .6, jeep: .5 }, bld: ['depot', 'factory', 'barracks', 'factory', 'depot', 'radar', 'factory', 'turret', 'medical', 'arty', 'airfield'], spec: { factory: ['heavy', 'rapid', 'artillery'], depot: ['trade'], hq: ['logi'], turret: ['at'], barracks: ['conscript'] }, tech: ['e1', 'a2', 'w2', 'e2', 'm2', 'a3', 'w1', 'e3'], calls: ['armor', 'barrage', 'supply', 'air', 'cruise'] },
+  voss: { id: 'voss', name: 'Adm. Voss', title: 'Air Commander', desc: 'Rules the skies with helicopters, gunships, jets and drones.', aggr: 1, expand: 1, eco: 1, tech: 1.1, army: 7, uw: { rifleman: 1, rocket: .8, aa: .8, heli: 3, gunship: 2.2, interceptor: 1.6, drone: 1.2, strike: 1.4, heavy: .6, medic: .5, jeep: .5 }, bld: ['depot', 'airfield', 'barracks', 'airfield', 'radar', 'depot', 'factory', 'airfield', 'turret', 'medical'], spec: { airfield: ['gunship', 'superiority', 'swarm'], depot: ['trade'], radar: ['aircon'], hq: ['warroom'], turret: ['flak'] }, tech: ['e1', 'm2', 'w1', 'm3', 'a3', 'w2', 'e2', 'o1'], calls: ['air', 'recon', 'supply', 'cruise', 'merc'] }
 };
 const AID = {
   easy: { n: 'Easy', think: 5, inc: .5, rx: 2, counter: 0, retreat: 0, call: 0, mistakes: .5, atkDelay: 540, startDelay: 50, capCd: 45, popLim: 22, bldMul: .45, noTech: 1, atkMul: 9 },
@@ -521,7 +557,8 @@ const SET = (() => {
   const d = { gfx: 'auto', shadows: false, shadowRes: 1024, particles: 35, scale: 85, decor: 45, maxUnits: 90, pr: 1, vol: 60, music: 40, edge: false, fps: false, camSpd: 1, hpAlways: false, name: 'Commander', scroll: 'auto', adv: false };
   let s = readJSON('frontline_settings_v2');
   if (!s) { const o = readJSON('frontline_settings_v1'); if (o) { s = {}; for (const k of ['vol', 'music', 'camSpd', 'fps', 'hpAlways', 'name']) if (o[k] !== undefined) s[k] = o[k]; s.gfx = o.gfx === 'ultra' ? 'high' : (['auto', 'low', 'medium', 'high'].includes(o.gfx) ? o.gfx : 'auto'); } }
-  Object.assign(d, s || {});
+  if (s) for (const k in s) if (k in d && typeof s[k] === typeof d[k] && (typeof s[k] !== 'number' || isFinite(s[k]))) d[k] = s[k];   // ignore anything of the wrong type
+  d.vol = clamp(d.vol, 0, 100); d.music = clamp(d.music, 0, 100); d.camSpd = clamp(d.camSpd, .5, 2); d.scale = clamp(d.scale, 40, 100); d.particles = clamp(d.particles, 0, 150); d.decor = clamp(d.decor, 0, 100); d.maxUnits = clamp(d.maxUnits, 40, 220);
   if (typeof d.name !== 'string' || !d.name) d.name = 'Commander'; d.name = d.name.slice(0, 14);
   const lvl = d.gfx === 'auto' ? (GPU.weak ? 'low' : 'medium') : d.gfx; if (GFX[lvl]) Object.assign(d, GFX[lvl]); else d.gfx = 'custom';
   if (d.gfx === 'custom') d.pr = d.pr || 1.25;
@@ -533,14 +570,15 @@ const RANKS = [['Private', 0], ['Corporal', 80], ['Sergeant', 220], ['Lieutenant
 const ACH = {
   win: ['First Victory', 'Win a battle.'], hard: ['Tough Tactician', 'Beat a Hard or Expert enemy.'], brutal: ['Expert Slayer', 'Beat an Expert enemy.'],
   online: ['Online Warrior', 'Win an online battle.'], spec3: ['Specialist', 'Add three special upgrades in one battle.'], air10: ['Sky King', 'Destroy 10 aircraft in one battle.'],
-  calls5: ['Forward Observer', 'Use 5 Support powers in one battle.'], hero: ['Hero Unit', 'Have a unit reach Hero rank.'], grab: ['Land Grab', 'Hold every flag at once.'], hq: ['Decapitation', 'Win by destroying an enemy HQ.'], rush: ['Blitz', 'Win a battle in under 8 minutes.'], tech: ['Scientist', 'Finish all 12 upgrades in one battle.']
+  calls5: ['Forward Observer', 'Use 5 Support powers in one battle.'], hero: ['Hero Unit', 'Have a unit reach Hero rank.'], grab: ['Land Grab', 'Hold every flag at once.'], hq: ['Decapitation', 'Win by destroying an enemy HQ.'], rush: ['Blitz', 'Win a battle in under 8 minutes.'], tech: ['Scientist', 'Finish all ' + TECH.length + ' upgrades in one battle.']
 };
 const PROF = (() => {
-  const d = { xp: 0, games: 0, wins: 0, losses: 0, kills: 0, lost: 0, built: 0, captured: 0, time: 0, best: 0, mp: 0, mpWins: 0, color: 0, ach: {}, maps: {}, tutDone: 0, seenIntro: 0 };
+  const d = { xp: 0, games: 0, wins: 0, losses: 0, kills: 0, lost: 0, built: 0, captured: 0, time: 0, best: 0, mp: 0, mpWins: 0, color: 0, ach: {}, maps: {}, tutDone: 0, seenIntro: 0, seenVer: '' };
   const s = readJSON('frontline_profile_v2') || readJSON('frontline_profile_v1');
   if (s) for (const k in d) if (s[k] !== undefined && typeof s[k] === typeof d[k]) d[k] = s[k];
   if (!d.ach || typeof d.ach !== 'object') d.ach = {}; if (!d.maps || typeof d.maps !== 'object') d.maps = {}; if (!(d.color >= 0 && d.color < 8)) d.color = 0;
   if (readJSON('frontline_profile_v1') && !readJSON('frontline_profile_v2') && d.games > 0) d.tutDone = 1;
+  if (typeof d.seenVer !== 'string') d.seenVer = ''; if (!(d.games > 0)) d.seenVer = VERSION;
   return d;
 })();
 function saveProf() { lsSet('frontline_profile_v2', JSON.stringify(PROF)); }
@@ -915,7 +953,7 @@ function markVis(g, x, z, r) {
   const vw = W.vw, M = W.M, c0 = Math.max(0, ((x - r + M.hw) / 4) | 0), c1 = Math.min(vw - 1, ((x + r + M.hw) / 4) | 0), r0 = Math.max(0, ((z - r + M.hd) / 4) | 0), r1 = Math.min(W.vd - 1, ((z + r + M.hd) / 4) | 0), rr2 = r * r;
   for (let a = r0; a <= r1; a++) { const pz = -M.hd + (a + .5) * 4 - z; for (let b = c0; b <= c1; b++) { const px = -M.hw + (b + .5) * 4 - x; if (px * px + pz * pz <= rr2) g[a * vw + b] = 2; } }
 }
-function bVis(b) { if (b.prog < 1) return 14; if (b.type === 'hq') return 46; if (b.type === 'turret' || b.type === 'arty') return 34; return 26; }
+function bVis(b) { if (b.prog < 1) return 14; if (b.type === 'radar') return BT.radar.vis[b.lvl - 1] * (b.spec === 'scan' ? 1.6 : 1); if (b.type === 'hq') return 46; if (b.type === 'turret' || b.type === 'arty') return 34; return 26; }
 function updateVision() {
   if (!W.o.fog) return;
   const us = W.units, bs = W.bld;
@@ -1346,7 +1384,7 @@ function updBuilding(b, dt) {
     b.upg.t += dt * (1 + .35 * Math.min(3, n));
     if (b.upg.t >= b.upg.dur) {
       if (b.upg.kind === 'lvl') { b.lvl++; refreshB(b); b.hp = Math.min(b.maxHp, b.hp + b.maxHp * .2); if (b.type === 'hq') { p.popCap = p.popCap; } }
-      else { b.spec = b.upg.spec; p.stats.specs++; const old = b.maxHp; refreshB(b); b.hp += b.maxHp - old; if (b.type === 'wall' && b.spec === 'mines') initMines(b); }
+      else { b.spec = b.upg.spec; p.stats.specs++; if (b.type === 'hq') recalcMods(p); const old = b.maxHp; refreshB(b); b.hp += b.maxHp - old; if (b.type === 'wall' && b.spec === 'mines') initMines(b); }
       b.upg = null; ev([9, b.id, r1(b.x), r1(b.z)]); b.sb |= 0;
     }
   }
@@ -1402,7 +1440,12 @@ function bFire(b, w, t) {
 }
 function auraTick(b) {
   const out = []; const p = P(b.owner);
-  if (b.type === 'depot' && b.spec === 'armory') { hashQ(b.x, b.z, 45, out); for (const e of out) if (e.team === b.team) e.armT = .7; }
+  if (b.type === 'medical') {
+    const heal = [5, 8, 12][b.lvl - 1] * (b.spec === 'triage' ? 2 : 1) * (1 + p.mod.heal); hashQ(b.x, b.z, 17, out);
+    for (const e of out) { if (e.team !== b.team) continue; if (e.T.cls === 0 || b.spec === 'motor') { if (e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + heal * .5); } if (b.spec === 'stim' && e.T.cls === 0) e.stimT = .7; if (b.spec === 'triage' && e.T.cls === 0) e.triT = .7; }
+  }
+  else if (b.type === 'radar' && b.spec === 'jammer') { hashQ(b.x, b.z, 55, out); for (const e of out) if (e.team !== b.team) e.jamT = .7; }
+  else if (b.type === 'depot' && b.spec === 'armory') { hashQ(b.x, b.z, 45, out); for (const e of out) if (e.team === b.team) e.armT = .7; }
   else if (b.type === 'wall' && b.spec === 'wire') {
     const pt = W.pts[b.pt]; hashQ(pt.x, pt.z, pt.hq >= 0 ? 21 : 16, out); for (const e of out) { if (e.team === b.team || e.T.air || e.T.cls !== 0) continue; const d = Math.hypot(e.x - pt.x, e.z - pt.z); if (d > (pt.hq >= 0 ? 17 : 11.5)) { e.slow = Math.max(e.slow, .7); hurt(e, 3, 'bullet', null, b.owner); } }
   }
@@ -1593,25 +1636,28 @@ function cmdTech(p, c) {
   if (hq < Math.max(2, t.tier) && !W.o.sandbox) return false; if (t.tier > 1) { const prev = TECH.find(x => x.br === t.br && x.tier === t.tier - 1); if (!p.techs[prev.id]) return false; }
   if (p.sup < t.cost && !W.o.sandbox) return false; if (!W.o.sandbox) p.sup -= t.cost; p.res = { id: t.id, t: 0, dur: t.time }; return true;
 }
-function callCd(p, id) { const C = CALL[id]; let cd = C.cd * (1 + p.mod.callCd); return Math.max(8, cd); }
+function callCd(p, id) { const C = CALL[id]; let cd = C.cd * (1 + p.mod.callCd); if (id === 'air' || id === 'recon') for (const b of W.bld) if (b.owner === p.id && b.type === 'radar' && b.spec === 'aircon' && b.prog >= 1) { cd *= .6; break; } return Math.max(8, cd); }
 function callCost(p, id) { return Math.round(CALL[id].cost * (1 + p.mod.callCost)); }
-function callAvail(p, id) { const C = CALL[id]; return playerHQLvl(p) >= C.req[1]; }
+function callAvail(p, id) { const C = CALL[id]; if (C.req[0] === 'hq') return playerHQLvl(p) >= C.req[1]; return playerHQLvl(p) >= 2 && bestLvl(p, C.req[0]) >= C.req[1]; }
+function hasAircon(p) { for (const b of W.bld) if (b.owner === p.id && b.type === 'radar' && b.spec === 'aircon' && b.prog >= 1) return true; return false; }
 function cmdCall(p, c) {
   const C = CALL[c.id]; if (!C || (!callAvail(p, c.id) && !W.o.sandbox)) return false; if ((p.cd[c.id] || 0) > 0) return false;
   const cost = callCost(p, c.id); if (p.sup < cost && !W.o.sandbox) return false;
   const M = W.M; let x = clamp(+c.x, -M.hw + 4, M.hw - 4), z = clamp(+c.z, -M.hd + 4, M.hd - 4); if (!isFinite(x) || !isFinite(z)) return false;
-  if (c.id === 'para' && W.o.fog && !seen(p.team, x, z)) return false;
+  if ((c.id === 'para' || c.id === 'merc' || c.id === 'armor') && W.o.fog && !seen(p.team, x, z)) return false;
+  if (C.fogOnly && !W.o.fog) return false;
   if (!W.o.sandbox) p.sup -= cost; p.cd[c.id] = callCd(p, c.id); p.stats.calls++; W.stats.calls++;
   const hq = p.hqB; const hx = hq ? hq.x : 0, hz = hq ? hq.z : 0;
   switch (c.id) {
-    case 'para': {
-      const list = ['rifleman', 'rifleman', 'rifleman', 'rifleman', 'rifleman', 'medic'];
-      const dly = 2.6; ev([5, 0, r1(x), r1(z), dly, list.length]);
-      W.sched.push({ at: W.t + dly, fn: () => { list.forEach((t, i) => { const a = i / list.length * TAU, d = 4.5; const q = snapFree(M, x + Math.cos(a) * d, z + Math.sin(a) * d, 5); if (p.pop + UT[t].pop > p.popCap && !W.o.sandbox) return; spawnUnit(t, p.id, q[0], q[1], { rot: a }); ev([1, 1, r1(q[0]), r1(M.H(q[0], q[1])), r1(q[1]), 1]); }); } });
+    case 'recon': { let dx = x - hx, dz = z - hz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l; ev([4, 0, r1(x - dx * 90), r1(z - dz * 90), r1(x + dx * 90), r1(z + dz * 90), 3.5]); W.sched.push({ at: W.t + 1.6, fn: () => { W.reveals.push({ team: p.team, x, z, r: 44, t: 22 }); ev([6, r1(x), r1(z), 44, 0, p.id]); } }); break; }
+    case 'merc': case 'para': case 'armor': {
+      const list = c.id === 'merc' ? ['merc', 'merc', 'merc', 'merc'] : c.id === 'para' ? ['rifleman', 'rifleman', 'rifleman', 'rifleman', 'rifleman', 'medic'] : ['tank', 'tank'];
+      const dly = c.id === 'armor' ? 4 : 2.6; ev([5, c.id === 'armor' ? 1 : 0, r1(x), r1(z), dly, list.length]);
+      W.sched.push({ at: W.t + dly, fn: () => { list.forEach((t, i) => { const a = i / list.length * TAU, d = list.length > 3 ? 4.5 : 3; const q = snapFree(M, x + Math.cos(a) * d, z + Math.sin(a) * d, 5); if (p.pop + UT[t].pop > p.popCap && !W.o.sandbox) return; const u = spawnUnit(t, p.id, q[0], q[1], { rot: a, vet: t === 'merc' ? 1 : 0, life: t === 'merc' ? 120 : 0 }); if (t === 'merc') { refreshUnit(u); u.hp = u.maxHp; } ev([1, 1, r1(q[0]), r1(M.H(q[0], q[1])), r1(q[1]), 1]); }); } });
       break;
     }
     case 'air': {
-      let dx = x - hx, dz = z - hz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l; const n = 6;
+      let dx = x - hx, dz = z - hz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l; const n = 6 + (hasAircon(p) ? 3 : 0);
       ev([4, 1, r1(x - dx * 100), r1(z - dz * 100), r1(x + dx * 100), r1(z + dz * 100), 3.2]);
       for (let i = 0; i < n; i++) { const t = (i - (n - 1) / 2) * 6, bx = x + dx * t, bz = z + dz * t; W.sched.push({ at: W.t + 1.3 + i * .22, fn: () => { const pr = { sx: bx - dx * 4, sy: 40, sz: bz - dz * 4, tx: bx, ty: M.H(bx, bz), tz: bz, t0: W.t, dur: .9, src: null, owner: p.id, team: p.team, dmg: 140, wt: 'bomb', spl: 8, tid: 0, arc: 0, k: 3 }; W.proj.push(pr); ev([0, 3, r1(pr.sx), 40, r1(pr.sz), r1(bx), r1(pr.ty), r1(bz), .9, 0, 0]); } }); }
       break;
@@ -1627,6 +1673,11 @@ function cmdCall(p, c) {
         for (const u of W.units) if (u.team === p.team && Math.hypot(u.x - x, u.z - z) < 28) { u.hp = Math.min(u.maxHp, u.hp + u.maxHp * .6); u.shield = 8; }
         for (const b of W.bld) if (b.team === p.team && Math.hypot(b.x - x, b.z - z) < 28) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * .4);
       } });
+      break;
+    }
+    case 'cruise': {
+      ev([0, 10, r1(hx), 120, r1(hz), r1(x), r1(M.H(x, z)), r1(z), 3.5, 0, 1]);
+      W.sched.push({ at: W.t + 3.5, fn: () => { splashDmg(x, z, 22, 950, 'bomb', p.team, p.id, null, {}); ev([1, 4, r1(x), r1(M.H(x, z) + 2), r1(z), 0]); for (let k = 0; k < 6; k++) ev([1, 3, r1(x + rr(-9, 9)), r1(M.H(x, z) + 1), r1(z + rr(-9, 9)), 0]); } });
       break;
     }
   }
@@ -1675,9 +1726,11 @@ function makeAI(p, cfg) {
       for (let i = 0; i < lim && !want; i++) { const t = pers.bld[i]; need[t] = (need[t] || 0) + 1; if (this.cntB(t) < need[t]) { if ((BT[t].hq1 || 1) > hql) { gated = true; continue; } want = t; } }
       if (!want && sup > 450 && !dif.noTech) { const ex = ['turret', 'depot', 'barracks', 'turret', 'factory'][(Math.random() * 5) | 0]; if (this.cntB(ex) < 2 + own.length) want = ex; }
       if (want && (want !== 'turret' || this.cntB('turret') < 1 + own.length * 2)) { if (sup >= BT[want].cost[0] + (want === 'depot' ? 0 : 20)) this.placeB(want); else saveUp(BT[want].cost[0] + 20); }
+      // forward walls on the contested flag (Hard and Expert commanders, and the Defender)
+      if (!dif.noTech && sup > 300 && playerHQLvl(p) >= BT.wall.hq1 && Math.random() < .3 * (pers.id === 'stone' ? 2 : 1)) { const fp = this.frontPoint(); if (fp && !fp.wall && own.length >= 2 && p.sup > 400) { if (pers.id === 'stone' || Math.random() < .3) this.cmd({ k: 'build', pt: fp.id, type: 'wall', slot: 0 }); } }
       // upgrades
       let upDone = 0;
-      const order = gated ? ['hq', 'depot', 'barracks', 'factory', 'airfield', 'turret', 'arty'] : ['depot', 'barracks', 'factory', 'airfield', 'turret', 'arty', 'hq'];
+      const order = gated ? ['hq', 'depot', 'barracks', 'factory', 'airfield', 'medical', 'radar', 'turret', 'arty'] : ['depot', 'radar', 'barracks', 'factory', 'airfield', 'medical', 'turret', 'arty', 'hq'];
       for (const t of order) {
         if (upDone) break;
         for (const b of (t === 'hq' ? [p.hqB] : s.blds[t] || [])) {
@@ -1685,7 +1738,7 @@ function makeAI(p, cfg) {
           if (b.lvl < 3 && BT[t].cost[b.lvl] !== undefined && !(dif.noTech && b.lvl >= 2 && t !== 'hq')) { const c = BT[t].cost[b.lvl]; const res = t === 'hq' ? 260 : 100 + (t === 'turret' || t === 'arty' ? 120 : 0); if (t === 'hq' && own.length < 3) continue; if (b.lvl >= 2 && playerHQLvl(p) < 2 && t !== 'hq') continue; if (sup >= c + res) { if (this.cmd({ k: 'upg', b: b.id })) { upDone = 1; break; } } else { saveUp(c + res); upDone = 1; break; } }
           else if (b.lvl >= 3 && !b.spec && dif.noTech) { }
           else if (b.lvl >= 3 && !b.spec && sup < SPEC_COST + 80) { saveUp(SPEC_COST + 80); upDone = 1; break; }
-          else if (b.lvl >= 3 && !b.spec && sup >= SPEC_COST + 80) { const pl = pers.spec[t] || []; const sp = pl.length ? pl[0] : BT[t].specs[0].id; let pick = sp; if (t === 'turret') { if (s.mix[3] > s.mixT * .3) pick = 'flak'; else if (s.mix[1] + s.mix[2] > s.mixT * .4) pick = 'at'; else pick = pl.includes('twin') ? 'twin' : pick; } if (t === 'factory') { const fs = (s.blds.factory || []).map(x => x.spec); const cand = pl.find(x => !fs.includes(x)); if (cand) pick = cand; } if (t === 'barracks') { const fs = (s.blds.barracks || []).map(x => x.spec); const cand = pl.find(x => !fs.includes(x)); if (cand) pick = cand; } if (this.cmd({ k: 'spec', b: b.id, s: pick })) { upDone = 1; break; } }
+          else if (b.lvl >= 3 && !b.spec && sup >= SPEC_COST + 80) { const pl = pers.spec[t] || []; const sp = pl.length ? pl[0] : BT[t].specs[0].id; let pick = sp; if (t === 'turret') { if (s.mix[3] > s.mixT * .3) pick = 'flak'; else if (s.mix[1] + s.mix[2] > s.mixT * .4) pick = 'at'; else pick = pl.includes('twin') ? 'twin' : pick; } if (t === 'factory') { const fs = (s.blds.factory || []).map(x => x.spec); const cand = pl.find(x => !fs.includes(x)); if (cand) pick = cand; } if (t === 'barracks') { const fs = (s.blds.barracks || []).map(x => x.spec); const cand = pl.find(x => !fs.includes(x)); if (cand) pick = cand; } if (t === 'airfield') { const fs = (s.blds.airfield || []).map(x => x.spec); const cand = pl.find(x => !fs.includes(x)); if (cand) pick = cand; } if (this.cmd({ k: 'spec', b: b.id, s: pick })) { upDone = 1; break; } }
         }
       }
       // research
@@ -1700,11 +1753,12 @@ function makeAI(p, cfg) {
     },
     placeB(type) {
       if ((BT[type].hq1 || 1) > playerHQLvl(p)) return;
-      const s = this.s; const front = ['turret', 'arty'].includes(type); const en = W.pts.filter(q => q.owner >= 0 && P(q.owner).team !== p.team); let bestS = -1e9, bp = null, bs = -1;
+      const s = this.s; const front = ['turret', 'arty', 'wall'].includes(type); const en = W.pts.filter(q => q.owner >= 0 && P(q.owner).team !== p.team); let bestS = -1e9, bp = null, bs = -1;
       for (const pt of s.ownPts) {
         let ed = 200; for (const e of en) ed = Math.min(ed, Math.hypot(e.x - pt.x, e.z - pt.z)); if (!en.length) ed = Math.hypot(pt.x, pt.z);
         for (let k = 0; k < pt.slots.length; k++) { if (pt.slots[k].b) continue; let sc = front ? -ed : ed * .5; if (pt.hq >= 0) sc += front ? -40 : 20; if (type === 'depot' && pt.hq >= 0) sc -= 30; sc += Math.random() * 10; if (sc > bestS) { bestS = sc; bp = pt; bs = k; } }
       }
+      if (type === 'wall') { const fp = this.frontPoint(); if (fp && !fp.wall) this.cmd({ k: 'build', pt: fp.id, type: 'wall', slot: 0 }); return; }
       if (bp) this.cmd({ k: 'build', pt: bp.id, type, slot: bs });
     },
     // ---------------- production ----------------
@@ -1720,12 +1774,13 @@ function makeAI(p, cfg) {
           const T = UT[t]; let w = pers.uw[t]; if (w === undefined) w = (b.type === 'hq' ? .35 : .2); if (w <= 0) continue;
           if (p.pop + T.pop > Math.min(p.popCap, dif.popLim)) continue;
           if (T.w && dif.counter > 0 && tot > 80) { let eff = 0; const wt = T.w.wt; for (let c = 0; c < 4; c++) { const air = c === 3; let m = WTM[wt][c]; if (air && T.w.g === 'g') m = 0; if (!air && T.w.g === 'a') m = 0; eff += mix[c] / tot * m; } w *= clamp(1 + dif.counter * (eff - .75), .2, 3); }
-          if (T.id === 'aa') { w *= 1 + (mix[3] / tot) * 8 * dif.counter; if (mix[3] < 60) w *= .12; }
+          if (T.id === 'aa' || T.id === 'interceptor') { w *= 1 + (mix[3] / tot) * 8 * dif.counter; if (mix[3] < 60) w *= .12; }
+          if (T.id === 'scout') { w *= (cnt.scout || 0) < 2 ? 1.5 : .05; }
           if (T.id === 'medic') { const n = cnt.medic || 0, inf = s.combat.filter(u => u.T.cls === 0).length; w *= n < inf / 7 ? 2 : .1; }
           if (T.id === 'engineer') { const n = cnt.engineer || 0; w *= n < Math.min(4, 1 + s.ownPts.length) ? 3 : .03; }
           if (T.id === 'jeep') { w *= (cnt.jeep || 0) < 3 ? 1.2 : .25; }
           if (T.id === 'strike' || T.id === 'drone') w *= (cnt[T.id] || 0) < 8 ? 1 : .2;
-          if (T.id === 'artillery') w *= ((cnt.artillery || 0) < Math.max(1, nCombat * .2)) ? 1 : .1;
+          if (T.id === 'artillery' || T.id === 'mlrs') w *= (((cnt.artillery || 0) + (cnt.mlrs || 0)) < Math.max(1, nCombat * .2)) ? 1 : .1;
           w /= Math.pow(1 + (cnt[t] || 0) / 5, .7);
           if (T.cost <= 110 && T.w) { const share = (cnt[t] || 0) / Math.max(10, nCombat); w *= clamp(1.5 - share * 2.8, .08, 1); }
           { const fill = p.pop / p.popCap; if (fill > .65) w *= Math.pow(T.cost / 90, (fill - .65) * 4.5); }
@@ -1766,6 +1821,7 @@ function makeAI(p, cfg) {
         if (tp > mine * 1.05 && tp > 150) this.lastEmerg = this.t;
         for (const u of pull) { if (defenders.has(u.id)) continue; defenders.add(u.id); this.role.set(u.id, 'def'); }
         const grp = pull.filter(u => Math.hypot(u.x - pt.x, u.z - pt.z) > 18); this.ord(grp, 'am', pt.x + rr(-4, 4), pt.z + rr(-4, 4));
+        if (dif.call > 0 && tp > mine * 1.2 && tp > 250 && (p.cd.merc || 0) <= 0 && callAvail(p, 'merc') && p.sup > 400) this.cmd({ k: 'call', id: 'merc', x: pt.x, z: pt.z });
         for (const e of s.med) this.ord([e], 'mv', pt.x, pt.z);
       }
       for (const [id, r] of this.role) if (r === 'def' && !defenders.has(id)) this.role.delete(id);
@@ -1842,18 +1898,22 @@ function makeAI(p, cfg) {
       if (!dif.call || this.t < 100) return; const s = this.s;
       for (const id of pers.calls) {
         if (!callAvail(p, id) || (p.cd[id] || 0) > 0) continue; const cost = callCost(p, id); if (p.sup < cost + 120 || Math.random() > .5 * dif.call + .2) continue;
-        if (id === 'air' || id === 'barrage') {
-          const R = id === 'barrage' ? 20 : 14, thr = id === 'barrage' ? 380 : 260; let best = null, bv = 0;
+        if (id === 'air' || id === 'barrage' || id === 'cruise') {
+          const R = id === 'cruise' ? 22 : id === 'barrage' ? 20 : 14, thr = id === 'cruise' ? 900 : id === 'barrage' ? 380 : 260; let best = null, bv = 0;
           const pool = s.enemy; for (const c of pool) {
             let v = 0, f = 0; for (const e of pool) if (Math.hypot(e.x - c.x, e.z - c.z) < R) v += e.T.cost; for (const b of s.enemyBlds) if (Math.hypot(b.x - c.x, b.z - c.z) < R) v += 120 * b.lvl;
             for (const u of s.my) if (Math.hypot(u.x - c.x, u.z - c.z) < R) f += u.T.cost; v -= f * 1.2; if (v > bv) { bv = v; best = c; }
           }
-          if (id !== 'air') for (const b of s.enemyBlds) { if (b.type === 'hq' || b.type === 'arty' || b.type === 'turret') { let f = 0; for (const u of s.my) if (Math.hypot(u.x - b.x, u.z - b.z) < R) f += u.T.cost; const v = 260 * b.lvl + (b.type === 'hq' ? 400 : 0) - f; if (v > bv) { bv = v; best = b; } } }
+          if (id !== 'air') for (const b of s.enemyBlds) { if (b.type === 'hq' || b.type === 'arty' || b.type === 'turret') { let f = 0; for (const u of s.my) if (Math.hypot(u.x - b.x, u.z - b.z) < R) f += u.T.cost; const v = 260 * b.lvl + (b.type === 'hq' ? 400 : 0) - f; if (v > bv && (id !== 'cruise' || b.type === 'hq')) { bv = v; best = b; } } }
           if (best && bv >= thr) { this.cmd({ k: 'call', id, x: best.x, z: best.z }); break; }
         } else if (id === 'supply') {
           const atk = s.combat.filter(u => this.role.get(u.id) === 'atk' && u.hp < u.maxHp * .6); if (atk.length >= 5) { let cx = 0, cz = 0; for (const u of atk) { cx += u.x; cz += u.z; } this.cmd({ k: 'call', id, x: cx / atk.length, z: cz / atk.length }); break; }
         } else if (id === 'para') {
           const targets = s.oppPts.filter(q => q.hq < 0 && q.owner < 0 && seen(p.team, q.x, q.z) && this.powerNear(q.x, q.z, 30) < 80); if (targets.length && Math.random() < .5) { const q = targets[(Math.random() * targets.length) | 0]; this.cmd({ k: 'call', id, x: q.x, z: q.z }); break; }
+        } else if (id === 'armor' || id === 'merc') {
+          if (this.state === 'attack' && p.sup > cost + 300) { const atk = s.combat.filter(u => this.role.get(u.id) === 'atk'); if (atk.length > 5) { let cx = 0, cz = 0; for (const u of atk) { cx += u.x; cz += u.z; } cx /= atk.length; cz /= atk.length; const q = snapFree(W.M, cx, cz, 6); if (W.o.fog && !seen(p.team, q[0], q[1])) continue; this.cmd({ k: 'call', id, x: q[0], z: q[1] }); break; } }
+        } else if (id === 'recon') {
+          const en = W.pts.filter(q => q.owner >= 0 && P(q.owner).team !== p.team && !explored(p.team, q.x, q.z)); if (W.o.fog && en.length && p.sup > 400) { const q = en[(Math.random() * en.length) | 0]; this.cmd({ k: 'call', id, x: q.x, z: q.z }); break; }
         }
       }
     }
@@ -1943,6 +2003,7 @@ function infModel(o) {
     case 'lmg': g.box(.16, .2, 1.1, .36, 1.1, .5, gc); g.box(.34, .3, .3, .36, .9, .35, DARK); break;
     case 'sniper': g.box(.1, .12, 1.5, .34, 1.15, .65, gc); g.cyl(.07, .07, .4, 6, .34, 1.28, .5, BLACK, { rx: PI / 2 }); break;
     case 'mortar': g.cyl(.13, .13, 1.2, 8, .3, 1.35, .55, DARK, { rx: PI / 2 - .85 }); g.box(.55, .1, .55, .3, 1.0, .1, DARK); g.cyl(.2, .2, .1, 8, .3, 1.0, .95, STEEL); break;
+    case 'gren': g.cyl(.14, .14, .8, 8, .36, 1.1, .5, gc, { rx: PI / 2 }); g.sph(.2, .2, .2, .36, 1.1, .95, 0x995533); break;
     case 'none': break;
     case 'pistol': g.box(.1, .12, .4, .34, 1.1, .3, gc); break;
     default: g.box(.12, .16, 1.0, .36, 1.12, .45, gc);
@@ -1955,9 +2016,13 @@ function buildModels() {
   MDL.rifleman = infModel({ vest: OLIVE, pants: 0x3a4030 });
   MDL.rocket = infModel({ vest: 0x5a5f4a, gun: 'rocket', pants: 0x333a2c });
   MDL.engineer = infModel({ vest: 0xc9922f, helmAcc: 0, helm: 0xe9c33a, gun: 'pistol', pack: 0x6a4a2a, extra: g => { g.box(.14, .5, .14, -.4, 1.1, .1, STEEL, { rz: .3 }); g.box(.3, .2, .12, -.46, 1.35, .1, STEEL); } });
+  MDL.scout = infModel({ vest: 0x6b7a50, gun: 'pistol', pack: DARK, extra: g => { g.cyl(.07, .07, .26, 6, .22, 1.62, .25, BLACK, { rx: PI / 2 }); g.cyl(.07, .07, .26, 6, .1, 1.62, .25, BLACK, { rx: PI / 2 }); } });
   MDL.heavy = infModel({ vest: 0x4b5240, gun: 'lmg', pants: 0x2c3128, extra: g => { g.box(.95, .3, .6, 0, 1.0, 0, DARK); g.box(.5, .5, .3, 0, 1.45, .3, STEEL); } });
   MDL.sniper = infModel({ vest: 0x3d4f2e, gun: 'sniper', pants: 0x2e3b25, helmAcc: 0, helm: 0x3d4f2e, extra: g => { g.box(.9, .18, .6, 0, 1.45, 0, 0, { acc: .9 }); } });
   MDL.mortar = infModel({ vest: 0x5f5438, gun: 'mortar', pants: 0x3a3626 });
+  MDL.grenadier = infModel({ vest: 0x7a5a3a, gun: 'gren', pants: 0x3a3626 });
+  MDL.commando = infModel({ vest: 0x24282b, gun: 'lmg', pants: 0x1c1f21, skin: 0x2a2d30, extra: g => { g.box(.5, .12, .08, 0, 1.72, .27, 0, { acc: 1 }); g.box(.3, .5, .3, 0, 1.0, -.3, 0x3a3f44); } });
+  MDL.merc = infModel({ vest: 0x7a6a4a, gun: 'lmg', pants: 0x3a352a, helmAcc: 0, helm: 0x201e1a, extra: g => { g.box(.9, .12, .5, 0, 1.44, 0, 0xd8a52c); g.box(.5, .12, .06, 0, 1.2, .25, 0xd8a52c); } });
   MDL.medic = infModel({ vest: 0xe5e8ea, gun: 'pistol', pants: 0x7b8087, helmAcc: 0, helm: 0xf1f3f5, extra: g => { g.box(.5, .12, .05, 0, 1.15, .25, RED); g.box(.12, .5, .05, 0, 1.15, .25, RED); g.box(.4, .3, .3, 0, 1.2, -.38, WHITE); g.box(.3, .08, .05, 0, 1.2, -.54, RED); } });
   // vehicles
   const wheels = (g, xs, zs, r, col) => { for (const x of xs) for (const z of zs) g.cyl(r, r, .4, 10, x, r, z, col || BLACK, { rz: PI / 2 }); };
@@ -1981,6 +2046,16 @@ function buildModels() {
   { const g = new GB(); g.box(2.3, .8, 3.8, 0, .85, 0, OLIVE); g.box(2.0, .9, 1.2, 0, 1.55, 1.4, GLASS); wheels(g, [-1.2, 1.2], [-1.3, 0, 1.3], .6);
     const t = new GB(); t.box(1.6, .5, 1.6, 0, .25, 0, STEEL); t.box(.3, .9, .3, -.7, .8, 0, DARK); t.box(.3, .9, .3, .7, .8, 0, DARK);
     for (const x of [-.55, .55]) t.cyl(.12, .12, 2.2, 6, x, 1.15, .5, BLACK, { rx: PI / 2 - .8 }); t.box(1.0, .1, .5, 0, .6, -.5, 0, { acc: 1 }); t.cyl(.5, .1, .1, 8, 0, 1.15, -.7, STEEL, { rx: .5 }); MDL.aa = [part(g), part(t, 'turret', 0, 1.2, -.9)]; }
+  { const g = new GB(); g.box(2.5, .8, 5.0, 0, .85, 0, KHAKI); g.box(2.3, 1.0, 1.4, 0, 1.6, 1.8, OLIVE); g.box(2.3, .1, 1.2, 0, 2.15, 1.8, 0, { acc: .95 }); wheels(g, [-1.3, 1.3], [-1.8, 0, 1.8], .65);
+    const t = new GB(); t.box(2.0, .35, 2.8, 0, .2, 0, STEEL); for (let i = 0; i < 2; i++) for (let j = 0; j < 4; j++) t.cyl(.2, .2, 3.0, 6, -.7 + j * .46, .65 + i * .45, .2, j % 2 ? 0x6a2f2a : 0x8a3a30, { rx: PI / 2 - .55 }); t.box(1.5, .1, .6, 0, 1.4, -.5, 0, { acc: .95 }); MDL.mlrs = [part(g), part(t, 'turret', 0, 1.3, -1.0)]; }
+  { // Titan: a giant walking mech. Legs and hips stay put, the torso and guns turn to aim.
+    const g = new GB(), col = 0x56606b, dk = 0x2a3036;
+    for (const sx of [-1, 1]) { const x = sx * 1.55; g.box(1.8, .5, 2.9, x, .25, .5, dk); g.box(1.0, 1.9, 1.0, x, 1.45, .15, col, { rx: .22 }); g.sph(.62, .62, .62, x, 2.5, .45, STEEL); g.box(1.2, 2.1, 1.2, x, 3.5, .05, col, { rx: -.2 }); g.box(.3, 1.1, .5, x + sx * .7, 1.6, .5, 0, { acc: .9 }); }
+    g.box(4.8, .9, 2.7, 0, 4.5, 0, dk); g.box(3.4, .3, 2.1, 0, 4.0, 0, 0, { acc: .9 });
+    const t = new GB(); t.box(4.2, 2.1, 3.0, 0, 1.0, 0, col); t.box(4.3, .35, 3.1, 0, 2.15, 0, 0, { acc: 1 }); t.box(2.0, .8, 1.3, 0, 2.6, .5, dk); t.box(1.5, .28, .1, 0, 2.62, 1.18, 0, { acc: 1 }); t.box(2.5, 1.0, .7, 0, 1.4, -1.75, dk);
+    t.box(1.2, 1.4, 1.6, 2.9, 1.0, .3, dk); t.cyl(.32, .32, 4.4, 8, 2.9, 1.0, 3.2, STEEL, { rx: PI / 2 }); t.cyl(.5, .5, .5, 8, 2.9, 1.0, 5.3, dk, { rx: PI / 2 });
+    t.box(1.0, 1.1, 1.4, -2.8, 1.0, .3, dk); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU; t.cyl(.11, .11, 2.4, 6, -2.8 + Math.cos(a) * .3, 1.0 + Math.sin(a) * .3, 2.6, BLACK, { rx: PI / 2 }); }
+    MDL.titan = [part(g), part(t, 'turret', 0, 4.9, 0)]; }
   // air
   { const g = new GB(); g.box(.9, .35, 1.3, 0, 0, 0, STEEL); g.box(.5, .25, .7, 0, .25, .2, 0, { acc: .95 }); g.sph(.2, .15, .25, 0, -.12, .5, 0x14181c);
     for (const x of [-1, 1]) for (const z of [-1, 1]) { g.box(1, .08, .1, x * .7, .05, z * .6, BLACK, { ry: x * z * .6 }); g.cyl(.55, .55, .04, 10, x * 1.05, .22, z * .85, 0x303840); }
@@ -1995,6 +2070,9 @@ function buildModels() {
     return [part(g), part(r, 'rotor', 0, o.w * .85 + .35 * o.s, 0, 30)];
   };
   MDL.heli = heli({ w: .85, l: 1.9, s: 1, tail: 3.2, rl: 3.6 });
+  MDL.gunship = heli({ w: 1.25, l: 2.7, s: 1.4, tail: 4.2, rl: 4.8, col: 0x3c4638 });
+  { const g = new GB(); g.cone(.45, 3.8, 8, 0, 0, .6, 0xb9c0c7, { rx: PI / 2 }); g.cyl(.5, .5, 2.6, 8, 0, 0, -1.4, 0xa6adb4, { rx: PI / 2 }); g.box(4.0, .08, 1.6, 0, 0, -.7, 0xa6adb4); g.box(.1, .9, .9, 0, .55, -2.3, 0, { acc: .95 }); g.box(1.6, .06, .6, 0, 0, -2.5, 0xa6adb4); g.box(3.6, .1, .5, 0, .06, -.6, 0, { acc: .95 }); g.sph(.28, .22, .6, 0, .3, .6, GLASS);
+    const r = new GB(); r.cyl(.35, .35, .1, 8, 0, 0, 0, BLACK); MDL.interceptor = [part(g), part(r, 'rotor', 0, 0, -2.7, 25)]; }
   // jet for call-ins / crates
   { const g = new GB(); g.cone(.6, 5, 8, 0, 0, 1, 0x8e969e, { rx: PI / 2 }); g.cyl(.65, .65, 3.5, 8, 0, 0, -2.2, 0x7e868e, { rx: PI / 2 }); g.box(7, .12, 2.5, 0, 0, -1.5, 0x7e868e); g.box(.12, 1.2, 1.4, 0, .7, -3.6, 0x8e969e); g.box(2.6, .1, 1, 0, 0, -3.8, 0x7e868e); MDL.jet = [part(g)]; }
   { const g = new GB(); g.box(1.6, 1.2, 1.6, 0, .6, 0, 0, { acc: .9 }); g.box(1.7, .2, 1.7, 0, .7, 0, DARK); g.cone(2.0, 1.2, 8, 0, 2.6, 0, WHITE, { rx: PI }); MDL.crate = [part(g)]; }
@@ -2025,6 +2103,13 @@ function bModel(type, lvl, spec) {
       if (L >= 3) { g.box(.3, 3.2, .3, -2.6, 3.6, 2.2, DARK); g.box(1.6, 1.0, 1.6, -2.6, 5.4, 2.2, OLIVE); g.box(1.8, .2, 1.8, -2.6, 6.0, 2.2, 0, { acc: 1 }); }
       return [part(g)];
     }
+    case 'medical': {
+      g.box(5, .3, 5, 0, .15, 0, CONC2); g.box(3.6, 2.0, 3.4, 0, 1.3, 0, WHITE); g.cone(2.9, 1.8, 4, 0, 3.2, 0, WHITE, { ry: PI / 4 }); g.cone(2.92, .5, 4, 0, 4.0, 0, 0, { ry: PI / 4, acc: .95 });
+      g.box(1.4, .3, .1, 0, 1.9, 1.75, RED); g.box(.3, 1.4, .1, 0, 1.9, 1.75, RED); g.box(2.2, 1.4, 1.2, 2.8, .8, 1.5, WHITE); g.box(2.4, .1, 1.3, 2.8, 1.55, 1.5, RED);
+      if (L >= 2) { g.box(2.4, 1.6, 2.4, -3, 1.0, -1.2, WHITE); g.cone(2.0, 1.2, 4, -3, 2.6, -1.2, WHITE, { ry: PI / 4 }); }
+      if (L >= 3) { g.box(1.6, 2.2, 1.6, -2, 1.4, 2.6, STEEL); g.cyl(.4, .4, 1, 8, -2, 3.0, 2.6, RED); }
+      return [part(g)];
+    }
     case 'factory': {
       g.box(8, .4, 7.5, 0, .2, 0, CONC2); g.box(7, 3.2, 6, 0, 2.0, 0, STEEL); for (let i = -2; i <= 2; i++) g.box(1.3, .9, 6.2, i * 1.4, 4.0, 0, CONC2, { rz: .0 }); g.box(7.2, .35, 6.2, 0, 3.7, 0, 0, { acc: .9 }); g.box(3.8, 2.4, .12, 0, 1.6, 3.05, DARK); g.cyl(.55, .65, 4.8, 8, -3, 5, -2, CONC2); g.box(1.3, 1, 1.3, 3, 4.3, 2, 0, { acc: .9 });
       if (L >= 2) { g.box(.6, 5, .6, 3.8, 3, -3.2, STEEL); g.box(.4, .4, 5, 3.8, 5.4, -1, STEEL); g.box(2.6, 1.4, 2.2, -4.6, 1.1, 2.4, KHAKI); }
@@ -2043,6 +2128,18 @@ function bModel(type, lvl, spec) {
       g.box(5, .3, 5, 0, .15, 0, CONC2); g.box(1.8, 1.4, 1.8, -1.3, 1.0, -1, 0, { acc: .9 }); g.box(1.8, 1.4, 1.8, 1.2, 1.0, -1.1, KHAKI); g.box(1.5, 1.2, 1.5, -.2, 2.3, -1, WOOD); g.cyl(1.0, 1.0, 2.2, 10, -1.2, 1.3, 1.6, STEEL); g.cyl(.9, .9, .2, 10, -1.2, 2.5, 1.6, 0, { acc: 1 }); g.box(1.6, 1.0, 1.0, 1.4, .8, 1.5, OLIVE);
       if (L >= 2) { g.cyl(1.0, 1.0, 2.8, 10, 1.6, 1.7, 1.7, STEEL); g.box(1.4, 1.1, 1.4, 1.8, 2.7, -1, KHAKI); }
       if (L >= 3) { g.box(3.4, 2.6, 2.0, 0, 1.6, 3.2, CONC); g.box(3.6, .3, 2.2, 0, 3.0, 3.2, 0, { acc: 1 }); }
+      return [part(g)];
+    }
+    case 'radar': {
+      g.box(3.6, .3, 3.6, 0, .15, 0, CONC2); g.box(2, 1.2, 2, 0, .9, 0, CONC); g.box(.5, L >= 2 ? 6 : 4, .5, 0, (L >= 2 ? 3 : 2) + 1.5, 0, STEEL); g.box(1.6, .8, .12, 0, 1.2, 1.1, GLASS); g.box(.4, .4, .4, 1.3, .6, 1, 0, { acc: 1 });
+      const r = new GB(); r.cyl(1.9, .4, .5, 12, 0, 0, .0, WHITE, { rx: PI / 2 - .5 }); r.box(.12, .12, 1.4, 0, .9, 0, STEEL, { rx: .5 }); r.cyl(.15, .15, .5, 6, 0, 0, 0, STEEL);
+      parts.push(part(g), part(r, 'rotor', 0, (L >= 2 ? 6.2 : 4.2) + 1.8, 0, 1.4));
+      if (L >= 3) { const r2 = new GB(); r2.cyl(1.2, .3, .4, 10, 0, 0, 0, WHITE, { rx: PI / 2 - .5 }); parts.push(part(r2, 'rotor', 1.6, 3.2, 1.4, -1.1)); }
+      return parts;
+    }
+    case 'wall': { // only used for the build icon; the real walls are drawn as a ring (see wallPools)
+      for (let i = -2; i <= 2; i++) { g.box(2.1, .8, 1.0, i * 2.2, .4, Math.abs(i) * -.5, CONC); g.box(2.16, .16, 1.06, i * 2.2, .86, Math.abs(i) * -.5, 0, { acc: 1 }); }
+      g.box(.5, 1.4, .5, -5.2, .7, -1.3, CONC2); g.box(.5, 1.4, .5, 5.2, .7, -1.3, CONC2);
       return [part(g)];
     }
     case 'turret': {
@@ -2093,8 +2190,8 @@ function buildDecor() {
 // ---------------- pools ----------------
 class Pool {
   constructor(parts, cap, mat, shadow) {
-    this.parts = parts; this.cap = cap; this.n = 0; this.meshes = [];
-    for (const p of parts) {
+    this.parts = parts.map(p => Object.assign({}, p)); this.cap = cap; this.n = 0; this.meshes = [];   // own copies, so pools that share a model keep separate colour buffers
+    for (const p of this.parts) {
       const geo = new THREE.InstancedBufferGeometry(); geo.index = p.geo.index; for (const k in p.geo.attributes) geo.setAttribute(k, p.geo.attributes[k]);
       const ic = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4); ic.setUsage(THREE.DynamicDrawUsage); geo.setAttribute('iCol', ic);
       const m = new THREE.InstancedMesh(geo, mat, cap); m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0; m.castShadow = !!shadow; m.visible = false;
@@ -2206,7 +2303,7 @@ function buildWorldVisuals() {
   { const g = new THREE.CircleGeometry(1, 10); g.rotateX(-PI / 2); decorBlob = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .2, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), Math.max(1, M.trees.length)); const rk = {}; decorBlob.userData.list = M.trees.map(t => ({ t, k: t.k, r: rk[t.k] = (rk[t.k] === undefined ? 0 : rk[t.k] + 1) })); decorBlob.count = M.trees.length; decorBlob.frustumCulled = false; decorBlob.renderOrder = 1; worldGroup.add(decorBlob); }
   // control points
   ptObjs = W.pts.map(pt => makePtObj(pt));
-  flagPool = new Pool(MDL.flag, 20, MAT_I, true); beaconPool = new Pool(MDL.beacon, 60, MAT_I, false); wallPools = [];
+  flagPool = new Pool(MDL.flag, 20, MAT_I, true); beaconPool = new Pool(MDL.beacon, 60, MAT_I, false); wallPools = [1, 2, 3].map(() => new Pool(MDL.wallseg, 900, MAT_I, true));
   // camera start
   const hq = P(ME).hqB; const c = hq || W.pts[M.spawnPts[P(ME).spawn]];
   cam.x = cam.tx = c.x * .92; cam.z = cam.tz = c.z * .92; cam.yaw = cam.tyaw = Math.atan2(c.x, c.z); cam.dist = cam.tdist = 92; cam.vx = cam.vz = 0; cam.lift = 0; cam.gy = M.H(cam.x, cam.z);
@@ -2370,14 +2467,14 @@ function renderFrame(dt, now) {
   let nbl = 0; const blob = blobPool;
   for (const u of W.units) {
     if (!myVisible(u) || !inView(u.rx, u.ry, u.rz, u.T.r + 9)) continue; const T = u.T; const pc = P(u.owner).color; _col.set(pc); let y = u.ry, sc = T.cls === 0 ? 1.18 : 1;
-    if (T.cls === 0 && u.moving) y += Math.abs(Math.sin(t * 11 + u.id)) * .13; if (T.air) y += Math.sin(t * 2 + u.id) * .25;
+    if (T.cls === 0 && u.moving) y += Math.abs(Math.sin(t * 11 + u.id)) * .13; else if (T.walker && u.moving) y += Math.abs(Math.sin(t * 3.4 + u.id)) * .38; if (T.air) y += Math.sin(t * 2 + u.id) * .25;
     const fl = u.flash > 0 ? Math.min(1, u.flash * 6) * .6 : (u.shield > 0 ? .25 : 0);
     const dispAim = (u.o === 0 || u.o === 4) && !u.tgt && T.cls === 0 && !u.firing ? u.rrot : u.raim;
     uPool(u.type).add(u.rx, y, u.rz, u.rrot, T.cls === 0 ? dispAim : u.raim, sc, _col.r, _col.g, _col.b, fl, t);
     if ((T.air || !SET.shadows) && nbl < 400) { const br = T.air ? T.r * 1.3 : T.cls === 0 ? 1.05 : T.r * 1.25; _m.makeScale(br, 1, br * (T.air || T.cls === 0 ? 1 : 1.35)); _m.setPosition(u.rx, M.H(u.rx, u.rz) + .2, u.rz); blob.setMatrixAt(nbl++, _m); }
     const sel = selIds.has(u.id), hov = hoverId === u.id;
     if (sel) addRing(u.rx, u.rz, T.r * 1.35 + .3, .35, 1, .5); else if (hov) addRing(u.rx, u.rz, T.r * 1.35 + .3, 1, .9, .4);
-    if (u.hpf < .999 || sel || hov || SET.hpAlways || u.vet > 0 && sel) addBar(u.rx, y + (T.cls === 0 ? 2.6 : T.air ? 3.2 : 3.4), u.rz, T.cls === 0 ? 1.9 : 2.8, u.hpf, u.vet, 0);
+    if (u.hpf < .999 || sel || hov || SET.hpAlways || u.vet > 0 && sel) addBar(u.rx, y + (T.cls === 0 ? 2.6 : T.air ? 3.2 : T.walker ? 8.6 : 3.4), u.rz, T.cls === 0 ? 1.9 : T.walker ? 4.4 : 2.8, u.hpf, u.vet, 0);
     if (u.owner !== ME && u.team !== MYTEAM && hov) addRing(u.rx, u.rz, T.r * 1.4 + .3, 1, .3, .3);
   }
   blob.count = nbl; blob.instanceMatrix.needsUpdate = true;
@@ -2394,7 +2491,8 @@ function renderFrame(dt, now) {
     if (b.type === 'wall') {
       const pc = P(b.owner).color; _col.set(pc); const pool = wallPools[b.lvl - 1]; const pt = W.pts[b.pt]; const arcs = wallArcs(pt); const hs = [.8, 1.1, 1.45][b.lvl - 1] * (b.prog < 1 ? .3 + .7 * b.prog : 1) * (b.spec === 'bulwark' ? 1.2 : 1);
       for (const a of arcs) { const len = (a[1] - a[0]) * a[2], n = Math.floor(len / 2.0); for (let i = 0; i <= n; i++) { const ang = a[0] + (a[1] - a[0]) * (i / n); const wx = pt.x + Math.cos(ang) * a[2], wz = pt.z + Math.sin(ang) * a[2]; const idx = pool.n; pool.add(wx, M.H(wx, wz) - .1, wz, 0, 0, 1, _col.r, _col.g, _col.b, b.flash > 0 ? .4 : 0, t); pool.setMatrix(idx, wx, M.H(wx, wz) - .1, wz, -ang, 1.0 + b.lvl * .12, hs, 1); } }
-      if (b.hp < b.maxHp * .999 || b.prog < 1) addBar(pt.x, M.H(pt.x, pt.z) + 5, pt.z + 0, 6, b.hp / b.maxHp, 0, b.prog < 1 ? 2 : 0);
+      if (selBld === b.id) addRing(pt.x, pt.z, pt.hq >= 0 ? 19.5 : 13.5, .35, 1, .5);
+      if (b.hp < b.maxHp * .999 || b.prog < 1 || selBld === b.id) addBar(pt.x, M.H(pt.x, pt.z) + 5, pt.z + 0, 6, b.hp / b.maxHp, 0, b.prog < 1 ? 2 : 0);
       continue;
     }
     if (!inView(b.x, b.y, b.z, b.T.sz + 12)) continue;
@@ -2662,7 +2760,7 @@ function ppuAt(x, y, z) { const dx = camera.position.x - x, dy = camera.position
 function pickEntity(sx, sy, filter) {
   let best = null, bs = 1e9; const touchPad = UI.touch ? 10 : 3;
   for (const u of W.units) {
-    if (!myVisible(u)) continue; if (filter && !filter(u)) continue; w2s(u.rx, u.ry + (u.T.cls === 0 ? 1.0 : 1.4), u.rz, _sp); if (_sp.z > 1) continue;
+    if (!myVisible(u)) continue; if (filter && !filter(u)) continue; w2s(u.rx, u.ry + (u.T.walker ? 3.4 : u.T.cls === 0 ? 1.0 : 1.4), u.rz, _sp); if (_sp.z > 1) continue;
     const rpx = u.T.r * 1.35 * ppuAt(u.rx, u.ry, u.rz) + touchPad + 5; const d = Math.hypot(_sp.x - sx, _sp.y - sy); if (d < rpx && d / rpx < bs) { bs = d / rpx; best = u; }
   }
   if (best) return best;
@@ -2678,6 +2776,7 @@ function pickPad(g, rad) { rad = rad || 3.4;
     for (let k = 0; k < pt.slots.length; k++) { const s = pt.slots[k]; if (!s.b && Math.hypot(g.x - s.x, g.z - s.z) < rad) return { pt, slot: k }; }
   } return null;
 }
+function pickWall(g) { for (const pt of W.pts) { const wb = pt.wall; if (!wb || wb.dead || wb.team !== MYTEAM) continue; const R = pt.hq >= 0 ? 19.5 : 13.5; if (Math.abs(Math.hypot(g.x - pt.x, g.z - pt.z) - R) < (UI.touch ? 3.6 : 2.6)) return wb; } return null; }
 function pickPoint(g) { let best = null, bd = 1e9; for (const pt of W.pts) { const d = Math.hypot(g.x - pt.x, g.z - pt.z); if (d < (pt.hq >= 0 ? 14 : pt.r + 1.5) && d < bd) { bd = d; best = pt; } } return best; }
 function ping(x, z, col) { mmPings.push({ x, z, t0: performance.now() / 1000, col: col || '#ffd24a' }); }
 function orderMarker(x, z, col) { markers.push({ x, z, t0: performance.now() / 1000, dur: .55, col: col || [.4, 1, .5] }); }
@@ -2717,6 +2816,7 @@ function onClickWorld(sx, sy, shift) {
   }
   screenToGround(sx, sy, _g); if (!_g.ok) return;
   if (have) { issueMove(_g.x, _g.z, nearEnemy(_g.x, _g.z, 16)); return; }
+  const wl = pickWall(_g); if (wl) { selectBuilding(wl); sfx('click'); return; }
   const pad = pickPad(_g, UI.touch ? 4.2 : 3.4); if (pad) { selectPad(pad.pt, pad.slot); sfx('click'); return; }
   const pt = pickPoint(_g); if (pt) { selectPoint(pt); sfx('click'); return; }
   if (!shift) { clearSel(); afterSel(); }
@@ -2822,7 +2922,7 @@ function onKey(e) {
   if (SCREEN) { if (k === 'escape' && SCREEN === 'pause') ACT.resume(); else if (k === 'escape' && (SCREEN === 'howto' || SCREEN === 'tech') && inGame) ACT.howback(); return; }
   if (UI.chatOpen) { if (e.key === 'Escape') closeChat(); return; }
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) return;
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab', 'backspace', 'pageup', 'pagedown'].includes(k) || /^f[1-4]$/.test(k)) e.preventDefault();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab', 'backspace', 'pageup', 'pagedown'].includes(k) || FKEYS[k]) e.preventDefault();
   if ((e.ctrlKey || e.metaKey || e.altKey) && k !== 'a' && !/^[1-9]$/.test(k)) return; // leave browser shortcuts (Ctrl+R, Ctrl+W...) alone
   UI.keys[k] = true; initAudio();
   if (k === 'escape') { if (UI.mode) setMode(null); else if (UI.supOpen || UI.specOpen || UI.more) { closePops(); UI.cardSig = ''; hudUpdate(true); } else if (techOpen) closeTech(); else if (selIds.size || selBld || selPadState()) { clearSel(); afterSel(); } else openPause(); return; }
@@ -2833,7 +2933,7 @@ function onKey(e) {
     return;
   }
   if ((e.ctrlKey || e.metaKey) && k === 'a') { e.preventDefault(); selAllArmy(); return; }
-  if (/^f[1-4]$/.test(k)) { const id = CALLORDER[+k[1] - 1]; startCall(id); return; }
+  if (FKEYS[k]) { startCall(FKEYS[k]); return; }
   switch (k) {
     case 't': openTech(); return; case 'p': openPause(); return; case '?': ACT.help(); return;
     case 'home': case ' ': case 'backspace': goHome(); return;
@@ -2858,7 +2958,8 @@ function retreatSel() {
   if (best) { issue({ k: 'mv', ids: us.map(u => u.id), x: best.x, z: best.z, f: UI.form }); orderMarker(best.x, best.z, [.5, .7, 1]); sfx('order'); UI.did.retreat = 1; }
 }
 function startCall(id) {
-  const p = P(ME); if (!callAvail(p, id) && !W.o.sandbox) { sfx('deny'); toast('Upgrade your HQ to Level ' + CALL[id].req[1] + ' to unlock ' + CALL[id].n); return; }
+  const p = P(ME); if (CALL[id].fogOnly && !W.o.fog) { sfx('deny'); toast(CALL[id].n + ' only works when Fog of war is on'); return; }
+  if (!callAvail(p, id) && !W.o.sandbox) { sfx('deny'); toast(CALL[id].req[0] === 'hq' ? 'Upgrade your HQ to Level ' + CALL[id].req[1] + ' to unlock ' + CALL[id].n : 'Build a Radar Station and level it up to Level ' + CALL[id].req[1] + ' to unlock ' + CALL[id].n); return; }
   if ((p.cd[id] || 0) > 0) { sfx('deny'); toast(CALL[id].n + ' is recharging: ' + Math.ceil(p.cd[id]) + 's'); return; }
   if (p.sup < callCost(p, id) && !W.o.sandbox) { sfx('deny'); toast('Not enough money'); return; }
   UI.supOpen = false; setMode('call', id);
@@ -2919,7 +3020,10 @@ const ICO = {
   bomb: '<circle cx="12" cy="14" r="7"/><path d="M12 7V3.500M15 4l-3 .3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>',
   crate: '<path d="M3 8l9-5 9 5v9l-9 5-9-5z" opacity=".95"/><path d="M12 12.500V22M3 8l9 5 9-5" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1.500"/>',
   chute: '<path d="M2.500 11A9.500 9 0 0 1 21.500 11c-2-1.500-3.500-1.500-4.800 0-1.500-1.500-3-1.500-4.700 0-1.700-1.500-3.200-1.500-4.700 0-1.300-1.500-2.800-1.500-4.800 0z"/><path d="M4 12l8 8M20 12l-8 8M12 12v8" stroke="currentColor" stroke-width="1.500" fill="none"/>',
-  guns: '<path d="M3 15h14l2-3h3v3l-2 3H3zM6 9h7v4H6z"/>'
+  guns: '<path d="M3 15h14l2-3h3v3l-2 3H3zM6 9h7v4H6z"/>',
+  eye: '<path fill-rule="evenodd" d="M12 5C6.500 5 2.700 9 1.500 12c1.200 3 5 7 10.500 7s9.300-4 10.500-7C21.300 9 17.500 5 12 5zm0 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/><circle cx="12" cy="12" r="2"/>',
+  rocket: '<path d="M12 2c3 2.500 4.500 6 4.500 10v4l2.500 3h-4l-1.500-2h-3L9 19H5l2.500-3v-4C7.500 8 9 4.500 12 2z"/><circle cx="12" cy="10" r="1.800" fill="#13202e"/>',
+  tank: '<path d="M3 15h18v4H3zM6 11h9l1.500 2.500H6zM15 12h6v1.800h-6z"/>'
 };
 const ic = (k, c) => '<svg class="ic' + (c ? ' ' + c : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICO[k] || '') + '</svg>';
 function toast(msg) { let t = $('.toast'); if (t) t.remove(); t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); }
@@ -2932,6 +3036,7 @@ function uiAlert(e) {
     case 'hqlost': addAlert('YOUR HQ WAS DESTROYED', '#ff3030'); break;
     case 'vet': if (e[5] >= 3) addAlert(name + ' became a Hero!', '#ffd24a'); break;
     case 'tech': addAlert('Upgrade done: ' + name, '#7be08a'); sfx('done'); break;
+    case 'expire': addAlert('Mercenary contract ended', '#aaa'); break;
     case 'nonest': addAlert('Cannot build another nest right now', '#aaa'); break;
     case 'elim': addAlert(name + ' is out of the game', '#ff9a4a'); break;
   }
@@ -2945,7 +3050,7 @@ function uiPointEvent(e) {
 }
 function uiChat(pid, msg) { const p = P(pid); if (!p) return; const c = $('#chatbox'); const d = document.createElement('div'); d.innerHTML = '<b style="color:' + hex3(p.color) + '">' + esc(p.name) + ':</b> ' + esc(msg); c.appendChild(d); setTimeout(() => d.remove(), 7000); while (c.children.length > 4) c.firstChild.remove(); if (pid !== ME) sfx('click'); }
 let QUICKFN = {};
-function lockMsg(what) { sfx('deny'); toast('Level up your HQ to Level 2 to unlock ' + what + '. Click your HQ, then press Level up.'); const h = P(ME).hqB; if (h) { camGoto(h.x, h.z); selectBuilding(h); } }
+function lockMsg(what, lvl) { sfx('deny'); toast('Level up your HQ to Level ' + (lvl || 2) + ' to unlock ' + what + '. Click your HQ, then press Level up.'); const h = P(ME).hqB; if (h) { camGoto(h.x, h.z); selectBuilding(h); } }
 function hqOk() { return playerHQLvl(P(ME)) >= 2 || !!W.o.sandbox; }
 function hudInit() {
   $('#hud').classList.remove('tuton'); $('#alerts').innerHTML = ''; $('#chatbox').innerHTML = ''; $('#scoreRow').innerHTML = ''; $('#quick').innerHTML = ''; $('#panel').innerHTML = ''; $('#panel').dataset.h = ''; $('#goal').innerHTML = '';
@@ -2963,7 +3068,7 @@ let lastScore = '', lastQuick = '';
 function teamBleed() { const cnt = {}; for (const t of W.teamList) cnt[t.id] = 0; for (const pt of W.pts) if (pt.owner >= 0) cnt[P(pt.owner).team]++; let mx = 0; for (const t of W.teamList) if (t.alive) mx = Math.max(mx, cnt[t.id]); const r = {}; for (const t of W.teamList) r[t.id] = t.alive && mx > cnt[t.id] ? Math.ceil((mx - cnt[t.id]) / 2) : 0; return r; }
 function ptsOfTeam(t) { let n = 0; for (const pt of W.pts) if (pt.owner >= 0 && P(pt.owner).team === t) n++; return n; }
 function iconStyle(k) { return ICONS[k] ? 'background-image:url(' + ICONS[k] + ')' : ''; }
-function strongWeak(w) { const names = ['soldiers', 'vehicles', 'tanks', 'aircraft', 'buildings']; const s = [], wk = []; for (let c = 0; c < 5; c++) { let m = WTM[w.wt][c]; if (c === 3 && w.g === 'g') m = 0; if (c !== 3 && w.g === 'a') m = 0; if (m >= 1.15) s.push(names[c]); else if (m <= .3) wk.push(names[c]); } return (s.length ? 'Good against ' + s.join(', ') + '. ' : '') + (wk.length ? 'Weak against ' + wk.join(', ') + '.' : ''); }
+function strongWeak(w) { if (w.g === 'a') return 'Only attacks aircraft, and is very strong against them.'; const names = ['soldiers', 'vehicles', 'tanks', 'aircraft', 'buildings']; const s = [], wk = []; for (let c = 0; c < 5; c++) { let m = WTM[w.wt][c]; if (c === 3 && w.g === 'g') m = 0; if (c !== 3 && w.g === 'a') m = 0; if (m >= 1.15) s.push(names[c]); else if (m <= .3) wk.push(names[c]); } return (s.length ? 'Good against ' + s.join(', ') + '. ' : '') + (wk.length ? 'Weak against ' + wk.join(', ') + '.' : ''); }
 function unitTip(type, b) { const T = UT[type], p = P(ME), w = T.w; return T.n + '|' + T.info + '|Costs ' + unitCost(p, type, b) + '. Takes ' + T.pop + ' army space. Ready in ' + T.bt + 's.|' + (w ? strongWeak(w) : '') + '|Hold Shift to queue 5.'; }
 function bldTip(type) { const T = BT[type]; return T.n + '|' + T.info + '|Costs ' + T.cost[0] + '. You can level it up 3 times.'; }
 
@@ -3031,8 +3136,8 @@ function updModeBar() {
 function updQuick(force) {
   const p = P(ME), ok = hqOk(); const items = [['army', 'army', 'Army', 'Select all your troops (Ctrl+A)'], ['idle', 'idle', 'Idle', 'Select troops that are doing nothing (Tab)'], ['home', 'hq', 'Home', 'Jump the camera to your HQ (Space)']];
   const upAff = ok && !p.res && TECH.some(t => !p.techs[t.id] && playerHQLvl(p) >= Math.max(2, t.tier) && (t.tier === 1 || p.techs[TECH.find(x => x.br === t.br && x.tier === t.tier - 1).id]) && p.sup >= t.cost + 80);
-  const supRdy = ok && CALLORDER.some(id => callAvail(p, id) && (p.cd[id] || 0) <= 0 && p.sup >= callCost(p, id) + 60);
-  items.push(['upg', 'up', 'Upgrades', ok ? 'Research upgrades for your whole army (T)' : 'Level up your HQ to Level 2 to unlock'], ['sup', 'plane', 'Support', ok ? 'Call in airstrikes, supplies and more (F1-F4)' : 'Level up your HQ to Level 2 to unlock']);
+  const supRdy = ok && supIds().some(id => callAvail(p, id) && (p.cd[id] || 0) <= 0 && p.sup >= callCost(p, id) + 60);
+  items.push(['upg', 'up', 'Upgrades', ok ? 'Research upgrades for your whole army (T)' : 'Level up your HQ to Level 2 to unlock'], ['sup', 'plane', 'Support', ok ? 'Call in airstrikes, supplies, mercenaries and more (F1-F4, F6-F9)' : 'Level up your HQ to Level 2 to unlock']);
   if (UI.touch && !W.o.mp && !W.mirror) items.push(['sel', 'sel', 'Select', 'Drag to select troops']); else if (W.o.mp || W.mirror) items.push(['chat', 'chat', 'Chat', 'Talk to your opponent (Enter)']); else items.push(['help', 'help', 'Help', 'How to play (?)']);
   const sig = items.map(i => i[0]).join() + ok + upAff + supRdy + UI.supOpen + UI.boxTouch + (UI.touch ? 1 : 0) + (techOpen ? 1 : 0);
   if (sig === lastQuick && !force) return; lastQuick = sig;
@@ -3041,13 +3146,14 @@ function updQuick(force) {
     return '<button class="qb' + (lock ? ' lock' : '') + (on ? ' on' : '') + '" data-q2="' + i[0] + '" data-tip="' + esc(i[2] + '|' + i[3]) + '">' + ic(lock ? 'lock' : i[1]) + '<span>' + i[2] + '</span>' + (bd ? '<span class="bd"></span>' : '') + '</button>';
   }).join('');
 }
+function supIds() { return CALLORDER.filter(id => !(CALL[id].fogOnly && !W.o.fog)); }
 function updSup(force) {
-  const el = $('#sup'); if (!UI.supOpen) { el.classList.add('hidden'); return; } el.classList.remove('hidden'); const p = P(ME);
-  const sig = CALLORDER.map(id => (callAvail(p, id) ? 1 : 0) + '' + Math.ceil(p.cd[id] || 0) + (p.sup >= callCost(p, id) ? 1 : 0)).join() + UI.mode; if (el.dataset.s === sig && !force) return; el.dataset.s = sig;
-  el.innerHTML = CALLORDER.map(id => {
+  const el = $('#sup'); if (!UI.supOpen) { el.classList.add('hidden'); return; } el.classList.remove('hidden'); const p = P(ME); const ids = supIds();
+  const sig = ids.map(id => (callAvail(p, id) ? 1 : 0) + '' + Math.ceil(p.cd[id] || 0) + (p.sup >= callCost(p, id) ? 1 : 0)).join() + UI.mode; if (el.dataset.s === sig && !force) return; el.dataset.s = sig;
+  el.innerHTML = ids.map(id => {
     const C = CALL[id], av = callAvail(p, id) || W.o.sandbox, cd = p.cd[id] || 0, cost = callCost(p, id), afford = p.sup >= cost || W.o.sandbox;
-    const ico = { air: 'bomb', supply: 'crate', barrage: 'guns', para: 'chute' }[id];
-    return '<div class="card' + (!av ? ' lock' : (cd > 0 || !afford ? ' off' : '')) + '" data-call="' + id + '" data-tip="' + esc(C.n + '|' + C.d + '|Costs ' + cost + '. Recharges in ' + C.cd + 's.') + '"><div class="cimg" style="color:' + C.col + ';display:flex;align-items:center;justify-content:center">' + ic(ico) + '</div><div class="cn">' + C.n + '</div>' + (av ? '<div class="cc">' + (cd > 0 ? Math.ceil(cd) + 's' : ic('coin') + cost) + '</div>' : '<div class="cc">' + ic('lock') + ' HQ Lv ' + C.req[1] + '</div>') + '<div class="cd">' + C.d + '</div></div>';
+    const ico = { recon: 'eye', air: 'bomb', supply: 'crate', merc: 'group', para: 'chute', barrage: 'guns', armor: 'tank', cruise: 'rocket' }[id];
+    return '<div class="card' + (!av ? ' lock' : (cd > 0 || !afford ? ' off' : '')) + '" data-call="' + id + '" data-tip="' + esc(C.n + ' (' + C.key + ')|' + C.d + '|Costs ' + cost + '. Recharges in ' + C.cd + 's.') + '"><div class="cimg" style="color:' + C.col + ';display:flex;align-items:center;justify-content:center">' + ic(ico) + '</div><div class="cn">' + C.n + '</div>' + (av ? '<div class="cc">' + (cd > 0 ? Math.ceil(cd) + 's' : ic('coin') + cost) + '</div>' : '<div class="cc">' + ic('lock') + ' ' + callReqText(C) + '</div>') + '<div class="cd">' + C.d + '</div></div>';
   }).join('');
 }
 
@@ -3055,10 +3161,10 @@ function updSup(force) {
 function cardHtml(i, o, compact) {
   const img = o.img ? '<div class="cimg" style="' + iconStyle(o.img) + '"></div>' : '<div class="cimg" style="color:' + (o.col || 'var(--gold2)') + ';display:flex;align-items:center;justify-content:center">' + ic(o.ico || 'star') + '</div>';
   const cost = o.lock ? '<span class="cc">' + ic('lock') + (o.lockTxt || 'Locked') + '</span>' : (o.cost ? '<span class="cc">' + ic('coin') + o.cost + '</span>' : '');
-  const cls = 'card' + (compact ? ' c2' : '') + (o.off ? ' off' : '') + (o.lock ? ' lock' : '') + (o.on ? ' on' : '') + (o.go ? ' go' : '');
+  const cls = 'card' + (compact ? ' c2' : '') + (o.off ? ' off' : '') + (o.lock ? ' lock' : '') + (o.on ? ' on' : '') + (o.go ? ' go' : '') + (o.stk ? ' stk' : '');
   const extra = (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
-  if (compact) return '<div class="' + cls + '" data-i="' + i + '" data-tip="' + esc(o.tip || o.nm) + '">' + img + '<div class="ctx"><div class="cn">' + esc(o.nm) + '</div><div class="cs">' + cost + '<span class="cd">' + esc(o.s || o.d || '') + '</span></div></div>' + extra + '</div>';
-  return '<div class="' + cls + '" data-i="' + i + '" data-tip="' + esc(o.tip || o.nm) + '"><div class="crow">' + img + '<div class="cn">' + esc(o.nm) + '</div></div><div class="cm">' + cost + '</div><div class="cd">' + esc(o.d || '') + '</div>' + extra + '</div>';
+  if (compact) return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '">' + img + '<div class="ctx"><div class="cn">' + esc(o.nm) + '</div><div class="cs">' + cost + '<span class="cd">' + esc(o.s || o.d || '') + '</span></div></div>' + extra + '</div>';
+  return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '"><div class="crow">' + img + '<div class="cn">' + esc(o.nm) + '</div></div><div class="cm">' + cost + '</div><div class="cd">' + esc(o.d || '') + '</div>' + extra + '</div>';
 }
 function hpHtml(f, col) { return '<div class="hpbar"><i style="width:' + Math.round(f * 20) * 5 + '%' + (col ? ';background:' + col : '') + '"></i></div>'; }
 function renderPanel(force) {
@@ -3084,21 +3190,21 @@ function renderPanel(force) {
     }
   } else if (b && b.owner === ME) {
     const T = b.T, spn = b.spec ? T.specs.find(s => s.id === b.spec) : null;
-    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '%' : spn ? '<b>' + esc(spn.n) + '</b> upgrade' : esc(T.d)) + '</div>';
+    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '%' : esc(T.d)) + '</div>';
     if (b.q.length) head += '<div class="chips">' + b.q.map((q, i) => '<div class="chip" data-q="' + i + '" data-tip="' + esc(UT[q.u].n + '|Click to cancel and get your money back.') + '" style="width:28px;height:28px;' + iconStyle(q.u) + '">' + (i === 0 ? '<div class="h" style="width:' + Math.round(q.t / q.dur * 10) * 10 + '%;background:#f6c04e"></div>' : '') + '</div>').join('') + '</div>';
     if (b.prog >= 1) {
       let hk = 0;
       for (const k of Object.keys(UT)) {
         const U = UT[k], src = U.src.find(s => s[0] === b.type); if (!src || U.nobuild) continue; const ok = canTrainAt(b, k); if (!ok) continue;
         const cost = unitCost(p, k, b), popOk = p.pop + U.pop <= p.popCap, can = (p.sup >= cost || W.o.sandbox) && popOk;
-        items.push({ nm: U.n, img: k, cost, d: U.d, s: U.role, off: !can, tip: unitTip(k, b), fn: () => { if (issue({ k: 'train', b: b.id, u: k, n: UI.keys['shift'] ? 5 : 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); } else { sfx('deny'); toast(!popOk ? 'Army is full. Capture more flags to raise the limit.' : 'Not enough money yet.'); } UI.cardSig = ''; hudUpdate(true); } });
+        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: !can, tip: unitTip(k, b), fn: () => { if (issue({ k: 'train', b: b.id, u: k, n: UI.keys['shift'] ? 5 : 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); } else { sfx('deny'); toast(!popOk ? 'Army is full. Capture more flags to raise the limit.' : 'Not enough money yet.'); } UI.cardSig = ''; hudUpdate(true); } });
       }
       if (b.lvl < 3 && !b.upg && BT[b.type].cost[b.lvl] !== undefined) {
         const uc = BT[b.type].cost[b.lvl], gate = b.lvl === 2 && b.type !== 'hq' && hql < 2;
-        items.push({ nm: 'Level ' + (b.lvl + 1), ico: 'up', cost: uc, d: T.up[b.lvl - 1], go: !gate && (p.sup >= uc), lock: gate, lockTxt: 'HQ Lv 2', off: !gate && p.sup < uc && !W.o.sandbox, hk: 'U', tip: 'Level up to ' + (b.lvl + 1) + '|' + (T.upl || T.up)[b.lvl - 1] + '|Costs ' + uc + '. Takes ' + BT[b.type].bt[b.lvl] + 's.' + (gate ? ' Level up your HQ to Level 2 first.' : ''), fn: () => { if (gate) { toast('Level up your HQ to Level 2 first.'); sfx('deny'); return; } if (issue({ k: 'upg', b: b.id })) { UI.did.upg = 1; sfx('click'); } else { sfx('deny'); toast('Not enough money yet.'); } } });
+        items.push({ nm: 'Level ' + (b.lvl + 1), key: 'lvl', stk: 1, ico: 'up', cost: uc, d: T.up[b.lvl - 1], go: !gate && (p.sup >= uc), lock: gate, lockTxt: 'HQ Lv 2', off: !gate && p.sup < uc && !W.o.sandbox, hk: 'U', tip: 'Level up to ' + (b.lvl + 1) + '|' + (T.upl || T.up)[b.lvl - 1] + '|Costs ' + uc + '. Takes ' + BT[b.type].bt[b.lvl] + 's.' + (gate ? ' Level up your HQ to Level 2 first.' : ''), fn: () => { if (gate) { toast('Level up your HQ to Level 2 first.'); sfx('deny'); return; } if (issue({ k: 'upg', b: b.id })) { UI.did.upg = 1; sfx('click'); } else { sfx('deny'); toast('Not enough money yet.'); } } });
       }
-      if (b.lvl >= 3 && !b.spec && !b.upg && T.specs.length) items.push({ nm: 'Pick upgrade', ico: 'star', cost: SPEC_COST, d: 'Choose 1 of 3 upgrades.', go: p.sup >= SPEC_COST, off: p.sup < SPEC_COST && !W.o.sandbox, tip: 'Pick an upgrade|Choose 1 of 3 special upgrades for this building. It cannot be changed later.', fn: () => { UI.specOpen = true; UI.cardSig = ''; hudUpdate(true); } });
-      if (b.upg) items.push({ nm: 'Working...', ico: 'build', d: b.upg.kind === 'lvl' ? 'Leveling up.' : 'Adding upgrade.', off: true, pg: b.upg.t / b.upg.dur, fn: () => { } });
+      if (b.lvl >= 3 && !b.spec && !b.upg && T.specs.length) items.push({ nm: 'Pick upgrade', key: 'spec', stk: 1, ico: 'star', cost: SPEC_COST, d: 'Choose 1 of 3 upgrades.', go: p.sup >= SPEC_COST, off: p.sup < SPEC_COST && !W.o.sandbox, tip: 'Pick an upgrade|Choose 1 of 3 special upgrades for this building. It cannot be changed later.', fn: () => { UI.specOpen = true; UI.cardSig = ''; hudUpdate(true); } });
+      if (b.upg) items.push({ nm: 'Working...', key: 'work', stk: 1, ico: 'build', d: b.upg.kind === 'lvl' ? 'Leveling up.' : 'Adding upgrade.', off: true, pg: b.upg.t / b.upg.dur, fn: () => { } });
       if (Object.keys(UT).some(k => canTrainAt(b, k))) { hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Rally point|New troops walk to the spot you click.">Rally point</button>'; }
     } else items.push({ nm: 'Under construction', ico: 'build', d: 'Engineers nearby build it faster.', off: true, pg: b.prog, fn: () => { } });
     if (b.type !== 'hq') { hb.sell = () => { if (issue({ k: 'sell', b: b.id })) { sfx('click'); selBld = 0; UI.cardSig = ''; hudUpdate(true); } }; hbtns += '<button class="sm" data-hb="sell" data-tip="Sell|Remove this building and get half the money back.">Sell +' + Math.round(b.spent * .5) + '</button>'; }
@@ -3110,15 +3216,24 @@ function renderPanel(force) {
   } else if (selPad && W.pts[selPad.pt]) {
     const pt = W.pts[selPad.pt];
     if (pt.owner === ME) {
-      const free = pt.slots.filter(s => !s.b).length;
-      head = '<div class="ph1"><div class="pic" style="color:' + hex3(P(ME).color) + ';display:flex;align-items:center;justify-content:center">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Your base' : pt.name) + '<small>Your flag</small></div></div><div class="pm" style="white-space:normal">' + (free ? 'Pick a building. ' + free + ' spot' + (free > 1 ? 's' : '') + ' free.' : 'All spots used. Click a building to use it.') + '</div>';
-      if (free) for (const k of BUILDABLE) {
+      const free = pt.slots.filter(s => !s.b).length, wallOk = !pt.wall;
+      head = '<div class="ph1"><div class="pic" style="color:' + hex3(P(ME).color) + ';display:flex;align-items:center;justify-content:center">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Your base' : pt.name) + '<small>Your flag</small></div></div><div class="pm" style="white-space:normal">' + (free ? 'Pick a building. ' + free + ' spot' + (free > 1 ? 's' : '') + ' free.' : (wallOk && hql >= BT.wall.hq1 ? 'All spots used. You can still add walls.' : 'All spots used. Click a building to use it.')) + '</div>';
+      const buildCard = (k) => {
         const T = BT[k], gate = (T.hq1 || 1) > hql && !W.o.sandbox, can = p.sup >= T.cost[0] || W.o.sandbox;
-        items.push({ nm: T.n, img: 'b_' + k, cost: T.cost[0], d: T.d, lock: gate, lockTxt: 'HQ Lv ' + T.hq1, off: !gate && !can, tip: bldTip(k) + (gate ? '|Level up your HQ to Level ' + T.hq1 + ' to unlock this.' : ''), fn: () => {
-          if (gate) { sfx('deny'); toast('Level up your HQ to Level ' + T.hq1 + ' to unlock the ' + T.n + '.'); return; }
-          let slot = selPad && selPad.slot >= 0 && !pt.slots[selPad.slot].b ? selPad.slot : pt.slots.findIndex(s => !s.b); if (slot < 0) { toast('No free build spots here.'); return; }
-          if (issue({ k: 'build', pt: pt.id, slot, type: k })) { UI.did.build = k; sfx('click'); clearSel(); afterSel(); } else { sfx('deny'); toast('Not enough money yet.'); } } });
+        return { nm: T.n, key: 'b_' + k, img: 'b_' + k, cost: T.cost[0], d: T.d, lock: gate, lockTxt: 'HQ Lv ' + T.hq1, off: !gate && !can, tip: bldTip(k) + (gate ? '|Level up your HQ to Level ' + T.hq1 + ' to unlock this.' : ''), fn: () => {
+          if (gate) { lockMsg('the ' + T.n, T.hq1); return; }
+          let slot = selPad && selPad.slot >= 0 && !pt.slots[selPad.slot].b ? selPad.slot : pt.slots.findIndex(s => !s.b); if (slot < 0 && k !== 'wall') { toast('No free build spots here.'); return; }
+          if (issue({ k: 'build', pt: pt.id, slot: Math.max(0, slot), type: k })) { UI.did.build = k; sfx('click'); clearSel(); afterSel(); } else { sfx('deny'); toast('Not enough money yet.'); } } };
+      };
+      const lockedNext = [];
+      for (const k of BUILDABLE) {
+        const T = BT[k]; if (k === 'wall' ? !wallOk : !free) continue;
+        if ((T.hq1 || 1) > hql && !W.o.sandbox) { if ((T.hq1 || 1) === hql + 1) lockedNext.push(k); continue; }
+        items.push(buildCard(k));
       }
+      if (lockedNext.length === 1) items.push(buildCard(lockedNext[0]));
+      else if (lockedNext.length > 1) { const nms = lockedNext.map(k => BT[k].n); items.push({ nm: 'More buildings', key: 'b_more', ico: 'lock', lock: true, lockTxt: 'HQ Lv ' + (hql + 1), d: nms.length + ' more to build.', tip: 'More buildings|Level up your HQ to Level ' + (hql + 1) + ' to unlock: ' + nms.join(', ') + '.', fn: () => lockMsg('more buildings', hql + 1) }); }
+      if (pt.wall && !pt.wall.dead) items.push({ nm: 'Walls', key: 'walls', img: 'b_wall', d: 'Level up or sell the walls.', tip: 'Fortified Walls|Select the walls around this flag to level them up.', fn: () => { selectBuilding(pt.wall); sfx('click'); } });
     } else {
       head = '<div class="ph1"><div class="pic" style="color:' + (pt.owner >= 0 ? hex3(P(pt.owner).color) : '#8d97a3') + ';display:flex;align-items:center;justify-content:center">' + ic('flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Enemy base' : pt.name) + '<small>' + (pt.owner < 0 ? 'Empty flag' : 'Enemy flag') + '</small></div></div><div class="pm" style="white-space:normal">' + (pt.hq >= 0 ? 'Destroy the HQ to win!' : 'Send troops into the circle and wait. When it changes color, it is yours.') + '</div>';
       wide = true;
@@ -3157,10 +3272,12 @@ function showTouchBtns(on) {
 const MENU = () => $('#menus');
 let SCREEN = '', PREV = {}, SK = null, techOpen = false, CODEXTAB = 'units', BACKSCREEN = 'main', PAUSEDBYHELP = false;
 const SUPPLY_OPT = { low: 300, normal: 600, high: 1200, rich: 3000 };
-function defaultSK() { return { map: 'greenfield', type: '1v1', diff: 'easy', style: 'mixed', more: false, seed: 0, slots: [{ kind: 'human', team: 0 }, { kind: 'ai', pers: 'hale', diff: 'easy', team: 1 }, { kind: 'closed', pers: 'vex', diff: 'easy', team: 2 }, { kind: 'closed', pers: 'stone', diff: 'easy', team: 3 }], tickets: 400, supplies: 'normal', fog: false, speed: 1, maxPop: 120 }; }
+function defaultSK() { return { map: 'greenfield', type: '1v1', diff: 'easy', style: 'mixed', more: false, custom: false, seed: 0, slots: [{ kind: 'human', team: 0 }, { kind: 'ai', pers: 'hale', diff: 'easy', team: 1 }, { kind: 'closed', pers: 'vex', diff: 'easy', team: 2 }, { kind: 'closed', pers: 'stone', diff: 'easy', team: 3 }], tickets: 400, supplies: 'normal', fog: false, speed: 1, maxPop: 120 }; }
 function applySimple(S) {
   const n = mapDef(S.map).maxP, pool = ['hale', 'vex', 'stone', 'kruger', 'voss']; if (n < 3) S.type = '1v1';
-  const T = S.slots; for (let i = 1; i < 4; i++) { T[i].diff = S.diff; T[i].pers = S.style === 'mixed' ? pool[(i * 2 + (S.seed | 0)) % pool.length] : S.style; }
+  const T = S.slots;
+  if (S.custom) { T[0].team = 0; T[0].kind = 'human'; for (let i = n; i < 4; i++) T[i].kind = 'closed'; if (!T.slice(1, n).some(x => x.kind === 'ai')) T[1].kind = 'ai'; if (T[1].team === 0 && !T.slice(1, n).some(x => x.kind === 'ai' && x.team !== 0)) T[1].team = 1; return; }
+  for (let i = 1; i < 4; i++) { T[i].diff = S.diff; T[i].pers = S.style === 'mixed' ? pool[(i * 2 + (S.seed | 0)) % pool.length] : S.style; }
   if (S.type === '1v1') { T[0].team = 0; T[1].kind = 'ai'; T[1].team = 1; T[2].kind = 'closed'; T[3].kind = 'closed'; }
   else if (S.type === '2v2') { T[1].kind = T[2].kind = T[3].kind = 'ai'; T[0].team = 0; T[1].team = 0; T[2].team = 1; T[3].team = 1; }
   else { T[0].team = 0; for (let i = 1; i < 4; i++) { T[i].kind = 'ai'; T[i].team = i; } }
@@ -3190,6 +3307,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> the Titan mech, Gunships, Sky Hunter jets, Commandos, mercenaries, Medical Tents, Radar, walls and 4 more Support powers are back. See the Field Guide. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -3200,19 +3318,31 @@ SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min
 SCREENS.skirmish = () => {
   const d = mapDef(SK.map), n = d.maxP; const mc = MAPS.map(m => `<div class="mc ${m.id === SK.map ? 'on' : ''}" data-act="map" data-v="${m.id}"><img src="${mapPreview(m.id)}"/>${m.name}<small>${m.maxP === 2 ? '2 players' : 'up to 4 players'}</small></div>`).join('');
   const dd = { easy: 'Slow and forgiving. Great for learning.', normal: 'A fair fight.', hard: 'Fast and smart. Counters your army.', brutal: 'Very hard. Gets extra money.' }[SK.diff];
-  const adv = SK.more ? `<div class="row" style="gap:18px;margin-top:8px"><div><div class="lbl">Starting score</div>${seg('tickets', [[200, '200'], [400, '400'], [700, '700'], [1000, '1000']], SK.tickets)}</div>
+  const adv = SK.more ? `<div class="row" style="gap:18px;margin-top:8px"><div><div class="lbl">Enemies</div>${seg('custom', [[0, 'Quick setup'], [1, 'Customize each']], SK.custom ? 1 : 0, 'scustom')}</div><div><div class="lbl">Starting score</div>${seg('tickets', [[200, '200'], [400, '400'], [700, '700'], [1000, '1000']], SK.tickets)}</div>
   <div><div class="lbl">Starting money</div>${seg('supplies', [['low', 'Low'], ['normal', 'Normal'], ['high', 'High'], ['rich', 'Rich']], SK.supplies)}</div>
   <div><div class="lbl">Fog of war</div>${seg('fog', [[1, 'On'], [0, 'Off']], SK.fog ? 1 : 0)}</div>
   <div><div class="lbl">Game speed</div>${seg('speed', [[1, 'Normal'], [1.5, 'Fast'], [2, 'Faster']], SK.speed)}</div>
   <div><div class="lbl">Army limit</div>${seg('maxPop', [[80, '80'], [120, '120'], [160, '160']], SK.maxPop)}</div></div>` : '';
   return `<div class="scr bg"><div class="panel" style="width:min(860px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Play vs Computer</h2><button class="tbtn" data-act="back">Back</button></div>
   <div class="lbl">1. Pick a map</div><div class="mapcards">${mc}</div><div class="note" style="margin-top:6px">${esc(d.desc)}</div>
-  ${n > 2 ? `<div class="lbl">2. Game type</div>${seg('type', [['1v1', '1 vs 1'], ['2v2', '2 vs 2 (you + 1 helper)'], ['ffa', 'Everyone for themselves']], SK.type, 'stype')}` : ''}
+  ${SK.custom ? `<div class="lbl">2. Players</div>${skRowsHtml()}<div class="note" style="margin-top:5px">Pick each commander, how hard they are, and which team they are on. Put players on different teams to fight.</div>` : `${n > 2 ? `<div class="lbl">2. Game type</div>${seg('type', [['1v1', '1 vs 1'], ['2v2', '2 vs 2 (you + 1 helper)'], ['ffa', 'Everyone for themselves']], SK.type, 'stype')}` : ''}
   <div class="lbl">${n > 2 ? '3' : '2'}. How hard is the enemy?</div>${seg('diff', Object.entries(AID).map(([k, v]) => [k, v.n]), SK.diff, 'sdiff')}<div class="note" style="margin-top:5px">${dd}</div>
-  <div class="lbl">${n > 2 ? '4' : '3'}. Enemy style</div>${sel('style', [['mixed', 'Surprise me'], ...Object.values(AIP).map(p => [p.id, p.name + ' - ' + p.title])], SK.style, 'sstyle')}
+  <div class="lbl">${n > 2 ? '4' : '3'}. Enemy style</div>${sel('style', [['mixed', 'Surprise me'], ...Object.values(AIP).map(p => [p.id, p.name + ' - ' + p.title])], SK.style, 'sstyle')}`}
   <div style="margin-top:12px"><button class="tbtn" data-act="moreopt">${SK.more ? 'Hide' : 'Show'} extra options</button></div>${adv}
   <div class="stick"><button class="mbtn go" style="margin:0" data-act="startsk">Start Battle<small>Goal: capture flags and hold more than the enemy</small></button></div></div></div>`;
 };
+function skRowsHtml() {
+  const n = mapDef(SK.map).maxP, colors = assignColors(SK); let rows = '';
+  for (let i = 0; i < n; i++) {
+    const sl = SK.slots[i]; rows += `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span>`;
+    if (i === 0) rows += `<b style="min-width:130px">${esc(SET.name)} (You)</b>`;
+    else rows += sel('kind' + i, [['ai', 'AI Commander'], ['closed', 'Closed']], sl.kind, 'slotkind', 'data-i="' + i + '"');
+    if (sl.kind === 'ai') rows += sel('pers' + i, Object.values(AIP).map(p => [p.id, p.name + ' - ' + p.title]), sl.pers, 'slotpers', 'data-i="' + i + '"') + sel('diff' + i, Object.entries(AID).map(([k, v]) => [k, v.n]), sl.diff, 'slotdiff', 'data-i="' + i + '"');
+    if (sl.kind !== 'closed') rows += sel('team' + i, [[0, 'Team A'], [1, 'Team B'], [2, 'Team C'], [3, 'Team D']], sl.team, 'slotteam', 'data-i="' + i + '"');
+    rows += '</div>';
+  }
+  return rows;
+}
 function assignColors(S) {
   const used = new Set(), out = []; const mine = PROF.color || 0; out[0] = mine; used.add(mine);
   for (let i = 1; i < 4; i++) { let c = 0; while (used.has(c)) c++; used.add(c); out[i] = c; } return out;
@@ -3261,13 +3391,13 @@ SCREENS.profile = () => {
 SCREENS.codex = () => {
   let body = '';
   if (CODEXTAB === 'units') {
-    body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px">' + UTK.map(k => { const T = UT[k], w = T.w; const src = T.src.filter(s => s[0] !== 'hq' || T.src.length === 1).map(s => BT[s[0]].n + (s[1] > 1 ? ' (Level ' + s[1] + ')' : '')).join(' or '); return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:52px;height:52px;${iconStyle(k)}"></div><div><b>${T.n}</b> <i>${T.role}</i><br>${T.info}<br><i>${w ? strongWeak(w) : ''}</i><br><i>Cost ${T.cost} - made at the ${src}</i></div></div>`; }).join('') + '</div>';
+    body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px">' + UTK.map(k => { const T = UT[k], w = T.w; const src = T.nobuild ? 'Free with the Hire Mercenaries power' : 'Cost ' + T.cost + ' - made at the ' + T.src.filter(s => s[0] !== 'hq' || T.src.length === 1).map(s => { const B = BT[s[0]], sp = s[2] ? B.specs.find(x => x.id === s[2]) : null; return B.n + (s[1] > 1 || sp ? ' (' + (s[1] > 1 ? 'Level ' + s[1] : '') + (s[1] > 1 && sp ? ', ' : '') + (sp ? sp.n + ' upgrade' : '') + ')' : ''); }).join(' or '); return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:52px;height:52px;${iconStyle(k)}"></div><div><b>${T.n}</b> <i>${T.role}</i><br>${T.info}<br><i>${w ? strongWeak(w) : ''}</i><br><i>${src}</i></div></div>`; }).join('') + '</div>';
   } else if (CODEXTAB === 'buildings') {
     body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:7px">' + ['hq', ...BUILDABLE].map(k => { const T = BT[k]; return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:58px;height:58px;${iconStyle('b_' + k)}"></div><div><b>${T.n}</b>${T.cost[0] ? ' - costs ' + T.cost[0] : ''}<br>${T.info}<br>${T.specs.map(s => '<span style="color:#ffe2a6">' + s.n + '</span>: ' + s.d).join('<br>')}</div></div>`; }).join('') + '</div>';
   } else if (CODEXTAB === 'callins') {
-    body = CALLORDER.map(id => { const C = CALL[id]; return `<div class="ach" style="margin-bottom:5px"><span style="font-size:24px;color:${C.col};width:28px;text-align:center">${C.ic}</span><div><b>${C.n}</b> (${C.key}) - costs ${C.cost}, recharges in ${C.cd}s, needs HQ Level ${C.req[1]}<br><i style="color:#ccd">${C.d}</i></div></div>`; }).join('');
+    body = CALLORDER.map(id => { const C = CALL[id]; return `<div class="ach" style="margin-bottom:5px"><span style="font-size:24px;color:${C.col};width:28px;text-align:center">${C.ic}</span><div><b>${C.n}</b> (${C.key}) - costs ${C.cost}, recharges in ${C.cd}s, needs ${C.req[0] === 'hq' ? 'HQ Level ' + C.req[1] : 'a Level ' + C.req[1] + ' Radar Station'}<br><i style="color:#ccd">${C.d}</i></div></div>`; }).join('');
   } else {
-    body = '<div class="note" style="margin-bottom:6px">Unlock Upgrades by leveling your HQ to Level 2. They help your whole army. One at a time.</div><div class="tech">' + TBR.map(b => '<div class="tcol"><h5>' + b.n + '</h5>' + TECH.filter(t => t.br === b.id).map(t => `<div class="tcard" style="cursor:default"><b>${t.n}</b>${t.d}<br><span style="color:#ffe2a6">Costs ${t.cost}</span></div>`).join('') + '</div>').join('') + '</div>';
+    body = '<div class="note" style="margin-bottom:6px">Unlock Upgrades by leveling your HQ to Level 2. They help your whole army. One at a time. There are ' + TECH.length + ' in total.</div><div class="tech">' + TBR.map(b => '<div class="tcol"><h5>' + b.n + '</h5>' + TECH.filter(t => t.br === b.id).map(t => `<div class="tcard" style="cursor:default"><b>${t.n}</b>${t.d}<br><span style="color:#ffe2a6">Costs ${t.cost}</span></div>`).join('') + '</div>').join('') + '</div>';
   }
   return `<div class="scr bg"><div class="panel" style="width:min(1000px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Field Guide</h2><button class="tbtn" data-act="back2">Back</button></div><div class="row" style="margin:8px 0">${seg('ctab', [['units', 'Troops'], ['buildings', 'Buildings'], ['callins', 'Support'], ['tech', 'Upgrades']], CODEXTAB, 'ctab')}</div>${body}</div></div>`;
 };
@@ -3281,10 +3411,10 @@ SCREENS.howto = () => {
    <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building to train troops. Level it up to unlock stronger troops.</p></div>
    <div class="hc"><h4>3. Select and move</h4><div class="dg"><div class="bx" style="left:20px;top:26px;width:80px;height:56px"></div>${sol(36, 44)}${sol(58, 54)}${sol(78, 44)}<div class="arr" style="left:110px;top:56px;width:60px;transform:rotate(-8deg)"></div><div class="cur" style="left:186px;top:34px"></div></div><p>Click a troop, or drag a box around many. Then click the ground to move there, or click an enemy to attack it. No right-click needed.</p></div>
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
-   <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns shoot down helicopters and drones.</p></div>
+   <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
    <div class="hc"><h4>6. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, wheel or + -</b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b><kbd>F</kbd> then click</b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b></div></div>
   </div>
-  <div class="note" style="margin-top:12px">Tip: more of the game unlocks as you level up your HQ. Upgrades and Support powers (airstrikes, supply drops) open at HQ Level 2.</div></div></div>`;
+  <div class="note" style="margin-top:12px">Tip: more of the game unlocks as you level up your HQ and your buildings. Upgrades and Support powers (airstrikes, supply drops, mercenaries) open at HQ Level 2. A Level 3 building lets you pick a special upgrade, and some of them unlock giant units like the Titan mech, Gunships and Sky Hunter jets.</div></div></div>`;
 };
 SCREENS.pause = () => `<div class="scr bg"><div class="panel" style="width:min(360px,96vw)"><h2 style="margin:0 0 8px;color:#ffe2a6;text-align:center">${W && W.mirror || (W && W.o.mp) ? 'Menu' : 'Paused'}</h2>
   <button class="mbtn go" data-act="resume">Resume</button><button class="mbtn" data-act="help">How to Play</button><button class="mbtn" data-act="psettings">Settings</button><button class="mbtn" data-act="pcodex">Field Guide</button>
@@ -3314,6 +3444,8 @@ ACT.stype = el => { SK.type = el.dataset.v; applySimple(SK); reSK(); };
 ACT.sdiff = el => { SK.diff = el.dataset.v; applySimple(SK); reSK(); };
 ACT.sstyle = el => { SK.style = el.value; applySimple(SK); };
 ACT.moreopt = () => { SK.more = !SK.more; showScreen('skirmish'); };
+ACT.scustom = el => { const on = el.dataset.v === '1'; if (on && !SK.custom) { SK.custom = false; applySimple(SK); } SK.custom = on; applySimple(SK); showScreen('skirmish'); };
+ACT.newsok = () => { PROF.seenVer = VERSION; saveProf(); showScreen('main'); };
 ACT.slotkind = el => { const i = +el.dataset.i; SK.slots[i].kind = el.value; if (el.value === 'ai' && SK.slots[i].team === SK.slots[0].team) SK.slots[i].team = i; reSK(); };
 ACT.slotpers = el => { SK.slots[+el.dataset.i].pers = el.value; };
 ACT.slotdiff = el => { SK.slots[+el.dataset.i].diff = el.value; };
@@ -3345,21 +3477,22 @@ function bindMenus() {
 }
 // ----- upgrades panel -----
 function openTech() {
-  if (techOpen) { closeTech(); return; } if (!inGame) return; techOpen = true; lastQuick = ''; const d = document.createElement('div'); d.id = 'techp'; d.style.cssText = 'position:fixed;left:50%;top:60px;transform:translateX(-50%);z-index:30;width:min(940px,98vw);max-height:calc(100vh - 150px);overflow:auto'; d.className = 'panel';
-  d.innerHTML = '<div class="row" style="justify-content:space-between"><h3 style="margin:0;color:#ffe2a6;font-size:20px">Upgrades <span class="note" style="font-weight:400;font-size:13px">- help your whole army. One at a time. Row 2 needs HQ Level 2, row 3 needs HQ Level 3.</span></h3><button class="tbtn" id="techx">Close</button></div><div id="techbody"></div>';
-  document.body.appendChild(d); $('#techx').onclick = closeTech; d.addEventListener('click', e => { const c = e.target.closest('.tcard'); if (c && c.dataset.id) { if (issue({ k: 'tech', id: c.dataset.id })) { UI.did.tech = 1; sfx('click'); } else { sfx('deny'); toast('You cannot start that yet.'); } updTech(true); } });
+  if (techOpen) { closeTech(); return; } if (!inGame) return; techOpen = true; lastQuick = ''; const d = document.createElement('div'); d.id = 'techp'; d.style.cssText = 'position:fixed;left:50%;top:60px;transform:translateX(-50%);z-index:30;width:min(1180px,98vw);max-height:calc(100vh - 150px);overflow:auto'; d.className = 'panel';
+  d.innerHTML = '<div class="row" style="justify-content:space-between"><h3 style="margin:0;color:#ffe2a6;font-size:20px">Upgrades <span class="note" style="font-weight:400;font-size:13px">- help your whole army. One at a time. Rows 1 and 2 need HQ Level 2, row 3 needs HQ Level 3.</span></h3><button class="tbtn" id="techx">Close</button></div><div id="techbody"></div>';
+  document.body.appendChild(d); $('#techx').onclick = closeTech; d.addEventListener('click', e => { if (e.target.closest('#techmore')) { UI.techAdv = true; updTech(true); return; } const c = e.target.closest('.tcard'); if (c && c.dataset.id) { if (issue({ k: 'tech', id: c.dataset.id })) { UI.did.tech = 1; sfx('click'); } else { sfx('deny'); toast('You cannot start that yet.'); } updTech(true); } });
   updTech(true);
 }
 function closeTech() { if (techOpen) lastQuick = ''; techOpen = false; const d = $('#techp'); if (d) d.remove(); }
 let techSig = '';
+function techAdvShown(p, hq) { return !!(UI.techAdv || hq >= 3 || W.o.sandbox || TECH.some(t => TBR.find(b => b.id === t.br).adv && (p.techs[t.id] || (p.res && p.res.id === t.id)))); }
 function updTech(force) {
-  if (!techOpen) return; const p = P(ME), hq = playerHQLvl(p);
-  let sig = JSON.stringify([p.techs, p.res && p.res.id, Math.floor(p.sup / 20), hq, p.res ? Math.floor(p.res.t) : 0]); if (sig === techSig && !force) return; techSig = sig;
-  const h = '<div class="tech">' + TBR.map(b => '<div class="tcol"><h5>' + b.n + '</h5>' + TECH.filter(t => t.br === b.id).map(t => {
+  if (!techOpen) return; const p = P(ME), hq = playerHQLvl(p); const adv = techAdvShown(p, hq);
+  let sig = JSON.stringify([p.techs, p.res && p.res.id, Math.floor(p.sup / 20), hq, p.res ? Math.floor(p.res.t) : 0, adv]); if (sig === techSig && !force) return; techSig = sig;
+  const h = '<div class="tech">' + TBR.filter(b => adv || !b.adv).map(b => '<div class="tcol"><h5>' + b.n + '</h5>' + TECH.filter(t => t.br === b.id).map(t => {
     const done = p.techs[t.id], act = p.res && p.res.id === t.id, prev = t.tier > 1 ? TECH.find(x => x.br === t.br && x.tier === t.tier - 1) : null; const need = Math.max(2, t.tier); const lock = !done && !act && ((hq < need && !W.o.sandbox) || (prev && !p.techs[prev.id]));
     const st = done ? '<span style="color:#7be08a">Done</span>' : act ? '<span style="color:#ffe2a6">Researching ' + Math.floor(p.res.t / p.res.dur * 100) + '%</span>' : lock ? '<span style="color:#ff9a8a">' + (hq < need ? 'Needs HQ Level ' + need : 'Do the one above first') + '</span>' : '<span style="color:#ffe2a6">Costs ' + t.cost + '</span>';
     return '<div class="tcard ' + (done ? 'done' : act ? 'act' : lock ? 'lock' : '') + '" data-id="' + t.id + '"><b>' + t.n + '</b>' + t.d + '<br>' + st + (act ? '<div class="pgb" style="width:' + (p.res.t / p.res.dur * 100) + '%"></div>' : '') + '</div>';
-  }).join('') + '</div>').join('') + '</div>';
+  }).join('') + '</div>').join('') + '</div>' + (adv ? '' : '<div style="margin-top:10px"><button class="tbtn" id="techmore">Show more upgrades (Vision, Command)</button></div>');
   $('#techbody').innerHTML = h;
 }
 
@@ -3379,10 +3512,10 @@ const TUT_STEPS = [
   { t: 'Send them to a flag', x: 'Click the gray flag to send your soldiers there. The pulsing circle is the flag.', target: () => { const f = tutFlag(); return f ? { world: () => [f.x, f.y + 1, f.z], label: 'Gray flag' } : null; }, ok: () => UI.did.move, setup: () => { UI.did.move = 0; if (!selIds.size) selAllArmy(); const f = tutFlag(), h = tutHq(); if (f) { camGoto(f.x, f.z, true); cam.tdist = 100; } } },
   { t: 'Capture the flag', x: 'Wait while your soldiers capture it. The circle fills with your color. Flags give you money!', target: () => { const f = TUT.flag; return f ? { world: () => [f.x, f.y + 1, f.z], label: 'Capturing...' } : null; }, ok: () => TUT.flag && TUT.flag.owner === ME, auto: 1, setup: () => { TUT.flag = tutFlag() || TUT.flag; if (TUT.flag) camGoto(TUT.flag.x, TUT.flag.z); }, skipFn: () => { const f = TUT.flag; if (f && f.owner < 0) { f.owner = ME; f.ctrl = 1; f.capP = ME; } } },
   { t: 'Open the build menu', x: 'Click "+ Build" above your base to see what you can build. You have plenty of money.', target: () => { const h = tutHq(); return { sel: ptLabel(W.pts[h.pt]), fallbackWorld: [h.x, h.y + 10, h.z] }; }, ok: () => selPad && selPad.pt === tutHq().pt, setup: () => { P(ME).sup = Math.max(P(ME).sup, 600); goHome(); clearSel(); afterSel(); } },
-  { t: 'Build a Barracks', x: 'Pick the Barracks. It trains soldiers.', target: () => ({ sel: '#panel .card:nth-child(1)' }), ok: () => !!tutBarracks(), setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); const hp = W.pts[tutHq().pt]; if (!(selPad && selPad.pt === hp.id)) selectPoint(hp); }, skipFn: () => { if (!tutBarracks()) { const pt = W.pts[tutHq().pt], k = pt.slots.findIndex(s => !s.b); if (k >= 0) placeBuilding('barracks', ME, pt, k, true); } } },
-  { t: 'Train a soldier', x: 'Your Barracks is being built. When it is ready, pick a Rifleman to train a soldier.', t2: 'Your Barracks is ready! Pick a Rifleman to train a soldier.', target: () => { const b = tutBarracks(); if (!b) return null; return b.prog < 1 ? { world: () => [b.x, b.y + 3, b.z], label: 'Building...' } : { sel: '#panel .card:nth-child(1)' }; }, ok: () => (UI.did.train || 0) >= 1, setup: () => { UI.did.train = 0; const b = tutBarracks(); if (b) camGoto(b.x, b.z); }, tick: () => { const b = tutBarracks(); if (b && b.prog >= 1 && !TUT.sel1) { TUT.sel1 = 1; selectBuilding(b); sfx('done'); } }, skipFn: () => { const b = tutBarracks(); if (b) issue({ k: 'train', b: b.id, u: 'rifleman', n: 1 }); } },
+  { t: 'Build a Barracks', x: 'Pick the Barracks. It trains soldiers.', target: () => ({ sel: '#panel .card[data-key="b_barracks"]' }), ok: () => !!tutBarracks(), setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); const hp = W.pts[tutHq().pt]; if (!(selPad && selPad.pt === hp.id)) selectPoint(hp); }, skipFn: () => { if (!tutBarracks()) { const pt = W.pts[tutHq().pt], k = pt.slots.findIndex(s => !s.b); if (k >= 0) placeBuilding('barracks', ME, pt, k, true); } } },
+  { t: 'Train a soldier', x: 'Your Barracks is being built. When it is ready, pick a Rifleman to train a soldier.', t2: 'Your Barracks is ready! Pick a Rifleman to train a soldier.', target: () => { const b = tutBarracks(); if (!b) return null; return b.prog < 1 ? { world: () => [b.x, b.y + 3, b.z], label: 'Building...' } : { sel: '#panel .card[data-key="rifleman"]' }; }, ok: () => (UI.did.train || 0) >= 1, setup: () => { UI.did.train = 0; const b = tutBarracks(); if (b) camGoto(b.x, b.z); }, tick: () => { const b = tutBarracks(); if (b && b.prog >= 1 && !TUT.sel1) { TUT.sel1 = 1; selectBuilding(b); sfx('done'); } }, skipFn: () => { const b = tutBarracks(); if (b) issue({ k: 'train', b: b.id, u: 'rifleman', n: 1 }); } },
   { t: 'Beat the enemy scouts', x: 'Enemy soldiers are coming! Press Army, then click an enemy soldier to attack it.', target: () => { const e = tutFoe(); return e ? { world: () => { const f = tutFoe(); return f ? [f.rx || f.x, (f.ry || 0) + 4, f.rz || f.z] : [e.x, 4, e.z]; }, label: 'Enemy' } : null; }, ok: () => TUT.foes && TUT.foes.every(u => u.dead), setup: () => { const h = tutHq(), f = tutFlag(); const bx = h.x * .55, bz = h.z * .55 + 30; TUT.foes = []; for (let i = 0; i < 3; i++) { const q = snapFree(W.M, bx + i * 4, bz + (i % 2) * 3); TUT.foes.push(spawnUnit('rifleman', 1, q[0], q[1], { hpB: .55, dmB: .6 })); } applyCmd(1, { k: 'am', ids: TUT.foes.map(u => u.id), x: h.x * .75, z: h.z * .75 + 4 }); camGoto((bx + h.x * .75) / 2, (bz + h.z * .75 + 4) / 2, true); cam.tdist = 100; }, skipFn: () => { for (const u of W.units.slice()) if (u.owner === 1 && TUT.foes && TUT.foes.includes(u)) killUnit(u, null, -1); } },
-  { t: 'Level up your base', x: 'Your HQ is selected. Press Level up. This unlocks Upgrades and Support powers like airstrikes.', target: () => ({ sel: '#panel .card:nth-child(3)' }), ok: () => { const h = tutHq(); return h.upg || h.lvl >= 2; }, setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); goHome(); selectBuilding(tutHq()); sfx('done'); }, skipFn: () => { issue({ k: 'upg', b: tutHq().id }); } },
+  { t: 'Level up your base', x: 'Your HQ is selected. Press Level up. This unlocks Upgrades and Support powers like airstrikes.', target: () => ({ sel: '#panel .card[data-key="lvl"]' }), ok: () => { const h = tutHq(); return h.upg || h.lvl >= 2; }, setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); goHome(); selectBuilding(tutHq()); sfx('done'); }, skipFn: () => { issue({ k: 'upg', b: tutHq().id }); } },
   { t: 'You are ready!', x: 'Capture more flags than the enemy to win. Their score drops when you hold more flags. Good luck, Commander!', btn: 'Keep playing', btn2: 'Back to menu', final: 1, setup: () => { for (const p of W.players) if (p.ai) p.ai.hold = false; PROF.tutDone = 1; saveProf(); } }
 ];
 function startTutorial() {
@@ -3671,6 +3804,7 @@ function applyMeta(m) {
     const id = d[0]; seenB.add(id); let b = W.byId.get(id);
     if (!b) { const T = BT[d[1]]; b = { id, k: 'b', type: d[1], T, owner: d[9], team: W.players[d[9]].team, pt: d[2], slot: d[3], x: d[15], z: d[16], y: W.M.H(d[15], d[16]), lvl: 1, spec: '', hp: 1, maxHp: 1, prog: 0, upg: null, q: [], hasRally: false, rx: 0, rz: 0, aim: 0, flash: 0, fire: 0, dead: false, sz: T.sz, w: null, sb: 0, rot: d[17], born: performance.now() }; W.byId.set(id, b); W.bld.push(b); if (b.type === 'hq') W.players[b.owner].hqB = b; if (b.type === 'wall') { const pt = W.pts[b.pt]; pt.wall = b; } else if (b.slot >= 0) W.pts[b.pt].slots[b.slot].b = b; }
     if (b.hp > d[6] + 1) b.flash = .1;
+    if (b.type === 'hq' && b.spec !== d[5]) { b.spec = d[5]; recalcMods(W.players[b.owner]); }
     b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.q = d[13].map(q => ({ u: q[0], t: q[1], dur: q[2] })); b.sb = d[14]; b.w = bWeapon(b);
   }
   for (let i = W.bld.length - 1; i >= 0; i--) { const b = W.bld[i]; if (!seenB.has(b.id) && performance.now() - b.born > 600) { b.dead = true; W.byId.delete(b.id); if (b.type === 'wall') { const pt = W.pts[b.pt]; if (pt.wall === b) pt.wall = null; } else if (b.slot >= 0) { const pt = W.pts[b.pt]; if (pt.slots[b.slot].b === b) pt.slots[b.slot].b = null; } W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } }
@@ -3807,8 +3941,8 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 // ---------------- debug hook ----------------
 if (DEBUG) {
   window.__fl = {
-    get renderer() { return renderer; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
+    makeAI, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
