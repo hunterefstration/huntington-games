@@ -23,7 +23,7 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 .tags { margin-top: 7px; }
 .tag { display: inline-block; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.07); color: var(--dim); margin-right: 3px; }
 .tag.new { background: rgba(241,196,15,0.18); color: var(--gold); }
-#exp-btn { position: fixed; right: 8px; bottom: 6px; background: transparent; border: none; color: #3d4652; font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
+#exp-btn { position: fixed; left: 8px; bottom: 6px; background: transparent; border: none; color: #3d4652; font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
 #exp-btn:hover { color: var(--dim); }
 #exp { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 5; }
 #exp.open { display: flex; }
@@ -67,8 +67,9 @@ var MIRRORS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/'
 var local = location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
 
 var GAMES = [
+  { dir: 'Frontline', name: 'Frontline: Command', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: '3D army strategy: capture points, build bases, 22 unit types. Fight AI commanders or a friend with a 6-digit code.' },
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter', img: 'blocky', tags: ['3D', 'Multiplayer'], desc: 'Zombie wave shooter: 8 maps, ranks, an armory, and online co-op or PvP with 6-digit party codes.' },
-  { dir: 'Tower Defense 2.0', name: 'Tower Defense 2.0', img: 'td', tags: ['New', 'Strategy'], desc: '30+ towers with specializations, troops you command, 10 maps, 100 waves or endless.' },
+  { dir: 'Tower Defense 2.0', name: 'Tower Defense 2.1', img: 'td', tags: ['New', 'Strategy'], desc: '40+ towers, 8 barracks, mercenaries and walls, all with specialties. 10 maps, 100 waves or endless.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon', img: 'coffee', tags: ['Tycoon'], desc: 'Build, staff and grow a chain of coffee shops.' },
   { dir: 'Tetris', name: 'Tetris Surge', img: 'tetris', tags: ['New', 'Puzzle'], desc: 'Power blocks, perks and bosses in a rogue-lite run, plus Marathon, Sprint, Ultra and Zen.' },
   { dir: 'Market Life 1.9', name: 'Market & Life', img: 'market', tags: ['Sim'], desc: 'Climb the career ladder, start businesses and play the market.' },

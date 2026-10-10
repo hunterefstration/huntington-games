@@ -40,6 +40,9 @@
    let frameCount = 0;
    let nextObstacleFrame = 0;
    let godMode = false;
+   let enteringName = false;
+   let goSnap = null; // frame under the game-over overlay, so typing redraws don't stack darkness
+   let nameBuf = '';
   
    // Rotation Variables
    let rotation = 0;
@@ -64,8 +67,13 @@
    const obstacles = [];
 
 
+   // Storage can throw (sandboxed iframe, blocked cookies) so never let it stop the game
+   function loadScores() {
+       try { return JSON.parse(localStorage.getItem('neonScores')) || []; } catch (e) { return []; }
+   }
+
    function updateLeaderboardUI() {
-       const scores = JSON.parse(localStorage.getItem('neonScores')) || [];
+       const scores = loadScores();
        scoreList.innerHTML = scores
            .map(s => `<div class="score-entry"><span>${s.name}</span><span>${Number(s.val).toLocaleString()}</span></div>`)
            .join('');
@@ -73,15 +81,29 @@
 
 
    function saveScore(newName, newScore) {
-       let scores = JSON.parse(localStorage.getItem('neonScores')) || [];
+       let scores = loadScores();
        scores.push({ name: newName, val: newScore });
        scores.sort((a, b) => b.val - a.val);
-       localStorage.setItem('neonScores', JSON.stringify(scores.slice(0, 5)));
+       try { localStorage.setItem('neonScores', JSON.stringify(scores.slice(0, 5))); } catch (e) {}
        updateLeaderboardUI();
    }
 
 
    window.addEventListener('keydown', (e) => {
+       // Name entry after a crash (replaces the blocking prompt() box that froze the page)
+       if (enteringName) {
+           if (e.code === 'Enter') {
+               saveScore(nameBuf || 'Player 1', score);
+               enteringName = false;
+           } else if (e.key === 'Backspace') {
+               nameBuf = nameBuf.slice(0, -1);
+           } else if (e.key.length === 1 && /[A-Za-z0-9 _-]/.test(e.key) && nameBuf.length < 12) {
+               nameBuf += e.key;
+           }
+           e.preventDefault();
+           drawGameOver();
+           return;
+       }
        if ((e.code === 'Space' || e.code === 'ArrowUp') && player.grounded && gameActive) {
            player.dy = -player.jumpForce;
            player.grounded = false;
@@ -279,10 +301,9 @@
                player.y + player.height - 4 > 380 - o.height) {
               
                gameActive = false;
-               setTimeout(() => {
-                   const name = prompt("SYSTEM OVERLOAD! Enter Name:", "Player 1");
-                   if (name) saveScore(name, score);
-               }, 100);
+               enteringName = true;
+               nameBuf = '';
+               goSnap = null;
            }
 
 
@@ -302,14 +323,30 @@
        if (gameActive) {
            requestAnimationFrame(update);
        } else {
-           ctx.shadowBlur = 0;
-           ctx.fillStyle = "rgba(0,0,0,0.85)";
-           ctx.fillRect(0,0, canvas.width, canvas.height);
-           ctx.fillStyle = "#fff";
-           ctx.textAlign = "center";
-           ctx.font = "bold 28px Courier New";
-           ctx.fillText("CONNECTION LOST", canvas.width/2, canvas.height/2 - 20);
-           ctx.font = "18px Courier New";
+           drawGameOver();
+       }
+   }
+
+
+   function drawGameOver() {
+       ctx.shadowBlur = 0;
+       if (!goSnap) goSnap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+       else ctx.putImageData(goSnap, 0, 0);
+       ctx.fillStyle = "rgba(0,0,0,0.85)";
+       ctx.fillRect(0,0, canvas.width, canvas.height);
+       ctx.fillStyle = "#fff";
+       ctx.textAlign = "center";
+       ctx.font = "bold 28px Courier New";
+       ctx.fillText("CONNECTION LOST", canvas.width/2, canvas.height/2 - 20);
+       ctx.font = "18px Courier New";
+       ctx.save();
+       ctx.fillStyle = "#000";
+       ctx.fillRect(0, canvas.height/2, canvas.width, 70);
+       ctx.restore();
+       if (enteringName) {
+           ctx.fillText("TYPE YOUR NAME: " + nameBuf + "_", canvas.width/2, canvas.height/2 + 20);
+           ctx.fillText("PRESS ENTER TO SAVE SCORE", canvas.width/2, canvas.height/2 + 50);
+       } else {
            ctx.fillText("PRESS ENTER TO RECONNECT", canvas.width/2, canvas.height/2 + 30);
        }
    }
