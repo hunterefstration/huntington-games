@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tower Defense - Version 2.2</title>
+<title>Tower Defense - Version 2.3</title>
 <style>
 :root { --bg: #0f1216; --panel: rgba(18, 22, 28, 0.92); --line: rgba(255,255,255,0.10); --text: #e8ecf1; --dim: #9aa4b2; --gold: #f1c40f; --red: #e74c3c; --green: #2ecc71; --blue: #3498db; --purple: #9b59b6; --orange: #e67e22; }
 * { box-sizing: border-box; }
@@ -185,7 +185,7 @@ table.stats th { color: var(--dim); font-weight: 700; }
     <div id="menu-note" class="subtitle" style="font-style:normal;color:#ffd54f"></div>
     <div class="section-title">Your records</div>
     <div id="records" class="subtitle" style="font-style:normal"></div>
-    <div class="version">VERSION 2.2 &middot; MODERN WARFARE</div>
+    <div class="version">VERSION 2.3 &middot; 1900 AND BEYOND</div>
   </div>
 
   <div class="menu-card hidden" id="menu-new">
@@ -286,13 +286,14 @@ table.stats th { color: var(--dim); font-weight: 700; }
 <script>
 'use strict';
 // =====================================================================
-//  TOWER DEFENSE 2.2  -  Huntington Games
+//  TOWER DEFENSE 2.3  -  Huntington Games
 //  One file, no libraries. The world is a fixed 960 x 600 board that is
 //  scaled to fit any window. Logic runs at a fixed 60 ticks a second.
-//  Setting: modern warfare, 1900 and later.
+//  Setting: war from 1900 onward - world wars, modern armies and near-future
+//  sci-fi (energy weapons, cryo, plasma, shields, robots and mechs).
 // =====================================================================
 const W = 960, H = 600, TPS = 60;
-const VERSION = '2.2';
+const VERSION = '2.3';
 
 // ---------------------------------------------------------------------
 //  TOWERS
@@ -314,39 +315,39 @@ const TOWERS = [
     specs: [{ name: 'Armor Piercing', desc: 'Ignores enemy armor and deals +25% damage.', mods: { dmg: 1.25, pierceArmor: true } },
             { name: 'Long Barrel', desc: '+35% range, and it can now shoot air units.', mods: { range: 1.35, air: 'yes' } }] },
   { id: 'rapid', tab: 'Attack', name: 'Rapid', cost: 150, range: 120, damage: 20, rate: 15, color: '#e67e22', kind: 'bullet', limit: 80, air: 'no',
-    desc: 'Fires four times a second. Fantastic against infantry swarms, weak against armor (every hit loses the armor value).',
+    desc: 'Fires four times a second. Fantastic against swarms, weak against armor (every hit loses the armor value).',
     specs: [{ name: 'Overclock', desc: 'Fires 65% faster.', mods: { rate: 0.6 } },
             { name: 'Incendiary', desc: 'Bullets set enemies on fire for 40% extra damage over 2 seconds.', mods: { burn: 0.4 } }] },
   { id: 'sniper', tab: 'Attack', name: 'Sniper', cost: 100, range: 350, damage: 120, rate: 100, color: '#9b59b6', kind: 'snipe', limit: 50, air: 'yes', detect: true,
-    desc: 'Huge range and a big instant hit. Can see camouflaged enemies. Slow to reload, so it is best on tough targets.',
+    desc: 'Huge range and a big instant hit. Can see stealthed enemies. Slow to reload, so it is best on tough targets.',
     specs: [{ name: 'Deadeye', desc: '25% chance to crit for triple damage.', mods: { crit: 0.25, critMult: 3 } },
             { name: 'Penetrator', desc: 'Shots punch through up to 3 enemies in a line and ignore armor.', mods: { pierce: 3, pierceArmor: true } }] },
   { id: 'flak', tab: 'Attack', name: 'Flak (AA)', cost: 150, range: 250, damage: 100, rate: 45, aoe: 80, color: '#1abc9c', kind: 'shell', limit: 40, air: 'only',
     desc: 'Anti-air only. Explosive bursts that shred groups of drones and jets.',
     specs: [{ name: 'Airburst Shells', desc: '+50% blast radius and +20% damage.', mods: { aoe: 1.5, dmg: 1.2 } },
             { name: 'Flak Wall', desc: 'Air units hit are slowed by 35% for 2 seconds.', mods: { slow: 0.35, slowTicks: 120 } }] },
-  { id: 'suppress', tab: 'Attack', name: 'Suppressor', cost: 200, range: 130, damage: 5, rate: 60, aoe: 50, color: '#74b9ff', kind: 'suppress', limit: 40, air: 'no',
-    desc: 'Barely hurts, but every enemy in the burst is pinned down and slowed by 50%. Put it where the road bends to hold enemies in front of your damage.',
-    specs: [{ name: 'Pinning Fire', desc: 'Slow becomes 65%, and 12% of hits pin enemies in place for 1.2 seconds.', mods: { slowPower: 0.65, freeze: 0.12 } },
-            { name: 'Spotter Rounds', desc: 'Marked enemies take +25% damage from every source.', mods: { brittle: 0.25 } }] },
+  { id: 'frost', tab: 'Attack', name: 'Frost', cost: 200, range: 130, damage: 5, rate: 60, aoe: 50, color: '#74b9ff', kind: 'frost', limit: 40, air: 'no',
+    desc: 'A cryo-projector. Barely hurts, but every enemy in the blast is slowed by 50%. Put it where the road bends to hold enemies in front of your damage.',
+    specs: [{ name: 'Deep Freeze', desc: 'Slow becomes 65%, and 12% of hits freeze enemies solid for 1.2 seconds.', mods: { slowPower: 0.65, freeze: 0.12 } },
+            { name: 'Shatter', desc: 'Chilled enemies take +25% damage from every source.', mods: { brittle: 0.25 } }] },
   { id: 'cannon', tab: 'Attack', name: 'Field Gun', cost: 250, range: 150, damage: 60, rate: 70, aoe: 60, color: '#27ae60', kind: 'shell', limit: 50, air: 'no',
     desc: 'Explosive shells that splash a whole group. Strong all game long.',
     specs: [{ name: 'Big Bertha', desc: '+60% damage and +30% blast radius, but fires 20% slower.', mods: { dmg: 1.6, aoe: 1.3, rate: 1.2 } },
             { name: 'Cluster Shells', desc: 'Each shell bursts into 3 extra bomblets.', mods: { cluster: 3 } }] },
   { id: 'tesla', tab: 'Attack', name: 'Tesla', cost: 350, range: 110, damage: 15, rate: 5, color: '#f1c40f', kind: 'zap', limit: 40, air: 'yes', detect: true,
-    desc: 'An experimental Tesla coil that zaps 12 times a second. It hits air units and sees camouflaged enemies, and it can be tuned into chain lightning arrays. Short range, so build it right next to the road.',
+    desc: 'An experimental Tesla coil that zaps 12 times a second. It hits air units and sees stealthed enemies, and it can be tuned into chain lightning arrays. Short range, so build it right next to the road.',
     specs: [{ name: 'Arc Chain', desc: 'Every zap arcs on to 3 more enemies (30% weaker with each jump).', mods: { chain: 3 } },
             { name: 'Overcharge', desc: '8% of zaps stun the target for 0.4 seconds.', mods: { stun: 0.08, stunTicks: 24 } },
             { name: 'Coil Array', desc: 'Arcs jump to up to 8 enemies and lose less power with each jump (15% instead of 30%).', mods: { chain: 7, chainFalloff: 0.85 } },
             { name: 'Ionized Targets', desc: 'Struck enemies are ionized: they take +20% damage from everything for 3 seconds.', mods: { mark: 0.2, markTicks: 180 } }] },
-  { id: 'venom', tab: 'Attack', name: 'Gas Launcher', cost: 350, range: 350, damage: 120, rate: 100, color: '#6c5ce7', kind: 'poison', limit: 30, air: 'no',
-    desc: 'Long-range gas shells that poison: the target loses health over 3 seconds. Poison ignores armor and stops field repairs.',
-    specs: [{ name: 'Nerve Agent', desc: 'Gassed enemies are also slowed by 30%.', mods: { slow: 0.3, slowTicks: 180 } },
-            { name: 'Lingering Cloud', desc: 'When a gassed enemy dies, the gas spreads to everything nearby.', mods: { plague: true } }] },
+  { id: 'venom', tab: 'Attack', name: 'Venom', cost: 350, range: 350, damage: 120, rate: 100, color: '#6c5ce7', kind: 'poison', limit: 30, air: 'no',
+    desc: 'Long-range toxin darts from a bioengineered launcher: the target loses health over 3 seconds. Poison ignores armor and stops regeneration.',
+    specs: [{ name: 'Neurotoxin', desc: 'Poisoned enemies are also slowed by 30%.', mods: { slow: 0.3, slowTicks: 180 } },
+            { name: 'Plague', desc: 'When a poisoned enemy dies, the poison jumps to everything nearby.', mods: { plague: true } }] },
   { id: 'missile', tab: 'Attack', name: 'Missile', cost: 400, range: 450, damage: 80, rate: 150, aoe: 90, color: '#95a5a6', kind: 'missile', limit: 30, air: 'yes',
     desc: 'Homing missiles with a big blast and enormous range. Hits air.',
     specs: [{ name: 'Salvo', desc: 'Launches 3 missiles at once.', mods: { shots: 3 } },
-            { name: 'Bunker Buster', desc: 'Double damage against bosses, armored and reactive-armor enemies.', mods: { heavyBonus: 2 } }] },
+            { name: 'Bunker Buster', desc: 'Double damage against bosses, armored and shielded enemies.', mods: { heavyBonus: 2 } }] },
   { id: 'minigun', tab: 'Attack', name: 'Minigun', cost: 450, range: 120, damage: 6, rate: 2, color: '#7f8c8d', kind: 'bullet', limit: 20, air: 'no',
     desc: 'Thirty bullets a second. Melts anything soft at close range, but armor ruins it.',
     specs: [{ name: 'Spin-Up', desc: 'Keeps getting stronger while it fires: up to +120% damage after 3 seconds.', mods: { spin: true } },
@@ -354,24 +355,24 @@ const TOWERS = [
   { id: 'artillery', tab: 'Attack', name: 'Artillery', cost: 500, range: 600, damage: 150, rate: 200, aoe: 150, color: '#576574', kind: 'lob', limit: 15, air: 'no',
     desc: 'Lobs a shell across the whole map. The shell takes a moment to land, so it aims where the enemy is going.',
     specs: [{ name: 'Barrage', desc: 'Fires 3 shells that land in a spread.', mods: { shots: 3, spread: 50 } },
-            { name: 'Concussive Barrage', desc: 'Every blast stuns enemies for 1 second.', mods: { stunAll: 60 } }] },
+            { name: 'Seismic Charges', desc: 'Every blast sends a shockwave through the ground that stuns enemies for 1 second.', mods: { stunAll: 60 } }] },
   { id: 'howitzer', tab: 'Attack', name: 'Howitzer', cost: 3000, range: 600, minRange: 150, damage: 300, rate: 150, aoe: 120, color: '#d35400', kind: 'lob', limit: 10, air: 'no',
     desc: 'A heavy gun with massive blasts. It cannot hit anything closer than 150 units (the red ring), so protect it.',
     specs: [{ name: 'Heavy Charge', desc: '+50% damage and +25% range, but the dead zone grows to 225.', mods: { dmg: 1.5, range: 1.25, minRange: 1.5 } },
             { name: 'Napalm', desc: 'Leaves a burning patch for 3 seconds that hurts everything on it.', mods: { napalm: true } }] },
-  { id: 'inferno', tab: 'Attack', name: 'Flamethrower', cost: 600, range: 120, damage: 6, rate: 3, aoe: 40, color: '#e17055', kind: 'beam', ramp: true, limit: 20, air: 'no',
-    desc: 'A jet of burning fuel that gets hotter the longer it stays on one target (up to 4x damage). Built for bosses.',
-    specs: [{ name: 'Thermite Mix', desc: 'Heats up twice as fast and burns through armor.', mods: { rampSpeed: 2, pierceArmor: true } },
-            { name: 'Fuel Spray', desc: 'Sprays fire on every enemy near the target.', mods: { aoe: 1.8, splashAll: true } }] },
+  { id: 'inferno', tab: 'Attack', name: 'Inferno', cost: 600, range: 120, damage: 6, rate: 3, aoe: 40, color: '#e17055', kind: 'beam', ramp: true, limit: 20, air: 'no',
+    desc: 'A beam of superheated fire that gets hotter the longer it stays on one target (up to 4x damage). Built for bosses.',
+    specs: [{ name: 'Meltdown', desc: 'Heats up twice as fast and melts armor away.', mods: { rampSpeed: 2, pierceArmor: true } },
+            { name: 'Flamethrower', desc: 'Sprays fire on every enemy near the target.', mods: { aoe: 1.8, splashAll: true } }] },
   { id: 'laser', tab: 'Attack', name: 'Laser', cost: 700, range: 250, damage: 35, rate: 6, color: '#ff7675', kind: 'beam', limit: 25, air: 'yes',
-    desc: 'An experimental laser: a precise continuous beam with good range. Hits air.',
-    specs: [{ name: 'Focusing Optics', desc: '+60% damage and 25% more range.', mods: { dmg: 1.6, range: 1.25 } },
-            { name: 'Beam Splitter', desc: 'The beam splits onto 2 extra targets.', mods: { prism: 2 } }] },
-  { id: 'dew', tab: 'Attack', name: 'Directed Energy', cost: 1500, range: 150, damage: 30, rate: 1, color: '#00cec9', kind: 'beam', pierceBeam: true, super: true, limit: 1, air: 'yes', detect: true,
-    desc: 'SUPER TOWER. An experimental directed-energy weapon that fires every tick and burns through everything in a line. Only one super tower can exist at a time.',
-    specs: [{ name: 'Pulse Burst', desc: 'Every 7 seconds it releases an energy pulse that hits EVERY enemy in range for two seconds of beam damage and stuns them briefly.', mods: { pulse: 120, pulseEvery: 420 } },
-            { name: 'Twin Emitters', desc: 'Fires a second beam at another target. Both beams ignore armor.', mods: { prism: 1, pierceArmor: true } },
-            { name: 'Focus Mode', desc: 'Damage ramps up to 5x while it stays on one target, and the beam burns through armor.', mods: { focus: true, focusMax: 4, pierceArmor: true } }] },
+    desc: 'A precise continuous energy beam with good range. Hits air.',
+    specs: [{ name: 'Focusing Lens', desc: '+60% damage and 25% more range.', mods: { dmg: 1.6, range: 1.25 } },
+            { name: 'Prism', desc: 'The beam splits onto 2 extra targets.', mods: { prism: 2 } }] },
+  { id: 'plasma', tab: 'Attack', name: 'Plasma', cost: 1500, range: 150, damage: 30, rate: 1, color: '#00cec9', kind: 'beam', pierceBeam: true, super: true, limit: 1, air: 'yes', detect: true,
+    desc: 'SUPER TOWER. A plasma lance that fires every tick and burns through everything in a line. Only one super tower can exist at a time.',
+    specs: [{ name: 'Solar Nova', desc: 'Every 7 seconds it releases a shockwave that hits EVERY enemy in range for two seconds of beam damage and stuns them briefly.', mods: { pulse: 120, pulseEvery: 420 } },
+            { name: 'Twin Lance', desc: 'Fires a second lance at another target. Both lances ignore armor.', mods: { prism: 1, pierceArmor: true } },
+            { name: 'Meltdown Core', desc: 'Damage ramps up to 5x while it stays on one target, and the beam burns through armor.', mods: { focus: true, focusMax: 4, pierceArmor: true } }] },
   { id: 'railgun', tab: 'Attack', name: 'Railgun', cost: 1500, range: 2000, damage: 30000, rate: 900, color: '#0984e3', kind: 'rail', super: true, manual: true, limit: 1, air: 'yes', detect: true,
     desc: 'SUPER TOWER. Press FIRE, then click anywhere: a slug crosses the whole map and hits everything on that line. Recharges in 15 seconds.',
     specs: [{ name: 'Capacitor Bank', desc: 'Stores 3 shots and recharges each one 40% faster. Fire in bursts, then let it refill.', mods: { charges: 3, rate: 0.6 } },
@@ -395,25 +396,25 @@ const TOWERS = [
   { id: 'commander', tab: 'Support', name: 'Commander', cost: 400, range: 150, color: '#f39c12', kind: 'aura', aura: 'command', limit: 10, stack: false,
     desc: 'Towers in its circle get +10% range and +5% damage per Commander level (the best Commander in range counts).',
     specs: [{ name: 'Combined Arms', desc: 'Damage bonus doubles (+10% per level) and towers in the circle also fire 3% faster per level.', mods: { cmdDmg: 2, cmdRate: 0.03 } },
-            { name: 'Overwatch', desc: 'Range bonus is 50% stronger (+15% per level) and every tower in the circle can see camouflaged enemies.', mods: { cmdRange: 1.5, cmdDetect: true } }] },
+            { name: 'Overwatch', desc: 'Range bonus is 50% stronger (+15% per level) and every tower in the circle can see stealthed enemies.', mods: { cmdRange: 1.5, cmdDetect: true } }] },
   { id: 'power', tab: 'Support', name: 'Power Plant', cost: 600, range: 200, color: '#e1b12c', kind: 'aura', aura: 'eco', limit: 10, stack: false,
     desc: 'Farms and Factories in its circle earn +20% more per Power Plant level.',
     specs: [{ name: 'Overdrive Grid', desc: 'Attack towers in the circle fire 4% faster per level (20% at level 5), on top of the income bonus.', mods: { grid: 0.04 } },
-            { name: 'Electrified Perimeter', desc: 'Electrifies the circle: every enemy inside takes 15 damage per second per level (ignores armor) and is slowed 15%.', mods: { field: 15 } }] },
-  { id: 'smoke', tab: 'Support', name: 'Smoke Generator', cost: 1200, range: 130, color: '#81ecec', kind: 'aura', aura: 'smoke', limit: 10, stack: false,
-    desc: 'Thick smoke slows every enemy inside its circle by 40% (55% at level 5). Half-Tracks drive straight through it.',
-    specs: [{ name: 'Flashbang Pulse', desc: 'Slow rises by 20 points, and every 6 seconds a flashbang volley stuns everything in the circle for 1 second (bosses are only slowed).', mods: { zero: true, slowAdd: 0.2 } },
-            { name: 'Illumination Flares', desc: 'Enemies inside the circle are lit up and take +25% damage from every source.', mods: { brittleField: 0.25 } },
-            { name: 'Heavy Smoke', desc: 'The circle is 40% larger and enemies stay slowed for 3 seconds after they leave it.', mods: { range: 1.4, linger: 180 } }] },
+            { name: 'Static Field', desc: 'Electrifies the circle: every enemy inside takes 15 damage per second per level (ignores armor) and is slowed 15%.', mods: { field: 15 } }] },
+  { id: 'cryo', tab: 'Support', name: 'Cryo-Emitter', cost: 1200, range: 130, color: '#81ecec', kind: 'aura', aura: 'cryo', limit: 10, stack: false,
+    desc: 'A cryogenic field generator: every enemy inside its circle moves 40% slower (55% at level 5). Phase Walkers are immune.',
+    specs: [{ name: 'Absolute Zero', desc: 'Slow rises by 20 points, and every 6 seconds a pulse freezes everything in the circle solid for 1 second (bosses are only slowed).', mods: { zero: true, slowAdd: 0.2 } },
+            { name: 'Brittle Field', desc: 'Enemies inside the circle take +25% damage from every source.', mods: { brittleField: 0.25 } },
+            { name: 'Permafrost', desc: 'The circle is 40% larger and enemies stay slowed for 3 seconds after they leave it.', mods: { range: 1.4, linger: 180 } }] },
   { id: 'mechanic', tab: 'Support', name: 'Mechanic Bay', cost: 1500, range: 180, damage: 50, rate: 60, color: '#00b894', kind: 'heal', limit: 10, stack: false,
     desc: 'Repairs walls, traps, troops and tanks in its circle by 50 health a second (+25 per level).',
     specs: [{ name: 'Lifeline', desc: 'Repairs 50% faster and restores 4 base health at the end of every wave (at most 12 per wave across all Lifeline bays).', mods: { dmg: 1.5, lifeline: 4 } },
-            { name: 'Armor Kits', desc: 'Troops, mercenaries, walls and traps in the circle take 35% less damage.', mods: { ward: 0.35 } },
+            { name: 'Ward Generator', desc: 'Projects an energy shield: troops, mercenaries, walls and traps in the circle take 35% less damage.', mods: { ward: 0.35 } },
             { name: 'Field Medics', desc: 'Barracks in the circle train replacements twice as fast, and troops in the circle regenerate 3% health per second.', mods: { medic: 2 } }] },
   { id: 'radar', tab: 'Support', name: 'Radar', cost: 500, range: 180, color: '#a29bfe', kind: 'aura', aura: 'radar', limit: 8, stack: false,
-    desc: 'Reveals camouflaged enemies in its circle so every tower can shoot them. From level 3, revealed enemies take +10% damage (+20% at level 5).',
+    desc: 'Reveals stealthed enemies in its circle so every tower can shoot them. From level 3, revealed enemies take +10% damage (+20% at level 5).',
     specs: [{ name: 'Targeting Computer', desc: 'Every revealed enemy takes +35% damage from all sources, starting at level 1.', mods: { mark: 0.35 } },
-            { name: 'Jammer', desc: 'Enemies in the circle cannot use abilities (dash, dig in, heal, call reinforcements, field repair) and are slowed 15%.', mods: { jam: true, jamSlow: 0.15 } },
+            { name: 'Jammer', desc: 'Enemies in the circle cannot use abilities (teleport, burrow, heal, summon, regenerate) and are slowed 15%.', mods: { jam: true, jamSlow: 0.15 } },
             { name: 'Air Control', desc: 'Flying enemies in the circle are slowed 45% and take +15% damage from everything.', mods: { airSlow: 0.45, airMark: 0.15 } }] },
 
   // ---------------- TROOPS (barracks, contractor HQ, command post) ----------------
@@ -422,49 +423,56 @@ const TOWERS = [
     desc: 'Trains rifle infantry that block and fight ground enemies. Drag a box around troops (or click them), then right-click to move them as a group. Fallen soldiers are replaced after a few seconds.',
     specs: [{ name: 'Assault Squad', desc: 'Body armor and SMGs: double health and +30% damage.', mods: { tx: { hp: 2, dmg: 1.3 }, ts: { armor: 3, color: '#7d8c6b', look: 'assault' } } },
             { name: 'Machine Gun Team', desc: 'Light machine guns: soldiers shoot from range and can hit air units, but have less health.', mods: { tx: { hp: 0.7 }, ts: { role: 'ranged', range: 110, hitsAir: true, rate: 40, color: '#27ae60', look: 'mgteam' } } },
-            { name: 'Veteran Corps', desc: 'Soldiers learn from every kill: +6% damage and +5% health per kill, up to 10 kills.', mods: { ts: { vetOn: true, color: '#f39c12', look: 'vet' } } }] },
+            { name: 'Veteran Corps', desc: 'Soldiers learn from every kill: +6% damage and +5% health per kill, up to 10 kills.', mods: { ts: { vetOn: true, color: '#f39c12', look: 'vet' } } },
+            { name: 'Plasma Rifles', desc: 'Energy rifles: soldiers fire plasma bolts with a small splash from range and can hit air units, but have less health.', mods: { tx: { hp: 0.8, dmg: 1.2 }, ts: { role: 'ranged', range: 115, hitsAir: true, rate: 38, aoe: 22, shotColor: '#18ffff', color: '#00bcd4', look: 'plasmarifle' } } }] },
   { id: 'marksman', tab: 'Troops', name: 'Marksman School', cost: 500, range: 150, color: '#27ae60', kind: 'barracks', troop: 'marksman', limit: 4, stack: false,
     b: { n: [2, 2, 3, 3, 4], hp: 70, dmg: 16, respawn: 560 },
     desc: 'Trains designated marksmen who shoot from behind your line. They hit ground AND air, but die fast if enemies reach them. Park them behind sandbags or heavy infantry.',
     specs: [{ name: 'Sniper Teams', desc: 'Range +60%, damage +25%, and rounds ignore armor.', mods: { tx: { range: 1.6, dmg: 1.25 }, ts: { pierceArmor: true } } },
             { name: 'Incendiary Rounds', desc: 'Incendiary bullets burn for 60% extra damage over 2 seconds and splash a small area.', mods: { ts: { burn: 0.6, aoe: 26, shotColor: '#ff7043' } } },
-            { name: 'Spotter Teams', desc: 'Spotters see camouflaged enemies, mark their targets (+15% damage from everything for 3 seconds) and crit 20% of the time.', mods: { ts: { detect: true, mark: 0.15, crit: 0.2, critMult: 2, color: '#16a085' } } }] },
+            { name: 'Spotter Teams', desc: 'Spotters see stealthed enemies, mark their targets (+15% damage from everything for 3 seconds) and crit 20% of the time.', mods: { ts: { detect: true, mark: 0.15, crit: 0.2, critMult: 2, color: '#16a085' } } },
+            { name: 'Gauss Snipers', desc: 'Electromagnetic rifles: range +80% and damage x1.8, rounds ignore armor and see stealth, but they fire 60% slower.', mods: { tx: { range: 1.8, dmg: 1.8, rate: 1.6 }, ts: { pierceArmor: true, detect: true, shotColor: '#00e5ff', color: '#0097a7', look: 'gauss' } } }] },
   { id: 'heavy', tab: 'Troops', name: 'Heavy Infantry Depot', cost: 800, range: 150, color: '#7f8c8d', kind: 'barracks', troop: 'heavy', limit: 4, stack: false,
     b: { n: [1, 2, 2, 3, 3], hp: 320, dmg: 14, respawn: 780 },
     desc: 'Armored shock infantry with riot shields and body armor, and lots of health. Few in number, but they hold the line against the toughest enemies.',
     specs: [{ name: 'Attached Medics', desc: 'Medics ride with the squad: allies within 80 units regain 14 health a second, and the squad regenerates too.', mods: { ts: { medAura: 14, medRad: 80, regen: 0.01, color: '#f1c40f', look: 'medheavy' } } },
             { name: 'Motorized Assault', desc: 'Jeep-borne troops: 80% faster, search much farther, and open every fight with a rush that hits for triple damage.', mods: { tx: { speed: 1.8 }, ts: { charge: 3, leash: 150, look: 'motor' } } },
-            { name: 'Riot Shield Wall', desc: 'Health +80%, takes 40% less damage, and bashes attackers for 30 damage a second (grows each wave).', mods: { tx: { hp: 1.8 }, ts: { guard: 0.6, thorns: 30, look: 'riot' } } }] },
+            { name: 'Riot Shield Wall', desc: 'Health +80%, takes 40% less damage, and bashes attackers for 30 damage a second (grows each wave).', mods: { tx: { hp: 1.8 }, ts: { guard: 0.6, thorns: 30, look: 'riot' } } },
+            { name: 'Power Armor', desc: 'Powered exoskeletons: 2.6x health, +40% damage, extra armor and 25% less damage taken. Slower, but nearly unstoppable.', mods: { tx: { hp: 2.6, dmg: 1.4, speed: 0.85 }, ts: { armor: 8, guard: 0.75, color: '#5c7fa8', look: 'powerarmor' } } }] },
   { id: 'k9', tab: 'Troops', name: 'K9 Unit', cost: 650, range: 150, color: '#a0522d', kind: 'barracks', troop: 'k9', limit: 4, stack: false,
     b: { n: [3, 3, 4, 5, 5], hp: 80, dmg: 9, respawn: 420 },
     desc: 'Military dogs are very fast, chase enemies a long way from the rally point, and are replaced quickly. Low health, so they trade their lives for speed.',
     specs: [{ name: 'War Dogs', desc: '+80% health, +40% damage, and bites cause bleeding (60% extra damage over 2 seconds).', mods: { tx: { hp: 1.8, dmg: 1.4, r: 1.2 }, ts: { bleed: 0.6, look: 'wardog', color: '#7f8c8d' } } },
             { name: 'Motorcycle Recon', desc: 'Motorcycle scouts dodge 35% of attacks, hunt the strongest enemy in reach, and open with a hit for triple damage.', mods: { tx: { speed: 1.2 }, ts: { dodge: 0.35, hunt: true, backstab: 3, leash: 200, look: 'motorbike', color: '#2d3436' } } },
-            { name: 'Armored Car Patrol', desc: 'Two armored cars instead of a pack of dogs: 4.5x health, 2x damage, and every burst has a 25% chance to pin the target.', mods: { tx: { hp: 4.5, dmg: 2, r: 1.7, speed: 0.55 }, ts: { stun: 0.25, stunTicks: 40, look: 'car', color: '#6d7a52' }, nAdj: -2 } }] },
+            { name: 'Armored Car Patrol', desc: 'Two armored cars instead of a pack of dogs: 4.5x health, 2x damage, and every burst has a 25% chance to pin the target.', mods: { tx: { hp: 4.5, dmg: 2, r: 1.7, speed: 0.55 }, ts: { stun: 0.25, stunTicks: 40, look: 'car', color: '#6d7a52' }, nAdj: -2 } },
+            { name: 'Drone Swarm', desc: 'Combat drones instead of dogs: two extra drones that fly out to shoot ground AND air targets from a distance, but with half the health.', mods: { tx: { hp: 0.55, dmg: 0.5, speed: 0.8 }, ts: { role: 'ranged', range: 100, hitsAir: true, rate: 20, shotColor: '#80d8ff', color: '#b0bec5', look: 'drone' }, nAdj: 2 } }] },
   { id: 'demo', tab: 'Troops', name: 'Demolitions Corps', cost: 1000, range: 150, color: '#5d6d7e', kind: 'barracks', troop: 'grenadier', limit: 4, stack: false,
     b: { n: [1, 2, 2, 3, 3], hp: 60, dmg: 34, respawn: 700 },
     desc: 'Trains grenadiers with launchers that splash whole groups. Their airburst rounds hit air too, but they are fragile: keep them behind the line.',
     specs: [{ name: 'Flamethrower Teams', desc: 'Incendiary rounds have a 60% bigger blast and set enemies burning (50% extra damage over 2 seconds).', mods: { tx: { aoe: 1.6 }, ts: { burn: 0.5, color: '#e74c3c', look: 'flame' } } },
             { name: 'Smoke and Flashbang', desc: 'Smoke rounds slow everything in the blast by 40%, and 15% of hits stun enemies for 1.2 seconds.', mods: { ts: { slow: 0.4, slowTicks: 120, freeze: 0.15, color: '#74b9ff', look: 'smokeman' } } },
-            { name: 'EMP Squad', desc: 'Fire EMP pulses instead of grenades: each pulse arcs to 4 more enemies and has a 10% chance to stun. Fires 20% faster.', mods: { tx: { rate: 0.8 }, ts: { chain: 4, aoe: 0, stun: 0.1, stunTicks: 30, color: '#f1c40f', look: 'emp' } } }] },
+            { name: 'EMP Squad', desc: 'Fire EMP pulses instead of grenades: each pulse arcs to 4 more enemies and has a 10% chance to stun. Fires 20% faster.', mods: { tx: { rate: 0.8 }, ts: { chain: 4, aoe: 0, stun: 0.1, stunTicks: 30, color: '#f1c40f', look: 'emp' } } },
+            { name: 'Cryo Grenadiers', desc: 'Cryogenic grenades slow everything in the blast by 55%, and 25% of hits freeze enemies solid for 1.2 seconds.', mods: { ts: { slow: 0.55, slowTicks: 150, freeze: 0.25, color: '#4dd0e1', look: 'cryogren' } } }] },
   { id: 'workshop', tab: 'Troops', name: 'Engineer Workshop', cost: 900, range: 150, color: '#f39c12', kind: 'barracks', troop: 'engineer', limit: 4, stack: false,
     b: { n: [1, 2, 2, 3, 3], hp: 90, dmg: 10, respawn: 700 },
     desc: 'Combat engineers plant landmines on the road near their rally point (up to 2 each) and repair nearby walls, traps and troops. Weak fighters, so keep them behind your line.',
     specs: [{ name: 'Sappers', desc: 'Plant mines twice as fast, up to 4 each, with 50% bigger damage.', mods: { ts: { mineEvery: 300, mineCap: 4, mineMul: 1.5 } } },
             { name: 'Fortifiers', desc: 'Repair 3x faster and raise a free temporary sandbag wall on the road every 14 seconds (up to 2 each, they last 40 seconds).', mods: { ts: { repair: 3, wallEvery: 840, wallCap: 2 } } },
-            { name: 'Sentry Gun Crews', desc: 'Each engineer sets up an automatic sentry gun beside it every 15 seconds (up to 2 each, they last 25 seconds).', mods: { ts: { sentryEvery: 900, sentryCap: 2 } } }] },
+            { name: 'Turret Techs', desc: 'Each engineer assembles an automatic sentry turret beside it every 15 seconds (up to 2 each, they last 25 seconds).', mods: { ts: { sentryEvery: 900, sentryCap: 2 } } }] },
   { id: 'battery', tab: 'Troops', name: 'Artillery Battery', cost: 1400, range: 150, color: '#8d6e63', kind: 'barracks', troop: 'gun', limit: 4, stack: false,
     b: { n: [1, 1, 2, 2, 2], hp: 260, dmg: 80, respawn: 900 },
     desc: 'Crews a field gun that lobs shells a long way. Heavy splash damage, but it is slow, cannot hit air, and cannot hit things up close.',
     specs: [{ name: 'Heavy Howitzers', desc: 'Range +50%, blast +30%, damage +30%, but fires 20% slower.', mods: { tx: { range: 1.5, aoe: 1.3, dmg: 1.3, rate: 1.2 } } },
             { name: 'Dual-Purpose Guns', desc: 'Armor-piercing shells: each shot hits up to 5 enemies in a line, ignores armor, does double damage to bosses and armored enemies, and can hit air.', mods: { tx: { rate: 0.55, dmg: 1.1 }, ts: { bolt: true, pierce: 5, pierceArmor: true, heavyBonus: 2, hitsAir: true, aoe: 0, minRange: 0, look: 'atgun' } } },
-            { name: 'Mortar Crew', desc: 'Rapid mortar fire: 2.2x faster, shorter range, and every shell bursts into 3 bomblets.', mods: { tx: { rate: 0.45, range: 0.6, dmg: 0.7 }, ts: { cluster: 3, look: 'mortar' } } }] },
+            { name: 'Mortar Crew', desc: 'Rapid mortar fire: 2.2x faster, shorter range, and every shell bursts into 3 bomblets.', mods: { tx: { rate: 0.45, range: 0.6, dmg: 0.7 }, ts: { cluster: 3, look: 'mortar' } } },
+            { name: 'Rail Cannons', desc: 'Electromagnetic cannons: slugs hit up to 12 enemies in a line, ignore armor, hit air and do double damage to bosses and armored enemies. Longer range, 2x damage.', mods: { tx: { range: 1.3, dmg: 2, rate: 1 }, ts: { bolt: true, pierce: 12, pierceArmor: true, heavyBonus: 2, hitsAir: true, aoe: 0, minRange: 0, look: 'railcannon' } } }] },
   { id: 'hospital', tab: 'Troops', name: 'Field Hospital', cost: 1000, range: 150, color: '#f5e6a8', kind: 'barracks', troop: 'medic', limit: 4, stack: false,
     b: { n: [1, 1, 2, 2, 3], hp: 90, dmg: 14, respawn: 700 },
     desc: 'Combat medics heal the most wounded ally in reach (troops, mercenaries, walls and traps) and return fire when nobody needs healing.',
     specs: [{ name: 'Battlefield Triage', desc: 'Healing is doubled, and allies near a medic take 30% less damage.', mods: { tx: { heal: 2 }, ts: { guardAura: 0.7, guardR: 90, look: 'triage' } } },
             { name: 'Combat Medics', desc: 'Medics carry grenades: their fire hits 2.5x harder and splashes a small area, but healing is halved.', mods: { tx: { dmg: 2.5, heal: 0.5 }, ts: { aoe: 42, shotColor: '#fff59d', look: 'combatmed' } } },
-            { name: 'Evac Chopper', desc: 'Fallen troops and mercenaries within 130 units are pulled out and return to the fight at 60% health (each medic can do this once every 25 seconds).', mods: { ts: { revive: true, reviveR: 130, look: 'evac' } } }] },
+            { name: 'Evac Chopper', desc: 'Fallen troops and mercenaries within 130 units are pulled out and return to the fight at 60% health (each medic can do this once every 25 seconds).', mods: { ts: { revive: true, reviveR: 130, look: 'evac' } } },
+            { name: 'Nanite Medics', desc: 'Nanite clouds: allies within 100 units regain 12 health a second and regenerate 1.5% a second, and direct healing is 30% stronger.', mods: { tx: { heal: 1.3 }, ts: { medAura: 12, medRad: 100, regen: 0.015, color: '#55efc4', look: 'nanomed' } } }] },
   { id: 'hq', tab: 'Troops', name: 'Contractor HQ', cost: 1200, color: '#d4ac0d', kind: 'hq', limit: 1, stack: false,
     desc: 'A headquarters for hiring private military contractors. Each level cuts hire prices 4% and cooldowns 5%, adds a squad slot at levels 2 and 4, and unlocks stronger contractors early (see the Mercs tab).',
     specs: [{ name: 'Quartermaster', desc: 'All hires cost 30% less and recharge 15% faster.', mods: { mcost: 0.7, mcd: 0.85 } },
@@ -485,10 +493,11 @@ const TOWERS = [
             { name: 'Reinforced Sandbags', desc: '2.2x health, takes 20% less damage, and rebuilds itself (2% per second) whenever nothing is chewing on it.', mods: { hp: 2.2, guard: 0.8, regen: 0.02 } },
             { name: 'Demolition Charges', desc: 'When it falls it explodes, hitting everything within 90 units (damage grows each wave).', mods: { boom: 600, boomR: 90 } }] },
   { id: 'concrete', tab: 'Defense', name: 'Concrete Barrier', cost: 300, color: '#95a5a6', kind: 'fence', hp: 2000, limit: 10, onPath: true,
-    desc: 'A much tougher barrier (2000 health). Breachers still tear through it fast.',
+    desc: 'A much tougher barrier (2000 health). Shredders still tear through it fast.',
     specs: [{ name: 'Steel Reinforced', desc: '2.5x health and takes 35% less damage from every attacker.', mods: { hp: 2.5, guard: 0.65 } },
             { name: 'Guard Post', desc: 'Becomes a checkpoint: two riflemen stand guard beside it and fight, replaced every 15 seconds if they fall.', mods: { garrison: 2 } },
-            { name: 'Electrified Fence', desc: 'Arcs current into every enemy within 45 units twice a second (40 damage, grows each wave, ignores armor).', mods: { shock: 40 } }] },
+            { name: 'Electrified Fence', desc: 'Arcs current into every enemy within 45 units twice a second (40 damage, grows each wave, ignores armor).', mods: { shock: 40 } },
+            { name: 'Force Field', desc: 'An energy shield projector: 1.6x health, takes 50% less damage from every attacker, and the shield recharges 4% of its health a second whenever nothing is attacking it.', mods: { hp: 1.6, guard: 0.5, regen: 0.04 } }] },
   { id: 'mgnest', tab: 'Defense', name: 'Machine Gun Nest', cost: 800, range: 150, damage: 45, rate: 40, color: '#34495e', kind: 'fence', shootKind: 'bullet', hp: 5000, shoots: true, limit: 5, onPath: true, air: 'no',
     desc: 'A fortified bunker that sits on the road AND shoots back.',
     specs: [{ name: 'Triple Belt', desc: 'Fires 3 rounds at once (80% damage each) from 10% farther away.', mods: { shots: 3, dmg: 0.8, range: 1.1 } },
@@ -507,13 +516,15 @@ const TOWERS = [
   { id: 'mine', tab: 'Defense', name: 'Landmine', cost: 75, damage: 250, aoe: 60, color: '#7f8c8d', kind: 'mine', limit: 15, onPath: true,
     desc: 'Placed ON the road. Explodes when a ground enemy steps on it. Damage grows with the wave number.',
     specs: [{ name: 'Cluster Mine', desc: 'The blast throws 4 bomblets around it.', mods: { cluster: 4 } },
-            { name: 'Concussion Mine', desc: 'Smaller blast (60% damage), but stuns everything in it for 1.5 seconds and slows them 60% for 4 seconds.', mods: { dmg: 0.6, freezeMine: 90, slowMine: 0.6 } },
+            { name: 'Frost Mine', desc: 'A cryo charge. Smaller blast (60% damage), but it freezes everything in it for 1.5 seconds and slows them 60% for 4 seconds.', mods: { dmg: 0.6, freezeMine: 90, slowMine: 0.6 } },
             { name: 'Pressure Plate', desc: 'Reusable! Rearms itself 10 seconds after each blast (at 60% damage).', mods: { dmg: 0.6, rearm: 600 } }] }
 ];
 const TOWER = Object.fromEntries(TOWERS.map(t => [t.id, t]));
 for (const t of TOWERS) { t.stack = t.stack !== false && !t.super && !t.onPath && !t.consumable; t.aoe = t.aoe || 0; t.air = t.air || 'no'; }
-// Old saves (2.0 / 2.1) used other ids for towers that were renamed in 2.2.
-const LEGACY_TOWER_IDS = { frost: 'suppress', cryo: 'smoke', plasma: 'dew', archery: 'marksman', knights: 'heavy', beasts: 'k9', academy: 'demo', siege: 'battery', shrine: 'hospital', guild: 'hq', banner: 'cpost', wood: 'sandbag', iron: 'concrete', phalanx: 'mgnest', spikes: 'tanktrap', tar: 'oil' };
+// Older saves used other ids for towers that were renamed in 2.2 and then restored in 2.3.
+const LEGACY_TOWER_IDS = { suppress: 'frost', smoke: 'cryo', dew: 'plasma', archery: 'marksman', knights: 'heavy', beasts: 'k9', academy: 'demo', siege: 'battery', shrine: 'hospital', guild: 'hq', banner: 'cpost', wood: 'sandbag', iron: 'concrete', phalanx: 'mgnest', spikes: 'tanktrap', tar: 'oil' };
+// Same for the ability that was called 'smokescreen' in 2.2.
+const LEGACY_ABILITY_IDS = { smokescreen: 'freeze' };
 // ...and these were removed entirely: they are taken out of old saves and refunded.
 const RETIRED_TOWERS = { wizard: 'Wizard' };
 
@@ -552,14 +563,22 @@ const MERCS = [
     desc: 'Three hired marksmen with heavy rifles. Long range, big single hits. Ground only.' },
   { id: 'shock', name: 'Shock Troopers', cost: 320, cd: 30, life: 25, n: 2, wave: 6, hq: 1, role: 'melee', look: 'shock', color: '#b33939', hp: 300, dmg: 40, rate: 25, range: 22, speed: 2.6, r: 8, armor: 0, leash: 130, lifesteal: 0.25, frenzy: true,
     desc: 'Two assault troopers with SMGs and combat stimulants. Fast, hit hard, recover by hitting, and fight 50% harder below half health.' },
+  { id: 'drones', name: 'Combat Drones', cost: 420, cd: 28, life: 30, n: 4, wave: 9, hq: 2, role: 'ranged', look: 'drone', color: '#b0bec5', hp: 90, dmg: 32, rate: 20, range: 125, speed: 3.0, r: 6, hitsAir: true, shotColor: '#80d8ff',
+    desc: 'Four armed hover drones. Fast and cheap to lose: they shoot ground AND air targets and swarm anything that gets close.' },
   { id: 'officer', name: 'Armored Officer', cost: 550, cd: 40, life: 45, n: 1, wave: 10, hq: 2, role: 'melee', look: 'officer', color: '#f1c40f', hp: 1200, dmg: 35, rate: 40, range: 24, speed: 1.4, r: 10, armor: 5, leash: 120, medAura: 18, medRad: 95, guard: 0.8,
     desc: 'One armored command officer with a medic kit. Heals allies within 95 units (18 health a second) and takes 20% less damage.' },
   { id: 'flame', name: 'Flamethrowers', cost: 650, cd: 35, life: 30, n: 2, wave: 12, hq: 2, role: 'aoe', look: 'flame', color: '#e74c3c', hp: 100, dmg: 55, rate: 80, range: 140, speed: 1.5, r: 6.5, aoe: 55, burn: 0.5, hitsAir: false,
     desc: 'Two flamethrower troops. Burning fuel splashes a group and sets enemies burning. Ground only.' },
+  { id: 'plasmatroop', name: 'Plasma Troopers', cost: 600, cd: 32, life: 30, n: 3, wave: 14, hq: 2, role: 'ranged', look: 'plasmarifle', color: '#00bcd4', hp: 170, dmg: 62, rate: 55, range: 160, speed: 1.6, r: 6.5, aoe: 30, hitsAir: true, shotColor: '#18ffff',
+    desc: 'Three troopers with plasma rifles. Their bolts splash a small area, hit air and long range targets, and cook anything bunched up.' },
   { id: 'special', name: 'Special Forces', cost: 480, cd: 35, life: 25, n: 3, wave: 15, hq: 3, role: 'melee', look: 'special', color: '#2d3436', hp: 140, dmg: 90, rate: 30, range: 20, speed: 3.4, r: 6.5, armor: 0, leash: 280, hunt: true, crit: 0.35, critMult: 3, pierceArmor: true, dodge: 0.3, backstab: 3,
     desc: 'Three operators that hunt the strongest enemy anywhere nearby. Ignore armor, crit 35% for triple damage, dodge 30%.' },
+  { id: 'powerarmor', name: 'Power Armor Squad', cost: 850, cd: 45, life: 40, n: 2, wave: 17, hq: 3, role: 'melee', look: 'powerarmor', color: '#5c7fa8', hp: 1000, dmg: 60, rate: 45, range: 24, speed: 1.4, r: 10, armor: 6, leash: 120, guard: 0.8, cleave: 40,
+    desc: 'Two soldiers in powered exoskeletons. Thick armor (6), 20% less damage taken, and every punch hits the group around the target.' },
   { id: 'lighttank', name: 'Light Tank', cost: 1100, cd: 60, life: 40, n: 1, wave: 20, hq: 4, role: 'melee', look: 'tank', color: '#6d7a52', hp: 3000, dmg: 150, rate: 90, range: 28, speed: 0.9, r: 15, armor: 8, leash: 110, cleave: 62, stun: 0.2, stunTicks: 30,
-    desc: 'A hired light tank with 3000 health and armor 8. Every shell is an area blast that may stun.' }
+    desc: 'A hired light tank with 3000 health and armor 8. Every shell is an area blast that may stun.' },
+  { id: 'mech', name: 'Mech Walker', cost: 2400, cd: 80, life: 45, n: 1, wave: 30, hq: 5, role: 'melee', look: 'mech', color: '#7f8fa6', hp: 6000, dmg: 230, rate: 80, range: 30, speed: 0.9, r: 17, armor: 10, leash: 120, cleave: 75, stun: 0.25, stunTicks: 36, guard: 0.85,
+    desc: 'A piloted combat mech with 6000 health and armor 10. Its servo-fists smash whole groups and may stun. Level 5 Contractor HQ unlocks it early.' }
 ];
 const MERC = Object.fromEntries(MERCS.map(m => [m.id, m]));
 const mercScale = (wave) => 1 + wave * 0.12;
@@ -574,7 +593,7 @@ const TAB_NAMES = { Attack: 'Attack', Support: 'Support', Troops: 'Troops', Defe
 //  ENEMIES   hp / speed (units per tick) / reward ($) / dmg (to your base)
 // ---------------------------------------------------------------------
 const ENEMIES = [
-  { id: 'swarm', name: 'Skirmishers', hp: 12, speed: 3.5, reward: 3, color: '#a0a870', r: 8, dmg: 2, wave: 1, desc: 'Light infantry that sprints in. They come in big groups.' },
+  { id: 'swarm', name: 'Swarm Bots', hp: 12, speed: 3.5, reward: 3, color: '#00cec9', r: 8, dmg: 2, wave: 1, desc: 'Tiny robotic crawlers that sprint in. They come in big groups.' },
   { id: 'basic', name: 'Rifleman', hp: 40, speed: 1.5, reward: 10, color: '#a5523a', r: 12, dmg: 10, wave: 1, desc: 'The standard enemy infantryman.' },
   { id: 'fast', name: 'Motorcycle Scout', hp: 25, speed: 2.8, reward: 12, color: '#c9a227', r: 10, dmg: 5, wave: 2, desc: 'Runs nearly twice as fast as a Rifleman.' },
   { id: 'tank', name: 'Light Tank', hp: 150, speed: 0.8, reward: 25, color: '#6f7a55', r: 16, dmg: 50, wave: 4, armor: 2, desc: 'Slow and tough, with light armor.' },
@@ -583,24 +602,25 @@ const ENEMIES = [
   { id: 'commando', name: 'Commando', hp: 35, speed: 4.2, reward: 15, color: '#2d2d2d', r: 9, dmg: 8, wave: 7, dodge: 0.2, desc: 'Extremely fast and takes cover from 20% of bullets (blasts and beams always hit).' },
   { id: 'drone', name: 'Attack Drone', hp: 15, speed: 2.5, reward: 15, color: '#ecf0f1', r: 9, dmg: 10, wave: 8, air: true, desc: 'Flies straight at your base, ignoring the road. Needs anti-air.' },
   { id: 'armored', name: 'Armored Car', hp: 220, speed: 0.9, reward: 30, color: '#7f8c8d', r: 15, dmg: 40, wave: 8, armor: 6, desc: 'Heavy armor: every hit does 6 less damage. Rapid fire towers struggle.' },
-  { id: 'shredder', name: 'Breacher', hp: 120, speed: 2.2, reward: 20, color: '#d35400', r: 12, dmg: 15, wave: 9, shred: true, desc: 'An engineering vehicle that tears through walls and troops at triple speed.' },
+  { id: 'shredder', name: 'Shredder', hp: 120, speed: 2.2, reward: 20, color: '#d35400', r: 12, dmg: 15, wave: 9, shred: true, desc: 'A buzz-saw robot that tears through walls and troops at triple speed.' },
   { id: 'medic', name: 'Combat Medic', hp: 60, speed: 1.4, reward: 20, color: '#ff7675', r: 11, dmg: 10, wave: 10, heal: 0.25, healRange: 80, desc: 'Heals every enemy near it. Kill it first.' },
-  { id: 'repair', name: 'Repair Truck', hp: 120, speed: 1.3, reward: 25, color: '#55a98a', r: 13, dmg: 20, wave: 10, regen: 0.004, desc: 'Field repair: regenerates health quickly unless gassed or burning.' },
-  { id: 'halftrack', name: 'Half-Track', hp: 60, speed: 1.8, reward: 20, color: '#8d9a6b', r: 11, dmg: 15, wave: 11, noSlow: true, desc: 'Cannot be slowed or pinned down. It drives through anything.' },
+  { id: 'regen', name: 'Regen Bot', hp: 120, speed: 1.3, reward: 25, color: '#55efc4', r: 13, dmg: 20, wave: 10, regen: 0.004, desc: 'Nanite repair swarms regenerate its health quickly unless it is poisoned or burning.' },
+  { id: 'phasewalker', name: 'Phase Walker', hp: 60, speed: 1.8, reward: 20, color: 'rgba(200,225,255,0.75)', r: 11, dmg: 15, wave: 11, noSlow: true, desc: 'A phase-shifted robot. Cannot be slowed or frozen.' },
   { id: 'jet', name: 'Fighter Jet', hp: 80, speed: 1.5, reward: 25, color: '#34495e', r: 11, dmg: 20, wave: 12, air: true, desc: 'A tougher flyer.' },
-  { id: 'reactive', name: 'Reactive Armor', hp: 40, speed: 1.2, reward: 25, color: '#e67e22', r: 12, dmg: 15, wave: 12, shield: 75, desc: 'Carries reactive armor plating that soaks damage first.' },
-  { id: 'jeep', name: 'Raider Jeep', hp: 80, speed: 1.0, reward: 25, color: '#a8864a', r: 11, dmg: 20, wave: 13, blink: true, desc: 'Floors it: bursts 45 units forward every few seconds.' },
+  { id: 'shielded', name: 'Shielded', hp: 40, speed: 1.2, reward: 25, color: '#e67e22', r: 12, dmg: 15, wave: 12, shield: 75, desc: 'Power-armored trooper with an energy shield that soaks damage first.' },
+  { id: 'teleporter', name: 'Teleporter', hp: 80, speed: 1.0, reward: 25, color: '#e056fd', r: 11, dmg: 20, wave: 13, blink: true, desc: 'Blinks 45 units forward every few seconds.' },
   { id: 'heavytank', name: 'Heavy Tank', hp: 400, speed: 0.5, reward: 50, color: '#2d3436', r: 20, dmg: 100, wave: 14, armor: 4, desc: 'A slow wall of health and armor.' },
   { id: 'zeppelin', name: 'Zeppelin', hp: 220, speed: 0.5, reward: 40, color: '#bdc3c7', r: 18, dmg: 60, wave: 15, air: true, desc: 'A slow, tanky airship.' },
-  { id: 'carrier', name: 'APC', hp: 350, speed: 0.7, reward: 60, color: '#b79a4d', r: 18, dmg: 80, wave: 16, onDeath: 'swarm', onDeathN: 5, desc: 'Releases 5 Skirmishers when destroyed.' },
-  { id: 'camo', name: 'Camo Scout', hp: 70, speed: 1.6, reward: 30, color: '#4f6b3a', r: 11, dmg: 20, wave: 16, stealth: true, desc: 'CAMOUFLAGED: only towers that detect (Sniper, Tesla, supers) or anything inside a Radar circle can target it. Blasts still hit it.' },
-  { id: 'cmdcar', name: 'Command Car', hp: 300, speed: 0.6, reward: 50, color: '#7a6a4a', r: 16, dmg: 60, wave: 18, summon: 'swarm', desc: 'Radios in a fresh Skirmisher every 2 seconds.' },
+  { id: 'carrier', name: 'Carrier', hp: 350, speed: 0.7, reward: 60, color: '#fdcb6e', r: 18, dmg: 80, wave: 16, onDeath: 'swarm', onDeathN: 5, desc: 'A walking carrier that releases 5 Swarm Bots when destroyed.' },
+  { id: 'phantom', name: 'Phantom', hp: 70, speed: 1.6, reward: 30, color: '#6c5ce7', r: 11, dmg: 20, wave: 16, stealth: true, desc: 'CLOAKED: only towers that detect (Sniper, Tesla, supers) or anything inside a Radar circle can target it. Blasts still hit it.' },
+  { id: 'dronecmd', name: 'Drone Commander', hp: 300, speed: 0.6, reward: 50, color: '#833471', r: 16, dmg: 60, wave: 18, summon: 'swarm', desc: 'A command platform that launches a fresh Swarm Bot every 2 seconds.' },
   { id: 'assault', name: 'Assault Trooper', hp: 180, speed: 1.1, reward: 30, color: '#b33939', r: 14, dmg: 30, wave: 19, enrage: true, desc: 'Charges at double speed when below half health. Finish it fast.' },
-  { id: 'sapper', name: 'Tunnel Sappers', hp: 160, speed: 1.2, reward: 30, color: '#8d6e63', r: 13, dmg: 25, wave: 20, burrow: true, desc: 'Digs in underground for 2 seconds out of every 7. While underground nothing can hurt it.' },
-  { id: 'superheavy', name: 'Super-Heavy Tank', hp: 600, speed: 0.45, reward: 70, color: '#636e72', r: 22, dmg: 120, wave: 25, armor: 12, noSlow: true, desc: 'Massive armor (12) and immune to slows. Use armor piercing, poison or big hits.' },
-  { id: 'hive', name: 'Drone Carrier', hp: 500, speed: 0.45, reward: 80, color: '#8fa0ab', r: 20, dmg: 90, wave: 30, air: true, summon: 'drone', desc: 'A flying carrier that launches Attack Drones every 4 seconds.' },
+  { id: 'burrower', name: 'Burrower', hp: 160, speed: 1.2, reward: 30, color: '#8d6e63', r: 13, dmg: 25, wave: 20, burrow: true, desc: 'A tunneling machine. Digs underground for 2 seconds out of every 7. While burrowed nothing can hurt it.' },
+  { id: 'colossus', name: 'Colossus Mech', hp: 600, speed: 0.45, reward: 70, color: '#636e72', r: 22, dmg: 120, wave: 25, armor: 12, noSlow: true, desc: 'A walking fortress. Massive armor (12) and immune to slows. Use armor piercing, poison or big hits.' },
+  { id: 'hive', name: 'Hive Ship', hp: 500, speed: 0.45, reward: 80, color: '#fab1a0', r: 20, dmg: 90, wave: 30, air: true, summon: 'drone', desc: 'A flying carrier ship that launches Attack Drones every 4 seconds.' },
   { id: 'boss', name: 'Armored Train', hp: 800, speed: 0.6, reward: 150, color: '#7a2e24', r: 24, dmg: 200, wave: 999, armor: 3, boss: true, desc: 'Arrives every 5th wave. Takes off a huge chunk of base health if it gets through.' },
-  { id: 'railway', name: 'Railway Gun', hp: 2500, speed: 0.4, reward: 300, color: '#1a252f', r: 30, dmg: 500, wave: 999, armor: 8, boss: true, desc: 'Arrives every 10th wave. Armored, enormous, and lethal if it reaches the base.' }
+  { id: 'railway', name: 'Railway Gun', hp: 2500, speed: 0.4, reward: 300, color: '#1a252f', r: 30, dmg: 500, wave: 999, armor: 8, boss: true, desc: 'Arrives on waves 10, 30, 50 and so on. Armored, enormous, and lethal if it reaches the base.' },
+  { id: 'titan', name: 'Titan Mech', hp: 2500, speed: 0.4, reward: 300, color: '#2c3e50', r: 30, dmg: 500, wave: 999, armor: 8, boss: true, desc: 'Arrives on waves 20, 40, 60 and so on. A towering war machine, armored and lethal if it reaches the base.' }
 ];
 const ENEMY = Object.fromEntries(ENEMIES.map(e => [e.id, e]));
 
@@ -609,8 +629,8 @@ const AFFIXES = [
   { id: 'swift', name: 'Motorized', color: '#f1c40f', hp: 0.85, speed: 1.35, desc: '+35% speed, -15% health' },
   { id: 'heavy', name: 'Heavy', color: '#e17055', hp: 1.8, speed: 0.85, size: 1.3, reward: 1.6, desc: '+80% health, bigger, slower' },
   { id: 'plated', name: 'Up-Armored', color: '#b2bec3', armor: 4, desc: '+4 armor' },
-  { id: 'warded', name: 'Reactive', color: '#74b9ff', shield: 0.5, desc: 'Gains reactive armor worth 50% of its health' },
-  { id: 'vital', name: 'Resupplied', color: '#55efc4', regen: 0.003, desc: 'Regenerates health' },
+  { id: 'warded', name: 'Shielded', color: '#74b9ff', shield: 0.5, desc: 'Gains an energy shield worth 50% of its health' },
+  { id: 'vital', name: 'Nanite', color: '#55efc4', regen: 0.003, desc: 'Regenerates health' },
   { id: 'elite', name: 'Elite', color: '#ffd54f', hp: 1.5, reward: 2.5, desc: '+50% health, pays 2.5x' }
 ];
 
@@ -654,7 +674,7 @@ const THEMES = {
   desert:  { ground: '#c8a45c', ground2: '#bd9850', path: '#8c6f45', edge: '#6b5333', deco: ['cactus', 'rock', 'rock'] },
   snow:    { ground: '#dfe8ee', ground2: '#d2dde5', path: '#7c8a96', edge: '#5d6a75', deco: ['pine', 'pine', 'rock'] },
   scorched: { ground: '#3b3330', ground2: '#342c29', path: '#6b5a4c', edge: '#2b221c', deco: ['rock', 'rock', 'wreck'] },
-  night:   { ground: '#1d2b3a', ground2: '#192634', path: '#4a5568', edge: '#2d3748', deco: ['pine', 'rock', 'wreck'] }
+  night:   { ground: '#1d2b3a', ground2: '#192634', path: '#4a5568', edge: '#2d3748', deco: ['pine', 'rock', 'wreck', 'crystal'] }
 };
 
 // Targeting priorities: name + scoring function (bigger = shot first)
@@ -671,7 +691,7 @@ const TARGETING = [
   { id: 'slow', name: 'Slowest' },
   { id: 'air', name: 'Air first' },
   { id: 'ground', name: 'Ground first' },
-  { id: 'armored', name: 'Armored / reactive first' },
+  { id: 'armored', name: 'Armored / shielded first' },
   { id: 'boss', name: 'Bosses first' },
   { id: 'random', name: 'Random' }
 ];
@@ -679,7 +699,7 @@ const TARGETING = [
 const ABILITIES = [
   { id: 'strike', name: 'Airstrike', key: 'Q', cd: 60, wave: 3, desc: 'Click the map: bombers carpet-bomb a line through that spot.' },
   { id: 'reinforce', name: 'Paratroopers', key: 'W', cd: 50, wave: 5, desc: 'Click the map: 4 paratroopers drop in and fight for 25 seconds.' },
-  { id: 'smokescreen', name: 'Smoke Screen', key: 'E', cd: 75, wave: 8, desc: 'Every enemy on the map is pinned down for 1.5 seconds, then slowed for 4 more.' }
+  { id: 'freeze', name: 'Cryo Burst', key: 'E', cd: 75, wave: 8, desc: 'Every enemy on the map is frozen for 1.5 seconds, then slowed for 4 more.' }
 ];
 
 const ACHIEVEMENTS = [
@@ -712,15 +732,16 @@ const TIPS = [
   'Engineers plant mines, Medics heal, Grenadiers splash, Marksmen hit air. Mix barracks types and add a Command Post.',
   'Press Esc or right-click empty ground to deselect. The Deselect button works too.',
   'Almost every tower, barracks, wall and trap specializes at level 5. Each path changes how it plays.',
-  'Armor removes damage from EVERY hit. Use big hits, gas, or armor-piercing upgrades on Armored Cars and Super-Heavy Tanks.',
-  'Camouflaged Camo Scouts can only be shot by Snipers, Tesla coils, supers, or towers near a Radar.',
+  'Armor removes damage from EVERY hit. Use big hits, poison, or armor-piercing upgrades on Armored Cars and Colossus Mechs.',
+  'Cloaked Phantoms can only be shot by Snipers, Tesla coils, supers, or towers near a Radar.',
   'Click a tower in the shop while placing to stack another one onto the same spot.',
   'Starting the next wave early (while the timer runs) pays a bonus.',
   'The Codex lists the stats of every tower at every level.',
-  'Suppressors and Smoke Generators right before a Field Gun or Flamethrower multiply their damage.',
+  'Frost towers and Cryo-Emitters right before a Field Gun or Inferno multiply their damage.',
   'Farms pay out at the end of every wave. Power Plants boost them by 20% per level.',
   'Numbers 1 to 9 pick towers from the shop. Q / W / E fire your abilities.',
-  'The Tesla coil hits air and sees camouflage, and its Coil Array specialty chains lightning across a whole group.'
+  'The Tesla coil hits air and sees stealth, and its Coil Array specialty chains lightning across a whole group.',
+  'Sci-fi options: Plasma Rifles, Power Armor, Drone Swarms and Rail Cannons are specialties on the barracks, and the Mercs tab has Combat Drones, Plasma Troopers, Power Armor and a Mech Walker.'
 ];
 </script>
 <script>
@@ -1311,7 +1332,7 @@ function towerAttack(g, u) {
     }
     G.lines.push({ x1: g.x, y1: g.y, x2: ex, y2: ey, life: 8, ml: 8, color: '#e0c3fc', w: 2 }); burst(t.x, t.y, g.def.color, 5, 2);
     sfx('snipe');
-  } else if (k === 'suppress') {
+  } else if (k === 'frost') {
     g.angle = Math.atan2(t.y - g.y, t.x - g.x);
     const o = { src: u, group: g, slow: m.slowPower || 0.5, slowTicks: 90, freeze: m.freeze, brittle: m.brittle, noVar: true };
     aoeHurt(t.x, t.y, st.aoe, st.damage * g.buff.dmg, o, false);
@@ -1356,7 +1377,7 @@ function beamAttack(g, u, st) {
   const mult = ramps ? 1 + (g.def.ramp ? 3 : (m.focusMax || 3)) * u.ramp : 1;
   const o = { src: u, group: g, pierceArmor: !!m.pierceArmor, noVar: true };
   for (const e of all) hurt(e, st.damage * g.buff.dmg * mult, o);
-  if (g.def.pierceBeam) {    // the directed-energy beam burns everything along each line
+  if (g.def.pierceBeam) {    // plasma burns everything along each lance
     for (const tg of all) {
       const a = Math.atan2(tg.y - g.y, tg.x - g.x), ca = Math.cos(a), sa = Math.sin(a);
       for (const e of G.enemies) {
@@ -1371,7 +1392,7 @@ function beamAttack(g, u, st) {
   }
   if (Math.random() < 0.3) burst(t.x, t.y, g.def.color, 1, 1.2, 2, 14);
 }
-// Pulse Burst (Directed Energy spec): a periodic shockwave that hits every enemy in range
+// Solar Nova (Plasma spec): a periodic shockwave that hits every enemy in range
 function pulseTick(g, u) {
   const st = u.stats, m = st.mods;
   if (++u.pulseT < m.pulseEvery) return;
@@ -1521,12 +1542,12 @@ function removeTower(g) {
 //  WAVES
 // =====================================================================
 const WAVE_THEMES = [
-  { id: 'swarm', label: 'INFANTRY RUSH', from: 6, pool: { swarm: 5, fast: 3, dismount: 0, commando: 1 } },
-  { id: 'armored', label: 'ARMORED', from: 9, pool: { armored: 4, tank: 3, heavytank: 2, superheavy: 1, reactive: 2 } },
+  { id: 'swarm', label: 'SWARM', from: 6, pool: { swarm: 5, fast: 3, dismount: 0, commando: 1 } },
+  { id: 'armored', label: 'ARMORED', from: 9, pool: { armored: 4, tank: 3, heavytank: 2, colossus: 1, shielded: 2 } },
   { id: 'air', label: 'AIR RAID', from: 10, pool: { drone: 5, jet: 3, zeppelin: 2, hive: 1 } },
   { id: 'rush', label: 'BLITZ', from: 8, pool: { fast: 4, commando: 3, assault: 2, swarm: 2 } },
-  { id: 'stealth', label: 'CAMOUFLAGE', from: 17, pool: { camo: 5, halftrack: 2, sapper: 2 } },
-  { id: 'convoy', label: 'CONVOY', from: 12, pool: { basic: 3, truck: 2, cmdcar: 1, carrier: 1, medic: 1 } }
+  { id: 'stealth', label: 'STEALTH', from: 17, pool: { phantom: 5, phasewalker: 2, burrower: 2 } },
+  { id: 'convoy', label: 'CONVOY', from: 12, pool: { basic: 3, truck: 2, dronecmd: 1, carrier: 1, medic: 1 } }
 ];
 function buildWave(n) {
   const out = []; let label = 'MIXED', t = 30;
@@ -1536,11 +1557,12 @@ function buildWave(n) {
   if (n === 1) { label = 'FIRST CONTACT'; for (let i = 0; i < 6; i++) add('basic', rand(36, 50)); return { list: out, label }; }
   if (n % 100 === 0 && G.opts.mode === 'classic') {
     label = 'FINALE';
-    for (let i = 0; i < 12; i++) { add('railway', 40); for (let j = 0; j < 12; j++) add('fast', 10, rollAffix()); }
+    for (let i = 0; i < 12; i++) { add('titan', 40); for (let j = 0; j < 12; j++) add('fast', 10, rollAffix()); }
     return { list: out, label };
   }
   let budget = n * 20, theme = null;
-  if (n % 10 === 0) { label = 'RAILWAY GUN'; add('railway', 120); budget *= 0.5; }
+  if (n % 20 === 0) { label = 'TITAN MECH'; add('titan', 120); budget *= 0.5; }
+  else if (n % 10 === 0) { label = 'RAILWAY GUN'; add('railway', 120); budget *= 0.5; }
   else if (n % 5 === 0) { label = 'BOSS'; add('boss', 100); budget *= 0.45; }
   else if (n % 3 === 0 && n >= 6) { const opts = WAVE_THEMES.filter(x => n >= x.from); theme = pick(opts); label = theme.label; }
   const avail = ENEMIES.filter(e => e.wave <= n && !e.boss && e.id !== 'dismount');
@@ -1575,7 +1597,7 @@ function startWave() {
   G.countdown = 0;
   const w = G.nextWave || buildWave(G.wave); G.nextWave = null;
   G.spawnQ = w.list.slice(); G.waveLabel = w.label; G.waveT = 0; G.waveActive = true;
-  announce('WAVE ' + G.wave, w.label, w.label === 'BOSS' || w.label === 'RAILWAY GUN' || w.label === 'FINALE' ? '#ff6b6b' : '#fff');
+  announce('WAVE ' + G.wave, w.label, w.label === 'BOSS' || w.label === 'RAILWAY GUN' || w.label === 'TITAN MECH' || w.label === 'FINALE' ? '#ff6b6b' : '#fff');
   sfx('wave');
   updateHUD(true);
 }
@@ -1636,10 +1658,10 @@ function useAbility(id, x, y) {
       t.order = { x: x + off.x, y: y + off.y }; G.troops.push(t); sq.push(t);
     }
     burst(x, y, '#3498db', 20, 3);
-  } else if (id === 'smokescreen') {
+  } else if (id === 'freeze') {
     for (const e of G.enemies) if (e.alive && !e.def.noSlow) e.stunT = Math.max(e.stunT, 90);
-    G.freezeSlowT = 330; burst(W / 2, H / 2, '#cfd8dc', 60, 8, 3, 40);
-    toast('Smoke screen! Everything is pinned down!', '#cfd8dc');
+    G.freezeSlowT = 330; burst(W / 2, H / 2, '#a5d8ff', 60, 8, 3, 40);
+    toast('Cryo burst! Everything is frozen!', '#a5d8ff');
   }
   G.abilities[id] = a.cd * TPS; G.armed = null; sfx('upgrade');
   return true;
@@ -1776,7 +1798,7 @@ function computeAuras() {
         hurt(e, m.field * L * 0.1, { noVar: true, pierceArmor: true, src: u, group: a }); e.slowAura = Math.max(e.slowAura, 0.15);
         if (Math.random() < 0.04) G.lines.push({ x1: a.x, y1: a.y, x2: e.x, y2: e.y, life: 5, ml: 5, color: '#fff59d', zig: true, w: 1 });
       }
-    } else if (au === 'smoke') {
+    } else if (au === 'cryo') {
       const p = Math.min(0.9, (L >= 5 ? 0.55 : 0.4) + (m.slowAdd || 0));
       let pulse = false;
       if (m.zero) { a.zeroT = (a.zeroT || 0) + 6; if (a.zeroT >= 360) { a.zeroT = 0; pulse = true; G.lines.push({ ring: true, x: a.x, y: a.y, r: R, life: 18, ml: 18, color: '#dff9fb' }); } }
@@ -1876,7 +1898,11 @@ function cleanSave(s) {
     money: numOr(s.money, d.money, 0, 1e12), lives: numOr(s.lives, d.lives, 1, d.lives), endless: !!s.endless, auto: !!s.auto,
     stats: {}, abilities: {}, towers: [], retired: {}, unknown: 0, refund: 0, skipped: 0, fixed: 0 };
   if (isPlainObj(s.stats)) for (const k of ['kills', 'damage', 'leaked', 'built', 'spent', 'earned', 'lost']) if (own(s.stats, k)) out.stats[k] = numOr(s.stats[k], 0, 0, 1e15);
-  if (isPlainObj(s.abilities)) for (const a of ABILITIES) if (own(s.abilities, a.id)) out.abilities[a.id] = numOr(s.abilities[a.id], 0, 0, a.cd * TPS);
+  if (isPlainObj(s.abilities)) for (const a of ABILITIES) {
+    const legacy = Object.keys(LEGACY_ABILITY_IDS).find(k => LEGACY_ABILITY_IDS[k] === a.id);
+    const src = own(s.abilities, a.id) ? a.id : (legacy && own(s.abilities, legacy) ? legacy : null);
+    if (src) out.abilities[a.id] = numOr(s.abilities[src], 0, 0, a.cd * TPS);
+  }
   const list = Array.isArray(s.towers) ? s.towers.slice(0, 600) : [];
   if (s.towers != null && !Array.isArray(s.towers)) { out.fixed++; warnTD('towers list was not an array'); }
   let superSeen = false;
@@ -2468,10 +2494,11 @@ function renderBackground() {
   for (const p of G.paths) { strokePath(b, p, 38, th.path); }
   b.setLineDash([10, 14]); for (const p of G.paths) strokePath(b, p, 2, 'rgba(255,255,255,0.12)'); b.setLineDash([]);
   if (S.scenery) for (const o of G.obstacles) drawDeco(b, o);
-  // enemy staging areas (where the waves arrive)
+  // enemy warp gates (where the waves arrive)
   for (const p of G.paths) { const s0 = p.pts[0]; const a1 = p.pts[1]; const ang = Math.atan2(a1.y - s0.y, a1.x - s0.x); const px = clamp(s0.x + Math.cos(ang) * 30, 14, W - 14), py = clamp(s0.y + Math.sin(ang) * 30, 14, H - 14);
-    b.fillStyle = 'rgba(140,40,40,0.35)'; b.beginPath(); b.arc(px, py, 24, 0, 6.283); b.fill(); b.strokeStyle = '#a83232'; b.lineWidth = 3; b.beginPath(); b.arc(px, py, 18, 0, 6.283); b.stroke();
-    b.save(); b.translate(px, py); b.rotate(ang); b.strokeStyle = '#e8c8c8'; b.lineWidth = 2.5; b.lineCap = 'butt'; for (const o of [-5, 3]) { b.beginPath(); b.moveTo(o - 3, -7); b.lineTo(o + 4, 0); b.lineTo(o - 3, 7); b.stroke(); } b.restore(); }
+    b.fillStyle = 'rgba(155,89,182,0.35)'; b.beginPath(); b.arc(px, py, 24, 0, 6.283); b.fill(); b.strokeStyle = '#9b59b6'; b.lineWidth = 3; b.beginPath(); b.arc(px, py, 18, 0, 6.283); b.stroke();
+    b.strokeStyle = 'rgba(224,170,255,0.8)'; b.lineWidth = 1.5; b.beginPath(); b.arc(px, py, 11, 0.4, 2.4); b.stroke(); b.beginPath(); b.arc(px, py, 11, 3.5, 5.5); b.stroke();
+    b.save(); b.translate(px, py); b.rotate(ang); b.strokeStyle = '#ead7f5'; b.lineWidth = 2.5; b.lineCap = 'butt'; for (const o of [-4, 4]) { b.beginPath(); b.moveTo(o - 3, -6); b.lineTo(o + 3, 0); b.lineTo(o - 3, 6); b.stroke(); } b.restore(); }
   // your base: a sandbagged command bunker
   const bx = G.base.x, by = G.base.y;
   b.fillStyle = '#7d6f4a'; for (let i = 0; i < 14; i++) { const a2 = i / 14 * 6.283; b.beginPath(); b.ellipse(bx + Math.cos(a2) * 29, by + Math.sin(a2) * 29, 7, 4.5, a2 + 1.57, 0, 6.283); b.fill(); }
@@ -2489,6 +2516,7 @@ function drawDeco(c, o) {
   if (o.kind === 'tree' || o.kind === 'bush') { c.fillStyle = o.kind === 'bush' ? '#2e8b3e' : '#1e6b2c'; c.beginPath(); c.arc(x, y, r, 0, 6.283); c.fill(); c.fillStyle = 'rgba(255,255,255,0.12)'; c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.45, 0, 6.283); c.fill(); }
   else if (o.kind === 'pine') { c.fillStyle = '#1b5e20'; c.beginPath(); c.moveTo(x, y - r * 1.3); c.lineTo(x + r, y + r * 0.6); c.lineTo(x - r, y + r * 0.6); c.fill(); c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.moveTo(x, y - r * 1.3); c.lineTo(x + r * 0.4, y - r * 0.4); c.lineTo(x - r * 0.4, y - r * 0.4); c.fill(); }
   else if (o.kind === 'cactus') { c.fillStyle = '#4caf50'; c.fillRect(x - 3, y - r, 6, r * 1.8); c.fillRect(x - r * 0.7, y - r * 0.4, r * 0.7, 4); c.fillRect(x - r * 0.7, y - r * 0.9, 4, r * 0.55); c.fillRect(x, y - r * 0.2, r * 0.7, 4); c.fillRect(x + r * 0.7 - 4, y - r * 0.6, 4, r * 0.45); }
+  else if (o.kind === 'crystal') { c.fillStyle = '#8e7cc3'; c.beginPath(); c.moveTo(x, y - r * 1.2); c.lineTo(x + r * 0.6, y); c.lineTo(x, y + r * 0.6); c.lineTo(x - r * 0.6, y); c.fill(); c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.moveTo(x, y - r * 1.2); c.lineTo(x + r * 0.2, y); c.lineTo(x, y + r * 0.6); c.fill(); }
   else if (o.kind === 'wreck') { c.fillStyle = '#3b3f3a'; c.fillRect(x - r, y - r * 0.55, r * 2, r * 1.1); c.fillStyle = '#2a2d2a'; c.fillRect(x - r * 0.2, y - r * 0.8, r * 1.0, r * 0.7); c.fillStyle = '#6d4c41'; c.fillRect(x - r * 0.9, y + r * 0.2, r * 0.8, r * 0.25); c.fillStyle = 'rgba(0,0,0,0.35)'; c.beginPath(); c.arc(x + r * 0.3, y - r * 0.2, r * 0.3, 0, 6.283); c.fill(); }
   else { c.fillStyle = '#7b7d7d'; c.beginPath(); c.moveTo(x - r, y + r * 0.3); c.lineTo(x - r * 0.5, y - r * 0.7); c.lineTo(x + r * 0.4, y - r * 0.8); c.lineTo(x + r, y); c.lineTo(x + r * 0.5, y + r * 0.6); c.fill(); c.fillStyle = 'rgba(255,255,255,0.15)'; c.beginPath(); c.moveTo(x - r * 0.5, y - r * 0.7); c.lineTo(x + r * 0.4, y - r * 0.8); c.lineTo(x, y - r * 0.2); c.fill(); }
 }
@@ -2530,7 +2558,7 @@ function drawTowerArt(c, def, x, y, s, angle, recoil, level, spec, t) {
     c.fillStyle = col;
     if (def.aura === 'command') { c.fillStyle = '#5d4037'; c.fillRect(-1, -12, 2, 22); c.fillStyle = col; c.beginPath(); c.moveTo(1, -12); c.lineTo(12, -8); c.lineTo(1, -4); c.fill(); c.fillStyle = '#ffd54f'; c.beginPath(); c.arc(-5, 6, 4, 0, 6.283); c.fill(); }
     else if (def.aura === 'eco') { c.beginPath(); c.moveTo(3, -12); c.lineTo(-6, 2); c.lineTo(0, 2); c.lineTo(-3, 12); c.lineTo(7, -2); c.lineTo(1, -2); c.closePath(); c.fill(); }
-    else if (def.aura === 'smoke') { c.fillStyle = '#4a4f55'; c.fillRect(-6, 2, 12, 8); c.fillStyle = 'rgba(210,215,220,0.85)'; const tt = (t || 0) / 40; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(Math.sin(tt + i * 2) * 3, -3 - i * 4, 4 + i, 0, 6.283); c.fill(); } }
+    else if (def.aura === 'cryo') { c.strokeStyle = col; c.lineWidth = 2.5; for (let i = 0; i < 3; i++) { c.save(); c.rotate(i * Math.PI / 3 + (t || 0) / 120); c.beginPath(); c.moveTo(-11, 0); c.lineTo(11, 0); c.stroke(); c.restore(); } c.fillStyle = '#e0f7fa'; c.beginPath(); c.arc(0, 0, 3, 0, 6.283); c.fill(); }
     else if (def.aura === 'cpost') { c.fillStyle = '#6b7355'; c.beginPath(); c.moveTo(-11, 10); c.lineTo(0, -4); c.lineTo(11, 10); c.closePath(); c.fill(); c.fillStyle = '#22272b'; c.fillRect(-2.5, 3, 5, 7); c.fillStyle = '#3e3a2c'; c.fillRect(-1, -14, 2, 11); c.fillStyle = col; c.beginPath(); c.moveTo(1, -14); c.lineTo(11, -11 + Math.sin((t || 0) / 8) * 1.4); c.lineTo(1, -8); c.fill();
       if (spec) { c.fillStyle = '#ffd54f'; star(c, -7, 6, spec === 1 ? 4 : spec === 2 ? 3.2 : 2.4); } }
     else if (def.aura === 'radar') { c.save(); c.rotate((t || 0) / 25); c.fillStyle = col; c.beginPath(); c.ellipse(0, 0, 11, 5, 0, 0, 6.283); c.fill(); c.fillStyle = '#2d3436'; c.fillRect(-1, -10, 2, 10); c.restore(); c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, 2.5, 0, 6.283); c.fill(); }
@@ -2552,10 +2580,10 @@ function drawTowerArt(c, def, x, y, s, angle, recoil, level, spec, t) {
     else if (k === 'lob') { c.fillRect(2, -4, def.id === 'howitzer' ? 18 : 14, 8); }
     else if (k === 'poison') c.fillRect(4, -2, 15, 4);
     else if (k === 'beam') { c.fillRect(4, -3, 12, 6); c.fillStyle = col; c.beginPath(); c.arc(16, 0, 3, 0, 6.283); c.fill(); }
-    else if (k === 'suppress') c.fillRect(2, -3.5, 14, 7);
+    else if (k === 'frost') c.fillRect(2, -3.5, 14, 7);
     else if (k === 'rail') { c.fillRect(2, -5, 22, 3); c.fillRect(2, 2, 22, 3); c.fillStyle = col; c.fillRect(6, -2, 14, 4); }
     c.fillStyle = col; c.beginPath();
-    if (k === 'suppress') { c.arc(0, 0, 9, 0, 6.283); c.fill(); c.fillStyle = '#e3f2fd'; c.beginPath(); c.arc(0, 0, 4, 0, 6.283); c.fill(); }
+    if (k === 'frost') { for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; c.lineTo(Math.cos(a) * 10, Math.sin(a) * 10); } c.closePath(); c.fill(); c.fillStyle = '#e3f2fd'; c.beginPath(); c.arc(0, 0, 4, 0, 6.283); c.fill(); }
     else if (k === 'zap') { c.arc(0, 0, 9, 0, 6.283); c.fill(); c.strokeStyle = '#fffde7'; c.lineWidth = 1.5; c.beginPath(); c.arc(0, 0, 5.5, 0, 6.283); c.stroke(); c.beginPath(); c.arc(0, 0, 2.5, 0, 6.283); c.stroke(); }
     else if (k === 'nuke') { c.arc(0, 0, 10, 0, 6.283); c.fill(); c.fillStyle = '#f1c40f'; for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 8, i * 2.094, i * 2.094 + 0.8); c.fill(); } }
     else if (k === 'lob') { c.arc(0, 0, def.id === 'howitzer' ? 10 : 8.5, 0, 6.283); c.fill(); }
@@ -2586,7 +2614,8 @@ function fenceSpecMark(c, id, spec, t) {
   } else if (id === 'concrete') {
     if (spec === 1) { c.fillStyle = '#ecf0f1'; for (let i = -14; i <= 14; i += 7) { c.beginPath(); c.arc(i, 0, 1.4, 0, 6.283); c.fill(); } }
     else if (spec === 2) { c.fillStyle = '#5d4037'; c.beginPath(); c.moveTo(-7, 7); c.lineTo(-7, -2); c.arc(0, -2, 7, Math.PI, 0); c.lineTo(7, 7); c.closePath(); c.fill(); c.fillStyle = '#ffd54f'; c.fillRect(-1, 0, 2, 7); }
-    else { c.strokeStyle = (t || 0) % 16 < 8 ? '#fff59d' : '#4fc3f7'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-16, 0); for (let i = -12; i <= 16; i += 4) c.lineTo(i, ((i / 4) % 2 ? -4 : 4)); c.stroke(); }
+    else if (spec === 3) { c.strokeStyle = (t || 0) % 16 < 8 ? '#fff59d' : '#4fc3f7'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-16, 0); for (let i = -12; i <= 16; i += 4) c.lineTo(i, ((i / 4) % 2 ? -4 : 4)); c.stroke(); }
+    else { c.fillStyle = 'rgba(100,210,255,' + (0.12 + 0.06 * Math.sin((t || 0) / 8)).toFixed(2) + ')'; c.strokeStyle = 'rgba(120,220,255,0.9)'; c.lineWidth = 1.4; c.beginPath(); c.ellipse(0, 0, 23, 14, 0, 0, 6.283); c.fill(); c.stroke(); c.fillStyle = '#4fc3f7'; for (const sx of [-19, 19]) { c.beginPath(); c.arc(sx, 0, 2.2, 0, 6.283); c.fill(); } }
   } else if (id === 'mgnest') {
     c.fillStyle = '#ffd54f';
     if (spec === 1) { for (const o of [-6, 0, 6]) c.fillRect(-18, o - 1, 6, 2); }
@@ -2610,7 +2639,7 @@ function drawTrap(c, def, spec, t) {
   }
 }
 // every troop and mercenary is drawn from its "look" (top-down soldiers, vehicles and dogs)
-const HELMETS = { soldier: '#4b5320', marksman: '#6b5d36', heavy: '#37474f', assault: '#37474f', mgteam: '#4b5320', vet: '#4b5320', medheavy: '#455a64', riot: '#263238', grenadier: '#4a3a5a', flame: '#6d4c41', smokeman: '#546e7a', emp: '#455a64', engineer: '#f1c40f', medic: '#ecf0f1', triage: '#ecf0f1', combatmed: '#ecf0f1', evac: '#ecf0f1', contractor: '#1c1c1c', shock: '#7b1f1f', officer: '#3e4a2f', special: '#101010' };
+const HELMETS = { plasmarifle: '#006064', gauss: '#004d56', powerarmor: '#37526f', cryogren: '#4dd0e1', nanomed: '#ecf0f1', soldier: '#4b5320', marksman: '#6b5d36', heavy: '#37474f', assault: '#37474f', mgteam: '#4b5320', vet: '#4b5320', medheavy: '#455a64', riot: '#263238', grenadier: '#4a3a5a', flame: '#6d4c41', smokeman: '#546e7a', emp: '#455a64', engineer: '#f1c40f', medic: '#ecf0f1', triage: '#ecf0f1', combatmed: '#ecf0f1', evac: '#ecf0f1', contractor: '#1c1c1c', shock: '#7b1f1f', officer: '#3e4a2f', special: '#101010' };
 function wheelPair(c, x, y, rr) { c.fillStyle = '#1c1f22'; c.beginPath(); c.arc(x, y, rr, 0, 6.283); c.fill(); }
 function drawTroopFigure(c, look, x, y, r, ang, col, flash, anim) {
   c.save(); c.translate(x, y);
@@ -2673,16 +2702,40 @@ function drawTroopFigure(c, look, x, y, r, ang, col, flash, anim) {
     c.rotate(ang); c.fillStyle = '#90a4ae'; c.fillRect(0, -1.6, r * 1.9, 3.2); c.fillStyle = '#ffca28'; c.beginPath(); c.arc(0, 0, r * 0.35, 0, 6.283); c.fill();
     c.restore(); return;
   }
+  if (look === 'drone') {            // combat drone: a hovering quad-rotor
+    const hov = Math.sin((anim || 0) / 5) * 0.8;
+    c.translate(0, hov); c.strokeStyle = '#78909c'; c.lineWidth = 1.5;
+    for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { c.beginPath(); c.moveTo(0, 0); c.lineTo(sx * r * 0.95, sy * r * 0.95); c.stroke(); c.fillStyle = 'rgba(210,225,235,0.55)'; c.beginPath(); c.arc(sx * r * 0.95, sy * r * 0.95, r * 0.5, 0, 6.283); c.fill(); }
+    c.rotate(ang); c.fillStyle = body; c.beginPath(); c.arc(0, 0, r * 0.58, 0, 6.283); c.fill();
+    c.strokeStyle = '#263238'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(r * 0.3, 0); c.lineTo(r * 1.1, 0); c.stroke();
+    glowDot(c, r * 0.3, 0, r * 0.2, '#00e5ff');
+    c.restore(); return;
+  }
+  if (look === 'mech') {             // piloted combat mech
+    c.rotate(ang); mechArt(c, r, body, shade(col[0] === '#' ? col : '#7f8fa6', 0.62), false, anim || 0, flash);
+    c.restore(); return;
+  }
+  if (look === 'railcannon') {       // rail cannon: twin electromagnetic rails on a tracked mount
+    c.rotate(ang);
+    c.fillStyle = '#1c1f22'; c.fillRect(-r * 1.1, -r * 0.95, r * 1.6, r * 0.4); c.fillRect(-r * 1.1, r * 0.55, r * 1.6, r * 0.4);
+    c.fillStyle = '#4a5560'; roundRect(c, -r * 0.95, -r * 0.62, r * 1.5, r * 1.24, r * 0.2); c.fill();
+    c.fillStyle = '#263238'; c.fillRect(0, -r * 0.34, r * 2.3, r * 0.2); c.fillRect(0, r * 0.14, r * 2.3, r * 0.2);
+    c.fillStyle = '#18ffff'; c.fillRect(r * 0.2, -r * 0.16, r * 2.0, r * 0.32);
+    glowDot(c, -r * 0.4, 0, r * 0.22, '#18ffff');
+    if (flash) { c.fillStyle = 'rgba(255,255,255,0.6)'; c.fillRect(-r * 1.1, -r * 0.95, r * 3.4, r * 1.9); }
+    c.restore(); return;
+  }
   // ---- infantry: uniform, head, helmet, then the weapon (drawn pointing along +x) ----
-  const heavy = look === 'heavy' || look === 'assault' || look === 'medheavy' || look === 'riot';
+  const heavy = look === 'heavy' || look === 'assault' || look === 'medheavy' || look === 'riot' || look === 'powerarmor';
   const bw = heavy ? 1.05 : 0.85;
   c.save(); c.rotate(ang);
   c.fillStyle = body; c.beginPath(); c.ellipse(0, 0, r * 0.7, r * bw, 0, 0, 6.283); c.fill();                // shoulders
   if (heavy) { c.fillStyle = flash ? '#fff' : 'rgba(30,40,50,0.55)'; c.fillRect(-r * 0.35, -r * 0.75, r * 0.7, r * 1.5); }   // armor plate
   if (look === 'flame') { c.fillStyle = '#b0b7bd'; c.beginPath(); c.arc(-r * 0.7, -r * 0.3, r * 0.3, 0, 6.283); c.arc(-r * 0.7, r * 0.3, r * 0.3, 0, 6.283); c.fill(); }
   if (look === 'vet') { c.fillStyle = '#ffd54f'; c.beginPath(); c.moveTo(-r * 0.2, -r * 0.8); c.lineTo(r * 0.2, -r * 0.55); c.lineTo(-r * 0.2, -r * 0.3); c.fill(); }
-  const medic = look === 'medic' || look === 'triage' || look === 'combatmed' || look === 'evac' || look === 'medheavy';
-  if (medic) { c.fillStyle = '#e74c3c'; c.fillRect(-r * 0.45, -r * 0.12, r * 0.5, r * 0.24); c.fillRect(-r * 0.32, -r * 0.3, r * 0.24, r * 0.6); }
+  const medic = look === 'medic' || look === 'triage' || look === 'combatmed' || look === 'evac' || look === 'medheavy' || look === 'nanomed';
+  const crossCol = look === 'nanomed' ? '#1de9b6' : '#e74c3c';
+  if (medic) { c.fillStyle = crossCol; c.fillRect(-r * 0.45, -r * 0.12, r * 0.5, r * 0.24); c.fillRect(-r * 0.32, -r * 0.3, r * 0.24, r * 0.6); }
   c.fillStyle = look === 'special' ? '#2a2a2a' : '#f0c8a0'; c.beginPath(); c.arc(r * 0.05, 0, r * 0.45, 0, 6.283); c.fill();       // head
   const hc = HELMETS[look] || '#4b5320';
   c.fillStyle = flash ? '#fff' : hc; c.beginPath(); c.arc(0, 0, r * 0.5, 0, 6.283); c.fill();                  // helmet
@@ -2690,7 +2743,9 @@ function drawTroopFigure(c, look, x, y, r, ang, col, flash, anim) {
   if (look === 'shock') { c.fillStyle = '#e74c3c'; c.fillRect(-r * 0.5, -r * 0.1, r * 1.0, r * 0.2); }
   if (look === 'special') { c.fillStyle = '#76ff03'; c.beginPath(); c.arc(r * 0.35, -r * 0.17, r * 0.1, 0, 6.283); c.arc(r * 0.35, r * 0.17, r * 0.1, 0, 6.283); c.fill(); }
   if (look === 'contractor') { c.fillStyle = '#90a4ae'; c.fillRect(r * 0.25, -r * 0.3, r * 0.15, r * 0.6); }
-  if (medic) { c.fillStyle = '#e74c3c'; c.fillRect(-r * 0.04, -r * 0.3, r * 0.14, r * 0.6); c.fillRect(-r * 0.22, -r * 0.08, r * 0.5, r * 0.16); }
+  if (look === 'plasmarifle' || look === 'gauss' || look === 'powerarmor' || look === 'cryogren') { c.fillStyle = look === 'cryogren' ? '#e0f7fa' : look === 'powerarmor' ? '#ffab40' : '#18ffff'; c.fillRect(r * 0.2, -r * 0.3, r * 0.3, r * 0.6); }
+  if (look === 'nanomed') { c.strokeStyle = 'rgba(29,233,182,0.55)'; c.lineWidth = 1; c.beginPath(); c.arc(0, 0, r * 1.05 + Math.sin((anim || 0) / 5) * 1.2, 0, 6.283); c.stroke(); }
+  if (medic) { c.fillStyle = crossCol; c.fillRect(-r * 0.04, -r * 0.3, r * 0.14, r * 0.6); c.fillRect(-r * 0.22, -r * 0.08, r * 0.5, r * 0.16); }
   if (look === 'evac') { c.strokeStyle = 'rgba(236,240,241,0.8)'; c.lineWidth = 1.2; const a = (anim || 0) / 3; c.beginPath(); c.moveTo(Math.cos(a) * r * 1.2, Math.sin(a) * r * 1.2); c.lineTo(-Math.cos(a) * r * 1.2, -Math.sin(a) * r * 1.2); c.stroke(); }
   c.lineWidth = Math.max(1.4, r * 0.24); c.lineCap = 'butt';
   const wy = r * 0.45;
@@ -2706,6 +2761,10 @@ function drawTroopFigure(c, look, x, y, r, ang, col, flash, anim) {
   else if (look === 'emp') { c.strokeStyle = '#78909c'; c.beginPath(); c.moveTo(r * 0.1, wy); c.lineTo(r * 1.3, wy); c.stroke(); c.strokeStyle = '#fff176'; c.lineWidth = 1.2; c.beginPath(); c.arc(r * 1.4, wy, r * 0.5, -1, 1); c.stroke(); c.beginPath(); c.arc(r * 1.4, wy, r * 0.85, -0.8, 0.8); c.stroke(); }
   else if (look === 'engineer') { c.strokeStyle = '#b0bec5'; c.beginPath(); c.moveTo(0, wy); c.lineTo(r * 1.4, wy); c.stroke(); c.fillStyle = '#b0bec5'; c.fillRect(r * 1.3, wy - 2, 3, 4); }
   else if (medic) { c.strokeStyle = '#37474f'; c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * (look === 'combatmed' ? 1.6 : 1.0), wy); c.stroke(); }
+  else if (look === 'plasmarifle') { c.strokeStyle = '#263238'; c.lineWidth = Math.max(2.2, r * 0.32); c.beginPath(); c.moveTo(r * 0.1, wy); c.lineTo(r * 1.6, wy); c.stroke(); glowDot(c, r * 1.7, wy, r * 0.25 + Math.sin((anim || 0) / 3) * 0.4, '#18ffff'); }
+  else if (look === 'gauss') { c.strokeStyle = '#263238'; c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * 2.5, wy); c.stroke(); c.fillStyle = '#18ffff'; for (let i = 0; i < 4; i++) c.fillRect(r * (0.9 + i * 0.4), wy - r * 0.2, r * 0.12, r * 0.4); }
+  else if (look === 'powerarmor') { c.strokeStyle = '#263238'; c.lineWidth = Math.max(3, r * 0.42); c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * 1.5, wy); c.stroke(); glowDot(c, r * 1.55, wy, r * 0.22, '#ffab40'); c.fillStyle = 'rgba(255,255,255,0.18)'; c.fillRect(-r * 0.2, -r * 0.8, r * 0.3, r * 1.6); }
+  else if (look === 'cryogren') { c.strokeStyle = '#2b2b2b'; c.lineWidth = Math.max(2.6, r * 0.4); c.beginPath(); c.moveTo(r * 0.1, wy); c.lineTo(r * 1.5, wy); c.stroke(); c.fillStyle = '#b3e5fc'; c.beginPath(); c.moveTo(r * 1.5, wy - r * 0.35); c.lineTo(r * 2.1, wy); c.lineTo(r * 1.5, wy + r * 0.35); c.fill(); }
   else if (look === 'officer') { c.strokeStyle = '#37474f'; c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * 0.9, wy); c.stroke(); }
   else if (look === 'special') { c.strokeStyle = '#111'; c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * 1.9, wy); c.stroke(); c.lineWidth = Math.max(2.2, r * 0.34); c.beginPath(); c.moveTo(r * 1.5, wy); c.lineTo(r * 1.9, wy); c.stroke(); }
   else { c.strokeStyle = '#263238'; c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * 1.7, wy); c.stroke(); c.strokeStyle = '#6d4c41'; c.lineWidth = Math.max(1.6, r * 0.3); c.beginPath(); c.moveTo(r * 0.2, wy); c.lineTo(r * 0.7, wy); c.stroke(); }
@@ -2719,10 +2778,29 @@ function drawTankBody(c, turret) {
   c.save(); c.rotate(turret || 0); c.fillStyle = '#2e86c1'; c.beginPath(); c.arc(0, 0, 8, 0, 6.283); c.fill(); c.fillStyle = '#1b4f72'; c.fillRect(4, -2.5, 16, 5); c.restore();
 }
 function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
-// ---- enemy vehicles and soldiers (all drawn facing +x) ----
+// ---- enemy vehicles, soldiers and sci-fi machines (all drawn facing +x) ----
 function treads(c, L, Wd, w) { c.fillStyle = '#1c1f22'; c.fillRect(-L, -Wd - w, L * 2, w); c.fillRect(-L, Wd, L * 2, w); c.fillStyle = '#3a3f44'; for (let i = -L + 3; i < L - 2; i += 6) { c.fillRect(i, -Wd - w, 2, w); c.fillRect(i, Wd, 2, w); } }
 function wheels4(c, L, Wd, rr) { c.fillStyle = '#1c1f22'; for (const sx of [-0.62, 0.62]) for (const sy of [-1, 1]) { c.beginPath(); c.arc(L * sx, Wd * sy, rr, 0, 6.283); c.fill(); } }
 function turretAt(c, x, rr, col, barrel, bw) { c.fillStyle = col; c.beginPath(); c.arc(x, 0, rr, 0, 6.283); c.fill(); c.fillStyle = '#22272b'; c.fillRect(x, -(bw || 2) / 2, barrel, bw || 2); }
+function glowDot(c, x, y, rr, color) { c.fillStyle = color; c.beginPath(); c.arc(x, y, rr, 0, 6.283); c.fill(); c.fillStyle = 'rgba(255,255,255,0.85)'; c.beginPath(); c.arc(x, y, rr * 0.4, 0, 6.283); c.fill(); }
+// walking robot legs: n pairs along x, swinging with time
+function botLegs(c, n, span, reach, base, t, color, lw) { c.strokeStyle = color; c.lineWidth = lw; for (let i = 0; i < n; i++) { const x = (i - (n - 1) / 2) * span, w = Math.sin(t / 3 + i * 2.1) * reach * 0.4; for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(x, sd * base); c.lineTo(x + w, sd * (base + reach)); c.stroke(); } } }
+// a bipedal combat mech seen from above (the Colossus, the Titan, and the Mech Walker mercenary)
+function mechArt(c, r, col, dk, titan, t, flash) {
+  const step = Math.sin(t / 10) * r * 0.18;
+  c.fillStyle = '#1c1f22'; c.fillRect(-r * 0.5 + step, -r * 1.0, r * 1.15, r * 0.5); c.fillRect(-r * 0.5 - step, r * 0.5, r * 1.15, r * 0.5);          // feet
+  c.fillStyle = dk; c.fillRect(-r * 0.3 + step, -r * 0.75, r * 0.7, r * 0.35); c.fillRect(-r * 0.3 - step, r * 0.4, r * 0.7, r * 0.35);                 // legs
+  c.fillStyle = col; roundRect(c, -r * 0.8, -r * 0.55, r * 1.4, r * 1.1, r * 0.2); c.fill();                                                           // torso
+  c.fillStyle = 'rgba(0,0,0,0.2)'; c.fillRect(-r * 0.8, -r * 0.55, r * 0.45, r * 1.1);
+  for (const sd of [-1, 1]) {                                                                                                                           // shoulder cannons
+    c.fillStyle = dk; roundRect(c, -r * 0.35, sd * r * 0.82 - r * 0.28, r * 0.85, r * 0.56, r * 0.12); c.fill();
+    c.fillStyle = '#22272b'; c.fillRect(r * 0.45, sd * r * 0.82 - r * 0.09, r * (titan ? 1.1 : 0.85), r * 0.18);
+    if (titan) { c.fillStyle = '#b33'; c.fillRect(-r * 0.25, sd * r * 0.82 - r * 0.18, r * 0.35, r * 0.36); }
+  }
+  c.fillStyle = flash ? '#fff' : dk; c.beginPath(); c.arc(r * 0.35, 0, r * 0.34, 0, 6.283); c.fill();                                                    // head
+  c.fillStyle = titan ? '#ff5252' : '#ffab40'; c.fillRect(r * 0.42, -r * 0.2, r * 0.18, r * 0.4);                                                      // visor
+  glowDot(c, -r * 0.45, 0, r * 0.2 + Math.sin(t / 5) * r * 0.03, '#18ffff');                                                                            // reactor
+}
 function drawEnemyArt(c, def, x, y, r, angle, opts) {
   opts = opts || {}; const col = opts.flash ? '#ffffff' : def.color, id = def.id, t = opts.t || 0;
   const dk = shade(def.color[0] === '#' ? def.color : '#888888', 0.6);
@@ -2740,11 +2818,13 @@ function drawEnemyArt(c, def, x, y, r, angle, opts) {
     c.fillStyle = '#5d4037'; c.fillRect(-r * 0.3, -r * 0.18, r * 0.7, r * 0.36);
     c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(i * r * 0.5, -r * 0.6); c.lineTo(i * r * 0.5, r * 0.6); c.stroke(); }
   }
-  else if (id === 'hive') {
-    c.fillStyle = col; c.beginPath(); c.moveTo(r * 1.2, 0); c.lineTo(-r * 0.8, -r * 1.5); c.lineTo(-r * 0.4, 0); c.lineTo(-r * 0.8, r * 1.5); c.closePath(); c.fill();
-    c.fillStyle = dk; c.fillRect(-r * 0.6, -r * 0.2, r * 1.2, r * 0.4);
-    c.fillStyle = '#ecf0f1'; for (const k of [-0.9, -0.45, 0.45, 0.9]) { c.beginPath(); c.arc(-r * 0.3, k * r, r * 0.22, 0, 6.283); c.fill(); }
-    c.fillStyle = '#85c1e9'; c.beginPath(); c.arc(r * 0.6, 0, r * 0.2, 0, 6.283); c.fill();
+  else if (id === 'hive') {                                 // hive ship: a saucer-like carrier with launch bays
+    c.fillStyle = dk; c.beginPath(); c.ellipse(0, 0, r * 1.25, r * 1.05, 0, 0, 6.283); c.fill();
+    c.fillStyle = col; c.beginPath(); c.ellipse(0, 0, r * 1.0, r * 0.86, 0, 0, 6.283); c.fill();
+    c.fillStyle = 'rgba(0,0,0,0.18)'; c.beginPath(); c.ellipse(-r * 0.25, 0, r * 0.7, r * 0.6, 0, 0, 6.283); c.fill();
+    for (let i = 0; i < 6; i++) { const a = i * 1.047 + 0.52; c.fillStyle = '#2d3436'; c.beginPath(); c.arc(Math.cos(a) * r * 0.8, Math.sin(a) * r * 0.68, r * 0.17, 0, 6.283); c.fill(); }
+    for (let i = 0; i < 10; i++) { const a = i * 0.628 + t / 18; c.fillStyle = i % 2 ? '#ffeaa7' : '#ff7675'; c.beginPath(); c.arc(Math.cos(a) * r * 1.13, Math.sin(a) * r * 0.95, r * 0.075, 0, 6.283); c.fill(); }
+    c.fillStyle = '#74b9ff'; c.beginPath(); c.arc(r * 0.1, 0, r * 0.36, 0, 6.283); c.fill(); c.fillStyle = 'rgba(255,255,255,0.55)'; c.beginPath(); c.arc(r * 0.02, -r * 0.1, r * 0.13, 0, 6.283); c.fill();
   }
   else if (id === 'fast') {                                // motorcycle scout
     c.fillStyle = '#1c1f22'; c.beginPath(); c.arc(r * 0.9, 0, r * 0.4, 0, 6.283); c.arc(-r * 0.9, 0, r * 0.4, 0, 6.283); c.fill();
@@ -2752,50 +2832,29 @@ function drawEnemyArt(c, def, x, y, r, angle, opts) {
     c.fillStyle = '#cfd8dc'; c.fillRect(r * 0.5, -r * 0.55, r * 0.15, r * 1.1);
     c.fillStyle = dk; c.beginPath(); c.arc(-r * 0.1, 0, r * 0.5, 0, 6.283); c.fill(); c.fillStyle = '#d7b98e'; c.beginPath(); c.arc(0, 0, r * 0.28, 0, 6.283); c.fill();
   }
-  else if (id === 'tank' || id === 'heavytank' || id === 'superheavy' || id === 'reactive' || id === 'shredder') {
-    const big = id === 'superheavy' ? 1.25 : 1, L = r * 1.15, Wd = r * 0.62 * big;
+  else if (id === 'tank' || id === 'heavytank') {
+    const L = r * 1.15, Wd = r * 0.62;
     treads(c, L, Wd, r * 0.3);
     c.fillStyle = col; c.fillRect(-L, -Wd, L * 2, Wd * 2);
     c.fillStyle = 'rgba(0,0,0,0.18)'; c.fillRect(-L, -Wd, L * 0.5, Wd * 2);
-    if (id === 'reactive') { c.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = -1; i <= 1; i++) for (const s of [-1, 1]) c.fillRect(i * r * 0.55 - r * 0.2, s * Wd * 0.55 - r * 0.12, r * 0.4, r * 0.24); }
-    if (id === 'shredder') { c.fillStyle = '#f1c40f'; c.fillRect(L * 0.9, -Wd * 1.25, r * 0.28, Wd * 2.5); c.fillStyle = '#7a5c00'; for (let i = -2; i <= 2; i++) c.fillRect(L * 0.9, i * Wd * 0.5 - 1, r * 0.28, 2); }
-    if (id === 'superheavy') { turretAt(c, -r * 0.1, r * 0.6, dk, r * 1.5, 4); c.fillStyle = '#22272b'; c.fillRect(-r * 0.1, -r * 0.1, r * 1.3, r * 0.2); }
-    else if (id === 'heavytank') { turretAt(c, -r * 0.1, r * 0.5, dk, r * 1.3, 3.2); c.fillStyle = dk; c.beginPath(); c.arc(r * 0.55, r * 0.35, r * 0.18, 0, 6.283); c.fill(); }
+    if (id === 'heavytank') { turretAt(c, -r * 0.1, r * 0.5, dk, r * 1.3, 3.2); c.fillStyle = dk; c.beginPath(); c.arc(r * 0.55, r * 0.35, r * 0.18, 0, 6.283); c.fill(); }
     else turretAt(c, -r * 0.05, r * 0.45, dk, r * 1.0, 2.6);
     plates();
   }
-  else if (id === 'armored' || id === 'jeep' || id === 'cmdcar') {
-    const L = r * (id === 'jeep' ? 1.0 : 1.2), Wd = r * (id === 'jeep' ? 0.5 : 0.62);
+  else if (id === 'armored') {
+    const L = r * 1.2, Wd = r * 0.62;
     wheels4(c, L, Wd + 1, r * 0.26);
     c.fillStyle = col; roundRect(c, -L, -Wd, L * 2, Wd * 2, r * 0.2); c.fill();
     c.fillStyle = 'rgba(255,255,255,0.2)'; c.fillRect(L * 0.15, -Wd * 0.7, L * 0.5, Wd * 1.4);
-    if (id === 'armored') { turretAt(c, -L * 0.15, r * 0.4, dk, r * 0.9, 2.4); plates(); }
-    else if (id === 'jeep') { c.strokeStyle = '#263238'; c.lineWidth = 2; c.beginPath(); c.moveTo(-L * 0.4, 0); c.lineTo(L * 0.3, 0); c.stroke(); c.fillStyle = dk; c.beginPath(); c.arc(-L * 0.3, 0, r * 0.28, 0, 6.283); c.fill(); }
-    else { c.strokeStyle = '#cfd8dc'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-L * 0.7, -Wd * 0.5); c.lineTo(-L * 1.25, -Wd * 1.4); c.moveTo(-L * 0.7, Wd * 0.5); c.lineTo(-L * 1.25, Wd * 1.4); c.stroke(); c.fillStyle = '#ecf0f1'; c.beginPath(); c.arc(0, 0, r * 0.3, 0, 6.283); c.fill(); c.fillStyle = '#b33'; c.fillRect(r * 0.15, -r * 0.1, r * 0.3, r * 0.2); }
+    turretAt(c, -L * 0.15, r * 0.4, dk, r * 0.9, 2.4); plates();
   }
-  else if (id === 'truck' || id === 'repair') {
+  else if (id === 'truck') {
     const L = r * 1.2, Wd = r * 0.6;
     wheels4(c, L, Wd + 1, r * 0.27);
     c.fillStyle = col; c.fillRect(L * 0.35, -Wd, L * 0.65, Wd * 2);            // cab
     c.fillStyle = '#cfd8dc'; c.fillRect(L * 0.75, -Wd * 0.7, L * 0.15, Wd * 1.4);
-    c.fillStyle = id === 'truck' ? '#b9c28a' : dk; c.fillRect(-L, -Wd * 0.95, L * 1.3, Wd * 1.9);  // cargo bed
-    if (id === 'truck') { c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 1; for (let i = -3; i <= 1; i++) { c.beginPath(); c.moveTo(i * L * 0.3 - L * 0.1, -Wd * 0.9); c.lineTo(i * L * 0.3 - L * 0.1, Wd * 0.9); c.stroke(); } }
-    else { c.fillStyle = '#fff'; c.fillRect(-L * 0.6, -r * 0.1, L * 0.9, r * 0.2); c.fillRect(-L * 0.2, -r * 0.5, r * 0.2, r); }
-  }
-  else if (id === 'halftrack') {
-    const L = r * 1.2, Wd = r * 0.55;
-    c.fillStyle = '#1c1f22'; c.fillRect(-L, -Wd - 2, L * 1.0, 4); c.fillRect(-L, Wd - 2, L * 1.0, 4);
-    wheelPair(c, L * 0.7, -Wd, r * 0.26); wheelPair(c, L * 0.7, Wd, r * 0.26);
-    c.fillStyle = col; roundRect(c, -L, -Wd, L * 2, Wd * 2, r * 0.15); c.fill();
-    c.fillStyle = dk; c.fillRect(-L * 0.8, -Wd * 0.7, L * 1.0, Wd * 1.4);
-    c.fillStyle = '#22272b'; c.fillRect(L * 0.1, -1, r * 0.9, 2);
-  }
-  else if (id === 'carrier') {
-    const L = r * 1.2, Wd = r * 0.68;
-    c.fillStyle = '#1c1f22'; for (const sx of [-0.7, 0, 0.7]) for (const sy of [-1, 1]) { c.beginPath(); c.arc(L * sx, Wd * sy * 1.05, r * 0.24, 0, 6.283); c.fill(); }
-    c.fillStyle = col; roundRect(c, -L, -Wd, L * 2, Wd * 2, r * 0.2); c.fill();
-    c.fillStyle = dk; c.fillRect(-L * 0.9, -Wd * 0.6, L * 1.0, Wd * 1.2);
-    turretAt(c, L * 0.35, r * 0.28, dk, r * 0.6, 2.4);
+    c.fillStyle = '#b9c28a'; c.fillRect(-L, -Wd * 0.95, L * 1.3, Wd * 1.9);  // cargo bed
+    c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 1; for (let i = -3; i <= 1; i++) { c.beginPath(); c.moveTo(i * L * 0.3 - L * 0.1, -Wd * 0.9); c.lineTo(i * L * 0.3 - L * 0.1, Wd * 0.9); c.stroke(); }
   }
   else if (id === 'boss') {                                 // armored train
     const L = r * 1.5, Wd = r * 0.55;
@@ -2817,22 +2876,108 @@ function drawEnemyArt(c, def, x, y, r, angle, opts) {
     c.fillStyle = '#f1c40f'; c.fillRect(-L, -Wd * 0.08, L * 0.5, Wd * 0.16);
     plates();
   }
+  // ---------------- sci-fi enemies ----------------
+  else if (id === 'swarm') {                                // swarm bot: a tiny skittering crawler
+    botLegs(c, 3, r * 0.55, r * 0.55, r * 0.35, t, dk, 1.3);
+    c.fillStyle = col; roundRect(c, -r * 0.8, -r * 0.5, r * 1.6, r * 1.0, r * 0.35); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.28)'; c.fillRect(-r * 0.5, -r * 0.34, r * 0.8, r * 0.2);
+    glowDot(c, r * 0.5, 0, r * 0.22, '#ff1744');
+  }
+  else if (id === 'shredder') {                             // shredder: a tracked robot with a spinning buzz saw
+    const L = r * 1.0, Wd = r * 0.6;
+    treads(c, L * 0.85, Wd, r * 0.26);
+    c.fillStyle = col; roundRect(c, -L, -Wd, L * 1.7, Wd * 2, r * 0.2); c.fill();
+    c.fillStyle = dk; c.fillRect(-L * 0.75, -Wd * 0.5, L * 0.8, Wd);
+    glowDot(c, -L * 0.3, 0, r * 0.17, '#ffca28');
+    c.save(); c.translate(L * 0.95, 0); c.rotate(t * 0.55); c.fillStyle = opts.flash ? '#fff' : '#cfd8dc'; c.beginPath();
+    for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, rr = i % 2 ? r * 0.5 : r * 0.82; c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    c.closePath(); c.fill(); c.fillStyle = '#455a64'; c.beginPath(); c.arc(0, 0, r * 0.2, 0, 6.283); c.fill(); c.restore();
+  }
+  else if (id === 'regen') {                                // regen bot: a walker wrapped in a cloud of repair nanites
+    botLegs(c, 2, r * 0.7, r * 0.5, r * 0.5, t, dk, 1.8);
+    c.fillStyle = col; c.beginPath(); for (let i = 0; i < 6; i++) { const a = i * 1.047; c.lineTo(Math.cos(a) * r * 0.85, Math.sin(a) * r * 0.85); } c.closePath(); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.9)'; c.fillRect(-r * 0.4, -r * 0.1, r * 0.8, r * 0.2); c.fillRect(-r * 0.1, -r * 0.4, r * 0.2, r * 0.8);
+    glowDot(c, r * 0.55, 0, r * 0.15, '#00e5ff');
+    for (let i = 0; i < 8; i++) { const a = i * 0.785 + t / 14, rr = r * (1.12 + Math.sin(t / 6 + i) * 0.1); c.fillStyle = 'rgba(180,255,230,0.85)'; c.beginPath(); c.arc(Math.cos(a) * rr, Math.sin(a) * rr, r * 0.09, 0, 6.283); c.fill(); }
+  }
+  else if (id === 'phasewalker') {                                // phase walker: a robot that flickers between positions
+    for (let k = 3; k >= 1; k--) { c.globalAlpha = (opts.alpha != null ? opts.alpha : 1) * (0.14 + 0.04 * (4 - k)); c.fillStyle = '#9ecbff'; c.beginPath(); c.ellipse(-k * r * 0.45, Math.sin(t / 4 + k) * r * 0.1, r * 0.7, r * 0.95, 0, 0, 6.283); c.fill(); }
+    c.globalAlpha = opts.alpha != null ? opts.alpha : 1;
+    c.fillStyle = opts.flash ? '#fff' : 'rgba(200,228,255,0.85)'; c.beginPath(); c.ellipse(0, 0, r * 0.7, r * 0.95, 0, 0, 6.283); c.fill();
+    c.strokeStyle = 'rgba(90,160,255,0.95)'; c.lineWidth = 1.3; c.stroke();
+    c.fillStyle = 'rgba(120,180,255,0.9)'; c.beginPath(); c.arc(r * 0.05, 0, r * 0.45, 0, 6.283); c.fill();
+    c.fillStyle = '#e3f2fd'; c.fillRect(r * 0.25, -r * 0.25, r * 0.2, r * 0.5);
+    c.strokeStyle = 'rgba(255,255,255,0.45)'; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(-r * 0.6, i * r * 0.3 + Math.sin(t / 5 + i) * 1.5); c.lineTo(r * 0.5, i * r * 0.3 + Math.sin(t / 5 + i) * 1.5); c.stroke(); }
+  }
+  else if (id === 'shielded') {                             // shielded: a power-armored trooper (the energy bubble is drawn below)
+    c.fillStyle = col; c.beginPath(); c.ellipse(0, 0, r * 0.75, r * 1.0, 0, 0, 6.283); c.fill();
+    c.fillStyle = dk; roundRect(c, -r * 0.35, -r * 1.05, r * 0.8, r * 0.5, r * 0.15); c.fill(); roundRect(c, -r * 0.35, r * 0.55, r * 0.8, r * 0.5, r * 0.15); c.fill();
+    c.fillStyle = '#37474f'; c.beginPath(); c.arc(r * 0.05, 0, r * 0.5, 0, 6.283); c.fill();
+    c.fillStyle = '#ffab40'; c.fillRect(r * 0.2, -r * 0.3, r * 0.28, r * 0.6);
+    c.strokeStyle = '#263238'; c.lineWidth = Math.max(2, r * 0.22); c.beginPath(); c.moveTo(r * 0.3, r * 0.6); c.lineTo(r * 1.6, r * 0.6); c.stroke();
+    glowDot(c, r * 1.6, r * 0.6, r * 0.15, '#ffab40');
+  }
+  else if (id === 'teleporter') {                           // teleporter: a hovering emitter wrapped in warp rings
+    c.fillStyle = col; c.beginPath(); c.moveTo(r * 0.95, 0); c.lineTo(0, -r * 0.8); c.lineTo(-r * 0.8, 0); c.lineTo(0, r * 0.8); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(0,0,0,0.2)'; c.beginPath(); c.moveTo(0, -r * 0.8); c.lineTo(-r * 0.8, 0); c.lineTo(0, r * 0.8); c.lineTo(-r * 0.2, 0); c.closePath(); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(0, 0, r * 0.3 + Math.sin(t / 5) * 1.5, 0, 6.283); c.fill();
+    c.strokeStyle = 'rgba(240,160,255,0.9)'; c.lineWidth = 1.6; for (let i = 0; i < 3; i++) { const a = t / 9 + i * 2.094; c.beginPath(); c.arc(0, 0, r * 1.2, a, a + 0.9); c.stroke(); }
+  }
+  else if (id === 'carrier') {                              // carrier: a four-legged walker with a deck full of swarm bots
+    const L = r * 1.2, Wd = r * 0.62;
+    c.fillStyle = '#1c1f22'; for (const sx of [-0.7, 0.7]) for (const sy of [-1, 1]) { const sw = Math.sin(t / 12 + sx * 3 + sy) * r * 0.12; c.fillRect(L * sx - r * 0.35 + sw, Wd * sy * 1.12 - r * 0.2, r * 0.7, r * 0.4); }
+    c.fillStyle = col; roundRect(c, -L, -Wd, L * 2, Wd * 2, r * 0.25); c.fill();
+    c.fillStyle = dk; roundRect(c, -L * 0.85, -Wd * 0.7, L * 1.1, Wd * 1.4, r * 0.1); c.fill();
+    for (let i = 0; i < 6; i++) { c.fillStyle = '#00cec9'; c.beginPath(); c.arc(-L * 0.62 + (i % 3) * L * 0.34, (i < 3 ? -1 : 1) * Wd * 0.33, r * 0.14, 0, 6.283); c.fill(); }
+    c.fillStyle = '#37474f'; c.beginPath(); c.arc(L * 0.55, 0, r * 0.33, 0, 6.283); c.fill(); c.fillStyle = '#ff9800'; c.fillRect(L * 0.62, -r * 0.2, r * 0.18, r * 0.4);
+  }
+  else if (id === 'phantom') {                              // phantom: a cloaked stealth operative with a shimmering suit
+    c.fillStyle = col; c.beginPath(); c.moveTo(r * 1.1, 0); c.lineTo(-r * 0.7, -r * 0.95); c.lineTo(-r * 0.25, 0); c.lineTo(-r * 0.7, r * 0.95); c.closePath(); c.fill();
+    c.fillStyle = dk; c.beginPath(); c.moveTo(r * 0.8, 0); c.lineTo(-r * 0.35, -r * 0.5); c.lineTo(-r * 0.1, 0); c.lineTo(-r * 0.35, r * 0.5); c.closePath(); c.fill();
+    glowDot(c, r * 0.5, -r * 0.18, r * 0.1, '#18ffff'); glowDot(c, r * 0.5, r * 0.18, r * 0.1, '#18ffff');
+    c.strokeStyle = 'rgba(200,190,255,0.6)'; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { const o = ((t / 3 + i * 7) % 16) / 16; c.beginPath(); c.moveTo(-r * 0.8, (o - 0.5) * r * 2); c.lineTo(r * 0.6, (o - 0.5) * r * 2); c.stroke(); }
+  }
+  else if (id === 'dronecmd') {                             // drone commander: a command platform with orbiting repair drones
+    c.fillStyle = col; c.beginPath(); for (let i = 0; i < 8; i++) { const a = i * 0.785 + 0.39; c.lineTo(Math.cos(a) * r * 0.95, Math.sin(a) * r * 0.95); } c.closePath(); c.fill();
+    c.strokeStyle = dk; c.lineWidth = 2; c.stroke();
+    c.fillStyle = dk; c.beginPath(); c.arc(0, 0, r * 0.55, 0, 6.283); c.fill();
+    c.fillStyle = '#ecf0f1'; c.fillRect(-r * 0.3, -r * 0.08, r * 0.6, r * 0.16); c.fillRect(-r * 0.08, -r * 0.3, r * 0.16, r * 0.6);
+    c.strokeStyle = '#cfd8dc'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-r * 0.7, -r * 0.5); c.lineTo(-r * 1.2, -r * 0.9); c.moveTo(-r * 0.7, r * 0.5); c.lineTo(-r * 1.2, r * 0.9); c.stroke();
+    for (let i = 0; i < 3; i++) { const a = t / 16 + i * 2.094; const dx = Math.cos(a) * r * 1.35, dy = Math.sin(a) * r * 1.35; c.fillStyle = '#b2bec3'; c.beginPath(); c.arc(dx, dy, r * 0.2, 0, 6.283); c.fill(); glowDot(c, dx, dy, r * 0.09, '#00e676'); }
+  }
+  else if (id === 'burrower') {                             // burrower: a tunneling machine with a spinning drill
+    const L = r * 1.0, Wd = r * 0.58;
+    treads(c, L * 0.8, Wd, r * 0.24);
+    c.fillStyle = col; roundRect(c, -L, -Wd, L * 1.5, Wd * 2, r * 0.2); c.fill();
+    c.fillStyle = dk; c.fillRect(-L * 0.8, -Wd * 0.45, L * 0.7, Wd * 0.9);
+    c.save(); c.beginPath(); c.moveTo(L * 0.5, -Wd * 1.05); c.lineTo(L * 1.55, 0); c.lineTo(L * 0.5, Wd * 1.05); c.closePath(); c.clip();
+    c.fillStyle = opts.flash ? '#fff' : '#b0bec5'; c.fillRect(L * 0.5, -Wd * 1.1, L * 1.2, Wd * 2.2);
+    c.strokeStyle = '#546e7a'; c.lineWidth = 2.4; for (let i = -3; i < 4; i++) { const o = ((t / 2 + i * 7) % 14) / 14; c.beginPath(); c.moveTo(L * (0.5 + o * 0.6) - 4, -Wd * 1.1); c.lineTo(L * (0.5 + o * 0.6) + 6, Wd * 1.1); c.stroke(); }
+    c.restore();
+    glowDot(c, -L * 0.35, 0, r * 0.14, '#ffca28');
+  }
+  else if (id === 'colossus') { mechArt(c, r, col, dk, false, t, opts.flash); plates(); }       // Colossus Mech
+  else if (id === 'titan') { mechArt(c, r, col, dk, true, t, opts.flash); }                   // Titan Mech
   else {
     // infantry
     const small = r < 9;
     c.fillStyle = col; c.beginPath(); c.ellipse(0, 0, r * 0.7, r * 0.95, 0, 0, 6.283); c.fill();
     c.strokeStyle = dk; c.lineWidth = Math.max(1, r * 0.1); c.stroke();
-    if (id === 'camo') { c.fillStyle = '#2f4a22'; for (const [a, b] of [[-0.3, -0.5], [0.2, 0.4], [-0.1, 0.1], [0.3, -0.2]]) { c.beginPath(); c.arc(a * r, b * r, r * 0.22, 0, 6.283); c.fill(); } c.fillStyle = '#8a7b4a'; c.beginPath(); c.arc(-r * 0.4, r * 0.3, r * 0.2, 0, 6.283); c.fill(); }
     if (id === 'medic') { c.fillStyle = '#fff'; c.fillRect(-r * 0.5, -r * 0.14, r * 0.7, r * 0.28); c.fillRect(-r * 0.25, -r * 0.4, r * 0.28, r * 0.8); }
-    if (id === 'sapper') { c.fillStyle = '#8d6e63'; c.fillRect(-r * 0.9, -r * 0.7, r * 0.35, r * 0.5); }
     c.fillStyle = id === 'commando' ? '#3a2f2a' : '#d7b98e'; c.beginPath(); c.arc(r * 0.05, 0, r * 0.42, 0, 6.283); c.fill();
-    c.fillStyle = id === 'medic' ? '#ecf0f1' : id === 'camo' ? '#3e5a2b' : id === 'commando' ? '#111' : dk; c.beginPath(); c.arc(0, 0, r * 0.48, 0, 6.283); c.fill();
+    c.fillStyle = id === 'medic' ? '#ecf0f1' : id === 'commando' ? '#111' : dk; c.beginPath(); c.arc(0, 0, r * 0.48, 0, 6.283); c.fill();
     if (id === 'assault') { c.fillStyle = '#e74c3c'; c.fillRect(-r * 0.48, -r * 0.1, r * 0.96, r * 0.2); }
     if (id === 'commando') { c.fillStyle = '#e74c3c'; c.fillRect(r * 0.2, -r * 0.4, r * 0.15, r * 0.8); }
     if (id === 'medic') { c.fillStyle = '#e74c3c'; c.fillRect(-r * 0.2, -r * 0.07, r * 0.4, r * 0.14); c.fillRect(-r * 0.07, -r * 0.2, r * 0.14, r * 0.4); }
     if (id === 'assault' && opts.enraged) { c.strokeStyle = '#ff1744'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, r + 3, 0, 6.283); c.stroke(); }
     c.strokeStyle = '#1c1f22'; c.lineWidth = Math.max(1.5, r * 0.16); c.beginPath(); c.moveTo(r * 0.2, r * 0.55); c.lineTo(r * (small ? 1.5 : 1.7), r * 0.55); c.stroke();
-    if (id === 'sapper') { c.strokeStyle = '#8d6e63'; c.beginPath(); c.moveTo(r * 0.1, -r * 0.55); c.lineTo(r * 1.3, -r * 0.55); c.stroke(); c.fillStyle = '#b0bec5'; c.fillRect(r * 1.2, -r * 0.8, r * 0.4, r * 0.5); }
+  }
+  // energy shield bubble (Shielded units, and anything carrying a shield from a variant)
+  const shf = opts.shield != null ? opts.shield : (def.shield ? 1 : 0);
+  if (shf > 0) {
+    const pulse = 0.5 + 0.5 * Math.sin(t / 7);
+    c.strokeStyle = 'rgba(110,205,255,' + (0.4 + 0.4 * shf + 0.1 * pulse).toFixed(2) + ')'; c.lineWidth = 1.6; c.beginPath(); c.arc(0, 0, r * 1.38, 0, 6.283); c.stroke();
+    c.fillStyle = 'rgba(110,205,255,' + (0.05 + 0.1 * shf).toFixed(2) + ')'; c.fill();
   }
   c.restore();
 }
@@ -2862,7 +3007,7 @@ function render(now) {
   // aura circles (always faintly visible)
   for (const g of G.towers) if (g.def.kind === 'aura' || g.def.kind === 'heal') {
     const R = g.units[0].stats.range * (g.def.kind === 'heal' ? g.buff.range : 1);
-    ctx.fillStyle = g.def.aura === 'smoke' ? 'rgba(200,205,210,0.14)' : g.def.aura === 'radar' ? 'rgba(162,155,254,0.07)' : g.def.aura === 'cpost' ? 'rgba(230,126,34,0.06)' : 'rgba(255,255,255,0.035)';
+    ctx.fillStyle = g.def.aura === 'cryo' ? 'rgba(129,236,236,0.10)' : g.def.aura === 'radar' ? 'rgba(162,155,254,0.07)' : g.def.aura === 'cpost' ? 'rgba(230,126,34,0.06)' : 'rgba(255,255,255,0.035)';
     ctx.beginPath(); ctx.arc(g.x, g.y, R, 0, 6.283); ctx.fill();
   }
   // ranges: selected, hovered, or all
@@ -2914,7 +3059,7 @@ function render(now) {
   for (let pass = 0; pass < 2; pass++) for (const e of G.enemies) {
     if (!e.alive || (pass === 0) === e.air) continue;
     const hidden = e.def.stealth && e.revealedT <= 0;
-    drawEnemyArt(ctx, e.def, e.x, e.y, e.r, e.angle, { flash: e.flash > 0, t, burrowed: e.burrowed, enraged: e.def.enrage && e.hp < e.maxHp * 0.5, alpha: hidden ? 0.3 : null });
+    drawEnemyArt(ctx, e.def, e.x, e.y, e.r, e.angle, { flash: e.flash > 0, t, burrowed: e.burrowed, enraged: e.def.enrage && e.hp < e.maxHp * 0.5, alpha: hidden ? 0.3 : null, shield: e.maxShield > 0 && e.shield > 0 ? e.shield / e.maxShield : 0 });
     if (e.affix) { ctx.strokeStyle = e.affix.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 3, 0, 6.283); ctx.stroke(); }
     if (e.stunT > 0) { ctx.fillStyle = 'rgba(165,216,255,0.45)'; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 2, 0, 6.283); ctx.fill(); }
     else if ((e.slowT > 0 || e.slowAura > 0 || G.freezeSlowT > 0) && !e.def.noSlow) { ctx.strokeStyle = 'rgba(116,185,255,0.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 1, 0, 6.283); ctx.stroke(); }
@@ -3421,8 +3566,8 @@ function tagsHTML(def) {
   const t = [];
   if (def.super) t.push('<span class="tag sup">SUPER</span>');
   if (def.air === 'yes') t.push('<span class="tag air">Hits air</span>'); else if (def.air === 'only') t.push('<span class="tag air">Air only</span>');
-  else if (['bullet', 'snipe', 'shell', 'suppress', 'zap', 'poison', 'lob', 'beam'].includes(def.kind) && def.air === 'no') t.push('<span class="tag">Ground only</span>');
-  if (def.detect) t.push('<span class="tag det">Sees camouflage</span>');
+  else if (['bullet', 'snipe', 'shell', 'frost', 'zap', 'poison', 'lob', 'beam'].includes(def.kind) && def.air === 'no') t.push('<span class="tag">Ground only</span>');
+  if (def.detect) t.push('<span class="tag det">Sees stealth</span>');
   if (def.aoe) t.push('<span class="tag aoe">Area damage</span>');
   if (def.onPath) t.push('<span class="tag path">Goes on the path</span>');
   if (def.stack) t.push('<span class="tag">Stacks</span>');
@@ -3454,7 +3599,7 @@ function renderAbilities() {
 }
 function armAbility(id) {
   const a = ABILITIES.find(x => x.id === id); if (!abilityReady(a)) { sfx('deny'); return; }
-  if (id === 'smokescreen') { useAbility('smokescreen'); renderAbilities(); return; }
+  if (id === 'freeze') { useAbility('freeze'); renderAbilities(); return; }
   G.armed = G.armed === id ? null : id; G.place = null; G.placeMerc = null; G.moveMode = null; rebuildShop();
   if (G.armed) toast(a.name + ': click the map (right-click cancels)', '#ffd54f');
   renderAbilities();
@@ -3486,7 +3631,7 @@ function auraEffect(def, L, m) {
   m = m || {};
   if (def.aura === 'command') return '+' + Math.round(10 * L * (m.cmdRange || 1)) + '% range, +' + Math.round(5 * L * (m.cmdDmg || 1)) + '% dmg' + (m.cmdRate ? ', +' + Math.round(m.cmdRate * L * 100) + '% fire rate' : '') + (m.cmdDetect ? ', sees stealth' : '');
   if (def.aura === 'eco') return '+' + 20 * L + '% income' + (m.grid ? ', towers +' + Math.round(m.grid * L * 100) + '% fire rate' : '') + (m.field ? ', ' + m.field * L + ' dmg/s field' : '');
-  if (def.aura === 'smoke') return Math.round(((L >= 5 ? 0.55 : 0.4) + (m.slowAdd || 0)) * 100) + '% slow' + (m.brittleField ? ', +' + Math.round(m.brittleField * 100) + '% dmg taken' : '');
+  if (def.aura === 'cryo') return Math.round(((L >= 5 ? 0.55 : 0.4) + (m.slowAdd || 0)) * 100) + '% slow' + (m.brittleField ? ', +' + Math.round(m.brittleField * 100) + '% dmg taken' : '');
   if (def.aura === 'radar') return 'Reveal' + (L >= 3 || m.mark ? ', +' + Math.round(Math.max(m.mark || 0, L >= 5 ? 0.2 : L >= 3 ? 0.1 : 0) * 100) + '% dmg taken' : '');
   if (def.aura === 'cpost') return '+' + Math.round(6 * L * (m.postDmg || 1)) + '% troop dmg, regen ' + ((0.4 * L + (m.regen || 0) * 100)).toFixed(1) + '%/s' + (m.postSpeed ? ', +' + Math.round(m.postSpeed * 100) + '% speed' : '') + (m.guard ? ', -' + Math.round((1 - m.guard) * 100) + '% dmg taken' : '');
   return '';
@@ -3716,13 +3861,13 @@ function renderCodex() {
     ENEMIES.forEach(def => codexItem(list, enemyIcon(def, 22), def.name, def.id === codexSel, () => { codexSel = def.id; renderCodex(); }));
     const d = ENEMY[codexSel];
     const abil = [];
-    if (d.air) abil.push('Flying'); if (d.armor) abil.push('Armor ' + d.armor + ' (grows with waves)'); if (d.shield) abil.push('Reactive armor'); if (d.stealth) abil.push('Camouflage'); if (d.noSlow) abil.push('Immune to slow and pinning'); if (d.dodge) abil.push('Takes cover from bullets'); if (d.split) abil.push('Unloads troops'); if (d.heal) abil.push('Heals allies'); if (d.regen) abil.push('Field repair'); if (d.summon) abil.push('Calls reinforcements'); if (d.burrow) abil.push('Digs in'); if (d.enrage) abil.push('All-out charge'); if (d.blink) abil.push('Bursts forward'); if (d.shred) abil.push('Breaches walls'); if (d.boss) abil.push('Boss');
+    if (d.air) abil.push('Flying'); if (d.armor) abil.push('Armor ' + d.armor + ' (grows with waves)'); if (d.shield) abil.push('Energy shield'); if (d.stealth) abil.push('Stealth (cloaked)'); if (d.noSlow) abil.push('Immune to slow and freeze'); if (d.dodge) abil.push('Takes cover from bullets'); if (d.split) abil.push('Unloads troops'); if (d.heal) abil.push('Heals allies'); if (d.regen) abil.push('Nanite repair'); if (d.summon) abil.push('Launches drones'); if (d.burrow) abil.push('Burrows'); if (d.enrage) abil.push('All-out charge'); if (d.blink) abil.push('Teleports'); if (d.shred) abil.push('Shreds walls'); if (d.boss) abil.push('Boss');
     det.innerHTML = '<h3>' + d.name + '</h3><p>' + d.desc + '</p><div>' + abil.map(a => '<span class="tag">' + a + '</span>').join('') + '</div>' +
       '<table class="stats"><tr><th>Stat</th><th>Wave 1</th><th>Wave 25</th><th>Wave 50</th><th>Wave 100</th></tr>' +
       '<tr><td>Health</td>' + [1, 25, 50, 100].map(w => '<td>' + fmt(d.hp * Math.pow(waveMult(w), d.boss ? 1.3 : 1)) + '</td>').join('') + '</tr>' +
       '<tr><td>Speed</td><td colspan="4" style="text-align:left">' + (d.speed * 60).toFixed(0) + ' units/s (normal enemies speed up a little each wave)</td></tr>' +
       '<tr><td>Reward</td><td colspan="4" style="text-align:left">$' + d.reward + '</td></tr><tr><td>Damage to base</td><td colspan="4" style="text-align:left">' + d.dmg + '</td></tr>' +
-      '<tr><td>First seen</td><td colspan="4" style="text-align:left">' + (d.wave >= 999 ? (d.id === 'boss' ? 'Every 5th wave' : d.id === 'railway' ? 'Every 10th wave' : 'Unloaded by Troop Trucks') : 'Wave ' + d.wave) + '</td></tr></table><p style="color:var(--dim);font-size:12px">Health shown for Normal difficulty. Every enemy also rolls a little random size, health and speed, so no two are identical.</p>';
+      '<tr><td>First seen</td><td colspan="4" style="text-align:left">' + (d.wave >= 999 ? (d.id === 'boss' ? 'Every 5th wave' : d.id === 'railway' ? 'Waves 10, 30, 50...' : d.id === 'titan' ? 'Waves 20, 40, 60...' : 'Unloaded by Troop Trucks') : 'Wave ' + d.wave) + '</td></tr></table><p style="color:var(--dim);font-size:12px">Health shown for Normal difficulty. Every enemy also rolls a little random size, health and speed, so no two are identical.</p>';
     const h3 = det.querySelector('h3'); if (h3) h3.prepend(enemyIcon(d, 40));
   } else if (codexTab === 'affixes') {
     det.innerHTML = '<p>From wave 7 onward some enemies spawn with a random <b>variant</b> (shown as a colored ring). The chance grows every wave, up to 45%. Hover an enemy to see its variant.</p>' + AFFIXES.map(a => '<div class="ach got"><div class="ico" style="color:' + a.color + ';border:2px solid ' + a.color + '">&#9679;</div><div><b style="color:' + a.color + '">' + a.name + '</b><div style="color:var(--dim)">' + a.desc + '</div></div></div>').join('');
@@ -3805,16 +3950,16 @@ function mercDetailHTML(m) {
   return h;
 }
 function guideHTML() {
-  return '<p><b>Goal.</b> Enemy columns advance along the road toward your base. Each one that gets through takes health off your base. Survive 100 waves (Classic) or as long as you can (Endless). The war is set in the modern era: infantry, armor, aircraft and artillery.</p>' +
+  return '<p><b>Goal.</b> Enemy columns advance along the road toward your base. Each one that gets through takes health off your base. Survive 100 waves (Classic) or as long as you can (Endless). The war runs from 1900 onward: trench-era guns and tanks, modern armies, and near-future sci-fi (energy weapons, cryo, shields, robots and mechs).</p>' +
   '<p><b>Building.</b> Pick something in the shop (or press 1 to 9) and click the map. You stay in build mode so you can place several; it drops you out automatically when you can no longer afford another one or hit its limit. Click an existing tower of the same type to <b>stack</b> another one onto it. The shop has five tabs: Attack, Support, Troops, Defense and Mercs.</p>' +
   '<p><b>Selecting.</b> Click a tower or a troop. <b>Drag a box</b> to select a group (troops if the box caught any, otherwise towers; hold <kbd>Alt</kbd> or use the Box button to force towers or troops). <kbd>Shift</kbd> adds to the selection, double-click grabs every tower of the same type, and the panel has a Select all button. Esc, right-click empty ground, or the Deselect button clears it.</p>' +
   '<p><b>Upgrades and specialties.</b> Almost everything (towers, supers, support, barracks, walls, traps, mines, command posts and the Contractor HQ) goes to level 5, then you <b>specialize</b> it into one of 2 to 4 paths that change how it plays. Choose for <b>one unit, a whole stack, or every ready unit in your selection</b> at once. The panel shows the total price, how many are ready, and which ones were skipped and why (below level 5, or already specialized). If you cannot afford all of them it specializes as many as you can. Farms and Factories upgrade forever. Selling gives back 75% (100% if built this break).</p>' +
-  '<p><b>Barracks and troops.</b> Eight barracks train different troops: Riflemen (hold the road), Marksmen (ranged, hit air), Heavy Infantry (tanky), K9 dogs (very fast), Grenadiers (area fire), Engineers (mines, repairs, sentry guns), Field Gun crews (long-range shells) and Combat Medics (healing). Troops grow stronger every wave. Select troops and right-click (or press Move) to send the whole group somewhere; they keep a formation and hold their new post. A Command Post boosts troops and contractors in its circle.</p>' +
-  '<p><b>Contractors.</b> Open the Mercs tab, pick a squad, and click near the road to drop them in. They fight for a limited time and then leave. Each type has a cooldown, and you can only have a few squads out at once. Stats and prices grow with the wave. Some unlock at a wave; a Contractor HQ (Troops tab) unlocks them earlier, cuts prices and cooldowns, adds squad slots, and has its own specialties. Contractors can be selected and moved like troops.</p>' +
-  '<p><b>Walls, traps and mines.</b> These go ON the road. Sandbags, concrete barriers and machine gun nests stop ground enemies, who must destroy them to pass, so you can never block the road for good (flyers ignore walls). Tank Traps and Oil Slicks do not block but hurt and slow everything crossing them; they wear out, so repair them. Mines blow up when stepped on. Each can be upgraded and specialized (barbed wire, demolition charges, guard posts, snare wire, reusable mines...).</p>' +
+  '<p><b>Barracks and troops.</b> Eight barracks train different troops: Riflemen (hold the road), Marksmen (ranged, hit air), Heavy Infantry (tanky), K9 dogs (very fast), Grenadiers (area fire), Engineers (mines, repairs, sentry turrets), Field Gun crews (long-range shells) and Combat Medics (healing). Their specialties go from machine gun teams to sci-fi: plasma rifles, power armor, drone swarms, cryo grenades, rail cannons and nanite medics. Troops grow stronger every wave. Select troops and right-click (or press Move) to send the whole group somewhere; they keep a formation and hold their new post. A Command Post boosts troops and contractors in its circle.</p>' +
+  '<p><b>Contractors.</b> Open the Mercs tab, pick a squad, and click near the road to drop them in. They fight for a limited time and then leave. Each type has a cooldown, and you can only have a few squads out at once. Stats and prices grow with the wave. Some unlock at a wave; a Contractor HQ (Troops tab) unlocks them earlier, cuts prices and cooldowns, adds squad slots, and has its own specialties. Contractors can be selected and moved like troops. Besides soldiers and tanks, the roster has Combat Drones, Plasma Troopers, a Power Armor Squad and (with a level 5 HQ) a Mech Walker.</p>' +
+  '<p><b>Walls, traps and mines.</b> These go ON the road. Sandbags, concrete barriers (with an energy Force Field specialty) and machine gun nests stop ground enemies, who must destroy them to pass, so you can never block the road for good (flyers ignore walls). Tank Traps and Oil Slicks do not block but hurt and slow everything crossing them; they wear out, so repair them. Mines blow up when stepped on. Each can be upgraded and specialized (barbed wire, demolition charges, guard posts, snare wire, frost mines, reusable mines...).</p>' +
   '<p><b>Moving towers.</b> Select one or many towers and press Move (M). The whole group keeps its shape. Moving during a wave makes towers spend 1.5 seconds setting back up.</p>' +
   '<p><b>Targeting.</b> Every attack tower has 15 targeting modes, including Random. "Lock" keeps it on one enemy until it dies or leaves range.</p>' +
-  '<p><b>Armor, reactive plating, camouflage.</b> Armor subtracts from every hit (fast weak hits suffer most). Reactive plating soaks damage first. Camouflaged enemies need detection: Sniper, Tesla coils, supers, Spotter Teams, Overwatch Commanders, or any tower inside a Radar circle.</p>' +
+  '<p><b>Armor, shields, stealth.</b> Armor subtracts from every hit (fast weak hits suffer most). Energy shields soak damage first. Cloaked and stealthed enemies need detection: Sniper, Tesla coils, supers, Spotter Teams, Overwatch Commanders, or any tower inside a Radar circle.</p>' +
   '<p><b>Variety.</b> Damage rolls +-10% per hit (turn it off in Settings), enemies vary a little in size, health and speed, and later waves bring random variants. Maps can be mirrored or flipped and the scenery changes every game.</p>' +
   '<p><b>Keys.</b> ' + KEYLIST.map(([k, d]) => '<kbd>' + k + '</kbd> ' + d).join(' &middot; ') + '</p>';
 }
