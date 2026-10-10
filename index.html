@@ -104,9 +104,9 @@ function render() {
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
     var m = 0;
-    img.alt = g.name; img.loading = 'lazy'; img.src = (local ? '' : IMG_MIRRORS[0]) + 'hub/' + g.img + '.jpg';
+    img.alt = g.name; img.loading = 'lazy'; img.src = (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg';
     img.onerror = function () {
-      if (!local && ++m < IMG_MIRRORS.length) { img.src = IMG_MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
+      if (!local && ++m < MIRRORS.length) { img.src = MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
       shot.innerHTML = ''; shot.appendChild(el('div', 'fallback', g.name));
     };
     shot.appendChild(img); b.appendChild(shot);
