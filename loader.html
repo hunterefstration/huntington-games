@@ -11,6 +11,23 @@
 // Huntington Games loader. Paste this into the HTML panel at jsbin.com (or save it as a .html file).
 // It downloads the newest hub from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
 // and it works even where github.io is blocked.
+function findLatest(repo, floor, cb) {
+  // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
+  // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
+  function exists(n) {
+    return fetch('https://cdn.jsdelivr.net/gh/' + repo + '@r' + n + '/latest.json').then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+  var lo = floor, step = 1;
+  function bisect(a, b) {
+    if (b - a <= 1) return cb(a);
+    var m = (a + b) >> 1;
+    exists(m).then(function (ok) { if (ok) bisect(m, b); else bisect(a, m); });
+  }
+  function gallop() {
+    exists(lo + step).then(function (ok) { if (ok) { lo += step; step *= 2; gallop(); } else bisect(lo, lo + step); });
+  }
+  gallop();
+}
 (function () {
   var repo = 'hunterefstration/huntington-games';
   var hosts = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0, version = null;
@@ -19,8 +36,8 @@
       document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>cdn.jsdelivr.net may be blocked on this network.';
       return;
     }
-    var url = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@' + (version || 'main') + '/index.html';
-    fetch(url, { cache: 'no-cache' }).then(function (r) {
+    var url = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@' + version + '/index.html';
+    fetch(url).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
     }).then(function (html) {
@@ -29,10 +46,12 @@
       document.open(); document.write(html); document.close();
     }).catch(next);
   }
-  // latest.json names the newest commit; an exact commit is never stale. Falls back to @main.
-  fetch('https://cdn.jsdelivr.net/gh/' + repo + '@main/latest.json', { cache: 'no-cache' })
-    .then(function (r) { return r.json(); }).then(function (j) { version = j.sha || null; })
-    .catch(function () {}).then(next);
+  var floor = 1;
+  try { floor = Math.max(1, parseInt(localStorage.getItem('hg_release'), 10) || 1); } catch (e) {}
+  findLatest(repo, floor, function (n) {
+    try { localStorage.setItem('hg_release', n); } catch (e) {}
+    version = 'r' + n; next();
+  });
 })();
 </script>
 </body>

@@ -62,15 +62,33 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 // Anywhere else (jsbin, a copy from the Google Doc...) the game code is fetched from the jsDelivr CDN mirror of
 // the GitHub repo and written into the frame, so the browser never navigates to github.io (school Chromebooks
 // often block that). Same trick as the Hollow Knight web port.
-// jsDelivr caches @main for up to 12 hours, but an exact commit (@<sha>) is served fresh right away.
-// latest.json (purged on every release) names the newest commit; load everything from that commit.
+// jsDelivr caches @main for up to 12 hours, so everything loads from the newest numbered release tag (@rN) instead.
 var REPO_NAME = 'hunterefstration/huntington-games';
-var LATEST_URL = 'https://cdn.jsdelivr.net/gh/' + REPO_NAME + '@main/latest.json';
+function findLatest(repo, floor, cb) {
+  // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
+  // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
+  function exists(n) {
+    return fetch('https://cdn.jsdelivr.net/gh/' + repo + '@r' + n + '/latest.json').then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+  var lo = floor, step = 1;
+  function bisect(a, b) {
+    if (b - a <= 1) return cb(a);
+    var m = (a + b) >> 1;
+    exists(m).then(function (ok) { if (ok) bisect(m, b); else bisect(a, m); });
+  }
+  function gallop() {
+    exists(lo + step).then(function (ok) { if (ok) { lo += step; step *= 2; gallop(); } else bisect(lo, lo + step); });
+  }
+  gallop();
+}
 var MIRROR_HOSTS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/', 'https://gcore.jsdelivr.net/gh/', 'https://testingcf.jsdelivr.net/gh/'];
 var MIRRORS = [];
 function setVersion(v) { MIRRORS = MIRROR_HOSTS.map(function (m) { return m + REPO_NAME + '@' + (v || 'main') + '/'; }); }
-var versionReady = window.HG_VERSION ? Promise.resolve(window.HG_VERSION) :
-  fetch(LATEST_URL, { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) { return j.sha; }).catch(function () { return null; });
+var versionReady = window.HG_VERSION ? Promise.resolve(window.HG_VERSION) : new Promise(function (done) {
+  var floor = 1;
+  try { floor = Math.max(1, parseInt(localStorage.getItem('hg_release'), 10) || 1); } catch (e) {}
+  findLatest(REPO_NAME, floor, function (n) { try { localStorage.setItem('hg_release', n); } catch (e) {} done('r' + n); });
+});
 var local = location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
 
 var GAMES = [

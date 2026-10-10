@@ -1,15 +1,14 @@
 #!/bin/sh
-# Publish: commit everything, point latest.json at that commit, push, and refresh jsDelivr's copy of latest.json.
+# Publish: commit everything, tag the next release (r1, r2, ...) and push. The hub and loader find the newest
+# tag on jsDelivr by themselves; tags are served fresh immediately (unlike @main, which can lag 12 hours).
 # Usage: ./release.sh "message"
 set -e
 cd "$(dirname "$0")"
+git fetch -q --tags
+N=$(( $(git tag -l 'r*' | sed 's/^r//' | grep -E '^[0-9]+$' | sort -n | tail -1) + 1 ))
+printf '{"release":%s}\n' "$N" > latest.json
 git add -A
-git commit -qm "${1:-update}" || true
-SHA=$(git rev-parse HEAD)
-printf '{"sha":"%s"}\n' "$SHA" > latest.json
-git add latest.json
-git commit -qm "latest.json -> $SHA" || true
-git push -q
-sleep 20
-curl -s "https://purge.jsdelivr.net/gh/hunterefstration/huntington-games@main/latest.json" | grep -E '"throttled"'
-curl -s "https://cdn.jsdelivr.net/gh/hunterefstration/huntington-games@main/latest.json"
+git commit -qm "${1:-update} (r$N)" || true
+git tag "r$N"
+git push -q && git push -q origin "r$N"
+echo "released r$N"
