@@ -79,7 +79,7 @@ b{font-weight:700}
 #mmwrap{position:relative;width:162px;height:108px;background:#05080c;border:2px solid #34495f;border-radius:10px;overflow:hidden}
 #mm{width:100%;height:100%;touch-action:none;cursor:pointer}
 #panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:6px;display:flex;flex-direction:row;gap:8px;overflow:hidden}
-.phead{flex:none;width:166px;display:flex;flex-direction:column;gap:4px;min-width:0;padding-right:8px;border-right:1px solid rgba(120,150,180,.28);justify-content:center}
+.phead{flex:none;width:204px;display:flex;flex-direction:column;gap:4px;min-width:0;padding-right:8px;border-right:1px solid rgba(120,150,180,.28);justify-content:center}
 .phead.wide{flex:1;width:auto;border-right:0;padding-right:0}
 .ph1{display:flex;gap:7px;align-items:center;min-width:0}
 .pic{width:36px;height:36px;border-radius:8px;background:#0d1620 center/contain no-repeat;border:1px solid #3a4f66;flex:none}
@@ -100,7 +100,7 @@ b{font-weight:700}
 .cards::-webkit-scrollbar{height:12px}
 .cards.compact{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-columns:max-content;gap:5px 6px;align-content:stretch}
 .hbtns{display:flex;gap:5px;flex-wrap:wrap}
-.hbtns .sm{padding:3px 8px;min-height:26px;font-size:11.5px}
+.hbtns{flex-wrap:nowrap}.hbtns .sm{padding:3px 5px;min-height:24px;font-size:11px}
 .hbtns .sm.on{border-color:var(--gold);background:#6b4b12}
 .card{position:relative;flex:none;width:118px;border:1px solid #3f5b78;border-radius:10px;background:linear-gradient(180deg,#26405c,#182a40);padding:5px 6px;display:flex;flex-direction:column;gap:2px;text-align:left;overflow:hidden;min-height:0}
 .card:hover{border-color:var(--gold);background:linear-gradient(180deg,#2e4d6e,#1c3149)}
@@ -258,6 +258,14 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 ::-webkit-scrollbar-thumb:hover{background:#93b3d3}
 .cdo{position:absolute;inset:0;border-radius:10px;background:conic-gradient(rgba(5,10,16,.8) calc(var(--p,0)*360deg),rgba(5,10,16,0) 0);display:flex;align-items:flex-end;justify-content:flex-end;padding:3px;pointer-events:none;font-weight:900;font-size:14px;color:#ffe2a6;text-shadow:0 1px 3px #000,0 0 6px #000}
 .card.cdn{border-color:#8a6a28}
+.card .qb{position:absolute;left:4px;top:4px;z-index:2;background:rgba(8,14,22,.92);border:1px solid #6fb4ff;border-radius:8px;padding:0 5px;font-size:12px;font-weight:900;line-height:16px;color:#bfe0ff;pointer-events:none}
+.card .qx{position:absolute;right:4px;top:4px;z-index:2;width:18px;height:18px;line-height:16px;text-align:center;border-radius:5px;background:#5a2a24;border:1px solid #c0584a;color:#ffd0c8;font-size:11px;font-weight:900;cursor:pointer}
+.card .qx:hover{background:#9a3a30}
+.qrow{display:flex;flex-wrap:wrap;gap:1px;margin:1px 0;min-height:17px}
+.qrow .qi{width:17px;height:17px;border:1px solid #4f7fb0;border-radius:4px;background:#0d1620 center/contain no-repeat;cursor:pointer;flex:none}
+.qrow.pz .qi{border-color:#e0705f}
+.qrow .qi:hover{border-color:#ff8a7a;box-shadow:0 0 6px #ff8a7a}
+.bbadge.que{border-color:#6fb4ff}
 .cdo span:not(:empty){background:rgba(5,10,16,.9);border:1px solid #8a6a28;border-radius:7px;padding:0 6px;line-height:18px}
 .bbadge{position:fixed;left:0;top:0;z-index:3;pointer-events:none;padding:2px 8px;border-radius:10px;font-size:11.5px;font-weight:800;background:rgba(10,16,24,.8);border:1px solid #4a6a8c;white-space:nowrap;text-align:center;display:none}
 .bbadge.rdy{color:#8ff0b4;border-color:#3d9b5b}
@@ -379,10 +387,10 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 <script type="module">
 import * as THREE from 'three';
 // =====================================================================
-//  FRONTLINE: COMMAND 2.2  -  single file RTS for Huntington Games
+//  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.2';
+const VERSION = '2.3';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -549,10 +557,10 @@ const AID = {
   // apm = actions per minute the commander can take, react = seconds before it notices a threat, popLim = army cap,
   // firstAtk = earliest first attack (seconds), pause = rest between waves, idle = chance it does nothing on a thought,
   // leave = chance it leaves a flag lightly defended, inc = income multiplier (only Brutal cheats a little)
-  easy: { n: 'Easy', think: 5.5, apm: 6, react: 9, inc: .5, rx: 2, counter: 0, retreat: 0, call: 0, mistakes: .5, idle: .45, leave: .8, atkDelay: 600, firstAtk: 600, pause: 170, startDelay: 50, capCd: 45, popLim: 16, warn: 25, bank: 150, burst: 1, hqPower: 99999, noDef: 1, bldMul: .45, noTech: 1, atkMul: 9, waveMax: 10, focusDwell: 40 },
-  normal: { n: 'Normal', think: 2.1, apm: 40, react: 3.5, inc: 1, rx: 1.2, counter: .3, retreat: .5, call: 0, mistakes: .15, idle: .12, leave: .25, atkDelay: 420, firstAtk: 360, pause: 110, startDelay: 10, capCd: 20, popLim: 55, warn: 20, bank: 50, burst: 3, hqPower: 1300, noDef: 1, bldMul: .85, noTech: 1, atkMul: 1.5, waveMax: 14, focusDwell: 24 },
-  hard: { n: 'Hard', think: 1.6, apm: 70, react: 2.5, inc: 1, rx: .9, counter: .8, retreat: .5, call: .8, mistakes: .08, idle: .08, leave: .15, atkDelay: 300, firstAtk: 250, pause: 70, startDelay: 5, capCd: 15, popLim: 70, warn: 12, bank: 30, burst: 3, hqPower: 700, bldMul: .95, atkMul: 1.25, waveMax: 26, focusDwell: 20 },
-  brutal: { n: 'Brutal', think: 1.2, apm: 140, react: .9, inc: 1.12, rx: .7, counter: 1, retreat: .45, call: 1, mistakes: .05, idle: .03, leave: .1, atkDelay: 150, firstAtk: 140, pause: 40, startDelay: 0, popLim: 200, warn: 5, bank: 0, burst: 4, hqPower: 500, bldMul: 1, atkMul: 1.05, waveMax: 99, focusDwell: 14 }
+  easy: { n: 'Easy', think: 5.5, apm: 6, react: 9, inc: .5, rx: 2, counter: 0, retreat: 0, call: 0, mistakes: .5, idle: .45, leave: .8, atkDelay: 600, firstAtk: 600, pause: 170, startDelay: 50, capCd: 45, popLim: 16, warn: 25, bank: 150, burst: 1, queue: 0, hqPower: 99999, noDef: 1, bldMul: .45, noTech: 1, atkMul: 9, waveMax: 10, focusDwell: 40 },
+  normal: { n: 'Normal', think: 2.1, apm: 40, react: 3.5, inc: 1, rx: 1.2, counter: .3, retreat: .5, call: 0, mistakes: .15, idle: .12, leave: .25, atkDelay: 420, firstAtk: 360, pause: 110, startDelay: 10, capCd: 20, popLim: 55, warn: 20, bank: 50, burst: 3, queue: 1, hqPower: 1300, noDef: 1, bldMul: .85, noTech: 1, atkMul: 1.5, waveMax: 14, focusDwell: 24 },
+  hard: { n: 'Hard', think: 1.6, apm: 70, react: 2.5, inc: 1, rx: .9, counter: .8, retreat: .5, call: .8, mistakes: .08, idle: .08, leave: .15, atkDelay: 300, firstAtk: 250, pause: 70, startDelay: 5, capCd: 15, popLim: 70, warn: 12, bank: 30, burst: 3, queue: 2, hqPower: 700, bldMul: .95, atkMul: 1.25, waveMax: 26, focusDwell: 20 },
+  brutal: { n: 'Brutal', think: 1.2, apm: 140, react: .9, inc: 1.12, rx: .7, counter: 1, retreat: .45, call: 1, mistakes: .05, idle: .03, leave: .1, atkDelay: 150, firstAtk: 140, pause: 40, startDelay: 0, popLim: 200, warn: 5, bank: 0, burst: 4, queue: 3, hqPower: 500, bldMul: 1, atkMul: 1.05, waveMax: 99, focusDwell: 14 }
 };
 
 // ---------------- settings & profile ----------------
@@ -1019,6 +1027,28 @@ function prodSpeed(b) {
 function unitCdBase(T) { return clamp(2.5 + T.cost / 55, 3, 12); }
 function unitCd(b, type) { return Math.max(1.5, unitCdBase(UT[type]) / prodSpeed(b)); }
 function cdLeft(b, type) { return b.cdu && b.cdu[type] > 0 ? b.cdu[type] : 0; }
+// 2.3 deploy queue: click a card while it recharges and the building deploys it for you the moment the cooldown ends (paid when queued)
+const QCAP = 10;
+function qCount(b, type) { let n = 0; if (b.q) for (const e of b.q) if (e.u === type) n++; return n; }
+function qTotal(b) { return b.q ? b.q.length : 0; }
+function refundQueue(b) { if (!b.q || !b.q.length) return; if (!W.o.sandbox) { const p = P(b.owner); if (p) for (const e of b.q) p.sup += e.c; } b.q.length = 0; }
+// 2.3 auto-rally: the biggest cluster of the player's combat units (ignoring units parked at an enemy HQ unless that is all there is)
+function armyRally(p, b) {
+  const eh = []; for (const q of W.players) if (q.alive && q.team !== p.team && q.hqB && !q.hqB.dead) eh.push(q.hqB);
+  let gnd = [], hot = [], air = [];
+  for (const u of W.units) {
+    if (u.owner !== p.id || u.dead || (!u.T.w && !u.T.w2) || u.life > 0) continue;
+    if (u.T.air) { air.push(u); continue; }
+    let near = false; for (const h of eh) if (Math.hypot(u.x - h.x, u.z - h.z) < 28) { near = true; break; }
+    (near ? hot : gnd).push(u);
+  }
+  let us = gnd.length ? gnd : (hot.length ? hot : air); if (!us.length) return null; if (us.length > 160) us = us.slice(0, 160);
+  const R = 16; let best = null, bs = -1;
+  for (const a of us) { let sc = 0; for (const c of us) if (Math.hypot(a.x - c.x, a.z - c.z) < R) sc += c.T.pop || 1; sc -= Math.hypot(a.x - b.x, a.z - b.z) * .001; if (sc > bs) { bs = sc; best = a; } }
+  let cx = 0, cz = 0, n = 0; for (const c of us) if (Math.hypot(c.x - best.x, c.z - best.z) < R) { cx += c.x; cz += c.z; n++; }
+  cx /= n; cz /= n; if (Math.hypot(cx - b.x, cz - b.z) < 14) return null;
+  const q = snapFree(W.M, clamp(cx + rr(-4, 4), -W.M.hw + 3, W.M.hw - 3), clamp(cz + rr(-4, 4), -W.M.hd + 3, W.M.hd - 3), 5); return [q[0], q[1], n];
+}
 function playerHQLvl(p) { return p.hqB && !p.hqB.dead ? p.hqB.lvl : 0; }
 function bestLvl(p, type) { let l = 0; for (const b of W.bld) if (b.owner === p.id && b.type === type && b.prog >= 1 && b.lvl > l) l = b.lvl; return l; }
 function bWeapon(b) {
@@ -1110,7 +1140,7 @@ function killUnit(u, src, owner) {
   else if (owner !== undefined && owner >= 0) { P(owner).stats.kills++; if (u.T.air) P(owner).stats.air++; }
 }
 function killBuilding(b, src, owner) {
-  if (b.dead) return; b.dead = true; const p = P(b.owner); const pt = b.pt >= 0 ? W.pts[b.pt] : null;
+  if (b.dead) return; b.dead = true; const p = P(b.owner); const pt = b.pt >= 0 ? W.pts[b.pt] : null; refundQueue(b);
   const i = W.bld.indexOf(b); if (i >= 0) { W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } W.byId.delete(b.id);
   if (b.type === 'wall') { if (pt) pt.wall = null; for (const a of b.arcs) markNav(W.M, a[0], a[1], .6, -1); }
   else if (b.slot >= 0 && pt) { pt.slots[b.slot].b = null; markNav(W.M, b.x, b.z, b.T.sz * .52, -1); }
@@ -1418,6 +1448,14 @@ function updBuilding(b, dt) {
   }
   // unit cooldowns (units are deployed instantly when ordered; each type then recharges)
   for (const k in b.cdu) { if ((b.cdu[k] -= dt) <= 0) delete b.cdu[k]; }
+  if (b.q.length && b.prog >= 1) {
+    const pq = P(b.owner); b.qPause = false;
+    for (let i = 0; i < b.q.length; i++) {
+      const e = b.q[i]; if (cdLeft(b, e.u) > 0) continue; const QT = UT[e.u];
+      if (!W.o.sandbox && pq.pop + QT.pop > pq.popCap) { b.qPause = true; continue; }
+      b.q.splice(i, 1); i--; deployUnit(b, pq, e.u);
+    }
+  } else b.qPause = false;
   // auras / specials every 0.5s
   b.aT -= dt; if (b.aT <= 0) { b.aT = .5; auraTick(b); }
   // weapons
@@ -1473,13 +1511,15 @@ function auraTick(b) {
 }
 function spawnFromBuilding(b, type, idx) {
   const T = UT[type], p = P(b.owner), M = W.M;
-  let ang = b.hasRally ? Math.atan2(b.rz - b.z, b.rx - b.x) : Math.atan2(-b.z, -b.x) + (Math.random() - .5) * 1.2;
+  let dest = null; if (b.hasRally) dest = [b.rx, b.rz]; else if (!p.ai) dest = armyRally(p, b);
+  let ang = dest ? Math.atan2(dest[1] - b.z, dest[0] - b.x) : Math.atan2(-b.z, -b.x) + (Math.random() - .5) * 1.2;
   ang += (idx || 0) * .8 - ((b.id * 7) % 5) * .15; const d = b.sz * .5 + 2.6 + (T.cls >= 1 ? 1.5 : 0);
   let x = b.x + Math.cos(ang) * d, z = b.z + Math.sin(ang) * d; const q = snapFree(M, x, z, 5); x = q[0]; z = q[1];
   const o = { rot: ang }; if (b.spec === 'elite' && T.cls === 0) o.vet = 1; if (b.spec === 'shock' && T.cls === 0) { o.hpB = 1.2; o.spB = 1.1; o.dmB = 1.1; } if (b.spec === 'heavy' && (T.cls === 1 || T.cls === 2)) o.hpB = 1.15;
   const u = spawnUnit(type, b.owner, x, z, o); if (o.vet) refreshUnit(u), u.hp = u.maxHp;
   if (b.type === 'factory' && b.spec === 'artillery' && type === 'artillery') u.fromArtPark = true;
   if (b.hasRally) { u.o = 1; u.tx = b.rx; u.tz = b.rz; u.arr = 3; }
+  else if (dest) { u.o = 2; u.am = true; u.tx = dest[0]; u.tz = dest[1]; u.arr = 3; }
   return u;
 }
 
@@ -1606,6 +1646,11 @@ function applyCmd(pid, c) {
     case 'upg': return cmdUpgrade(p, c);
     case 'spec': return cmdSpec(p, c);
     case 'train': return cmdTrain(p, c);
+    case 'cq': {
+      const b = W.byId.get(c.b); if (!b || b.owner !== pid || !b.q || !b.q.length) return false; let i = -1;
+      if (typeof c.u === 'string') { for (let k = b.q.length - 1; k >= 0; k--) if (b.q[k].u === c.u) { i = k; break; } } else i = c.i | 0;
+      if (i < 0 || i >= b.q.length) return false; const e = b.q.splice(i, 1)[0]; if (!W.o.sandbox) p.sup += e.c; NET.dirty = true; return true;
+    }
     case 'sell': { const b = W.byId.get(c.b); if (!b || b.owner !== pid || b.type === 'hq') return false; p.sup += Math.round(b.spent * .5); ev([1, 2, r1(b.x), r1(b.y + 1), r1(b.z), 1]); killBuilding(b, null, -1); return true; }
     case 'tech': return cmdTech(p, c);
     case 'call': return cmdCall(p, c);
@@ -1643,14 +1688,22 @@ function unitsForB(b) { const r = []; for (const k in UT) if (canTrainAt(b, k)) 
 function unlockInfo(b, type) { const T = UT[type]; for (const s of T.src) if (s[0] === b.type) { return s; } return null; }
 function cmdTrain(p, c) {
   const b = W.byId.get(c.b); if (!b || b.owner !== p.id || !canTrainAt(b, c.u)) return false;
-  const T = UT[c.u]; if (cdLeft(b, c.u) > 0) return false;
+  const T = UT[c.u]; const cost = unitCost(p, c.u, b);
+  if (cdLeft(b, c.u) > 0 || qCount(b, c.u) > 0) {      // 2.3: recharging -> join the building's queue (paid now, refunded on cancel)
+    if (b.q.length >= QCAP) return false; if (p.sup < cost && !W.o.sandbox) return false;
+    if (!W.o.sandbox) p.sup -= cost; b.q.push({ u: c.u, c: W.o.sandbox ? 0 : cost }); NET.dirty = true; return true;
+  }
   if (!W.o.sandbox && p.pop + T.pop > p.popCap) return false;
-  const cost = unitCost(p, c.u, b); if (p.sup < cost && !W.o.sandbox) return false;
+  if (p.sup < cost && !W.o.sandbox) return false;
   if (!W.o.sandbox) p.sup -= cost;
-  const cnt = (b.spec === 'swarm' && c.u === 'strike') ? 2 : 1; let last = null;
-  for (let i = 0; i < cnt; i++) last = spawnFromBuilding(b, c.u, i);
-  b.cdu[c.u] = unitCd(b, c.u); p.deployT = W.t; if (last) ev([1, 1, r1(last.x), r1(last.y + 1), r1(last.z), 1]);
+  deployUnit(b, p, c.u);
   return true;
+}
+function deployUnit(b, p, type) {
+  const cnt = (b.spec === 'swarm' && type === 'strike') ? 2 : 1; let last = null;
+  for (let i = 0; i < cnt; i++) last = spawnFromBuilding(b, type, i);
+  b.cdu[type] = unitCd(b, type); p.deployT = W.t; if (last) ev([1, 1, r1(last.x), r1(last.y + 1), r1(last.z), 1]);
+  return last;
 }
 function cmdTech(p, c) {
   const t = TECHBY[c.id]; if (!t || p.techs[t.id] || p.res) return false; const hq = playerHQLvl(p);
@@ -1833,6 +1886,13 @@ function makeAI(p, cfg) {
         this.wants.delete(b.id);
         if (this.cmd({ k: 'train', b: b.id, u: pick, n: 1 })) { cnt[pick] = (cnt[pick] || 0) + 1; deployed++; }
         if (!b.hasRally && this.stage) { this.cmd({ k: 'rally', b: b.id, x: this.stage[0], z: this.stage[1] }); }
+      }
+      // 2.3: with spare money the AI also lines up one or two extra troops in a building's queue (more on harder levels)
+      const ql = dif.queue || 0;
+      if (ql > 0 && deployed < burst + 1 && p.sup > 260 + reserve) for (const b of W.bld) {
+        if (b.owner !== p.id || b.prog < 1 || b.dead || b.q.length >= ql) continue; const ul = unitsForB(b).filter(t => cdLeft(b, t) > 0 && (pers.uw[t] || 0) > 0 && qCount(b, t) === 0 && p.pop + UT[t].pop <= Math.min(p.popCap, dif.popLim) - b.q.length);
+        if (!ul.length) continue; const t = ul[(Math.random() * ul.length) | 0]; if (unitCost(p, t, b) > p.sup - reserve - 120) continue;
+        if (this.cmd({ k: 'train', b: b.id, u: t, n: 1 })) { deployed++; break; }
       }
     },
     // ---------------- military ----------------
@@ -2938,10 +2998,12 @@ function setupInput() {
   mm.addEventListener('pointermove', e => { if (UI.mmDrag && e.pointerType === 'touch') mmPointer(e, false); });
   mm.addEventListener('contextmenu', e => e.preventDefault());
   $('#hud').addEventListener('contextmenu', e => e.preventDefault());
+  $('#panel').addEventListener('contextmenu', e => { const c = e.target.closest('.card[data-key]'); if (!c || !selBld) return; const b = W && W.byId.get(selBld), k = c.dataset.key; if (b && b.owner === ME && UT[k] && qCount(b, k)) { issue({ k: 'cq', b: b.id, u: k }); sfx('click'); UI.cardSig = ''; hudUpdate(true); } });
   $('#btnMenu').onclick = () => openPause();
   $('#zIn').onclick = () => camZoom(1 / 1.2); $('#zOut').onclick = () => camZoom(1.2);
   $('#rL').onclick = () => { cam.tyaw -= PI / 4; }; $('#rR').onclick = () => { cam.tyaw += PI / 4; };
   $('#panel').addEventListener('click', e => {
+    const qx = e.target.closest('[data-qx]'); if (qx && selBld) { issue({ k: 'cq', b: selBld, u: qx.dataset.qx }); sfx('click'); UI.cardSig = ''; hudUpdate(true); return; }
     const q = e.target.closest('[data-q]'); if (q && selBld) { issue({ k: 'cq', b: selBld, i: +q.dataset.q }); sfx('click'); UI.cardSig = ''; return; }
     const g = e.target.closest('[data-grp]'); if (g) { const t = g.dataset.grp; selectUnits(selUnitsArr().filter(u => u.type === t).map(u => u.id)); return; }
     const hbb = e.target.closest('[data-hb]'); if (hbb) { const f = CARD.hb && CARD.hb[hbb.dataset.hb]; if (f) { initAudio(); f(); } return; }
@@ -3138,12 +3200,12 @@ function updStrip() {
   const now = performance.now();
   for (const u of W.units) if (u.owner === ME && !UI.known.has(u.id)) { UI.known.add(u.id); UI.deployLog.push({ t: u.type, at: now }); }
   while (UI.deployLog.length && (now - UI.deployLog[0].at > 12000 || UI.deployLog.length > 40)) UI.deployLog.shift();
-  const pb = prodBlds(); let rdy = 0, cool = 0, soon = 99; for (const b of pb) { const n = Object.keys(b.cdu).length; if (n) { cool++; for (const k in b.cdu) soon = Math.min(soon, b.cdu[k]); } else rdy++; }
+  const pb = prodBlds(); let rdy = 0, cool = 0, soon = 99, qtot = 0, qpz = 0; for (const b of pb) { qtot += b.q.length; if (b.qPause) qpz++; const n = Object.keys(b.cdu).length; if (n) { cool++; for (const k in b.cdu) soon = Math.min(soon, b.cdu[k]); } else rdy++; }
   const grp = {}; for (const d of UI.deployLog) grp[d.t] = (grp[d.t] || 0) + 1;
   const chips = Object.keys(grp).slice(-7).map(t => '<div class="ch" style="' + iconStyle(t) + '" data-tip="' + esc(UT[t].n + '|Deployed recently.') + '"><b>' + grp[t] + '</b></div>').join('');
-  const sig = pb.length + '/' + rdy + '/' + cool + '/' + (soon < 99 ? soon.toFixed(0) : '') + '/' + chips;
+  const sig = pb.length + '/' + rdy + '/' + cool + '/' + qtot + qpz + '/' + (soon < 99 ? soon.toFixed(0) : '') + '/' + chips;
   if (el.dataset.s === sig) return; el.dataset.s = sig;
-  el.innerHTML = '<span class="as">Army status</span>' + (pb.length ? '<span class="rd">' + rdy + ' ready</span>' + (cool ? '<span class="cl">' + cool + ' recharging' + (soon < 99 ? ' (next ' + Math.ceil(soon) + 's)' : '') + '</span>' : '') : '<span>no barracks yet</span>') + (chips ? '<span class="as">Just deployed</span>' + chips : '');
+  el.innerHTML = '<span class="as">Army status</span>' + (pb.length ? '<span class="rd">' + rdy + ' ready</span>' + (cool ? '<span class="cl">' + cool + ' recharging' + (soon < 99 ? ' (next ' + Math.ceil(soon) + 's)' : '') + '</span>' : '') + (qtot ? '<span class="qd" style="color:#9fd0ff">' + qtot + ' queued' + (qpz ? ' (army full)' : '') + '</span>' : '') : '<span>no barracks yet</span>') + (chips ? '<span class="as">Just deployed</span>' + chips : '');
   el.style.display = pb.length || chips ? 'flex' : 'none';
 }
 const BADGES = new Map();
@@ -3153,7 +3215,13 @@ function updBadges() {
     w2s(b.x, b.y + b.T.sz * .45 + 5, b.z, _sp); if (_sp.z >= 1 || _sp.x < -40 || _sp.x > vpW + 40 || _sp.y < 70 || _sp.y > vpH - 130) continue;
     let d = BADGES.get(b.id); if (!d) { d = document.createElement('div'); d.className = 'bbadge'; document.body.appendChild(d); BADGES.set(b.id, d); }
     seen.add(b.id); const keys = Object.keys(b.cdu); let txt, cls, bar = '';
-    if (!keys.length) { txt = 'READY'; cls = 'rdy'; } else { let soon = 99, tot = 1, k0 = ''; for (const k of keys) if (b.cdu[k] < soon) { soon = b.cdu[k]; k0 = k; } tot = Math.max(.5, unitCd(b, k0)); txt = soon.toFixed(1) + 's' + (keys.length > 1 ? ' (' + keys.length + ')' : ''); cls = 'cool'; bar = '<i style="width:' + Math.round(clamp(1 - soon / tot, 0, 1) * 100) + '%"></i>'; }
+    if (b.q.length) {
+      let bk = '', bt = 99; for (const e of b.q) { const c = cdLeft(b, e.u); if (c < bt) { bt = c; bk = e.u; } }
+      const n1 = qCount(b, bk), more = b.q.length - n1, tot = Math.max(.5, unitCd(b, bk));
+      if (b.qPause) { txt = UT[bk].n + ' x' + n1 + ' - paused: army full'; cls = 'cool que'; bar = ''; }
+      else { txt = UT[bk].n + ' x' + n1 + ' - ' + (bt > 0 ? bt.toFixed(1) + 's' : 'now') + (more ? ' (+' + more + ')' : ''); cls = 'cool que'; bar = '<i style="width:' + Math.round(clamp(1 - bt / tot, 0, 1) * 100) + '%"></i>'; }
+    }
+    else if (!keys.length) { txt = 'READY'; cls = 'rdy'; } else { let soon = 99, tot = 1, k0 = ''; for (const k of keys) if (b.cdu[k] < soon) { soon = b.cdu[k]; k0 = k; } tot = Math.max(.5, unitCd(b, k0)); txt = soon.toFixed(1) + 's' + (keys.length > 1 ? ' (' + keys.length + ')' : ''); cls = 'cool'; bar = '<i style="width:' + Math.round(clamp(1 - soon / tot, 0, 1) * 100) + '%"></i>'; }
     const sig = cls + txt; if (d.dataset.s !== sig) { d.dataset.s = sig; d.className = 'bbadge ' + cls; d.innerHTML = txt + bar; }
     d.style.display = 'block'; d.style.transform = 'translate(' + (_sp.x | 0) + 'px,' + (_sp.y | 0) + 'px) translate(-50%,-100%)';
   }
@@ -3163,7 +3231,7 @@ function teamBleed() { const cnt = {}; for (const t of W.teamList) cnt[t.id] = 0
 function ptsOfTeam(t) { let n = 0; for (const pt of W.pts) if (pt.owner >= 0 && P(pt.owner).team === t) n++; return n; }
 function iconStyle(k) { return ICONS[k] ? 'background-image:url(' + ICONS[k] + ')' : ''; }
 function strongWeak(w) { if (w.g === 'a') return 'Only attacks aircraft, and is very strong against them.'; const names = ['soldiers', 'vehicles', 'tanks', 'aircraft', 'buildings']; const s = [], wk = []; for (let c = 0; c < 5; c++) { let m = WTM[w.wt][c]; if (c === 3 && w.g === 'g') m = 0; if (c !== 3 && w.g === 'a') m = 0; if (m >= 1.15) s.push(names[c]); else if (m <= .3) wk.push(names[c]); } return (s.length ? 'Good against ' + s.join(', ') + '. ' : '') + (wk.length ? 'Weak against ' + wk.join(', ') + '.' : ''); }
-function unitTip(type, b) { const T = UT[type], p = P(ME), w = T.w; return T.n + '|' + T.info + '|Costs ' + unitCost(p, type, b) + '. Takes ' + T.pop + ' army space. Deploys the moment you click it. Then this troop recharges for ' + unitCd(b || { owner: ME, spec: '', pt: -1 }, type).toFixed(1) + 's.|' + (w ? strongWeak(w) : ''); }
+function unitTip(type, b) { const T = UT[type], p = P(ME), w = T.w; return T.n + '|' + T.info + '|Costs ' + unitCost(p, type, b) + '. Takes ' + T.pop + ' army space. Deploys the moment you click it. Then this troop recharges for ' + unitCd(b || { owner: ME, spec: '', pt: -1 }, type).toFixed(1) + 's. Click again while it recharges to queue more (up to ' + QCAP + '); the building deploys them for you. Right-click the card to cancel one.|' + (w ? strongWeak(w) : ''); }
 function bldTip(type) { const T = BT[type]; return T.n + '|' + T.info + '|Costs ' + T.cost[0] + '. You can level it up 3 times.'; }
 
 function coachHint() {
@@ -3222,7 +3290,7 @@ function updModeBar() {
   const el = $('#modebar'); let t = '';
   if (UI.mode === 'amove') t = 'Click where your troops should go. They will fight on the way.';
   else if (UI.mode === 'nest') t = 'Click where the Engineer should build a Sandbag Nest.';
-  else if (UI.mode === 'rally') t = 'Click where new troops should gather.';
+  else if (UI.mode === 'rally') t = 'Click where new troops should gather. This replaces Rally: Army (auto).';
   else if (UI.mode === 'call') t = 'Click the map to use ' + CALL[UI.callId].n + '.';
   else if (UI.mode === 'sbspawn') t = 'Click the map to place ' + UT[UI.sb.type].n + '.';
   if (el.dataset.t === t) return; el.dataset.t = t; if (!t) { el.classList.add('hidden'); return; } el.classList.remove('hidden'); el.innerHTML = '<span>' + esc(t) + '</span><button class="sm" id="modex">Cancel</button>'; $('#modex').onclick = () => setMode(null);
@@ -3256,7 +3324,7 @@ function cardHtml(i, o, compact) {
   const img = o.img ? '<div class="cimg" style="' + iconStyle(o.img) + '"></div>' : '<div class="cimg" style="color:' + (o.col || 'var(--gold2)') + ';display:flex;align-items:center;justify-content:center">' + ic(o.ico || 'star') + '</div>';
   const cost = o.lock ? '<span class="cc">' + ic('lock') + (o.lockTxt || 'Locked') + '</span>' : (o.cost ? '<span class="cc">' + ic('coin') + o.cost + '</span>' : '');
   const cls = 'card' + (compact ? ' c2' : '') + (o.cdn ? ' cdn' : '') + (o.off ? ' off' : '') + (o.lock ? ' lock' : '') + (o.on ? ' on' : '') + (o.go ? ' go' : '') + (o.stk ? ' stk' : '');
-  const extra = (o.cdn ? '<div class="cdo" data-cb="' + o.cb + '" data-ck="' + o.key + '"><span></span></div>' : '') + (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
+  const extra = (o.q ? '<span class="qb" data-tip="Queued|' + o.q + ' in the queue. They deploy by themselves when the card recharges.">+' + o.q + '</span><span class="qx" data-qx="' + (o.key || '') + '" data-tip="Cancel one|Remove one from the queue and get the money back. (Right-click the card does the same.)">x</span>' : '') + (o.cdn ? '<div class="cdo" data-cb="' + o.cb + '" data-ck="' + o.key + '"><span></span></div>' : '') + (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
   if (compact) return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '">' + img + '<div class="ctx"><div class="cn">' + esc(o.nm) + '</div><div class="cs">' + cost + '<span class="cd">' + esc(o.s || o.d || '') + '</span></div></div>' + extra + '</div>';
   return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '"><div class="crow">' + img + '<div class="cn">' + esc(o.nm) + '</div></div><div class="cm">' + cost + '</div><div class="cd">' + esc(o.d || '') + '</div>' + extra + '</div>';
 }
@@ -3284,13 +3352,19 @@ function renderPanel(force) {
     }
   } else if (b && b.owner === ME) {
     const T = b.T, spn = b.spec ? T.specs.find(s => s.id === b.spec) : null;
-    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '%' : (Object.keys(UT).some(k => canTrainAt(b, k)) ? (Object.keys(b.cdu || {}).length ? '<b style="color:#ffd37a">' + Object.keys(b.cdu).length + ' recharging</b>' : '<b style="color:#8ff0b4">All troops ready</b>') : esc(T.d))) + '</div>';
+    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '%' : (Object.keys(UT).some(k => canTrainAt(b, k)) ? (Object.keys(b.cdu || {}).length ? '<b style="color:#ffd37a">' + Object.keys(b.cdu).length + ' recharging</b>' : '<b style="color:#8ff0b4">All troops ready</b>') + (b.q.length ? ' <b style="color:#9fd0ff">' + b.q.length + ' queued</b>' + (b.qPause ? ' <b style="color:#ff9a8c">(army full)</b>' : '') : '') : esc(T.d))) + '</div>';
     if (b.prog >= 1) {
       let hk = 0;
       for (const k of Object.keys(UT)) {
         const U = UT[k], src = U.src.find(s => s[0] === b.type); if (!src || U.nobuild) continue; const ok = canTrainAt(b, k); if (!ok) continue;
         const cost = unitCost(p, k, b), popOk = p.pop + U.pop <= p.popCap, can = (p.sup >= cost || W.o.sandbox) && popOk, cdr = cdLeft(b, k);
-        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: !can, cdn: cdr > 0, cb: b.id, tip: unitTip(k, b), fn: () => { const cd0 = cdLeft(b, k); if (cd0 > 0) { sfx('deny'); toast(U.n + ' is recharging: ' + cd0.toFixed(1) + 's'); return; } if (issue({ k: 'train', b: b.id, u: k, n: 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); } else { sfx('deny'); toast(p.pop + U.pop > p.popCap ? 'Army is full. Capture more flags to raise the limit.' : 'Not enough money yet.'); } UI.cardSig = ''; hudUpdate(true); } });
+        const qn = qCount(b, k);
+        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: cdr > 0 || qn > 0 ? !(p.sup >= cost || W.o.sandbox) : !can, cdn: cdr > 0, q: qn, cb: b.id, tip: unitTip(k, b), fn: () => {
+          const queueing = cdLeft(b, k) > 0 || qCount(b, k) > 0, moneyOk = p.sup >= cost || W.o.sandbox;
+          if (queueing && b.q.length >= QCAP) { sfx('deny'); toast('The queue is full (' + QCAP + ' troops).'); return; }
+          if (!moneyOk) { sfx('deny'); toast('Not enough money yet.'); return; }
+          if (!queueing && p.pop + U.pop > p.popCap && !W.o.sandbox) { sfx('deny'); toast('Army is full. Capture more flags to raise the limit.'); return; }
+          if (issue({ k: 'train', b: b.id, u: k, n: 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); if (queueing) toast('Queued ' + U.n + ' (' + (W.mirror ? b.q.length + 1 : b.q.length) + ' in line)'); } else { sfx('deny'); toast(queueing ? 'Could not queue that.' : 'Not enough money yet.'); } UI.cardSig = ''; hudUpdate(true); } });
       }
       if (b.lvl < 3 && !b.upg && BT[b.type].cost[b.lvl] !== undefined) {
         const uc = BT[b.type].cost[b.lvl], gate = b.lvl === 2 && b.type !== 'hq' && hql < 2;
@@ -3298,9 +3372,16 @@ function renderPanel(force) {
       }
       if (b.lvl >= 3 && !b.spec && !b.upg && T.specs.length) items.push({ nm: 'Pick upgrade', key: 'spec', stk: 1, ico: 'star', cost: SPEC_COST, d: 'Choose 1 of 3 upgrades.', go: p.sup >= SPEC_COST, off: p.sup < SPEC_COST && !W.o.sandbox, tip: 'Pick an upgrade|Choose 1 of 3 special upgrades for this building. It cannot be changed later.', fn: () => { UI.specOpen = true; UI.cardSig = ''; hudUpdate(true); } });
       if (b.upg) items.push({ nm: 'Working...', key: 'work', stk: 1, ico: 'build', d: b.upg.kind === 'lvl' ? 'Leveling up.' : 'Adding upgrade.', off: true, pg: b.upg.t / b.upg.dur, fn: () => { } });
-      if (Object.keys(UT).some(k => canTrainAt(b, k))) { hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Rally point|New troops walk to the spot you click.">Rally point</button>'; }
+      if (Object.keys(UT).some(k => canTrainAt(b, k))) {
+        if (b.hasRally) {
+          hb.rallyauto = () => { issue({ k: 'rally', b: b.id, clear: 1 }); sfx('click'); toast('New troops will now go to your main army.'); UI.cardSig = ''; hudUpdate(true); };
+          hbtns += '<button class="sm on" data-hb="rallyauto" data-tip="Rally: point|New troops walk to the spot you picked. Click to switch back to Army (auto).">Rally: point</button>';
+          hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Move rally point|Click the ground to move the rally point.">Move</button>';
+        } else { hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Rally: Army (auto)|New troops walk to where most of your army is. Click, then click the ground, to pick a fixed rally point instead.">' + (UI.mode === 'rally' ? 'Click the map' : 'Rally: Army (auto)') + '</button>'; }
+      }
     } else items.push({ nm: 'Under construction', ico: 'build', d: 'Engineers nearby build it faster.', off: true, pg: b.prog, fn: () => { } });
     if (b.type !== 'hq') { hb.sell = () => { if (issue({ k: 'sell', b: b.id })) { sfx('click'); selBld = 0; UI.cardSig = ''; hudUpdate(true); } }; hbtns += '<button class="sm" data-hb="sell" data-tip="Sell (K)|Remove this building and get half the money back.">Sell +' + Math.round(b.spent * .5) + '</button>'; }
+    if (b.q.length) head = head.replace(/<div class="pm">[^]*$/, '') + '<div class="qrow' + (b.qPause ? ' pz' : '') + '">' + b.q.map((e, i) => '<div class="qi" data-q="' + i + '" style="' + iconStyle(e.u) + '" data-tip="' + esc(UT[e.u].n + '|Queued. Click to cancel this one and get the money back.' + (b.qPause ? ' The queue is paused: your army is full.' : '')) + '"></div>').join('') + '</div>';
     if (hbtns) head += '<div class="hbtns">' + hbtns + '</div>';
   } else if (b) {
     const T = b.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt" style="color:' + (b.team === MYTEAM ? '#9fd0ff' : '#ff9a8c') + '">' + T.n + '<small>' + (b.team === MYTEAM ? 'Ally' : 'Enemy') + ' Lv ' + b.lvl + '</small></div></div>' + hpHtml(b.hp / b.maxHp, b.team === MYTEAM ? '' : '#e14a3a') + '<div class="pm">' + (b.team === MYTEAM ? '' : 'Select your troops, then click this to attack.') + '</div>';
@@ -3334,8 +3415,8 @@ function renderPanel(force) {
   } else {
     const h = coachHint(); head = '<div class="coach">' + ic('flag') + '<div>' + esc(h[0]) + '<small>' + esc(h[1]) + '</small></div></div>'; wide = true;
   }
-  const compact = items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : 176) - 8);
-  const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.cdn ? 'c' : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
+  const compact = items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : 214) - 8);
+  const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.cdn ? 'c' : '') + (i.q ? 'q' + i.q : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
   if (el.dataset.h === sig && !force) return; const sc = el.querySelector('.cards'); const keepScroll = sc ? sc.scrollLeft : 0; el.dataset.h = sig;
   CARD = items.map(i => i.fn); CARD.hb = hb;
   el.innerHTML = '<div class="phead' + (wide ? ' wide' : '') + '">' + head + '</div>' + (items.length ? '<div class="cards' + (compact ? ' compact' : '') + '">' + items.map((o, i) => cardHtml(i, o, compact)).join('') + '</div>' : '');
@@ -3400,7 +3481,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> troops deploy the moment you click them, then recharge on a short cooldown (no more waiting in a queue). Support powers are now <b>hold F + a number</b>, no F-keys needed. The map moves with two-finger scroll, and the enemy commanders act more like real players. Normal is easier, and the old Hard is now called Brutal. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> click a troop card while it recharges to <b>queue</b> it. The building deploys queued troops one by one on its own, even if you close the panel (up to 10 per building; click the x or right-click to cancel and get your money back). New troops now <b>automatically walk to where most of your army is</b>; a building's <b>Rally</b> button switches between Army (auto) and a fixed rally point. Troops still deploy the moment you click them, support powers are <b>hold F + a number</b>, and the enemy commanders use the queue too. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -3501,7 +3582,7 @@ SCREENS.howto = () => {
   <div class="note" style="font-size:16px;margin:6px 0 12px;color:#e6eef7"><b style="color:#ffe2a6">Goal:</b> capture flags. Hold more flags than the enemy and their score drops to zero. You can also destroy their HQ to win at once.</div>
   <div class="hw">
    <div class="hc"><h4>1. Capture flags</h4><div class="dg"><div class="c ring" style="left:128px;top:14px;width:80px;height:80px"></div><div class="pole" style="left:166px;top:34px"></div>${sol(40, 54)}${sol(60, 62)}${sol(80, 52)}<div class="arr" style="left:100px;top:72px;width:48px;transform:rotate(-12deg)"></div></div><p>Walk soldiers into the circle around a flag. When it turns your color, it is yours. Flags give you money.</p></div>
-   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click a troop card: it appears right away! Then that troop recharges for a few seconds (the card fills back in). Level the building up to unlock stronger troops.</p></div>
+   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click a troop card: it appears right away! Then that troop recharges for a few seconds (the card fills back in). Click it again while it recharges to <b>queue</b> more: the building deploys them for you, even if you look away (click the small x or right-click a card to cancel one and get your money back). New troops walk to where most of your army is. Use <b>Rally: Army (auto)</b> on the building to pick a fixed rally point instead. Level the building up to unlock stronger troops.</p></div>
    <div class="hc"><h4>3. Select and move</h4><div class="dg"><div class="bx" style="left:20px;top:26px;width:80px;height:56px"></div>${sol(36, 44)}${sol(58, 54)}${sol(78, 44)}<div class="arr" style="left:110px;top:56px;width:60px;transform:rotate(-8deg)"></div><div class="cur" style="left:186px;top:34px"></div></div><p>Click a troop, or drag a box around many. Then click the ground to move there, or click an enemy to attack it. No right-click needed.</p></div>
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
    <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
@@ -3606,7 +3687,7 @@ const TUT_STEPS = [
   { t: 'Capture the flag', x: 'Wait while your soldiers capture it. The circle fills with your color. Flags give you money!', target: () => { const f = TUT.flag; return f ? { world: () => [f.x, f.y + 1, f.z], label: 'Capturing...' } : null; }, ok: () => TUT.flag && TUT.flag.owner === ME, auto: 1, setup: () => { TUT.flag = tutFlag() || TUT.flag; if (TUT.flag) camGoto(TUT.flag.x, TUT.flag.z); }, skipFn: () => { const f = TUT.flag; if (f && f.owner < 0) { f.owner = ME; f.ctrl = 1; f.capP = ME; } } },
   { t: 'Open the build menu', x: 'Click "+ Build" above your base to see what you can build. You have plenty of money.', target: () => { const h = tutHq(); return { sel: ptLabel(W.pts[h.pt]), fallbackWorld: [h.x, h.y + 10, h.z] }; }, ok: () => selPad && selPad.pt === tutHq().pt, setup: () => { P(ME).sup = Math.max(P(ME).sup, 600); goHome(); clearSel(); afterSel(); } },
   { t: 'Build a Barracks', x: 'Pick the Barracks. It trains soldiers.', target: () => ({ sel: '#panel .card[data-key="b_barracks"]' }), ok: () => !!tutBarracks(), setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); const hp = W.pts[tutHq().pt]; if (!(selPad && selPad.pt === hp.id)) selectPoint(hp); }, skipFn: () => { if (!tutBarracks()) { const pt = W.pts[tutHq().pt], k = pt.slots.findIndex(s => !s.b); if (k >= 0) placeBuilding('barracks', ME, pt, k, true); } } },
-  { t: 'Deploy a soldier', x: 'Your Barracks is being built. When it is ready, click a Rifleman card. The soldier appears at once, then the card recharges.', t2: 'Your Barracks is ready! Click a Rifleman card. The soldier appears at once, then the card recharges for a few seconds.', target: () => { const b = tutBarracks(); if (!b) return null; return b.prog < 1 ? { world: () => [b.x, b.y + 3, b.z], label: 'Building...' } : { sel: '#panel .card[data-key="rifleman"]' }; }, ok: () => (UI.did.train || 0) >= 1, setup: () => { UI.did.train = 0; const b = tutBarracks(); if (b) camGoto(b.x, b.z); }, tick: () => { const b = tutBarracks(); if (b && b.prog >= 1 && !TUT.sel1) { TUT.sel1 = 1; selectBuilding(b); sfx('done'); } }, skipFn: () => { const b = tutBarracks(); if (b) issue({ k: 'train', b: b.id, u: 'rifleman', n: 1 }); } },
+  { t: 'Deploy a soldier', x: 'Your Barracks is being built. When it is ready, click a Rifleman card. The soldier appears at once, then the card recharges. Click again while it recharges to queue more.', t2: 'Your Barracks is ready! Click a Rifleman card. The soldier appears at once, then the card recharges for a few seconds. Click again while it recharges and the Barracks deploys the next one for you.', target: () => { const b = tutBarracks(); if (!b) return null; return b.prog < 1 ? { world: () => [b.x, b.y + 3, b.z], label: 'Building...' } : { sel: '#panel .card[data-key="rifleman"]' }; }, ok: () => (UI.did.train || 0) >= 1, setup: () => { UI.did.train = 0; const b = tutBarracks(); if (b) camGoto(b.x, b.z); }, tick: () => { const b = tutBarracks(); if (b && b.prog >= 1 && !TUT.sel1) { TUT.sel1 = 1; selectBuilding(b); sfx('done'); } }, skipFn: () => { const b = tutBarracks(); if (b) issue({ k: 'train', b: b.id, u: 'rifleman', n: 1 }); } },
   { t: 'Beat the enemy scouts', x: 'Enemy soldiers are coming! Press Army, then click an enemy soldier to attack it.', target: () => { const e = tutFoe(); return e ? { world: () => { const f = tutFoe(); return f ? [f.rx || f.x, (f.ry || 0) + 4, f.rz || f.z] : [e.x, 4, e.z]; }, label: 'Enemy' } : null; }, ok: () => TUT.foes && TUT.foes.every(u => u.dead), setup: () => { const h = tutHq(), f = tutFlag(); const bx = h.x * .55, bz = h.z * .55 + 30; TUT.foes = []; for (let i = 0; i < 3; i++) { const q = snapFree(W.M, bx + i * 4, bz + (i % 2) * 3); TUT.foes.push(spawnUnit('rifleman', 1, q[0], q[1], { hpB: .55, dmB: .6 })); } applyCmd(1, { k: 'am', ids: TUT.foes.map(u => u.id), x: h.x * .75, z: h.z * .75 + 4 }); camGoto((bx + h.x * .75) / 2, (bz + h.z * .75 + 4) / 2, true); cam.tdist = 100; }, skipFn: () => { for (const u of W.units.slice()) if (u.owner === 1 && TUT.foes && TUT.foes.includes(u)) killUnit(u, null, -1); } },
   { t: 'Level up your base', x: 'Your HQ is selected. Press Level up. This unlocks Upgrades and Support powers like airstrikes.', target: () => ({ sel: '#panel .card[data-key="lvl"]' }), ok: () => { const h = tutHq(); return h.upg || h.lvl >= 2; }, setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); goHome(); selectBuilding(tutHq()); sfx('done'); }, skipFn: () => { issue({ k: 'upg', b: tutHq().id }); } },
   { t: 'You are ready!', x: 'Capture more flags than the enemy to win. Their score drops when you hold more flags. Good luck, Commander!', btn: 'Keep playing', btn2: 'Back to menu', final: 1, setup: () => { for (const p of W.players) if (p.ai) p.ai.hold = false; PROF.tutDone = 1; saveProf(); } }
@@ -3866,7 +3947,7 @@ function buildSnapshot() {
 function buildMeta() {
   const pl = W.players.map(p => ({ s: Math.floor(p.sup), i: +p.inc.toFixed(2), p: p.pop, c: p.popCap, a: p.alive ? 1 : 0, t: Object.keys(p.techs), r: p.res ? [p.res.id, +p.res.t.toFixed(1), p.res.dur] : 0, cd: Object.fromEntries(Object.entries(p.cd).filter(e => e[1] > 0).map(e => [e[0], +e[1].toFixed(1)])), st: p.stats, o: p.out || '' }));
   const pts = W.pts.map(p => [p.owner, +p.ctrl.toFixed(3), p.capP, p.contested ? 1 : 0, p.hq]);
-  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, Object.fromEntries(Object.entries(b.cdu).map(e => [e[0], +e[1].toFixed(1)])), b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2)]);
+  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, Object.fromEntries(Object.entries(b.cdu).map(e => [e[0], +e[1].toFixed(1)])), b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.q.length ? b.q.map(e => e.u) : 0, b.qPause ? 1 : 0]);
   return { t: 'meta', tick: W.tick, time: W.t, tix: W.teamList.map(t => [t.id, Math.round(t.tickets), t.alive ? 1 : 0]), pl, pts, bs, over: W.over ? 1 : 0 };
 }
 function netHostAfterTick() { if (!NET.peer || !W.o.mp) return; if (W.tick % 2 === 0) { sendBin(buildSnapshot()); NET.snapsTx++; } if (W.tick % 4 === 0 || NET.dirty) { NET.dirty = false; sendRel(buildMeta()); } }
@@ -3898,7 +3979,7 @@ function applyMeta(m) {
     if (!b) { const T = BT[d[1]]; b = { id, k: 'b', type: d[1], T, owner: d[9], team: W.players[d[9]].team, pt: d[2], slot: d[3], x: d[15], z: d[16], y: W.M.H(d[15], d[16]), lvl: 1, spec: '', hp: 1, maxHp: 1, prog: 0, upg: null, q: [], cdu: {}, hasRally: false, rx: 0, rz: 0, aim: 0, flash: 0, fire: 0, dead: false, sz: T.sz, w: null, sb: 0, rot: d[17], born: performance.now() }; W.byId.set(id, b); W.bld.push(b); if (b.type === 'hq') W.players[b.owner].hqB = b; if (b.type === 'wall') { const pt = W.pts[b.pt]; pt.wall = b; } else if (b.slot >= 0) W.pts[b.pt].slots[b.slot].b = b; }
     if (b.hp > d[6] + 1) b.flash = .1;
     if (b.type === 'hq' && b.spec !== d[5]) { b.spec = d[5]; recalcMods(W.players[b.owner]); }
-    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.cdu = d[13] || {}; b.sb = d[14]; b.w = bWeapon(b);
+    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.cdu = d[13] || {}; b.q = d[18] ? d[18].filter(k => UT[k]).map(k => ({ u: k, c: 0 })) : []; b.qPause = !!d[19]; b.sb = d[14]; b.w = bWeapon(b);
   }
   for (let i = W.bld.length - 1; i >= 0; i--) { const b = W.bld[i]; if (!seenB.has(b.id) && performance.now() - b.born > 600) { b.dead = true; W.byId.delete(b.id); if (b.type === 'wall') { const pt = W.pts[b.pt]; if (pt.wall === b) pt.wall = null; } else if (b.slot >= 0) { const pt = W.pts[b.pt]; if (pt.slots[b.slot].b === b) pt.slots[b.slot].b = null; } W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } }
   if (m.over && !W.over) { W.over = true; }
@@ -4035,7 +4116,7 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 if (DEBUG) {
   window.__fl = {
     get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    makeAI, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    makeAI, qCount, armyRally, QCAP, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
