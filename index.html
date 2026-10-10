@@ -123,7 +123,8 @@ function fetchGame(g) {
   function next() {
     if (i >= MIRRORS.length) return Promise.reject(new Error('all mirrors failed'));
     var base = MIRRORS[i++];
-    return fetch(base + path(g)).then(function (r) {
+    // no-cache: the CDN tells browsers to keep files for 7 days; always revalidate so updates show up.
+    return fetch(base + path(g), { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
     }).then(function (html) { return { html: html, base: base }; }, next);

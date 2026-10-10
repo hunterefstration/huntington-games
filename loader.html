@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huntington Games</title>
+</head>
+<body style="margin:0;background:#0d1117;color:#8b949e;font:16px 'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">
+<div id="msg">Loading Huntington Games...</div>
+<script>
+// Huntington Games loader. Paste this into the HTML panel at jsbin.com (or save it as a .html file).
+// It downloads the newest hub from the jsDelivr CDN every time, so this code never needs updating,
+// and it works even where github.io is blocked.
+(function () {
+  var mirrors = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0;
+  function next() {
+    if (i >= mirrors.length) {
+      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>cdn.jsdelivr.net may be blocked on this network.';
+      return;
+    }
+    var url = 'https://' + mirrors[i++] + '.jsdelivr.net/gh/hunterefstration/huntington-games@main/index.html';
+    fetch(url, { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).then(function (html) {
+      document.open(); document.write(html); document.close();
+    }).catch(next);
+  }
+  next();
+})();
+</script>
+</body>
+</html>
