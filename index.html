@@ -25,6 +25,20 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 .tag.new { background: rgba(241,196,15,0.18); color: var(--gold); }
 #exp-btn { position: fixed; left: 8px; bottom: 6px; background: transparent; border: none; color: #3d4652; font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
 #exp-btn:hover { color: var(--dim); }
+#offbar { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; color: var(--dim); }
+#offbar.off { display: none; }
+#offprog { display: none; width: 140px; height: 6px; background: #1f2630; border-radius: 3px; overflow: hidden; }
+#offprog.on { display: inline-block; }
+#offfill { display: block; height: 100%; width: 0; background: var(--blue); transition: width 0.3s; }
+#offdl { background: transparent; border: 1px solid var(--line); color: var(--dim); border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+#offdl:hover { color: var(--text); border-color: var(--blue); }
+#offdl:disabled { opacity: 0.5; cursor: default; }
+#offdlg { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 6; }
+#offdlg.open { display: flex; }
+#offdlg .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 16px; font-size: 14px; line-height: 1.5; }
+#offdlg h2 { margin: 0 0 6px; font-size: 18px; }
+#offdlg .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+#offdlg .btns button { background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 12px; font: inherit; font-weight: 700; cursor: pointer; }
 #exp { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 5; }
 #exp.open { display: flex; }
 #exp .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 16px; }
@@ -49,8 +63,10 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
   <h1>HUNTINGTON GAMES</h1>
   <div class="sub">Pick a game.</div>
   <div class="grid" id="grid"></div>
+  <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
 </div>
+<div id="offdlg"><div class="box"><h2 id="offdlg-title">Offline copy</h2><div id="offdlg-text"></div><div class="btns"><button id="offdlg-again">Download again</button><button id="offdlg-tab">Open in a new tab</button><button id="offdlg-close">Close</button></div></div></div>
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
 <div id="player">
@@ -89,12 +105,13 @@ var versionReady = window.HG_VERSION ? Promise.resolve(window.HG_VERSION) : new 
   try { floor = Math.max(1, parseInt(localStorage.getItem('hg_release'), 10) || 1); } catch (e) {}
   findLatest(REPO_NAME, floor, function (n) { try { localStorage.setItem('hg_release', n); } catch (e) {} done('r' + n); });
 });
-var local = location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+var BUNDLE = window.HG_BUNDLE || null; // only set inside the saved "Huntington Games Offline.html"
+var local = !BUNDLE && (location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost');
 
 var GAMES = [
   { dir: 'Frontline', name: 'Frontline: Command', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: '3D war strategy, from rifles to mechs: capture flags, build up, command your army. Play the AI or a friend with a 6-digit code.' },
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter', img: 'blocky', tags: ['3D', 'Multiplayer'], desc: 'Zombie wave shooter: 8 maps, ranks, an armory, and online co-op or PvP with 6-digit party codes.' },
-  { dir: 'Tower Defense 2.0', name: 'Tower Defense 2.4', img: 'td', tags: ['New', 'Strategy'], desc: 'Two modes: Tower Mode (40+ towers with specialties) or Troop Mode (8 barracks, contractors, command your army). 1900 to the future.' },
+  { dir: 'Tower Defense 2.0', name: 'Tower Defense 2.5', img: 'td', tags: ['New', 'Strategy'], desc: 'Two modes: Tower Mode (40+ towers with specialties) or Troop Mode (8 barracks, contractors, command your army). 1900 to the future.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon', img: 'coffee', tags: ['Tycoon'], desc: 'Build, staff and grow a chain of coffee shops.' },
   { dir: 'Tetris', name: 'Tetris Surge', img: 'tetris', tags: ['New', 'Puzzle'], desc: 'Power blocks, perks and bosses in a rogue-lite run, plus Marathon, Sprint, Ultra and Zen.' },
   { dir: 'Market Life 1.9', name: 'Market & Life', img: 'market', tags: ['Sim'], desc: 'Climb the career ladder, start businesses and play the market.' },
@@ -119,13 +136,21 @@ function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.cl
 function render() {
   if (!local && !MIRRORS.length) { versionReady.then(function (v) { setVersion(v); render(); }); return; }
   var grid = document.getElementById('grid');
+  grid.innerHTML = ''; document.getElementById('exp-list').innerHTML = '';
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
     var m = 0;
-    img.alt = g.name; img.loading = 'lazy'; img.src = (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg';
+    function fallback() { shot.innerHTML = ''; shot.appendChild(el('div', 'fallback', g.name)); }
+    img.alt = g.name; img.loading = 'lazy';
+    img.src = BUNDLE ? (BUNDLE.files['img:' + g.img] || '') : (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg';
     img.onerror = function () {
-      if (!local && ++m < MIRRORS.length) { img.src = MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
-      shot.innerHTML = ''; shot.appendChild(el('div', 'fallback', g.name));
+      if (!local && !BUNDLE && ++m < MIRRORS.length) { img.src = MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
+      if (!local && !BUNDLE && !img.getAttribute('data-c')) { // network failed: try the saved copy
+        img.setAttribute('data-c', '1');
+        idbGet('img:' + g.img).then(function (b) { if (b && b.size) img.src = URL.createObjectURL(b); else fallback(); });
+        return;
+      }
+      fallback();
     };
     shot.appendChild(img); b.appendChild(shot);
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div><div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
@@ -143,23 +168,355 @@ var frame = document.getElementById('frame'), current = null, loadId = 0;
 function message(text) {
   return '<!DOCTYPE html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#8b949e;font:16px Segoe UI,sans-serif;text-align:center;padding:20px;box-sizing:border-box">' + text + '</body></html>';
 }
-// Try each CDN mirror until one answers. Resolves to { html, base }.
-function fetchGame(g) {
+// Try each CDN mirror until one answers. Resolves to { html, base } (html is a Blob when asBlob).
+function timedFetch(url, ms, opts) {
+  var c = window.AbortController ? new AbortController() : null, o = opts || {}, t;
+  if (c) o.signal = c.signal;
+  t = setTimeout(function () { if (c) c.abort(); }, ms);
+  return fetch(url, o).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
+}
+function fetchRepo(p, asBlob) {
   var i = 0;
   function next() {
     if (i >= MIRRORS.length) return Promise.reject(new Error('all mirrors failed'));
     var base = MIRRORS[i++];
     // no-cache: the CDN tells browsers to keep files for 7 days; always revalidate so updates show up.
-    return fetch(base + path(g), { cache: 'no-cache' }).then(function (r) {
+    return timedFetch(base + p, 25000, { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.text();
-    }).then(function (html) { return { html: html, base: base }; }, next);
+      return asBlob ? r.blob() : r.text();
+    }).then(function (body) { return { html: body, base: base }; }, next);
   }
   return versionReady.then(function (v) { if (!MIRRORS.length) setVersion(v); return next(); });
 }
+function fetchGame(g) { return fetchRepo(path(g)); }
 function withBase(html, href) {
   var tag = '<base href="' + href + '">';
   return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
+}
+// ===== Offline: download every game and library at start, keep them in memory + IndexedDB, run from the copy =====
+// IndexedDB "hg-offline", store "files". Keys: hub, meta, game:<dir>/<file>, lib:<url>, img:<name>.
+// Libraries are stored by their exact (version pinned) URL, games by release, so a new release only re-downloads
+// the game files whose hash changed.
+var dbPromise = null, MEM = {}, metaP = null, cacheP = null, blobUrls = {}, libBusy = {};
+var OFF = { saved: 0, total: GAMES.length + EXPERIMENTAL.length, done: {}, failed: 0, running: false };
+function openDB() {
+  if (!dbPromise) dbPromise = new Promise(function (resolve) {
+    try {
+      var rq = indexedDB.open('hg-offline', 1);
+      rq.onupgradeneeded = function () { try { rq.result.createObjectStore('files'); } catch (e) {} };
+      rq.onsuccess = function () { resolve(rq.result); };
+      rq.onerror = rq.onblocked = function () { resolve(null); };
+    } catch (e) { resolve(null); }
+  });
+  return dbPromise;
+}
+function idbDo(mode, fn) { // resolves to the request result, or null on any problem
+  return openDB().then(function (db) {
+    return new Promise(function (resolve) {
+      if (!db) return resolve(null);
+      try {
+        var tx = db.transaction('files', mode), rq = fn(tx.objectStore('files'));
+        tx.oncomplete = function () { resolve(rq.result === undefined ? null : rq.result); };
+        tx.onerror = tx.onabort = function () { resolve(null); };
+      } catch (e) { resolve(null); }
+    });
+  });
+}
+function idbGet(k) { return idbDo('readonly', function (s) { return s.get(k); }); }
+function idbPut(k, v) { return idbDo('readwrite', function (s) { return s.put(v, k); }); }
+function idbHas(k) { return idbDo('readonly', function (s) { return s.count(k); }).then(function (n) { return n > 0; }); }
+function gkey(g) { return 'game:' + g.dir + '/' + (g.file || 'index.html'); }
+// A saved record is { text, rel, sha }. In the offline copy the files are plain strings.
+function getRec(key) {
+  if (BUNDLE) { var v = BUNDLE.files[key]; return Promise.resolve(typeof v === 'string' ? { text: v, rel: BUNDLE.version } : null); }
+  if (MEM[key]) return Promise.resolve(MEM[key]);
+  return idbGet(key).then(function (r) { if (r && typeof r.text === 'string') MEM[key] = r; return r && typeof r.text === 'string' ? r : null; });
+}
+function getMeta() {
+  if (BUNDLE) return Promise.resolve(BUNDLE.meta);
+  if (!metaP) metaP = idbGet('meta').then(function (m) { m = m || {}; m.libs = m.libs || {}; m.mods = m.mods || {}; return m; });
+  return metaP;
+}
+function offText(t) { var e = document.getElementById('offstat'); if (e) e.textContent = t; }
+function offProgress() {
+  var n = Object.keys(OFF.done).length, bar = document.getElementById('offprog');
+  OFF.saved = n;
+  if (n >= OFF.total) { offText('All games ready offline'); bar.classList.remove('on'); return; }
+  offText((OFF.running ? 'Downloading games ' : 'Offline: ') + n + '/' + OFF.total + (OFF.running ? '' : ' games saved'));
+  document.getElementById('offfill').style.width = Math.round(100 * n / OFF.total) + '%';
+  if (OFF.running) bar.classList.add('on'); else bar.classList.remove('on');
+}
+// --- finding the libraries a game needs ---
+var LIB_HOST = /^https:\/\/(?:cdn\.jsdelivr\.net\/npm|cdnjs\.cloudflare\.com\/ajax|unpkg\.com|cdn\.tailwindcss\.com|fonts\.googleapis\.com\/css)/;
+var URL_RE = /https:\/\/(?:cdn\.jsdelivr\.net\/npm|cdnjs\.cloudflare\.com\/ajax|unpkg\.com|cdn\.tailwindcss\.com|fonts\.googleapis\.com\/css2?)[^"'\s)<>`\\]*/g;
+// cdn.tailwindcss.com sends no CORS header so it cannot be copied directly; jsDelivr hosts the same script.
+var LIB_ALIAS = { 'https://cdn.tailwindcss.com': 'https://cdn.jsdelivr.net/npm/tailwindcss-cdn@3.4.10/tailwindcss.js' };
+function escRe(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function libUrls(html) {
+  var out = [];
+  (html.match(URL_RE) || []).forEach(function (u) { u = u.replace(/&amp;/g, '&'); if (!/\/$/.test(u) && out.indexOf(u) < 0) out.push(u); });
+  return out;
+}
+function importMapOf(html) {
+  var m = /<script[^>]*type=["']importmap["'][^>]*>([\s\S]*?)<\/script>/i.exec(html);
+  if (!m) return null;
+  try { var j = JSON.parse(m[1]); return { imports: j.imports || {}, start: m.index + m[0].indexOf(m[1]), end: m.index + m[0].indexOf(m[1]) + m[1].length, json: j }; } catch (e) { return null; }
+}
+function resolveBare(s, im) {
+  if (im[s]) return im[s];
+  var best = null;
+  Object.keys(im).forEach(function (k) { if (/\/$/.test(k) && s.indexOf(k) === 0 && (!best || k.length > best.length)) best = k; });
+  return best ? im[best] + s.slice(best.length) : null;
+}
+function mapUrls(html, im) { // module files named by the import map, with prefix entries expanded from the html
+  var out = [];
+  Object.keys(im).forEach(function (k) {
+    if (/\/$/.test(k)) {
+      var re = new RegExp('[\'"]' + escRe(k) + '([^\'"\\s]+)[\'"]', 'g'), m;
+      while ((m = re.exec(html))) if (out.indexOf(im[k] + m[1]) < 0) out.push(im[k] + m[1]);
+    } else if (out.indexOf(im[k]) < 0) out.push(im[k]);
+  });
+  return out;
+}
+function moduleDeps(text, url, im) {
+  var out = [], re = /(?:\bfrom\s*|\bimport\s*\(?\s*)(['"])([^'"\n]+)\1/g, m, s, u;
+  while ((m = re.exec(text))) {
+    s = m[2]; u = null;
+    if (/^\.{0,2}\//.test(s)) { try { u = new URL(s, url).href; } catch (e) {} }
+    else if (/^https:/.test(s)) { if (LIB_HOST.test(s)) u = s; }
+    else u = resolveBare(s, im);
+    if (u && out.indexOf(u) < 0) out.push(u);
+  }
+  return out;
+}
+function rewriteRel(t, base) { // relative imports of a module -> absolute CDN urls, which the import map points at blobs
+  return t.replace(/(\bfrom\s*|\bimport\s*\(?\s*)(['"])(\.{1,2}\/[^'"\n]*)\2/g, function (m, a, q, s) { try { return a + q + new URL(s, base).href + q; } catch (e) { return m; } });
+}
+// --- downloading ---
+function fetchLib(url) { // CDN file with a timeout and mirror fallback
+  var urls = [url];
+  if (/^https:\/\/cdn\.jsdelivr\.net\//.test(url)) ['fastly', 'gcore'].forEach(function (h) { urls.push(url.replace('//cdn.', '//' + h + '.')); });
+  var i = 0;
+  function next() {
+    return timedFetch(urls[i++], 30000).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r; }).catch(function (e) { if (i < urls.length) return next(); throw e; });
+  }
+  return next();
+}
+function toDataUri(blob) { return new Promise(function (res) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { res(''); }; r.readAsDataURL(blob); }); }
+function fontCss(url) { // Google Fonts css -> latin subset with the font files inlined as data: urls
+  return fetchLib(url).then(function (r) { return r.text(); }).then(function (css) {
+    var blocks = [], re = /\/\*\s*([\w-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g, m, seen = {};
+    while ((m = re.exec(css))) if (m[1] === 'latin') blocks.push(m[2]);
+    if (!blocks.length) blocks = css.match(/@font-face\s*\{[^}]*\}/g) || [];
+    return Promise.all(blocks.map(function (b) {
+      var um = /url\(\s*(['"]?)(https:[^)'"\s]+)\1\s*\)/.exec(b);
+      if (!um) return b;
+      seen[um[2]] = seen[um[2]] || fetchLib(um[2]).then(function (r) { return r.blob(); }).then(toDataUri);
+      return seen[um[2]].then(function (d) { return b.replace(um[0], function () { return 'url(' + d + ')'; }); });
+    })).then(function (a) { return a.join('\n'); });
+  });
+}
+function ensureLib(url) { // resolves true when the library is in the cache
+  var key = 'lib:' + url;
+  if (libBusy[key]) return libBusy[key];
+  return libBusy[key] = idbHas(key).then(function (have) {
+    if (have) return true;
+    var work = /^https:\/\/fonts\.googleapis\.com\//.test(url) ? fontCss(url) : fetchLib(LIB_ALIAS[url] || url).then(function (r) { return r.text(); });
+    return work.then(function (text) { return idbPut(key, { text: text }); }).then(function (ok) { return !!ok; });
+  }).catch(function () { return false; }).then(function (ok) { if (!ok) delete libBusy[key]; return ok; });
+}
+async function cacheLibsFor(html) { // downloads every library a game page needs; resolves { urls, ok }
+  var imap = importMapOf(html), im = imap ? imap.imports : {}, urls = libUrls(html), meta = await getMeta();
+  var queue = mapUrls(html, im), seen = {}, ok = true, all = {};
+  queue.forEach(function (u) { if (urls.indexOf(u) < 0) urls.push(u); });
+  urls.forEach(function (u) { all[u] = 1; });
+  while (queue.length) {
+    var u = queue.shift();
+    if (seen[u]) continue;
+    seen[u] = 1; all[u] = 1; meta.mods[u] = 1;
+    if (!(await ensureLib(u))) { ok = false; continue; }
+    var rec = await idbGet('lib:' + u);
+    if (rec && rec.text) moduleDeps(rec.text, u, im).forEach(function (d) { if (!seen[d]) queue.push(d); });
+  }
+  var rs = await Promise.all(urls.filter(function (u) { return !seen[u]; }).map(ensureLib));
+  if (rs.indexOf(false) >= 0) ok = false;
+  return { urls: Object.keys(all), ok: ok };
+}
+function fetchHashes(v) { // per-file hashes of a release (jsDelivr data API), so unchanged files are not downloaded again
+  return timedFetch('https://data.jsdelivr.com/v1/packages/gh/' + REPO_NAME + '@' + v + '?structure=flat', 8000).then(function (r) { return r.json(); }).then(function (j) {
+    var m = {}; (j.files || []).forEach(function (f) { m[f.name] = f.hash; }); return m;
+  }).catch(function () { return null; });
+}
+async function cacheGame(g, v, hashes) {
+  var key = gkey(g), meta = await getMeta(), hash = (hashes && hashes['/' + g.dir + '/' + (g.file || 'index.html')]) || null;
+  var rec = await getRec(key), html;
+  if (rec && (rec.rel === v || (hash && rec.sha === hash))) {
+    html = rec.text;
+    if (rec.rel !== v) { rec = { text: html, rel: v, sha: hash }; MEM[key] = rec; await idbPut(key, rec); }
+  } else {
+    html = (await fetchGame(g)).html;
+    rec = { text: html, rel: v, sha: hash }; MEM[key] = rec;
+    if (!(await idbPut(key, rec))) { /* storage full or blocked: still usable from memory */ }
+  }
+  var libs = await cacheLibsFor(html);
+  if (!libs.ok) return false;
+  meta.libs[g.dir] = libs.urls;
+  return true;
+}
+async function runCache() {
+  var all = GAMES.concat(EXPERIMENTAL);
+  var db = await openDB();
+  if (!db) { offText('Offline saving is not available in this browser.'); return; }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  var v = await versionReady;
+  if (!MIRRORS.length) setVersion(v);
+  var meta = await getMeta();
+  // games that are already saved for this release count right away
+  await Promise.all(all.map(function (g) {
+    return getRec(gkey(g)).then(function (r) { if (r && r.rel === v && meta.libs[g.dir]) OFF.done[g.dir] = 1; });
+  }));
+  OFF.running = true; OFF.failed = 0; offProgress();
+  var hub = await idbGet('hub');
+  if (!hub || hub.rel !== v) { try { var h = await fetchRepo('index.html'); await idbPut('hub', { text: h.html, rel: v }); } catch (e) {} }
+  var hashes = await fetchHashes(v);
+  var imgs = GAMES.map(function (g) {
+    return idbHas('img:' + g.img).then(function (have) { if (have) return; return fetchRepo('hub/' + g.img + '.jpg', true).then(function (r) { return idbPut('img:' + g.img, r.html); }).catch(function () {}); });
+  });
+  var i = 0;
+  async function worker() {
+    while (i < all.length) {
+      var g = all[i++], ok = false;
+      try { ok = await cacheGame(g, v, hashes); } catch (e) { ok = false; }
+      if (ok) OFF.done[g.dir] = 1; else OFF.failed++;
+      offProgress();
+    }
+  }
+  await Promise.all([worker(), worker(), worker()].concat(imgs));
+  await idbPut('meta', meta);
+  OFF.running = false; offProgress();
+  if (Object.keys(OFF.done).length < OFF.total) offText('Offline: ' + Object.keys(OFF.done).length + '/' + OFF.total + ' games saved (will retry next time)');
+}
+function startCache() {
+  if (!cacheP) cacheP = runCache().catch(function () { OFF.running = false; offText('Offline saving paused'); });
+  return cacheP;
+}
+// --- running a game from the saved copy ---
+function blobFor(url) { // library -> blob: url, made once per session
+  if (blobUrls[url]) return blobUrls[url];
+  return blobUrls[url] = getRec('lib:' + url).then(function (r) {
+    if (!r) return null;
+    return getMeta().then(function (meta) {
+      var t = r.text, type = /\.css$|fonts\.googleapis\.com/.test(url) ? 'text/css' : 'text/javascript';
+      if (meta.mods[url]) t = rewriteRel(t, url);
+      return URL.createObjectURL(new Blob([t], { type: type }));
+    });
+  });
+}
+async function inlineLibs(html, g) {
+  var meta = await getMeta(), urls = (meta.libs || {})[g.dir];
+  if (!urls || !urls.length) return html;
+  var blobs = {}, have = [];
+  for (var k = 0; k < urls.length; k++) { var b = await blobFor(urls[k]); if (b) { blobs[urls[k]] = b; have.push(urls[k]); } }
+  var imap = importMapOf(html), holder = '\u0001HGMAP\u0001', mapText = null;
+  if (imap) {
+    var im = imap.imports;
+    have.forEach(function (u) {
+      Object.keys(im).forEach(function (key) {
+        var val = im[key];
+        if (val === u) im[key] = blobs[u];
+        else if (/\/$/.test(key) && /\/$/.test(val) && u.indexOf(val) === 0) im[key + u.slice(val.length)] = blobs[u];
+      });
+      if (meta.mods[u]) im[u] = blobs[u]; // rewritten relative imports point here
+    });
+    mapText = JSON.stringify(imap.json);
+    html = html.slice(0, imap.start) + holder + html.slice(imap.end);
+  }
+  have.sort(function (a, c) { return c.length - a.length; }).forEach(function (u) {
+    html = html.split(u).join(blobs[u]);
+    if (u.indexOf('&') >= 0) html = html.split(u.replace(/&/g, '&amp;')).join(blobs[u]);
+  });
+  if (mapText) html = html.replace(holder, function () { return mapText; });
+  return html;
+}
+// Saved copy first (instant, no network). Fall back to the network, and to the saved copy if the network is slow.
+function loadGameHtml(g) {
+  var key = gkey(g);
+  if (BUNDLE) return getRec(key).then(function (r) { if (!r) throw new Error('missing'); return { html: r.text, base: '' }; });
+  return versionReady.then(function (v) {
+    if (!MIRRORS.length) setVersion(v);
+    return getRec(key).then(function (rec) {
+      if (rec && rec.rel === v) return { html: rec.text, base: MIRRORS[0], cached: true };
+      return new Promise(function (resolve, reject) {
+        var done = false, timer = setTimeout(function () { if (rec && !done) { done = true; resolve({ html: rec.text, base: MIRRORS[0], cached: true }); } }, 4000);
+        fetchGame(g).then(function (r) {
+          clearTimeout(timer);
+          if (!rec || rec.text !== r.html) { var nr = { text: r.html, rel: v, sha: null }; MEM[key] = nr; idbPut(key, nr); }
+          if (!done) { done = true; resolve(r); }
+        }, function (err) {
+          clearTimeout(timer);
+          if (done) return;
+          done = true;
+          if (rec) resolve({ html: rec.text, base: MIRRORS[0], cached: true }); else reject(err);
+        });
+      });
+    });
+  });
+}
+function prepare(html, g, base) {
+  return inlineLibs(html, g).catch(function () { return html; }).then(function (h) { return BUNDLE ? h : withBase(h, base + encodeURI(g.dir) + '/'); });
+}
+// --- the one-file offline copy ---
+var offlineUrl = null;
+async function buildOfflineHtml() {
+  if (cacheP) await cacheP;
+  cacheP = null; await startCache(); // fills any gaps; quick when everything is already saved
+  var v = await versionReady, meta = await getMeta(), files = {}, libs = {}, missing = [];
+  var all = GAMES.concat(EXPERIMENTAL);
+  for (var i = 0; i < all.length; i++) {
+    var g = all[i], r = await getRec(gkey(g)), urls = meta.libs[g.dir];
+    if (!r || !urls) { missing.push(g.name); continue; }
+    files[gkey(g)] = r.text; libs[g.dir] = urls;
+    for (var j = 0; j < urls.length; j++) if (!files['lib:' + urls[j]]) { var l = await idbGet('lib:' + urls[j]); if (l) files['lib:' + urls[j]] = l.text; }
+  }
+  for (var k = 0; k < GAMES.length; k++) { var im = await idbGet('img:' + GAMES[k].img); if (im && im.size) files['img:' + GAMES[k].img] = await toDataUri(im); }
+  var hub = await idbGet('hub'), hubText = hub && hub.text;
+  if (!hubText) hubText = (await fetchRepo('index.html')).html;
+  var json = JSON.stringify({ version: v, files: files, meta: { libs: libs, mods: meta.mods } })
+    .replace(/[\u007f-\uffff]/g, function (c) { return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4); }).replace(/</g, '\\u003c');
+  var tag = '<script>window.HG_VERSION=' + JSON.stringify(v) + ';window.HG_BUNDLE=' + json + ';<\/script>';
+  var html = hubText.replace('<title>Huntington Games</title>', '<title>Huntington Games Offline</title>');
+  html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
+  return { html: html, missing: missing };
+}
+function showOfflineDialog(title, text, canSave) {
+  document.getElementById('offdlg-title').textContent = title;
+  document.getElementById('offdlg-text').innerHTML = text;
+  document.getElementById('offdlg-again').style.display = document.getElementById('offdlg-tab').style.display = canSave ? '' : 'none';
+  document.getElementById('offdlg').classList.add('open');
+}
+function saveOffline() {
+  if (!offlineUrl) return;
+  try { var a = document.createElement('a'); a.href = offlineUrl; a.download = 'Huntington Games Offline.html'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
+}
+async function downloadOffline() {
+  var btn = document.getElementById('offdl');
+  btn.disabled = true; var old = btn.textContent; btn.textContent = 'Preparing...';
+  showOfflineDialog('Offline copy', 'Getting every game ready. This can take a minute on a slow connection...', false);
+  try {
+    var res = await buildOfflineHtml(), size = res.html.length;
+    var blob = new Blob([res.html], { type: 'text/html' });
+    if (offlineUrl) { try { URL.revokeObjectURL(offlineUrl); } catch (e) {} }
+    offlineUrl = URL.createObjectURL(blob);
+    saveOffline();
+    showOfflineDialog('Offline copy ready',
+      '<b>Huntington Games Offline.html</b> (' + (size / 1048576).toFixed(1) + ' MB) should now be in your Downloads folder.' +
+      (res.missing.length ? '<br><br>Not included (could not be downloaded): ' + res.missing.join(', ') + '.' : '') +
+      '<br><br>If nothing downloaded (some school browsers block it here), press <b>Open in a new tab</b>, then press <b>Ctrl+S</b> and choose "Webpage, HTML Only".' +
+      '<br><br>Keep the file in your Files app and open it any time, with no internet. Online multiplayer (Frontline, Blocky Shooter) still needs internet.', true);
+  } catch (e) {
+    showOfflineDialog('Offline copy', 'Could not build the offline copy. Check your connection and try again.', false);
+  }
+  btn.disabled = false; btn.textContent = old;
 }
 function play(g) {
   var id = ++loadId;
@@ -169,13 +526,16 @@ function play(g) {
   try { history.replaceState(null, '', '#' + encodeURIComponent(g.dir)); } catch (e) {}
   if (local) { frame.removeAttribute('srcdoc'); frame.src = path(g); return; }
   frame.srcdoc = message('Loading ' + g.name + '...');
-  fetchGame(g).then(function (r) {
+  loadGameHtml(g).then(function (r) {
     if (id !== loadId) return;
-    current.html = withBase(r.html, r.base + encodeURI(g.dir) + '/');
-    frame.srcdoc = current.html;
-  }, function () {
+    return prepare(r.html, g, r.base).then(function (h) {
+      if (id !== loadId) return;
+      current.html = h;
+      frame.srcdoc = h;
+    });
+  }).catch(function () {
     if (id !== loadId) return;
-    frame.srcdoc = message('Could not download ' + g.name + '.<br>The game CDN (cdn.jsdelivr.net) may be blocked on this network.');
+    frame.srcdoc = message('Could not load ' + g.name + '.<br>' + (BUNDLE ? 'This game is missing from the offline copy.' : 'The game CDN (cdn.jsdelivr.net) may be blocked on this network, or you are offline and this game is not saved yet.'));
   });
 }
 function closePlayer() {
@@ -197,8 +557,14 @@ document.addEventListener('fullscreenchange', function () { document.getElementB
 document.getElementById('exp-btn').onclick = function () { document.getElementById('exp').classList.add('open'); };
 document.getElementById('exp-close').onclick = function () { document.getElementById('exp').classList.remove('open'); };
 document.getElementById('exp').onclick = function (e) { if (e.target.id === 'exp') e.target.classList.remove('open'); };
-document.getElementById('note').textContent = local ? '' : 'Games load from the jsDelivr CDN.';
+document.getElementById('note').textContent = BUNDLE ? 'Offline copy of release ' + BUNDLE.version + '. Online multiplayer (Frontline, Blocky Shooter) needs internet.' : local ? '' : 'Games load from the jsDelivr CDN.';
+document.getElementById('offdl').onclick = downloadOffline;
+document.getElementById('offdlg-close').onclick = function () { document.getElementById('offdlg').classList.remove('open'); };
+document.getElementById('offdlg-again').onclick = saveOffline;
+document.getElementById('offdlg-tab').onclick = function () { if (offlineUrl) { try { window.open(offlineUrl, '_blank'); } catch (e) {} } };
+if (local || BUNDLE) document.getElementById('offbar').className = 'off';
 render();
+if (!local && !BUNDLE) startCache(); // download every game and library right away
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
 </script>
