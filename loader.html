@@ -12,22 +12,27 @@
 // It downloads the newest hub from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
 // and it works even where github.io is blocked.
 (function () {
-  var sources = ['https://raw.githubusercontent.com/hunterefstration/huntington-games/main/'].concat(
-    ['cdn', 'fastly', 'gcore', 'testingcf'].map(function (m) { return 'https://' + m + '.jsdelivr.net/gh/hunterefstration/huntington-games@main/'; })), i = 0;
+  var repo = 'hunterefstration/huntington-games';
+  var hosts = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0, version = null;
   function next() {
-    if (i >= sources.length) {
-      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>raw.githubusercontent.com and cdn.jsdelivr.net may be blocked on this network.';
+    if (i >= hosts.length) {
+      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>cdn.jsdelivr.net may be blocked on this network.';
       return;
     }
-    var url = sources[i++] + 'index.html';
+    var url = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@' + (version || 'main') + '/index.html';
     fetch(url, { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
     }).then(function (html) {
+      var tag = '<script>window.HG_VERSION = ' + JSON.stringify(version) + ';<\/script>';
+      html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
       document.open(); document.write(html); document.close();
     }).catch(next);
   }
-  next();
+  // latest.json names the newest commit; an exact commit is never stale. Falls back to @main.
+  fetch('https://cdn.jsdelivr.net/gh/' + repo + '@main/latest.json', { cache: 'no-cache' })
+    .then(function (r) { return r.json(); }).then(function (j) { version = j.sha || null; })
+    .catch(function () {}).then(next);
 })();
 </script>
 </body>

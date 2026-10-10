@@ -62,10 +62,15 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 // Anywhere else (jsbin, a copy from the Google Doc...) the game code is fetched from the jsDelivr CDN mirror of
 // the GitHub repo and written into the frame, so the browser never navigates to github.io (school Chromebooks
 // often block that). Same trick as the Hollow Knight web port.
-var REPO = 'hunterefstration/huntington-games@main/';
-var IMG_MIRRORS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/', 'https://gcore.jsdelivr.net/gh/', 'https://testingcf.jsdelivr.net/gh/'].map(function (m) { return m + REPO; });
-// Game code: GitHub's raw server first (updates within 5 minutes), then jsDelivr (can lag up to 12 hours).
-var MIRRORS = ['https://raw.githubusercontent.com/hunterefstration/huntington-games/main/'].concat(IMG_MIRRORS);
+// jsDelivr caches @main for up to 12 hours, but an exact commit (@<sha>) is served fresh right away.
+// latest.json (purged on every release) names the newest commit; load everything from that commit.
+var REPO_NAME = 'hunterefstration/huntington-games';
+var LATEST_URL = 'https://cdn.jsdelivr.net/gh/' + REPO_NAME + '@main/latest.json';
+var MIRROR_HOSTS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/', 'https://gcore.jsdelivr.net/gh/', 'https://testingcf.jsdelivr.net/gh/'];
+var MIRRORS = [];
+function setVersion(v) { MIRRORS = MIRROR_HOSTS.map(function (m) { return m + REPO_NAME + '@' + (v || 'main') + '/'; }); }
+var versionReady = window.HG_VERSION ? Promise.resolve(window.HG_VERSION) :
+  fetch(LATEST_URL, { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (j) { return j.sha; }).catch(function () { return null; });
 var local = location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
 
 var GAMES = [
@@ -94,6 +99,7 @@ var EXPERIMENTAL = [
 function path(g) { return encodeURI(g.dir) + '/' + (local ? 'index.html' : (g.file || 'index.html')); }
 function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 function render() {
+  if (!local && !MIRRORS.length) { versionReady.then(function (v) { setVersion(v); render(); }); return; }
   var grid = document.getElementById('grid');
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
@@ -131,7 +137,7 @@ function fetchGame(g) {
       return r.text();
     }).then(function (html) { return { html: html, base: base }; }, next);
   }
-  return next();
+  return versionReady.then(function (v) { if (!MIRRORS.length) setVersion(v); return next(); });
 }
 function withBase(html, href) {
   var tag = '<base href="' + href + '">';
