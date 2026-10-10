@@ -63,7 +63,9 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 // the GitHub repo and written into the frame, so the browser never navigates to github.io (school Chromebooks
 // often block that). Same trick as the Hollow Knight web port.
 var REPO = 'hunterefstration/huntington-games@main/';
-var MIRRORS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/', 'https://gcore.jsdelivr.net/gh/', 'https://testingcf.jsdelivr.net/gh/'].map(function (m) { return m + REPO; });
+var IMG_MIRRORS = ['https://cdn.jsdelivr.net/gh/', 'https://fastly.jsdelivr.net/gh/', 'https://gcore.jsdelivr.net/gh/', 'https://testingcf.jsdelivr.net/gh/'].map(function (m) { return m + REPO; });
+// Game code: GitHub's raw server first (updates within 5 minutes), then jsDelivr (can lag up to 12 hours).
+var MIRRORS = ['https://raw.githubusercontent.com/hunterefstration/huntington-games/main/'].concat(IMG_MIRRORS);
 var local = location.protocol === 'file:' || /github\.io$/.test(location.hostname) || location.hostname === '127.0.0.1' || location.hostname === 'localhost';
 
 var GAMES = [
@@ -96,9 +98,9 @@ function render() {
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
     var m = 0;
-    img.alt = g.name; img.loading = 'lazy'; img.src = (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg';
+    img.alt = g.name; img.loading = 'lazy'; img.src = (local ? '' : IMG_MIRRORS[0]) + 'hub/' + g.img + '.jpg';
     img.onerror = function () {
-      if (!local && ++m < MIRRORS.length) { img.src = MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
+      if (!local && ++m < IMG_MIRRORS.length) { img.src = IMG_MIRRORS[m] + 'hub/' + g.img + '.jpg'; return; }
       shot.innerHTML = ''; shot.appendChild(el('div', 'fallback', g.name));
     };
     shot.appendChild(img); b.appendChild(shot);

@@ -9,16 +9,17 @@
 <div id="msg">Loading Huntington Games...</div>
 <script>
 // Huntington Games loader. Paste this into the HTML panel at jsbin.com (or save it as a .html file).
-// It downloads the newest hub from the jsDelivr CDN every time, so this code never needs updating,
+// It downloads the newest hub from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
 // and it works even where github.io is blocked.
 (function () {
-  var mirrors = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0;
+  var sources = ['https://raw.githubusercontent.com/hunterefstration/huntington-games/main/'].concat(
+    ['cdn', 'fastly', 'gcore', 'testingcf'].map(function (m) { return 'https://' + m + '.jsdelivr.net/gh/hunterefstration/huntington-games@main/'; })), i = 0;
   function next() {
-    if (i >= mirrors.length) {
-      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>cdn.jsdelivr.net may be blocked on this network.';
+    if (i >= sources.length) {
+      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>raw.githubusercontent.com and cdn.jsdelivr.net may be blocked on this network.';
       return;
     }
-    var url = 'https://' + mirrors[i++] + '.jsdelivr.net/gh/hunterefstration/huntington-games@main/index.html';
+    var url = sources[i++] + 'index.html';
     fetch(url, { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
