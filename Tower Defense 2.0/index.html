@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tower Defense - Version 2.3</title>
+<title>Tower Defense - Version 2.4</title>
 <style>
 :root { --bg: #0f1216; --panel: rgba(18, 22, 28, 0.92); --line: rgba(255,255,255,0.10); --text: #e8ecf1; --dim: #9aa4b2; --gold: #f1c40f; --red: #e74c3c; --green: #2ecc71; --blue: #3498db; --purple: #9b59b6; --orange: #e67e22; }
 * { box-sizing: border-box; }
@@ -31,6 +31,15 @@ kbd { font-family: monospace; font-size: 11px; background: rgba(255,255,255,0.1)
 .subtitle { color: var(--dim); font-style: italic; margin: 2px 0 18px; }
 .menu-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
 .section-title { font-size: 12px; font-weight: 800; letter-spacing: 2px; color: var(--dim); margin: 18px 0 8px; text-transform: uppercase; }
+.gm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gm-card { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 16px 18px 14px; border: 2px solid #2c3a49; white-space: normal; min-height: 170px; }
+.gm-card.on { border-color: var(--gmc); box-shadow: 0 0 0 2px var(--gmc), 0 6px 22px rgba(0,0,0,0.45); background: rgba(255,255,255,0.07); }
+.gm-card .gm-tag { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #fff; padding: 2px 8px; border-radius: 4px; }
+.gm-card .gm-name { font-size: 24px; line-height: 1.1; }
+.gm-card .gm-desc { font-size: 13px; color: #cfd8e3; font-weight: 500; }
+.gm-card ul { margin: 2px 0 0; padding-left: 18px; font-size: 12px; color: var(--dim); font-weight: 500; }
+.gm-card .gm-sel { position: absolute; top: 12px; right: 14px; font-size: 11px; font-weight: 800; color: var(--gmc); letter-spacing: 1px; }
+@media (max-width: 560px) { .gm-row { grid-template-columns: 1fr; } .gm-card { min-height: 0; padding: 12px 14px; } .gm-card .gm-name { font-size: 20px; } }
 .choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .choice { flex: 1 1 140px; text-align: left; padding: 10px 12px; }
 .choice small { display: block; font-weight: 500; color: var(--dim); font-size: 11px; margin-top: 3px; white-space: normal; }
@@ -185,14 +194,16 @@ table.stats th { color: var(--dim); font-weight: 700; }
     <div id="menu-note" class="subtitle" style="font-style:normal;color:#ffd54f"></div>
     <div class="section-title">Your records</div>
     <div id="records" class="subtitle" style="font-style:normal"></div>
-    <div class="version">VERSION 2.3 &middot; 1900 AND BEYOND</div>
+    <div class="version">VERSION 2.4 &middot; 1900 AND BEYOND</div>
   </div>
 
   <div class="menu-card hidden" id="menu-new">
     <h1 class="title" style="font-size:34px">NEW GAME</h1>
+    <div class="section-title">Game mode</div>
+    <div class="gm-row" id="gm-choices"></div>
     <div class="section-title">Difficulty</div>
     <div class="choice-row" id="diff-choices"></div>
-    <div class="section-title">Mode</div>
+    <div class="section-title">Length</div>
     <div class="choice-row" id="mode-choices"></div>
     <div class="section-title">Map variant</div>
     <div class="choice-row" id="variant-choices"></div>
@@ -209,6 +220,7 @@ table.stats th { color: var(--dim); font-weight: 700; }
   <div id="hud">
     <div class="hud-stat" title="Money"><span style="color:var(--gold)">$</span><b id="h-money">0</b></div>
     <div class="hud-stat" title="Base health"><span style="color:var(--red)">&#9829;</span><b id="h-lives">0</b></div>
+    <div class="hud-stat" title="Game mode"><b id="h-mode" style="font-size:12px;letter-spacing:1px"></b></div>
     <div class="hud-stat" title="Wave"><span>Wave</span><b id="h-wave">0</b><span id="h-wavemax" style="color:var(--dim)"></span></div>
     <div class="hud-stat" title="This wave"><span id="h-wavetype" style="color:var(--blue);font-weight:800">-</span></div>
     <div id="wave-preview"></div>
@@ -286,14 +298,33 @@ table.stats th { color: var(--dim); font-weight: 700; }
 <script>
 'use strict';
 // =====================================================================
-//  TOWER DEFENSE 2.3  -  Huntington Games
+//  TOWER DEFENSE 2.4  -  Huntington Games
 //  One file, no libraries. The world is a fixed 960 x 600 board that is
 //  scaled to fit any window. Logic runs at a fixed 60 ticks a second.
 //  Setting: war from 1900 onward - world wars, modern armies and near-future
 //  sci-fi (energy weapons, cryo, plasma, shields, robots and mechs).
 // =====================================================================
 const W = 960, H = 600, TPS = 60;
-const VERSION = '2.3';
+const VERSION = '2.4';
+
+// ---------------------------------------------------------------------
+//  GAME MODES (new in 2.4)
+//  tower  = towers, support towers, supers and defenses. No troops at all.
+//  troop  = you command an army: barracks, contractors, command posts and
+//           defenses, plus the support structures that keep the economy
+//           and the front line running. No attack towers.
+//  legacy = a save from before 2.4: everything stays available.
+//  Each tower has def.gm = 'tower' | 'troop' (only that mode) or nothing (both).
+// ---------------------------------------------------------------------
+const GAME_MODES = {
+  tower:  { name: 'Tower Mode', tag: 'TOWERS', color: '#3498db', desc: 'Build and upgrade towers, support towers, super towers and defenses.',
+            bullets: ['Attack towers, supers and stacking', 'Farms, power, radar and cryo support', 'Walls, traps and mines', 'Airstrike, EMP Blast and Cryo Burst'] },
+  troop:  { name: 'Troop Mode', tag: 'TROOPS', color: '#c0392b', desc: 'Command an army. Barracks, contractors, command posts and defenses.',
+            bullets: ['Eight barracks types and contractors', 'Drag-select, group move and rally', 'Farms, radar, mechanic bays and walls', 'Airstrike, Paratroopers and Cryo Burst'] },
+  legacy: { name: 'Mixed (old save)', tag: 'MIXED', color: '#95a5a6', desc: 'A save from before 2.4: towers and troops together.', bullets: [] }
+};
+const PICKABLE_MODES = ['tower', 'troop'];
+const inMode = (def, gm) => gm === 'legacy' || !def.gm || def.gm === gm;
 
 // ---------------------------------------------------------------------
 //  TOWERS
@@ -520,6 +551,9 @@ const TOWERS = [
             { name: 'Pressure Plate', desc: 'Reusable! Rearms itself 10 seconds after each blast (at 60% damage).', mods: { dmg: 0.6, rearm: 600 } }] }
 ];
 const TOWER = Object.fromEntries(TOWERS.map(t => [t.id, t]));
+for (const t of TOWERS) { if (t.tab === 'Attack' || t.id === 'commander') t.gm = 'tower'; else if (t.tab === 'Troops') t.gm = 'troop'; }
+// specialties that only make sense with troops are marked gm: 'troop' and hidden in Tower Mode
+for (const [id, name] of [['factory', 'Armory Line'], ['mechanic', 'Field Medics'], ['sandbag', 'Guard Post'], ['concrete', 'Guard Post'], ['mgnest', 'Guard Post']]) { const d = TOWERS.find(x => x.id === id), s = d && d.specs && d.specs.find(x => x.name === name); if (s) s.gm = 'troop'; }
 for (const t of TOWERS) { t.stack = t.stack !== false && !t.super && !t.onPath && !t.consumable; t.aoe = t.aoe || 0; t.air = t.air || 'no'; }
 // Older saves used other ids for towers that were renamed in 2.2 and then restored in 2.3.
 const LEGACY_TOWER_IDS = { suppress: 'frost', smoke: 'cryo', dew: 'plasma', archery: 'marksman', knights: 'heavy', beasts: 'k9', academy: 'demo', siege: 'battery', shrine: 'hospital', guild: 'hq', banner: 'cpost', wood: 'sandbag', iron: 'concrete', phalanx: 'mgnest', spikes: 'tanktrap', tar: 'oil' };
@@ -581,11 +615,18 @@ const MERCS = [
     desc: 'A piloted combat mech with 6000 health and armor 10. Its servo-fists smash whole groups and may stun. Level 5 Contractor HQ unlocks it early.' }
 ];
 const MERC = Object.fromEntries(MERCS.map(m => [m.id, m]));
-const mercScale = (wave) => 1 + wave * 0.12;
+// Troop Mode tuning: troops scale with the wave much faster than in Tower Mode, because towers are not carrying the fight.
+const TM = { hp: 0.6, dmg: 1.0, merc: 0.45, tank: 0.45, reward: 1.6, start: 700, barracksLimit: 1.5, cost: 0.5, wavePay: 1.25, boss: 0.75 };
+// Troop Mode prices: barracks and troop structures are cheaper (see applyModeCosts, called when a game starts)
+for (const t of TOWERS) t.baseCost = t.cost;
+function applyModeCosts(gm) { for (const t of TOWERS) t.cost = (gm === 'troop' && (t.kind === 'barracks' || t.kind === 'hq' || t.aura === 'cpost' || t.id === 'mechanic')) ? Math.round(t.baseCost * TM.cost / 10) * 10 : t.baseCost; }
+const isTroopMode = () => !!(G && G.gm === 'troop');
+const mercScale = (wave) => 1 + wave * (isTroopMode() ? TM.merc : 0.12);
 const mercCostAt = (m, wave) => Math.round(m.cost * (1 + wave * 0.02));
 const BASE_MERC_CAP = 3;
 
 const TABS = ['Attack', 'Support', 'Troops', 'Defense', 'Mercs'];
+const TABS_BY_MODE = { tower: ['Attack', 'Support', 'Defense'], troop: ['Troops', 'Mercs', 'Support', 'Defense'], legacy: TABS };
 const TAB_NAMES = { Attack: 'Attack', Support: 'Support', Troops: 'Troops', Defense: 'Defense', Mercs: 'Mercs' };
 
 
@@ -696,14 +737,22 @@ const TARGETING = [
   { id: 'random', name: 'Random' }
 ];
 
-const ABILITIES = [
+const ALL_ABILITIES = [
   { id: 'strike', name: 'Airstrike', key: 'Q', cd: 60, wave: 3, desc: 'Click the map: bombers carpet-bomb a line through that spot.' },
-  { id: 'reinforce', name: 'Paratroopers', key: 'W', cd: 50, wave: 5, desc: 'Click the map: 4 paratroopers drop in and fight for 25 seconds.' },
+  { id: 'reinforce', gm: 'troop', name: 'Paratroopers', key: 'W', cd: 50, wave: 5, desc: 'Click the map: 4 paratroopers drop in and fight for 25 seconds.' },
+  { id: 'emp', gm: 'tower', name: 'EMP Blast', key: 'W', cd: 55, wave: 5, desc: 'Every enemy on the map loses its energy shield, flyers and machines are stunned for 2 seconds, and everything takes 6% of its health (bosses 2%).' },
   { id: 'freeze', name: 'Cryo Burst', key: 'E', cd: 75, wave: 8, desc: 'Every enemy on the map is frozen for 1.5 seconds, then slowed for 4 more.' }
 ];
+// ABILITIES is the list for the game that is running; setAbilityMode() refills it (in place) for a mode.
+const ABILITIES = ALL_ABILITIES.filter(a => a.gm !== 'troop');
+function setAbilityMode(gm) { const list = ALL_ABILITIES.filter(a => inMode(a, gm) && !(gm === 'legacy' && a.id === 'emp')); ABILITIES.length = 0; for (const a of list) ABILITIES.push(a); }
 
 const ACHIEVEMENTS = [
   { id: 'first', name: 'First Contact', desc: 'Clear wave 1.' },
+  { id: 'w50_tower', name: 'Tower Veteran', desc: 'Reach wave 50 in Tower Mode.', gm: 'tower' },
+  { id: 'w50_troop', name: 'Field Commander', desc: 'Reach wave 50 in Troop Mode.', gm: 'troop' },
+  { id: 'win_tower', name: 'Master Builder', desc: 'Beat wave 100 in Tower Mode.', gm: 'tower' },
+  { id: 'win_troop', name: 'Field Marshal', desc: 'Beat wave 100 in Troop Mode.', gm: 'troop' },
   { id: 'w25', name: 'Holding the Line', desc: 'Reach wave 25.' },
   { id: 'w50', name: 'Halfway to Victory', desc: 'Reach wave 50.' },
   { id: 'win', name: 'Victory', desc: 'Beat wave 100 in Classic.' },
@@ -711,18 +760,36 @@ const ACHIEVEMENTS = [
   { id: 'nightmare', name: 'Hardened Veteran', desc: 'Beat wave 100 on Total War.' },
   { id: 'endless150', name: 'The Long War', desc: 'Reach wave 150 in Endless.' },
   { id: 'spec', name: 'Specialist', desc: 'Specialize a tower.' },
-  { id: 'super', name: 'Strategic Asset', desc: 'Build a super tower.' },
-  { id: 'army', name: 'Army', desc: 'Have 12 barracks troops on the field at once.' },
-  { id: 'hire', name: 'Private Contract', desc: 'Hire your first contractor squad.' },
+  { id: 'super', name: 'Strategic Asset', desc: 'Build a super tower.', gm: 'tower' },
+  { id: 'army', name: 'Army', desc: 'Have 12 barracks troops on the field at once.', gm: 'troop' },
+  { id: 'hire', name: 'Private Contract', desc: 'Hire your first contractor squad.', gm: 'troop' },
   { id: 'drill', name: 'Drill Instructor', desc: 'Specialize 5 or more units with a single click.' },
-  { id: 'garrison', name: 'Combined Arms', desc: 'Own one of every barracks type at the same time.' },
-  { id: 'bigspender', name: 'War Chest', desc: 'Have 5 contractor squads out at the same time.' },
+  { id: 'garrison', name: 'Combined Arms', desc: 'Own one of every barracks type at the same time.', gm: 'troop' },
+  { id: 'bigspender', name: 'War Chest', desc: 'Have 5 contractor squads out at the same time.', gm: 'troop' },
   { id: 'rich', name: 'War Economy', desc: 'Hold $25,000 at once.' },
-  { id: 'stack10', name: 'Tall Order', desc: 'Stack 10 towers on one spot.' },
+  { id: 'stack10', name: 'Tall Order', desc: 'Stack 10 towers on one spot.', gm: 'tower' },
   { id: 'kills1000', name: 'Body Count', desc: 'Kill 1,000 enemies in one game.' },
   { id: 'allmaps', name: 'Theater Commander', desc: 'Earn at least one star on every map.' }
 ];
 
+const TIPS_TOWER = [
+  'Tower Mode: stack Basic towers early, then add Standard, Sniper and Flak. Mix ground and air coverage before wave 8.',
+  'Farms pay out at the end of every wave. Power Plants boost them by 20% per level.',
+  'Frost towers and Cryo-Emitters right before a Field Gun or Inferno multiply their damage.',
+  'Phantoms are cloaked: Snipers, Tesla coils, supers or any tower inside a Radar circle can shoot them.',
+  'EMP Blast strips every shield and stuns flyers and machines: save it for Shielded waves and Hive Ships.',
+  'Super towers are limited to one on the board. Pick the one that fits the wave you are afraid of.'
+];
+const TIPS_TROOP = [
+  'Troop Mode: start with an Infantry Barracks near the road, then add a Marksman School for anti-air.',
+  'Drag a box over troops, then right-click to move the whole group. Troops hold their new post.',
+  'Marksmen and Grenadiers hit air. Sniper Teams, Gauss Snipers and Dual-Purpose Guns ignore armor: bring them for tanks and bosses.',
+  'A Command Post makes troops in its circle hit harder and heal. Put it just behind your front line.',
+  'Contractors are paid-for squads: drop them on a boss or into a hole in your line. A Contractor HQ cuts prices.',
+  'Field Hospitals and Mechanic Bays keep your troops alive between fights. Radar lets troops see Phantoms.',
+  'Sandbags make enemies stop and chew while your marksmen and gun crews shoot them.'
+];
+// Tips shown in a legacy (mixed) game
 const TIPS = [
   'Drag a box over towers or troops to select a group. Right-click moves selected troops. Hold Alt while dragging to grab only towers.',
   'At level 5, pick a specialty for one unit, a whole stack, or every eligible tower in your selection at once.',
@@ -773,7 +840,7 @@ const specOf = (def, n) => (def && def.specs && n > 0 && def.specs[n - 1]) || nu
 function warnTD(msg) { try { console.warn('[TD] ' + msg); } catch (e) {} }
 function getStars() { const o = store.get(KEYS.stars, {}), out = {}; if (isPlainObj(o)) for (const k of Object.keys(o)) { const v = o[k]; if (/^\d+$/.test(k) && isNum(v) && v >= 1 && v <= 3) out[k] = Math.round(v); } return out; }
 function getAch() { const o = store.get(KEYS.ach, {}), out = {}; if (isPlainObj(o)) for (const k of Object.keys(o)) { if (ACHIEVEMENTS.some(a => a.id === k) && isNum(o[k])) out[k] = o[k]; } return out; }
-function getRecords() { const o = store.get(KEYS.records, {}), out = { best: 0, bestEndless: 0, games: 0, kills: 0 }; if (isPlainObj(o)) for (const k of Object.keys(out)) out[k] = numOr(o[k], 0, 0, 1e12); return out; }
+function getRecords() { const o = store.get(KEYS.records, {}), out = { best: 0, bestEndless: 0, games: 0, kills: 0, bestTower: 0, bestTroop: 0, bestEndlessTower: 0, bestEndlessTroop: 0 }; if (isPlainObj(o)) for (const k of Object.keys(out)) out[k] = numOr(o[k], 0, 0, 1e12); return out; }
 
 // =====================================================================
 //  SETTINGS
@@ -871,9 +938,10 @@ let G = null;            // current game (null on the menu)
 let paused = false;
 function newGameState(opts) {
   const d = DIFFICULTIES[opts.diff];
+  const gm = own(GAME_MODES, opts.gm) ? opts.gm : 'legacy';
   return {
-    opts, diff: d, map: null, paths: [], obstacles: [],
-    money: opts.mode === 'sandbox' ? 1e9 : d.money, lives: d.lives, maxLives: d.lives,
+    opts, gm, rewardMul: gm === 'troop' ? TM.reward : 1, diff: d, map: null, paths: [], obstacles: [],
+    money: opts.mode === 'sandbox' ? 1e9 : d.money + (gm === 'troop' ? TM.start : 0), lives: d.lives, maxLives: d.lives,
     wave: 1, waveActive: false, waveLabel: 'READY', spawnQ: [], spawnT: 0, nextWave: null,
     enemies: [], towers: [], troops: [], walls: [], projectiles: [], beams: [], lines: [], patches: [], strikes: [], texts: [], mercCd: {}, squads: [], placeMerc: null, hinted: {},
     speed: 1, auto: S.autoWaveDefault, countdown: 0, tick: 0,
@@ -1042,6 +1110,7 @@ function makeEnemy(id, wave, opts = {}) {
     if (a.hp) e.hp *= a.hp; if (a.speed) e.speed *= a.speed; if (a.size) e.r *= a.size; if (a.reward) e.reward *= a.reward;
     if (a.armor) e.armor += a.armor * (1 + wave / 60); if (a.shield) { e.shield += e.hp * a.shield; e.maxShield = e.shield; } if (a.regen) e.affixRegen = a.regen;
   }
+  if (G.gm === 'troop' && def.boss) { e.hp *= TM.boss; e.shield *= TM.boss; }
   e.maxHp = e.hp;
   const p = G.paths[e.path];
   if (e.air) { e.x = p.air.ax; e.y = p.air.ay; } else { pathPos(p, e.d, _p); e.x = _p.x; e.y = _p.y; }
@@ -1131,7 +1200,7 @@ function hurt(e, amount, o) {
 function killEnemy(e, o) {
   if (!e.alive) return;
   e.alive = false; e.hp = 0;
-  const pay = Math.max(1, Math.round(e.reward));
+  const pay = Math.max(1, Math.round(e.reward * G.rewardMul));
   G.money += pay; G.stats.earned += pay; G.stats.kills++;
   if (o && o.src) { o.src.kills++; if (o.group) o.group.kills++; }
   burst(e.x, e.y, e.def.color, e.def.boss ? 40 : 10, e.def.boss ? 4 : 2.2, e.def.boss ? 4 : 2.5);
@@ -1624,17 +1693,17 @@ function waveEnd() {
       inc = Math.floor(inc); income += inc; floatText(g.x, g.y - 18, '+' + money$(inc), '#2ecc71', true);
     } else if (g.def.kind === 'heal') { const m = g.units[0].stats.mods; if (m.lifeline) heal += m.lifeline; }
   }
-  const bonus = 50 + G.wave * 10;
+  const bonus = Math.round((50 + G.wave * 10) * (G.gm === 'troop' ? TM.wavePay : 1));
   G.money += income + bonus; G.stats.earned += income + bonus;
   if (heal > 0 && G.lives < G.maxLives) { const h = Math.min(12, heal); G.lives = Math.min(G.maxLives, G.lives + h); floatText(G.base.x, G.base.y - 44, '+' + h + ' base', '#55efc4', true); }
   if (income) sfx('income');
   if (G.wave === 1) unlock('first');
-  if (G.wave >= 25) unlock('w25'); if (G.wave >= 50) unlock('w50'); if (G.wave >= 150) unlock('endless150');
+  if (G.wave >= 25) unlock('w25'); if (G.wave >= 50) { unlock('w50'); if (G.gm === 'tower') unlock('w50_tower'); if (G.gm === 'troop') unlock('w50_troop'); } if (G.wave >= 150) unlock('endless150');
   if (G.opts.mode === 'classic' && G.wave >= 100 && !G.endlessContinued) { victory(); return; }
   G.wave++;
   G.nextWave = buildWave(G.wave);
   if (G.auto) G.countdown = 6 * TPS;
-  if (G.wave === 3 && !G.hinted.merc) { G.hinted.merc = 1; setTimeout(() => G && toast('Hire help: open the Mercs tab (key H), pick a squad, then click near the road', '#ffd54f'), 1800); }
+  if (G.wave === 3 && !G.hinted.merc && G.gm !== 'tower') { G.hinted.merc = 1; setTimeout(() => G && toast('Hire help: open the Mercs tab (key H), pick a squad, then click near the road', '#ffd54f'), 1800); }
   saveGame();
   updateHUD(true);
 }
@@ -1650,11 +1719,20 @@ function useAbility(id, x, y) {
     const ang = Math.random() * Math.PI;
     for (let i = 0; i < 7; i++) G.strikes.push({ x: x + Math.cos(ang) * (i - 3) * 38, y: y + Math.sin(ang) * (i - 3) * 38, t: 40 + i * 7, dmg: 300 * (1 + G.wave * 0.12), r: 55 });
     toast('Airstrike inbound!', '#ff8a80');
+  } else if (id === 'emp') {
+    for (const e of G.enemies) if (e.alive) {
+      e.shield = 0;
+      if (!e.def.boss && (e.air || e.def.shred || e.def.regen || e.def.blink || e.def.summon || e.def.shield || e.def.heal || e.def.stealth || e.id === 'swarm' || e.id === 'dronecmd' || e.id === 'colossus')) e.stunT = Math.max(e.stunT, 120);
+      hurt(e, e.maxHp * (e.def.boss ? 0.02 : 0.06), { noVar: true, pierceArmor: true });
+    }
+    G.lines.push({ ring: true, x: W / 2, y: H / 2, r: 420, life: 24, ml: 24, color: '#9ad7ff' }); burst(W / 2, H / 2, '#74b9ff', 50, 7, 3, 36); shake(5);
+    toast('EMP Blast! Shields down, machines stunned!', '#9ad7ff');
   } else if (id === 'reinforce') {
     const sq = [];
     for (let i = 0; i < 4; i++) {
       const off = formationOffset(i, 4);
-      const t = new Troop('soldier', x + off.x, y + off.y - 60, { hp: 200 * (1 + G.wave * 0.08), dmg: 12 * (1 + G.wave * 0.08), life: 25 * TPS, color: '#2980b9', speed: 1.8, squadList: sq });
+      const ps = 1 + G.wave * (G.gm === 'troop' ? TM.merc : 0.08);
+      const t = new Troop('soldier', x + off.x, y + off.y - 60, { hp: 200 * ps, dmg: 12 * ps, life: 25 * TPS, color: '#2980b9', speed: 1.8, squadList: sq });
       t.order = { x: x + off.x, y: y + off.y }; G.troops.push(t); sq.push(t);
     }
     burst(x, y, '#3498db', 20, 3);
@@ -1849,15 +1927,17 @@ function victory() {
   const all = store.get(KEYS.stars, {}); const key = G.opts.map + '';
   if ((all[key] || 0) < stars) { all[key] = stars; store.set(KEYS.stars, all); }
   G.stars = stars;
-  unlock('win'); if (G.lives >= G.maxLives) unlock('flawless'); if (G.opts.diff === 'nightmare') unlock('nightmare');
+  unlock('win'); if (G.gm === 'tower') unlock('win_tower'); if (G.gm === 'troop') unlock('win_troop'); if (G.lives >= G.maxLives) unlock('flawless'); if (G.opts.diff === 'nightmare') unlock('nightmare');
   if (MAPS.every((m, i) => (store.get(KEYS.stars, {})[i] || 0) > 0)) unlock('allmaps');
   gameOver(true);
 }
 function recordRun() {
   if (G.opts.mode === 'sandbox') return;
-  const r = store.get(KEYS.records, { best: 0, bestEndless: 0, games: 0, kills: 0 });
+  const r = getRecords();
   r.games++; r.kills += G.stats.kills;
-  if (G.opts.mode === 'endless' || G.endlessContinued) r.bestEndless = Math.max(r.bestEndless, G.wave); else r.best = Math.max(r.best, G.wave);
+  const endless = G.opts.mode === 'endless' || G.endlessContinued, sfx2 = G.gm === 'tower' ? 'Tower' : G.gm === 'troop' ? 'Troop' : null;
+  if (endless) { r.bestEndless = Math.max(r.bestEndless, G.wave); if (sfx2) r['bestEndless' + sfx2] = Math.max(r['bestEndless' + sfx2], G.wave); }
+  else { r.best = Math.max(r.best, G.wave); if (sfx2) r['best' + sfx2] = Math.max(r['best' + sfx2], G.wave); }
   store.set(KEYS.records, r);
 }
 function unlock(id) {
@@ -1877,7 +1957,7 @@ const REFUND_RATE = 1;     // retired items give back everything that was invest
 function saveGame() {
   if (!G || G.opts.mode === 'sandbox' || G.over) return;
   store.set(KEYS.save, {
-    v: 3, ver: VERSION, opts: G.opts, seed: G.seed, wave: G.wave, money: G.money, lives: G.lives, stats: G.stats, endless: G.endlessContinued,
+    v: 3, ver: VERSION, gm: G.gm, opts: G.opts, seed: G.seed, wave: G.wave, money: G.money, lives: G.lives, stats: G.stats, endless: G.endlessContinued,
     abilities: G.abilities, auto: G.auto,
     towers: G.towers.filter(g => !g.auto && !(g.def.kind === 'mine' && g.used)).map(g => ({ d: g.def.id, x: g.x, y: g.y, t: g.targeting, s: g.sticky, hp: g.hp, rally: g.rally, u: g.units.map(u => [u.level, u.spec, Math.round(u.invested), Math.round(u.dealt), u.kills]) }))
   });
@@ -1892,13 +1972,15 @@ function cleanSave(s) {
   const o = s.opts;
   const mapN = typeof o.map === 'string' && /^\d+$/.test(o.map) ? +o.map : o.map;
   if (!Number.isInteger(mapN) || !MAPS[mapN]) return null;
-  const opts = { diff: own(DIFFICULTIES, o.diff) ? o.diff : 'normal', mode: own(MODES, o.mode) && o.mode !== 'sandbox' ? o.mode : 'classic', variant: own(VARIANTS, o.variant) ? o.variant : 'normal', map: mapN };
+  // saves from before 2.4 have no mode: they load as a mixed game so their troops and barracks keep working
+  const gm = own(GAME_MODES, s.gm) ? s.gm : own(GAME_MODES, o.gm) ? o.gm : 'legacy';
+  const opts = { gm, diff: own(DIFFICULTIES, o.diff) ? o.diff : 'normal', mode: own(MODES, o.mode) && o.mode !== 'sandbox' ? o.mode : 'classic', variant: own(VARIANTS, o.variant) ? o.variant : 'normal', map: mapN };
   const d = DIFFICULTIES[opts.diff];
   const out = { opts, seed: isNum(s.seed) ? Math.floor(s.seed) : ((Math.random() * 1e9) | 0), wave: Math.floor(numOr(s.wave, 1, 1, 100000)),
     money: numOr(s.money, d.money, 0, 1e12), lives: numOr(s.lives, d.lives, 1, d.lives), endless: !!s.endless, auto: !!s.auto,
     stats: {}, abilities: {}, towers: [], retired: {}, unknown: 0, refund: 0, skipped: 0, fixed: 0 };
   if (isPlainObj(s.stats)) for (const k of ['kills', 'damage', 'leaked', 'built', 'spent', 'earned', 'lost']) if (own(s.stats, k)) out.stats[k] = numOr(s.stats[k], 0, 0, 1e15);
-  if (isPlainObj(s.abilities)) for (const a of ABILITIES) {
+  if (isPlainObj(s.abilities)) for (const a of ALL_ABILITIES) {
     const legacy = Object.keys(LEGACY_ABILITY_IDS).find(k => LEGACY_ABILITY_IDS[k] === a.id);
     const src = own(s.abilities, a.id) ? a.id : (legacy && own(s.abilities, legacy) ? legacy : null);
     if (src) out.abilities[a.id] = numOr(s.abilities[src], 0, 0, a.cd * TPS);
@@ -1916,6 +1998,7 @@ function cleanSave(s) {
     if (own(LEGACY_TOWER_IDS, id)) id = LEGACY_TOWER_IDS[id];
     if (!own(TOWER, id)) { out.unknown++; refund(); warnTD('unknown tower "' + String(t.d).slice(0, 30) + '" removed'); continue; }
     const def = TOWER[id];
+    if (!inMode(def, gm)) { out.skipped++; refund(); warnTD('tower ' + id + ' does not belong to ' + gm + ' mode: removed'); continue; }
     if (def.kind === 'tank' || !isNum(t.x) || !isNum(t.y)) { out.skipped++; refund(); warnTD('tower ' + id + ' had no usable position'); continue; }
     if (def.super) { if (superSeen) { out.skipped++; refund(); warnTD('extra super tower removed'); continue; } superSeen = true; }
     let units = rows.map(a => {
@@ -1939,7 +2022,7 @@ function cleanSave(s) {
 function applySave(c) {
   startGame(Object.assign({}, c.opts, { seed: c.seed }), true);
   G.wave = c.wave; G.money = c.money; G.lives = Math.min(c.lives, G.maxLives); Object.assign(G.stats, c.stats); G.endlessContinued = c.endless; G.auto = c.auto;
-  Object.assign(G.abilities, c.abilities);
+  for (const k of Object.keys(c.abilities)) if (own(G.abilities, k)) G.abilities[k] = c.abilities[k];
   let refund = c.refund, skipped = c.skipped;
   for (const t of c.towers) {
     try {
@@ -1963,7 +2046,7 @@ function applySave(c) {
   updateHUD(true); rebuildShop();
   const names = Object.keys(c.retired).map(n => n + ' towers');
   if (c.unknown) names.push('some unrecognized items');
-  let msg = 'Welcome back - wave ' + G.wave, color = '#2ecc71', ms = 2200;
+  let msg = 'Welcome back - wave ' + G.wave + (G.gm === 'legacy' ? ' (old save: towers and troops together)' : ' (' + GAME_MODES[G.gm].name + ')'), color = '#2ecc71', ms = 2200;
   if (names.length) { msg = names.join(' and ') + ' were retired.' + (refund > 0 ? ' You got ' + money$(refund) + ' back.' : ''); color = '#ffd54f'; ms = 5000; }
   else if (refund > 0 || skipped + c.fixed > 0) { msg = 'Welcome back - wave ' + G.wave + ' (some damaged entries were repaired' + (refund > 0 ? ', ' + money$(refund) + ' refunded' : '') + ')'; color = '#ffd54f'; ms = 4500; }
   toast(msg, color, ms);
@@ -2024,9 +2107,9 @@ Troop.next = 1;
 // ---------------------------------------------------------------------
 function makeTank() {
   const pi = (Math.random() * G.paths.length) | 0, p = G.paths[pi];
-  return new Troop('tank', G.base.x, G.base.y, { hp: 1000 * (1 + G.wave * 0.06), dmg: 40 * (1 + G.wave * 0.1), rate: 30, range: 130, speed: 1, r: 15, path: pi, d: p.len - 10, color: '#2980b9', role: 'tank' });
+  return new Troop('tank', G.base.x, G.base.y, { hp: 1000 * (1 + G.wave * (G.gm === 'troop' ? TM.tank : 0.06)), dmg: 40 * (1 + G.wave * (G.gm === 'troop' ? TM.tank * 1.4 : 0.1)), rate: 30, range: 130, speed: 1, r: 15, path: pi, d: p.len - 10, color: '#2980b9', role: 'tank' });
 }
-function deployTank(free) { G.troops.push(makeTank()); if (free) toast('Armory Line rolled out a free Tank', '#8cc8ff'); }
+function deployTank(free) { if (G.gm === 'tower') return; G.troops.push(makeTank()); if (free) toast('Armory Line rolled out a free Tank', '#8cc8ff'); }
 
 // ---------------------------------------------------------------------
 //  Barracks: keep the squad topped up
@@ -2034,8 +2117,9 @@ function deployTank(free) { G.troops.push(makeTank()); if (free) toast('Armory L
 function spawnTroopFor(g, st) {
   const def = g.def, T = TROOP_TYPES[def.troop] || TROOP_TYPES.soldier, m = st.mods, tx = m.tx || {}, o = Object.assign({}, m.ts || {});
   for (const k in tx) { if (k === 'hp' || k === 'dmg') continue; const base = o[k] != null ? o[k] : T[k]; if (base != null) o[k] = base * tx[k]; }
-  o.hp = Math.round(st.troopHp * (1 + G.wave * 0.03));
-  o.dmg = Math.max(1, st.troopDmg * (1 + G.wave * 0.05));
+  const tm = G.gm === 'troop';
+  o.hp = Math.round(st.troopHp * (1 + G.wave * (tm ? TM.hp : 0.03)));
+  o.dmg = Math.max(1, st.troopDmg * (1 + G.wave * (tm ? TM.dmg : 0.05)));
   o.owner = g;
   const off = formationOffset(g.squad.length, st.soldiers);
   const t = new Troop(def.troop, g.x, g.y, o);
@@ -2336,7 +2420,7 @@ function mercPlaceError(x, y) {
   return null;
 }
 function hireMerc(id, x, y) {
-  const m = MERC[id], err = mercError(m) || mercPlaceError(x, y);
+  const m = MERC[id], err = (G.gm === 'tower' ? 'Contractors are not available in Tower Mode' : null) || mercError(m) || mercPlaceError(x, y);
   if (err) { toast(err, '#ff8a80'); sfx('deny'); return false; }
   const hq = getHQ(), cost = mercCost(m, hq); spend(cost);
   G.mercCd[id] = mercCdTicks(m, hq);
@@ -3166,6 +3250,10 @@ const mouse = { in: false, sx: 0, sy: 0, wx: 0, wy: 0 };
 const hover = { tower: null, enemy: null, troop: null };
 const drag = { active: false, box: false, sx: 0, sy: 0, csx: 0, csy: 0, button: 0, alt: false };
 let boxMode = 'auto', lastClick = { t: 0, g: null };
+const curGM = () => (G && G.gm) || 'legacy';
+const gmTabs = () => TABS_BY_MODE[curGM()] || TABS;
+const shopList = (tab) => TOWERS.filter(t => t.tab === tab && inMode(t, curGM()));
+const specHidden = (s) => !!(s && s.gm === 'troop' && curGM() === 'tower');
 function towerAt(x, y, defId) { let best = null, bd = 19; for (const g of G.towers) { if (g.auto || (defId && g.def.id !== defId)) continue; const d = dist(g.x, g.y, x, y); if (d < bd) { bd = d; best = g; } } return best; }
 function troopAt(x, y) { let best = null, bd = 13; for (const t of G.troops) { if (t.hp <= 0 || t.fixed) continue; const d = dist(t.x, t.y, x, y); if (d < bd + (t.kind === 'tank' ? 8 : 0)) { bd = d; best = t; } } return best; }
 function enemyAt(x, y) { let best = null, bd = 1e9; for (const e of G.enemies) { if (!e.alive) continue; const d = dist(e.x, e.y, x, y); if (d < e.r + 5 && d < bd) { bd = d; best = e; } } return best; }
@@ -3173,9 +3261,10 @@ function countOf(def) {
   if (def.kind === 'tank') return G.troops.filter(t => t.kind === 'tank' && t.hp > 0).length;
   let n = 0; for (const g of G.towers) if (g.def === def && !g.auto) n += def.stack ? g.units.length : 1; return n;
 }
-function limitOf(def) { if (def.super) return 1; if (def.consumable) return def.limit; return Math.max(1, Math.floor(def.limit * G.diff.limits)); }
+function limitOf(def) { if (def.super) return 1; if (def.consumable) return def.limit; return Math.max(1, Math.floor(def.limit * G.diff.limits * (G.gm === 'troop' && def.kind === 'barracks' ? TM.barracksLimit : 1))); }
 const hasSuper = () => G.towers.some(g => g.def.super);
 function buyError(def) {
+  if (!inMode(def, curGM())) return def.name + ' is not available in ' + GAME_MODES[curGM()].name;
   if (G.money < def.cost) return "Can't afford another " + def.name;
   if (def.super && hasSuper()) return 'Only one super tower at a time';
   if (countOf(def) >= limitOf(def)) return def.name + ' limit reached (' + limitOf(def) + ')';
@@ -3320,6 +3409,7 @@ function skipNote(r) {
 function applySpec(list, spec) {
   if (!list.length) return 0;
   const def = list[0][0].def, c = specCost(def); let n = 0; const touched = new Set();
+  if (specHidden(specOf(def, spec))) return 0;
   for (const [g, i] of list) {
     const u = g.units[i]; if (!u || !u.canSpec) continue;
     if (G.opts.mode !== 'sandbox' && G.money < c) break;
@@ -3414,9 +3504,9 @@ document.addEventListener('keydown', (ev) => {
   else if (k === 's' || k === 'delete') { if (G.sel.towers.size) sellGroups([...G.sel.towers]); }
   else if (k === 'm') startMove();
   else if (k === 't' && G.sel.towers.size) { const g = [...G.sel.towers][0]; const i = TARGETING.findIndex(x => x.id === g.targeting); const nt = TARGETING[(i + 1) % TARGETING.length].id; G.sel.towers.forEach(x => x.targeting = nt); toast('Targeting: ' + TARGETING.find(x => x.id === nt).name); refreshSelection(true); }
-  else if (k === 'tab') { ev.preventDefault(); shopTab = TABS[(TABS.indexOf(shopTab) + 1) % TABS.length]; rebuildShop(true); }
-  else if (k === 'h') { shopTab = 'Mercs'; rebuildShop(true); }
-  else if (/^[1-9]$/.test(k)) { if (shopTab === 'Mercs') { const m = MERCS[+k - 1]; if (m) beginMerc(m.id); } else { const list = TOWERS.filter(t => t.tab === shopTab); const d = list[+k - 1]; if (d) beginPlace(d.id); } }
+  else if (k === 'tab') { ev.preventDefault(); const tb = gmTabs(); shopTab = tb[(tb.indexOf(shopTab) + 1) % tb.length]; rebuildShop(true); }
+  else if (k === 'h') { if (gmTabs().includes('Mercs')) { shopTab = 'Mercs'; rebuildShop(true); } }
+  else if (/^[1-9]$/.test(k)) { if (shopTab === 'Mercs') { const m = MERCS[+k - 1]; if (m) beginMerc(m.id); } else { const list = shopList(shopTab); const d = list[+k - 1]; if (d) beginPlace(d.id); } }
   else { const a = ABILITIES.find(x => x.key.toLowerCase() === k); if (a) armAbility(a.id); }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && !G.over && S.autoPauseHidden && !paused && !$('game-screen').classList.contains('hidden')) setPaused(true); });
@@ -3455,7 +3545,7 @@ function cycleSpeed() { G.speed = G.speed >= 3 ? 1 : G.speed + 1; updateHUD(); }
 function toggleRanges() { G.showRanges = !G.showRanges; updateHUD(); }
 function setPaused(p) {
   paused = p; $('modal-pause').classList.toggle('hidden', !p);
-  if (p && G) $('pause-body').innerHTML = statsHTML() + '<p style="color:var(--dim);font-size:12px">Tip: ' + pick(TIPS) + '</p>';
+  if (p && G) $('pause-body').innerHTML = statsHTML() + '<p style="color:var(--dim);font-size:12px">Tip: ' + pick(tipList()) + '</p>';
   if (!p) initAudio();
 }
 function statsHTML() {
@@ -3468,7 +3558,7 @@ function statsHTML() {
 // =====================================================================
 let shopTab = 'Attack'; const iconCache = {};
 function buildTabs() {
-  const box = $('shop-tabs'); box.innerHTML = TABS.map(t => '<button class="tab" data-tab="' + t + '">' + TAB_NAMES[t] + '</button>').join('');
+  const box = $('shop-tabs'); box.innerHTML = gmTabs().map(t => '<button class="tab" data-tab="' + t + '">' + TAB_NAMES[t] + '</button>').join('');
   box.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => { shopTab = b.dataset.tab; rebuildShop(true); }));
 }
 function rebuildShop(full) {
@@ -3478,7 +3568,7 @@ function rebuildShop(full) {
   if (full || shop.dataset.tab !== shopTab) {
     shop.dataset.tab = shopTab; shop.innerHTML = ''; mercBarKey = '';
     if (shopTab === 'Mercs') buildMercShop(shop);
-    else TOWERS.filter(t => t.tab === shopTab).forEach((def, i) => {
+    else shopList(shopTab).forEach((def, i) => {
       const b = document.createElement('button'); b.className = 'btn tcard'; b.dataset.id = def.id;
       const row = document.createElement('div'); row.className = 'row';
       row.appendChild(iconCache[def.id] || (iconCache[def.id] = towerIcon(def)));
@@ -3664,6 +3754,7 @@ function specBoxHTML(g, i, towers) {
   if (scope === 'unit') h += '<div class="spec-note">Applies to unit ' + (i + 1) + ' only: ' + money$(cost) + '.</div>';
   else h += '<div class="spec-note">Applies to <b>' + n + '</b> unit' + (n === 1 ? '' : 's') + ' ready (level ' + MAX_LEVEL + '): ' + money$(n * cost) + (afford < n ? ' <span style="color:#ff8a80">(you can afford ' + afford + ')</span>' : '') + '. ' + skipNote(R) + '</div>';
   def.specs.forEach((s, si) => {
+    if (specHidden(s)) return;
     h += '<button class="btn spec-opt" data-act="spec" data-i="' + i + '" data-s="' + (si + 1) + '" data-scope="' + scope + '"' + (afford < 1 && scope !== 'unit' || (scope === 'unit' && G.money < cost && G.opts.mode !== 'sandbox') ? ' disabled' : '') + '>' + String.fromCharCode(65 + si) + ': ' + s.name + '<small>' + s.desc + '</small></button>';
   });
   return h + '</div>';
@@ -3734,7 +3825,7 @@ function multiHTML(towers, troops) {
       if (!n) h += '<div class="spec-note">None can specialize right now. ' + skipNote(R) + '</div>';
       else {
         h += '<div class="spec-note"><b>' + n + '</b> ready: ' + money$(n * cost) + ' for all' + (afford < n ? ' <span style="color:#ff8a80">(you can afford ' + afford + ')</span>' : '') + '. ' + skipNote(R) + '</div>';
-        def.specs.forEach((s, si) => { h += '<button class="btn spec-opt" data-act="specsel" data-def="' + def.id + '" data-s="' + (si + 1) + '"' + (afford < 1 ? ' disabled' : '') + '>' + String.fromCharCode(65 + si) + ': ' + s.name + ' on ' + afford + '<small>' + s.desc + '</small></button>'; });
+        def.specs.forEach((s, si) => { if (specHidden(s)) return; h += '<button class="btn spec-opt" data-act="specsel" data-def="' + def.id + '" data-s="' + (si + 1) + '"' + (afford < 1 ? ' disabled' : '') + '>' + String.fromCharCode(65 + si) + ': ' + s.name + ' on ' + afford + '<small>' + s.desc + '</small></button>'; });
       }
       h += '</div>';
     }
@@ -3843,7 +3934,7 @@ function renderCodex() {
   if (codexTab === 'towers') {
     if (!codexSel || !TOWER[codexSel]) codexSel = TOWERS[0].id;
     for (const tab of ['Attack', 'Support', 'Troops', 'Defense']) {
-      const gl = document.createElement('div'); gl.className = 'grp'; gl.textContent = tab.toUpperCase(); list.appendChild(gl);
+      const gl = document.createElement('div'); gl.className = 'grp'; gl.textContent = tab.toUpperCase() + (tab === 'Attack' ? '  (TOWER MODE)' : tab === 'Troops' ? '  (TROOP MODE)' : '  (BOTH MODES)'); list.appendChild(gl);
       TOWERS.filter(t => t.tab === tab).forEach(def => codexItem(list, towerIcon(def, 22), def.name, def.id === codexSel, () => { codexSel = def.id; renderCodex(); }));
     }
     det.innerHTML = towerDetailHTML(TOWER[codexSel]); const h3 = det.querySelector('h3'); if (h3) h3.prepend(towerIcon(TOWER[codexSel], 40));
@@ -3872,7 +3963,7 @@ function renderCodex() {
   } else if (codexTab === 'affixes') {
     det.innerHTML = '<p>From wave 7 onward some enemies spawn with a random <b>variant</b> (shown as a colored ring). The chance grows every wave, up to 45%. Hover an enemy to see its variant.</p>' + AFFIXES.map(a => '<div class="ach got"><div class="ico" style="color:' + a.color + ';border:2px solid ' + a.color + '">&#9679;</div><div><b style="color:' + a.color + '">' + a.name + '</b><div style="color:var(--dim)">' + a.desc + '</div></div></div>').join('');
   } else {
-    det.innerHTML = guideHTML();
+    det.innerHTML = guideHTML(); det.querySelectorAll('[data-gg]').forEach(b => b.onclick = () => { guideMode = b.dataset.gg; renderCodex(); });
   }
 }
 function specCards(def) {
@@ -3891,9 +3982,10 @@ function specCards(def) {
   return h;
 }
 function auraHQ(L, m) { m = m || {}; return 'prices -' + Math.round((1 - (1 - 0.04 * L) * (m.mcost || 1)) * 100) + '%, cooldowns -' + Math.round((1 - (1 - 0.05 * L) * (m.mcd || 1)) * 100) + '%, ' + (3 + Math.floor(L / 2) + (m.mcap || 0)) + ' squads'; }
+function modeBadge(gm) { return gm === 'tower' ? '<span class="tag" style="background:#1f4e79;color:#fff">TOWER MODE ONLY</span>' : gm === 'troop' ? '<span class="tag" style="background:#7b241c;color:#fff">TROOP MODE ONLY</span>' : '<span class="tag" style="background:#2c3e50;color:#fff">BOTH MODES</span>'; }
 function towerDetailHTML(def) {
   const k = def.kind;
-  let h = '<h3>' + def.name + '</h3><div>' + tagsHTML(def) + '</div><p>' + def.desc + '</p>';
+  let h = '<h3>' + def.name + '</h3><div>' + modeBadge(def.gm) + tagsHTML(def) + '</div><p>' + def.desc + '</p>';
   h += '<div class="sp-grid" style="max-width:420px"><div>Cost</div><b>$' + def.cost + '</b><div>Limit</div><b>' + (def.super ? '1 (one super total)' : def.limit + ' (x difficulty)') + '</b>' + (def.hp ? '<div>Health</div><b>' + def.hp + '</b>' : '') + (def.minRange ? '<div>Dead zone</div><b>' + def.minRange + '</b>' : '') + '</div>';
   if (k === 'tank') { h += '<p>Health 1000 (+6% per wave), shoots for 40 damage (+10% per wave) twice a second, range 130. Not upgradeable: deploy more instead.</p>'; return h; }
   const rows = [];
@@ -3930,7 +4022,7 @@ function towerDetailHTML(def) {
 function troopDetailHTML(key) {
   const T = TROOP_TYPES[key], at = trainedAt(key);
   const roleText = { melee: 'Close combat: walks up to an enemy and holds it in place.', ranged: 'Ranged: shoots from where it stands.', aoe: 'Area fire: grenades, flames and EMP pulses that hit a whole group.', artillery: 'Artillery: lobbed or piercing shells from far away.', medic: 'Support: heals the most wounded ally, returns fire otherwise.', engineer: 'Builder: plants mines, repairs, builds defenses.', sentry: 'Sentry gun: stationary, short-lived.', tank: 'Vehicle: drives the road, shooting and ramming.' };
-  let h = '<h3>' + T.name + '</h3><div><span class="tag">' + T.role + '</span>' + (T.hitsAir ? '<span class="tag air">Hits air</span>' : '') + (T.fixed ? '<span class="tag">Stationary</span>' : '') + '</div><p>' + T.desc + '</p><p>' + (roleText[T.role] || '') + '</p>';
+  let h = '<h3>' + T.name + '</h3><div>' + modeBadge('troop') + '<span class="tag">' + T.role + '</span>' + (T.hitsAir ? '<span class="tag air">Hits air</span>' : '') + (T.fixed ? '<span class="tag">Stationary</span>' : '') + '</div><p>' + T.desc + '</p><p>' + (roleText[T.role] || '') + '</p>';
   h += '<div class="sp-grid" style="max-width:420px"><div>Speed</div><b>' + (T.speed * 60).toFixed(0) + ' units/s</b>' + (T.role === 'melee' ? '<div>Search radius</div><b>' + T.leash + '</b>' : '<div>Range</div><b>' + T.range + '</b>') + '<div>Attack every</div><b>' + (T.rate / 60).toFixed(2) + 's</b>' + (T.armor ? '<div>Armor</div><b>' + T.armor + '</b>' : '') + (T.aoe ? '<div>Blast</div><b>' + T.aoe + '</b>' : '') + '</div>';
   if (at.length) {
     h += '<div class="section-title" style="margin-top:10px">Trained at</div>';
@@ -3943,13 +4035,44 @@ function troopDetailHTML(key) {
 }
 function mercDetailHTML(m) {
   const tags = []; if (m.hitsAir) tags.push('Hits air'); if (m.aoe || m.cleave) tags.push('Area damage'); if (m.hunt) tags.push('Hunts the strongest'); if (m.lifesteal) tags.push('Lifesteal'); if (m.medAura) tags.push('Heals allies'); if (m.pierceArmor) tags.push('Ignores armor'); if (m.crit) tags.push('Crits'); if (m.dodge) tags.push('Dodges'); if (m.burn) tags.push('Burns'); if (m.frenzy) tags.push('Frenzy'); if (m.stun) tags.push('Stuns');
-  let h = '<h3>' + m.name + '</h3><div><span class="tag">' + m.role + '</span>' + tags.map(x => '<span class="tag">' + x + '</span>').join('') + '</div><p>' + m.desc + '</p>';
+  let h = '<h3>' + m.name + '</h3><div>' + modeBadge('troop') + '<span class="tag">' + m.role + '</span>' + tags.map(x => '<span class="tag">' + x + '</span>').join('') + '</div><p>' + m.desc + '</p>';
   h += '<div class="sp-grid" style="max-width:440px"><div>Squad</div><b>' + m.n + ' unit' + (m.n > 1 ? 's' : '') + '</b><div>Stays for</div><b>' + m.life + 's</b><div>Cooldown</div><b>' + m.cd + 's</b><div>Unlocks</div><b>Wave ' + m.wave + (m.hq ? ' or HQ L' + m.hq : '') + '</b>' + (m.armor ? '<div>Armor</div><b>' + m.armor + '</b>' : '') + '<div>Range</div><b>' + (m.role === 'melee' ? 'Melee' : m.range) + '</b></div>';
   h += '<table class="stats"><tr><th>At wave</th><th>Price</th><th>Health each</th><th>Damage each</th></tr>' + [1, 25, 50, 100].map(w => '<tr><td>' + w + '</td><td>$' + fmt(mercCostAt(m, w)) + '</td><td>' + fmt(m.hp * mercScale(w)) + '</td><td>' + fmt(m.dmg * mercScale(w)) + '</td></tr>').join('') + '</table>';
   h += '<p style="color:var(--dim);font-size:12px">Hire from the Mercs tab, then click near the road (within about 90 units of it). Mercenaries can be selected and moved like troops. Prices and stats grow with the wave. A Contractor HQ lowers prices and cooldowns, adds squad slots, and unlocks this unit early (HQ level ' + (m.hq || 'none needed') + ').</p>';
   return h;
 }
+const tipList = () => curGM() === 'tower' ? TIPS_TOWER : curGM() === 'troop' ? TIPS_TROOP : TIPS;
+let guideMode = null;
 function guideHTML() {
+  const gmx = guideMode || (G && G.gm !== 'legacy' ? G.gm : menuPrefs.gm) || 'tower';
+  const sw = '<div class="seg" style="margin-bottom:10px">' + PICKABLE_MODES.map(k => '<button data-gg="' + k + '"' + (k === gmx ? ' class="on"' : '') + '>' + GAME_MODES[k].name + '</button>').join('') + '</div>';
+  return sw + (gmx === 'troop' ? guideTroop() : guideTower());
+}
+function guideTower() {
+  return '<p><b>Tower Mode.</b> You build the defense out of towers. There are no soldiers, barracks or contractors in this mode.</p>' +
+  '<p><b>Goal.</b> Enemy columns advance along the road toward your base. Each one that gets through takes health off your base. Survive 100 waves (Classic) or as long as you can (Endless). The war runs from 1900 onward: trench-era guns and tanks, modern armies, and near-future sci-fi (energy weapons, cryo, shields, robots and mechs).</p>' +
+  '<p><b>Building.</b> Pick something in the shop (or press 1 to 9) and click the map. The shop has three tabs: Attack, Support and Defense. Click an existing tower of the same type to <b>stack</b> another one onto it.</p>' +
+  '<p><b>Selecting.</b> Click a tower, or drag a box to select a group. <kbd>Shift</kbd> adds to the selection, double-click grabs every tower of the same type. Esc, right-click empty ground, or the Deselect button clears it.</p>' +
+  '<p><b>Upgrades and specialties.</b> Almost everything goes to level 5, then you <b>specialize</b> it into one of 2 to 4 paths. Choose for one unit, a whole stack, or your whole selection. Farms and Factories upgrade forever. Selling gives back 75% (100% if built this break).</p>' +
+  '<p><b>Support and supers.</b> Farms and Factories pay out every wave, Power Plants boost them, Commanders boost nearby towers, Cryo-Emitters slow, Mechanic Bays repair walls, and Radar reveals cloaked enemies. Super towers (Howitzer, Doomsday, Railgun) are limited to one on the board and are aimed by hand.</p>' +
+  '<p><b>Walls, traps and mines.</b> These go ON the road. Sandbags, concrete barriers and machine gun nests stop ground enemies, who must destroy them to pass. Tank Traps and Oil Slicks slow and hurt everything crossing them. Mines blow up when stepped on.</p>' +
+  '<p><b>Abilities.</b> Airstrike (Q), EMP Blast (W: strips shields, stuns flyers and machines) and Cryo Burst (E: freezes everything).</p>' +
+  '<p><b>Targeting.</b> Every attack tower has 15 targeting modes. "Lock" keeps it on one enemy until it dies or leaves range. Armor subtracts from every hit; cloaked enemies need Snipers, Tesla coils, supers or a Radar circle.</p>' +
+  '<p><b>Keys.</b> ' + KEYLIST.filter(([k]) => !/Right-click|H$/.test(k)).map(([k, d]) => '<kbd>' + k + '</kbd> ' + d).join(' &middot; ') + '</p>';
+}
+function guideTroop() {
+  return '<p><b>Troop Mode.</b> You are a field commander. Instead of attack towers you build barracks and send troops to hold the road. There are no attack towers in this mode.</p>' +
+  '<p><b>Goal.</b> Enemy columns advance along the road toward your base. Hold them with your army and survive 100 waves (Classic) or as long as you can (Endless).</p>' +
+  '<p><b>Your army.</b> The shop has four tabs: Troops, Mercs, Support and Defense. Eight barracks train different troops: Riflemen (hold the road), Marksmen (ranged, hit air), Heavy Infantry (armored), K9 dogs (fast), Grenadiers (area fire), Engineers (mines, repairs, sentries), Field Gun crews (long-range shells) and Combat Medics (healing). Build a barracks near the road and its troops gather at a rally point on it. Troops grow stronger every wave, and level 5 barracks pick a specialty.</p>' +
+  '<p><b>Commanding troops.</b> Click a troop, or <b>drag a box</b> to select a group. Right-click (or press Move) to send the whole group somewhere; they keep a formation and hold their new post. Select a barracks and drag its rally flag to change where fresh troops gather.</p>' +
+  '<p><b>Know your counters.</b> Flyers (Attack Drones, Fighter Jets, Zeppelins, Hive Ships): Marksmen, Grenadiers, Machine Gun Teams, Medics and Plasma troops can hit air. Armor (Armored Cars, Heavy Tanks, Colossus Mechs, bosses): Sniper Teams, Gauss Snipers, Dual-Purpose Guns, Rail Cannons, Special Forces and Heavy Infantry with Power Armor ignore or push through armor. Cloaked Phantoms: Spotter Teams, Gauss Snipers or a Radar circle.</p>' +
+  '<p><b>Contractors.</b> Open the Mercs tab, pick a squad and click near the road to drop it in. They fight for a limited time and then leave. A Contractor HQ lowers prices and cooldowns and unlocks stronger squads early. Command Posts boost troops and contractors in their circle.</p>' +
+  '<p><b>Economy and support.</b> Farms and Factories pay out every wave, Power Plants boost them, Mechanic Bays repair troops and walls, Cryo-Emitters slow enemies and Radar reveals cloaked ones. Barracks have higher limits in this mode.</p>' +
+  '<p><b>Walls, traps and mines.</b> Sandbags, concrete barriers and machine gun nests make enemies stop so your troops can shoot them. Tank Traps, Oil Slicks and Mines hurt and slow whatever crosses them.</p>' +
+  '<p><b>Abilities.</b> Airstrike (Q), Paratroopers (W) and Cryo Burst (E).</p>' +
+  '<p><b>Keys.</b> ' + KEYLIST.map(([k, d]) => '<kbd>' + k + '</kbd> ' + d).join(' &middot; ') + '</p>';
+}
+function guideHTML_unused() {
   return '<p><b>Goal.</b> Enemy columns advance along the road toward your base. Each one that gets through takes health off your base. Survive 100 waves (Classic) or as long as you can (Endless). The war runs from 1900 onward: trench-era guns and tanks, modern armies, and near-future sci-fi (energy weapons, cryo, shields, robots and mechs).</p>' +
   '<p><b>Building.</b> Pick something in the shop (or press 1 to 9) and click the map. You stay in build mode so you can place several; it drops you out automatically when you can no longer afford another one or hit its limit. Click an existing tower of the same type to <b>stack</b> another one onto it. The shop has five tabs: Attack, Support, Troops, Defense and Mercs.</p>' +
   '<p><b>Selecting.</b> Click a tower or a troop. <b>Drag a box</b> to select a group (troops if the box caught any, otherwise towers; hold <kbd>Alt</kbd> or use the Box button to force towers or troops). <kbd>Shift</kbd> adds to the selection, double-click grabs every tower of the same type, and the panel has a Select all button. Esc, right-click empty ground, or the Deselect button clears it.</p>' +
@@ -4035,12 +4158,12 @@ $('confirm-yes').onclick = () => { closeModal('confirm'); if (confirmFn) confirm
 $('confirm-no').onclick = () => { closeModal('confirm'); confirmFn = null; };
 function renderAchievements() {
   const got = getAch();
-  $('ach-body').innerHTML = '<p style="color:var(--dim)">' + Object.keys(got).length + ' / ' + ACHIEVEMENTS.length + ' unlocked</p>' + ACHIEVEMENTS.map(a => '<div class="ach' + (got[a.id] ? ' got' : '') + '"><div class="ico">' + (got[a.id] ? '&#9733;' : '?') + '</div><div><b>' + a.name + '</b><div style="color:var(--dim);font-size:12px">' + a.desc + '</div></div></div>').join('');
+  $('ach-body').innerHTML = '<p style="color:var(--dim)">' + Object.keys(got).length + ' / ' + ACHIEVEMENTS.length + ' unlocked</p>' + ACHIEVEMENTS.map(a => '<div class="ach' + (got[a.id] ? ' got' : '') + '"><div class="ico">' + (got[a.id] ? '&#9733;' : '?') + '</div><div><b>' + a.name + '</b>' + (a.gm ? ' <span class="tag">' + GAME_MODES[a.gm].name + '</span>' : '') + '<div style="color:var(--dim);font-size:12px">' + a.desc + '</div></div></div>').join('');
 }
 function showEnd(won) {
   $('end-title').textContent = won ? 'VICTORY!' : 'GAME OVER';
   $('end-title').style.color = won ? 'var(--gold)' : 'var(--red)';
-  let h = won ? '<div class="stars" style="font-size:32px;text-align:center">' + '&#9733;'.repeat(G.stars) + '&#9734;'.repeat(3 - G.stars) + '</div><p style="text-align:center">You held ' + G.map.name + ' through wave 100!</p>' : '<p style="text-align:center">The enemy broke through on wave <b>' + G.wave + '</b>.</p>';
+  let h = won ? '<div class="stars" style="font-size:32px;text-align:center">' + '&#9733;'.repeat(G.stars) + '&#9734;'.repeat(3 - G.stars) + '</div><p style="text-align:center">You held ' + G.map.name + ' through wave 100 in ' + GAME_MODES[G.gm].name + '!</p>' : '<p style="text-align:center">The enemy broke through on wave <b>' + G.wave + '</b>.</p>';
   h += statsHTML();
   const top = G.towers.filter(g => g.dealt > 0).sort((a, b) => b.dealt - a.dealt).slice(0, 3);
   if (top.length) h += '<div class="section-title">Top towers</div>' + top.map(g => '<div style="display:flex;justify-content:space-between;font-size:13px"><span>' + g.def.name + (g.units.length > 1 ? ' x' + g.units.length : '') + '</span><b>' + fmt(g.dealt) + ' dmg &middot; ' + g.kills + ' kills</b></div>').join('');
@@ -4057,7 +4180,8 @@ $('b-quit').onclick = () => { saveGame(); setPaused(false); toMenu(); };
 // =====================================================================
 //  MENUS
 // =====================================================================
-const menuPrefs = Object.assign({ diff: 'normal', mode: 'classic', variant: 'normal' }, (() => { const o = store.get(KEYS.menu, {}); return isPlainObj(o) ? o : {}; })());
+const menuPrefs = Object.assign({ gm: 'tower', diff: 'normal', mode: 'classic', variant: 'normal' }, (() => { const o = store.get(KEYS.menu, {}); return isPlainObj(o) ? o : {}; })());
+if (!PICKABLE_MODES.includes(menuPrefs.gm)) menuPrefs.gm = 'tower';
 if (!own(DIFFICULTIES, menuPrefs.diff)) menuPrefs.diff = 'normal';
 if (!own(MODES, menuPrefs.mode)) menuPrefs.mode = 'classic';
 if (!own(VARIANTS, menuPrefs.variant)) menuPrefs.variant = 'normal';
@@ -4068,10 +4192,10 @@ function showMenu(which) {
     const chk = checkStoredSave(); const c = chk && !chk.bad ? chk : null;
     menuNote(chk && chk.bad ? 'Your saved game was damaged. A backup copy was kept.' : '');
     $('btn-continue').classList.toggle('hidden', !c);
-    $('continue-info').textContent = c ? 'Saved game: ' + MAPS[c.opts.map].name + ', wave ' + c.wave + ', ' + DIFFICULTIES[c.opts.diff].name + ', ' + money$(c.money) : '';
+    $('continue-info').textContent = c ? 'Saved game: ' + GAME_MODES[c.opts.gm].name + ', ' + MAPS[c.opts.map].name + ', wave ' + c.wave + ', ' + DIFFICULTIES[c.opts.diff].name + ', ' + money$(c.money) : '';
     const r = getRecords();
     const stars = getStars(); const nStars = Object.values(stars).reduce((a, b) => a + b, 0);
-    $('records').innerHTML = 'Best wave: <b>' + r.best + '</b> &middot; Best endless: <b>' + r.bestEndless + '</b> &middot; Games: <b>' + r.games + '</b> &middot; Kills: <b>' + fmt(r.kills) + '</b> &middot; Stars: <b>' + nStars + ' / ' + MAPS.length * 3 + '</b>';
+    $('records').innerHTML = 'Best wave: Tower <b>' + r.bestTower + '</b> &middot; Troop <b>' + r.bestTroop + '</b> &middot; Best endless: Tower <b>' + r.bestEndlessTower + '</b> &middot; Troop <b>' + r.bestEndlessTroop + '</b> &middot; Games: <b>' + r.games + '</b> &middot; Kills: <b>' + fmt(r.kills) + '</b> &middot; Stars: <b>' + nStars + ' / ' + MAPS.length * 3 + '</b>';
   }
   if (which === 'new') renderNewGame();
 }
@@ -4082,7 +4206,17 @@ function choiceRow(el, obj, key) {
     b.innerHTML = v.name + '<small>' + v.desc + '</small>'; b.onclick = () => { menuPrefs[key] = k; store.set(KEYS.menu, menuPrefs); renderNewGame(); }; el.appendChild(b);
   });
 }
+function renderGmCards() {
+  const box = $('gm-choices'); box.innerHTML = '';
+  for (const k of PICKABLE_MODES) {
+    const m = GAME_MODES[k], b = document.createElement('button'); b.className = 'btn gm-card' + (menuPrefs.gm === k ? ' on' : ''); b.style.setProperty('--gmc', m.color); b.dataset.gm = k;
+    b.innerHTML = '<span class="gm-tag" style="background:' + m.color + '">' + m.tag + '</span><b class="gm-name">' + m.name + '</b><span class="gm-desc">' + m.desc + '</span><ul>' + m.bullets.map(x => '<li>' + x + '</li>').join('') + '</ul>' + (menuPrefs.gm === k ? '<span class="gm-sel">SELECTED</span>' : '');
+    b.onclick = () => { menuPrefs.gm = k; store.set(KEYS.menu, menuPrefs); renderNewGame(); };
+    box.appendChild(b);
+  }
+}
 function renderNewGame() {
+  renderGmCards();
   choiceRow($('diff-choices'), DIFFICULTIES, 'diff'); choiceRow($('mode-choices'), MODES, 'mode'); choiceRow($('variant-choices'), VARIANTS, 'variant');
   const grid = $('map-choices'); grid.innerHTML = ''; const stars = getStars();
   MAPS.forEach((m, i) => {
@@ -4090,7 +4224,7 @@ function renderNewGame() {
     const c = document.createElement('canvas'); c.width = 192; c.height = 120; drawMapPreview(c, m); b.appendChild(c);
     const n = document.createElement('div'); n.className = 'mname'; const s = stars[i] || 0;
     n.innerHTML = (i + 1) + '. ' + m.name + ' <span class="stars">' + '&#9733;'.repeat(s) + '&#9734;'.repeat(3 - s) + '</span>' + (m.note ? '<small style="display:block;color:var(--dim);font-weight:500;font-size:11px;white-space:normal">' + m.note + '</small>' : '');
-    b.appendChild(n); b.onclick = () => startGame({ diff: menuPrefs.diff, mode: menuPrefs.mode, variant: menuPrefs.variant, map: i });
+    b.appendChild(n); b.onclick = () => startGame({ gm: menuPrefs.gm, diff: menuPrefs.diff, mode: menuPrefs.mode, variant: menuPrefs.variant, map: i });
     grid.appendChild(b);
   });
 }
@@ -4103,13 +4237,14 @@ function drawMapPreview(c, m) {
 $('btn-new').onclick = () => showMenu('new');
 $('btn-new-back').onclick = () => showMenu('main');
 $('btn-continue').onclick = () => { if (!loadGame()) { toast('No saved game'); showMenu('main'); } };
-function toMenu() { G = null; paused = false; parts.length = 0; showMenu('main'); }
+function toMenu() { applyModeCosts('legacy'); G = null; paused = false; parts.length = 0; showMenu('main'); }
 
 // =====================================================================
 //  START
 // =====================================================================
 function startGame(opts, loading) {
   initAudio();
+  setAbilityMode(own(GAME_MODES, opts.gm) ? opts.gm : 'legacy'); applyModeCosts(own(GAME_MODES, opts.gm) ? opts.gm : 'legacy');
   G = newGameState(opts); enemyUid = 1; parts.length = 0;
   setupMap(G);
   $('menu-screen').classList.add('hidden'); $('game-screen').classList.remove('hidden');
@@ -4117,8 +4252,8 @@ function startGame(opts, loading) {
   requestAnimationFrame(() => { resize(); });
   resize();
   if (!loading) { G.nextWave = buildWave(1); store.del(KEYS.save); }
-  shopTab = 'Attack'; specOpen = null; specScope = null; rebuildShop(true); $('abilities').innerHTML = ''; renderAbilities(); refreshSelection(); updateHUD(true);
-  if (!loading) { announce(G.map.name, DIFFICULTIES[opts.diff].name + ' &middot; ' + MODES[opts.mode].name + (G.variantUsed !== 'normal' ? ' &middot; ' + G.variantUsed : ''), '#fff'); if (S.showTips) setTimeout(() => G && toast('Tip: ' + TIPS[0]), 2600); }
+  shopTab = gmTabs()[0]; buildTabs(); $('b-boxmode').classList.toggle('hidden', G.gm === 'tower'); boxMode = 'auto'; $('b-boxmode').textContent = 'Box: Auto'; $('b-boxmode').classList.remove('on'); { const hm = $('h-mode'); hm.textContent = GAME_MODES[G.gm].tag; hm.style.color = GAME_MODES[G.gm].color; } specOpen = null; specScope = null; rebuildShop(true); $('abilities').innerHTML = ''; renderAbilities(); refreshSelection(); updateHUD(true);
+  if (!loading) { announce(G.map.name, GAME_MODES[G.gm].name + ' &middot; ' + DIFFICULTIES[opts.diff].name + ' &middot; ' + MODES[opts.mode].name + (G.variantUsed !== 'normal' ? ' &middot; ' + G.variantUsed : ''), '#fff'); if (S.showTips) setTimeout(() => G && toast('Tip: ' + tipList()[0]), 2600); }
 }
 buildTabs();
 $('b-boxmode').onclick = () => { boxMode = boxMode === 'auto' ? 'towers' : boxMode === 'towers' ? 'troops' : 'auto'; $('b-boxmode').textContent = 'Box: ' + (boxMode === 'auto' ? 'Auto' : boxMode === 'towers' ? 'Towers' : 'Troops'); $('b-boxmode').classList.toggle('on', boxMode !== 'auto'); };
@@ -4156,7 +4291,7 @@ function loop(now) {
   guarded(render, now);
   if (now - fpsT >= 1000) { const fps = frames * 1000 / (now - fpsT); frames = 0; fpsT = now; if (S.showFps) { $('fps').classList.remove('hidden'); $('fps').textContent = Math.round(fps) + ' FPS'; } autoQualityTick(fps); }
   if (now - uiT > 200) { uiT = now; guarded(() => { updateHUD(); refreshShopState(); renderAbilities(); renderSelPanel(); updateHoverTooltip(); }); }
-  if (S.showTips && now - tipT > 45000 && G.wave > 1) { tipT = now; toast('Tip: ' + pick(TIPS), '#9fd3ff'); }
+  if (S.showTips && now - tipT > 45000 && G.wave > 1) { tipT = now; toast('Tip: ' + pick(tipList()), '#9fd3ff'); }
 }
 showMenu('main');
 requestAnimationFrame(loop);
