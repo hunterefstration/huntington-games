@@ -221,6 +221,17 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .tcard .pgb{position:absolute;left:0;bottom:0;height:4px;background:var(--gold)}
 .stars{color:var(--gold);letter-spacing:2px}
 .toast{position:fixed;left:50%;bottom:140px;transform:translateX(-50%);z-index:70;background:rgba(10,16,24,.97);border:1px solid var(--gold);padding:10px 18px;border-radius:12px;font-weight:700;font-size:15px;pointer-events:none;text-align:center;max-width:92vw;animation:fin .2s}
+.dchip{display:inline-block;margin:2px 3px 2px 0;padding:3px 9px;border:1px solid #6a5a2a;border-radius:20px;background:#221c0c;color:#ffe2a6;font-size:13px;font-weight:700}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:6px}
+.dcard{display:flex;flex-direction:column;gap:5px;text-align:left;padding:12px;border-radius:12px;border:1px solid #8a6a28;background:linear-gradient(180deg,#2a2210,#16120a);color:var(--txt);font-size:13.5px;cursor:pointer;min-height:96px}
+.dcard b{color:#ffe2a6;font-size:16px}.dcard b i{color:var(--dim);font-style:normal;font-size:13px}.dcard:hover{border-color:var(--gold);box-shadow:0 0 14px #f6c04e55}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:6px}
+.mcard{display:flex;flex-direction:column;gap:5px;text-align:left;padding:10px;border-radius:12px;border:1px solid #46647f;background:linear-gradient(180deg,#1d3048,#121e2e);color:var(--txt);font-size:13.5px;cursor:pointer}
+.mcard:hover{border-color:var(--gold);box-shadow:0 0 14px #f6c04e44}.mcard img{width:100%;height:120px;object-fit:cover;border-radius:8px;display:block}.mcard b{color:#ffe2a6;font-size:17px}
+.mcard .mi{color:#9fd0ff;font-size:12.5px}.mcard .mm{align-self:flex-start;padding:1px 8px;border-radius:10px;background:#3a2a50;border:1px solid #8a6ac0;color:#e0d0ff;font-size:12px;font-weight:700}.mcard .mr{color:#7be08a;font-weight:700;font-size:12.5px}
+.ctrack{display:flex;gap:5px;flex-wrap:wrap}.ctrack span{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #34495f;background:#0d1620;color:var(--dim);font-weight:800;font-size:13px}
+.ctrack span.done{background:#1d4a2c;border-color:#4fdc86;color:#c8ffd9}.ctrack span.now{border-color:var(--gold);color:#ffe2a6;box-shadow:0 0 10px #f6c04e66}.ctrack span.fin{border-style:dashed}
+.hearts{color:#ff5a6a;font-size:20px;letter-spacing:2px;margin-left:6px}.hearts s{color:#3a4656;text-decoration:none}
 .ach{display:flex;gap:10px;align-items:center;padding:7px 10px;border:1px solid #29394d;border-radius:9px;background:#0d1620;font-size:13px}
 .ach.ok{border-color:#3d9b5b;background:#0f2216}.ach i{font-style:normal;color:var(--dim)}
 #loading{position:fixed;inset:0;z-index:90;background:#06090d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-weight:900;letter-spacing:.2em;color:var(--gold2);font-size:20px}
@@ -390,7 +401,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.4';
+const VERSION = '3.0';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -603,10 +614,11 @@ const RANKS = [['Private', 0], ['Corporal', 80], ['Sergeant', 220], ['Lieutenant
 const ACH = {
   win: ['First Victory', 'Win a battle.'], hard: ['Tough Tactician', 'Beat a Hard or Brutal enemy.'], brutal: ['Brutal Slayer', 'Beat a Brutal enemy.'],
   online: ['Online Warrior', 'Win an online battle.'], spec3: ['Specialist', 'Add three special upgrades in one battle.'], air10: ['Sky King', 'Destroy 10 aircraft in one battle.'],
-  calls5: ['Forward Observer', 'Use 5 Support powers in one battle.'], hero: ['Hero Unit', 'Have a unit reach Hero rank.'], grab: ['Land Grab', 'Hold every flag at once.'], hq: ['Decapitation', 'Win by destroying an enemy HQ.'], rush: ['Blitz', 'Win a battle in under 8 minutes.'], tech: ['Scientist', 'Finish all ' + TECH.length + ' upgrades in one battle.']
+  calls5: ['Forward Observer', 'Use 5 Support powers in one battle.'], hero: ['Hero Unit', 'Have a unit reach Hero rank.'], grab: ['Land Grab', 'Hold every flag at once.'], hq: ['Decapitation', 'Win by destroying an enemy HQ.'], rush: ['Blitz', 'Win a battle in under 8 minutes.'], tech: ['Scientist', 'Finish all ' + TECH.length + ' upgrades in one battle.'],
+  camp: ['Operation Complete', 'Win a Campaign operation.'], campElite: ['Legend', 'Win a Campaign operation on Elite.'], ace: ['Bounty Hunter', 'Destroy an enemy Ace.'], crate: ['Quartermaster', 'Claim 3 supply crates in one battle.']
 };
 const PROF = (() => {
-  const d = { xp: 0, games: 0, wins: 0, losses: 0, kills: 0, lost: 0, built: 0, captured: 0, time: 0, best: 0, mp: 0, mpWins: 0, color: 0, ach: {}, maps: {}, tutDone: 0, seenIntro: 0, seenVer: '' };
+  const d = { xp: 0, games: 0, wins: 0, losses: 0, kills: 0, lost: 0, built: 0, captured: 0, time: 0, best: 0, mp: 0, mpWins: 0, color: 0, ach: {}, maps: {}, tutDone: 0, seenIntro: 0, seenVer: '', cRuns: 0, cWins: 0, cBest: 0 };
   const s = readJSON('frontline_profile_v2') || readJSON('frontline_profile_v1');
   if (s) for (const k in d) if (s[k] !== undefined && typeof s[k] === typeof d[k]) d[k] = s[k];
   if (!d.ach || typeof d.ach !== 'object') d.ach = {}; if (!d.maps || typeof d.maps !== 'object') d.maps = {}; if (!(d.color >= 0 && d.color < 8)) d.color = 0;
@@ -962,6 +974,7 @@ function createWorld(o) {
   if (!W.mirror) for (const pt of W.pts) if (pt.hq >= 0 && pt.owner < 0) { pt.hq = -1; pt.name = 'Empty Base'; pt.val = 1.5; }
   for (const p of W.players) recalcMods(p);
   W.activeTeams = W.teamList.map(t => t.id);
+  battleSetup();
   if (!W.mirror) for (const p of W.players) if (p.kind === 'ai') p.ai = makeAI(p, s_ai(o, p.id));
   updateVision(); updateVision();
   return W;
@@ -1004,6 +1017,7 @@ function teamVisible(team, e) { return e.team === team || seen(team, e.x, e.z); 
 function recalcMods(p) {
   const m = p.mod; for (const k of MODKEYS) m[k] = 0;
   for (const id in p.techs) { const t = TECHBY[id]; if (t) for (const k in t.mod) m[k] += t.mod[k]; }
+  if (p.perkMod) for (const k in p.perkMod) if (k in m) m[k] += p.perkMod[k];
   const hq = p.hqB; if (hq && hq.spec === 'logi') { m.inc += .25; m.cost -= .08; } if (hq && hq.spec === 'warroom') { m.callCd -= .25; m.xp += .25; }
   m.cost = Math.max(-.5, m.cost);
   for (const u of W.units) if (u.owner === p.id) refreshUnit(u);
@@ -1020,7 +1034,7 @@ function unitCost(p, type, b) {
 }
 function prodSpeed(b, type) {
   const p = P(b.owner); let s = 1 + p.mod.prod; if (b.spec === 'conscript') s *= 1.4; if (b.spec === 'rapid') s *= 1.5; if (b.spec === 'swarm' && DRONES[type]) s *= 2;
-  if (p.ai) s *= AID[p.ai.diff].trainMul || 1;
+  if (p.ai) s *= p.ai.dif.trainMul || 1;
   const pt = b.pt >= 0 ? W.pts[b.pt] : null; if (pt) for (const sl of pt.slots) if (sl.b && sl.b.type === 'depot' && sl.b.spec === 'logistics' && sl.b.prog >= 1) { s *= 1.25; break; }
   return s;
 }
@@ -1169,6 +1183,7 @@ function killUnit(u, src, owner) {
   if (!W.o.sandbox) { const tm = W.teams[u.team]; if (tm) tm.tickets -= ticketCost(u.T); }
   if (src && src.k === 'u') { const sp = P(src.owner); sp.stats.kills++; if (u.T.air) sp.stats.air++; if (!src.dead) giveXp(src, u.T.cost * .22); }
   else if (owner !== undefined && owner >= 0) { P(owner).stats.kills++; if (u.T.air) P(owner).stats.air++; }
+  const ko = src && src.k === 'u' ? src.owner : owner; if (ko !== undefined && ko >= 0 && W.players[ko] && W.players[ko].team !== u.team) { const kp = W.players[ko]; if (kp.bounty) kp.sup += u.T.cost * kp.bounty; if (u.ace) aceKilled(u, ko); }
 }
 function killBuilding(b, src, owner) {
   if (b.dead) return; b.dead = true; const p = P(b.owner); const pt = b.pt >= 0 ? W.pts[b.pt] : null; refundTraining(b);
@@ -1581,11 +1596,12 @@ function secTick() {
     let inc = 0, pn = 0; for (const pt of W.pts) if (pt.owner === p.id) { pn++; inc += pt.hq >= 0 ? 6 : 3 * pt.val; }
     for (const b of W.bld) if (b.owner === p.id && b.type === 'depot' && b.prog >= 1) inc += BT.depot.inc[b.lvl - 1] * (b.spec === 'trade' ? 1.6 : 1);
     let hqL = p.hqB ? p.hqB.lvl : 1; inc *= 1 + (hqL - 1) * .12;
-    inc *= 1 + p.mod.inc; if (p.ai) inc *= AID[p.ai.diff].inc; p.inc = inc; p.ptsN = pn; p.stats.peakPts = Math.max(p.stats.peakPts, pn);
+    inc *= 1 + p.mod.inc; if (p.ai) inc *= p.ai.dif.inc; p.inc = inc; p.ptsN = pn; p.stats.peakPts = Math.max(p.stats.peakPts, pn);
     p.popCap = Math.min(W.popMax, 36 + pn * 7 + p.mod.pop + (hqL - 1) * 10);
     if (p.hqB && p.hqB.dead && p.alive) p.alive = false;
   }
   if (W.tick % 60 === 0) bleedTick();
+  fevTick(); objTick();
   checkWin();
 }
 function bleedTick() {
@@ -1627,6 +1643,111 @@ function razePoint(pt) {
   for (const b of W.bld.slice()) if (b.type === 'nest') { if (Math.hypot(b.x - pt.x, b.z - pt.z) < 12 && b.owner === pt.owner) killBuilding(b, null, -1); }
 }
 
+// ---------------- 3.0 field events (offline battles): supply crates, enemy aces, artillery strikes ----------------
+// A crate is claimed by the side that keeps troops next to it, alone, for 5 seconds. An ace is a marked unit with extra health
+// and a bounty on it. An artillery strike shells a busy flag after a 12 second warning, hitting everyone there.
+function fevMsg(text, x, z, col, teamOnly) { for (const q of W.players) if ((q.kind === 'human' || q.kind === 'remote') && (teamOnly === undefined || q.team === teamOnly)) ev([3, q.id, 'msg', r1(x || 0), r1(z || 0), col || 0, text]); }
+function teamName(t) { for (const q of W.players) if (q.team === t && (q.kind === 'human' || q.kind === 'remote')) return 'Your side'; return 'The enemy'; }
+function humanTeam() { for (const q of W.players) if (q.kind === 'human') return q.team; return -1; }
+function fevReward(team, amt, x, z, crate) {   // goes to whoever on that side has the most troops there
+  const ps = W.players.filter(q => q.team === team && q.alive); if (!ps.length) return 0; let best = ps[0], bn = -1;
+  for (const q of ps) { let n = 0; for (const u of W.units) if (u.owner === q.id && Math.hypot(u.x - x, u.z - z) < 14) n++; if (n > bn) { bn = n; best = q; } }
+  const a = Math.round(amt * (best.fevMul || 1)); best.sup += a; if (crate) best.stats.crates = (best.stats.crates || 0) + 1; return a;
+}
+function fevSpawn() {
+  const supplyGame = W.o.obj && W.o.obj.type === 'supply';
+  const kinds = supplyGame ? ['crate'] : ['crate', 'crate', 'ace', 'strike'];
+  let k = kinds[(Math.random() * kinds.length) | 0]; if (W.fev.some(e => e.k === k) && !supplyGame) k = kinds.find(x => !W.fev.some(e => e.k === x)) || null; if (!k) return;
+  if (k === 'crate') {
+    // a fair spot: one of the flags that are about as far from every side's HQ (so nobody gets it for free)
+    const hqs = W.teamList.filter(t => t.alive).map(t => W.players.filter(q => q.team === t.id && q.alive && q.hqB).map(q => q.hqB));
+    const spread = q => { const ds = hqs.map(hs => Math.min(...hs.map(h => Math.hypot(h.x - q.x, h.z - q.z)))); return Math.max(...ds) - Math.min(...ds); };
+    const cand = W.pts.filter(q => q.hq < 0).map(q => [q, spread(q) + Math.random() * 12]).sort((a, b) => a[1] - b[1]).slice(0, 3); const pt = cand.length ? cand[(Math.random() * cand.length) | 0][0] : null;
+    const a = Math.random() * TAU, d = pt ? rr(9, 16) : rr(0, 20); const q = snapFree(W.M, (pt ? pt.x : 0) + Math.cos(a) * d, (pt ? pt.z : 0) + Math.sin(a) * d, 6);
+    const e = { k, id: ++W.fevN, x: q[0], z: q[1], t: 0, life: 100, hold: 0, ht: -1, land: 3 };
+    W.fev.push(e); ev([5, 1, r1(e.x), r1(e.z), 3, 1]);
+    fevMsg('Supply crate dropping' + (pt ? ' near ' + pt.name : '') + '! Keep troops next to it to claim ' + (supplyGame ? 'it.' : '350 money.'), e.x, e.z, 1);
+  } else if (k === 'ace') {
+    const teams = W.teamList.filter(t => t.alive).map(t => t.id); const tm = teams[(W.fevN + (Math.random() < .5 ? 0 : 1)) % teams.length];
+    let best = null, bs = 0; for (const u of W.units) { if (u.team !== tm || u.T.air || !u.T.w || u.life > 0 || u.ace) continue; const sc = u.T.cost * (1 + u.vet * .3); if (sc > bs) { bs = sc; best = u; } }
+    if (!best) return; const e = { k, id: ++W.fevN, uid: best.id, team: tm, x: best.x, z: best.z, t: 0, life: 150 };
+    best.ace = 1; best.hpB *= 1.5; best.dmB *= 1.2; refreshUnit(best); best.hp = best.maxHp; W.fev.push(e);
+    for (const q of W.players) if (q.kind === 'human' || q.kind === 'remote') ev([3, q.id, 'msg', r1(best.x), r1(best.z), 2, q.team === tm ? 'Your ' + best.T.n + ' is now an Ace: +50% health, +20% damage. Keep it alive for 2:30 for a 200 bonus. The enemy has a bounty on it!' : 'Enemy Ace spotted: ' + (/^[AEIOU]/.test(best.T.n) ? 'an ' : 'a ') + best.T.n + ' (gold ring). Destroy it for a 300 bounty!']);
+  } else if (k === 'strike') {
+    let best = null, bs = 0; for (const pt of W.pts) { if (pt.hq >= 0) continue; const out = []; hashQ(pt.x, pt.z, 20, out); const tm = new Set(out.map(u => u.team)); const sc = out.length * (tm.size > 1 ? 2 : 1); if (sc > bs) { bs = sc; best = pt; } }
+    if (!best || bs < 4) return; const e = { k, id: ++W.fevN, x: best.x, z: best.z, t: 0, life: 12, r: 17 };
+    W.fev.push(e); fevMsg('Artillery strike on ' + best.name + ' in 12 seconds! It hits everyone there. Get your troops out (or lure the enemy in).', e.x, e.z, 3);
+  }
+}
+function fevTick() {      // once a second
+  if (!W.fev) return; const obj = W.o.obj;
+  if (!W.over && W.t >= W.fevT) { W.fevT = W.t + (obj && obj.type === 'supply' ? rr(45, 60) : rr(110, 160)); fevSpawn(); }
+  for (let i = W.fev.length - 1; i >= 0; i--) {
+    const e = W.fev[i]; e.t++; let done = false;
+    if (e.k === 'crate') {
+      if (e.t < e.land) continue;
+      const out = []; hashQ(e.x, e.z, 7, out); const tm = new Set(); for (const u of out) if (!u.dead && !u.T.air && u.life <= 0) tm.add(u.team);
+      if (tm.size === 1) { const t = [...tm][0]; if (t !== e.ht) { e.ht = t; e.hold = 0; } e.hold++; } else if (tm.size === 0) e.hold = Math.max(0, e.hold - 1);
+      if (e.hold >= 5) {
+        done = true; const t = e.ht; ev([6, r1(e.x), r1(e.z), 12, 2, -1]);
+        for (const u of W.units) if (u.team === t && Math.hypot(u.x - e.x, u.z - e.z) < 14) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * .5);
+        if (obj && obj.type === 'supply') { W.objC[t] = (W.objC[t] || 0) + 1; fevMsg(teamName(t) + ' claimed a supply crate (' + W.objC[t] + '/' + obj.need + ').', e.x, e.z, 1); fevReward(t, 150, e.x, e.z, 1); }
+        else { const a = fevReward(t, 350, e.x, e.z, 1); fevMsg(teamName(t) + ' claimed the supply crate (+' + a + ' money, troops healed).', e.x, e.z, 1); }
+      } else if (e.t >= e.life) { done = true; fevMsg('The supply crate was lost.', e.x, e.z, 0); }
+    } else if (e.k === 'ace') {
+      const u = W.byId.get(e.uid); if (u && !u.dead) { e.x = u.x; e.z = u.z; }
+      if (!u || u.dead) done = true;
+      else if (e.t >= e.life) { done = true; u.ace = 0; const a = fevReward(e.team, 200, u.x, u.z); fevMsg((teamName(e.team) === 'Your side' ? 'Your' : 'The enemy') + ' Ace survived (+' + a + ' money).', u.x, u.z, 2); }
+    } else if (e.k === 'strike') {
+      if (e.t >= e.life) { done = true; const x = e.x, z = e.z, M = W.M;
+        for (let j = 0; j < 14; j++) { const a = Math.random() * TAU, r = Math.sqrt(Math.random()) * e.r, bx = x + Math.cos(a) * r, bz = z + Math.sin(a) * r; W.sched.push({ at: W.t + .3 + j * .4, fn: () => { const pr = { sx: bx + 30, sy: 70, sz: bz + 30, tx: bx, ty: M.H(bx, bz), tz: bz, t0: W.t, dur: 1.4, src: null, owner: -1, team: -1, dmg: 70, wt: 'shell', spl: 6, tid: 0, arc: 1, k: 2 }; W.proj.push(pr); ev([0, 2, r1(pr.sx), 70, r1(pr.sz), r1(bx), r1(pr.ty), r1(bz), 1.4, 0, 1]); } }); }
+        ev([6, r1(x), r1(z), e.r, 1, -1]); }
+    }
+    if (done) W.fev.splice(i, 1);
+  }
+}
+// ace killed: the killer's side collects the bounty
+function aceKilled(u, owner) {
+  if (owner === undefined || owner < 0 || !W.players[owner]) return; const k = W.players[owner]; if (k.team === u.team) return;
+  const a = Math.round(300 * (k.fevMul || 1)); k.sup += a; k.stats.aces = (k.stats.aces || 0) + 1; fevMsg(teamName(k.team) + ' destroyed ' + (teamName(u.team) === 'Your side' ? 'your' : 'the enemy') + ' Ace ' + u.T.n + ' (+' + a + ' bounty).', u.x, u.z, 2);
+}
+// ---------------- 3.0 battle objectives (Campaign missions) ----------------
+function endBattle(team, reason) { if (W.over) return; W.over = true; W.winner = team; W.reason = reason; for (const t of W.teamList) if (t.id !== team) { t.alive = false; for (const i of t.players) { const q = W.players[i]; if (q.alive) { q.alive = false; q.out = reason; } } } ev([12, team, reason]); }
+function objTick() {
+  const o = W.o.obj; if (!o || W.over || W.o.sandbox) return; const ht = humanTeam(); const foe = W.teamList.find(t => t.id !== ht);
+  if (o.type === 'blitz' && W.t >= o.dur) endBattle(foe ? foe.id : -1, 'Out of time');
+  else if (o.type === 'holdout' && W.t >= o.dur) endBattle(ht, 'You held out');
+  else if (o.type === 'koth') { const pt = W.pts[o.pt]; if (pt && W.t >= (o.open || 0) && pt.owner >= 0 && pt.ctrl >= 1 && !pt.contested) { const t = P(pt.owner).team; W.objC[t] = (W.objC[t] || 0) + 1; if (W.objC[t] >= o.need) endBattle(t, t === ht ? 'You held the hill' : 'The enemy held the hill'); } }
+  else if (o.type === 'supply') { for (const t in W.objC) if (W.objC[t] >= o.need) { endBattle(+t, +t === ht ? 'You grabbed the supplies' : 'The enemy grabbed the supplies'); break; } }
+}
+// 3.0 campaign setup: Doctrines for the player and the mission's starting conditions
+function battleSetup() {
+  const o = W.o; W.fev = []; W.fevN = 0; W.objC = {}; W.fevT = o.events ? (o.obj && o.obj.type === 'supply' ? 35 : rr(100, 130)) : 1e9;
+  if (o.obj && o.obj.type === 'koth' && o.obj.pt === undefined) { let best = null; for (const pt of W.pts) if (pt.hq < 0 && (!best || pt.val > best.val || (pt.val === best.val && Math.hypot(pt.x, pt.z) < Math.hypot(best.x, best.z)))) best = pt; o.obj.pt = best ? best.id : 0; }
+  if (W.mirror) return;
+  for (const p of W.players) {
+    const s = o.players[p.id]; const hq = p.hqB; if (!hq) continue; const pt = W.pts[hq.pt];
+    const near = n => { const a = Math.atan2(-pt.z, -pt.x) + rr(-.6, .6), d = 14 + rr(0, 6); return snapFree(W.M, pt.x + Math.cos(a) * d, pt.z + Math.sin(a) * d, 5); };
+    const add = (t, n, vet) => { for (let i = 0; i < n; i++) { const q = near(); spawnUnit(t, p.id, q[0], q[1], { rot: Math.atan2(-pt.z, -pt.x), vet: vet || 0 }); } };
+    if (s.extra) for (const [t, n] of s.extra) add(t, n);
+    if (s.sup) p.sup += s.sup;
+    if (s.fort) {   // dug in: walls at the HQ and the home flag, bunkers at the flags it holds
+      placeBuilding('wall', p.id, pt, -2, true).slot = -2;
+      for (const q of W.pts) if (q.owner === p.id && q.hq < 0) { if (!q.wall) placeBuilding('wall', p.id, q, -2, true).slot = -2; const k = q.slots.findIndex(x => !x.b); if (k >= 0) { const b = placeBuilding('turret', p.id, q, k, true); b.lvl = 2; refreshB(b); b.hp = b.maxHp; } }
+      for (let n = 0; n < 2; n++) { const k = pt.slots.findIndex(x => !x.b); if (k >= 0) { const b = placeBuilding('turret', p.id, pt, k, true); b.lvl = 2; refreshB(b); b.hp = b.maxHp; } }
+    }
+    const D = s.docs; if (!D) continue; const has = id => D[id] || 0;
+    p.perkMod = {}; for (const id in D) { const d = DOCS[id]; if (d && d.mod) for (const k in d.mod) p.perkMod[k] = (p.perkMod[k] || 0) + d.mod[k] * D[id]; }
+    p.sup += 300 * has('chest'); p.bounty = has('bounty') ? .15 : 0; p.fevMul = has('qm') ? 2 : 1;
+    if (has('hq2')) { hq.lvl = 2; refreshB(hq); hq.hp = hq.maxHp; }
+    if (has('fort') && !pt.wall) placeBuilding('wall', p.id, pt, -2, true).slot = -2;
+    if (has('base')) { const k = pt.slots.findIndex(x => !x.b); if (k >= 0) { const b = placeBuilding('barracks', p.id, pt, k, true); b.ros.rifleman = 3; b.ros.rocket = 2; } }
+    if (has('vets')) { for (const u of W.units) if (u.owner === p.id) { u.vet = Math.max(u.vet, 1); refreshUnit(u); u.hp = u.maxHp; } add('rifleman', 3, 1); }
+    if (has('tanks')) add('lighttank', 2 * has('tanks'));
+    if (has('mercs')) { for (let i = 0; i < 4; i++) { const q = near(); const u = spawnUnit('merc', p.id, q[0], q[1], { vet: 1, life: 180 }); refreshUnit(u); u.hp = u.maxHp; } }
+    recalcMods(p);
+  }
+}
 // ---------------- commands ----------------
 function unitsOf(pid, ids) { const r = []; for (const id of ids) { const u = W.byId.get(id); if (u && u.k === 'u' && u.owner === pid && !u.dead) r.push(u); } return r; }
 function formationPositions(us, tx, tz, form) {
@@ -1780,7 +1901,7 @@ function cmdDebug(p, c) {
 //  AI COMMANDERS
 // =====================================================================
 function makeAI(p, cfg) {
-  const pers = AIP[cfg.pers] || AIP.hale, dif = AID[cfg.diff] || AID.normal;
+  const pers = AIP[cfg.pers] || AIP.hale, dif = Object.assign({}, AID[cfg.diff] || AID.normal, cfg.over || {});   // 3.0: missions can tune a commander
   const SAYS = { vex: { start: 'Hit them hard, hit them fast!', attack: 'Charge! No mercy!', retreat: 'Regroup! We go again.' }, stone: { start: 'Dig in. Let them come.', attack: 'The wall advances.', retreat: 'Fall back behind the guns.' }, hale: { start: 'Adapting to the battlefield.', attack: 'Probing their weak point.', retreat: 'Recalculating.' }, kruger: { start: 'Armor will decide this.', attack: 'Tanks forward!', retreat: 'Pull back and repair.' }, voss: { start: 'The skies belong to us.', attack: 'Wings up. Strike!', retreat: 'Back to the airfield.' } };
   const ai = {
     say(kind) { if (W.o.tutorial || W.o.demo || this.t - (this.lastSay || -99) < 50 || this.t < 4) return; const s = (SAYS[pers.id] || {})[kind]; if (!s) return; this.lastSay = this.t; ev([11, p.id, s]); },
@@ -1795,7 +1916,7 @@ function makeAI(p, cfg) {
       this.pickFocus();
       const f = this.focus;
       if (f === 'build' || f === 'expand' || Math.random() < .15) this.econ(); else this.saveFor = 0;
-      this.produce(); this.military(); this.calls();
+      this.produce(); this.military(); this.events(); this.calls();
     },
     // a person does one or two things at a time: expand, or build up, or mass an army, or defend, or attack
     pickFocus() {
@@ -1932,9 +2053,9 @@ function makeAI(p, cfg) {
       for (const b of W.bld) { if (b.owner !== p.id || b.type === 'nest') continue; }
       const defenders = new Set();
       for (const [pt, tp] of threatened) {
-        this.lastThreat = this.t; const near = s.combat.filter(u => Math.hypot(u.x - pt.x, u.z - pt.z) < 90 && this.role.get(u.id) !== 'cap' && (!u.T.air || true));
+        this.lastThreat = this.t; const near = s.combat.filter(u => Math.hypot(u.x - pt.x, u.z - pt.z) < 90 && this.role.get(u.id) !== 'cap' && this.role.get(u.id) !== 'crate');
         let mine = near.reduce((a, u) => a + u.T.cost * (u.hp / u.maxHp), 0);
-        const pull = (pt.hq >= 0 || tp > mine * 1.0) ? s.combat.filter(u => this.role.get(u.id) !== 'cap') : near;
+        const pull = (pt.hq >= 0 || tp > mine * 1.0) ? s.combat.filter(u => this.role.get(u.id) !== 'cap' && (pt.hq >= 0 || this.role.get(u.id) !== 'crate')) : near;
         if (tp > mine * 1.05 && tp > 150) this.lastEmerg = this.t;
         for (const u of pull) { if (defenders.has(u.id)) continue; defenders.add(u.id); this.role.set(u.id, 'def'); }
         const grp = pull.filter(u => Math.hypot(u.x - pt.x, u.z - pt.z) > 18); this.ord(grp, 'am', pt.x + rr(-4, 4), pt.z + rr(-4, 4));
@@ -2000,6 +2121,32 @@ function makeAI(p, cfg) {
       }
       for (const e of s.eng) if (e.o === 0 && Math.random() < .2) { const pts = s.ownPts; const pt = pts[(Math.random() * pts.length) | 0]; if (pt && Math.hypot(e.x - pt.x, e.z - pt.z) > 30) this.ord([e], 'mv', pt.x, pt.z); }
     },
+    // 3.0: race for supply crates, and get out from under artillery strikes
+    events() {
+      const s = this.s; if (!W.fev) return; const supplyGame = W.o.obj && W.o.obj.type === 'supply'; const hq = p.hqB;
+      const sq = this.crateSq || (this.crateSq = new Map());
+      for (const e of W.fev) {
+        if (e.k === 'strike') {
+          if (e.dodge || Math.random() > .3 + dif.counter * .6) continue; e.dodge = e.dodge || {}; if (e.dodge[p.id]) continue; e.dodge[p.id] = 1;
+          const mine = s.my.filter(u => !u.T.air && Math.hypot(u.x - e.x, u.z - e.z) < e.r + 4); if (!mine.length || !hq) continue;
+          const a = Math.atan2(hq.z - e.z, hq.x - e.x); this.ord(mine, 'mv', e.x + Math.cos(a) * (e.r + 12), e.z + Math.sin(a) * (e.r + 12));
+        } else if (e.k === 'crate') {
+          let ids = sq.get(e.id);
+          if (!ids) {
+            if (e.skip && e.skip[p.id]) continue; if (!supplyGame && Math.random() > .45 + dif.counter * .5) { (e.skip = e.skip || {})[p.id] = 1; continue; }
+            const pool = s.combat.filter(u => !u.T.air && u.T.cap && this.role.get(u.id) !== 'def' && this.role.get(u.id) !== 'cap').sort((a, b) => Math.hypot(a.x - e.x, a.z - e.z) - Math.hypot(b.x - e.x, b.z - e.z));
+            const pick = pool.slice(0, supplyGame ? 7 : 3); if (!pick.length) continue; ids = pick.map(u => u.id); sq.set(e.id, ids); for (const u of pick) this.role.set(u.id, 'crate'); this.ord(pick, 'am', e.x, e.z);
+          } else {
+            // keep the squad on the crate: fight on the way in, then stand on it (and top the squad up if it is shot to pieces)
+            const us = ids.map(id => W.byId.get(id)).filter(u => u && !u.dead && this.role.get(u.id) === 'crate'); const dd = u => Math.hypot(u.x - e.x, u.z - e.z);
+            if (us.length < (supplyGame ? 4 : 2)) { const more = s.combat.filter(u => !u.T.air && u.T.cap && !this.role.has(u.id)).sort((a, b) => dd(a) - dd(b)).slice(0, (supplyGame ? 6 : 3) - us.length); for (const u of more) { this.role.set(u.id, 'crate'); ids.push(u.id); us.push(u); } }
+            const farA = us.filter(u => dd(u) > 28 && u.o === 0), farM = us.filter(u => dd(u) > 4.5 && dd(u) <= 28 && !(u.o === 1 && Math.hypot(u.tx - e.x, u.tz - e.z) < 3));
+            if (farA.length) this.ord(farA, 'am', e.x, e.z); if (farM.length) this.ord(farM, 'mv', e.x + rr(-1.5, 1.5), e.z + rr(-1.5, 1.5));
+          }
+        }
+      }
+      for (const [id, ids] of sq) if (!W.fev.some(e => e.id === id)) { for (const uid of ids) if (this.role.get(uid) === 'crate') this.role.delete(uid); sq.delete(id); }
+    },
     endWave(retreat) { this.state = 'mass'; this.wave++; if (retreat) this.lastRetreat = this.t; this.nextAtk = this.t + dif.pause * (retreat ? 1.3 : 1) * (.8 + Math.random() * .5); },
     warnHumans(code, pt) { if (!pt || W.o.demo || this.t < 30) return; for (const q of W.players) if (q.team !== p.team && (q.kind === 'human' || q.kind === 'remote')) alertMsg(q.id, code, pt.x, pt.z, 0, pt.hq >= 0 ? 'their base' : pt.name); },
     pickTarget(atk, cx, cz, power) {
@@ -2010,6 +2157,7 @@ function makeAI(p, cfg) {
         const isHQ = pt.hq >= 0; const d = Math.hypot(pt.x - cx, pt.z - cz); const def = this.powerNear(pt.x, pt.z, 40);
         if (def > power * 1.1 && !isHQ) continue; if (isHQ && (def > power * 1.3 || power < dif.hqPower)) continue;
         let sc = pt.val * 40 - d * .35 - def * .4 + (pt.owner >= 0 ? 35 : 15); if (isHQ) sc += power > dif.hqPower ? 70 + (total <= 2 ? 80 : 0) : -60;
+        if (W.o.obj && W.o.obj.type === 'koth' && W.o.obj.pt === pt.id) sc += 160;
         if (pt.owner >= 0) { const o = P(pt.owner); const weak = o.pop < 18 ? 20 : 0; sc += weak; }
         sc += Math.random() * 15 * (1 - dif.counter * .3) + Math.random() * dif.mistakes * 90; if (sc > bs) { bs = sc; best = pt; }
       }
@@ -2198,6 +2346,7 @@ function buildModels() {
   // jet for call-ins / crates
   { const g = new GB(); g.cone(.6, 5, 8, 0, 0, 1, 0x8e969e, { rx: PI / 2 }); g.cyl(.65, .65, 3.5, 8, 0, 0, -2.2, 0x7e868e, { rx: PI / 2 }); g.box(7, .12, 2.5, 0, 0, -1.5, 0x7e868e); g.box(.12, 1.2, 1.4, 0, .7, -3.6, 0x8e969e); g.box(2.6, .1, 1, 0, 0, -3.8, 0x7e868e); MDL.jet = [part(g)]; }
   { const g = new GB(); g.box(1.6, 1.2, 1.6, 0, .6, 0, 0, { acc: .9 }); g.box(1.7, .2, 1.7, 0, .7, 0, DARK); g.cone(2.0, 1.2, 8, 0, 2.6, 0, WHITE, { rx: PI }); MDL.crate = [part(g)]; }
+  { const g = new GB(); g.box(1.6, 1.2, 1.6, 0, .6, 0, 0, { acc: .9 }); g.box(1.7, .2, 1.7, 0, .7, 0, DARK); g.box(.12, 3.2, .12, .7, 1.6, .7, DARK); g.box(1, .6, .06, 1.2, 2.85, .7, 0, { acc: .9 }); MDL.cratel = [part(g)]; }   // a landed field-event crate, with a little flag
   { const g = new GB(); g.box(1.4, .5, 1.4, 0, .25, 0, 0x2a2420); g.box(1.0, .5, 1.0, .2, .6, .1, 0x1c1814); MDL.wreck = [part(g)]; }
   { const g = new GB(); g.cyl(.7, .7, .6, 6, 0, .3, 0, 0xffc94a); g.cone(.8, 1.2, 4, 0, 1.0, 0, 0xffffff, { rx: PI }); MDL.beacon = [part(g)]; }
   { const g = new GB(); g.cyl(.1, .1, 9, 6, 0, 4.5, 0, 0xcfd3d8); g.box(2.8, 1.5, .08, 1.5, 7.9, 0, 0, { acc: 1 }); g.cyl(.3, .3, .3, 6, 0, 9.1, 0, 0xffc94a); g.box(1.8, .4, 1.8, 0, .2, 0, 0x5e5b55); MDL.flag = [part(g)]; }
@@ -2647,6 +2796,13 @@ function renderFrame(dt, now) {
     } else o.label.style.display = 'none';
   }
   padPool.count = npd; padPool.instanceMatrix.needsUpdate = true;
+  // 3.0 field events: crate rings, ace markers, artillery strike zones
+  if (W.fev) for (const e of W.fev) {
+    const pul = .5 + .5 * Math.sin(t * 5);
+    if (e.k === 'crate') { if (e.t < e.land) continue; addRing(e.x, e.z, 7, 1, .82, .25); addRing(e.x, e.z, 7 * (e.hold / 5) + .3, .4, 1, .55); }
+    else if (e.k === 'strike') { const f = clamp((e.t + (W.t % 1)) / e.life, 0, 1); for (let k = 0; k < 30; k++) { const a = k / 30 * TAU + t * .25; addRing(e.x + Math.cos(a) * e.r, e.z + Math.sin(a) * e.r, .85, 1, .22 + .25 * pul, .18); } for (let k = 0; k < 18; k++) { const a = k / 18 * TAU - t * .4, rr_ = e.r * (1 - f); addRing(e.x + Math.cos(a) * rr_, e.z + Math.sin(a) * rr_, .55, 1, .6, .3); } }
+    else if (e.k === 'ace') { const u = W.byId.get(e.uid); if (!u || u.dead || !myVisible(u)) continue; addRing(u.rx, u.rz, u.T.r * 1.6 + .8, 1, .82, .2); _col.set(0xffd24a); beaconPool.add(u.rx, u.ry + (u.T.cls === 0 ? 4 : u.T.walker ? 11 : 6) + Math.sin(t * 3) * .3, u.rz, t * 2, t * 2, .6, _col.r, _col.g, _col.b, 0, t); }
+  }
   for (const k in bPools) bPools[k].end(); flagPool.end(); beaconPool.end(); for (const wpool of wallPools) wpool.end();
   // ---- projectiles / tracers / jets / crates ----
   vprojPool.begin(); const nowS = performance.now() / 1000;
@@ -2668,6 +2824,9 @@ function renderFrame(dt, now) {
   if (!POOLS.crate) POOLS.crate = new Pool(MDL.crate, 24, MAT_I, false); const cp = POOLS.crate; cp.begin();
   for (let i = crates.length - 1; i >= 0; i--) { const c = crates[i]; const f = (nowS - c.t0) / c.dur; if (f >= 1) { crates.splice(i, 1); continue; } const gy = M.H(c.x, c.z); const y = gy + (1 - f) * (1 - f) * 70; cp.add(c.x + c.dx * (1 - f) * .4, y, c.z, f * 2, f * 2, c.big ? 1.2 : .8, 1, 1, 1, 0, 0); }
   cp.end();
+  if (!POOLS.cratel) POOLS.cratel = new Pool(MDL.cratel, 8, MAT_I, true); const clp = POOLS.cratel; clp.begin();
+  if (W.fev) for (const e of W.fev) if (e.k === 'crate' && e.t >= e.land) clp.add(e.x, M.H(e.x, e.z), e.z, .4, .4, 1.5, 1, .82, .3, e.hold > 0 ? .25 * (.5 + .5 * Math.sin(t * 8)) : 0, t);
+  clp.end();
   if (!POOLS.jet) POOLS.jet = new Pool(MDL.jet, 6, MAT_I, true); const jp = POOLS.jet; jp.begin();
   for (let i = jets.length - 1; i >= 0; i--) { const j = jets[i]; const f = (nowS - j.t0) / j.dur; if (f >= 1) { jets.splice(i, 1); continue; } const x = lerp(j.sx, j.ex, f), z = lerp(j.sz, j.ez, f), yaw = Math.atan2(j.ex - j.sx, j.ez - j.sz); jp.add(x, 46, z, yaw, yaw, 1, .9, .9, .95, 0, 0); emit(pSmoke, x - Math.sin(yaw) * 5, 46, z - Math.cos(yaw) * 5, 0, 0, 0, 1, 1.5, 3.5, [.9, .9, .9, .4], [.9, .9, .9, 0], 1, 0); }
   jp.end();
@@ -3173,6 +3332,7 @@ function uiAlert(e) {
     case 'expire': addAlert('Mercenary contract ended', '#aaa'); break;
     case 'nonest': addAlert('Cannot build another nest right now', '#aaa'); break;
     case 'elim': addAlert(name + ' is out of the game', '#ff9a4a'); break;
+    case 'msg': { const col = ['#c9d4e0', '#ffd24a', '#ffcf5a', '#ff6a50'][e[5]] || '#c9d4e0'; addAlert(name, col, e[3], e[4], 9000); if (e[3] || e[4]) ping(e[3], e[4], col); sfx(e[5] === 3 ? 'alert' : 'done'); break; }
   }
 }
 function uiPointEvent(e) {
@@ -3288,6 +3448,15 @@ function updScore() {
 }
 function updGoal() {
   const el = $('#goal'); let mine = ptsOfTeam(MYTEAM), theirs = 0; for (const t of W.teamList) if (t.id !== MYTEAM) theirs = Math.max(theirs, ptsOfTeam(t.id));
+  const o = W.o.obj; if (o && !W.o.sandbox && o.type !== 'conquest' && o.type !== 'fortress' && o.type !== 'twofront') {
+    const C = W.objC || {}, me = C[MYTEAM] || 0; let foe = 0; for (const t in C) if (+t !== MYTEAM) foe = Math.max(foe, C[t]); const left = Math.max(0, (o.dur || 0) - W.t);
+    let lg, sh, st;
+    if (o.type === 'blitz') { lg = 'Blitz: destroy the enemy HQ (or drain their score) before time runs out.'; sh = 'Win before time runs out'; st = '<span class="st ' + (left < 120 ? 'l' : 't') + '">' + fmtTime(left) + ' left</span>'; }
+    else if (o.type === 'holdout') { lg = 'Hold Out: keep your HQ standing until the timer ends.'; sh = 'Survive'; st = '<span class="st w">' + fmtTime(left) + ' to go</span>'; }
+    else if (o.type === 'koth') { const pt = W.pts[o.pt], wait = (o.open || 0) - W.t; lg = 'King of the Hill: hold ' + (pt ? pt.name : 'the center flag') + ' for ' + fmtTime(o.need) + ' in total. The clock stops while it is contested.'; sh = 'Hold the hill'; st = wait > 0 ? '<span class="st t">Hill opens in ' + fmtTime(wait) + '</span>' : '<span class="st ' + (me >= foe ? 'w' : 'l') + '">You ' + fmtTime(me) + ' - Enemy ' + fmtTime(foe) + '</span>'; }
+    else { lg = 'Supply Run: claim ' + o.need + ' supply crates before the enemy does.'; sh = 'Claim ' + o.need + ' crates'; st = '<span class="st ' + (me >= foe ? 'w' : 'l') + '">You ' + me + ' - Enemy ' + foe + ' of ' + o.need + '</span>'; }
+    const sg = 'O' + lg + st; if (sg === el.dataset.s) return; el.dataset.s = sg; el.innerHTML = '<b>GOAL</b><span class="lg">' + esc(lg) + '</span><span class="sh">' + esc(sh) + '</span>' + st; return;
+  }
   const sig = W.o.sandbox ? 'S' : mine + '/' + theirs + '/' + W.pts.length + (W.o.tutorial ? 't' : ''); if (sig === el.dataset.s) return; el.dataset.s = sig;
   if (W.o.sandbox) { el.innerHTML = '<b>SANDBOX</b> Build anything. Spawn units from the box on the right.'; return; }
   const st = mine > theirs ? '<span class="st w">Winning ' + mine + ' - ' + theirs + '</span>' : mine < theirs ? '<span class="st l">Losing ' + mine + ' - ' + theirs + '</span>' : '<span class="st t">Tied ' + mine + ' - ' + theirs + '</span>';
@@ -3492,11 +3661,12 @@ SCREENS.main = () => {
   return `<div class="scr"><div class="panel" style="width:min(430px,96vw);background:rgba(10,15,22,.88)">
   <div class="title">FRONTLINE</div><div class="sub">Command</div>
   <button class="mbtn ${first ? 'go' : ''}" data-act="tutorial">${first ? 'Start here: ' : ''}Tutorial<small>Learn the game in about 3 minutes</small></button>
-  <button class="mbtn ${first ? '' : 'go'}" data-act="skirmish">Play vs Computer<small>Pick a map and an enemy commander</small></button>
+  <button class="mbtn ${first ? '' : 'go'}" data-act="campaign">Campaign${CAMP && !CAMP.over ? ': Continue' : ''}<small>${CAMP && !CAMP.over ? 'Operation ' + esc(CAMP.name) + ' - stage ' + (CAMP.stage + 1) + ' of ' + CSTAGES : 'A run of ' + CSTAGES + ' different missions. Earn Doctrines as you win.'}</small></button>
+  <button class="mbtn" data-act="skirmish">Quick Battle<small>Pick a map and an enemy commander</small></button>
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> buildings now hold a <b>roster</b>. Click troop cards to pick what a Barracks, Motor Pool or Airfield keeps; it trains them one by one (paying as each starts) and <b>replaces any that die</b>. A Barracks holds 5, then 10, then 20 soldiers as you level it up (Motor Pool 3/6/10, Airfield 2/3/4). The minus button or right-click removes a slot; <b>Pause</b> stops training to save money. Air power has been cut way down: helicopters and gunships are fragile and short-ranged, bazookas, machine gunners and bunkers can shoot them down, you can only have 2 Airfields, and the enemy commanders no longer mass helicopters. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Campaign!</b> Lead an operation of 7 battles with different missions (Blitz, Hold Out, King of the Hill, Break the Line, Supply Run, Two Fronts). Every win earns a <b>Doctrine</b> that powers up the rest of your run. Battles now have <b>field events</b> too: race the enemy for supply crates, hunt enemy Aces for a bounty, and get out from under incoming artillery strikes. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -3511,7 +3681,8 @@ SCREENS.skirmish = () => {
   <div><div class="lbl">Starting money</div>${seg('supplies', [['low', 'Low'], ['normal', 'Normal'], ['high', 'High'], ['rich', 'Rich']], SK.supplies)}</div>
   <div><div class="lbl">Fog of war</div>${seg('fog', [[1, 'On'], [0, 'Off']], SK.fog ? 1 : 0)}</div>
   <div><div class="lbl">Game speed</div>${seg('speed', [[1, 'Normal'], [1.5, 'Fast'], [2, 'Faster']], SK.speed)}</div>
-  <div><div class="lbl">Army limit</div>${seg('maxPop', [[80, '80'], [120, '120'], [160, '160']], SK.maxPop)}</div></div>` : '';
+  <div><div class="lbl">Army limit</div>${seg('maxPop', [[80, '80'], [120, '120'], [160, '160']], SK.maxPop)}</div>
+  <div><div class="lbl">Field events</div>${seg('events', [[1, 'On'], [0, 'Off']], SK.events === false ? 0 : 1)}</div></div>` : '';
   return `<div class="scr bg"><div class="panel" style="width:min(860px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Play vs Computer</h2><button class="tbtn" data-act="back">Back</button></div>
   <div class="lbl">1. Pick a map</div><div class="mapcards">${mc}</div><div class="note" style="margin-top:6px">${esc(d.desc)}</div>
   ${SK.custom ? `<div class="lbl">2. Players</div>${skRowsHtml()}<div class="note" style="margin-top:5px">Pick each commander, how hard they are, and which team they are on. Put players on different teams to fight.</div>` : `${n > 2 ? `<div class="lbl">2. Game type</div>${seg('type', [['1v1', '1 vs 1'], ['2v2', '2 vs 2 (you + 1 helper)'], ['ffa', 'Everyone for themselves']], SK.type, 'stype')}` : ''}
@@ -3546,7 +3717,7 @@ function skToCfg(S, mpRemote) {
     else { o.kind = 'ai'; o.name = AIP[s.pers].name; o.ai = { pers: s.pers, diff: s.diff }; }
     players.push(o);
   }
-  return { map: S.map, players, tickets: S.tickets, supplies: SUPPLY_OPT[S.supplies], fog: !!S.fog, speed: S.speed, maxPop: S.maxPop };
+  return { map: S.map, players, tickets: S.tickets, supplies: SUPPLY_OPT[S.supplies], fog: !!S.fog, speed: S.speed, maxPop: S.maxPop, events: S.events !== false };
 }
 function validSK(S) { const c = skToCfg(S); if (c.players.length < 2) return 'Add at least one opponent.'; const teams = new Set(c.players.map(p => p.team)); if (teams.size < 2) return 'Put at least two players on different teams.'; return ''; }
 SCREENS.settings = () => {
@@ -3601,13 +3772,14 @@ SCREENS.howto = () => {
    <div class="hc"><h4>3. Select and move</h4><div class="dg"><div class="bx" style="left:20px;top:26px;width:80px;height:56px"></div>${sol(36, 44)}${sol(58, 54)}${sol(78, 44)}<div class="arr" style="left:110px;top:56px;width:60px;transform:rotate(-8deg)"></div><div class="cur" style="left:186px;top:34px"></div></div><p>Click a troop, or drag a box around many. Then click the ground to move there, or click an enemy to attack it. No right-click needed.</p></div>
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
    <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
-   <div class="hc"><h4>6. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b></div></div>
+   <div class="hc"><h4>6. Events and the Campaign</h4><div class="dg dark"><div class="coin" style="left:30px;top:34px">$</div><div class="arr" style="left:62px;top:46px;width:40px"></div>${sol(124, 38, '#58a8ff')}${sol(140, 44, '#58a8ff')}<div class="coin" style="left:196px;top:34px;background:#ff6a50">!</div></div><p>During a battle, <b>field events</b> pop up: a <b>supply crate</b> drops (keep troops next to it, with no enemies there, to claim money), an <b>Ace</b> is marked with a gold ring (destroy enemy Aces for a bounty), or an <b>artillery strike</b> is called on a busy flag (get out of the red circle, or lure the enemy in). In the <b>Campaign</b>, pick a mission at each stage, win to earn <b>Doctrines</b> that last the whole operation, and do not run out of Reserves.</p></div>
+   <div class="hc"><h4>7. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b></div></div>
   </div>
   <div class="note" style="margin-top:12px">Tip: more of the game unlocks as you level up your HQ and your buildings. Upgrades and Support powers (airstrikes, supply drops, mercenaries) open at HQ Level 2. Fire a Support power by holding F and pressing its number (Hold F + 1 is the first one). Lists and panels scroll with the wheel or two fingers on the touchpad. The enemy warns you with an orange message when it is massing an attack. A Level 3 building lets you pick a special upgrade, and some of them unlock giant units like the Titan mech, Gunships and Sky Hunter jets.</div></div></div>`;
 };
 SCREENS.pause = () => `<div class="scr bg"><div class="panel" style="width:min(360px,96vw)"><h2 style="margin:0 0 8px;color:#ffe2a6;text-align:center">${W && W.mirror || (W && W.o.mp) ? 'Menu' : 'Paused'}</h2>
   <button class="mbtn go" data-act="resume">Resume</button><button class="mbtn" data-act="help">How to Play</button><button class="mbtn" data-act="psettings">Settings</button><button class="mbtn" data-act="pcodex">Field Guide</button>
-  ${W && W.o.mp ? '<div class="note" style="text-align:center">Online games cannot be paused.</div>' : ''}<button class="mbtn" data-act="quit" style="border-color:#8a3a30">${W && W.o.mp ? 'Give up and leave' : 'Quit to menu'}</button></div></div>`;
+  ${W && W.o.mp ? '<div class="note" style="text-align:center">Online games cannot be paused.</div>' : ''}${W && W.o.camp && !W.over ? '<div class="note" style="text-align:center">Quitting a Campaign battle counts as a loss.</div>' : ''}<button class="mbtn" data-act="quit" style="border-color:#8a3a30">${W && W.o.mp ? 'Give up and leave' : 'Quit to menu'}</button></div></div>`;
 function openPause() { if (!inGame || !W) return; if (!W.o.mp) W.paused = true; showScreen('pause'); }
 SCREENS.results = (r) => {
   const rows = r.rows.map(x => `<tr><td style="color:${hex3(x.color)}"><b>${esc(x.name)}</b></td><td>${x.kills}</td><td>${x.lost}</td><td>${x.built}</td><td>${x.captured}</td></tr>`).join('');
@@ -3615,10 +3787,130 @@ SCREENS.results = (r) => {
   <div class="sub">${esc(r.reason)} - ${fmtTime(r.time)}</div>
   <table style="width:100%;border-collapse:collapse;font-size:14px;margin:6px 0"><tr style="color:#9fb0c3"><td>Commander</td><td>Kills</td><td>Lost</td><td>Built</td><td>Flags</td></tr>${rows}</table>
   <div class="note">${r.xp ? '+' + r.xp + ' XP' : ''} ${r.newAch.length ? '<br><b style="color:#ffe2a6">Achievement: ' + r.newAch.join(', ') + '</b>' : ''} ${r.rankUp ? '<br><b style="color:#7be08a">Promoted to ' + r.rankUp + '!</b>' : ''}</div>
-  ${r.mp ? '<button class="mbtn go" data-act="tolobby">Back to lobby</button>' : (r.sandbox ? '' : '<button class="mbtn go" data-act="rematch">Play again</button>')}<button class="mbtn" data-act="quit2">Main menu</button></div></div>`;
+  ${r.camp ? campResultHtml(r.camp) : (r.mp ? '<button class="mbtn go" data-act="tolobby">Back to lobby</button>' : (r.sandbox ? '' : '<button class="mbtn go" data-act="rematch">Play again</button>')) + '<button class="mbtn" data-act="quit2">Main menu</button>'}</div></div>`;
+};
+function campResultHtml(c) {
+  if (c.over === 'won') return '<div class="note" style="font-size:16px;color:#7be08a;margin-top:8px"><b>OPERATION ' + esc(CAMP.name.toUpperCase()) + ' COMPLETE!</b></div><button class="mbtn go" data-act="tocamp">Campaign</button><button class="mbtn" data-act="quit2">Main menu</button>';
+  if (c.over === 'lost') return '<div class="note" style="font-size:16px;color:#ff9a8c;margin-top:8px"><b>Out of Reserves. Operation ' + esc(CAMP.name) + ' failed.</b></div><button class="mbtn go" data-act="tocamp">Campaign</button><button class="mbtn" data-act="quit2">Main menu</button>';
+  if (!c.win) return '<div class="note" style="margin-top:8px">You lost a Reserve. ' + campHearts() + ' Pick a new mission and try again.</div><button class="mbtn go" data-act="tocamp">Back to the operation</button>';
+  return '<div class="note" style="margin-top:8px">' + (c.life ? '<b style="color:#7be08a">+1 Reserve!</b> ' : '') + campHearts() + '</div><div class="lbl" style="text-align:left">Choose a Doctrine (lasts the whole operation)</div>' + docCards(c.offer || []);
+}
+// =====================================================================
+//  3.0 CAMPAIGN: an operation of 7 battles. Pick 1 of 3 missions at each stage; every win earns a Doctrine
+//  (a perk that lasts the whole run). Lose a battle and you spend a Reserve; lose all 3 and the operation fails.
+// =====================================================================
+const DOCS = {
+  chest: { n: 'War Chest', d: 'Start every battle with 300 more money.', max: 3 },
+  logi: { n: 'Supply Lines', d: 'Earn 15% more money.', max: 2, mod: { inc: .15 } },
+  rapid: { n: 'Fast Training', d: 'Buildings train troops 20% faster.', max: 2, mod: { prod: .2 } },
+  bargain: { n: 'Bulk Contracts', d: 'Every unit costs 8% less.', max: 2, mod: { cost: -.08 } },
+  armor: { n: 'Body Armor', d: 'Soldiers have 15% more health.', max: 2, mod: { hpInf: .15 } },
+  plating: { n: 'Extra Plating', d: 'Vehicles, tanks and aircraft have 15% more health.', max: 2, mod: { hpVeh: .15, hpHvy: .15 } },
+  rifles: { n: 'Sharpshooters', d: 'Bullets do 12% more damage.', max: 2, mod: { dmgBul: .12 } },
+  ap: { n: 'Tank Hunters', d: 'Rockets and tank cannons do 12% more damage.', max: 2, mod: { dmgAT: .12 } },
+  guns: { n: 'Big Guns', d: 'Artillery and bombs do 15% more damage.', max: 2, mod: { dmgShell: .15 } },
+  drill: { n: 'Drill Sergeants', d: 'Troops rank up 40% faster.', max: 1, mod: { xp: .4 } },
+  eyes: { n: 'Scouting Parties', d: 'Your units see 20% farther and weapons reach 5% farther.', max: 1, mod: { vis: .2, rng: .05 } },
+  march: { n: 'Forced March', d: 'Soldiers and vehicles move 10% faster.', max: 1, mod: { spdInf: .1, spdVeh: .1 } },
+  vets: { n: 'Veteran Cadre', d: 'Your starting army are Veterans, plus 3 veteran Riflemen.', max: 1 },
+  tanks: { n: 'Armored Column', d: 'Start every battle with 2 Light Tanks.', max: 2 },
+  base: { n: 'Forward Base', d: 'Start with a Barracks next to your HQ, already training.', max: 1 },
+  hq2: { n: 'Head Start', d: 'Your HQ starts at Level 2.', max: 1 },
+  fort: { n: 'Dug In', d: 'Your HQ starts ringed with Fortified Walls.', max: 1 },
+  mercs: { n: 'Old Friends', d: '4 veteran Mercenaries join you for the first 3 minutes of every battle.', max: 1 },
+  bounty: { n: 'Bounty Hunters', d: 'Earn 15% of the cost of every enemy unit you destroy.', max: 1 },
+  qm: { n: 'Quartermaster', d: 'Supply crates and Ace bounties pay double.', max: 1 },
+  support: { n: 'Staff College', d: 'Support powers recharge 20% faster and cost 15% less.', max: 1, mod: { callCd: -.2, callCost: -.15 } }
+};
+const MISSIONS = {
+  conquest: { n: 'Conquest', ic: 'flag', d: 'The usual battle: hold more flags than the enemy or destroy their HQ.', reward: 'Pick 1 of 3 Doctrines' },
+  blitz: { n: 'Blitz', ic: 'fight', d: 'Destroy the enemy HQ or drain their score within 15 minutes. Both sides start with less score.', reward: 'Pick 1 of 4 Doctrines', four: 1 },
+  holdout: { n: 'Hold Out', ic: 'nest', d: 'Survive 9 minutes of non-stop attacks. The enemy gets extra money. Keep your HQ standing.', reward: '+1 Reserve, pick 1 of 3 Doctrines', life: 1 },
+  koth: { n: 'King of the Hill', ic: 'flag', d: 'Hold the center flag for 3 minutes in total. The clock starts at 1:30 and stops while the flag is being fought over.', reward: 'Pick 1 of 4 Doctrines', four: 1 },
+  fortress: { n: 'Break the Line', ic: 'guns', d: 'The enemy is dug in behind walls and bunkers. You start with a bigger army.', reward: '+1 Reserve, pick 1 of 3 Doctrines', life: 1 },
+  supply: { n: 'Supply Run', ic: 'crate', d: 'Supply crates drop every minute. Claim 4 before the enemy does.', reward: 'Pick 1 of 4 Doctrines', four: 1 },
+  twofront: { n: 'Two Fronts', ic: 'group', d: 'Two enemy commanders team up against you on a big map.', reward: '+1 Reserve, pick 1 of 4 Doctrines', life: 1, four: 1 }
+};
+const MODS = { fog: ['Fog of war', 'You only see what your troops see.'], rich: ['Rich', 'Everyone starts with 1400 more money.'], short: ['Short fuse', 'Both sides start with only 250 score.'] };
+const CDIFF = {
+  recruit: { n: 'Recruit', d: 'Easy and Normal enemies. A good first run.', ladder: ['easy', 'easy', 'normal', 'normal', 'normal', 'normal', 'normal'] },
+  veteran: { n: 'Veteran', d: 'Normal enemies that turn Hard halfway through.', ladder: ['normal', 'normal', 'normal', 'hard', 'hard', 'hard', 'hard'] },
+  elite: { n: 'Elite', d: 'Hard enemies that turn Brutal. For experts.', ladder: ['hard', 'hard', 'hard', 'brutal', 'brutal', 'brutal', 'brutal'] }
+};
+const CSTAGES = 7, OPNAMES = ['Iron Dawn', 'Steel Rain', 'Red Harvest', 'Thunderclap', 'Night Owl', 'Granite Fist', 'Sandstorm', 'Wildfire', 'Black Anvil', 'Silver Spear', 'Long Winter', 'Broken Arrow'];
+let CAMP = (() => { const c = readJSON('frontline_campaign_v1'); return c && c.v === 1 && CDIFF[c.diff] ? c : null; })();
+function saveCamp() { lsSet('frontline_campaign_v1', JSON.stringify(CAMP)); }
+function campRng(k) { return mulberry32(((CAMP.seed | 0) + CAMP.stage * 977 + k * 131 + (CAMP.rolls | 0) * 7919) >>> 0); }
+function campNew(diff) { CAMP = { v: 1, diff, stage: 0, lives: 3, docs: {}, seed: (Math.random() * 1e9) | 0, rolls: 0, choices: null, offer: null, cur: null, log: [], over: '' }; CAMP.name = OPNAMES[CAMP.seed % OPNAMES.length]; campChoices(); saveCamp(); }
+function campChoices() {
+  const st = CAMP.stage, r = campRng(1), pick = a => a[(r() * a.length) | 0], diff = CDIFF[CAMP.diff].ladder[st], pers = Object.keys(AIP);
+  const two = () => { const a = pick(pers); let b = pick(pers); if (b === a) b = pers[(pers.indexOf(a) + 1) % pers.length]; return [a, b]; };
+  if (st === CSTAGES - 1) { CAMP.choices = [{ type: 'twofront', map: pick(['corners', 'frostbite', 'ironworks']), foes: two(), diff, mod: '', final: 1 }]; return; }
+  const pool = Object.keys(MISSIONS).filter(k => k !== 'twofront' || st >= 2), types = st === 0 ? ['conquest'] : [];
+  while (types.length < 3) { const t = pick(pool); if (!types.includes(t)) types.push(t); }
+  CAMP.choices = types.map(t => {
+    const maps = MAPS.filter(m => t !== 'twofront' || m.maxP >= 3); let mod = st >= 1 && r() < .45 ? pick(Object.keys(MODS)) : '';
+    if (mod === 'short' && t !== 'conquest' && t !== 'fortress' && t !== 'blitz') mod = '';
+    return { type: t, map: pick(maps).id, foes: t === 'twofront' ? two() : [pick(pers)], diff, mod };
+  });
+}
+function campOffer(n) {
+  const r = campRng(2), ids = Object.keys(DOCS).filter(id => (CAMP.docs[id] || 0) < DOCS[id].max), out = [];
+  while (out.length < n && ids.length) out.push(ids.splice((r() * ids.length) | 0, 1)[0]); return out;
+}
+function campCfg(c) {
+  const colors = assignColors({}), over = {}, D = AID[c.diff];
+  if (c.type === 'holdout') Object.assign(over, { firstAtk: 45, pause: 18, atkMul: .45, hqPower: 0, warn: 6, retreat: 0, inc: D.inc * 1.6, popLim: Math.max(D.popLim, 40), startDelay: 0 });
+  if (c.type === 'koth' || c.type === 'supply') Object.assign(over, { firstAtk: Math.min(D.firstAtk, 200), capCd: 0 });
+  const players = [{ kind: 'human', name: SET.name, team: 0, color: PCOL[colors[0]].c, docs: CAMP.docs }];
+  c.foes.forEach((pers, i) => players.push({ kind: 'ai', name: AIP[pers].name, team: 1, color: PCOL[colors[i + 1]].c, ai: { pers, diff: c.diff, over }, fort: c.type === 'fortress', sup: c.type === 'fortress' ? 500 : 0 }));
+  if (c.type === 'fortress') players[0].extra = [['rifleman', 4], ['rocket', 3], ['heavy', 2], ['lighttank', 2], ['engineer', 1]];
+  if (c.type === 'holdout') { players[0].extra = [['rifleman', 3], ['heavy', 2], ['rocket', 2], ['engineer', 1]]; players[0].sup = 500; }
+  const obj = { type: c.type }; if (c.type === 'blitz') obj.dur = 900; if (c.type === 'holdout') obj.dur = 540; if (c.type === 'koth') { obj.need = 180; obj.open = 90; } if (c.type === 'supply') obj.need = 4;
+  const tickets = c.type === 'blitz' ? 300 : (c.type === 'holdout' || c.type === 'koth' || c.type === 'supply') ? 5000 : c.mod === 'short' ? 250 : 400;
+  return { map: c.map, players, tickets, supplies: 600 + (c.mod === 'rich' ? 1400 : 0), fog: c.mod === 'fog', speed: 1, maxPop: 120, events: true, obj, camp: true };
+}
+// called when a campaign battle ends (or is abandoned); returns what the results screen should show
+function campAfter(win) {
+  if (!CAMP || !CAMP.cur) return null; const c = CAMP.cur, M = MISSIONS[c.type]; CAMP.cur = null; const r = { win, type: c.type };
+  CAMP.log.push([c.type, win ? 1 : 0]);
+  if (win) {
+    if (c.final) { CAMP.over = 'won'; PROF.cWins++; PROF.cBest = Math.max(PROF.cBest, CSTAGES); if (!PROF.ach.camp) { PROF.ach.camp = 1; r.ach = ACH.camp[0]; } if (CAMP.diff === 'elite' && !PROF.ach.campElite) { PROF.ach.campElite = 1; r.ach = ACH.campElite[0]; } saveProf(); }
+    else { if (M.life && CAMP.lives < 3) { CAMP.lives++; r.life = 1; } CAMP.offer = campOffer(M.four ? 4 : 3); }
+  } else { CAMP.lives--; if (CAMP.lives <= 0) { CAMP.over = 'lost'; PROF.cBest = Math.max(PROF.cBest, CAMP.stage); saveProf(); } else { CAMP.rolls = (CAMP.rolls | 0) + 1; campChoices(); } }
+  r.lives = CAMP.lives; r.over = CAMP.over; r.offer = CAMP.offer; saveCamp(); return r;
+}
+function docChip(id, n) { const d = DOCS[id]; return '<span class="dchip" data-tip="' + esc(d.n + '|' + d.d) + '">' + esc(d.n) + (n > 1 ? ' x' + n : '') + '</span>'; }
+function docCards(ids) { return '<div class="dgrid">' + ids.map(id => { const d = DOCS[id], n = CAMP.docs[id] || 0; return '<button class="dcard" data-act="cdoc" data-v="' + id + '"><b>' + esc(d.n) + (n ? ' <i>(' + (n + 1) + ')</i>' : '') + '</b><span>' + esc(d.d) + '</span></button>'; }).join('') + '</div>'; }
+function campTrack() { let h = '<div class="ctrack">'; for (let i = 0; i < CSTAGES; i++) { h += '<span class="' + (i < CAMP.stage ? 'done' : i === CAMP.stage && !CAMP.over ? 'now' : '') + (i === CSTAGES - 1 ? ' fin' : '') + '">' + (i === CSTAGES - 1 ? '&#9733;' : i + 1) + '</span>'; } return h + '</div>'; }
+function campHearts() { return '<span class="hearts" data-tip="Reserves|Losing a battle costs one Reserve. Lose all 3 and the operation fails. Some missions give one back.">' + '&#9829;'.repeat(Math.max(0, CAMP.lives)) + '<s>' + '&#9829;'.repeat(Math.max(0, 3 - CAMP.lives)) + '</s></span>'; }
+SCREENS.campaign = () => {
+  if (CAMP && CAMP.cur) { campAfter(false); toast('The battle was left unfinished, so it counts as a loss.'); }
+  const head = t => `<div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">${t}</h2><button class="tbtn" data-act="back">Back</button></div>`;
+  if (!CAMP || CAMP.over) {
+    const last = CAMP && CAMP.over ? `<div class="note" style="margin:8px 0;padding:10px;border:1px solid ${CAMP.over === 'won' ? '#3d9b5b' : '#8a3a30'};border-radius:10px;background:#0d1620"><b style="color:${CAMP.over === 'won' ? '#7be08a' : '#ff9a8c'}">Operation ${esc(CAMP.name)}: ${CAMP.over === 'won' ? 'complete!' : 'failed at stage ' + (CAMP.stage + 1)}</b> (${CDIFF[CAMP.diff].n})<br>${Object.keys(CAMP.docs).length ? 'Doctrines: ' + Object.entries(CAMP.docs).map(([k, n]) => docChip(k, n)).join(' ') : ''}</div>` : '';
+    return `<div class="scr bg"><div class="panel" style="width:min(640px,98vw)">${head('Campaign')}
+    <div class="note" style="font-size:15px;color:#e6eef7;margin-top:6px">Lead an <b>operation</b> of ${CSTAGES} battles. At each stage pick 1 of 3 missions: Blitz, Hold Out, King of the Hill, Break the Line, Supply Run, Two Fronts and more. Every win earns a <b>Doctrine</b>, a bonus that lasts the whole operation. Losing costs one of your 3 <b>Reserves</b>. The last battle is against two commanders at once.</div>${last}
+    <div class="lbl">Pick a difficulty to start a new operation</div>${Object.entries(CDIFF).map(([k, d]) => `<button class="mbtn ${k === 'recruit' ? 'go' : ''}" data-act="cstart" data-v="${k}">${d.n}<small>${d.d}</small></button>`).join('')}
+    <div class="note" style="text-align:center;margin-top:8px">Operations won: <b>${PROF.cWins}</b> - furthest stage: <b>${PROF.cBest || 0}</b> of ${CSTAGES}</div></div></div>`;
+  }
+  const docs = Object.entries(CAMP.docs).map(([k, n]) => docChip(k, n)).join(' ') || '<span class="note">None yet. Win a battle to earn one.</span>';
+  let body;
+  if (CAMP.offer) body = `<div class="lbl">Victory! Choose a Doctrine</div>${docCards(CAMP.offer)}`;
+  else body = `<div class="lbl">${CAMP.stage === CSTAGES - 1 ? 'Final battle' : 'Stage ' + (CAMP.stage + 1) + ': pick your next mission'}</div><div class="mgrid">${CAMP.choices.map((c, i) => { const M = MISSIONS[c.type], md = mapDef(c.map); return `<button class="mcard" data-act="cgo" data-v="${i}"><img src="${mapPreview(c.map)}"/><b>${c.final ? 'Final Offensive: ' : ''}${M.n}</b><span>${esc(M.d)}</span><span class="mi">${esc(md.name)} - vs ${c.foes.map(f => esc(AIP[f].name)).join(' + ')} (${AID[c.diff].n})</span>${c.mod ? `<span class="mm" data-tip="${esc(MODS[c.mod].join('|'))}">${MODS[c.mod][0]}</span>` : ''}<span class="mr">${c.final ? 'Win to complete the operation' : M.reward}</span></button>`; }).join('')}</div>`;
+  return `<div class="scr bg"><div class="panel" style="width:min(900px,98vw)">${head('Operation ' + esc(CAMP.name))}
+  <div class="row" style="justify-content:space-between;align-items:center;margin-top:6px">${campTrack()}<div>${CDIFF[CAMP.diff].n} ${campHearts()}</div></div>
+  <div class="lbl">Doctrines</div><div>${docs}</div>${body}
+  <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="tbtn" data-act="cquit" style="border-color:#8a3a30">${UI.cquit ? 'Click again to give up this operation' : 'Give up operation'}</button></div></div></div>`;
 };
 // ----- screen actions -----
 let ACT = {};
+ACT.campaign = () => { UI.cquit = 0; showScreen('campaign'); };
+ACT.cstart = el => { campNew(el.dataset.v); PROF.cRuns++; saveProf(); showScreen('campaign'); };
+ACT.cgo = el => { const c = CAMP && CAMP.choices && CAMP.choices[+el.dataset.v]; if (!c) return; CAMP.cur = c; saveCamp(); startGame(campCfg(c)); };
+ACT.cdoc = el => { const id = el.dataset.v; if (!CAMP || !CAMP.offer || !CAMP.offer.includes(id)) return; CAMP.docs[id] = (CAMP.docs[id] || 0) + 1; CAMP.offer = null; CAMP.stage++; campChoices(); saveCamp(); if (inGame) endGame(); showScreen('campaign'); };
+ACT.cquit = () => { if (!UI.cquit) { UI.cquit = 1; showScreen('campaign'); return; } UI.cquit = 0; CAMP.over = 'lost'; PROF.cBest = Math.max(PROF.cBest, CAMP.stage); saveProf(); saveCamp(); showScreen('campaign'); };
+ACT.tocamp = () => { if (inGame) endGame(); ACT.campaign(); };
 ACT.tutorial = () => startTutorial(); ACT.skirmish = () => { if (!SK) SK = defaultSK(); applySimple(SK); showScreen('skirmish'); };
 ACT.sandbox = () => startSandbox(); ACT.codex = () => { BACKSCREEN = 'main'; showScreen('codex'); }; ACT.profile = () => { BACKSCREEN = 'main'; showScreen('profile'); }; ACT.settings = () => { BACKSCREEN = 'main'; showScreen('settings'); };
 let HOWFROM = '';
@@ -3628,7 +3920,7 @@ ACT.skiptut = () => { PROF.seenIntro = 1; saveProf(); showScreen('main'); };
 ACT.back = () => showScreen('main'); ACT.back2 = () => { if (inGame && W) showScreen('pause'); else showScreen(BACKSCREEN); };
 ACT.mp = () => { showScreen('mp'); };
 ACT.map = el => { SK.map = el.dataset.v; const mp = mapDef(SK.map).maxP; if (mp < 3) { SK.type = '1v1'; } if (SCREEN === 'mplobby') { SK.slots[2].kind = mp < 3 ? 'closed' : SK.slots[2].kind; SK.slots[3].kind = mp < 3 ? 'closed' : SK.slots[3].kind; } else applySimple(SK); reSK(); };
-ACT.opt = el => { let v = el.dataset.v; const k = el.dataset.k; if (k === 'fog') v = v === '1'; else if (k !== 'supplies') v = +v; SK[k] = v; reSK(); };
+ACT.opt = el => { let v = el.dataset.v; const k = el.dataset.k; if (k === 'fog' || k === 'events') v = v === '1'; else if (k !== 'supplies') v = +v; SK[k] = v; reSK(); };
 ACT.stype = el => { SK.type = el.dataset.v; applySimple(SK); reSK(); };
 ACT.sdiff = el => { SK.diff = el.dataset.v; applySimple(SK); reSK(); };
 ACT.sstyle = el => { SK.style = el.value; applySimple(SK); };
@@ -3652,7 +3944,7 @@ ACT.ctab = el => { CODEXTAB = el.dataset.v; showScreen('codex'); };
 ACT.resume = () => { closeScreen(); if (W) W.paused = false; };
 ACT.psettings = () => { BACKSCREEN = 'pause'; showScreen('settings'); };
 ACT.pcodex = () => { BACKSCREEN = 'pause'; showScreen('codex'); };
-ACT.quit = () => { if (W && W.o.mp) netSurrender(); endGame(); showScreen('main'); };
+ACT.quit = () => { if (W && W.o.mp) netSurrender(); const camp = W && W.o.camp && !resultsShown; endGame(); if (camp) { campAfter(false); ACT.campaign(); } else showScreen('main'); };
 ACT.quit2 = () => { endGame(); showScreen('main'); };
 ACT.rematch = () => { if (LASTCFG) startGame(LASTCFG, LASTOPT); };
 ACT.tolobby = () => { endGame(true); netBackToLobby(); };
@@ -4035,7 +4327,7 @@ function startGame(cfg, opt) {
   setTimeout(() => { try { launch(cfg, opt); } catch (err) { console.error(err); window.__errs.push('launch: ' + (err && err.stack || err)); inGame = false; showScreen('notice', { title: 'Could not start', msg: String(err && err.message || err) }); } showLoading(false); }, 40);
 }
 function launch(cfg, opt) {
-  cleanupGameUI(); const c = Object.assign({}, cfg, { mp: !!opt.mp, mirror: !!opt.mirror, debug: DEBUG });
+  cleanupGameUI(); const c = Object.assign({}, cfg, { mp: !!opt.mp, mirror: !!opt.mirror, debug: DEBUG }); if (opt.mp || c.tutorial) c.events = false;
   if (c.tutorial) c.bigStart = false; if (!c.mirror) c.maxPop = Math.min(c.maxPop || 120, Math.max(40, SET.maxUnits)); createWorld(c); ME = opt.me || 0; W.o.mp = !!opt.mp;
   buildWorldVisuals(); inGame = true; resultsShown = false; MODE = 'game'; $('#hud').classList.remove('hidden');
   hudInit(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.did = {}; UI.mode = null; UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
@@ -4083,11 +4375,12 @@ function showResults(win, reason) {
     PROF.games++; win ? PROF.wins++ : PROF.losses++; PROF.kills += me.stats.kills; PROF.lost += me.stats.lost; PROF.built += me.stats.built; PROF.captured += me.stats.captured; PROF.time += Math.round(W.t); if (win && (!PROF.best || W.t < PROF.best)) PROF.best = Math.round(W.t); if (W.o.mp) { PROF.mp++; if (win) PROF.mpWins++; }
     const aiD = W.players.filter(p => p.ai).map(p => p.ai.diff); const give = k => { if (!PROF.ach[k]) { PROF.ach[k] = 1; newAch.push(ACH[k][0]); } };
     if (win) { give('win'); if (aiD.includes('hard') || aiD.includes('brutal')) give('hard'); if (aiD.includes('brutal')) give('brutal'); if (W.o.mp) give('online'); if (/HQ/.test(reason || '')) give('hq'); if (W.t < 480) give('rush'); }
-    if (me.stats.specs >= 3) give('spec3'); if (me.stats.air >= 10) give('air10'); if (me.stats.calls >= 5) give('calls5'); if (me.stats.hero >= 1) give('hero'); if (me.stats.peakPts >= W.pts.length) give('grab'); if (Object.keys(me.techs).length >= TECH.length) give('tech');
+    if ((me.stats.aces || 0) >= 1) give('ace'); if ((me.stats.crates || 0) >= 3) give('crate'); if (me.stats.specs >= 3) give('spec3'); if (me.stats.air >= 10) give('air10'); if (me.stats.calls >= 5) give('calls5'); if (me.stats.hero >= 1) give('hero'); if (me.stats.peakPts >= W.pts.length) give('grab'); if (Object.keys(me.techs).length >= TECH.length) give('tech');
     saveProf();
   }
   if (!win && me.out === 'Surrendered') reason = 'You surrendered'; else if (!win && /score ran out/.test(W.reason || reason || '')) reason = 'Your score ran out'; else if (!win && (W.reason || reason) === 'Enemy HQ destroyed') reason = 'Your HQ was destroyed';
-  sfx(win ? 'win' : 'lose'); showScreen('results', { win, reason: reason || me.out || '', time: W.t, rows, xp, newAch, rankUp, mp: !!W.o.mp, sandbox: !!W.o.sandbox });
+  const camp = W.o.camp ? campAfter(win) : null; if (camp && camp.ach) newAch.push(camp.ach);
+  sfx(win ? 'win' : 'lose'); showScreen('results', { win, reason: reason || me.out || '', time: W.t, rows, xp, newAch, rankUp, mp: !!W.o.mp, sandbox: !!W.o.sandbox, camp });
 }
 
 // ---------------- frame ----------------
@@ -4131,7 +4424,7 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 if (DEBUG) {
   window.__fl = {
     get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    makeAI, rosCap, rosTotal, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    makeAI, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
