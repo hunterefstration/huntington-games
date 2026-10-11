@@ -1,0 +1,23 @@
+# Creates the release tag (r1, r2, ...) named in latest.json whenever it changes on main.
+# The hub and loader find new releases by these tags on jsDelivr, so pushing the commit is enough.
+name: Release tag
+on:
+  push:
+    branches: [main]
+    paths: [latest.json, .github/workflows/release-tag.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag the release
+        run: |
+          N=$(sed -E 's/[^0-9]//g' latest.json)
+          if [ -z "$N" ]; then echo "no release number in latest.json"; exit 1; fi
+          if git ls-remote --exit-code --tags origin "refs/tags/r$N" >/dev/null; then echo "r$N already exists"; exit 0; fi
+          git tag "r$N" && git push origin "r$N" && echo "tagged r$N"
