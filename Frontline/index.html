@@ -258,7 +258,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 ::-webkit-scrollbar-thumb:hover{background:#93b3d3}
 .cdo{position:absolute;inset:0;border-radius:10px;background:conic-gradient(rgba(5,10,16,.8) calc(var(--p,0)*360deg),rgba(5,10,16,0) 0);display:flex;align-items:flex-end;justify-content:flex-end;padding:3px;pointer-events:none;font-weight:900;font-size:14px;color:#ffe2a6;text-shadow:0 1px 3px #000,0 0 6px #000}
 .card.cdn{border-color:#8a6a28}
-.card .qb{position:absolute;left:4px;top:4px;z-index:2;background:rgba(8,14,22,.92);border:1px solid #6fb4ff;border-radius:8px;padding:0 5px;font-size:12px;font-weight:900;line-height:16px;color:#bfe0ff;pointer-events:none}
+.card .qb{position:absolute;right:26px;top:4px;z-index:2;background:rgba(8,14,22,.92);border:1px solid #6fb4ff;border-radius:8px;padding:0 5px;font-size:13px;font-weight:900;line-height:16px;color:#bfe0ff;pointer-events:none}
 .card .qx{position:absolute;right:4px;top:4px;z-index:2;width:18px;height:18px;line-height:16px;text-align:center;border-radius:5px;background:#5a2a24;border:1px solid #c0584a;color:#ffd0c8;font-size:11px;font-weight:900;cursor:pointer}
 .card .qx:hover{background:#9a3a30}
 .qrow{display:flex;flex-wrap:wrap;gap:1px;margin:1px 0;min-height:17px}
@@ -390,7 +390,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.3';
+const VERSION = '2.4';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -416,8 +416,8 @@ const PCOL = [
 // ---------------- combat tables ----------------
 // armour classes: 0 infantry, 1 vehicle, 2 heavy, 3 air, 4 building
 const WTM = {
-  bullet: [1, .45, .2, .55, .25], rocket: [.5, 1.3, 1.2, 0, 1], shell: [1.1, .8, .5, 0, 1.2], cannon: [.6, 1.2, 1, 0, .9],
-  snipe: [2, .15, .05, 0, .1], flak: [.35, .3, .15, 1.6, .1], aam: [0, 0, 0, 1.8, 0], comm: [1, .6, .3, .5, 1.6], bomb: [1.2, 1, .8, 0, 1.5], mine: [1.1, 1.3, 1, 0, 0]
+  bullet: [1, .45, .2, .9, .25], rocket: [.5, 1.3, 1.2, 0, 1], shell: [1.1, .8, .5, 0, 1.2], cannon: [.6, 1.2, 1, 0, .9],
+  snipe: [2, .15, .05, 0, .1], flak: [.35, .3, .15, 2.2, .1], aam: [0, 0, 0, 1.8, 0], comm: [1, .6, .3, .5, 1.6], bomb: [1.2, 1, .8, 0, 1.5], mine: [1.1, 1.3, 1, 0, 0]
 };
 const WTD = { bullet: 'b', rocket: 'g', shell: 'g', cannon: 'g', snipe: 'g', flak: 'b', aam: 'a', comm: 'b', bomb: 'g', mine: 'g' };
 const WKIND = { bullet: 0, rocket: 1, shell: 2, bomb: 3, flak: 4, snipe: 5, cannon: 7, aam: 9, comm: 0, mine: 2 };
@@ -430,10 +430,10 @@ const UT = {};
 function defU(id, o) { o.id = id; o.src = o.src || []; o.r = o.r || 1; o.vis = o.vis || 26; o.air = o.cls === 3; o.cap = o.cap !== false && !o.air; UT[id] = o; return o; }
 // d = one-line card text, info = longer text for the Field Guide
 defU('rifleman', { n: 'Rifleman', role: 'Soldier', cls: 0, pop: 1, cost: 50, bt: 7, hp: 70, spd: 6, vis: 26, r: .9, w: Wp('bullet', 8, .75, 17), src: [['barracks', 1], ['hq', 1]], d: 'Cheap. Good vs soldiers.', info: 'A cheap all-rounder. Good against soldiers, weak against tanks.' });
-defU('rocket', { n: 'Bazooka Team', role: 'Anti-tank', cls: 0, pop: 1, cost: 90, bt: 10, hp: 65, spd: 5.5, vis: 26, r: .9, w: Wp('rocket', 55, 2.6, 22, { ps: 38 }), src: [['barracks', 1]], d: 'Great vs tanks. Cannot hit planes.', info: 'Shoulder-fired rockets destroy vehicles and buildings. Cannot hit aircraft.' });
+defU('rocket', { n: 'Bazooka Team', role: 'Anti-tank', cls: 0, pop: 1, cost: 90, bt: 10, hp: 65, spd: 5.5, vis: 26, r: .9, w: Wp('rocket', 55, 2.6, 22, { ps: 38 }), w2: Wp('aam', 34, 3, 26, { ps: 60 }), src: [['barracks', 1]], d: 'Great vs tanks. Also shoots down helicopters.', info: 'Shoulder-fired rockets destroy vehicles and buildings. They also lock on to helicopters and drones and knock them out of the sky.' });
 defU('engineer', { n: 'Engineer', role: 'Builder', cls: 0, pop: 1, cost: 70, bt: 9, hp: 60, spd: 5.5, vis: 24, r: .9, w: Wp('bullet', 4, 1, 10), eng: 1, src: [['barracks', 1], ['hq', 1]], d: 'Builds fast, repairs, captures flags.', info: 'Repairs vehicles and buildings, speeds up construction, captures flags faster and can build a Sandbag Nest.' });
 defU('scout', { n: 'Scout', role: 'Runner', cls: 0, pop: 1, cost: 40, bt: 5, hp: 40, spd: 9.5, vis: 44, r: .8, w: Wp('bullet', 4, .8, 14), src: [['barracks', 2]], d: 'Very fast. Grabs flags, sees far.', info: 'A cheap, very fast runner that sees far. Great for grabbing empty flags and spotting the enemy, but it is not much of a fighter.' });
-defU('heavy', { n: 'Machine Gunner', role: 'Heavy infantry', cls: 0, pop: 1, cost: 110, bt: 12, hp: 150, spd: 4.8, vis: 26, r: 1, w: Wp('bullet', 6, .2, 18), src: [['barracks', 2]], d: 'Shreds soldiers and low planes.', info: 'Tough soldier with a belt-fed machine gun. Melts soldiers and shoots at low aircraft.' });
+defU('heavy', { n: 'Machine Gunner', role: 'Heavy infantry', cls: 0, pop: 1, cost: 110, bt: 12, hp: 150, spd: 4.8, vis: 26, r: 1, w: Wp('bullet', 6, .2, 18), src: [['barracks', 2]], d: 'Shreds soldiers and helicopters.', info: 'Tough soldier with a belt-fed machine gun. Melts soldiers and is good at shooting down helicopters.' });
 defU('sniper', { n: 'Sniper', role: 'Marksman', cls: 0, pop: 1, cost: 130, bt: 13, hp: 50, spd: 5, vis: 44, r: .9, w: Wp('snipe', 72, 3.2, 42), sf: 1, src: [['barracks', 2]], d: 'Long range. Picks off soldiers.', info: 'Kills soldiers from far away in 1-2 shots. Useless against vehicles. Must stand still to fire.' });
 defU('mortar', { n: 'Mortar Team', role: 'Light artillery', cls: 0, pop: 1, cost: 100, bt: 11, hp: 70, spd: 5.2, vis: 30, r: .9, w: Wp('shell', 40, 3.2, 54, { minr: 12, spl: 4.5, ps: 24, arc: 1 }), sf: 1, src: [['barracks', 2]], d: 'Lobs shells at groups of soldiers.', info: 'Drops shells on groups from a distance. Cannot hit targets that are very close. Stands still to fire.' });
 defU('grenadier', { n: 'Grenadier', role: 'Grenade thrower', cls: 0, pop: 1, cost: 100, bt: 11, hp: 85, spd: 5.2, vis: 26, r: .9, w: Wp('shell', 42, 2.3, 22, { spl: 4.5, ps: 22, arc: 1 }), src: [['barracks', 3]], d: 'Tosses grenades at groups.', info: 'Lobs grenades that hurt groups of soldiers and buildings. Short range, but it keeps moving while it fights.' });
@@ -445,13 +445,13 @@ defU('apc', { n: 'APC', role: 'Armored carrier', cls: 1, pop: 3, cost: 170, bt: 
 defU('lighttank', { n: 'Light Tank', role: 'Tank', cls: 1, pop: 3, cost: 220, bt: 15, hp: 400, spd: 8, vis: 28, r: 1.8, tur: 1, w: Wp('cannon', 36, 1.5, 25, { ps: 60 }), src: [['factory', 2]], d: 'Fast. Good vs cars and tanks.', info: 'A mobile cannon platform. Good against vehicles and buildings.' });
 defU('tank', { n: 'Main Battle Tank', role: 'Heavy tank', cls: 2, pop: 4, cost: 400, bt: 22, hp: 800, spd: 6.5, vis: 28, r: 2.1, tur: 1, w: Wp('cannon', 85, 2.2, 29, { ps: 70 }), src: [['factory', 3]], d: 'Strongest tank. Weak vs bazookas.', info: 'Very hard to kill and hits hard. Beats most things, but bazooka teams and groups of soldiers can bring it down.' });
 defU('artillery', { n: 'Self-Propelled Gun', role: 'Artillery', cls: 1, pop: 3, cost: 270, bt: 18, hp: 230, spd: 5, vis: 26, r: 1.9, tur: 1, w: Wp('shell', 78, 4.5, 72, { minr: 24, spl: 7, ps: 30, arc: 1 }), sf: 1, src: [['factory', 2]], d: 'Huge range. Hits groups.', info: 'Long-range shells with a big blast. Needs something to see the target and cannot hit enemies up close.' });
-defU('aa', { n: 'Anti-Air Gun', role: 'Anti-aircraft', cls: 1, pop: 2, cost: 200, bt: 14, hp: 270, spd: 8, vis: 30, r: 1.7, tur: 1, w: Wp('flak', 8, .2, 34, { ps: 0 }), src: [['factory', 2]], d: 'Shoots down planes and helicopters.', info: 'Rapid-fire flak guns. Deadly against aircraft and almost useless against ground targets.' });
+defU('aa', { n: 'Anti-Air Gun', role: 'Anti-aircraft', cls: 1, pop: 2, cost: 200, bt: 14, hp: 270, spd: 8, vis: 30, r: 1.7, tur: 1, w: Wp('flak', 10, .2, 40, { ps: 0 }), src: [['factory', 2]], d: 'Shoots down planes and helicopters.', info: 'Rapid-fire flak guns. Deadly against aircraft and almost useless against ground targets.' });
 defU('mlrs', { n: 'Rocket Battery', role: 'Rocket artillery', cls: 1, pop: 4, cost: 380, bt: 22, hp: 300, spd: 6, vis: 26, r: 1.9, tur: 1, w: Wp('shell', 26, 9, 90, { minr: 30, spl: 5, ps: 34, arc: 1, shots: 8, scat: 6 }), sf: 1, src: [['factory', 3, 'artillery']], d: 'Fires a huge rocket volley.', info: 'Launches eight rockets at once over a huge range. Great against groups and buildings. Needs something to see the target and cannot hit enemies up close. Needs the Long-Range Guns upgrade on a Level 3 Motor Pool.' });
 defU('titan', { n: 'Titan', role: 'Walking mech', cls: 2, pop: 6, cost: 700, bt: 32, hp: 1700, spd: 5, vis: 30, r: 2.5, tur: 1, walker: 1, w: Wp('cannon', 135, 2.6, 30, { ps: 70 }), w2: Wp('bullet', 7, .2, 22), src: [['factory', 3, 'heavy']], d: 'Giant walking mech. Super tough.', info: 'A giant walking war machine with a heavy cannon and a machine gun. It takes a huge beating, but bazooka teams, gunships and air power can bring it down. Needs the Extra Armor upgrade on a Level 3 Motor Pool.' });
 defU('drone', { n: 'Recon Drone', role: 'Flying scout', cls: 3, pop: 1, cost: 90, bt: 7, hp: 55, spd: 15, vis: 46, r: 1, alt: 9, w: Wp('bullet', 4, .3, 16), src: [['airfield', 1]], d: 'Cheap flying scout.', info: 'A small flying scout with a light gun. Sees very far.' });
 defU('strike', { n: 'Attack Drone', role: 'One-shot flyer', cls: 3, pop: 1, cost: 60, bt: 6, hp: 35, spd: 20, vis: 30, r: 1, alt: 8, kami: 1, w: Wp('bomb', 100, 0, 2.2, { spl: 5.5 }), src: [['airfield', 1]], d: 'Crashes into a target. One use.', info: 'An explosive drone that dives into its target and blows up.' });
-defU('heli', { n: 'Attack Helicopter', role: 'Gunship', cls: 3, pop: 3, cost: 320, bt: 18, hp: 380, spd: 12, vis: 34, r: 1.8, alt: 10, rotor: 1, w: Wp('rocket', 58, 2.4, 30, { ps: 50 }), w2: Wp('bullet', 6, .22, 24), src: [['airfield', 2]], d: 'Fast. Rockets hurt tanks.', info: 'A fast helicopter with anti-tank rockets and a chain gun. Vulnerable to Anti-Air Guns.' });
-defU('gunship', { n: 'Gunship', role: 'Heavy flyer', cls: 3, pop: 5, cost: 650, bt: 28, hp: 950, spd: 9, vis: 34, r: 2.4, alt: 11, rotor: 1, w: Wp('cannon', 52, .7, 32, { ps: 70 }), w2: Wp('rocket', 38, 1.3, 28, { ps: 48 }), src: [['airfield', 3, 'gunship']], d: 'Armored flyer. Cannon and rockets.', info: 'A flying fortress with an autocannon and rockets. Very tough and strong against ground targets. Cannot hit aircraft, and Anti-Air Guns hurt it. Needs the Combat Pilots upgrade on a Level 3 Airfield.' });
+defU('heli', { n: 'Attack Helicopter', role: 'Gunship', cls: 3, pop: 4, cost: 380, bt: 18, hp: 170, spd: 11, vis: 30, r: 1.8, alt: 8, rotor: 1, w: Wp('rocket', 28, 3.4, 19, { ps: 50 }), w2: Wp('bullet', 3, .3, 16), src: [['airfield', 2]], d: 'Fragile. Rockets hurt tanks.', info: 'A fast but fragile helicopter with a few anti-tank rockets and a light chain gun. Machine guns, bazookas, bunkers and Anti-Air Guns all shoot it down quickly.' });
+defU('gunship', { n: 'Gunship', role: 'Heavy flyer', cls: 3, pop: 6, cost: 750, bt: 28, hp: 420, spd: 8, vis: 30, r: 2.4, alt: 9, rotor: 1, w: Wp('cannon', 24, 1.2, 21, { ps: 70 }), w2: Wp('rocket', 18, 2.4, 19, { ps: 48 }), src: [['airfield', 3, 'gunship']], d: 'Slow flyer. Cannon and rockets.', info: 'A slow, expensive flyer with an autocannon and rockets. It cannot hit aircraft, and machine guns, bazookas, bunkers and Anti-Air Guns all bring it down. Needs the Combat Pilots upgrade on a Level 3 Airfield.' });
 defU('interceptor', { n: 'Sky Hunter', role: 'Air fighter', cls: 3, pop: 3, cost: 300, bt: 16, hp: 300, spd: 17, vis: 36, r: 1.6, alt: 12, rotor: 1, w: Wp('aam', 60, 1, 38, { ps: 70 }), src: [['airfield', 3, 'superiority']], d: 'Fast jet. Only hits aircraft.', info: 'A very fast jet fighter with air-to-air missiles. It only attacks aircraft, so keep it away from the ground fight. Needs the Better Engines upgrade on a Level 3 Airfield.' });
 
 
@@ -460,22 +460,22 @@ const BT = {};
 function defB(id, o) { o.id = id; BT[id] = o; return o; }
 const SPEC_COST = 250, SPEC_TIME = 16;
 // hq1 = HQ level needed before you can build it
-defB('hq', { n: 'Headquarters', sz: 8, hp: [7000, 9000, 11500], cost: [0, 260, 480], bt: [0, 35, 50], d: 'Your base. Lose it and you lose.', info: 'Your base. Trains basic soldiers. If it is destroyed you lose. Upgrading raises income and unlocks new buildings, Upgrades and Support powers.', up: ['More money. Unlocks new stuff.', 'Even more money. More Support powers.'], upl: ['More money. Unlocks the Airfield, Artillery Battery, Medical Tent, Radar, Upgrades and the first Support powers.', 'Even more money. Unlocks Fortified Walls and the strongest Support powers.'], specs: [
+defB('hq', { n: 'Headquarters', sz: 8, hp: [7000, 9000, 11500], cost: [0, 260, 480], bt: [0, 35, 50], ros: [3, 4, 5], d: 'Your base. Lose it and you lose.', info: 'Your base. Keeps a small squad of Riflemen and Engineers (3, 4 and 5 troops by level). If it is destroyed you lose. Upgrading raises income and unlocks new buildings, Upgrades and Support powers.', up: ['More money. Unlocks new stuff.', 'Even more money. More Support powers.'], upl: ['More money. Unlocks the Airfield, Artillery Battery, Medical Tent, Radar, Upgrades and the first Support powers.', 'Even more money. Unlocks Fortified Walls and the strongest Support powers.'], specs: [
   { id: 'fortress', n: 'Hardened HQ', d: 'Much tougher, plus a machine gun to defend your base.' },
   { id: 'logi', n: 'Supply Lines', d: '+25% money and every unit costs 8% less.' },
   { id: 'warroom', n: 'Staff Officers', d: 'Support powers recharge faster. Units rank up faster.' }] });
-defB('barracks', { n: 'Barracks', sz: 5.5, hp: [700, 950, 1250], cost: [160, 130, 210], bt: [14, 16, 20], hq1: 1, d: 'Trains soldiers.', info: 'Trains soldiers. Level 2 unlocks Machine Gunner, Sniper, Mortar, Scout and Medic. Level 3 unlocks the Grenadier. The Veteran Training upgrade also unlocks the Commando.', up: ['Unlocks 5 new soldiers.', 'Unlocks the Grenadier. Pick 1 of 3 upgrades.'], upl: ['Unlocks Machine Gunner, Sniper, Mortar Team, Scout and Medic.', 'Stronger building. Unlocks the Grenadier. Then pick 1 of 3 upgrades.'], specs: [
+defB('barracks', { n: 'Barracks', sz: 5.5, hp: [700, 950, 1250], cost: [160, 130, 210], bt: [14, 16, 20], hq1: 1, ros: [5, 10, 20], d: 'Holds a squad of soldiers.', info: 'Pick which soldiers this Barracks keeps: it trains them and replaces any that die. Level 1 holds 5 soldiers, Level 2 holds 10 and Level 3 holds 20. Level 2 unlocks Machine Gunner, Sniper, Mortar, Scout and Medic. Level 3 unlocks the Grenadier. The Veteran Training upgrade also unlocks the Commando.', up: ['Holds 10. Unlocks 5 new soldiers.', 'Holds 20. Unlocks the Grenadier.'], upl: ['Holds 10 soldiers. Unlocks Machine Gunner, Sniper, Mortar Team, Scout and Medic.', 'Holds 20 soldiers. Stronger building. Unlocks the Grenadier. Then pick 1 of 3 upgrades.'], specs: [
   { id: 'elite', n: 'Veteran Training', d: 'New soldiers start as Veterans (stronger). Also unlocks the Commando.' },
-  { id: 'conscript', n: 'Mass Recruiting', d: 'Troop cooldowns 30% shorter. Soldiers cost 15% less.' },
+  { id: 'conscript', n: 'Mass Recruiting', d: 'Holds 30 soldiers instead of 20. Trains 40% faster. Soldiers cost 15% less.' },
   { id: 'shock', n: 'Assault Training', d: 'New soldiers get +20% health, +10% speed, +10% damage.' }] });
-defB('factory', { n: 'Motor Pool', sz: 6.5, hp: [900, 1250, 1650], cost: [260, 200, 300], bt: [18, 20, 24], hq1: 1, d: 'Builds cars and tanks.', info: 'Builds vehicles. Level 2: Light Tank, Self-Propelled Gun, Anti-Air Gun. Level 3: Main Battle Tank. Its upgrades unlock the giant Titan mech or the Rocket Battery.', up: ['Unlocks 3 new vehicles.', 'Unlocks the Main Battle Tank.'], upl: ['Unlocks Light Tank, Self-Propelled Gun and Anti-Air Gun.', 'Unlocks the Main Battle Tank. Then pick 1 of 3 upgrades.'], specs: [
+defB('factory', { n: 'Motor Pool', sz: 6.5, hp: [900, 1250, 1650], cost: [260, 200, 300], bt: [18, 20, 24], hq1: 1, ros: [3, 6, 10], d: 'Holds a group of vehicles.', info: 'Pick which vehicles this Motor Pool keeps: it builds them and replaces any that are destroyed. Level 1 holds 3 vehicles, Level 2 holds 6 and Level 3 holds 10. Level 2: Light Tank, Self-Propelled Gun, Anti-Air Gun. Level 3: Main Battle Tank. Its upgrades unlock the giant Titan mech or the Rocket Battery.', up: ['Holds 6. Unlocks 3 new vehicles.', 'Holds 10. Unlocks the Main Battle Tank.'], upl: ['Holds 6 vehicles. Unlocks Light Tank, Self-Propelled Gun and Anti-Air Gun.', 'Holds 10 vehicles. Unlocks the Main Battle Tank. Then pick 1 of 3 upgrades.'], specs: [
   { id: 'heavy', n: 'Extra Armor', d: 'Vehicles built here have +15% health. Also unlocks the Titan mech.' },
-  { id: 'rapid', n: 'Assembly Line', d: 'Vehicle cooldowns 33% shorter. Vehicles cost 15% less.' },
+  { id: 'rapid', n: 'Assembly Line', d: 'Holds 14 vehicles instead of 10. Builds 50% faster. Vehicles cost 15% less.' },
   { id: 'artillery', n: 'Long-Range Guns', d: 'Self-Propelled Guns shoot 20% farther. Also unlocks the Rocket Battery.' }] });
-defB('airfield', { n: 'Airfield', sz: 7, hp: [800, 1100, 1450], cost: [300, 220, 320], bt: [18, 20, 24], hq1: 2, d: 'Builds drones and helicopters.', info: 'Builds drones and helicopters. Level 2 unlocks the Attack Helicopter. Its upgrades unlock the Gunship or the Sky Hunter jet.', up: ['Unlocks the Attack Helicopter.', 'Pick 1 of 3 upgrades.'], upl: ['Unlocks the Attack Helicopter.', 'Stronger building. Pick 1 of 3 upgrades.'], specs: [
+defB('airfield', { n: 'Airfield', sz: 7, hp: [800, 1100, 1450], cost: [300, 220, 320], bt: [18, 20, 24], hq1: 2, ros: [2, 3, 4], max: 2, d: 'Holds a few aircraft.', info: 'Pick which aircraft this Airfield keeps: it builds them and replaces any that are shot down. Level 1 holds 2 aircraft, Level 2 holds 3 and Level 3 holds 4. You can only have 2 Airfields. Level 2 unlocks the Attack Helicopter. Its upgrades unlock the Gunship or the Sky Hunter jet.', up: ['Holds 3. Unlocks the Attack Helicopter.', 'Holds 4. Pick 1 of 3 upgrades.'], upl: ['Holds 3 aircraft. Unlocks the Attack Helicopter.', 'Holds 4 aircraft. Stronger building. Pick 1 of 3 upgrades.'], specs: [
   { id: 'gunship', n: 'Combat Pilots', d: 'All your aircraft deal +15% damage. Also unlocks the Gunship.' },
   { id: 'superiority', n: 'Better Engines', d: 'All your aircraft fly 15% faster. Also unlocks the Sky Hunter jet.' },
-  { id: 'swarm', n: 'Drone Factory', d: 'Drones cost 40% less. Attack Drones come in pairs.' }] });
+  { id: 'swarm', n: 'Drone Factory', d: 'Holds 4 more drones. Drones cost 40% less and build twice as fast.' }] });
 defB('depot', { n: 'Supply Depot', sz: 4.5, hp: [500, 700, 950], cost: [120, 100, 150], bt: [10, 12, 14], hq1: 1, d: 'Makes extra money.', info: 'Generates extra money every second.', inc: [2.5, 4.5, 7], up: ['Makes more money.', 'Even more money.'], upl: ['Makes more money.', 'Makes even more money. Then pick 1 of 3 upgrades.'], specs: [
   { id: 'trade', n: 'Trade Post', d: '+60% money from this depot.' },
   { id: 'logistics', n: 'Logistics Hub', d: 'Buildings at this flag recharge troops 25% faster.' },
@@ -484,7 +484,7 @@ defB('turret', { n: 'MG Bunker', sz: 3.6, hp: [520, 800, 1100], cost: [140, 110,
   { id: 'twin', n: 'Twin Machine Guns', d: 'Almost twice the fire rate. Great vs soldiers.' },
   { id: 'at', n: 'Anti-Tank Gun', d: 'Long-range cannon that kills vehicles.' },
   { id: 'flak', n: 'Anti-Aircraft Gun', d: 'Flak cannon that shoots down aircraft.' }] });
-defB('medical', { n: 'Medical Tent', sz: 5, hp: [450, 650, 850], cost: [130, 100, 160], bt: [11, 12, 14], hq1: 2, d: 'Heals soldiers nearby.', info: 'Trains Medics and slowly heals friendly soldiers around it. Healing grows with each level.', up: ['Heals faster.', 'Heals fastest. Pick an upgrade.'], specs: [
+defB('medical', { n: 'Medical Tent', sz: 5, hp: [450, 650, 850], cost: [130, 100, 160], bt: [11, 12, 14], hq1: 2, ros: [2, 3, 4], d: 'Heals soldiers nearby.', info: 'Keeps a few Medics (2, 3 and 4 by level) and slowly heals friendly soldiers around it. Healing grows with each level.', up: ['Heals faster.', 'Heals fastest. Pick an upgrade.'], specs: [
   { id: 'triage', n: 'Triage Ward', d: 'Double healing. Nearby soldiers take 15% less damage.' },
   { id: 'stim', n: 'Stim Lab', d: 'Nearby soldiers shoot 20% faster and run 10% faster.' },
   { id: 'motor', n: 'Repair Bay', d: 'Also repairs vehicles and aircraft nearby.' }] });
@@ -557,10 +557,10 @@ const AID = {
   // apm = actions per minute the commander can take, react = seconds before it notices a threat, popLim = army cap,
   // firstAtk = earliest first attack (seconds), pause = rest between waves, idle = chance it does nothing on a thought,
   // leave = chance it leaves a flag lightly defended, inc = income multiplier (only Brutal cheats a little)
-  easy: { n: 'Easy', think: 5.5, apm: 6, react: 9, inc: .5, rx: 2, counter: 0, retreat: 0, call: 0, mistakes: .5, idle: .45, leave: .8, atkDelay: 600, firstAtk: 600, pause: 170, startDelay: 50, capCd: 45, popLim: 16, warn: 25, bank: 150, burst: 1, queue: 0, hqPower: 99999, noDef: 1, bldMul: .45, noTech: 1, atkMul: 9, waveMax: 10, focusDwell: 40 },
-  normal: { n: 'Normal', think: 2.1, apm: 40, react: 3.5, inc: 1, rx: 1.2, counter: .3, retreat: .5, call: 0, mistakes: .15, idle: .12, leave: .25, atkDelay: 420, firstAtk: 360, pause: 110, startDelay: 10, capCd: 20, popLim: 55, warn: 20, bank: 50, burst: 3, queue: 1, hqPower: 1300, noDef: 1, bldMul: .85, noTech: 1, atkMul: 1.5, waveMax: 14, focusDwell: 24 },
-  hard: { n: 'Hard', think: 1.6, apm: 70, react: 2.5, inc: 1, rx: .9, counter: .8, retreat: .5, call: .8, mistakes: .08, idle: .08, leave: .15, atkDelay: 300, firstAtk: 250, pause: 70, startDelay: 5, capCd: 15, popLim: 70, warn: 12, bank: 30, burst: 3, queue: 2, hqPower: 700, bldMul: .95, atkMul: 1.25, waveMax: 26, focusDwell: 20 },
-  brutal: { n: 'Brutal', think: 1.2, apm: 140, react: .9, inc: 1.12, rx: .7, counter: 1, retreat: .45, call: 1, mistakes: .05, idle: .03, leave: .1, atkDelay: 150, firstAtk: 140, pause: 40, startDelay: 0, popLim: 200, warn: 5, bank: 0, burst: 4, queue: 3, hqPower: 500, bldMul: 1, atkMul: 1.05, waveMax: 99, focusDwell: 14 }
+  easy: { n: 'Easy', trainMul: .5, think: 5.5, apm: 6, react: 9, inc: .5, rx: 2, counter: 0, retreat: 0, call: 0, mistakes: .5, idle: .45, leave: .8, atkDelay: 600, firstAtk: 600, pause: 170, startDelay: 50, capCd: 45, popLim: 16, warn: 25, bank: 150, burst: 1, queue: 0, hqPower: 99999, noDef: 1, bldMul: .45, noTech: 1, atkMul: 9, waveMax: 10, focusDwell: 40 },
+  normal: { n: 'Normal', trainMul: .8, think: 2.1, apm: 40, react: 3.5, inc: 1, rx: 1.2, counter: .3, retreat: .5, call: 0, mistakes: .15, idle: .12, leave: .25, atkDelay: 420, firstAtk: 360, pause: 110, startDelay: 10, capCd: 20, popLim: 55, warn: 20, bank: 50, burst: 3, queue: 1, hqPower: 1300, noDef: 1, bldMul: .85, noTech: 1, atkMul: 1.5, waveMax: 14, focusDwell: 24 },
+  hard: { n: 'Hard', trainMul: 1, think: 1.6, apm: 70, react: 2.5, inc: 1, rx: .9, counter: .8, retreat: .5, call: .8, mistakes: .08, idle: .08, leave: .15, atkDelay: 300, firstAtk: 250, pause: 70, startDelay: 5, capCd: 15, popLim: 70, warn: 12, bank: 30, burst: 3, queue: 2, hqPower: 700, bldMul: .95, atkMul: 1.25, waveMax: 26, focusDwell: 20 },
+  brutal: { n: 'Brutal', trainMul: 1.15, think: 1.2, apm: 140, react: .9, inc: 1.12, rx: .7, counter: 1, retreat: .45, call: 1, mistakes: .05, idle: .03, leave: .1, atkDelay: 150, firstAtk: 140, pause: 40, startDelay: 0, popLim: 200, warn: 5, bank: 0, burst: 4, queue: 3, hqPower: 500, bldMul: 1, atkMul: 1.05, waveMax: 99, focusDwell: 14 }
 };
 
 // ---------------- settings & profile ----------------
@@ -1018,20 +1018,51 @@ function unitCost(p, type, b) {
   if (b) { if (b.spec === 'conscript' && T.cls === 0) c *= .85; if (b.spec === 'rapid' && (T.cls === 1 || T.cls === 2)) c *= .85; if (b.spec === 'swarm' && (type === 'drone' || type === 'strike')) c *= .6; }
   return Math.round(c);
 }
-function prodSpeed(b) {
-  const p = P(b.owner); let s = 1 + p.mod.prod; if (b.spec === 'conscript') s *= 1.4; if (b.spec === 'rapid') s *= 1.5;
+function prodSpeed(b, type) {
+  const p = P(b.owner); let s = 1 + p.mod.prod; if (b.spec === 'conscript') s *= 1.4; if (b.spec === 'rapid') s *= 1.5; if (b.spec === 'swarm' && DRONES[type]) s *= 2;
+  if (p.ai) s *= AID[p.ai.diff].trainMul || 1;
   const pt = b.pt >= 0 ? W.pts[b.pt] : null; if (pt) for (const sl of pt.slots) if (sl.b && sl.b.type === 'depot' && sl.b.spec === 'logistics' && sl.b.prog >= 1) { s *= 1.25; break; }
   return s;
 }
-// 2.2 cooldown system: a unit is deployed the moment you click its card, then that unit type waits on a short cooldown (per building)
+// 2.4 roster system: each production building keeps a roster you pick (how many of each troop). It trains them one at a time,
+// paying as each one starts, and replaces any that die. How many troops it can hold grows with its level.
+const DRONES = { drone: 1, strike: 1 };
 function unitCdBase(T) { return clamp(2.5 + T.cost / 55, 3, 12); }
-function unitCd(b, type) { return Math.max(1.5, unitCdBase(UT[type]) / prodSpeed(b)); }
-function cdLeft(b, type) { return b.cdu && b.cdu[type] > 0 ? b.cdu[type] : 0; }
-// 2.3 deploy queue: click a card while it recharges and the building deploys it for you the moment the cooldown ends (paid when queued)
-const QCAP = 10;
-function qCount(b, type) { let n = 0; if (b.q) for (const e of b.q) if (e.u === type) n++; return n; }
-function qTotal(b) { return b.q ? b.q.length : 0; }
-function refundQueue(b) { if (!b.q || !b.q.length) return; if (!W.o.sandbox) { const p = P(b.owner); if (p) for (const e of b.q) p.sup += e.c; } b.q.length = 0; }
+function unitCd(b, type) { return Math.max(1.5, unitCdBase(UT[type]) / prodSpeed(b, type)); }
+function rosBase(b) { const r = BT[b.type].ros; return r ? r[b.lvl - 1] + (b.spec === 'conscript' ? 10 : b.spec === 'rapid' ? 4 : 0) : 0; }
+function rosCap(b) { return rosBase(b) + (b.spec === 'swarm' ? 4 : 0); }         // Drone Factory: 4 extra slots, drones only
+function rosTotal(b, noDrones) { let n = 0; if (b.ros) for (const k in b.ros) if (!noDrones || !DRONES[k]) n += b.ros[k]; return n; }
+function rosHave(b, type) { return b.have && b.have[type] || 0; }
+function rosFits(b, type) { if (rosTotal(b) + 1 > rosCap(b)) return false; if (b.spec === 'swarm' && !DRONES[type] && rosTotal(b, true) + 1 > rosBase(b)) return false; return true; }
+function isProd(b) { return !!BT[b.type].ros; }
+function refundTraining(b) { if (!b.tr) return; if (!W.o.sandbox) { const p = P(b.owner); if (p) p.sup += b.tr.c; } b.tr = null; }
+function popLimit(p) { return Math.min(p.popCap, p.popLim || 1e9); }
+function bCount(p, type) { let n = 0; for (const b of W.bld) if (b.owner === p.id && b.type === type && !b.dead) n++; return n; }
+// count each building's living troops (run every tick before buildings update)
+function countHomes() {
+  for (const b of W.bld) if (b.have) for (const k in b.have) b.have[k] = 0;
+  for (const u of W.units) if (u.home && !u.dead) { const b = W.byId.get(u.home); if (b && b.k === 'b' && b.have && b.owner === u.owner) b.have[u.type] = (b.have[u.type] || 0) + 1; }
+}
+// b.wait: 0 = fine, 1 = waiting for money, 2 = army full, 3 = paused
+function rosterTick(b, dt) {
+  const p = P(b.owner), sb = W.o.sandbox;
+  if (b.tr) {
+    const t = b.tr.u;
+    if (!b.ros[t] || rosHave(b, t) >= b.ros[t]) { refundTraining(b); return; }
+    b.tr.t = Math.min(b.tr.dur, b.tr.t + dt); if (b.tr.t < b.tr.dur) { b.wait = 0; return; }
+    if (!sb && p.pop + UT[t].pop > popLimit(p)) { b.wait = 2; return; }      // finished, but no room in the army yet
+    b.tr = null; b.wait = 0; deployUnit(b, p, t); b.have[t] = (b.have[t] || 0) + 1; return;
+  }
+  if (b.hold) { b.wait = 3; return; }
+  let pick = null, best = 0;
+  for (const k in b.ros) { const want = b.ros[k], have = rosHave(b, k); if (have >= want || !canTrainAt(b, k)) continue; const sc = (want - have) / want; if (sc > best) { best = sc; pick = k; } }
+  if (!pick) { b.wait = 0; return; }
+  if (!sb && p.pop + UT[pick].pop > popLimit(p)) { b.wait = 2; return; }
+  const cost = unitCost(p, pick, b);
+  if (!sb && p.sup - cost < (p.resv || 0)) { b.wait = 1; return; }
+  if (!sb) p.sup -= cost;
+  b.tr = { u: pick, t: 0, dur: unitCd(b, pick), c: sb ? 0 : cost }; b.wait = 0;
+}
 // 2.3 auto-rally: the biggest cluster of the player's combat units (ignoring units parked at an enemy HQ unless that is all there is)
 function armyRally(p, b) {
   const eh = []; for (const q of W.players) if (q.alive && q.team !== p.team && q.hqB && !q.hqB.dead) eh.push(q.hqB);
@@ -1084,7 +1115,7 @@ function spawnUnit(type, owner, x, z, o) {
 function placeBuilding(type, owner, pt, slot, instant) {
   const T = BT[type], p = P(owner); let x, z;
   if (type === 'wall') { x = pt.x; z = pt.z; } else if (slot >= 0) { x = pt.slots[slot].x; z = pt.slots[slot].z; } else { x = pt.x; z = pt.z; }
-  const b = { id: W.nid++, k: 'b', type, T, owner, team: p.team, pt: pt ? pt.id : -1, slot, x, z, y: W.M.H(x, z), lvl: 1, spec: '', hp: 0, maxHp: 0, prog: instant ? 1 : 0, upg: null, q: [], cdu: {}, rx: 0, rz: 0, hasRally: false, cd: 0, cd2: 0, scan: Math.random(), tgt: null, aim: 0, flash: 0, dead: false, spent: T.cost[0], w: null, sb: 1 << p.team, aT: 0, mines: null, mineT: 0, sz: T.sz, rot: 0, fire: 0 };
+  const b = { id: W.nid++, k: 'b', type, T, owner, team: p.team, pt: pt ? pt.id : -1, slot, x, z, y: W.M.H(x, z), lvl: 1, spec: '', hp: 0, maxHp: 0, prog: instant ? 1 : 0, upg: null, ros: T.ros ? {} : null, have: T.ros ? {} : null, tr: null, wait: 0, hold: false, rx: 0, rz: 0, hasRally: false, cd: 0, cd2: 0, scan: Math.random(), tgt: null, aim: 0, flash: 0, dead: false, spent: T.cost[0], w: null, sb: 1 << p.team, aT: 0, mines: null, mineT: 0, sz: T.sz, rot: 0, fire: 0 };
   refreshB(b); b.hp = instant ? b.maxHp : b.maxHp * .12;
   if (type === 'hq') { b.rot = Math.atan2(-z, -x) + PI / 2; }
   else { b.rot = Math.atan2(W.M.hd * .0 - z, -x) + (slot >= 0 ? 0 : 0); b.rot = Math.round(Math.atan2(-x, -z) / (PI / 2)) * (PI / 2); }
@@ -1140,7 +1171,7 @@ function killUnit(u, src, owner) {
   else if (owner !== undefined && owner >= 0) { P(owner).stats.kills++; if (u.T.air) P(owner).stats.air++; }
 }
 function killBuilding(b, src, owner) {
-  if (b.dead) return; b.dead = true; const p = P(b.owner); const pt = b.pt >= 0 ? W.pts[b.pt] : null; refundQueue(b);
+  if (b.dead) return; b.dead = true; const p = P(b.owner); const pt = b.pt >= 0 ? W.pts[b.pt] : null; refundTraining(b);
   const i = W.bld.indexOf(b); if (i >= 0) { W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } W.byId.delete(b.id);
   if (b.type === 'wall') { if (pt) pt.wall = null; for (const a of b.arcs) markNav(W.M, a[0], a[1], .6, -1); }
   else if (b.slot >= 0 && pt) { pt.slots[b.slot].b = null; markNav(W.M, b.x, b.z, b.T.sz * .52, -1); }
@@ -1446,16 +1477,8 @@ function updBuilding(b, dt) {
       b.upg = null; ev([9, b.id, r1(b.x), r1(b.z)]); b.sb |= 0;
     }
   }
-  // unit cooldowns (units are deployed instantly when ordered; each type then recharges)
-  for (const k in b.cdu) { if ((b.cdu[k] -= dt) <= 0) delete b.cdu[k]; }
-  if (b.q.length && b.prog >= 1) {
-    const pq = P(b.owner); b.qPause = false;
-    for (let i = 0; i < b.q.length; i++) {
-      const e = b.q[i]; if (cdLeft(b, e.u) > 0) continue; const QT = UT[e.u];
-      if (!W.o.sandbox && pq.pop + QT.pop > pq.popCap) { b.qPause = true; continue; }
-      b.q.splice(i, 1); i--; deployUnit(b, pq, e.u);
-    }
-  } else b.qPause = false;
+  // roster: train the next missing troop
+  if (b.ros) rosterTick(b, dt);
   // auras / specials every 0.5s
   b.aT -= dt; if (b.aT <= 0) { b.aT = .5; auraTick(b); }
   // weapons
@@ -1516,7 +1539,7 @@ function spawnFromBuilding(b, type, idx) {
   ang += (idx || 0) * .8 - ((b.id * 7) % 5) * .15; const d = b.sz * .5 + 2.6 + (T.cls >= 1 ? 1.5 : 0);
   let x = b.x + Math.cos(ang) * d, z = b.z + Math.sin(ang) * d; const q = snapFree(M, x, z, 5); x = q[0]; z = q[1];
   const o = { rot: ang }; if (b.spec === 'elite' && T.cls === 0) o.vet = 1; if (b.spec === 'shock' && T.cls === 0) { o.hpB = 1.2; o.spB = 1.1; o.dmB = 1.1; } if (b.spec === 'heavy' && (T.cls === 1 || T.cls === 2)) o.hpB = 1.15;
-  const u = spawnUnit(type, b.owner, x, z, o); if (o.vet) refreshUnit(u), u.hp = u.maxHp;
+  const u = spawnUnit(type, b.owner, x, z, o); u.home = b.id; if (o.vet) refreshUnit(u), u.hp = u.maxHp;
   if (b.type === 'factory' && b.spec === 'artillery' && type === 'artillery') u.fromArtPark = true;
   if (b.hasRally) { u.o = 1; u.tx = b.rx; u.tz = b.rz; u.arr = 3; }
   else if (dest) { u.o = 2; u.am = true; u.tx = dest[0]; u.tz = dest[1]; u.arr = 3; }
@@ -1526,7 +1549,7 @@ function spawnFromBuilding(b, type, idx) {
 // ---------------- world tick ----------------
 function simTick() {
   const dt = TICK; if (W.over && !W.o.sandbox) { }
-  W.tick++; W.t += dt; hashBuild(); FIELD_BUDGET = 3;
+  W.tick++; W.t += dt; hashBuild(); countHomes(); FIELD_BUDGET = 3;
   const us = W.units;
   for (let i = 0; i < us.length; i++) { const u = us[i]; if (!u.dead) { updUnit(u, dt); } }
   // separation after movement (hash is slightly stale: ok)
@@ -1645,12 +1668,8 @@ function applyCmd(pid, c) {
     case 'build': return cmdBuild(p, c);
     case 'upg': return cmdUpgrade(p, c);
     case 'spec': return cmdSpec(p, c);
-    case 'train': return cmdTrain(p, c);
-    case 'cq': {
-      const b = W.byId.get(c.b); if (!b || b.owner !== pid || !b.q || !b.q.length) return false; let i = -1;
-      if (typeof c.u === 'string') { for (let k = b.q.length - 1; k >= 0; k--) if (b.q[k].u === c.u) { i = k; break; } } else i = c.i | 0;
-      if (i < 0 || i >= b.q.length) return false; const e = b.q.splice(i, 1)[0]; if (!W.o.sandbox) p.sup += e.c; NET.dirty = true; return true;
-    }
+    case 'ros': return cmdRoster(p, c);
+    case 'rhold': { const b = W.byId.get(c.b); if (!b || b.owner !== pid || !b.ros) return false; b.hold = !b.hold; if (b.hold) refundTraining(b); NET.dirty = true; return true; }
     case 'sell': { const b = W.byId.get(c.b); if (!b || b.owner !== pid || b.type === 'hq') return false; p.sup += Math.round(b.spent * .5); ev([1, 2, r1(b.x), r1(b.y + 1), r1(b.z), 1]); killBuilding(b, null, -1); return true; }
     case 'tech': return cmdTech(p, c);
     case 'call': return cmdCall(p, c);
@@ -1663,6 +1682,7 @@ function cmdBuild(p, c) {
   const pt = W.pts[c.pt]; if (!pt || pt.owner !== p.id) return false; const T = BT[c.type]; if (!T || BUILDABLE.indexOf(c.type) < 0) return false; if ((T.hq1 || 1) > playerHQLvl(p) && !W.o.sandbox) return false;
   const cost = T.cost[0] * (c.type === 'wall' ? 1 : 1);
   if (c.type === 'wall') { if (pt.wall) return false; } else { const sl = pt.slots[c.slot | 0]; if (!sl || sl.b) return false; }
+  if (T.max && bCount(p, c.type) >= T.max && !W.o.sandbox) return false;
   if (p.sup < cost && !W.o.sandbox) return false;
   if (!W.o.sandbox) p.sup -= cost;
   const b = placeBuilding(c.type, p.id, pt, c.type === 'wall' ? -2 : c.slot | 0, false); b.spent = cost; if (c.type === 'wall') b.slot = -2;
@@ -1686,24 +1706,17 @@ function canTrainAt(b, type) {
 }
 function unitsForB(b) { const r = []; for (const k in UT) if (canTrainAt(b, k)) r.push(k); return r; }
 function unlockInfo(b, type) { const T = UT[type]; for (const s of T.src) if (s[0] === b.type) { return s; } return null; }
-function cmdTrain(p, c) {
-  const b = W.byId.get(c.b); if (!b || b.owner !== p.id || !canTrainAt(b, c.u)) return false;
-  const T = UT[c.u]; const cost = unitCost(p, c.u, b);
-  if (cdLeft(b, c.u) > 0 || qCount(b, c.u) > 0) {      // 2.3: recharging -> join the building's queue (paid now, refunded on cancel)
-    if (b.q.length >= QCAP) return false; if (p.sup < cost && !W.o.sandbox) return false;
-    if (!W.o.sandbox) p.sup -= cost; b.q.push({ u: c.u, c: W.o.sandbox ? 0 : cost }); NET.dirty = true; return true;
-  }
-  if (!W.o.sandbox && p.pop + T.pop > p.popCap) return false;
-  if (p.sup < cost && !W.o.sandbox) return false;
-  if (!W.o.sandbox) p.sup -= cost;
-  deployUnit(b, p, c.u);
-  return true;
+// c.d = +1 adds a slot for troop c.u, -1 removes one (the troop itself stays, it just will not be replaced)
+function cmdRoster(p, c) {
+  const b = W.byId.get(c.b); if (!b || b.owner !== p.id || !b.ros || !UT[c.u]) return false; const d = c.d | 0;
+  if (d > 0) { if (!canTrainAt(b, c.u) || !rosFits(b, c.u)) return false; b.ros[c.u] = (b.ros[c.u] || 0) + 1; }
+  else if (d < 0) { if (!b.ros[c.u]) return false; if (--b.ros[c.u] <= 0) delete b.ros[c.u]; if (b.tr && b.tr.u === c.u && rosHave(b, c.u) >= (b.ros[c.u] || 0)) refundTraining(b); }
+  else return false;
+  NET.dirty = true; return true;
 }
 function deployUnit(b, p, type) {
-  const cnt = (b.spec === 'swarm' && type === 'strike') ? 2 : 1; let last = null;
-  for (let i = 0; i < cnt; i++) last = spawnFromBuilding(b, type, i);
-  b.cdu[type] = unitCd(b, type); p.deployT = W.t; if (last) ev([1, 1, r1(last.x), r1(last.y + 1), r1(last.z), 1]);
-  return last;
+  const u = spawnFromBuilding(b, type, rosHave(b, type) % 3); p.deployT = W.t; ev([1, 1, r1(u.x), r1(u.y + 1), r1(u.z), 1]);
+  return u;
 }
 function cmdTech(p, c) {
   const t = TECHBY[c.id]; if (!t || p.techs[t.id] || p.res) return false; const hq = playerHQLvl(p);
@@ -1814,7 +1827,7 @@ function makeAI(p, cfg) {
       const s = this.s; const sup = p.sup; const own = s.ownPts; this.saveFor = 0; const saveUp = c => { if (!this.saveFor && c < 700) this.saveFor = c; };
       // pick building
       const lim = Math.max(2, Math.floor(Math.min(pers.bld.length, 3 + own.length * 2) * dif.bldMul)); const need = {}; let want = null, gated = false; const hql = playerHQLvl(p);
-      for (let i = 0; i < lim && !want; i++) { const t = pers.bld[i]; if (dif.noDef && (t === 'turret' || t === 'arty' || t === 'wall')) continue; need[t] = (need[t] || 0) + 1; if (this.cntB(t) < need[t]) { if ((BT[t].hq1 || 1) > hql) { gated = true; continue; } want = t; } }
+      for (let i = 0; i < lim && !want; i++) { const t = pers.bld[i]; if (dif.noDef && (t === 'turret' || t === 'arty' || t === 'wall')) continue; if (BT[t].max && this.cntB(t) >= BT[t].max) continue; need[t] = (need[t] || 0) + 1; if (this.cntB(t) < need[t]) { if ((BT[t].hq1 || 1) > hql) { gated = true; continue; } want = t; } }
       if (!want && sup > 450 && !dif.noTech && !dif.noDef) { const ex = ['turret', 'depot', 'barracks', 'turret', 'factory'][(Math.random() * 5) | 0]; if (this.cntB(ex) < 2 + own.length) want = ex; }
       if (want && (want !== 'turret' || this.cntB('turret') < 1 + own.length * 2)) { if (sup >= BT[want].cost[0] + (want === 'depot' ? 0 : 20)) this.placeB(want); else saveUp(BT[want].cost[0] + 20); }
       // forward walls on the contested flag (Hard and Expert commanders, and the Defender)
@@ -1853,46 +1866,46 @@ function makeAI(p, cfg) {
       if (bp) this.cmd({ k: 'build', pt: bp.id, type, slot: bs });
     },
     // ---------------- production ----------------
+    // 2.4: the AI fills its buildings' rosters a slot or two at a time (and swaps slots to counter what it sees); the buildings do the training
+    unitWeight(b, t, cnt, plan) {
+      const s = this.s, mix = s.mix, tot = Math.max(1, s.mixT), T = UT[t]; let w = pers.uw[t];
+      if (w === undefined) w = T.air ? .08 : b.type === 'hq' ? .35 : .2; if (w <= 0) return 0;
+      if (T.w && dif.counter > 0 && tot > 80) { let eff = 0; const ws = T.w2 ? [T.w, T.w2] : [T.w]; for (let c = 0; c < 4; c++) { let m = 0; for (const wp of ws) { let mm = WTM[wp.wt][c]; if (c === 3 && wp.g === 'g') mm = 0; if (c !== 3 && wp.g === 'a') mm = 0; m = Math.max(m, mm); } eff += mix[c] / tot * m; } w *= clamp(1 + dif.counter * (eff - .75), .2, 3); }
+      if (T.id === 'aa' || T.id === 'interceptor') { w *= 1 + (mix[3] / tot) * 8 * dif.counter; if (mix[3] < 60) w *= .12; }
+      if (T.id === 'scout') w *= (cnt.scout || 0) < 2 ? 1.5 : .05;
+      if (T.id === 'medic') w *= (cnt.medic || 0) < plan.inf / 7 ? 2 : .1;
+      if (T.id === 'engineer') w *= (cnt.engineer || 0) < Math.min(4, 1 + s.ownPts.length) ? 3 : .03;
+      if (T.id === 'jeep') w *= (cnt.jeep || 0) < 3 ? 1.2 : .25;
+      if (T.id === 'artillery' || T.id === 'mlrs') w *= ((cnt.artillery || 0) + (cnt.mlrs || 0)) < Math.max(1, plan.all * .2) ? 1 : .1;
+      if (T.air && !DRONES[t] && plan.air + 1 > Math.max(1, plan.all * (pers.id === 'voss' ? .35 : .12))) w *= .03;   // never an air-only army
+      w /= Math.pow(1 + (cnt[t] || 0) / 5, .7);
+      return w;
+    },
     produce() {
-      const s = this.s; const nCombat = s.combat.length; const mix = s.mix, tot = Math.max(1, s.mixT);
-      const cnt = {}; for (const u of s.my) cnt[u.type] = (cnt[u.type] || 0) + 1;
-      const list = []; let deployed = 0; const burst = dif.burst || 1;
-      for (const b of W.bld) { if (b.owner !== p.id || b.prog < 1 || b.dead) continue; const ul = unitsForB(b).filter(t => cdLeft(b, t) <= 0); if (ul.length) list.push({ b, ul, top: Math.max(...ul.map(t => UT[t].cost)) }); }
-      list.sort((x, y) => y.top - x.top); const emerg = this.t - (this.lastEmerg || -99) < 8; let reserve = (!emerg && nCombat >= 5 && dif.counter > 0 ? (this.saveFor || 0) : 0) * (this.state === 'attack' ? .6 : .9) + (emerg ? 0 : (dif.bank || 0));
-      for (const { b, ul } of list) {
-        if (deployed >= burst) break;
-        const sc = []; let sum = 0;
-        for (const t of ul) {
-          const T = UT[t]; let w = pers.uw[t]; if (w === undefined) w = (b.type === 'hq' ? .35 : .2); if (w <= 0) continue;
-          if (p.pop + T.pop > Math.min(p.popCap, dif.popLim)) continue;
-          if (T.w && dif.counter > 0 && tot > 80) { let eff = 0; const wt = T.w.wt; for (let c = 0; c < 4; c++) { const air = c === 3; let m = WTM[wt][c]; if (air && T.w.g === 'g') m = 0; if (!air && T.w.g === 'a') m = 0; eff += mix[c] / tot * m; } w *= clamp(1 + dif.counter * (eff - .75), .2, 3); }
-          if (T.id === 'aa' || T.id === 'interceptor') { w *= 1 + (mix[3] / tot) * 8 * dif.counter; if (mix[3] < 60) w *= .12; }
-          if (T.id === 'scout') { w *= (cnt.scout || 0) < 2 ? 1.5 : .05; }
-          if (T.id === 'medic') { const n = cnt.medic || 0, inf = s.combat.filter(u => u.T.cls === 0).length; w *= n < inf / 7 ? 2 : .1; }
-          if (T.id === 'engineer') { const n = cnt.engineer || 0; w *= n < Math.min(4, 1 + s.ownPts.length) ? 3 : .03; }
-          if (T.id === 'jeep') { w *= (cnt.jeep || 0) < 3 ? 1.2 : .25; }
-          if (T.id === 'strike' || T.id === 'drone') w *= (cnt[T.id] || 0) < 8 ? 1 : .2;
-          if (T.id === 'artillery' || T.id === 'mlrs') w *= (((cnt.artillery || 0) + (cnt.mlrs || 0)) < Math.max(1, nCombat * .2)) ? 1 : .1;
-          w /= Math.pow(1 + (cnt[t] || 0) / 5, .7);
-          if (T.cost <= 110 && T.w) { const share = (cnt[t] || 0) / Math.max(10, nCombat); w *= clamp(1.5 - share * 2.8, .08, 1); }
-          { const fill = p.pop / p.popCap; if (fill > .65) w *= Math.pow(T.cost / 90, (fill - .65) * 4.5); }
-          sc.push([t, w]); sum += w;
+      const s = this.s, nCombat = s.combat.length, emerg = this.t - (this.lastEmerg || -99) < 8;
+      // money held back for buildings and upgrades: the rosters only train with what is left over
+      p.resv = emerg ? 0 : (nCombat >= 5 && dif.counter > 0 ? (this.saveFor || 0) : 0) * (this.state === 'attack' ? .6 : .9) + (dif.bank || 0);
+      p.popLim = dif.popLim;
+      const cnt = {}, plan = { all: 0, inf: 0, air: 0 }, list = [];
+      for (const b of W.bld) { if (b.owner !== p.id || !b.ros) continue; for (const k in b.ros) { const n = b.ros[k]; cnt[k] = (cnt[k] || 0) + n; plan.all += n; if (UT[k].cls === 0) plan.inf += n; if (UT[k].air && !DRONES[k]) plan.air += n; } if (b.prog >= 1 && !b.dead) list.push(b); }
+      list.sort((x, y) => rosTotal(x) / Math.max(1, rosCap(x)) - rosTotal(y) / Math.max(1, rosCap(y)));
+      const add = (b, t) => { if (!this.cmd({ k: 'ros', b: b.id, u: t, d: 1 })) return false; cnt[t] = (cnt[t] || 0) + 1; plan.all++; if (UT[t].cls === 0) plan.inf++; if (UT[t].air && !DRONES[t]) plan.air++; return true; };
+      let changes = 0; const maxCh = dif.burst || 1;
+      for (const b of list) {
+        if (!b.hasRally && this.stage) this.cmd({ k: 'rally', b: b.id, x: this.stage[0], z: this.stage[1] });
+        if (changes >= maxCh) continue;
+        const ul = unitsForB(b); if (!ul.length) continue;
+        const sc = []; let sum = 0; for (const t of ul) { if (!rosFits(b, t)) continue; const w = this.unitWeight(b, t, cnt, plan); if (w > 0) { sc.push([t, w]); sum += w; } }
+        if (rosTotal(b) < rosCap(b)) {
+          if (!sc.length) continue; let r = Math.random() * sum, pick = sc[0][0]; for (const [t, w] of sc) { r -= w; if (r <= 0) { pick = t; break; } }
+          if (dif.counter >= 1 && Math.random() < .5) { let bst = sc[0]; for (const x of sc) if (x[1] > bst[1]) bst = x; pick = bst[0]; }
+          if (add(b, pick)) changes++;
+        } else if (dif.counter > 0 && Math.random() < .3 * dif.counter) {
+          // roster full: swap the least useful slot for something that counters the enemy better
+          let worst = null, ww = 1e9; for (const k in b.ros) { const c2 = Object.assign({}, cnt); c2[k]--; const w = this.unitWeight(b, k, c2, plan); if (w < ww) { ww = w; worst = k; } }   // judged as if one fewer, so it is not swapped out and straight back in
+          let best = null, bw = 0; for (const t of ul) { if (t === worst) continue; const w = this.unitWeight(b, t, cnt, plan); if (w > bw) { bw = w; best = t; } }
+          if (worst && best && bw > ww * 2.5 + .05 && this.cmd({ k: 'ros', b: b.id, u: worst, d: -1 })) { cnt[worst]--; plan.all--; if (UT[worst].cls === 0) plan.inf--; if (UT[worst].air && !DRONES[worst]) plan.air--; if (rosFits(b, best)) add(b, best); changes++; }
         }
-        if (!sc.length || Math.max(...sc.map(x => x[1])) < .09) continue; let r = Math.random() * sum, pick = sc[0][0]; for (const [t, w] of sc) { r -= w; if (r <= 0) { pick = t; break; } }
-        if (dif.counter >= 1) { let bst = sc[0]; for (const x of sc) if (x[1] > bst[1]) bst = x; if (Math.random() < .5) pick = bst[0]; }
-        const wnt = this.wants.get(b.id); if (wnt && wnt.until > this.t && sc.some(x => x[0] === wnt.u)) pick = wnt.u;
-        const cost = unitCost(p, pick, b);
-        if (cost > p.sup - reserve) { if (cost - p.sup < Math.max(60, p.inc * 16)) { reserve = Math.max(reserve, cost); this.wants.set(b.id, { u: pick, until: wnt && wnt.u === pick ? wnt.until : this.t + 25 }); } continue; }
-        this.wants.delete(b.id);
-        if (this.cmd({ k: 'train', b: b.id, u: pick, n: 1 })) { cnt[pick] = (cnt[pick] || 0) + 1; deployed++; }
-        if (!b.hasRally && this.stage) { this.cmd({ k: 'rally', b: b.id, x: this.stage[0], z: this.stage[1] }); }
-      }
-      // 2.3: with spare money the AI also lines up one or two extra troops in a building's queue (more on harder levels)
-      const ql = dif.queue || 0;
-      if (ql > 0 && deployed < burst + 1 && p.sup > 260 + reserve) for (const b of W.bld) {
-        if (b.owner !== p.id || b.prog < 1 || b.dead || b.q.length >= ql) continue; const ul = unitsForB(b).filter(t => cdLeft(b, t) > 0 && (pers.uw[t] || 0) > 0 && qCount(b, t) === 0 && p.pop + UT[t].pop <= Math.min(p.popCap, dif.popLim) - b.q.length);
-        if (!ul.length) continue; const t = ul[(Math.random() * ul.length) | 0]; if (unitCost(p, t, b) > p.sup - reserve - 120) continue;
-        if (this.cmd({ k: 'train', b: b.id, u: t, n: 1 })) { deployed++; break; }
       }
     },
     // ---------------- military ----------------
@@ -2998,13 +3011,12 @@ function setupInput() {
   mm.addEventListener('pointermove', e => { if (UI.mmDrag && e.pointerType === 'touch') mmPointer(e, false); });
   mm.addEventListener('contextmenu', e => e.preventDefault());
   $('#hud').addEventListener('contextmenu', e => e.preventDefault());
-  $('#panel').addEventListener('contextmenu', e => { const c = e.target.closest('.card[data-key]'); if (!c || !selBld) return; const b = W && W.byId.get(selBld), k = c.dataset.key; if (b && b.owner === ME && UT[k] && qCount(b, k)) { issue({ k: 'cq', b: b.id, u: k }); sfx('click'); UI.cardSig = ''; hudUpdate(true); } });
+  $('#panel').addEventListener('contextmenu', e => { const c = e.target.closest('.card[data-key]'); if (!c || !selBld) return; const b = W && W.byId.get(selBld), k = c.dataset.key; if (b && b.owner === ME && UT[k] && b.ros && b.ros[k]) { issue({ k: 'ros', b: b.id, u: k, d: -1 }); sfx('click'); UI.cardSig = ''; hudUpdate(true); } });
   $('#btnMenu').onclick = () => openPause();
   $('#zIn').onclick = () => camZoom(1 / 1.2); $('#zOut').onclick = () => camZoom(1.2);
   $('#rL').onclick = () => { cam.tyaw -= PI / 4; }; $('#rR').onclick = () => { cam.tyaw += PI / 4; };
   $('#panel').addEventListener('click', e => {
-    const qx = e.target.closest('[data-qx]'); if (qx && selBld) { issue({ k: 'cq', b: selBld, u: qx.dataset.qx }); sfx('click'); UI.cardSig = ''; hudUpdate(true); return; }
-    const q = e.target.closest('[data-q]'); if (q && selBld) { issue({ k: 'cq', b: selBld, i: +q.dataset.q }); sfx('click'); UI.cardSig = ''; return; }
+    const qx = e.target.closest('[data-qx]'); if (qx && selBld) { issue({ k: 'ros', b: selBld, u: qx.dataset.qx, d: -1 }); sfx('click'); UI.cardSig = ''; hudUpdate(true); return; }
     const g = e.target.closest('[data-grp]'); if (g) { const t = g.dataset.grp; selectUnits(selUnitsArr().filter(u => u.type === t).map(u => u.id)); return; }
     const hbb = e.target.closest('[data-hb]'); if (hbb) { const f = CARD.hb && CARD.hb[hbb.dataset.hb]; if (f) { initAudio(); f(); } return; }
     const c = e.target.closest('[data-i]'); if (c) { const f = CARD[+c.dataset.i]; if (f) { initAudio(); f(); } }
@@ -3187,42 +3199,37 @@ function hudInit() {
   };
 }
 let lastScore = '', lastQuick = '';
-// ----- 2.2: cooldown overlays on cards, the Army status strip, and the little badge over each production building -----
-function updCdo() {
-  for (const o of $$('#panel .cdo')) {
-    const b = W.byId.get(+o.dataset.cb); if (!b) continue; const k = o.dataset.ck; const rem = cdLeft(b, k), tot = Math.max(.5, unitCd(b, k));
-    o.style.setProperty('--p', clamp(rem / tot, 0, 1).toFixed(3)); const sp = o.firstChild; if (sp) sp.textContent = rem > 0 ? (rem < 10 ? rem.toFixed(1) : Math.ceil(rem)) : '';
-  }
-}
-function prodBlds() { return W.bld.filter(b => b.owner === ME && b.prog >= 1 && !b.dead && b.cdu && Object.keys(UT).some(k => canTrainAt(b, k))); }
+// ----- 2.4: roster status on cards, the Army status strip, and the little badge over each production building -----
+const WAITTXT = ['', 'waiting for money', 'army full', 'paused'];
+function prodBlds() { return W.bld.filter(b => b.owner === ME && b.prog >= 1 && !b.dead && b.ros); }
+function rosMissing(b) { let n = 0; for (const k in b.ros) n += Math.max(0, b.ros[k] - rosHave(b, k)); return n; }
 function updStrip() {
   const el = $('#armystrip'); if (!el) return; if (!UI.known || W.t < 2.5) { UI.known = new Set(W.units.filter(u => u.owner === ME).map(u => u.id)); UI.deployLog = []; }
   const now = performance.now();
   for (const u of W.units) if (u.owner === ME && !UI.known.has(u.id)) { UI.known.add(u.id); UI.deployLog.push({ t: u.type, at: now }); }
   while (UI.deployLog.length && (now - UI.deployLog[0].at > 12000 || UI.deployLog.length > 40)) UI.deployLog.shift();
-  const pb = prodBlds(); let rdy = 0, cool = 0, soon = 99, qtot = 0, qpz = 0; for (const b of pb) { qtot += b.q.length; if (b.qPause) qpz++; const n = Object.keys(b.cdu).length; if (n) { cool++; for (const k in b.cdu) soon = Math.min(soon, b.cdu[k]); } else rdy++; }
+  const pb = prodBlds().filter(b => b.type !== 'hq' || rosTotal(b)); let full = 0, trn = 0, money = 0, army = 0, empty = 0, miss = 0;
+  for (const b of pb) { const m = rosMissing(b); miss += m; if (!rosTotal(b)) empty++; else if (b.tr && b.wait !== 2) trn++; else if (b.wait === 1) money++; else if (b.wait === 2) army++; else if (!m) full++; }
   const grp = {}; for (const d of UI.deployLog) grp[d.t] = (grp[d.t] || 0) + 1;
   const chips = Object.keys(grp).slice(-7).map(t => '<div class="ch" style="' + iconStyle(t) + '" data-tip="' + esc(UT[t].n + '|Deployed recently.') + '"><b>' + grp[t] + '</b></div>').join('');
-  const sig = pb.length + '/' + rdy + '/' + cool + '/' + qtot + qpz + '/' + (soon < 99 ? soon.toFixed(0) : '') + '/' + chips;
+  const sig = [pb.length, full, trn, money, army, empty, miss, chips].join('/');
   if (el.dataset.s === sig) return; el.dataset.s = sig;
-  el.innerHTML = '<span class="as">Army status</span>' + (pb.length ? '<span class="rd">' + rdy + ' ready</span>' + (cool ? '<span class="cl">' + cool + ' recharging' + (soon < 99 ? ' (next ' + Math.ceil(soon) + 's)' : '') + '</span>' : '') + (qtot ? '<span class="qd" style="color:#9fd0ff">' + qtot + ' queued' + (qpz ? ' (army full)' : '') + '</span>' : '') : '<span>no barracks yet</span>') + (chips ? '<span class="as">Just deployed</span>' + chips : '');
+  el.innerHTML = '<span class="as">Army status</span>' + (pb.length ? (trn ? '<span class="cl">' + trn + ' training</span>' : '') + (full ? '<span class="rd">' + full + ' at full strength</span>' : '') + (money ? '<span class="cl" style="color:#ff9a8c">' + money + ' waiting for money</span>' : '') + (army ? '<span class="cl" style="color:#ff9a8c">' + army + ' army full</span>' : '') + (empty ? '<span class="qd" style="color:#9fd0ff">' + empty + ' with no troops picked</span>' : '') + (miss ? '<span class="qd" style="color:#9fd0ff">' + miss + ' troops to go</span>' : '') : '<span>no barracks yet</span>') + (chips ? '<span class="as">Just deployed</span>' + chips : '');
   el.style.display = pb.length || chips ? 'flex' : 'none';
 }
 const BADGES = new Map();
 function updBadges() {
   const show = inGame && W && MODE === 'game' && !SCREEN; const seen = new Set();
   if (show) for (const b of prodBlds()) {
+    if (b.type === 'hq' && !rosTotal(b)) continue;
     w2s(b.x, b.y + b.T.sz * .45 + 5, b.z, _sp); if (_sp.z >= 1 || _sp.x < -40 || _sp.x > vpW + 40 || _sp.y < 70 || _sp.y > vpH - 130) continue;
     let d = BADGES.get(b.id); if (!d) { d = document.createElement('div'); d.className = 'bbadge'; document.body.appendChild(d); BADGES.set(b.id, d); }
-    seen.add(b.id); const keys = Object.keys(b.cdu); let txt, cls, bar = '';
-    if (b.q.length) {
-      let bk = '', bt = 99; for (const e of b.q) { const c = cdLeft(b, e.u); if (c < bt) { bt = c; bk = e.u; } }
-      const n1 = qCount(b, bk), more = b.q.length - n1, tot = Math.max(.5, unitCd(b, bk));
-      if (b.qPause) { txt = UT[bk].n + ' x' + n1 + ' - paused: army full'; cls = 'cool que'; bar = ''; }
-      else { txt = UT[bk].n + ' x' + n1 + ' - ' + (bt > 0 ? bt.toFixed(1) + 's' : 'now') + (more ? ' (+' + more + ')' : ''); cls = 'cool que'; bar = '<i style="width:' + Math.round(clamp(1 - bt / tot, 0, 1) * 100) + '%"></i>'; }
-    }
-    else if (!keys.length) { txt = 'READY'; cls = 'rdy'; } else { let soon = 99, tot = 1, k0 = ''; for (const k of keys) if (b.cdu[k] < soon) { soon = b.cdu[k]; k0 = k; } tot = Math.max(.5, unitCd(b, k0)); txt = soon.toFixed(1) + 's' + (keys.length > 1 ? ' (' + keys.length + ')' : ''); cls = 'cool'; bar = '<i style="width:' + Math.round(clamp(1 - soon / tot, 0, 1) * 100) + '%"></i>'; }
-    const sig = cls + txt; if (d.dataset.s !== sig) { d.dataset.s = sig; d.className = 'bbadge ' + cls; d.innerHTML = txt + bar; }
+    seen.add(b.id); let have = 0; for (const k in b.ros) have += Math.min(rosHave(b, k), b.ros[k]); const tot = rosTotal(b), cnt = have + '/' + tot; let txt, cls, bar = '';
+    if (!tot) { txt = 'Pick troops (0/' + rosCap(b) + ')'; cls = 'cool que'; }
+    else if (b.wait) { txt = cnt + ' - ' + WAITTXT[b.wait]; cls = 'cool que'; }
+    else if (b.tr) { txt = cnt + ' - ' + UT[b.tr.u].n + ' ' + Math.max(0, b.tr.dur - b.tr.t).toFixed(1) + 's'; cls = 'cool'; bar = '<i style="width:' + Math.round(clamp(b.tr.t / b.tr.dur, 0, 1) * 100) + '%"></i>'; }
+    else { txt = 'FULL ' + cnt; cls = 'rdy'; }
+    const sig = cls + txt + bar; if (d.dataset.s !== sig) { d.dataset.s = sig; d.className = 'bbadge ' + cls; d.innerHTML = esc(txt) + bar; }
     d.style.display = 'block'; d.style.transform = 'translate(' + (_sp.x | 0) + 'px,' + (_sp.y | 0) + 'px) translate(-50%,-100%)';
   }
   for (const [id, d] of BADGES) if (!seen.has(id)) { d.remove(); BADGES.delete(id); }
@@ -3231,7 +3238,7 @@ function teamBleed() { const cnt = {}; for (const t of W.teamList) cnt[t.id] = 0
 function ptsOfTeam(t) { let n = 0; for (const pt of W.pts) if (pt.owner >= 0 && P(pt.owner).team === t) n++; return n; }
 function iconStyle(k) { return ICONS[k] ? 'background-image:url(' + ICONS[k] + ')' : ''; }
 function strongWeak(w) { if (w.g === 'a') return 'Only attacks aircraft, and is very strong against them.'; const names = ['soldiers', 'vehicles', 'tanks', 'aircraft', 'buildings']; const s = [], wk = []; for (let c = 0; c < 5; c++) { let m = WTM[w.wt][c]; if (c === 3 && w.g === 'g') m = 0; if (c !== 3 && w.g === 'a') m = 0; if (m >= 1.15) s.push(names[c]); else if (m <= .3) wk.push(names[c]); } return (s.length ? 'Good against ' + s.join(', ') + '. ' : '') + (wk.length ? 'Weak against ' + wk.join(', ') + '.' : ''); }
-function unitTip(type, b) { const T = UT[type], p = P(ME), w = T.w; return T.n + '|' + T.info + '|Costs ' + unitCost(p, type, b) + '. Takes ' + T.pop + ' army space. Deploys the moment you click it. Then this troop recharges for ' + unitCd(b || { owner: ME, spec: '', pt: -1 }, type).toFixed(1) + 's. Click again while it recharges to queue more (up to ' + QCAP + '); the building deploys them for you. Right-click the card to cancel one.|' + (w ? strongWeak(w) : ''); }
+function unitTip(type, b) { const T = UT[type], p = P(ME); return T.n + '|' + T.info + '|Costs ' + unitCost(p, type, b) + ' each time one is trained. Takes ' + T.pop + ' army space and ' + (b ? unitCd(b, type).toFixed(1) : unitCdBase(T).toFixed(1)) + 's to train. Click the card to add one to this building\'s roster; the building trains it and replaces it if it dies. Click the minus (or right-click the card) to remove one.|' + (T.w ? strongWeak(T.w) : '') + (T.w2 && T.w2.g === 'a' && T.w.g !== 'a' ? ' Also fires missiles that are strong against aircraft.' : ''); }
 function bldTip(type) { const T = BT[type]; return T.n + '|' + T.info + '|Costs ' + T.cost[0] + '. You can level it up 3 times.'; }
 
 function coachHint() {
@@ -3240,7 +3247,7 @@ function coachHint() {
   const foeFlag = W.pts.some(q => q.owner >= 0 && P(q.owner).team !== MYTEAM);
   if (!blds.some(b => b.type === 'barracks')) return ['Build a Barracks to train more soldiers.', p.sup >= BT.barracks.cost[0] ? 'Click your HQ flag, then pick Barracks.' : 'Save up ' + BT.barracks.cost[0] + ' money first.'];
   if (neutral && flags < 2) return ['Capture a gray flag. Flags give you money.', 'Select soldiers, then click the flag.'];
-  if (has('barracks') && soldiers < 8 && p.sup >= 50) return ['Deploy more soldiers at your Barracks.', 'Click the Barracks, then click a soldier card. It deploys at once.'];
+  { const eb = blds.find(b => b.ros && b.type !== 'hq' && b.prog >= 1 && rosTotal(b) < rosCap(b)); if (eb && soldiers < 14) return ['Your ' + eb.T.n + ' has room for ' + (rosCap(eb) - rosTotal(eb)) + ' more troops.', 'Click it, then click troop cards to fill its roster.']; }
   if (hql < 2 && p.sup >= BT.hq.cost[1] + 40 && flags >= 1) return ['Level up your HQ for more money and new things.', 'Click your HQ, then press Level up.'];
   if (neutral) return ['Send a group to capture the next gray flag.', 'Select soldiers, then click the flag.'];
   if (soldiers >= 12 && foeFlag) return ['Your army is big. Attack an enemy flag!', 'Press Army, then click an enemy flag.'];
@@ -3256,7 +3263,7 @@ function hudUpdate(force) {
   updScore(); updGoal();
   for (const id of [...selIds]) { const u = W.byId.get(id); if (!u || u.dead) selIds.delete(id); }
   if (selBld && !W.byId.get(selBld)) { selBld = 0; UI.selEnemy = null; UI.cardSig = ''; }
-  updModeBar(); renderPanel(force); updCdo(); updStrip(); updQuick(force); updSup(force);
+  updModeBar(); renderPanel(force); updStrip(); updQuick(force); updSup(force);
   if (UI.tutorialTick) UI.tutorialTick();
   if (techOpen) updTech();
 }
@@ -3324,9 +3331,19 @@ function cardHtml(i, o, compact) {
   const img = o.img ? '<div class="cimg" style="' + iconStyle(o.img) + '"></div>' : '<div class="cimg" style="color:' + (o.col || 'var(--gold2)') + ';display:flex;align-items:center;justify-content:center">' + ic(o.ico || 'star') + '</div>';
   const cost = o.lock ? '<span class="cc">' + ic('lock') + (o.lockTxt || 'Locked') + '</span>' : (o.cost ? '<span class="cc">' + ic('coin') + o.cost + '</span>' : '');
   const cls = 'card' + (compact ? ' c2' : '') + (o.cdn ? ' cdn' : '') + (o.off ? ' off' : '') + (o.lock ? ' lock' : '') + (o.on ? ' on' : '') + (o.go ? ' go' : '') + (o.stk ? ' stk' : '');
-  const extra = (o.q ? '<span class="qb" data-tip="Queued|' + o.q + ' in the queue. They deploy by themselves when the card recharges.">+' + o.q + '</span><span class="qx" data-qx="' + (o.key || '') + '" data-tip="Cancel one|Remove one from the queue and get the money back. (Right-click the card does the same.)">x</span>' : '') + (o.cdn ? '<div class="cdo" data-cb="' + o.cb + '" data-ck="' + o.key + '"><span></span></div>' : '') + (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
+  const extra = (o.rn ? '<span class="qb" data-tip="In the roster|' + o.rh + ' alive out of ' + o.rn + ' wanted. The building keeps this many and replaces any that die.">' + o.rh + '/' + o.rn + '</span><span class="qx" data-qx="' + (o.key || '') + '" data-tip="Remove one|Take one slot out of the roster. The troop stays, it just will not be replaced. (Right-click the card does the same.)">&minus;</span>' : '') + (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
   if (compact) return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '">' + img + '<div class="ctx"><div class="cn">' + esc(o.nm) + '</div><div class="cs">' + cost + '<span class="cd">' + esc(o.s || o.d || '') + '</span></div></div>' + extra + '</div>';
   return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '"><div class="crow">' + img + '<div class="cn">' + esc(o.nm) + '</div></div><div class="cm">' + cost + '</div><div class="cd">' + esc(o.d || '') + '</div>' + extra + '</div>';
+}
+function rosStatus(b) {
+  let have = 0; for (const k in b.ros) have += Math.min(rosHave(b, k), b.ros[k]); const tot = rosTotal(b), cap = rosCap(b);
+  let h = '<b style="color:#ffe2a6">Roster ' + tot + '/' + cap + '</b> ';
+  if (!tot) return h + '<span style="color:#9fd0ff">Click troop cards to pick what this building keeps.</span>';
+  h += '<span style="color:#cdd8e6">' + have + ' alive.</span> ';
+  if (b.wait) h += '<b style="color:#ff9a8c">' + (b.wait === 1 ? 'Waiting for money' : b.wait === 2 ? 'Army full' : 'Paused') + '</b>';
+  else if (b.tr) h += '<b style="color:#ffd37a">Training ' + UT[b.tr.u].n + ' (' + Math.ceil(Math.max(0, b.tr.dur - b.tr.t)) + 's)</b>';
+  else h += '<b style="color:#8ff0b4">Full strength</b>';
+  return h;
 }
 function hpHtml(f, col) { return '<div class="hpbar"><i style="width:' + Math.round(f * 20) * 5 + '%' + (col ? ';background:' + col : '') + '"></i></div>'; }
 function renderPanel(force) {
@@ -3352,19 +3369,15 @@ function renderPanel(force) {
     }
   } else if (b && b.owner === ME) {
     const T = b.T, spn = b.spec ? T.specs.find(s => s.id === b.spec) : null;
-    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '%' : (Object.keys(UT).some(k => canTrainAt(b, k)) ? (Object.keys(b.cdu || {}).length ? '<b style="color:#ffd37a">' + Object.keys(b.cdu).length + ' recharging</b>' : '<b style="color:#8ff0b4">All troops ready</b>') + (b.q.length ? ' <b style="color:#9fd0ff">' + b.q.length + ' queued</b>' + (b.qPause ? ' <b style="color:#ff9a8c">(army full)</b>' : '') : '') : esc(T.d))) + '</div>';
+    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : (b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '% ' : '') + (b.ros ? rosStatus(b) : b.upg ? '' : esc(T.d))) + '</div>';
     if (b.prog >= 1) {
       let hk = 0;
-      for (const k of Object.keys(UT)) {
-        const U = UT[k], src = U.src.find(s => s[0] === b.type); if (!src || U.nobuild) continue; const ok = canTrainAt(b, k); if (!ok) continue;
-        const cost = unitCost(p, k, b), popOk = p.pop + U.pop <= p.popCap, can = (p.sup >= cost || W.o.sandbox) && popOk, cdr = cdLeft(b, k);
-        const qn = qCount(b, k);
-        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: cdr > 0 || qn > 0 ? !(p.sup >= cost || W.o.sandbox) : !can, cdn: cdr > 0, q: qn, cb: b.id, tip: unitTip(k, b), fn: () => {
-          const queueing = cdLeft(b, k) > 0 || qCount(b, k) > 0, moneyOk = p.sup >= cost || W.o.sandbox;
-          if (queueing && b.q.length >= QCAP) { sfx('deny'); toast('The queue is full (' + QCAP + ' troops).'); return; }
-          if (!moneyOk) { sfx('deny'); toast('Not enough money yet.'); return; }
-          if (!queueing && p.pop + U.pop > p.popCap && !W.o.sandbox) { sfx('deny'); toast('Army is full. Capture more flags to raise the limit.'); return; }
-          if (issue({ k: 'train', b: b.id, u: k, n: 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); if (queueing) toast('Queued ' + U.n + ' (' + (W.mirror ? b.q.length + 1 : b.q.length) + ' in line)'); } else { sfx('deny'); toast(queueing ? 'Could not queue that.' : 'Not enough money yet.'); } UI.cardSig = ''; hudUpdate(true); } });
+      if (b.ros) for (const k of Object.keys(UT)) {
+        const U = UT[k], src = U.src.find(s => s[0] === b.type); if (!src || U.nobuild || !canTrainAt(b, k)) continue;
+        const cost = unitCost(p, k, b), rn = b.ros[k] || 0, rh = Math.min(rosHave(b, k), rn), fits = rosFits(b, k);
+        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: !fits, on: rn > 0, rn, rh, pg: b.tr && b.tr.u === k ? Math.max(.02, b.tr.t / b.tr.dur) : 0, tip: unitTip(k, b), fn: () => {
+          if (!rosFits(b, k)) { sfx('deny'); toast(rosTotal(b) >= rosCap(b) ? 'This ' + T.n + ' is full (' + rosCap(b) + '). Level it up to hold more, or remove a troop first.' : 'The extra Drone Factory slots are for drones only.'); return; }
+          if (issue({ k: 'ros', b: b.id, u: k, d: 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); } else { sfx('deny'); toast('Could not add that troop.'); } UI.cardSig = ''; hudUpdate(true); } });
       }
       if (b.lvl < 3 && !b.upg && BT[b.type].cost[b.lvl] !== undefined) {
         const uc = BT[b.type].cost[b.lvl], gate = b.lvl === 2 && b.type !== 'hq' && hql < 2;
@@ -3372,7 +3385,9 @@ function renderPanel(force) {
       }
       if (b.lvl >= 3 && !b.spec && !b.upg && T.specs.length) items.push({ nm: 'Pick upgrade', key: 'spec', stk: 1, ico: 'star', cost: SPEC_COST, d: 'Choose 1 of 3 upgrades.', go: p.sup >= SPEC_COST, off: p.sup < SPEC_COST && !W.o.sandbox, tip: 'Pick an upgrade|Choose 1 of 3 special upgrades for this building. It cannot be changed later.', fn: () => { UI.specOpen = true; UI.cardSig = ''; hudUpdate(true); } });
       if (b.upg) items.push({ nm: 'Working...', key: 'work', stk: 1, ico: 'build', d: b.upg.kind === 'lvl' ? 'Leveling up.' : 'Adding upgrade.', off: true, pg: b.upg.t / b.upg.dur, fn: () => { } });
-      if (Object.keys(UT).some(k => canTrainAt(b, k))) {
+      if (b.ros) {
+        hb.rhold = () => { issue({ k: 'rhold', b: b.id }); sfx('click'); UI.cardSig = ''; hudUpdate(true); };
+        hbtns += '<button class="sm' + (b.hold ? ' on' : '') + '" data-hb="rhold" data-tip="' + (b.hold ? 'Paused|This building is not training or replacing troops. Click to start again.' : 'Pause training|Stop this building from training and replacing troops (to save money). Click again to start.') + '">' + (b.hold ? 'Paused' : 'Pause') + '</button>';
         if (b.hasRally) {
           hb.rallyauto = () => { issue({ k: 'rally', b: b.id, clear: 1 }); sfx('click'); toast('New troops will now go to your main army.'); UI.cardSig = ''; hudUpdate(true); };
           hbtns += '<button class="sm on" data-hb="rallyauto" data-tip="Rally: point|New troops walk to the spot you picked. Click to switch back to Army (auto).">Rally: point</button>';
@@ -3381,7 +3396,6 @@ function renderPanel(force) {
       }
     } else items.push({ nm: 'Under construction', ico: 'build', d: 'Engineers nearby build it faster.', off: true, pg: b.prog, fn: () => { } });
     if (b.type !== 'hq') { hb.sell = () => { if (issue({ k: 'sell', b: b.id })) { sfx('click'); selBld = 0; UI.cardSig = ''; hudUpdate(true); } }; hbtns += '<button class="sm" data-hb="sell" data-tip="Sell (K)|Remove this building and get half the money back.">Sell +' + Math.round(b.spent * .5) + '</button>'; }
-    if (b.q.length) head = head.replace(/<div class="pm">[^]*$/, '') + '<div class="qrow' + (b.qPause ? ' pz' : '') + '">' + b.q.map((e, i) => '<div class="qi" data-q="' + i + '" style="' + iconStyle(e.u) + '" data-tip="' + esc(UT[e.u].n + '|Queued. Click to cancel this one and get the money back.' + (b.qPause ? ' The queue is paused: your army is full.' : '')) + '"></div>').join('') + '</div>';
     if (hbtns) head += '<div class="hbtns">' + hbtns + '</div>';
   } else if (b) {
     const T = b.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt" style="color:' + (b.team === MYTEAM ? '#9fd0ff' : '#ff9a8c') + '">' + T.n + '<small>' + (b.team === MYTEAM ? 'Ally' : 'Enemy') + ' Lv ' + b.lvl + '</small></div></div>' + hpHtml(b.hp / b.maxHp, b.team === MYTEAM ? '' : '#e14a3a') + '<div class="pm">' + (b.team === MYTEAM ? '' : 'Select your troops, then click this to attack.') + '</div>';
@@ -3393,9 +3407,10 @@ function renderPanel(force) {
       const free = pt.slots.filter(s => !s.b).length, wallOk = !pt.wall;
       head = '<div class="ph1"><div class="pic" style="color:' + hex3(P(ME).color) + ';display:flex;align-items:center;justify-content:center">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Your base' : pt.name) + '<small>Your flag</small></div></div><div class="pm" style="white-space:normal">' + (free ? 'Pick a building. ' + free + ' spot' + (free > 1 ? 's' : '') + ' free.' : (wallOk && hql >= BT.wall.hq1 ? 'All spots used. You can still add walls.' : 'All spots used. Click a building to use it.')) + '</div>';
       const buildCard = (k) => {
-        const T = BT[k], gate = (T.hq1 || 1) > hql && !W.o.sandbox, can = p.sup >= T.cost[0] || W.o.sandbox;
-        return { nm: T.n, key: 'b_' + k, img: 'b_' + k, cost: T.cost[0], d: T.d, lock: gate, lockTxt: 'HQ Lv ' + T.hq1, off: !gate && !can, tip: bldTip(k) + (gate ? '|Level up your HQ to Level ' + T.hq1 + ' to unlock this.' : ''), fn: () => {
+        const T = BT[k], gate = (T.hq1 || 1) > hql && !W.o.sandbox, can = p.sup >= T.cost[0] || W.o.sandbox, maxed = !gate && T.max && bCount(p, k) >= T.max && !W.o.sandbox;
+        return { nm: T.n, key: 'b_' + k, img: 'b_' + k, cost: T.cost[0], d: T.d, lock: gate || maxed, lockTxt: maxed ? 'Max ' + T.max : 'HQ Lv ' + T.hq1, off: !gate && !can, tip: bldTip(k) + (gate ? '|Level up your HQ to Level ' + T.hq1 + ' to unlock this.' : maxed ? '|You already have ' + T.max + ', the most you can build.' : ''), fn: () => {
           if (gate) { lockMsg('the ' + T.n, T.hq1); return; }
+          if (maxed) { sfx('deny'); toast('You can only have ' + T.max + ' ' + T.n + 's.'); return; }
           let slot = selPad && selPad.slot >= 0 && !pt.slots[selPad.slot].b ? selPad.slot : pt.slots.findIndex(s => !s.b); if (slot < 0 && k !== 'wall') { toast('No free build spots here.'); return; }
           if (issue({ k: 'build', pt: pt.id, slot: Math.max(0, slot), type: k })) { UI.did.build = k; sfx('click'); clearSel(); afterSel(); } else { sfx('deny'); toast('Not enough money yet.'); } } };
       };
@@ -3416,7 +3431,7 @@ function renderPanel(force) {
     const h = coachHint(); head = '<div class="coach">' + ic('flag') + '<div>' + esc(h[0]) + '<small>' + esc(h[1]) + '</small></div></div>'; wide = true;
   }
   const compact = items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : 214) - 8);
-  const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.cdn ? 'c' : '') + (i.q ? 'q' + i.q : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
+  const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.rn ? 'r' + i.rh + '/' + i.rn : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
   if (el.dataset.h === sig && !force) return; const sc = el.querySelector('.cards'); const keepScroll = sc ? sc.scrollLeft : 0; el.dataset.h = sig;
   CARD = items.map(i => i.fn); CARD.hb = hb;
   el.innerHTML = '<div class="phead' + (wide ? ' wide' : '') + '">' + head + '</div>' + (items.length ? '<div class="cards' + (compact ? ' compact' : '') + '">' + items.map((o, i) => cardHtml(i, o, compact)).join('') + '</div>' : '');
@@ -3481,7 +3496,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> click a troop card while it recharges to <b>queue</b> it. The building deploys queued troops one by one on its own, even if you close the panel (up to 10 per building; click the x or right-click to cancel and get your money back). New troops now <b>automatically walk to where most of your army is</b>; a building's <b>Rally</b> button switches between Army (auto) and a fixed rally point. Troops still deploy the moment you click them, support powers are <b>hold F + a number</b>, and the enemy commanders use the queue too. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> buildings now hold a <b>roster</b>. Click troop cards to pick what a Barracks, Motor Pool or Airfield keeps; it trains them one by one (paying as each starts) and <b>replaces any that die</b>. A Barracks holds 5, then 10, then 20 soldiers as you level it up (Motor Pool 3/6/10, Airfield 2/3/4). The minus button or right-click removes a slot; <b>Pause</b> stops training to save money. Air power has been cut way down: helicopters and gunships are fragile and short-ranged, bazookas, machine gunners and bunkers can shoot them down, you can only have 2 Airfields, and the enemy commanders no longer mass helicopters. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -3582,7 +3597,7 @@ SCREENS.howto = () => {
   <div class="note" style="font-size:16px;margin:6px 0 12px;color:#e6eef7"><b style="color:#ffe2a6">Goal:</b> capture flags. Hold more flags than the enemy and their score drops to zero. You can also destroy their HQ to win at once.</div>
   <div class="hw">
    <div class="hc"><h4>1. Capture flags</h4><div class="dg"><div class="c ring" style="left:128px;top:14px;width:80px;height:80px"></div><div class="pole" style="left:166px;top:34px"></div>${sol(40, 54)}${sol(60, 62)}${sol(80, 52)}<div class="arr" style="left:100px;top:72px;width:48px;transform:rotate(-12deg)"></div></div><p>Walk soldiers into the circle around a flag. When it turns your color, it is yours. Flags give you money.</p></div>
-   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click a troop card: it appears right away! Then that troop recharges for a few seconds (the card fills back in). Click it again while it recharges to <b>queue</b> more: the building deploys them for you, even if you look away (click the small x or right-click a card to cancel one and get your money back). New troops walk to where most of your army is. Use <b>Rally: Army (auto)</b> on the building to pick a fixed rally point instead. Level the building up to unlock stronger troops.</p></div>
+   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click troop cards to fill its <b>roster</b> (the number on a card shows alive / wanted). The building trains them one at a time, paying for each as it starts, and <b>replaces any that die</b>, even if you look away. A Barracks holds 5 soldiers, 10 at Level 2 and 20 at Level 3 (Motor Pool 3/6/10, Airfield 2/3/4). Click the minus or right-click a card to remove a slot, and press <b>Pause</b> to stop training. New troops walk to where most of your army is; use <b>Rally: Army (auto)</b> to pick a fixed rally point instead. Level the building up to hold more and unlock stronger troops.</p></div>
    <div class="hc"><h4>3. Select and move</h4><div class="dg"><div class="bx" style="left:20px;top:26px;width:80px;height:56px"></div>${sol(36, 44)}${sol(58, 54)}${sol(78, 44)}<div class="arr" style="left:110px;top:56px;width:60px;transform:rotate(-8deg)"></div><div class="cur" style="left:186px;top:34px"></div></div><p>Click a troop, or drag a box around many. Then click the ground to move there, or click an enemy to attack it. No right-click needed.</p></div>
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
    <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
@@ -3686,8 +3701,8 @@ const TUT_STEPS = [
   { t: 'Send them to a flag', x: 'Click the gray flag to send your soldiers there. The pulsing circle is the flag.', target: () => { const f = tutFlag(); return f ? { world: () => [f.x, f.y + 1, f.z], label: 'Gray flag' } : null; }, ok: () => UI.did.move, setup: () => { UI.did.move = 0; if (!selIds.size) selAllArmy(); const f = tutFlag(), h = tutHq(); if (f) { camGoto(f.x, f.z, true); cam.tdist = 100; } } },
   { t: 'Capture the flag', x: 'Wait while your soldiers capture it. The circle fills with your color. Flags give you money!', target: () => { const f = TUT.flag; return f ? { world: () => [f.x, f.y + 1, f.z], label: 'Capturing...' } : null; }, ok: () => TUT.flag && TUT.flag.owner === ME, auto: 1, setup: () => { TUT.flag = tutFlag() || TUT.flag; if (TUT.flag) camGoto(TUT.flag.x, TUT.flag.z); }, skipFn: () => { const f = TUT.flag; if (f && f.owner < 0) { f.owner = ME; f.ctrl = 1; f.capP = ME; } } },
   { t: 'Open the build menu', x: 'Click "+ Build" above your base to see what you can build. You have plenty of money.', target: () => { const h = tutHq(); return { sel: ptLabel(W.pts[h.pt]), fallbackWorld: [h.x, h.y + 10, h.z] }; }, ok: () => selPad && selPad.pt === tutHq().pt, setup: () => { P(ME).sup = Math.max(P(ME).sup, 600); goHome(); clearSel(); afterSel(); } },
-  { t: 'Build a Barracks', x: 'Pick the Barracks. It trains soldiers.', target: () => ({ sel: '#panel .card[data-key="b_barracks"]' }), ok: () => !!tutBarracks(), setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); const hp = W.pts[tutHq().pt]; if (!(selPad && selPad.pt === hp.id)) selectPoint(hp); }, skipFn: () => { if (!tutBarracks()) { const pt = W.pts[tutHq().pt], k = pt.slots.findIndex(s => !s.b); if (k >= 0) placeBuilding('barracks', ME, pt, k, true); } } },
-  { t: 'Deploy a soldier', x: 'Your Barracks is being built. When it is ready, click a Rifleman card. The soldier appears at once, then the card recharges. Click again while it recharges to queue more.', t2: 'Your Barracks is ready! Click a Rifleman card. The soldier appears at once, then the card recharges for a few seconds. Click again while it recharges and the Barracks deploys the next one for you.', target: () => { const b = tutBarracks(); if (!b) return null; return b.prog < 1 ? { world: () => [b.x, b.y + 3, b.z], label: 'Building...' } : { sel: '#panel .card[data-key="rifleman"]' }; }, ok: () => (UI.did.train || 0) >= 1, setup: () => { UI.did.train = 0; const b = tutBarracks(); if (b) camGoto(b.x, b.z); }, tick: () => { const b = tutBarracks(); if (b && b.prog >= 1 && !TUT.sel1) { TUT.sel1 = 1; selectBuilding(b); sfx('done'); } }, skipFn: () => { const b = tutBarracks(); if (b) issue({ k: 'train', b: b.id, u: 'rifleman', n: 1 }); } },
+  { t: 'Build a Barracks', x: 'Pick the Barracks. It keeps a squad of soldiers.', target: () => ({ sel: '#panel .card[data-key="b_barracks"]' }), ok: () => !!tutBarracks(), setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); const hp = W.pts[tutHq().pt]; if (!(selPad && selPad.pt === hp.id)) selectPoint(hp); }, skipFn: () => { if (!tutBarracks()) { const pt = W.pts[tutHq().pt], k = pt.slots.findIndex(s => !s.b); if (k >= 0) placeBuilding('barracks', ME, pt, k, true); } } },
+  { t: 'Fill the Barracks', x: 'Your Barracks is being built. When it is ready, click a Rifleman card to add a Rifleman to its roster.', t2: 'Your Barracks is ready! Click the Rifleman card to add Riflemen to its roster. It holds 5 soldiers for now. The Barracks trains them one by one and replaces any that die.', target: () => { const b = tutBarracks(); if (!b) return null; return b.prog < 1 ? { world: () => [b.x, b.y + 3, b.z], label: 'Building...' } : { sel: '#panel .card[data-key="rifleman"]' }; }, ok: () => (UI.did.train || 0) >= 1, setup: () => { UI.did.train = 0; const b = tutBarracks(); if (b) camGoto(b.x, b.z); }, tick: () => { const b = tutBarracks(); if (b && b.prog >= 1 && !TUT.sel1) { TUT.sel1 = 1; selectBuilding(b); sfx('done'); } }, skipFn: () => { const b = tutBarracks(); if (b) issue({ k: 'ros', b: b.id, u: 'rifleman', d: 1 }); } },
   { t: 'Beat the enemy scouts', x: 'Enemy soldiers are coming! Press Army, then click an enemy soldier to attack it.', target: () => { const e = tutFoe(); return e ? { world: () => { const f = tutFoe(); return f ? [f.rx || f.x, (f.ry || 0) + 4, f.rz || f.z] : [e.x, 4, e.z]; }, label: 'Enemy' } : null; }, ok: () => TUT.foes && TUT.foes.every(u => u.dead), setup: () => { const h = tutHq(), f = tutFlag(); const bx = h.x * .55, bz = h.z * .55 + 30; TUT.foes = []; for (let i = 0; i < 3; i++) { const q = snapFree(W.M, bx + i * 4, bz + (i % 2) * 3); TUT.foes.push(spawnUnit('rifleman', 1, q[0], q[1], { hpB: .55, dmB: .6 })); } applyCmd(1, { k: 'am', ids: TUT.foes.map(u => u.id), x: h.x * .75, z: h.z * .75 + 4 }); camGoto((bx + h.x * .75) / 2, (bz + h.z * .75 + 4) / 2, true); cam.tdist = 100; }, skipFn: () => { for (const u of W.units.slice()) if (u.owner === 1 && TUT.foes && TUT.foes.includes(u)) killUnit(u, null, -1); } },
   { t: 'Level up your base', x: 'Your HQ is selected. Press Level up. This unlocks Upgrades and Support powers like airstrikes.', target: () => ({ sel: '#panel .card[data-key="lvl"]' }), ok: () => { const h = tutHq(); return h.upg || h.lvl >= 2; }, setup: () => { P(ME).sup = Math.max(P(ME).sup, 500); goHome(); selectBuilding(tutHq()); sfx('done'); }, skipFn: () => { issue({ k: 'upg', b: tutHq().id }); } },
   { t: 'You are ready!', x: 'Capture more flags than the enemy to win. Their score drops when you hold more flags. Good luck, Commander!', btn: 'Keep playing', btn2: 'Back to menu', final: 1, setup: () => { for (const p of W.players) if (p.ai) p.ai.hold = false; PROF.tutDone = 1; saveProf(); } }
@@ -3947,7 +3962,7 @@ function buildSnapshot() {
 function buildMeta() {
   const pl = W.players.map(p => ({ s: Math.floor(p.sup), i: +p.inc.toFixed(2), p: p.pop, c: p.popCap, a: p.alive ? 1 : 0, t: Object.keys(p.techs), r: p.res ? [p.res.id, +p.res.t.toFixed(1), p.res.dur] : 0, cd: Object.fromEntries(Object.entries(p.cd).filter(e => e[1] > 0).map(e => [e[0], +e[1].toFixed(1)])), st: p.stats, o: p.out || '' }));
   const pts = W.pts.map(p => [p.owner, +p.ctrl.toFixed(3), p.capP, p.contested ? 1 : 0, p.hq]);
-  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, Object.fromEntries(Object.entries(b.cdu).map(e => [e[0], +e[1].toFixed(1)])), b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.q.length ? b.q.map(e => e.u) : 0, b.qPause ? 1 : 0]);
+  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, b.ros || 0, b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.tr ? [b.tr.u, +b.tr.t.toFixed(1), +b.tr.dur.toFixed(1)] : 0, b.wait || 0, b.have || 0, b.hold ? 1 : 0]);
   return { t: 'meta', tick: W.tick, time: W.t, tix: W.teamList.map(t => [t.id, Math.round(t.tickets), t.alive ? 1 : 0]), pl, pts, bs, over: W.over ? 1 : 0 };
 }
 function netHostAfterTick() { if (!NET.peer || !W.o.mp) return; if (W.tick % 2 === 0) { sendBin(buildSnapshot()); NET.snapsTx++; } if (W.tick % 4 === 0 || NET.dirty) { NET.dirty = false; sendRel(buildMeta()); } }
@@ -3976,10 +3991,10 @@ function applyMeta(m) {
   const seenB = new Set();
   for (const d of m.bs) {
     const id = d[0]; seenB.add(id); let b = W.byId.get(id);
-    if (!b) { const T = BT[d[1]]; b = { id, k: 'b', type: d[1], T, owner: d[9], team: W.players[d[9]].team, pt: d[2], slot: d[3], x: d[15], z: d[16], y: W.M.H(d[15], d[16]), lvl: 1, spec: '', hp: 1, maxHp: 1, prog: 0, upg: null, q: [], cdu: {}, hasRally: false, rx: 0, rz: 0, aim: 0, flash: 0, fire: 0, dead: false, sz: T.sz, w: null, sb: 0, rot: d[17], born: performance.now() }; W.byId.set(id, b); W.bld.push(b); if (b.type === 'hq') W.players[b.owner].hqB = b; if (b.type === 'wall') { const pt = W.pts[b.pt]; pt.wall = b; } else if (b.slot >= 0) W.pts[b.pt].slots[b.slot].b = b; }
-    if (b.hp > d[6] + 1) b.flash = .1;
+    if (!b) { const T = BT[d[1]]; b = { id, k: 'b', type: d[1], T, owner: d[9], team: W.players[d[9]].team, pt: d[2], slot: d[3], x: d[15], z: d[16], y: W.M.H(d[15], d[16]), lvl: 1, spec: '', hp: 1, maxHp: 1, prog: 0, upg: null, ros: null, have: null, tr: null, wait: 0, hold: false, hasRally: false, rx: 0, rz: 0, aim: 0, flash: 0, fire: 0, dead: false, sz: T.sz, w: null, sb: 0, rot: d[17], born: performance.now() }; W.byId.set(id, b); W.bld.push(b); if (b.type === 'hq') W.players[b.owner].hqB = b; if (b.type === 'wall') { const pt = W.pts[b.pt]; pt.wall = b; } else if (b.slot >= 0) W.pts[b.pt].slots[b.slot].b = b; }
+    if (b.hp > d[6] + 1) b.flash = .1; const T0 = BT[b.type];
     if (b.type === 'hq' && b.spec !== d[5]) { b.spec = d[5]; recalcMods(W.players[b.owner]); }
-    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.cdu = d[13] || {}; b.q = d[18] ? d[18].filter(k => UT[k]).map(k => ({ u: k, c: 0 })) : []; b.qPause = !!d[19]; b.sb = d[14]; b.w = bWeapon(b);
+    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.ros = d[13] || (T0.ros ? {} : null); b.tr = d[18] && UT[d[18][0]] ? { u: d[18][0], t: d[18][1], dur: d[18][2], c: 0 } : null; b.wait = d[19] | 0; b.have = d[20] || (T0.ros ? {} : null); b.hold = !!d[21]; b.sb = d[14]; b.w = bWeapon(b);
   }
   for (let i = W.bld.length - 1; i >= 0; i--) { const b = W.bld[i]; if (!seenB.has(b.id) && performance.now() - b.born > 600) { b.dead = true; W.byId.delete(b.id); if (b.type === 'wall') { const pt = W.pts[b.pt]; if (pt.wall === b) pt.wall = null; } else if (b.slot >= 0) { const pt = W.pts[b.pt]; if (pt.slots[b.slot].b === b) pt.slots[b.slot].b = null; } W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } }
   if (m.over && !W.over) { W.over = true; }
@@ -3994,7 +4009,7 @@ function interpGuest(nowMs) {
     else { let i = 1; while (i < b.length - 1 && b[i].t < rt) i++; const p0 = b[i - 1], p1 = b[i]; const f = clamp((rt - p0.t) / Math.max(1, p1.t - p0.t), 0, 1); u.rx = lerp(p0.x, p1.x, f); u.rz = lerp(p0.z, p1.z, f); u.rrot = p0.rot + angDiff(p0.rot, p1.rot) * f; u.raim = p0.aim + angDiff(p0.aim, p1.aim) * f; }
     u.ry = u.T.air ? M.H(u.rx, u.rz) + u.T.alt : M.H(u.rx, u.rz); u.vx = 0; u.vz = 0; if (u.flash > 0) u.flash -= .016;
   }
-  for (const b of W.bld) { if (b.flash > 0) b.flash -= .016; if (b.cdu) for (const k in b.cdu) { if ((b.cdu[k] -= .016) <= 0) delete b.cdu[k]; } }
+  for (const b of W.bld) { if (b.flash > 0) b.flash -= .016; if (b.tr && !b.wait) b.tr.t = Math.min(b.tr.dur, b.tr.t + .016); }
 }
 // ---------- per frame ----------
 function netTick(now) {
@@ -4116,7 +4131,7 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 if (DEBUG) {
   window.__fl = {
     get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    makeAI, qCount, armyRally, QCAP, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    makeAI, rosCap, rosTotal, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
