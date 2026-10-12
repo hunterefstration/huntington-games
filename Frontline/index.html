@@ -305,162 +305,116 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 #wmap .wmside{width:250px;flex:none;overflow:auto}#wmap .wmside .sm{margin:2px 3px 2px 0}#wmap .wmside .sm.on{border-color:var(--gold);background:#6b4b12}
 #wmap .wmmain{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}#wmap canvas{border-radius:10px;border:1px solid #34495f;cursor:crosshair;max-width:100%}
 #wmap .wmpt{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:7px;cursor:pointer;font-size:13px}#wmap .wmpt:hover{background:#1d3048}#wmap .wmpt i{margin-left:auto;font-style:normal;color:var(--dim);font-size:11.5px}#wmap .wmpt.enemy i{color:#ff9a8c}#wmap .wmpt.yours i{color:#8ff0b4}
-@media (max-width:700px){#wmap{flex-direction:column}#wmap .wmside{width:auto;max-height:34vh}#squads{width:120px}}
 #armystrip .as{color:var(--dim);letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 #armystrip .rd{color:#8ff0b4}#armystrip .cl{color:#ffd37a}
 #armystrip .ch{position:relative;width:26px;height:26px;border:1px solid #44607c;border-radius:6px;background:#0d1620 center/contain no-repeat;flex:none}
 #armystrip .ch b{position:absolute;right:1px;bottom:-2px;font-size:11px;text-shadow:0 0 3px #000,0 0 3px #000}
 .suph{grid-column:1/-1;font-size:13px;color:#d5e0ec;padding:2px 4px 4px}
 .qb .qh{font-size:9px;font-weight:700;color:var(--dim);line-height:1}
-@media (max-width:700px){#armystrip{display:none}}
-@media (max-height:520px){#armystrip{bottom:96px}}
-/* ---------- responsive ---------- */
-@media (max-width:1100px){.side .bar{width:60px}.stat{font-size:17px;padding:5px 9px}#goal{font-size:13px}.phead{width:150px}.phead.bh{width:218px}.phead.bh .pm{display:none}}
-@media (max-width:900px){
- .side .bar{display:none}.side .nm{display:none}.side b{font-size:16px;min-width:26px}
- .stat{font-size:16px;padding:4px 8px}.stat .ic{width:19px;height:19px}
- .fl{width:21px;height:27px}.fl .ic{width:17px;height:17px}
- #goal .lg{display:none}#goal .sh{display:inline}
- .tbtn{padding:7px 10px}
-}
-@media (max-width:700px){
- #topbar{flex-wrap:wrap;gap:6px;padding:5px 7px}
- .tb-mid{order:3;flex:1 0 100%}
- .tb-left{flex:1}
- .fl{width:20px;height:26px}.fl .ic{width:16px;height:16px}
- #goal{top:100px;font-size:12px;padding:4px 10px}
- #alerts{top:132px}
- #modebar{top:128px}
- #camctl{top:140px}
- #touchbtns{top:170px}
-}
-@media (max-width:700px){
- #bottom{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;height:auto;padding:5px;gap:5px}
- #quick{grid-column:1/3;grid-row:1;grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:44px}
- #mmwrap{grid-row:2;width:96px;height:106px}
- #panel{grid-row:2;height:106px;padding:4px;gap:5px}
- .phead{width:104px;padding-right:5px}
- .phead.bh{width:150px}.phead.bh .pic{display:none}
- .pic{width:28px;height:28px}.pt{font-size:12.5px}.pt small{font-size:10.5px}.pm{font-size:10.5px;max-height:26px}
- .qb{font-size:10px;min-height:44px}.qb .ic{width:19px;height:19px}
- .card{width:104px;padding:4px 5px}
- .card .cd{max-height:24px;font-size:10px}
- .card.c2{width:140px}
- #fps{bottom:auto;top:90px}
- #chatbox,#chatin{bottom:200px}
- #sup{bottom:176px;left:8px;right:8px;grid-template-columns:repeat(2,minmax(0,1fr));max-height:calc(100vh - 270px)}
- #specp{bottom:176px}
- .toast{bottom:200px}
- .tech{grid-template-columns:repeat(2,1fr)}
- .mc{width:calc(33.3% - 7px);font-size:12px}.mapcards{gap:8px}
- .side .nm{display:none}
- #camctl{top:auto;bottom:178px;right:6px}#rL,#rR{display:none}
- .fl{width:18px}
-}
-@media (max-height:520px){
- #topbar{min-height:40px;padding:3px 8px}
- .stat{font-size:15px;padding:3px 8px}
- #goal{top:44px;font-size:12px;padding:3px 10px}
- #alerts{top:76px}#modebar{top:76px}
- #bottom{height:90px;padding:4px 6px;gap:5px}
- #mmwrap{width:100px;height:80px}
- #panel{padding:4px 5px;gap:5px}
- .phead{width:130px}
- .phead.bh{width:200px}.phead.bh .pic{width:24px;height:24px}.phead.bh .hpbar{display:none}
- .pic{width:28px;height:28px}.pm{display:none}
- .card{width:100px;padding:3px 5px}.card .cn{font-size:12px}.card .cd{display:none}
- .card .cimg{width:28px;height:28px}
- .card.c2{width:140px}
- #quick{grid-template-columns:repeat(3,56px);gap:3px}.qb{font-size:10px}.qb .ic{width:17px;height:17px}
- #camctl{bottom:98px;top:auto;flex-direction:row}#camctl .tbtn{width:38px;min-height:38px}
- #fps{bottom:100px}#chatbox,#chatin{bottom:100px}#sup{bottom:98px;max-height:calc(100vh - 106px);grid-template-columns:repeat(4,minmax(0,1fr));left:8px}#sup .card{min-height:60px}#specp{bottom:98px}.toast{bottom:104px}
- #tut .tcard{top:80px;padding:8px 10px;width:min(300px,50vw)}#tut h3{font-size:16px}#tut p{font-size:13px;margin-bottom:5px}
-}
-@media (max-width:700px) and (min-height:521px){
- #tut .tcard{top:140px;left:8px;width:calc(100vw - 16px);padding:9px 12px}#tut h3{font-size:17px}#tut p{font-size:14px;margin-bottom:6px}
-}
-/* short screens: zoom buttons in a row above the bottom bar so they never cover the squad list */
-@media (max-height:720px) and (min-height:521px) and (min-width:701px){#camctl{flex-direction:row}}
-/* small phones in landscape: one bottom row (no minimap) so the panel stays on screen */
-@media (max-width:700px) and (max-height:520px){
- #bottom{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto;height:90px}
- #mmwrap{display:none}
- #panel{grid-row:1;grid-column:1;height:auto}
- #quick{grid-column:2;grid-row:1;grid-template-columns:repeat(3,50px);grid-auto-rows:auto}
- #camctl{bottom:96px;top:auto;right:6px}
- #squads{top:54px}
-}
+/* ---------- responsive (menus only: the in-game HUD scales as a whole, see HUD 2.1) ---------- */
+@media (max-width:700px){ .tech{grid-template-columns:repeat(2,1fr)} .mc{width:calc(33.3% - 7px);font-size:12px}.mapcards{gap:8px} }
+@media (max-height:520px){ #tut .tcard{top:80px;padding:8px 10px;width:min(300px,50vw)}#tut h3{font-size:16px}#tut p{font-size:13px;margin-bottom:5px} }
+@media (max-width:700px) and (min-height:521px){ #tut .tcard{top:140px;left:8px;width:calc(100vw - 16px);padding:9px 12px}#tut h3{font-size:17px}#tut p{font-size:14px;margin-bottom:6px} }
 
-/* ===================== 2.0 HUD: floating cards instead of one cramped bar ===================== */
-:root{--glass:rgba(11,17,26,.9);--glass2:rgba(20,31,46,.92);--edge:rgba(130,160,195,.22);--shadow:0 8px 24px rgba(0,0,0,.45)}
-#topbar{min-height:50px;padding:5px 12px;background:linear-gradient(180deg,rgba(6,10,16,.92),rgba(6,10,16,.6));border-bottom:1px solid var(--edge);box-shadow:0 4px 18px rgba(0,0,0,.35)}
-.stat{font-size:18px;padding:5px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07)}
-#btnMenu{background:rgba(255,255,255,.06);border-color:var(--edge)}
-#goal{top:58px;padding:5px 8px 5px 14px;background:var(--glass);border:1px solid var(--edge);box-shadow:var(--shadow)}
-#goal .wgo{font-size:14px;padding:6px 16px;border-radius:14px}
-#alerts{top:104px;width:min(320px,40%)}
-#alerts div{border-radius:0 10px 10px 0;background:var(--glass);box-shadow:var(--shadow);padding:6px 11px}
-#squads{top:58px;right:10px;width:150px}
-#squads .sqb{background:var(--glass);border-color:var(--edge);box-shadow:0 3px 10px rgba(0,0,0,.35)}
-@media (min-width:701px) and (min-height:521px){
- #bottom{left:10px;right:10px;bottom:10px;height:136px;padding:0;gap:10px;background:none;border-top:0;pointer-events:none}
- #mmwrap{width:204px;height:136px;border-radius:14px;border:1px solid var(--edge);box-shadow:var(--shadow);background:#05080c}
- #panel{border-radius:14px;background:var(--glass);border:1px solid var(--edge);box-shadow:var(--shadow);padding:9px 10px;gap:12px}
- #quick{grid-template-columns:repeat(3,74px);gap:7px}
- .qb{border-radius:12px;background:var(--glass2);border:1px solid var(--edge);box-shadow:0 3px 10px rgba(0,0,0,.35);font-size:12.5px}
- .qb:hover{border-color:var(--gold);background:#24384f}
- .qb .qh{display:none}
- .phead{width:236px;padding-right:12px;border-right:1px solid var(--edge)}
- .card{border-radius:11px;border-color:rgba(120,155,195,.32);background:linear-gradient(180deg,#223851,#172840)}
- .card.c2{width:200px;padding:4px 8px;gap:8px}
- .card.c2 .cimg{width:36px;height:36px}
- .card.c2 .cn{font-size:13px}
- .card.c2 .cs .cd{font-size:11px;color:#b9c8d8}
- .cards.compact{gap:7px 8px}
- .coach{font-size:17px;padding:4px 10px}
- #camctl{bottom:158px;right:10px;flex-direction:row;gap:6px}
- #camctl .tbtn{width:40px;min-height:40px;font-size:19px;background:var(--glass);border-color:var(--edge);box-shadow:0 3px 10px rgba(0,0,0,.35)}
- #armystrip{left:224px;bottom:156px;background:var(--glass);border-color:var(--edge)}
- #fps{bottom:158px}
- #chatbox,#chatin{bottom:196px}
- #sup{bottom:156px}
- #specp{bottom:156px}
- .toast{bottom:170px}
-}
-@media (min-width:701px) and (max-width:1100px) and (min-height:521px){
- #mmwrap{width:162px;height:108px;align-self:end}
- .phead{width:170px}.phead.bh{width:218px}
- .card.c2{width:176px}
- #quick{grid-template-columns:repeat(3,62px);gap:5px}
- #armystrip{left:182px}
-}
-@media (min-width:701px) and (max-height:720px) and (min-height:521px){
- #bottom{height:118px}
- #mmwrap{width:177px;height:118px}
- #panel{padding:6px 8px}
- #camctl{bottom:138px}#armystrip{bottom:136px}#sup,#specp{bottom:136px}#chatbox,#chatin{bottom:176px}#fps{bottom:138px}.toast{bottom:150px}
-}
-
-@media (min-width:701px) and (min-height:521px){
- .card.c2{width:var(--cw,190px)}
- .cards.compact .card.stk{width:150px}
- .cards.more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
- .card[data-key="warnow"]{width:250px;justify-content:center;gap:4px;padding:10px 14px}
- .card[data-key="warnow"] .cn{font-size:19px;color:#fff3d6}
- .card[data-key="warnow"] .cimg{width:40px;height:40px}
- .card[data-key="warnow"] .cd{font-size:12.5px;color:#ffe2a6}
- #armystrip .as{opacity:.7}
-}
-
-@media (min-width:701px) and (min-height:521px){
- .card.c2 .rq{top:auto;bottom:5px;right:6px;font-size:11.5px;line-height:15px}
- .card.c2 .qx{top:5px;right:5px}
- .card.c2.on .ctx{padding-right:22px}
- .card.c2.on .cs .cd{display:none}
-}
-@media (min-width:701px) and (max-width:1400px) and (min-height:521px){ #quick{grid-template-columns:repeat(3,66px);gap:6px} }
-
-@media (min-width:701px) and (max-width:1100px) and (min-height:521px){ .coach{font-size:14px;gap:8px;padding:2px 4px}.coach .ic{width:22px;height:22px}.coach small{font-size:11.5px} }
+/* ===================== HUD 2.1: one layout (1280x720) scaled to fit the screen, so nothing is ever cut off ===================== */
+#hud{inset:auto;left:0;top:0;width:100vw;height:100vh;transform-origin:0 0;--deck:176px;--g1:rgba(12,18,27,.95);--ln:rgba(140,170,205,.18);--ln2:rgba(140,170,205,.34);--tile:linear-gradient(180deg,#22384f,#162639);--tileh:linear-gradient(180deg,#2c4865,#1c3049)}
+#hud #topbar{height:46px;min-height:0;padding:0 12px;gap:12px;flex-wrap:nowrap;background:linear-gradient(180deg,rgba(7,11,17,.96),rgba(7,11,17,.82));border-bottom:1px solid var(--ln2);box-shadow:0 2px 14px rgba(0,0,0,.45)}
+#hud .tb-left,#hud .tb-right{gap:8px}
+#hud .tb-mid{order:0;flex:1}
+#hud .stat{font-size:17px;padding:4px 11px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);gap:6px}
+#hud .stat .ic{width:20px;height:20px}
+#hud #timer{font-size:16px;min-width:44px}
+#hud #btnMenu{min-height:32px;padding:4px 14px;background:rgba(255,255,255,.07);border-color:var(--ln2)}
+#hud .side .bar{display:block;width:104px;height:10px}#hud .side .nm{display:inline}#hud .side b{font-size:17px}
+#hud .fl{width:23px;height:29px}#hud .fl .ic{width:18px;height:18px}
+#hud #goal{top:54px;font-size:14px;padding:5px 8px 5px 14px;background:var(--g1);border:1px solid var(--ln2);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+#hud #goal .lg{display:inline}#hud #goal .sh{display:none}
+#hud #goal .wgo{font-size:14px;padding:5px 16px;border-radius:14px}
+#hud #modebar{top:98px}
+#hud #netbar{top:98px}
+#hud #alerts{left:12px;top:98px;width:310px}
+#hud #alerts div{border-radius:0 9px 9px 0;background:var(--g1);box-shadow:0 4px 14px rgba(0,0,0,.4);padding:6px 11px}
+#hud #squads{top:54px;right:12px;width:158px;gap:5px}
+#hud #squads .sqb{min-height:30px;padding:3px 8px 5px;background:var(--g1);border-color:var(--ln2);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+#hud #camctl{top:auto;right:12px;bottom:calc(var(--deck) + 24px);flex-direction:column;gap:5px}
+#hud #camctl .tbtn{width:38px;min-height:38px;font-size:18px;background:var(--g1);border-color:var(--ln2)}
+#hud #rL,#hud #rR{display:inline-flex}
+#hud #touchbtns{top:270px;right:12px}
+#hud #armystrip{left:12px;bottom:calc(var(--deck) + 22px);max-width:calc(100% - 260px);background:var(--g1);border-color:var(--ln2);display:flex}
+#hud #fps{left:12px;bottom:calc(var(--deck) + 58px);top:auto}
+#hud #chatbox,#hud #chatin{left:12px;bottom:calc(var(--deck) + 90px)}
+/* bottom: minimap | command deck (selection + tiles) | system buttons */
+#hud #bottom{position:absolute;left:12px;right:12px;bottom:12px;top:auto;height:var(--deck);display:flex;gap:10px;padding:0;background:none;border:0;pointer-events:none;grid-template-columns:none;grid-template-rows:none}
+#hud #bottom>*{pointer-events:auto}
+#hud #mmwrap{flex:none;align-self:flex-end;width:234px;height:156px;border-radius:12px;border:1px solid var(--ln2);box-shadow:0 6px 20px rgba(0,0,0,.5);background:#05080c;grid-row:auto}
+#hud #panel{flex:1;min-width:0;height:100%;display:flex;gap:0;padding:0;border-radius:12px;background:var(--g1);border:1px solid var(--ln2);box-shadow:0 6px 22px rgba(0,0,0,.5);overflow:hidden;grid-row:auto}
+#hud #quick{flex:none;width:192px;height:100%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);grid-auto-rows:auto;gap:6px;padding:8px;border-radius:12px;background:var(--g1);border:1px solid var(--ln2);box-shadow:0 6px 22px rgba(0,0,0,.5);grid-column:auto;grid-row:auto}
+#hud #quick .qb{min-height:0;border-radius:10px;background:var(--tile);border:1px solid rgba(130,165,205,.3);font-size:11.5px;gap:4px;box-shadow:none}
+#hud #quick .qb:hover{border-color:var(--gold);background:var(--tileh)}
+#hud #quick .qb .ic{width:22px;height:22px}
+#hud #quick .qb .qh{display:none}
+#hud #quick .qb.on{border-color:var(--gold);background:linear-gradient(180deg,#6b4d12,#3d2a08)}
+/* selection side of the deck */
+#panel .sel{width:300px;flex:none;padding:10px 12px;border-right:1px solid var(--ln);display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+#panel.wide .sel{flex:1;width:auto;border-right:0}
+#panel.wide .cmd{display:none}
+#panel .sel .ph1{display:flex;gap:9px;align-items:center;min-width:0}
+#panel .sel .pic{width:44px;height:44px;border-radius:9px;flex:none}
+#panel .sel .pt{flex:1;min-width:0;font-size:15.5px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#panel .sel .pt small{display:block;font-size:12px;font-weight:600;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#panel .sel .hpbar{height:6px;flex:none}
+#panel .sel .pm{font-size:12.5px;line-height:1.3;color:#cdd8e6;max-height:2.6em;overflow:hidden;flex:none;white-space:normal}
+#panel .sel .hbtns{display:flex;flex-wrap:wrap;gap:5px;margin-top:auto}
+#panel .sel .hbtns .sm{min-height:25px;padding:2px 9px;font-size:12px;border-radius:7px}
+#panel .sel .hbtns.fm{margin-top:auto;gap:4px}
+#panel .sel .hbtns.fm .sm{min-height:23px;padding:1px 8px;font-size:11.5px}
+#panel .sel .sell{flex:none;padding:3px 9px;min-height:26px;font-size:12px;background:#4a2620;border:1px solid #a0574a;border-radius:7px}
+#panel .sel .sell:hover{border-color:#ff9a8c;background:#6a3028}
+#panel .sel .chips{max-height:72px}
+#panel .sel .coach{display:flex;align-items:center;gap:12px;font-size:16px;line-height:1.3;padding:4px 2px}
+#panel .sel .coach .ic{width:28px;height:28px}
+#panel .sel .coach small{display:block;color:var(--dim);font-size:12.5px;margin-top:3px}
+/* command tiles: fixed size, never cut off; more than fit = pages */
+#panel .cmd{flex:1;min-width:0;display:flex;gap:6px;padding:8px 9px 8px 11px;align-items:center}
+#panel .tiles{display:grid;grid-template-rows:repeat(2,76px);grid-auto-columns:80px;gap:6px;align-content:center}
+#panel .tile{position:relative;width:80px;height:76px;min-height:0;padding:2px 3px 3px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;border-radius:10px;background:var(--tile);border:1px solid rgba(130,165,205,.3);cursor:pointer;text-align:center;overflow:hidden;flex:none}
+#panel .tile:hover{border-color:var(--gold);background:var(--tileh)}
+#panel .tile .tt{display:flex;justify-content:space-between;align-items:center;width:100%;height:14px;font-size:11px;font-weight:800;line-height:14px;white-space:nowrap}
+#panel .tile .tc{color:var(--gold);display:inline-flex;align-items:center;gap:2px}#panel .tile .tc .ic{width:11px;height:11px}
+#panel .tile .tk{color:#8fa5bb;font-weight:700;font-size:10px;margin-left:auto}
+#panel .tile .ti{width:29px;height:29px;border-radius:6px;background:#0d1620 center/contain no-repeat;display:flex;align-items:center;justify-content:center;color:var(--gold2);flex:none}
+#panel .tile .ti .ic{width:22px;height:22px}
+#panel .tile .tn{font-size:10.5px;font-weight:800;line-height:1.12;max-height:2.26em;margin-top:1px;overflow:hidden;color:#eaf1f8;width:100%}
+#panel .tile .tb{position:absolute;left:0;bottom:0;height:3px;background:var(--gold)}
+#panel .tile .trq{position:absolute;right:2px;top:18px;padding:0 4px;border-radius:6px;background:rgba(8,14,22,.92);border:1px solid #6fb4ff;font-size:10.5px;font-weight:900;line-height:14px;color:#bfe0ff}
+#panel .tile .tqx{position:absolute;left:2px;top:18px;width:17px;height:17px;line-height:15px;border-radius:5px;background:#5a2a24;border:1px solid #c0584a;color:#ffd0c8;font-size:12px;font-weight:900;cursor:pointer}
+#panel .tile .tqx:hover{background:#9a3a30}
+#panel .tile.on{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+#panel .tile.go{background:linear-gradient(180deg,#6b4d12,#3d2a08);border-color:var(--gold)}
+#panel .tile.off{opacity:.6}#panel .tile.off .tc{color:var(--red)}
+#panel .tile.lock{filter:grayscale(.8);opacity:.6}#panel .tile.lock .tc{color:#c4d0dd}
+#panel .tile.tbig{grid-column:span 2;grid-row:span 2;width:auto;height:auto;justify-content:center;gap:6px;padding:8px}
+#panel .tile.tbig .ti{width:46px;height:46px}#panel .tile.tbig .ti .ic{width:34px;height:34px}
+#panel .tile.tbig .tn{font-size:17px;max-height:none;color:#fff3d6}#panel .tile.tbig .tt{position:absolute;top:4px;left:6px;right:6px;width:auto}
+#panel .tile.tbig .ts{font-size:11.5px;color:#ffe2a6;font-weight:700}
+#panel .pager{display:flex;flex-direction:column;gap:5px;align-items:center;justify-content:center;margin-left:auto;flex:none}
+#panel .pager button{width:28px;height:52px;border-radius:8px;background:#1d3048;border:1px solid var(--ln2);font-weight:900;font-size:15px}
+#panel .pager button:hover{border-color:var(--gold)}#panel .pager button:disabled{opacity:.35;cursor:default}
+#panel .pager .pi{font-size:10.5px;color:var(--dim);font-weight:700}
+/* pop-ups sit above the deck, inside the scaled HUD */
+#hud #sup{right:12px;bottom:calc(var(--deck) + 22px);left:auto;grid-template-columns:repeat(4,148px);gap:7px;max-width:calc(100% - 24px);max-height:calc(100% - var(--deck) - 110px)}
+#hud #sup .card{width:auto;min-height:0;padding:6px 8px 7px;display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center}#hud #sup .card .cimg{grid-row:1/3;width:34px;height:34px}#hud #sup .card .cd{display:none}#hud #sup .card .cn{font-size:13px}#hud #sup .card .hk{top:auto;bottom:4px;right:6px}#hud #sup .suph{font-size:12px;padding:0 2px 2px}
+#hud #specp{left:50%;transform:translateX(-50%);bottom:calc(var(--deck) + 22px);width:min(740px,calc(100% - 24px))}
+#hud #techp{position:absolute!important;top:54px!important;max-height:calc(100% - var(--deck) - 90px)!important;width:min(1180px,calc(100% - 24px))!important}
+#hud #wmap{inset:54px 12px 12px 12px}
+/* very narrow screens (phones in portrait) */
+#hud #goal{max-width:calc(100% - 370px)}#hud #goal .lg{overflow:hidden;text-overflow:ellipsis;min-width:0}
+#hud.narrow #mmwrap{display:none}
+#hud.narrow #panel .sel{width:190px}
+#hud.narrow #quick{width:150px;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(3,1fr);gap:4px;padding:6px}#hud.narrow #quick .qb{font-size:10.5px;gap:1px}#hud.narrow #quick .qb .ic{width:18px;height:18px}
+#hud.narrow #flags,#hud.narrow .side .bar,#hud.narrow .side .nm,#hud.narrow .stat small{display:none}
+#hud.narrow #goal{max-width:calc(100% - 24px);top:54px}#hud.narrow #goal .lg{display:none}#hud.narrow #goal .sh{display:inline}
+#hud.narrow #squads{top:100px}#hud.narrow #alerts{top:100px;width:calc(100% - 200px)}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
@@ -508,7 +462,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.0';
+const VERSION = '2.1';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -3757,7 +3711,7 @@ function renderFrame(dt, now) {
     if (pt.owner === ME && selPad && selPad.pt === pt.id) for (let k = 0; k < pt.slots.length; k++) { if (pt.slots[k].b) continue; if (npd >= 120) break; const s = pt.slots[k]; _m.makeScale(4.4 + (selPad.slot === k ? .6 : 0), 1, 4.4); _m.setPosition(s.x, s.y + .22, s.z); padPool.setMatrixAt(npd++, _m); }
     if (pt.owner === ME && !pt.wall && !HIDEPADS && pt.owner >= 0) { }
     const sp = o.sp || (o.sp = { x: 0, y: 0, z: 0 }); w2s(pt.x, pt.y + 9, pt.z, sp);
-    const vis = sp.z < 1 && sp.x > -40 && sp.x < vpW + 40 && sp.y > 128 && sp.y < vpH - 150 && cam.dist < 170 && inGame && !SCREEN;
+    const vis = sp.z < 1 && sp.x > -40 && sp.x < vpW + 40 && sp.y > 128 && sp.y < vpH - hudDeckPx() && cam.dist < 170 && inGame && !SCREEN;
     if (vis) {
       const lb = o.label, own = pt.owner === ME, free = own && pt.slots.some(s => !s.b); const nm = pt.hq >= 0 ? (pt.owner >= 0 ? P(pt.owner).name + "'s base" : 'Empty base') : pt.name; const key = nm + '|' + pt.owner + '|' + free + '|' + pt.contested;
       if (o.key !== key) { o.key = key; lb.innerHTML = '<span class="dot" style="background:' + (pt.owner >= 0 ? hex3(P(pt.owner).color) : '#8d97a3') + '"></span><span class="nm">' + esc(nm) + '</span>' + (free ? '<button class="lb">+ Build</button>' : ''); const bt = lb.querySelector('.lb'); if (bt) bt.onclick = e => { e.stopPropagation(); initAudio(); selectPoint(pt); sfx('click'); }; }
@@ -3995,7 +3949,7 @@ function selectBuilding(b) { selIds.clear(); selBld = b.id; setSelPadState(HIDEP
 function selectPad(pt, slot) { selIds.clear(); selBld = 0; setSelPadState(HIDEPADS, { pt: pt.id, slot }); UI.selEnemy = null; closePops(); afterSel(); }
 function selectPoint(pt) { selIds.clear(); selBld = 0; setSelPadState(HIDEPADS, { pt: pt.id, slot: -9 }); UI.selEnemy = null; closePops(); afterSel(); }
 function issue(c) { if (!W) return false; if (W.mirror) { netSendCmd(c); return true; } return applyCmd(ME, c); }
-function myUnitsOnScreen(type) { const r = []; const o = {}; for (const u of W.units) { if (u.owner !== ME || (type && u.type !== type)) continue; w2s(u.rx, u.ry, u.rz, o); if (o.z < 1 && o.x > 0 && o.x < vpW && o.y > 40 && o.y < vpH - 120) r.push(u); } return r; }
+function myUnitsOnScreen(type) { const r = []; const o = {}; for (const u of W.units) { if (u.owner !== ME || (type && u.type !== type)) continue; w2s(u.rx, u.ry, u.rz, o); if (o.z < 1 && o.x > 0 && o.x < vpW && o.y > 40 && o.y < vpH - hudDeckPx()) r.push(u); } return r; }
 function selAllArmy() {
   let us = W.units.filter(u => u.owner === ME && !u.T.eng); if (!us.length) us = W.units.filter(u => u.owner === ME);
   if (!us.length) { toast('You have no troops yet. Train some at your HQ or Barracks!'); sfx('deny'); return; }
@@ -4044,7 +3998,7 @@ function pickEntity(sx, sy, filter) {
   if (best) return best;
   for (const b of W.bld) {
     if (b.type === 'wall') continue; if (b.team !== MYTEAM && W.o.fog && !(b.sb >> MYTEAM & 1) && !seen(MYTEAM, b.x, b.z)) continue; if (filter && !filter(b)) continue;
-    w2s(b.x, b.y + b.T.sz * .4, b.z, _sp); if (_sp.z > 1) continue; const rpx = b.T.sz * .7 * ppuAt(b.x, b.y, b.z) + touchPad + 3; const d = Math.hypot(_sp.x - sx, _sp.y - sy); if (d < rpx && d / rpx < bs) { bs = d / rpx; best = b; }
+    w2s(b.x, b.y + b.T.sz * .4, b.z, _sp); if (_sp.z > 1) continue; const rpx = b.T.sz * (selIds.size && b.team === MYTEAM ? .42 : .7) * ppuAt(b.x, b.y, b.z) + touchPad + 3; const d = Math.hypot(_sp.x - sx, _sp.y - sy); if (d < rpx && d / rpx < bs) { bs = d / rpx; best = b; }
   }
   return best;
 }
@@ -4081,6 +4035,7 @@ function onClickWorld(sx, sy, shift) {
   if (e && e.k === 'u') {
     if (e.owner === ME) {
       const now = performance.now();
+      if (!shift && selIds.size > 1 && selIds.has(e.id) && !(UI.lastClick.id === e.id && now - UI.lastClick.t < 420)) { UI.lastClick = { t: now, id: e.id }; screenToGround(sx, sy, _g); if (_g.ok) { issueMove(_g.x, _g.z, nearEnemy(_g.x, _g.z, 16)); return; } }
       if (UI.lastClick.id === e.id && now - UI.lastClick.t < 420) { selectUnits(myUnitsOnScreen(e.type).map(u => u.id), shift); camGoto(e.rx, e.rz); UI.lastClick.t = 0; return; }
       UI.lastClick = { t: now, id: e.id };
       if (shift) { if (selIds.has(e.id)) { selIds.delete(e.id); afterSel(); } else selectUnits([e.id], true); } else selectUnits([e.id]); sfx('click'); return;
@@ -4123,7 +4078,7 @@ function setupInput() {
   window.addEventListener('contextmenu', e => { if (inGame) e.preventDefault(); });
   cv.addEventListener('pointerdown', e => {
     initAudio(); if (!inGame) return; try { cv.focus(); } catch (_) { } const touch = e.pointerType === 'touch';
-    if (e.button === 0 && (techOpen || UI.supOpen || UI.specOpen)) { closeTech(); closePops(); UI.cardSig = ''; hudUpdate(true); updQuick(true); return; }   // 2.0: a click on the map closes Upgrades / Support instead of being lost if (touch) { UI.touch = true; showTouchBtns(true); }
+    if (e.button === 0 && (techOpen || UI.supOpen || UI.specOpen)) { closeTech(); closePops(); UI.cardSig = ''; hudUpdate(true); updQuick(true); }   // 2.1: a click on the map closes Upgrades / Support and still counts if (touch) { UI.touch = true; showTouchBtns(true); }
     try { cv.setPointerCapture(e.pointerId); } catch (_) { }
     UI.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), btn: e.button, touch, moved: false });
     UI.mx = e.clientX; UI.my = e.clientY;
@@ -4173,6 +4128,7 @@ function setupInput() {
   $('#zIn').onclick = () => camZoom(1 / 1.2); $('#zOut').onclick = () => camZoom(1.2);
   $('#rL').onclick = () => { cam.tyaw -= PI / 4; }; $('#rR').onclick = () => { cam.tyaw += PI / 4; };
   $('#panel').addEventListener('click', e => {
+    const pgb = e.target.closest('[data-pg]'); if (pgb) { if (!pgb.disabled) { UI.page = (UI.page || 0) + (+pgb.dataset.pg); sfx('click'); hudUpdate(true); } return; }
     const qx = e.target.closest('[data-qx]'); if (qx && selBld) { issue({ k: 'ros', b: selBld, u: qx.dataset.qx, d: -1 }); sfx('click'); UI.cardSig = ''; hudUpdate(true); return; }
     const g = e.target.closest('[data-grp]'); if (g) { const t = g.dataset.grp; selectUnits(selUnitsArr().filter(u => u.type === t).map(u => u.id)); return; }
     const hbb = e.target.closest('[data-hb]'); if (hbb) { const f = CARD.hb && CARD.hb[hbb.dataset.hb]; if (f) { initAudio(); f(); } return; }
@@ -4351,7 +4307,7 @@ let QUICKFN = {};
 function lockMsg(what, lvl) { sfx('deny'); toast('Level up your HQ to Level ' + (lvl || 2) + ' to unlock ' + what + '. Click your HQ, then press Level up.'); const h = P(ME).hqB; if (h) { camGoto(h.x, h.z); selectBuilding(h); } }
 function hqOk() { return playerHQLvl(P(ME)) >= 2 || !!W.o.sandbox; }
 function hudInit() {
-  $('#hud').classList.remove('tuton'); $('#alerts').innerHTML = ''; $('#chatbox').innerHTML = ''; $('#scoreRow').innerHTML = ''; $('#quick').innerHTML = ''; $('#panel').innerHTML = ''; $('#panel').dataset.h = ''; $('#goal').innerHTML = '';
+  $('#hud').classList.remove('tuton'); $('#alerts').innerHTML = ''; $('#chatbox').innerHTML = ''; $('#scoreRow').innerHTML = ''; $('#quick').innerHTML = ''; $('#panel').innerHTML = ''; $('#panel').dataset.h = ''; $('#goal').innerHTML = ''; $('#goal').dataset.s = ''; $('#panel').dataset.hs = '';
   UI.cardSig = ''; UI.selSig = ''; lastScore = ''; lastQuick = ''; UI.supOpen = false; UI.specOpen = false; UI.more = false; $('#sup').classList.add('hidden'); const sp = $('#specp'); if (sp) sp.remove();
   QUICKFN = {
     army: selAllArmy, idle: selIdle, home: () => { goHome(); sfx('click'); },
@@ -4386,7 +4342,7 @@ function updBadges() {
   const show = inGame && W && MODE === 'game' && !SCREEN; const seen = new Set();
   if (show) for (const b of prodBlds()) {
     if (b.type === 'hq' && !rosTotal(b)) continue;
-    w2s(b.x, b.y + b.T.sz * .45 + 5, b.z, _sp); if (_sp.z >= 1 || _sp.x < -40 || _sp.x > vpW + 40 || _sp.y < 70 || _sp.y > vpH - 130) continue;
+    w2s(b.x, b.y + b.T.sz * .45 + 5, b.z, _sp); if (_sp.z >= 1 || _sp.x < -40 || _sp.x > vpW + 40 || _sp.y < 70 || _sp.y > vpH - hudDeckPx() + 20) continue;
     let d = BADGES.get(b.id); if (!d) { d = document.createElement('div'); d.className = 'bbadge'; document.body.appendChild(d); BADGES.set(b.id, d); }
     seen.add(b.id); let have = 0; for (const k in b.ros) have += Math.min(rosHave(b, k), b.ros[k]); const tot = rosTotal(b), cnt = have + '/' + tot; let txt, cls, bar = '';
     if (!tot) { txt = 'Pick troops (0/' + rosCap(b) + ')'; cls = 'cool que'; }
@@ -4546,7 +4502,7 @@ function openWarMap() {
   d.classList.remove('hidden'); wmDraw(true); clearInterval(UI.wmT); UI.wmT = setInterval(() => { if (!UI.wmapOn || !inGame) { clearInterval(UI.wmT); return; } wmDraw(false); }, 250); updSquads(true);
 }
 function closeWarMap() { UI.wmapOn = false; clearInterval(UI.wmT); const d = $('#wmap'); if (d) d.remove(); if (inGame) updSquads(true); }
-function wmGeom() { const cv = $('#wmcv'), img = wmapImage(); const maxW = Math.max(240, Math.min(window.innerWidth - 300, 980)), maxH = Math.max(220, window.innerHeight - 120); const sc = Math.min(maxW / img.width, maxH / img.height); return { cv, img, sc, w: Math.round(img.width * sc), h: Math.round(img.height * sc) }; }
+function wmGeom() { const cv = $('#wmcv'), img = wmapImage(), HW = innerWidth / (UI.uis || 1), HH = innerHeight / (UI.uis || 1); const maxW = Math.max(240, Math.min(HW - 300, 980)), maxH = Math.max(220, HH - 120); const sc = Math.min(maxW / img.width, maxH / img.height); return { cv, img, sc, w: Math.round(img.width * sc), h: Math.round(img.height * sc) }; }
 function wmXY(g, x, z) { const M = W.M; return [(x + M.hw) / M.w * g.w, (z + M.hd) / M.d * g.h]; }
 function wmDraw(full) {
   const g = wmGeom(); if (!g.cv) return; const cv = g.cv; if (cv.width !== g.w || cv.height !== g.h) { cv.width = g.w; cv.height = g.h; } const c = cv.getContext('2d'); c.drawImage(g.img, 0, 0, g.w, g.h);
@@ -4585,10 +4541,36 @@ function fitCards(el) {
   const cs = el.querySelector('.cards.compact'); if (!cs) return; let n = 0; for (const c of cs.children) n += c.classList.contains('stk') ? 2 : 1;
   const cols = Math.ceil(n / 2), w = cs.clientWidth; if (!w) return; const cw = clamp(Math.floor((w - (cols - 1) * 8 - 2) / cols), 178, 230); cs.style.setProperty('--cw', cw + 'px'); cs.classList.toggle('more', !cs.querySelector('.stk') && cols * (cw + 8) - 8 > w + 4);
 }
-window.addEventListener('resize', () => { if (inGame && W) { UI.cardSig = ''; const el = $('#panel'); if (el) el.dataset.h = ''; hudUpdate(true); } });
+// 2.1: the HUD is laid out once at 1280x720 and scaled to the window (Settings > Screen buttons size changes it)
+function hudScale() {
+  const h = $('#hud'); if (!h) return; const mul = SET.uiSize === 's' ? .88 : SET.uiSize === 'l' ? 1.12 : 1;
+  const s = clamp(Math.min(innerWidth / 1280, innerHeight / 720) * mul, .55, 1.6); UI.uis = s;
+  h.style.transform = 'scale(' + s + ')'; h.style.width = (innerWidth / s) + 'px'; h.style.height = (innerHeight / s) + 'px'; h.classList.toggle('narrow', innerWidth / s < 1150);
+  if (inGame && W) { const el = $('#panel'); if (el) el.dataset.h = ''; hudUpdate(true); }
+}
+const hudDeckPx = () => (176 + 30) * (UI.uis || 1);   // screen px covered by the bottom deck
+window.addEventListener('resize', hudScale);
+// 2.1: HUD buttons act the moment the mouse button goes down (like most strategy games). The click that follows is
+// swallowed, so nothing runs twice, and a button that changes while it is held can never lose the press.
+const PRESS_SEL = 'button, [data-i], [data-hb], [data-qx], [data-grp], [data-pg], [data-sq], [data-call], [data-sp], [data-q2], [data-pt], [data-x], .tcard, .wmpt, .chip';
+let pressAt = 0;
+window.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button === 0) pressAt = 0;
+  if (e.pointerType !== 'mouse' || e.button !== 0 || !e.target || !e.target.closest) return;
+  const host = e.target.closest('#hud'); if (!host || e.target.closest('canvas, input, select, textarea')) return;
+  const a = e.target.closest(PRESS_SEL); if (!a || !host.contains(a) || a.disabled) return;
+  pressAt = performance.now(); e.preventDefault(); a.click();
+}, true);
+window.addEventListener('click', e => { if (e.isTrusted && pressAt && performance.now() - pressAt < 900) { e.stopImmediatePropagation(); e.preventDefault(); pressAt = 0; } }, true);   // (wherever the release lands, e.g. on a menu the press just opened)
 window.addEventListener('pointerdown', e => { const t = $('#tip'); if (t) t.classList.add('hidden'); UI.hudDown = !!(e.target && e.target.closest && e.target.closest('#hud, #techp')) && e.target.id !== 'gl'; clearTimeout(UI.hudDownT); if (UI.hudDown) UI.hudDownT = setTimeout(() => { UI.hudDown = false; }, 1500); }, true);
 const hudUp = () => { if (UI.hudDown) setTimeout(() => { UI.hudDown = false; if (inGame && W) hudUpdate(); }, 0); };
 window.addEventListener('pointerup', hudUp, true); window.addEventListener('pointercancel', hudUp, true);   // 2.0: a click never leaves an old tooltip on screen
+function tileHtml(o) {
+  const img = o.img ? '<div class="ti" style="' + iconStyle(o.img) + '"></div>' : '<div class="ti" style="color:' + (o.col || 'var(--gold2)') + '">' + ic(o.ico || 'star') + '</div>';
+  const cost = o.lock ? '<span class="tc">' + ic('lock') + esc(o.lockTxt || 'Locked') + '</span>' : (o.cost ? '<span class="tc">' + ic('coin') + o.cost + '</span>' : '<span></span>');
+  const ros = o.rn ? '<span class="trq">' + o.rh + '/' + o.rn + '</span><span class="tqx" data-qx="' + (o.key || '') + '" data-tip="Remove one|Take one slot out of the roster. The troop stays, it just will not be replaced. (Right-click the tile does the same.)">&minus;</span>' : '';
+  return '<div class="tt">' + cost + (o.hk ? '<span class="tk">' + o.hk + '</span>' : '') + '</div>' + img + '<div class="tn">' + esc(o.nm) + '</div>' + (o.big && o.s ? '<div class="ts">' + esc(o.s) + '</div>' : '') + ros + (o.pg ? '<div class="tb" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
+}
 function cardHtml(i, o, compact) {
   const img = o.img ? '<div class="cimg" style="' + iconStyle(o.img) + '"></div>' : '<div class="cimg" style="color:' + (o.col || 'var(--gold2)') + ';display:flex;align-items:center;justify-content:center">' + ic(o.ico || 'star') + '</div>';
   const cost = o.lock ? '<span class="cc">' + ic('lock') + (o.lockTxt || 'Locked') + '</span>' : (o.cost ? '<span class="cc">' + ic('coin') + o.cost + '</span>' : '');
@@ -4628,8 +4610,7 @@ function renderPanel(force) {
     items.push({ nm: 'Guard', key: 'guard', ico: 'hold', d: 'Hold a flag or spot.', hk: 'V', on: UI.mode === 'guard', tip: 'Guard (V)|Click a flag (or any spot) and these troops stand guard around it: they fight off anyone who comes near, then go back to their posts. Any other order ends guard duty.', fn: () => setMode(UI.mode === 'guard' ? null : 'guard') });
     { const tps = new Set(us.map(u => u.tp | 0)), tv = tps.size === 1 ? [...tps][0] : -1;
       items.push({ nm: 'Target: ' + (tv < 0 ? 'Mixed' : TPN[tv]), key: 'tp', ico: 'fight', d: 'What they shoot first.', on: tv > 0, tip: 'Target type (X)|Pick what these troops shoot first: Any, Soldiers, Vehicles, Aircraft or Buildings. Click to switch. They still fight back against anything they can hit.', fn: () => cycleTarget(us) }); }
-    items.push({ nm: UI.more ? 'Fewer' : 'More', ico: 'group', d: UI.more ? 'Hide extra orders.' : 'Hold position and more.', tip: 'More orders|Hold position, formations and staying together.', fn: () => { UI.more = !UI.more; UI.cardSig = ''; hudUpdate(true); } });
-    if (UI.more) {
+    {
       items.push({ nm: 'Hold', ico: 'hold', d: 'Only shoot what comes close.', hk: 'J', tip: 'Hold position (J)|Troops stand still and only fire at enemies in range.', fn: () => issue({ k: 'hold', ids: ids() }) });
       items.push({ nm: 'Stay together', ico: 'army', d: 'Walk at the slowest speed.', hk: 'G', on: UI.gspd, tip: 'Stay together (G)|The whole group moves at the speed of its slowest unit.', fn: () => { UI.gspd = !UI.gspd; UI.cardSig = ''; hudUpdate(true); } });
     }
@@ -4704,15 +4685,34 @@ function renderPanel(force) {
     }
   } else {
     const h = coachHint(); head = '<div class="coach">' + ic('flag') + '<div>' + esc(h[0]) + '<small>' + esc(h[1]) + '</small></div></div>'; wide = true;
-    if (W.war && W.war.phase === 'prep' && !W.o.mp) { const w = W.war; wide = false; items.push({ nm: w.go ? 'Starting...' : 'Start Wave ' + w.wave, key: 'warnow', ico: 'fight', go: !w.go, off: !!w.go, d: w.def.title, s: w.def.title, tip: 'Start wave ' + w.wave + '|' + w.def.name + ' (' + w.def.title + ') lands in the ' + WDIRS[w.def.site] + '. Your progress is saved first.', fn: () => { initAudio(); ACT.warnow(); UI.cardSig = ''; hudUpdate(true); } }); }
+    if (W.war && W.war.phase === 'prep' && !W.o.mp) { const w = W.war; wide = false; items.push({ nm: w.go ? 'Starting...' : 'Start Wave ' + w.wave, key: 'warnow', big: 1, ico: 'fight', go: !w.go, off: !!w.go, d: w.def.title, s: w.def.title, tip: 'Start wave ' + w.wave + '|' + w.def.name + ' (' + w.def.title + ') lands in the ' + WDIRS[w.def.site] + '. Your progress is saved first.', fn: () => { initAudio(); ACT.warnow(); UI.cardSig = ''; hudUpdate(true); } }); }
   }
-  const compact = items.length >= 3 || items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : bh ? 272 : 214) - 8);   // 2.0: same two-row layout on every screen size
-  const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.rn ? 'r' + i.rh + '/' + i.rn : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
-  if (el.dataset.h === sig && !force) return; const sc = el.querySelector('.cards'); const keepScroll = sc ? sc.scrollLeft : 0; el.dataset.h = sig;
+  // 2.1: the deck is built once; the selection side is replaced only when it changes, and the tiles are updated in
+  // place (same elements), so a button never disappears from under the mouse
+  if (!el.querySelector('.sel')) { el.innerHTML = '<div class="sel"></div><div class="cmd"><div class="tiles"></div><div class="pager"></div></div>'; el.dataset.hs = ''; }
+  const selEl = el.querySelector('.sel'), tilesEl = el.querySelector('.tiles'), pagerEl = el.querySelector('.pager'), cmdEl = el.querySelector('.cmd');
+  el.classList.toggle('wide', !items.length);
+  if (el.dataset.hs !== head + hbtns || force) { el.dataset.hs = head + hbtns; selEl.innerHTML = head; }
   CARD = items.map(i => i.fn); CARD.hb = hb;
-  el.innerHTML = '<div class="phead' + (wide ? ' wide' : '') + (bh ? ' bh' : '') + '">' + head + '</div>' + (items.length ? '<div class="cards' + (compact ? ' compact' : '') + '">' + items.map((o, i) => cardHtml(i, o, compact)).join('') + '</div>' : '');
-  if (keepScroll) { const n = el.querySelector('.cards'); if (n) n.scrollLeft = keepScroll; }
-  fitCards(el);
+  // pages: as many columns as fit, two rows
+  const pkey = us.length ? 'u' + us.length + ':' + us[0].id : b ? 'b' + b.id : selPad ? 'p' + selPad.pt + ':' + selPad.slot : 'n';
+  if (UI.pageKey !== pkey) { UI.pageKey = pkey; UI.page = 0; }
+  const cw = cmdEl.clientWidth || 600; let cols = Math.max(1, Math.floor((cw - 20 + 6) / 86)); let cells = 0; for (const o of items) cells += o.big ? 4 : 1;
+  let pages = 1; if (cells > cols * 2) { cols = Math.max(1, Math.floor((cw - 20 - 34 + 6) / 86)); pages = Math.ceil(cells / (cols * 2)); }
+  UI.page = clamp(UI.page || 0, 0, pages - 1);
+  const per = cols * 2, vis = []; { let c = 0, pg = 0; items.forEach((o, i) => { const n = o.big ? 4 : 1; if (c + n > per) { pg++; c = 0; } if (pg === UI.page) vis.push([o, i]); c += n; }); }
+  tilesEl.style.gridTemplateColumns = 'repeat(' + cols + ',80px)';
+  vis.forEach(([o, i], k) => {
+    let t = tilesEl.children[k]; const key = (o.key || o.nm) + (o.big ? '*' : '');
+    if (!t || t.dataset.key2 !== key) { const n = document.createElement('div'); n.dataset.key2 = key; if (t) tilesEl.replaceChild(n, t); else tilesEl.appendChild(n); t = n; t.dataset.s = ''; }
+    const cls = 'tile card' + (o.big ? ' tbig' : '') + (o.off ? ' off' : '') + (o.lock ? ' lock' : '') + (o.on ? ' on' : '') + (o.go ? ' go' : '');
+    if (t.className !== cls) t.className = cls;
+    t.dataset.i = i; t.dataset.key = o.key || ''; const tip = o.tip || o.nm; if (t.dataset.tip !== tip) t.dataset.tip = tip;
+    const inner = tileHtml(o); if (t.dataset.s !== inner) { t.dataset.s = inner; t.innerHTML = inner; }
+  });
+  while (tilesEl.children.length > vis.length) tilesEl.lastChild.remove();
+  const pg = pages > 1 ? '<button data-pg="-1"' + (UI.page <= 0 ? ' disabled' : '') + ' data-tip="Previous page">&#9650;</button><span class="pi">' + (UI.page + 1) + '/' + pages + '</span><button data-pg="1"' + (UI.page >= pages - 1 ? ' disabled' : '') + ' data-tip="More">&#9660;</button>' : '';
+  if (pagerEl.dataset.s !== pg) { pagerEl.dataset.s = pg; pagerEl.innerHTML = pg; }
   renderSpec();
 }
 function renderSpec() {
@@ -4775,7 +4775,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> a cleaner battle screen with more room, clicks that always go through (buttons no longer change under your mouse), Start Wave always shows in Endless War, and clicking the map closes Upgrades and Support. Big armies move smoothly, multiplayer works across different networks, squads and rally points are saved, and new troops wait at their building unless you set a rally point. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> a brand-new battle screen that fits any screen size (nothing gets cut off; change its size in Settings), square command tiles with pages instead of a scrolling row, and buttons that react the moment you press them so clicks are never lost. Clicking next to your own buildings with troops selected now moves them, and clicking the map closes Upgrades and Support. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -4843,6 +4843,7 @@ SCREENS.settings = () => {
   <div class="lbl">Music volume: <b id="v_music">${SET.music}%</b></div><input type="range" min="0" max="100" step="5" value="${SET.music}" data-act="rng" data-k="music">
   <div class="lbl">Camera speed: <b id="v_camSpd">${SET.camSpd}x</b></div><input type="range" min="0.5" max="2" step="0.1" value="${SET.camSpd}" data-act="rng" data-k="camSpd">
   <div class="row" style="gap:18px"><div><div class="lbl">Scroll with mouse edges</div>${o('edge', [[1, 'On'], [0, 'Off']])}</div><div><div class="lbl">Mouse wheel</div>${seg('scroll', [['pan', 'Moves the map'], ['zoom', 'Zooms']], SET.scroll === 'zoom' ? 'zoom' : 'pan', 'setv')}</div></div>
+  <div class="lbl">Screen buttons size</div>${seg('uiSize', [['s', 'Small'], ['m', 'Normal'], ['l', 'Large']], SET.uiSize || 'm', 'setv')}
   <div class="row" style="gap:18px"><div><div class="lbl">Health bars</div>${seg('hpAlways', [[0, 'When hurt'], [1, 'Always']], SET.hpAlways ? 1 : 0, 'setb')}</div><div><div class="lbl">Show FPS</div>${o('fps', [[1, 'On'], [0, 'Off']])}</div></div>
   <div class="lbl">Commander name</div><input type="text" maxlength="14" value="${esc(SET.name)}" data-act="name">
   <div style="margin-top:14px"><button class="tbtn" data-act="adv">${SET.adv ? 'Hide' : 'Show'} advanced graphics</button></div>${adv}</div></div>`;
@@ -5268,7 +5269,7 @@ function reSK() { if (SCREEN === 'mplobby') { refreshLobby(); lobbyChanged(); } 
 ACT.startsk = () => { const err = validSK(SK); if (err) { toast(err); return; } SK.seed = (SK.seed | 0) + 1; applySimple(SK); startGame(skToCfg(SK)); };
 ACT.gfxp = el => { const v = el.dataset.v; SET.gfx = v; if (v === 'auto') { autoLvl = GPU.weak ? 0 : 1; applyLevel(['low', 'medium', 'high'][autoLvl]); } else applyPreset(v); saveSet(); applyGfx(); showScreen('settings'); };
 ACT.setb = el => { SET[el.dataset.k] = el.dataset.v === '1'; if (el.dataset.k === 'shadows') SET.gfx = 'custom'; saveSet(); applyGfx(); showScreen('settings'); };
-ACT.setv = el => { SET[el.dataset.k] = el.dataset.v; saveSet(); showScreen('settings'); };
+ACT.setv = el => { SET[el.dataset.k] = el.dataset.v; saveSet(); if (el.dataset.k === 'uiSize') hudScale(); showScreen('settings'); };
 ACT.adv = () => { SET.adv = !SET.adv; saveSet(); showScreen('settings'); };
 ACT.rng = el => { const k = el.dataset.k; SET[k] = +el.value; if (['particles', 'scale', 'decor', 'maxUnits'].includes(k)) SET.gfx = 'custom'; const v = $('#v_' + k); if (v) v.textContent = SET[k] + (k === 'maxUnits' ? '' : k === 'camSpd' ? 'x' : '%'); saveSet(); setVol(); if (k === 'scale') resize(); if (k === 'music') musicVol(); if (k === 'decor') applyGfx(); };
 ACT.name = el => { SET.name = el.value.slice(0, 14) || 'Commander'; saveSet(); };
@@ -5291,9 +5292,9 @@ function bindMenus() {
 }
 // ----- upgrades panel -----
 function openTech() {
-  if (techOpen) { closeTech(); return; } if (!inGame) return; techOpen = true; lastQuick = ''; const d = document.createElement('div'); d.id = 'techp'; d.style.cssText = 'position:fixed;left:50%;top:60px;transform:translateX(-50%);z-index:30;width:min(1180px,98vw);max-height:calc(100vh - 150px);overflow:auto'; d.className = 'panel';
+  if (techOpen) { closeTech(); return; } if (!inGame) return; techOpen = true; lastQuick = ''; const d = document.createElement('div'); d.id = 'techp'; d.style.cssText = 'position:absolute;left:50%;top:54px;transform:translateX(-50%);z-index:30;overflow:auto;pointer-events:auto'; d.className = 'panel';
   d.innerHTML = '<div class="row" style="justify-content:space-between"><h3 style="margin:0;color:#ffe2a6;font-size:20px">Upgrades <span class="note" style="font-weight:400;font-size:13px">- help your whole army. One at a time. Rows 1 and 2 need HQ Level 2, row 3 needs HQ Level 3.</span></h3><button class="tbtn" id="techx">Close</button></div><div id="techbody"></div>';
-  document.body.appendChild(d); $('#techx').onclick = closeTech; d.addEventListener('click', e => { if (e.target.closest('#techmore')) { UI.techAdv = true; updTech(true); return; } const c = e.target.closest('.tcard'); if (c && c.dataset.id) { if (issue({ k: 'tech', id: c.dataset.id })) { UI.did.tech = 1; sfx('click'); } else { sfx('deny'); toast('You cannot start that yet.'); } updTech(true); } });
+  $('#hud').appendChild(d); $('#techx').onclick = closeTech; d.addEventListener('click', e => { if (e.target.closest('#techmore')) { UI.techAdv = true; updTech(true); return; } const c = e.target.closest('.tcard'); if (c && c.dataset.id) { if (issue({ k: 'tech', id: c.dataset.id })) { UI.did.tech = 1; sfx('click'); } else { sfx('deny'); toast('You cannot start that yet.'); } updTech(true); } });
   updTech(true);
 }
 function closeTech() { if (techOpen) lastQuick = ''; techOpen = false; const d = $('#techp'); if (d) d.remove(); }
@@ -5732,7 +5733,7 @@ function launch(cfg, opt) {
   cleanupGameUI(); const c = Object.assign({}, cfg, { mp: !!opt.mp, mirror: !!opt.mirror, debug: DEBUG }); if (opt.mp || c.tutorial) c.events = false;
   if (c.tutorial) c.bigStart = false; if (!c.mirror && !c.war) c.maxPop = Math.min(c.maxPop || 120, Math.max(60, SET.maxUnits)); createWorld(c); ME = opt.me || 0; W.o.mp = !!opt.mp;
   buildWorldVisuals(); inGame = true; resultsShown = false; MODE = 'game'; $('#hud').classList.remove('hidden');
-  hudInit(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.sqInfo = {}; UI.sqPend = {}; UI.did = {}; UI.mode = null; UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
+  hudInit(); hudScale(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.sqInfo = {}; UI.sqPend = {}; UI.did = {}; UI.mode = null; UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
   if (UI.touch) showTouchBtns(true); simAcc = 0; applyGfx(); try { mmBuild(); } catch (e) { } hudUpdate(true); closeScreen(); startTicker();
   if (c.mirror) { W.lastSnap = 0; }
   if (c.war) warRestoreSquads();
