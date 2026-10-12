@@ -102,6 +102,8 @@ b{font-weight:700}
 .hbtns{display:flex;gap:5px;flex-wrap:wrap}
 .hbtns{flex-wrap:nowrap}.hbtns .sm{padding:3px 5px;min-height:24px;font-size:11px}
 .hbtns .sm.on{border-color:var(--gold);background:#6b4b12}
+#goal .wgo{background:linear-gradient(180deg,#e6a937,#9a6612);border-color:#ffe2a6;color:#1a1204;font-weight:900;font-size:13px;padding:4px 12px;animation:wpulse 1.6s ease-in-out infinite}
+@keyframes wpulse{0%,100%{box-shadow:0 0 0 #f6c04e00}50%{box-shadow:0 0 12px #f6c04eaa}}
 .hbtns.fm{flex-wrap:wrap;gap:3px;margin-top:3px}.hbtns.fm .sm{padding:2px 5px;min-height:21px;font-size:10.5px}
 .card{position:relative;flex:none;width:118px;border:1px solid #3f5b78;border-radius:10px;background:linear-gradient(180deg,#26405c,#182a40);padding:5px 6px;display:flex;flex-direction:column;gap:2px;text-align:left;overflow:hidden;min-height:0}
 .card:hover{border-color:var(--gold);background:linear-gradient(180deg,#2e4d6e,#1c3149)}
@@ -4309,10 +4311,10 @@ function updGoal() {
   const el = $('#goal'); let mine = ptsOfTeam(MYTEAM), theirs = 0; for (const t of W.teamList) if (t.id !== MYTEAM) theirs = Math.max(theirs, ptsOfTeam(t.id));
   if (W.war) {   // 3.1 Endless War status
     const w = W.war, d = w.def; let lg, st;
-    if (w.phase === 'prep') { lg = 'Wave ' + w.wave + ': ' + d.name + ' (' + d.title + ') lands in the ' + WDIRS[d.site] + '. Build up your Bastion!'; st = '<span class="st t">' + (w.hold ? 'Ready' : 'Arrives in ' + fmtTime(w.t)) + '</span>' + (w.hold ? '' : '<button class="sm" data-warnow="1" style="pointer-events:auto">Start now</button>'); }
+    if (w.phase === 'prep') { lg = d.name + ' (' + d.title + ') will land in the ' + WDIRS[d.site] + '. Start when ready.'; st = w.hold || w.go ? '<span class="st t">Get ready...</span>' : '<button class="sm wgo" data-warnow="1" style="pointer-events:auto">Start Wave ' + w.wave + '</button>'; }
     else if (w.phase === 'fight') { const e = W.players[1], hq = e.hqB; lg = 'Wave ' + w.wave + ': destroy ' + d.name + "'s HQ in the " + WDIRS[d.site] + ', or hold out until time runs out.'; st = '<span class="st ' + (w.t < 60 ? 'w' : 't') + '">' + fmtTime(w.t) + ' left</span>' + (hq && !hq.dead ? '<span class="st l">Enemy HQ ' + Math.ceil(hq.hp / hq.maxHp * 100) + '%</span>' : ''); }
     else { lg = 'The Bastion has fallen.'; st = ''; }
-    const sg = 'W' + lg + st; if (sg === el.dataset.s) return; el.dataset.s = sg; el.innerHTML = '<b>WAVE ' + w.wave + '</b><span class="lg">' + esc(lg) + '</span><span class="sh">Wave ' + w.wave + '</span>' + st;
+    const sg = 'W' + lg + st; if (sg === el.dataset.s) return; el.dataset.s = sg; el.innerHTML = w.phase === 'prep' ? '<b>WAVE ' + w.wave + '</b>' + st + '<span class="lg">' + esc(lg) + '</span><span class="sh">Prepare</span>' : '<b>WAVE ' + w.wave + '</b><span class="lg">' + esc(lg) + '</span><span class="sh">Wave ' + w.wave + '</span>' + st;
     const bt = el.querySelector('[data-warnow]'); if (bt) bt.onclick = () => { initAudio(); ACT.warnow(); }; return;
   }
   const o = W.o.obj; if (o && !W.o.sandbox && o.type !== 'conquest' && o.type !== 'fortress' && o.type !== 'twofront') {
@@ -4932,10 +4934,9 @@ function warSave() {
 function warTick() {
   const w = W.war; if (!w || W.over) return;
   if (w.phase === 'prep') {
-    if (w.hold) return; w.t--;
+    if (w.hold) return;
     if ((w.saveT -= 1) <= 0) { w.saveT = 10; warSave(); }
-    if (w.t === 20) ev([3, 0, 'msg', 0, 0, 3, 'Scouts report ' + w.def.name + ' is 20 seconds out!']);
-    if (w.t <= 0) warSpawn();
+    if (w.go) warSpawn();      // the wave only starts when the player presses Start Wave
   } else if (w.phase === 'fight') {
     if ((w.rt = (w.rt === undefined ? 60 : w.rt) - 1) <= 0) { w.rt = Math.max(45, 90 - w.wave * 2); warReinforce(); }
     w.t--; if (w.t === 60) ev([3, 0, 'msg', 0, 0, 3, 'One minute left. Hold the Bastion and the enemy will give up!']);
@@ -5042,7 +5043,7 @@ SCREENS.warwave = (r) => `<div class="scr bg"><div class="panel" style="width:mi
   <div class="note" style="font-size:15px;color:#e6eef7;margin:8px 0">${esc(r.line)}</div><div class="note"><b style="color:#7be08a">+${r.reward} money</b>${r.how === 'hq' ? ' (HQ bonus)' : ''}. Progress saved.</div>
   ${r.ms ? `<div class="note" style="margin:10px 0;padding:10px;border:1px solid #8a6a28;border-radius:10px;background:#1a150a;color:#ffe2a6;text-align:left"><b>War report, wave ${WAR.wave}</b><br>${esc(r.ms)}</div>` : ''}
   ${WAR.offer ? `<div class="lbl" style="text-align:left">Pick a Doctrine (lasts for the whole war)</div>${warDocCards(WAR.offer)}` : ''}
-  <div class="note" style="margin-top:10px">Next: <b style="color:#ff9a8c">${esc(r.next.name)}</b> (${esc(r.next.title)}) from the ${WDIRS[r.next.site]}. You have time to build.</div>
+  <div class="note" style="margin-top:10px">Next: <b style="color:#ff9a8c">${esc(r.next.name)}</b> (${esc(r.next.title)}) from the ${WDIRS[r.next.site]}. Take your time to build; the wave starts when you press <b>Start Wave</b>.</div>
   ${WAR.offer ? '' : '<button class="mbtn go" data-act="warnext">Prepare for wave ' + WAR.wave + '</button>'}<button class="mbtn" data-act="warmenu">Save and leave</button></div></div>`;
 SCREENS.warlost = (r) => `<div class="scr bg"><div class="panel" style="width:min(520px,98vw);text-align:center"><div class="title" style="font-size:clamp(28px,6vw,48px);background:linear-gradient(180deg,#ffd0c8,#d4483a 60%,#7a1d14);-webkit-background-clip:text;background-clip:text">THE BASTION FELL</div>
   <div class="sub">Wave ${r.wave} - ${esc(r.name)}</div><div class="note" style="font-size:15px;color:#e6eef7;margin:10px 0">${esc(r.line)}</div>
@@ -5056,7 +5057,7 @@ ACT.warreset = () => { if (!UI.wreset) { UI.wreset = 1; showScreen('war'); retur
 ACT.warplay = () => { if (!WAR) warNew(); startGame(warCfg()); };
 ACT.wardoc = el => { const id = el.dataset.v; if (!WAR || !WAR.offer || !WAR.offer.includes(id)) return; WAR.docs[id] = (WAR.docs[id] || 0) + 1; WAR.offer = null; saveWar(); if (inGame && W && W.o.war) { const me = W.players[0]; me.perkMod = {}; for (const k in WAR.docs) { const d = DOCS[k]; if (d && d.mod) for (const m in d.mod) me.perkMod[m] = (me.perkMod[m] || 0) + d.mod[m] * WAR.docs[k]; } me.bounty = WAR.docs.bounty ? .15 : 0; me.fevMul = WAR.docs.qm ? 2 : 1; recalcMods(me); sfx('done'); ACT.warnext(); } else showScreen('war'); };
 ACT.warnext = () => { closeScreen(); if (W && W.war) { W.war.hold = false; W.paused = false; } };
-ACT.warnow = () => { if (W && W.war && W.war.phase === 'prep' && !W.war.hold) { W.war.t = Math.min(W.war.t, 1); sfx('click'); } };
+ACT.warnow = () => { if (W && W.war && W.war.phase === 'prep' && !W.war.hold && !W.war.go) { W.war.go = true; sfx('click'); hudUpdate(true); } };
 ACT.warmenu = () => { if (W && W.o.war && W.war && W.war.phase === 'prep') warSave(); endGame(); ACT.war(); };
 ACT.warmenu2 = () => { endGame(); ACT.war(); };
 ACT.warretry = () => { endGame(); startGame(warCfg()); };
@@ -5489,7 +5490,7 @@ function launch(cfg, opt) {
   if (UI.touch) showTouchBtns(true); simAcc = 0; applyGfx(); try { mmBuild(); } catch (e) { } hudUpdate(true); closeScreen(); startTicker();
   if (c.mirror) { W.lastSnap = 0; }
   if (c.camp && c.obj) { const mk = CAMP && CAMP.cur && CAMP.cur.final ? 'final' : c.obj.type, br = LORE.missions[mk] ? LORE.missions[mk].brief : null; if (br) setTimeout(() => { if (inGame) addAlert('HQ: ' + br[(Math.random() * br.length) | 0], '#ffe2a6', undefined, undefined, 16000); }, 1500); }
-  if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion: 24 build spots around your HQ and six outposts to capture. The enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 14000); }, 1500);
+  if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion: 24 build spots around your HQ, defense pads outside the walls and six outposts to capture. Press Start Wave (top of the screen) when you are ready; the enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 14000); }, 1500);
   if (opt.after) opt.after();
 }
 function cleanupGameUI() { closeWarMap(); UI.bsq = {}; for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
