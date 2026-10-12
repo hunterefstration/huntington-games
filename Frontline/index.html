@@ -81,6 +81,13 @@ b{font-weight:700}
 #panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:6px;display:flex;flex-direction:row;gap:8px;overflow:hidden}
 .phead{flex:none;width:204px;display:flex;flex-direction:column;gap:4px;min-width:0;padding-right:8px;border-right:1px solid rgba(120,150,180,.28);justify-content:center}
 .phead.wide{flex:1;width:auto;border-right:0;padding-right:0}
+/* building panel: Sell sits in the title row so it can never be covered; the rest wraps and scrolls inside the header */
+.phead.bh{width:262px;justify-content:flex-start;overflow-x:hidden;overflow-y:auto;gap:3px}
+.phead.bh .ph1{gap:6px}.phead.bh .pt{flex:1}
+.phead.bh .sell{margin-left:auto;flex:none;padding:3px 7px;min-height:24px;font-size:11.5px;background:#4a2620;border-color:#a0574a}
+.phead.bh .sell:hover{border-color:#ff9a8c;background:#6a3028}
+.phead.bh .pm{white-space:nowrap;text-overflow:ellipsis;max-height:16px;flex:none}
+.phead.bh .hbtns{flex-wrap:wrap;gap:4px}
 .ph1{display:flex;gap:7px;align-items:center;min-width:0}
 .pic{width:36px;height:36px;border-radius:8px;background:#0d1620 center/contain no-repeat;border:1px solid #3a4f66;flex:none}
 .pt{font-weight:800;font-size:14.5px;line-height:1.15;min-width:0;overflow:hidden}
@@ -308,14 +315,13 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 @media (max-width:700px){#armystrip{display:none}}
 @media (max-height:520px){#armystrip{bottom:96px}}
 /* ---------- responsive ---------- */
-@media (max-width:1100px){.side .bar{width:60px}.stat{font-size:17px;padding:5px 9px}#goal{font-size:13px}.phead{width:150px}}
+@media (max-width:1100px){.side .bar{width:60px}.stat{font-size:17px;padding:5px 9px}#goal{font-size:13px}.phead{width:150px}.phead.bh{width:218px}.phead.bh .pm{display:none}}
 @media (max-width:900px){
  .side .bar{display:none}.side .nm{display:none}.side b{font-size:16px;min-width:26px}
  .stat{font-size:16px;padding:4px 8px}.stat .ic{width:19px;height:19px}
  .fl{width:21px;height:27px}.fl .ic{width:17px;height:17px}
  #goal .lg{display:none}#goal .sh{display:inline}
  .tbtn{padding:7px 10px}
- #camctl{bottom:auto;top:96px}
 }
 @media (max-width:700px){
  #topbar{flex-wrap:wrap;gap:6px;padding:5px 7px}
@@ -334,6 +340,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
  #mmwrap{grid-row:2;width:96px;height:106px}
  #panel{grid-row:2;height:106px;padding:4px;gap:5px}
  .phead{width:104px;padding-right:5px}
+ .phead.bh{width:150px}.phead.bh .pic{display:none}
  .pic{width:28px;height:28px}.pt{font-size:12.5px}.pt small{font-size:10.5px}.pm{font-size:10.5px;max-height:26px}
  .qb{font-size:10px;min-height:44px}.qb .ic{width:19px;height:19px}
  .card{width:104px;padding:4px 5px}
@@ -359,17 +366,29 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
  #mmwrap{width:100px;height:80px}
  #panel{padding:4px 5px;gap:5px}
  .phead{width:130px}
+ .phead.bh{width:200px}.phead.bh .pic{width:24px;height:24px}.phead.bh .hpbar{display:none}
  .pic{width:28px;height:28px}.pm{display:none}
  .card{width:100px;padding:3px 5px}.card .cn{font-size:12px}.card .cd{display:none}
  .card .cimg{width:28px;height:28px}
  .card.c2{width:140px}
  #quick{grid-template-columns:repeat(3,56px);gap:3px}.qb{font-size:10px}.qb .ic{width:17px;height:17px}
- #camctl{bottom:auto;top:84px;flex-direction:row}#camctl .tbtn{width:38px;min-height:38px}
+ #camctl{bottom:98px;top:auto;flex-direction:row}#camctl .tbtn{width:38px;min-height:38px}
  #fps{bottom:100px}#chatbox,#chatin{bottom:100px}#sup{bottom:98px;max-height:calc(100vh - 106px);grid-template-columns:repeat(4,minmax(0,1fr));left:8px}#sup .card{min-height:60px}#specp{bottom:98px}.toast{bottom:104px}
  #tut .tcard{top:80px;padding:8px 10px;width:min(300px,50vw)}#tut h3{font-size:16px}#tut p{font-size:13px;margin-bottom:5px}
 }
 @media (max-width:700px) and (min-height:521px){
  #tut .tcard{top:140px;left:8px;width:calc(100vw - 16px);padding:9px 12px}#tut h3{font-size:17px}#tut p{font-size:14px;margin-bottom:6px}
+}
+/* short screens: zoom buttons in a row above the bottom bar so they never cover the squad list */
+@media (max-height:720px) and (min-height:521px) and (min-width:701px){#camctl{flex-direction:row}}
+/* small phones in landscape: one bottom row (no minimap) so the panel stays on screen */
+@media (max-width:700px) and (max-height:520px){
+ #bottom{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto;height:90px}
+ #mmwrap{display:none}
+ #panel{grid-row:1;grid-column:1;height:auto}
+ #quick{grid-column:2;grid-row:1;grid-template-columns:repeat(3,50px);grid-auto-rows:auto}
+ #camctl{bottom:96px;top:auto;right:6px}
+ #squads{top:54px}
 }
 </style>
 <script type="importmap">
@@ -4499,7 +4518,7 @@ const FORMTIP = ['A tidy block.', 'A wide line facing the target: every gun can 
 function cycleTarget(us) { const tps = new Set(us.map(u => u.tp | 0)), cur = tps.size === 1 ? [...tps][0] : -1, nv = (cur + 1) % 5; if (issue({ k: 'tp', ids: us.map(u => u.id), v: nv })) { if (!W.mirror) for (const u of us) u.tp = nv; toast('Target: ' + TPN[nv]); sfx('click'); } UI.cardSig = ''; hudUpdate(true); }
 function hpHtml(f, col) { return '<div class="hpbar"><i style="width:' + Math.round(f * 20) * 5 + '%' + (col ? ';background:' + col : '') + '"></i></div>'; }
 function renderPanel(force) {
-  const el = $('#panel'), p = P(ME), items = [], us = selUnitsArr(), b = selBld ? W.byId.get(selBld) : null; let head = '', wide = false, hbtns = ''; const hb = {};
+  const el = $('#panel'), p = P(ME), items = [], us = selUnitsArr(), b = selBld ? W.byId.get(selBld) : null; let head = '', wide = false, bh = false, hbtns = ''; const hb = {};
   const hql = playerHQLvl(p);
   if (us.length) {
     const by = {}; for (const u of us) (by[u.type] = by[u.type] || []).push(u);
@@ -4546,18 +4565,19 @@ function renderPanel(force) {
       if (b.ros) {
         const sq = (UI.bsq || {})[b.id] || 0;
         hb.bsq = () => { UI.bsq = UI.bsq || {}; UI.bsq[b.id] = (sq + 1) % 6; sfx('click'); UI.cardSig = ''; hudUpdate(true); };
-        hbtns += '<button class="sm' + (sq ? ' on' : '') + '" data-hb="bsq" data-tip="New troops join a squad|Troops from this building automatically join the squad you pick here and walk to it. Click to switch: none, then squads 1 to 5.">' + (sq ? 'Joins: ' + SQN[sq - 1] : 'Joins: no squad') + '</button>';
+        hbtns += '<button class="sm' + (sq ? ' on' : '') + '" data-hb="bsq" data-tip="New troops join a squad|Troops from this building automatically join the squad you pick here and walk to it. Click to switch: none, then squads 1 to 5.">' + (sq ? 'Squad: ' + SQN[sq - 1] : 'Squad: none') + '</button>';
         hb.rhold = () => { issue({ k: 'rhold', b: b.id }); sfx('click'); UI.cardSig = ''; hudUpdate(true); };
         hbtns += '<button class="sm' + (b.hold ? ' on' : '') + '" data-hb="rhold" data-tip="' + (b.hold ? 'Paused|This building is not training or replacing troops. Click to start again.' : 'Pause training|Stop this building from training and replacing troops (to save money). Click again to start.') + '">' + (b.hold ? 'Paused' : 'Pause') + '</button>';
         if (b.hasRally) {
           hb.rallyauto = () => { issue({ k: 'rally', b: b.id, clear: 1 }); sfx('click'); toast('New troops will now go to your main army.'); UI.cardSig = ''; hudUpdate(true); };
           hbtns += '<button class="sm on" data-hb="rallyauto" data-tip="Rally: point|New troops walk to the spot you picked. Click to switch back to Army (auto).">Rally: point</button>';
           hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Move rally point|Click the ground to move the rally point.">Move</button>';
-        } else { hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Rally: Army (auto)|New troops walk to where most of your army is. Click, then click the ground, to pick a fixed rally point instead.">' + (UI.mode === 'rally' ? 'Click the map' : 'Rally: Army (auto)') + '</button>'; }
+        } else { hb.rally = () => setMode(UI.mode === 'rally' ? null : 'rally'); hbtns += '<button class="sm' + (UI.mode === 'rally' ? ' on' : '') + '" data-hb="rally" data-tip="Rally: Army (auto)|New troops walk to where most of your army is. Click, then click the ground, to pick a fixed rally point instead.">' + (UI.mode === 'rally' ? 'Click the map' : 'Rally: auto') + '</button>'; }
       }
     } else items.push({ nm: 'Under construction', ico: 'build', d: 'Engineers nearby build it faster.', off: true, pg: b.prog, fn: () => { } });
-    if (b.type !== 'hq') { hb.sell = () => { if (issue({ k: 'sell', b: b.id })) { sfx('click'); selBld = 0; UI.cardSig = ''; hudUpdate(true); } }; hbtns += '<button class="sm" data-hb="sell" data-tip="Sell (K)|Remove this building and get half the money back.">Sell +' + Math.round(b.spent * .5) + '</button>'; }
+    if (b.type !== 'hq') { hb.sell = () => { if (issue({ k: 'sell', b: b.id })) { sfx('click'); selBld = 0; UI.cardSig = ''; hudUpdate(true); } }; head = head.replace('</small></div></div>', '</small></div><button class="sm sell" data-hb="sell" data-tip="Sell (K)|Remove this building and get half the money back.">Sell +' + Math.round(b.spent * .5) + '</button></div>'); }
     if (hbtns) head += '<div class="hbtns">' + hbtns + '</div>';
+    bh = true;
   } else if (b) {
     const T = b.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt" style="color:' + (b.team === MYTEAM ? '#9fd0ff' : '#ff9a8c') + '">' + T.n + '<small>' + (b.team === MYTEAM ? 'Ally' : 'Enemy') + ' Lv ' + b.lvl + '</small></div></div>' + hpHtml(b.hp / b.maxHp, b.team === MYTEAM ? '' : '#e14a3a') + '<div class="pm">' + (b.team === MYTEAM ? '' : 'Select your troops, then click this to attack.') + '</div>';
   } else if (UI.selEnemy && !UI.selEnemy.dead) {
@@ -4592,11 +4612,11 @@ function renderPanel(force) {
   } else {
     const h = coachHint(); head = '<div class="coach">' + ic('flag') + '<div>' + esc(h[0]) + '<small>' + esc(h[1]) + '</small></div></div>'; wide = true;
   }
-  const compact = items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : 214) - 8);
+  const compact = items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : bh ? 272 : 214) - 8);
   const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.rn ? 'r' + i.rh + '/' + i.rn : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
   if (el.dataset.h === sig && !force) return; const sc = el.querySelector('.cards'); const keepScroll = sc ? sc.scrollLeft : 0; el.dataset.h = sig;
   CARD = items.map(i => i.fn); CARD.hb = hb;
-  el.innerHTML = '<div class="phead' + (wide ? ' wide' : '') + '">' + head + '</div>' + (items.length ? '<div class="cards' + (compact ? ' compact' : '') + '">' + items.map((o, i) => cardHtml(i, o, compact)).join('') + '</div>' : '');
+  el.innerHTML = '<div class="phead' + (wide ? ' wide' : '') + (bh ? ' bh' : '') + '">' + head + '</div>' + (items.length ? '<div class="cards' + (compact ? ' compact' : '') + '">' + items.map((o, i) => cardHtml(i, o, compact)).join('') + '</div>' : '');
   if (keepScroll) { const n = el.querySelector('.cards'); if (n) n.scrollLeft = keepScroll; }
   renderSpec();
 }
@@ -5275,7 +5295,7 @@ function sandboxPanel() {
 //  state (5 Hz) and discrete effect events (reliable channel).
 // =====================================================================
 const PJ_PREFIX = 'frntln-cmd-v2-';
-const NET = { role: '', pj: null, peer: null, code: '', codeState: '', codeErr: '', joinState: '', joinErr: '', lobby: null, guestName: '', hostName: '', guestReady: false, myReady: false, lastRx: 0, rtt: 0, dirty: false, pingT: 0, matchGuest: -1, joinCode: '', leaving: false, snapsRx: 0, snapsTx: 0, cmdRx: 0, bytesTx: 0, bytesRx: 0, cmdWin: 0, cmdWinT: 0, gotSnap: 0 };
+const NET = { role: '', pj: null, peer: null, mq: [], via: '', code: '', codeState: '', codeErr: '', joinState: '', joinErr: '', lobby: null, guestName: '', hostName: '', guestReady: false, myReady: false, lastRx: 0, rtt: 0, dirty: false, pingT: 0, matchGuest: -1, joinCode: '', leaving: false, snapsRx: 0, snapsTx: 0, cmdRx: 0, bytesTx: 0, bytesRx: 0, cmdWin: 0, cmdWinT: 0, gotSnap: 0 };
 let pjLoading = null;
 function loadPeerJS() {
   if (window.Peer) return Promise.resolve(window.Peer); if (pjLoading) return pjLoading;
@@ -5285,10 +5305,42 @@ function loadPeerJS() {
     s.onerror = () => { pjLoading = null; rej(new Error("Couldn't reach the matchmaking service - are you online?")); }; document.head.appendChild(s);
   }); return pjLoading;
 }
-const pjOptions = () => ({ debug: 0 });
+// 4.3: more STUN servers so a direct link works on more networks. When a direct link still can't be made
+// (different Wi-Fi, phone data, strict school or office routers), both sides fall back to a public relay below.
+const NETQ = new URLSearchParams(location.search);
+const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }, { urls: 'stun:stun.cloudflare.com:3478' }, { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }];
+const pjOptions = () => { const o = { debug: 0, config: { iceServers: ICE, sdpSemantics: 'unified-plan' } }; const h = NETQ.get('pjhost'); if (h) { const [host, port] = h.split(':'); Object.assign(o, { host, port: +port || 443, path: '/', secure: location.protocol === 'https:' }); } return o; };
 function peerFromConn(conn) {
   const pc = conn.peerConnection, rel = conn.dataChannel; const fast = pc.createDataChannel('u', { negotiated: true, id: 50, ordered: false, maxRetransmits: 0 });
   rel.binaryType = fast.binaryType = 'arraybuffer'; return { pc, rel, fast, conn };
+}
+// ---------- relay fallback: MQTT over secure WebSockets through public brokers (all tried at once, first one wins) ----------
+const RELAYS = NETQ.get('relay') ? [NETQ.get('relay')] : ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
+const RTOPIC = 'frntln/cmd-v2/', DIRECT_WAIT = 4000;
+let mqLoading = null;
+function loadMQTT() {
+  if (window.mqtt) return Promise.resolve(window.mqtt); if (mqLoading) return mqLoading;
+  mqLoading = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';
+    s.onload = () => window.mqtt ? res(window.mqtt) : rej(new Error('relay')); s.onerror = () => { mqLoading = null; rej(new Error('relay')); }; document.head.appendChild(s);
+  }); return mqLoading;
+}
+function relayOpen(onUp) {
+  return loadMQTT().then(mq => RELAYS.forEach(url => {
+    let c; try { c = mq.connect(url, { clientId: 'fl' + Math.random().toString(36).slice(2, 12), clean: true, connectTimeout: 8000, reconnectPeriod: 3000, keepalive: 20, protocolVersion: 4 }); } catch (e) { return; }
+    NET.mq.push(c); let up = false; c.on('error', () => { }); c.on('connect', () => { if (!up) { up = true; onUp(c); } });
+  }), () => { });
+}
+function relayEnd(keep) { for (const c of NET.mq) if (c !== keep) { try { c.end(); } catch (e) { } } NET.mq = keep ? [keep] : []; }
+const rtxt = u => u[0] === 0 || u.length > 24 ? '' : new TextDecoder().decode(u);
+// a relay link that looks like a WebRTC peer to the rest of the code (strings = reliable JSON, a 0 byte in front = binary snapshot)
+function relayPeer(client, out, gid, own) {
+  let lastBin = 0;
+  const raw = d => { if (pc.connectionState !== 'connected') return; let p = d; if (typeof d !== 'string') { p = new Uint8Array(d.byteLength + 1); p.set(new Uint8Array(d), 1); } try { client.publish(out, p, { qos: 0 }); } catch (e) { } };
+  const rel = { readyState: 'open', bufferedAmount: 0, onmessage: null, onclose: null, send: raw };
+  const fast = { readyState: 'open', bufferedAmount: 0, onmessage: null, send: d => { const t = performance.now(); if (d.byteLength > 3000 && t - lastBin < 190) return; lastBin = t; raw(d); } };   // big armies: 5 snapshots a second through the relay
+  const pc = { connectionState: 'connected', addEventListener() { }, close() { if (pc.connectionState === 'closed') return; raw('{"t":"bye"}'); pc.connectionState = 'closed'; rel.readyState = fast.readyState = 'closed'; if (own) setTimeout(() => { try { client.end(); } catch (e) { } }, 300); } };
+  return { pc, rel, fast, relay: true, gid, client, deliver(u) { if (pc.connectionState !== 'connected') return; if (u[0] === 0) { if (fast.onmessage) fast.onmessage({ data: u.buffer.slice(u.byteOffset + 1, u.byteOffset + u.byteLength) }); } else if (rel.onmessage) rel.onmessage({ data: new TextDecoder().decode(u) }); } };
 }
 function sendRel(obj) { const p = NET.peer; if (!p) return; try { if (p.rel.readyState === 'open') { const s = JSON.stringify(obj); NET.bytesTx += s.length; p.rel.send(s); } } catch (e) { } }
 function sendBin(buf) { const p = NET.peer; if (!p) return; try { NET.bytesTx += buf.byteLength; if (p.fast.readyState === 'open' && p.fast.bufferedAmount < 60000) p.fast.send(buf); else if (p.rel.readyState === 'open' && p.rel.bufferedAmount < 200000) p.rel.send(buf); } catch (e) { } }
@@ -5301,53 +5353,88 @@ function wirePeer(peer, onClose) {
 function netReset(keepLobby) {
   try { if (NET.peer) { try { NET.peer.rel.onclose = null; } catch (e) { } NET.peer.pc.close(); } } catch (e) { }
   if (NET.pj) { const pj = NET.pj; NET.pj = null; setTimeout(() => { try { pj.destroy(); } catch (e) { } }, 200); }
-  Object.assign(NET, { role: '', peer: null, code: '', codeState: '', codeErr: '', joinState: '', joinErr: '', lobby: null, guestName: '', hostName: '', guestReady: false, myReady: false, dirty: false, matchGuest: -1, leaving: false });
+  const mq = NET.mq; NET.mq = []; setTimeout(() => { for (const c of mq) { try { c.end(); } catch (e) { } } }, 300);
+  Object.assign(NET, { role: '', peer: null, via: '', code: '', codeState: '', codeErr: '', joinState: '', joinErr: '', lobby: null, guestName: '', hostName: '', guestReady: false, myReady: false, dirty: false, matchGuest: -1, leaving: false });
 }
 // ---------- host ----------
+// a guest that reached us (directly or through the relay) becomes THE guest once it says hello on that link
+function hostCandidate(peer) {
+  const t0 = setTimeout(() => { if (NET.peer !== peer) { try { peer.pc.close(); } catch (e) { } } }, 30000);
+  peer.rel.onmessage = e => {
+    if (typeof e.data !== 'string') return; let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m.t !== 'hello' || NET.peer === peer) return; clearTimeout(t0);
+    if (NET.peer || NET.role !== 'host') { try { peer.rel.send(JSON.stringify({ t: 'full' })); } catch (x) { } setTimeout(() => { try { peer.pc.close(); } catch (x) { } }, 400); return; }
+    NET.peer = peer; NET.via = peer.relay ? 'relay' : 'direct'; wirePeer(peer, () => { if (NET.peer === peer) hostGuestGone(); });
+    NET.guestName = 'Friend'; NET.guestReady = false; netMessage(m); if (SCREEN === 'mplobby') refreshLobby();
+  };
+}
+function hostRelayUp(c, code) {
+  const base = RTOPIC + code + '/', cands = new Map(); c.subscribe(base + 'h/+', { qos: 0 });
+  c.on('message', (topic, u) => {
+    if (NET.role !== 'host' || !topic.startsWith(base + 'h/')) return; const gid = topic.slice(base.length + 2); let p = cands.get(gid);
+    if (rtxt(u) === '{"t":"rjoin"}') { if (!p || p.pc.connectionState === 'closed') { p = relayPeer(c, base + 'g/' + gid, gid, false); cands.set(gid, p); hostCandidate(p); } p.rel.send('{"t":"rok"}'); return; }
+    if (p) p.deliver(u);
+  });
+}
 async function netHostStart(tries) {
-  tries = tries || 0; NET.role = 'host'; NET.codeState = 'loading'; NET.code = ''; SK = SK || defaultSK(); SK.speed = 1; SK.slots[1] = Object.assign(SK.slots[1], { kind: 'remote', team: 1 }); if (SCREEN === 'mplobby') refreshLobby();
+  tries = tries || 0; const tok = NET.hostTok = (NET.hostTok || 0) + 1; relayEnd(); if (NET.pj) { try { NET.pj.destroy(); } catch (e) { } NET.pj = null; }
+  NET.role = 'host'; NET.codeState = 'loading'; NET.code = ''; SK = SK || defaultSK(); SK.speed = 1; SK.slots[1] = Object.assign(SK.slots[1], { kind: 'remote', team: 1 }); if (SCREEN === 'mplobby') refreshLobby();
+  const code = String(100000 + Math.floor(Math.random() * 900000)), live = () => NET.role === 'host' && NET.hostTok === tok;
+  const ready = () => { if (!live() || NET.codeState === 'ready') return; NET.code = code; NET.codeState = 'ready'; refreshLobby(); };
+  setTimeout(() => { if (live() && NET.codeState === 'loading') { NET.codeState = 'error'; NET.codeErr = "Couldn't reach the matchmaking service. Check your connection."; refreshLobby(); } }, 14000);
+  relayOpen(c => { if (!live()) { try { c.end(); } catch (e) { } return; } hostRelayUp(c, code); ready(); });
   try {
-    const Peer = await loadPeerJS(); if (NET.role !== 'host') return;
-    const code = String(100000 + Math.floor(Math.random() * 900000)); const pj = new Peer(PJ_PREFIX + code, pjOptions()); NET.pj = pj;
-    pj.on('open', () => { if (NET.pj !== pj) return; NET.code = code; NET.codeState = 'ready'; refreshLobby(); });
-    pj.on('error', e => {
-      if (NET.pj !== pj) return; if (e.type === 'unavailable-id' && tries < 6) { pj.destroy(); NET.pj = null; netHostStart(tries + 1); return; }
-      if (NET.codeState !== 'ready') { NET.codeState = 'error'; NET.codeErr = ['network', 'server-error', 'socket-error', 'socket-closed'].includes(e.type) ? "Couldn't reach the matchmaking service. Check your connection." : 'Something went wrong making a code (' + e.type + ').'; refreshLobby(); }
-    });
+    const Peer = await loadPeerJS(); if (!live()) return;
+    const pj = new Peer(PJ_PREFIX + code, pjOptions()); NET.pj = pj;
+    pj.on('open', () => { if (NET.pj === pj) ready(); });
+    pj.on('error', e => { if (NET.pj !== pj) return; if (e.type === 'unavailable-id' && tries < 6 && NET.codeState !== 'ready') { netHostStart(tries + 1); } });
     pj.on('disconnected', () => { if (NET.pj === pj && !pj.destroyed) setTimeout(() => { try { pj.reconnect(); } catch (e) { } }, 1500); });
-    pj.on('connection', conn => {
-      conn.on('open', () => {
-        if (conn.label !== 'frontline') { conn.close(); return; }
-        if (NET.peer) { try { conn.send(JSON.stringify({ t: 'full' })); } catch (e) { } setTimeout(() => conn.close(), 400); return; }
-        const peer = peerFromConn(conn); NET.peer = peer; wirePeer(peer, () => hostGuestGone());
-        NET.guestName = 'Friend'; NET.guestReady = false; if (SCREEN === 'mplobby') refreshLobby(); lobbyChanged();
-      });
-    });
-  } catch (e) { NET.codeState = 'error'; NET.codeErr = e.message; refreshLobby(); }
+    pj.on('connection', conn => { conn.on('open', () => { if (conn.label !== 'frontline' || !live()) { conn.close(); return; } hostCandidate(peerFromConn(conn)); }); });
+  } catch (e) { }
 }
 function hostGuestGone() {
-  if (NET.role !== 'host' || !NET.peer) return; NET.peer = null; const was = NET.guestName; NET.guestName = ''; NET.guestReady = false;
+  if (NET.role !== 'host' || !NET.peer) return; const old = NET.peer; NET.peer = null; NET.via = ''; try { old.rel.onclose = null; old.pc.close(); } catch (e) { }
+  const was = NET.guestName; NET.guestName = ''; NET.guestReady = false;
   if (W && W.o.mp && inGame && !W.over) { const g = W.players.find(p => p.kind === 'remote'); if (g) { eliminate(g, 'Disconnected'); toast('Opponent disconnected'); } }
   else if (SCREEN === 'mplobby') { refreshLobby(); toast((was || 'Friend') + ' left the lobby'); }
 }
 // ---------- guest ----------
-async function netJoin(raw, attempt) {
-  attempt = attempt || 0; const code = String(raw || '').replace(/\D/g, ''); NET.joinCode = code; NET.role = 'guest';
-  if (code.length !== 6) { NET.joinState = 'error'; NET.joinErr = 'Codes are 6 digits.'; if (SCREEN === 'mp') showScreen('mp'); return; }
+// try a direct link first; if it isn't open after a few seconds, knock on the relay too. Whichever answers first is used.
+async function netJoin(raw) {
+  const code = String(raw || '').replace(/\D/g, ''); netReset(); NET.joinCode = code; NET.role = 'guest';
+  if (code.length !== 6) { NET.joinState = 'error'; NET.joinErr = 'Codes are 6 digits.'; NET.role = ''; if (SCREEN === 'mp') showScreen('mp'); return; }
   NET.joinState = 'connecting'; NET.joinErr = ''; if (SCREEN === 'mp') showScreen('mp');
-  try {
-    const Peer = await loadPeerJS(); const pj = new Peer(pjOptions()); NET.pj = pj; let done = false;
-    const fail = (msg, retry) => { if (done || NET.pj !== pj) return; done = true; clearTimeout(timer); try { pj.destroy(); } catch (e) { } NET.pj = null; if (retry && attempt < 2) { setTimeout(() => netJoin(code, attempt + 1), 1200); return; } NET.joinState = 'error'; NET.joinErr = msg; NET.role = ''; if (SCREEN === 'mp') showScreen('mp'); };
-    const timer = setTimeout(() => fail("Couldn't connect in time. Check the code, and make sure the host is still on the lobby screen.", true), 16000);
-    pj.on('error', e => fail(e.type === 'peer-unavailable' ? 'No game found with code ' + code + '. Check the number with the host.' : ['network', 'server-error', 'socket-error'].includes(e.type) ? "Couldn't reach the matchmaking service - are you online?" : 'Connection problem (' + e.type + ').', e.type !== 'peer-unavailable'));
-    pj.on('open', () => {
-      const conn = pj.connect(PJ_PREFIX + code, { label: 'frontline', serialization: 'raw', reliable: true });
-      conn.on('open', () => {
-        if (done) return; done = true; clearTimeout(timer); const peer = peerFromConn(conn); NET.peer = peer; wirePeer(peer, () => guestHostGone());
-        NET.joinState = 'connected'; sendRel({ t: 'hello', name: SET.name, ver: VERSION }); setTimeout(() => { try { pj.disconnect(); } catch (e) { } }, 1500); showScreen('mplobby');
-      });
+  const gid = Math.random().toString(36).slice(2, 10), tok = NET.joinTok = (NET.joinTok || 0) + 1, timers = []; let done = false, relayOn = false, notFound = false, pj = null;
+  const live = () => !done && NET.role === 'guest' && NET.joinTok === tok;
+  const fail = msg => { if (!live()) return; done = true; timers.forEach(clearTimeout); netReset(); NET.joinCode = code; NET.joinState = 'error'; NET.joinErr = msg; if (SCREEN === 'mp') showScreen('mp'); };
+  const use = (peer, via) => {
+    if (!live()) { try { peer.pc.close(); } catch (e) { } return; } done = true; timers.forEach(clearTimeout);
+    NET.peer = peer; NET.via = via; wirePeer(peer, () => guestHostGone()); NET.joinState = 'connected'; sendRel({ t: 'hello', name: SET.name, ver: VERSION });
+    relayEnd(peer.relay ? peer.client : null);
+    if (pj) { if (peer.relay) { NET.pj = null; setTimeout(() => { try { pj.destroy(); } catch (e) { } }, 200); } else setTimeout(() => { try { pj.disconnect(); } catch (e) { } }, 1500); }
+    showScreen('mplobby');
+  };
+  const tryRelay = () => {
+    if (!live() || relayOn) return; relayOn = true;
+    relayOpen(c => {
+      if (!live()) { try { c.end(); } catch (e) { } return; }
+      const base = RTOPIC + code + '/', inbox = base + 'g/' + gid, p = relayPeer(c, base + 'h/' + gid, gid, true); let ok = false;
+      c.subscribe(inbox, { qos: 0 });
+      c.on('message', (t, u) => { if (t !== inbox) return; if (!ok) { if (rtxt(u) === '{"t":"rok"}') { ok = true; use(p, 'relay'); } return; } p.deliver(u); });
+      const knock = () => { if (live() && !ok) { try { c.publish(base + 'h/' + gid, '{"t":"rjoin"}'); } catch (e) { } } else clearInterval(iv); }; const iv = setInterval(knock, 1500); knock();
     });
-  } catch (e) { NET.joinState = 'error'; NET.joinErr = e.message; NET.role = ''; if (SCREEN === 'mp') showScreen('mp'); }
+  };
+  timers.push(setTimeout(tryRelay, DIRECT_WAIT + 3000));
+  timers.push(setTimeout(() => fail(notFound ? 'No game found with code ' + code + '. Check the number with the host.' : "Couldn't connect to the host. Check the code, make sure the host is still on the lobby screen, then try again."), 22000));
+  if (NETQ.has('forcerelay')) { tryRelay(); return; }
+  try {
+    const Peer = await loadPeerJS(); if (!live()) return; pj = new Peer(pjOptions()); NET.pj = pj;
+    pj.on('error', e => { if (e.type === 'peer-unavailable' && !notFound) { notFound = true; timers.push(setTimeout(() => fail('No game found with code ' + code + '. Check the number with the host.'), 9000)); } tryRelay(); });
+    pj.on('open', () => {
+      if (!live()) return; timers.push(setTimeout(tryRelay, DIRECT_WAIT));
+      const conn = pj.connect(PJ_PREFIX + code, { label: 'frontline', serialization: 'raw', reliable: true });
+      conn.on('open', () => { if (!live()) { try { conn.close(); } catch (e) { } return; } use(peerFromConn(conn), 'direct'); });
+    });
+  } catch (e) { tryRelay(); }
 }
 function guestHostGone(msg) {
   if (NET.role !== 'guest' || NET.leaving) return; const wasGame = inGame && W && W.o.mp && !W.over; netReset(); if (inGame) endGame(); showScreen('notice', { title: wasGame ? 'Connection lost' : 'Host left', msg: msg || (wasGame ? 'The connection to the host dropped, so the match ended.' : 'The host closed the lobby.') });
@@ -5397,11 +5484,12 @@ function netBackToLobby() {
 // ---------- screens ----------
 SCREENS.notice = (a) => `<div class="scr bg"><div class="panel" style="width:min(420px,96vw);text-align:center"><h2 style="color:#ffe2a6;margin:0 0 8px">${esc(a.title)}</h2><div class="note" style="font-size:14px">${esc(a.msg)}</div><button class="mbtn go" style="margin-top:14px" data-act="back">OK</button></div></div>`;
 SCREENS.mp = () => `<div class="scr bg"><div class="panel" style="width:min(520px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Play a Friend Online</h2><button class="tbtn" data-act="mpback">Back</button></div>
-  <div class="note" style="margin:8px 0">Play 1 vs 1 against a friend. One of you picks "Host a game" and gets a 6-digit code. The other types that code in and presses Join.</div>
+  <div class="note" style="margin:8px 0">Play 1 vs 1 against a friend. One of you picks "Host a game" and gets a 6-digit code. The other types that code in and presses Join. Works on different Wi-Fi networks and phone data too.</div>
   <button class="mbtn go" data-act="mphost">Host a game<small style="color:#3a2810">You get a 6-digit code to share</small></button>
   <div class="lbl">Join a game</div><div class="row"><input type="text" id="joincode" inputmode="numeric" maxlength="6" placeholder="000000" style="font-size:26px;letter-spacing:.3em;width:200px;text-align:center" value="${esc(NET.joinCode || '')}"><button class="mbtn" style="width:auto;margin:0;padding:12px 22px" data-act="mpjoin" ${NET.joinState === 'connecting' ? 'disabled' : ''}>Join</button></div>
   <div class="note" style="margin-top:8px;min-height:20px;color:${NET.joinState === 'error' ? '#ff9a8a' : '#8c9db1'}">${NET.joinState === 'connecting' ? 'Connecting to ' + esc(NET.joinCode) + '...' : esc(NET.joinErr || '')}</div></div></div>`;
 SCREENS_AFTER.mp = () => { const i = $('#joincode'); if (i) { i.addEventListener('input', () => { i.value = i.value.replace(/\D/g, '').slice(0, 6); NET.joinCode = i.value; }); i.addEventListener('keydown', e => { if (e.key === 'Enter') netJoin(i.value); }); } };
+const viaTag = () => NET.peer && NET.via ? '<span class="note" style="margin-left:8px" data-tip="' + (NET.via === 'relay' ? 'Relay connection|A direct link between your two networks was blocked, so the game is passed through a relay server. Works anywhere, slightly more delay.' : 'Direct connection|Your two computers are talking directly. Fastest possible.') + '">' + (NET.via === 'relay' ? 'Relay link' : 'Direct link') + '</span>' : '';
 function lobbyMainHtml() {
   if (NET.role === 'host') {
     const d = mapDef(SK.map), n = d.maxP; let rows = ''; const colors = assignColors(SK);
@@ -5410,7 +5498,7 @@ function lobbyMainHtml() {
     for (let i = 0; i < n; i++) {
       const s = SK.slots[i]; rows += `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span>`;
       if (i === 0) rows += `<b style="min-width:130px">${esc(SET.name)} (Host)</b>`;
-      else if (i === 1) rows += `<b style="min-width:130px">${NET.peer ? esc(NET.guestName) : '<span style="color:#8c9db1">Waiting for friend...</span>'}</b><span style="color:${NET.guestReady ? '#7be08a' : '#8c9db1'}">${NET.peer ? (NET.guestReady ? 'Ready' : 'Not ready') : ''}</span>`;
+      else if (i === 1) rows += `<b style="min-width:130px">${NET.peer ? esc(NET.guestName) : '<span style="color:#8c9db1">Waiting for friend...</span>'}</b><span style="color:${NET.guestReady ? '#7be08a' : '#8c9db1'}">${NET.peer ? (NET.guestReady ? 'Ready' : 'Not ready') : ''}</span>${viaTag()}`;
       else rows += sel('kind' + i, [['ai', 'AI Commander'], ['closed', 'Closed']], s.kind, 'slotkind', 'data-i="' + i + '"');
       if (s.kind === 'ai') rows += sel('pers' + i, Object.values(AIP).map(p => [p.id, p.name]), s.pers, 'slotpers', 'data-i="' + i + '"') + sel('diff' + i, Object.entries(AID).map(([k, v]) => [k, v.n]), s.diff, 'slotdiff', 'data-i="' + i + '"');
       if (s.kind !== 'closed') rows += sel('team' + i, [[0, 'Team A'], [1, 'Team B'], [2, 'Team C'], [3, 'Team D']], s.team, 'slotteam', 'data-i="' + i + '"');
@@ -5426,6 +5514,7 @@ function lobbyMainHtml() {
   const colors = assignColors({ slots: L.slots }); const pl = L.slots.map((s, i) => ({ s, i })).filter(x => x.s.kind !== 'closed');
   const rows = pl.map(({ s, i }) => `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span><b style="min-width:130px">${s.kind === 'remote' ? esc(SET.name) + ' (You)' : i === 0 ? esc(L.hostName) + ' (Host)' : esc(AIP[s.pers] ? AIP[s.pers].name : 'AI')}</b><span class="note">${s.kind === 'ai' ? 'AI - ' + AID[s.diff].n : ''} Team ${'ABCD'[s.team]}</span></div>`).join('');
   return `<div class="row"><img src="${mapPreview(L.map)}" style="width:150px;border-radius:6px"><div><b style="color:#ffe2a6;font-size:18px">${esc(L.mapName)}</b><div class="note">Score ${L.tickets} | Money ${L.supplies} | Fog ${L.fog ? 'on' : 'off'} | Army limit ${L.maxPop}</div></div></div><div class="lbl">Players</div>${rows}
+  <div style="margin-top:8px">${viaTag()}</div>
   <button class="mbtn ${NET.myReady ? '' : 'go'}" style="margin-top:12px" data-act="mpready">${NET.myReady ? 'Ready! (click to cancel)' : 'I am ready'}</button><div class="note" style="text-align:center">The host starts the match once everyone is ready.</div>`;
 }
 SCREENS.mplobby = () => `<div class="scr bg"><div class="panel" style="width:min(820px,98vw);max-height:96vh;overflow:auto"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">${NET.role === 'host' ? 'Hosting a game' : 'Game lobby'}</h2><button class="tbtn" data-act="mpleave">Leave</button></div><div id="lobbyMain">${lobbyMainHtml()}</div>
