@@ -529,10 +529,10 @@ defB('tesla', { n: 'Tesla Tower', def: 1, sz: 3.4, hp: [850, 1500, 2500], cost: 
   { id: 'tarc', n: 'Arc Chain', d: 'Lightning jumps to 2 more targets.' },
   { id: 'tover', n: 'Overload', d: '+40% damage.' },
   { id: 'tstun', n: 'Stun Field', d: 'Every hit slows enemies down.' }] });
-defB('shieldgen', { n: 'Shield Generator', def: 1, sz: 3.8, hp: [700, 1200, 2000], cost: [300, 220, 300], bt: [16, 18, 20], hq1: 2, d: 'Protects nearby buildings and troops.', info: 'Projects an energy screen. Your buildings nearby take 25%, 35% and then 45% less damage and slowly repair; your troops nearby take 10%, 15% and then 20% less.', up: ['Stronger shield.', 'Strongest shield. Pick an upgrade.'], specs: [
-  { id: 'sregen', n: 'Repair Field', d: 'Buildings in the shield repair three times as fast.' },
-  { id: 'swide', n: 'Wide Field', d: 'The shield covers a 50% bigger area.' },
-  { id: 'shard', n: 'Hardened Field', d: 'Everything in the shield takes 10% less damage on top.' }] });
+defB('shieldgen', { n: 'Shield Generator', def: 1, sz: 3.8, hp: [700, 1200, 2000], cost: [300, 220, 300], bt: [16, 18, 20], hq1: 2, d: 'A force field that blocks all damage.', info: 'Projects a force field dome. While it is up, it soaks up ALL damage to your buildings and troops inside (1200, 2500 and then 4500 points by level). When it runs out the field breaks; after 8 seconds it recharges and switches back on at half strength.', up: ['Shield holds 2500 damage, recharges faster.', 'Shield holds 4500 damage. Pick an upgrade.'], specs: [
+  { id: 'sregen', n: 'Fast Recharge', d: 'Recharges 2.5 times as fast, and starts after only 4 seconds.' },
+  { id: 'swide', n: 'Wide Field', d: 'The dome covers a 50% bigger area.' },
+  { id: 'shard', n: 'Hardened Field', d: 'The field holds 60% more damage.' }] });
 defB('medical', { n: 'Medical Tent', sz: 5, hp: [450, 650, 850], cost: [130, 100, 160], bt: [11, 12, 14], hq1: 2, ros: [2, 3, 4], d: 'Heals soldiers nearby.', info: 'Keeps a few Medics (2, 3 and 4 by level) and slowly heals friendly soldiers around it. Healing grows with each level.', up: ['Heals faster.', 'Heals fastest. Pick an upgrade.'], specs: [
   { id: 'triage', n: 'Triage Ward', d: 'Double healing. Nearby soldiers take 15% less damage.' },
   { id: 'stim', n: 'Stim Lab', d: 'Nearby soldiers shoot 20% faster and run 10% faster.' },
@@ -1632,7 +1632,11 @@ function hurt(tgt, dmg, wt, src, owner, opts) {
     if (tgt.shield > 0) dmg *= .55; if (tgt.cov && cls < 3) dmg *= cls === 0 ? .78 : .92; if (tgt.wrT > 0) dmg *= 1 - tgt.wr; if (tgt.triT > 0) dmg *= .85;
     if (opts && opts.shock) tgt.slow = 6;
   } else { if (tgt.T.def) dmg *= [.85, .7, .55][tgt.lvl - 1]; }   // 4.1: defenses are armored
-  if (tgt.shU > W.t) dmg *= 1 - tgt.shR;   // 4.2: inside a Shield Generator's field
+  if (W.shl && W.shl.length) for (const g of W.shl) {   // 4.3: a force field soaks up the whole hit until it breaks
+    if (g.team !== tgt.team || !g.sOn || g.dead) continue; const dx = tgt.x - g.x, dz = tgt.z - g.z; if (dx * dx + dz * dz > g.sR * g.sR) continue;
+    g.sp -= dmg; g.sHit = W.t; g.sFl = .18; if (g.sp <= 0) { g.sp = 0; g.sOn = false; g.sBrk = W.t; ev([1, 2, r1(g.x), r1(g.y + 4), r1(g.z), 2]); if (P(g.owner).kind !== 'ai') ev([3, g.owner, 'msg', r1(g.x), r1(g.z), 3, 'A force field broke! It recharges in ' + (g.spec === 'sregen' ? 4 : 8) + ' seconds.']); }
+    return;
+  }
   if (P(tgt.owner).godmode) dmg = 0;
   tgt.hp -= dmg; tgt.flash = .1;
   if (tgt.hp > 0 && W.fx) { const key = tgt.owner; const last = W.alertT[key] || -99; if (W.t - last > 7 && P(tgt.owner).kind !== 'ai') { W.alertT[key] = W.t; alertMsg(tgt.owner, 'attack', tgt.x, tgt.z, 0, tgt.k === 'b' ? tgt.T.n : tgt.T.n); } }
@@ -2012,6 +2016,7 @@ function updBuilding(b, dt) {
   }
   // roster: train the next missing troop
   if (b.ros) rosterTick(b, dt);
+  if (b.type === 'shieldgen') shieldTick(b, dt);
   // auras / specials every 0.5s
   b.aT -= dt; if (b.aT <= 0) { b.aT = .5; auraTick(b); }
   // weapons
@@ -2033,6 +2038,15 @@ function updBuilding(b, dt) {
   }
   // mines
   if (b.mines) { b.mineT -= dt; if (b.mineT <= 0) { b.mineT = .3; const out = tmpA; for (const m of b.mines) { if (m.t > 0) { m.t -= .3; continue; } hashQ(m.x, m.z, 1.9, out); for (const e of out) { if (e.team !== b.team && !e.T.air && !e.dead) { splashDmg(m.x, m.z, 4.5, 150, 'mine', b.team, b.owner, null, {}); ev([1, 2, r1(m.x), r1(W.M.H(m.x, m.z)), r1(m.z), 1]); m.t = 22; break; } } } } }
+}
+// 4.3 force fields: sp = shield points. Absorbs every hit inside the dome; at 0 it breaks, waits, recharges and comes back at half
+function shieldMax(b) { return [1200, 2500, 4500][b.lvl - 1] * (b.spec === 'shard' ? 1.6 : 1); }
+function shieldTick(b, dt) {
+  const mx = shieldMax(b), rate = [60, 110, 180][b.lvl - 1] * (b.spec === 'sregen' ? 2.5 : 1); b.sR = 28 * (b.spec === 'swide' ? 1.5 : 1); if (b.sFl > 0) b.sFl -= dt;
+  if (b.sp === undefined) { b.sp = mx; b.sOn = true; b.sHit = -99; b.sBrk = -99; }
+  if (b.sp > mx) b.sp = mx;
+  if (!b.sOn) { if (W.t - b.sBrk > (b.spec === 'sregen' ? 4 : 8)) { b.sp = Math.min(mx, b.sp + rate * dt); if (b.sp >= mx * .5) { b.sOn = true; ev([9, b.id, r1(b.x), r1(b.z)]); } } }
+  else if (W.t - b.sHit > 5 && b.sp < mx) b.sp = Math.min(mx, b.sp + rate * dt);
 }
 function bFire(b, w, t) {
   b.cd = w.cd * (.95 + Math.random() * .1); b.fire = .2; b.nShot = (b.nShot | 0) + 1; const p = P(b.owner);
@@ -2062,11 +2076,6 @@ function auraTick(b) {
     const heal = [5, 8, 12][b.lvl - 1] * (b.spec === 'triage' ? 2 : 1) * (1 + p.mod.heal); hashQ(b.x, b.z, 17, out);
     for (const e of out) { if (e.team !== b.team) continue; if (e.T.cls === 0 || b.spec === 'motor') { if (e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + heal * .5); } if (b.spec === 'stim' && e.T.cls === 0) e.stimT = .7; if (b.spec === 'triage' && e.T.cls === 0) e.triT = .7; }
   }
-  else if (b.type === 'shieldgen' && b.prog >= 1) {
-    const L = b.lvl - 1, R = 28 * (b.spec === 'swide' ? 1.5 : 1), hard = b.spec === 'shard' ? .1 : 0, ru = [.1, .15, .2][L] + hard, rb = [.25, .35, .45][L] + hard, rg = b.spec === 'sregen' ? .012 : .004;
-    hashQ(b.x, b.z, R, out); for (const e of out) if (e.team === b.team) { e.shU = W.t + .7; e.shR = ru; }
-    for (const o of W.bld) if (o.team === b.team && !o.dead && Math.hypot(o.x - b.x, o.z - b.z) < R) { o.shU = W.t + .7; o.shR = rb; if (o.prog >= 1 && o.hp < o.maxHp) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * rg); }
-  }
   else if (b.type === 'radar' && b.spec === 'jammer') { hashQ(b.x, b.z, 55, out); for (const e of out) if (e.team !== b.team) e.jamT = .7; }
   else if (b.type === 'depot' && b.spec === 'armory') { hashQ(b.x, b.z, 45, out); for (const e of out) if (e.team === b.team) e.armT = .7; }
   else if (b.type === 'wall' && b.spec === 'wire') {
@@ -2091,7 +2100,7 @@ function spawnFromBuilding(b, type, idx) {
 // ---------------- world tick ----------------
 function simTick() {
   const dt = TICK; if (W.over && !W.o.sandbox) { }
-  W.tick++; W.t += dt; hashBuild(); countHomes(); FIELD_BUDGET = 3;
+  W.tick++; W.t += dt; hashBuild(); countHomes(); FIELD_BUDGET = 3; W.shl = W.bld.filter(b => b.type === 'shieldgen' && b.prog >= 1 && b.sOn && !b.dead);
   const us = W.units;
   for (let i = 0; i < us.length; i++) { const u = us[i]; if (!u.dead) { updUnit(u, dt); } }
   // separation after movement (hash is slightly stale: ok)
@@ -2120,6 +2129,7 @@ function slowTick() {
 // 4.1: the army limit. Flags and HQ levels raise it, and so does every Supply Depot (3 / 6 / 10 by level). Endless War allows much bigger armies.
 function popCapOf(p) {
   let pn = 0, dep = 0; for (const pt of W.pts) if (pt.owner === p.id) pn++; for (const b of W.bld) if (b.owner === p.id && b.type === 'depot' && b.prog >= 1) dep += [3, 6, 10][b.lvl - 1];
+  if (W.o.war) return Infinity;   // 4.3: Endless War has no army limit at all
   const hqL = p.hqB ? p.hqB.lvl : 1; const base = W.o.war ? 50 + pn * 8 + (hqL - 1) * 30 : 36 + pn * 7 + (hqL - 1) * 10;
   return Math.min(W.popMax, base + dep + p.mod.pop);
 }
@@ -2346,7 +2356,7 @@ function cmdBuild(p, c) {
   const pt = W.pts[c.pt]; if (!pt || pt.owner !== p.id) return false; const T = BT[c.type]; if (!T || BUILDABLE.indexOf(c.type) < 0) return false; if ((T.hq1 || 1) > playerHQLvl(p) && !W.o.sandbox) return false;
   const cost = T.cost[0] * (c.type === 'wall' ? 1 : 1);
   if (c.type === 'wall') { if (pt.wall) return false; } else { const sl = pt.slots[c.slot | 0]; if (!sl || sl.b || (sl.d && !T.def)) return false; }
-  if (T.max && bCount(p, c.type) >= T.max && !W.o.sandbox) return false;
+  if (T.max && bCount(p, c.type) >= T.max && !W.o.sandbox && !W.o.war) return false;
   if (p.sup < cost && !W.o.sandbox) return false;
   if (!W.o.sandbox) p.sup -= cost;
   const b = placeBuilding(c.type, p.id, pt, c.type === 'wall' ? -2 : c.slot | 0, false); b.spent = cost; if (c.type === 'wall') b.slot = -2;
@@ -2753,6 +2763,7 @@ let pSmoke = null, pFire = null, vprojPool = null, scorchPool = null, markPool =
 let hoverId = 0, selIds = new Set(), selBld = 0, vpW = 800, vpH = 600;
 const ICONS = {};
 const _c4 = new THREE.Color();
+const SHDOME = new Map(); let SHGEO = null;   // 4.3 force field domes, one per Shield Generator
 const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4(), _sph = new THREE.Sphere();
 function inView(x, y, z, r) { _sph.center.set(x, y, z); _sph.radius = r; return _frustum.intersectsSphere(_sph); }
 
@@ -3324,8 +3335,16 @@ class Pool {
     }
   }
   begin() { this.n = 0; }
+  grow() {   // 4.3: no unit limit in Endless War, so a full pool doubles instead of dropping models
+    const cap2 = this.cap * 2;
+    this.meshes = this.meshes.map((m, k) => { const p = this.parts[k]; const geo = new THREE.InstancedBufferGeometry(); geo.index = p.geo.index; for (const a in p.geo.attributes) geo.setAttribute(a, p.geo.attributes[a]);
+      const ic = new THREE.InstancedBufferAttribute(new Float32Array(cap2 * 4), 4); ic.setUsage(THREE.DynamicDrawUsage); ic.array.set(p.ic.array); geo.setAttribute('iCol', ic);
+      const m2 = new THREE.InstancedMesh(geo, m.material, cap2); m2.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m2.instanceMatrix.array.set(m.instanceMatrix.array); m2.frustumCulled = false; m2.count = 0; m2.castShadow = m.castShadow; m2.visible = false;
+      worldGroup.remove(m); m.geometry.dispose(); m.dispose && m.dispose(); worldGroup.add(m2); p.ic = ic; return m2; });
+    this.cap = cap2;
+  }
   add(x, y, z, rot, aim, sc, r, g, b, fl, t) {
-    const i = this.n; if (i >= this.cap) return; this.n++;
+    if (this.n >= this.cap) this.grow(); const i = this.n; this.n++;
     for (let k = 0; k < this.parts.length; k++) {
       const p = this.parts[k], m = this.meshes[k], a = m.instanceMatrix.array, o = i * 16;
       let ang = rot, px = x, py = y, pz = z;
@@ -3467,7 +3486,7 @@ function buildFxObjects() {
   vprojPool = new Pool([part(new GB().box(.25, .25, 1.2, 0, 0, 0, 0xffe9a0))], 120, MAT_I, false);
   scorchPool = null;
   { const g = new THREE.CircleGeometry(1, 14); g.rotateX(-PI / 2); scorchPool = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0x15130f, transparent: true, opacity: .45, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 70); scorchPool.count = 0; scorchPool.frustumCulled = false; scorchPool.renderOrder = 1; worldGroup.add(scorchPool); }
-  { const g = new THREE.RingGeometry(.82, 1, 20); g.rotateX(-PI / 2); ringPool = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }), 400); ringPool.count = 0; ringPool.frustumCulled = false; ringPool.renderOrder = 3; ringPool.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(400 * 3), 3); worldGroup.add(ringPool); }
+  { const g = new THREE.RingGeometry(.82, 1, 20); g.rotateX(-PI / 2); ringPool = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .95, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }), 3000); ringPool.count = 0; ringPool.frustumCulled = false; ringPool.renderOrder = 3; ringPool.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(3000 * 3), 3); worldGroup.add(ringPool); }
   { const g = new THREE.CircleGeometry(1, 12); g.rotateX(-PI / 2); blobPool = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .26, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 400); blobPool.count = 0; blobPool.frustumCulled = false; blobPool.renderOrder = 1; worldGroup.add(blobPool); }
   { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-PI / 2); const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d'); c.clearRect(0, 0, 64, 64); c.strokeStyle = '#fff'; c.lineWidth = 3; c.strokeRect(6, 6, 52, 52); c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(6, 6, 52, 52); c.lineWidth = 6; c.beginPath(); c.moveTo(32, 18); c.lineTo(32, 46); c.moveTo(18, 32); c.lineTo(46, 32); c.stroke(); const t = new THREE.CanvasTexture(cv);
     padPool = new THREE.InstancedMesh(g, new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, color: 0xffd36a, opacity: .75, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 120); padPool.count = 0; padPool.frustumCulled = false; padPool.renderOrder = 2; worldGroup.add(padPool); }
@@ -3588,7 +3607,7 @@ function renderFrame(dt, now) {
   const bars = barPool.userData; let nb = 0; const ip = bars.ip.array, idd = bars.id.array;
   const addBar = (x, y, z, w, hp, vet, mode) => { if (nb >= 300 || cam.dist > 140) return; const j = nb * 4; ip[j] = x; ip[j + 1] = y; ip[j + 2] = z; ip[j + 3] = w; idd[j] = hp; idd[j + 1] = vet; idd[j + 2] = mode; nb++; };
   const rings = ringPool; let nr = 0; const rcol = rings.instanceColor.array;
-  const addRing = (x, z, r, cr, cg, cb) => { if (nr >= 400) return; _m.makeScale(r, 1, r); _m.setPosition(x, M.H(x, z) + .22, z); rings.setMatrixAt(nr, _m); rcol[nr * 3] = cr; rcol[nr * 3 + 1] = cg; rcol[nr * 3 + 2] = cb; nr++; };
+  const addRing = (x, z, r, cr, cg, cb) => { if (nr >= 3000) return; _m.makeScale(r, 1, r); _m.setPosition(x, M.H(x, z) + .22, z); rings.setMatrixAt(nr, _m); rcol[nr * 3] = cr; rcol[nr * 3 + 1] = cg; rcol[nr * 3 + 2] = cb; nr++; };
   let nbl = 0; const blob = blobPool;
   for (const u of W.units) {
     if (!myVisible(u) || !inView(u.rx, u.ry, u.rz, u.T.r + 9)) continue; const T = u.T; const pc = P(u.owner).color; _col.set(pc); let y = u.ry, sc = T.cls === 0 ? 1.18 : 1;
@@ -3688,6 +3707,32 @@ function renderFrame(dt, now) {
   let nm = 0;
   for (let i = markers.length - 1; i >= 0; i--) { const m = markers[i]; const f = (nowS - m.t0) / m.dur; if (f >= 1) { markers.splice(i, 1); continue; } if (nm < 16 && !m.ring) { const r = m.r ? m.r * (m.r > 5 ? Math.min(1, f * 3) : 1) : 2 * (1 - f) + .8; _m.makeScale(r, 1, r); _m.setPosition(m.x, M.H(m.x, m.z) + .3, m.z); markPool.setMatrixAt(nm++, _m); } }
   markPool.count = nm; markPool.instanceMatrix.needsUpdate = true;
+  // 4.3 force field domes (always visible) and range circles for whatever is selected
+  { const seenSh = new Set();
+    for (const b of W.bld) {
+      if (b.type !== 'shieldgen' || b.prog < 1 || b.dead || b.sp === undefined) continue; if (b.team !== MYTEAM && W.o.fog && !(b.sb >> MYTEAM & 1)) continue;
+      seenSh.add(b.id); let m = SHDOME.get(b.id);
+      if (!m) { if (!SHGEO) SHGEO = new THREE.SphereGeometry(1, 28, 10, 0, TAU, 0, PI / 2); m = new THREE.Mesh(SHGEO, new THREE.MeshBasicMaterial({ color: 0x6fd6ff, transparent: true, opacity: .15, depthWrite: false, side: THREE.DoubleSide })); m.renderOrder = 4; worldGroup.add(m); SHDOME.set(b.id, m); }
+      const R = b.sR || 28, f = clamp(b.sp / shieldMax(b), 0, 1); m.visible = !!b.sOn; m.position.set(b.x, M.H(b.x, b.z) - .6, b.z); m.scale.set(R, R * .5, R);
+      m.material.opacity = .05 + .11 * f + (b.sFl > 0 ? .22 : 0); m.material.color.set(b.team === MYTEAM ? 0x6fd6ff : 0xff8a7a);
+      if (b.sOn) { const n = 44; for (let k = 0; k < n; k++) { const a = k / n * TAU + t * .08; addRing(b.x + Math.cos(a) * R, b.z + Math.sin(a) * R, .32, b.team === MYTEAM ? .45 : 1, b.team === MYTEAM ? .85 : .5, b.team === MYTEAM ? 1 : .45); } }
+    }
+    for (const [id, m] of SHDOME) if (!seenSh.has(id)) { worldGroup.remove(m); m.material.dispose(); SHDOME.delete(id); }
+    const addCircle = (x, z, R, cr, cg, cb) => { if (!(R > 0)) return; const n = clamp(Math.round(R * 1.15), 16, 120); for (let k = 0; k < n; k++) { const a = k / n * TAU; addRing(x + Math.cos(a) * R, z + Math.sin(a) * R, .4, cr, cg, cb); } };
+    const unitCircles = (u, foe) => { const T = u.T; let R = 0, mn = 0; for (const w of [T.w, T.w2]) if (w) { R = Math.max(R, uRange(u, w)); if (w.minr) mn = Math.max(mn, w.minr); } const x = u.rx !== undefined ? u.rx : u.x, z = u.rz !== undefined ? u.rz : u.z; if (R) addCircle(x, z, R, foe ? 1 : 1, foe ? .35 : .85, foe ? .3 : .35); if (mn) addCircle(x, z, mn, 1, .3, .25); if (T.heal) addCircle(x, z, 11, .4, 1, .5); };
+    let ni = 0; for (const id of selIds) { if (ni++ >= 30) break; const u = W.byId.get(id); if (u && !u.dead) unitCircles(u, false); }
+    if (UI.selEnemy && !UI.selEnemy.dead && UI.selEnemy.k === 'u') unitCircles(UI.selEnemy, true);
+    const sb = selBld ? W.byId.get(selBld) : null;
+    if (sb && !sb.dead && sb.type !== 'wall') {
+      const foe = sb.team !== MYTEAM, rg = foe ? [1, .35, .3] : [1, .85, .35];
+      if (sb.w) { addCircle(sb.x, sb.z, sb.w.rng * (1 + P(sb.owner).mod.rng), rg[0], rg[1], rg[2]); if (sb.w.minr) addCircle(sb.x, sb.z, sb.w.minr, 1, .3, .25); }
+      if (sb.type === 'radar' || sb.type === 'hq') addCircle(sb.x, sb.z, bVis(sb), .45, .7, 1);
+      if (sb.type === 'medical') addCircle(sb.x, sb.z, 17, .4, 1, .5);
+      if (sb.type === 'depot' && sb.spec === 'armory') addCircle(sb.x, sb.z, 45, 1, .6, .3);
+      if (sb.type === 'radar' && sb.spec === 'jammer') addCircle(sb.x, sb.z, 55, 1, .4, .8);
+      if (sb.type === 'shieldgen') addCircle(sb.x, sb.z, (sb.sR || 28) - .8, .6, .95, 1);
+    }
+  }
   // rings & bars
   rings.count = nr; rings.instanceMatrix.needsUpdate = true; rings.instanceColor.needsUpdate = true;
   barPool.geometry.instanceCount = nb; bars.ip.needsUpdate = true; bars.id.needsUpdate = true;
@@ -4278,7 +4323,7 @@ function coachHint() {
 
 function hudUpdate(force) {
   if (!W || !inGame) return; const p = P(ME); if (!p) return;
-  $('#vSup').textContent = Math.floor(p.sup); $('#vInc').textContent = '+' + Math.round(p.inc) + '/s'; $('#vPop').textContent = p.pop + '/' + p.popCap; $('#stArmy').classList.toggle('low', p.pop >= p.popCap);
+  $('#vSup').textContent = Math.floor(p.sup); $('#vInc').textContent = '+' + Math.round(p.inc) + '/s'; $('#vPop').textContent = p.pop + '/' + (isFinite(p.popCap) ? p.popCap : '\u221e'); $('#stArmy').classList.toggle('low', p.pop >= p.popCap);
   $('#timer').textContent = fmtTime(W.t);
   { const mt = W.teams[MYTEAM]; if (mt && !W.o.sandbox) { const lvl = mt.tickets <= 25 ? 3 : mt.tickets <= 50 ? 2 : mt.tickets <= 100 ? 1 : 0; if (lvl > (UI.tixWarn || 0)) { UI.tixWarn = lvl; addAlert('Careful: your score is only ' + Math.max(0, Math.round(mt.tickets)) + '!', '#ff3b30'); sfx('alert'); } } }
   updScore(); updGoal();
@@ -4481,7 +4526,7 @@ function renderPanel(force) {
     head += '<div class="hbtns fm">' + hbtns + '</div>';
   } else if (b && b.owner === ME) {
     const T = b.T, spn = b.spec ? T.specs.find(s => s.id === b.spec) : null;
-    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : (b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '% ' : '') + (b.ros ? rosStatus(b) : b.upg ? '' : esc(T.d))) + '</div>';
+    head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : (b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '% ' : '') + (b.ros ? rosStatus(b) : b.type === 'shieldgen' && b.sp !== undefined ? (b.sOn ? '<b style="color:#8fe8ff">Force field ' + Math.round(b.sp) + ' / ' + Math.round(shieldMax(b)) + '</b>' : '<b style="color:#ff9a8c">Field broken: recharging ' + Math.round(b.sp / shieldMax(b) * 100) + '% (back at 50%)</b>') : b.upg ? '' : esc(T.d))) + '</div>';
     if (b.prog >= 1) {
       let hk = 0;
       if (b.ros) for (const k of Object.keys(UT)) {
@@ -4524,7 +4569,7 @@ function renderPanel(force) {
       const slotFor = k => { if (onPad) return (onPad.d && !BT[k].def) ? -1 : selPad.slot; if (BT[k].def) { const d = pt.slots.findIndex(s => !s.b && s.d); if (d >= 0) return d; } return pt.slots.findIndex(s => !s.b && !s.d); };
       head = '<div class="ph1"><div class="pic" style="color:' + hex3(P(ME).color) + ';display:flex;align-items:center;justify-content:center">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Your base' : pt.name) + '<small>Your flag</small></div></div><div class="pm" style="white-space:normal">' + (onPad && onPad.d ? 'Defense pad: pick a tower or gun.' : free || freeD ? 'Pick a building. ' + free + ' spot' + (free === 1 ? '' : 's') + (freeD ? ' and ' + freeD + ' defense pad' + (freeD === 1 ? '' : 's') : '') + ' free.' : (wallOk && hql >= BT.wall.hq1 ? 'All spots used. You can still add walls.' : 'All spots used. Click a building to use it.')) + '</div>';
       const buildCard = (k) => {
-        const T = BT[k], gate = (T.hq1 || 1) > hql && !W.o.sandbox, can = p.sup >= T.cost[0] || W.o.sandbox, maxed = !gate && T.max && bCount(p, k) >= T.max && !W.o.sandbox;
+        const T = BT[k], gate = (T.hq1 || 1) > hql && !W.o.sandbox, can = p.sup >= T.cost[0] || W.o.sandbox, maxed = !gate && T.max && bCount(p, k) >= T.max && !W.o.sandbox && !W.o.war;
         return { nm: T.n, key: 'b_' + k, img: 'b_' + k, cost: T.cost[0], d: T.d, lock: gate || maxed, lockTxt: maxed ? 'Max ' + T.max : 'HQ Lv ' + T.hq1, off: !gate && !can, tip: bldTip(k) + (gate ? '|Level up your HQ to Level ' + T.hq1 + ' to unlock this.' : maxed ? '|You already have ' + T.max + ', the most you can build.' : ''), fn: () => {
           if (gate) { lockMsg('the ' + T.n, T.hq1); return; }
           if (maxed) { sfx('deny'); toast('You can only have ' + T.max + ' ' + T.n + 's.'); return; }
@@ -4615,7 +4660,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Squads</b>: five squads on the right of the screen. Select troops and press + to fill one, then one click selects it; buildings can send new troops straight to a squad. The <b>War Map</b> (M) shows the whole battlefield and every flag: pick a squad and click where it should attack. Pick a <b>formation</b> (now with Column and Ring) and a <b>target type</b> (X) for any group. Endless War now allows armies of up to 320, Supply Depots raise your army limit, and <b>MG Bunkers</b> are much tougher with real armor at higher levels. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Squads</b>: five squads on the right of the screen. Select troops and press + to fill one, then one click selects it; buildings can send new troops straight to a squad. The <b>War Map</b> (M) shows the whole battlefield and every flag: pick a squad and click where it should attack. Pick a <b>formation</b> (now with Column and Ring) and a <b>target type</b> (X) for any group. Endless War has <b>no army limit</b> at all, Supply Depots raise your army limit elsewhere, click anything to see its <b>range</b>, Shield Generators raise a <b>force field</b> that blocks all damage until it breaks and recharges, and <b>MG Bunkers</b> are much tougher with real armor at higher levels. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -4977,7 +5022,7 @@ function warSpawn() {
     for (const b of blds) { if (!b.ros || rosTotal(b) >= rosCap(b)) continue; const ul = unitsForB(b).filter(t => rosFits(b, t)); if (!ul.length) continue; let sum = 0; const sc = ul.map(t => { const v = (persObj.uw[t] !== undefined ? persObj.uw[t] : .2) / Math.pow(1 + (b.ros[t] || 0) / 3, .8); sum += v; return v; }); let r = Math.random() * sum, pick = ul[0]; for (let i = 0; i < ul.length; i++) { r -= sc[i]; if (r <= 0) { pick = ul[i]; break; } } const c = slotCost(e, pick, b); if (!spend(c)) continue; b.ros[pick] = (b.ros[pick] || 0) + 1; b.paid[pick] = (b.paid[pick] || 0) + c; b.spent += c; added = true; }
     if (!added) break;
   }
-  let epop = 0; for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k] && epop < 170; i++) { epop += UT[k].pop; const u = spawnFromBuilding(b, k, i); if (S.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
+  let epop = 0; for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k] && epop < 400; i++) { epop += UT[k].pop; const u = spawnFromBuilding(b, k, i); if (S.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
   e.sup = clamp(money * .5, 200, 600 + wave * 150); e.pop = 0; for (const u of W.units) if (u.owner === e.id) e.pop += u.T.pop;
   const over = Object.assign({ firstAtk: 25, hqPower: 0, warn: 4, startDelay: 0, popLim: 999 }, S.over);
   e.ai = makeAI(e, { pers: S.pers, diff: d.diff, over, persObj });
@@ -5410,7 +5455,7 @@ function buildSnapshot() {
 function buildMeta() {
   const pl = W.players.map(p => ({ s: Math.floor(p.sup), i: +p.inc.toFixed(2), p: p.pop, c: p.popCap, a: p.alive ? 1 : 0, t: Object.keys(p.techs), r: p.res ? [p.res.id, +p.res.t.toFixed(1), p.res.dur] : 0, cd: Object.fromEntries(Object.entries(p.cd).filter(e => e[1] > 0).map(e => [e[0], +e[1].toFixed(1)])), st: p.stats, o: p.out || '' }));
   const pts = W.pts.map(p => [p.owner, +p.ctrl.toFixed(3), p.capP, p.contested ? 1 : 0, p.hq]);
-  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, b.ros || 0, b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.tr ? [b.tr.u, +b.tr.t.toFixed(1), +b.tr.dur.toFixed(1), b.tr.re | 0] : 0, b.wait || 0, b.have || 0, b.hold ? 1 : 0]);
+  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, b.ros || 0, b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.tr ? [b.tr.u, +b.tr.t.toFixed(1), +b.tr.dur.toFixed(1), b.tr.re | 0] : 0, b.wait || 0, b.have || 0, b.hold ? 1 : 0, b.type === 'shieldgen' && b.sp !== undefined ? [Math.round(b.sp), b.sOn ? 1 : 0, b.sR] : 0]);
   return { t: 'meta', tick: W.tick, time: W.t, tix: W.teamList.map(t => [t.id, Math.round(t.tickets), t.alive ? 1 : 0]), pl, pts, bs, over: W.over ? 1 : 0 };
 }
 function netHostAfterTick() { if (!NET.peer || !W.o.mp) return; if (W.tick % 2 === 0) { sendBin(buildSnapshot()); NET.snapsTx++; } if (W.tick % 4 === 0 || NET.dirty) { NET.dirty = false; sendRel(buildMeta()); } }
@@ -5442,7 +5487,7 @@ function applyMeta(m) {
     if (!b) { const T = BT[d[1]]; b = { id, k: 'b', type: d[1], T, owner: d[9], team: W.players[d[9]].team, pt: d[2], slot: d[3], x: d[15], z: d[16], y: W.M.H(d[15], d[16]), lvl: 1, spec: '', hp: 1, maxHp: 1, prog: 0, upg: null, ros: null, have: null, tr: null, wait: 0, hold: false, hasRally: false, rx: 0, rz: 0, aim: 0, flash: 0, fire: 0, dead: false, sz: T.sz, w: null, sb: 0, rot: d[17], born: performance.now() }; W.byId.set(id, b); W.bld.push(b); if (b.type === 'hq') W.players[b.owner].hqB = b; if (b.type === 'wall') { const pt = W.pts[b.pt]; pt.wall = b; } else if (b.slot >= 0) W.pts[b.pt].slots[b.slot].b = b; }
     if (b.hp > d[6] + 1) b.flash = .1; const T0 = BT[b.type];
     if (b.type === 'hq' && b.spec !== d[5]) { b.spec = d[5]; recalcMods(W.players[b.owner]); }
-    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.ros = d[13] || (T0.ros ? {} : null); b.tr = d[18] && UT[d[18][0]] ? { u: d[18][0], t: d[18][1], dur: d[18][2], re: d[18][3] | 0, c: 0 } : null; b.wait = d[19] | 0; b.have = d[20] || (T0.ros ? {} : null); b.hold = !!d[21]; b.sb = d[14]; b.w = bWeapon(b);
+    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.ros = d[13] || (T0.ros ? {} : null); b.tr = d[18] && UT[d[18][0]] ? { u: d[18][0], t: d[18][1], dur: d[18][2], re: d[18][3] | 0, c: 0 } : null; b.wait = d[19] | 0; b.have = d[20] || (T0.ros ? {} : null); b.hold = !!d[21]; if (d[22]) { b.sp = d[22][0]; b.sOn = !!d[22][1]; b.sR = d[22][2]; } b.sb = d[14]; b.w = bWeapon(b);
   }
   for (let i = W.bld.length - 1; i >= 0; i--) { const b = W.bld[i]; if (!seenB.has(b.id) && performance.now() - b.born > 600) { b.dead = true; W.byId.delete(b.id); if (b.type === 'wall') { const pt = W.pts[b.pt]; if (pt.wall === b) pt.wall = null; } else if (b.slot >= 0) { const pt = W.pts[b.pt]; if (pt.slots[b.slot].b === b) pt.slots[b.slot].b = null; } W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } }
   if (m.over && !W.over) { W.over = true; }
@@ -5493,7 +5538,7 @@ function launch(cfg, opt) {
   if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion: 24 build spots around your HQ, defense pads outside the walls and six outposts to capture. Press Start Wave (top of the screen) when you are ready; the enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 14000); }, 1500);
   if (opt.after) opt.after();
 }
-function cleanupGameUI() { closeWarMap(); UI.bsq = {}; for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
+function cleanupGameUI() { closeWarMap(); UI.bsq = {}; for (const m of SHDOME.values()) { if (worldGroup) worldGroup.remove(m); m.material.dispose(); } SHDOME.clear(); for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
 function endGame(keepNet) {
   cleanupGameUI(); inGame = false; $('#hud').classList.add('hidden'); $('#hud').classList.remove('tuton'); $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; UI.tutorialTick = null; UI.tutFrame = null; TUT = null;
   if (!keepNet && NET.role) netLeave();
