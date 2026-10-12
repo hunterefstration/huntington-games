@@ -1341,9 +1341,9 @@ function navRefresh(M) {
     pen[i] = p;
   }
 }
-const _hk = new Float32Array(60000), _hv = new Int32Array(60000);
+let _di = new Int32Array(0), _ec = _di, _en = _di; const _bh = new Int32Array(32);
 const DXs = [1, 1, 0, -1, -1, -1, 0, 1], DZs = [0, 1, 1, 1, 0, -1, -1, -1];
-let FIELD_BUDGET = 3;
+let FIELD_BUDGET = 3, FIELD_BANK = 3; const FIELD_MS = 1.5;   // 4.3: route building gets 1.5 ms per tick (saved up to 4 ms), so slow computers (Chromebooks) build routes more slowly instead of stalling
 // 4.3: coarse = a shared route for units still far from their spot (a big army in formation used to ask for one
 // full-map route per soldier, which froze the game for a minute). New routes are limited per tick; until a unit's
 // route is ready it walks straight at its goal. Old routes are recycled instead of thrown away.
@@ -1352,8 +1352,8 @@ function getField(M, tx, tz, coarse) {
   let key = n.idx(tx, tz); { const cx = key % nx, cz = (key / nx) | 0; key = Math.min(nz - 2, ((cz / G) | 0) * G + (G >> 1)) * nx + Math.min(nx - 2, ((cx / G) | 0) * G + (G >> 1)); }
   let f = n.cache.get(key);
   if (f && (f.ver === n.ver || FIELD_BUDGET <= 0)) { f.used = ++n.tick || (n.tick = 1); return f; }
-  if (FIELD_BUDGET <= 0) return null;
-  FIELD_BUDGET--;
+  if (FIELD_BUDGET <= 0 || FIELD_BANK <= 0) { if (f) { f.used = ++n.tick || (n.tick = 1); } return f || null; }
+  FIELD_BUDGET--; const ft0 = performance.now();
   const N = nx * nz; if (!f || f.dist.length !== N) { f = n.spare && n.spare.length ? n.spare.pop() : null; if (!f || f.dist.length !== N) f = { ver: n.ver, dist: new Float32Array(N), dir: new Int8Array(N), used: 0, goal: key }; f.goal = key; } f.ver = n.ver;
   const dist = f.dist, dir = f.dir; dist.fill(1e9); dir.fill(-1);
   let s = key;
@@ -1362,19 +1362,24 @@ function getField(M, tx, tz, coarse) {
     for (let r = 1; r < 14 && found < 0; r++) { let best = 1e9; for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) { if (Math.max(Math.abs(a), Math.abs(b)) !== r) continue; const cx = sx + a, cz = sz + b; if (cx < 0 || cz < 0 || cx >= nx || cz >= nz) continue; const i = cz * nx + cx; if (blk[i] | dyn[i]) continue; const d = a * a + b * b; if (d < best) { best = d; found = i; } } }
     if (found < 0) { n.cache.set(key, f); return f; } s = found;
   }
-  const off = [1, nx + 1, nx, nx - 1, -1, -nx - 1, -nx, -nx + 1]; const diagCost = 1.414;
-  let hn = 0; dist[s] = 0; _hk[0] = 0; _hv[0] = s; hn = 1;
-  while (hn > 0) {
-    const d = _hk[0], i = _hv[0]; hn--;
-    if (hn > 0) { const kd = _hk[hn], kv = _hv[hn]; let k = 0; for (; ;) { let c = 2 * k + 1; if (c >= hn) break; if (c + 1 < hn && _hk[c + 1] < _hk[c]) c++; if (_hk[c] >= kd) break; _hk[k] = _hk[c]; _hv[k] = _hv[c]; k = c; } _hk[k] = kd; _hv[k] = kv; }
-    if (d > dist[i]) continue;
+  const off = [1, nx + 1, nx, nx - 1, -1, -nx - 1, -nx, -nx + 1];
+  // 4.3: Dial's algorithm. Step costs are whole numbers (10 straight, 14 diagonal, +7 next to a wall), so a ring of
+  // 32 buckets replaces the heap: same routes, several times faster (big armies on slow computers)
+  if (_di.length < N) { _di = new Int32Array(N); _ec = new Int32Array(N * 8 + 16); _en = new Int32Array(N * 8 + 16); }
+  const di = _di, ec = _ec, en = _en, bh = _bh, INF = 0x7fffffff; di.fill(INF, 0, N); bh.fill(-1);
+  let ne = 0, left = 1, cur = 0; di[s] = 0; ec[0] = s; en[0] = -1; bh[0] = 0; ne = 1;
+  while (left > 0) {
+    const bk = cur & 31, e = bh[bk]; if (e < 0) { cur++; continue; }
+    bh[bk] = en[e]; left--; const i = ec[e]; if (di[i] !== cur) continue;
     for (let k = 0; k < 8; k++) {
       const j = i + off[k]; if (blk[j] | dyn[j]) continue;
       if (k & 1) { if (blk[i + off[(k + 7) & 7]] | dyn[i + off[(k + 7) & 7]] | blk[i + off[(k + 1) & 7]] | dyn[i + off[(k + 1) & 7]]) continue; }
-      const nd = d + ((k & 1) ? diagCost : 1) + pen[j];
-      if (nd < dist[j]) { dist[j] = nd; dir[j] = (k + 4) & 7; if (hn < 59990) { let q = hn++; while (q > 0) { const p = (q - 1) >> 1; if (_hk[p] <= nd) break; _hk[q] = _hk[p]; _hv[q] = _hv[p]; q = p; } _hk[q] = nd; _hv[q] = j; } }
+      const nd = cur + ((k & 1) ? 14 : 10) + (pen[j] > 0 ? 7 : 0);
+      if (nd < di[j]) { di[j] = nd; dir[j] = (k + 4) & 7; const b2 = nd & 31; ec[ne] = j; en[ne] = bh[b2]; bh[b2] = ne++; left++; }
     }
   }
+  for (let i = 0; i < N; i++) dist[i] = di[i] === INF ? 1e9 : di[i] * .1;
+  FIELD_BANK -= performance.now() - ft0;
   n.cache.set(key, f);
   if (n.cache.size > 128) { let ok = null, ou = 1e18; for (const [k, v] of n.cache) if (v.used < ou && k !== key) { ou = v.used; ok = k; } if (ok !== null) { (n.spare = n.spare || []).push(n.cache.get(ok)); n.cache.delete(ok); } }
   f.used = ++n.tick || (n.tick = 1);
@@ -1812,7 +1817,7 @@ function moveTo(u, tx, tz, dt, arrive) {
     if ((u.losT -= dt) <= 0) { u.los = d < 70 && losClear(M, u.x, u.z, tx, tz); u.losT = .25 + Math.random() * .15; }
     if (u.wpT > 0) { u.wpT -= dt; const wx = u.wpx - u.x, wz = u.wpz - u.z, wl = Math.sqrt(wx * wx + wz * wz); if (wl > .7) { mx = wx / wl; mz = wz / wl; } else u.wpT = 0; }   // 3.1: short escape waypoint
     else if (!u.los) {
-      const far = d > 32; let f = getField(M, tx, tz, far); if (!f && !far) f = getField(M, tx, tz, true);
+      const far = d > 20; let f = getField(M, tx, tz, far); if (!f && !far) f = getField(M, tx, tz, true);
       const n = M.nav, i = n.idx(u.x, u.z), k = f ? f.dir[i] : -2;
       if (!f) { }
       else if (k < 0 && f.dist[i] > 0) { const e = escapeCell(M, f, u.x, u.z); if (e) { u.wpx = e[0]; u.wpz = e[1]; u.wpT = 1.5; const wx = e[0] - u.x, wz = e[1] - u.z, wl = Math.sqrt(wx * wx + wz * wz) || 1; mx = wx / wl; mz = wz / wl; } }
@@ -1859,17 +1864,29 @@ function escapeCell(M, f, x, z) {
 }
 // a unit that has stopped making progress picks a nearby free spot that is closer to its goal (by the route, not the straight line)
 function unstick(u) {
-  const M = W.M, f = getField(M, u.tx, u.tz, Math.hypot(u.tx - u.x, u.tz - u.z) > 32), n = M.nav; if (!f) return false; const cur = f.dist[n.idx(u.x, u.z)]; let best = null, bs = cur >= 1e9 ? 1e18 : cur - .5;
+  const M = W.M, f = getField(M, u.tx, u.tz, Math.hypot(u.tx - u.x, u.tz - u.z) > 20), n = M.nav; if (!f) return false; const cur = f.dist[n.idx(u.x, u.z)]; let best = null, bs = cur >= 1e9 ? 1e18 : cur - .5;
   for (const r of [2.5, 4.5, 7]) for (let k = 0; k < 16; k++) { const a = k / 16 * TAU + r, px = u.x + Math.cos(a) * r, pz = u.z + Math.sin(a) * r; if (!M.inb(px, pz) || navBlockedAt(M, px, pz) || !losClear(M, u.x, u.z, px, pz)) continue; const dv = f.dist[n.idx(px, pz)]; if (dv >= 1e9) continue; const sc = dv + r * .3; if (sc < bs) { bs = sc; best = [px, pz]; } }
   if (!best) return false; u.wpx = best[0]; u.wpz = best[1]; u.wpT = 1.4; u.los = false; u.losT = 1.4; return true;
 }
+// 4.3: separation uses its own fine grid (4 m cells, rebuilt each tick): in a packed army each unit now checks its
+// close neighbours instead of every unit in a 12 m cell (hundreds), the main cost of big armies on slow computers
+let SEP = null;
+function sepBuild() {
+  const M = W.M, us = W.units, n = us.length, CS = 4, nx = Math.ceil(M.w / CS) + 1, nz = Math.ceil(M.d / CS) + 1, NC = nx * nz;
+  if (!SEP || SEP.NC !== NC) SEP = { nx, nz, NC, start: new Int32Array(NC + 1), cur: new Int32Array(NC), cell: new Int32Array(0), list: [] };
+  const S = SEP; if (S.cell.length < n) S.cell = new Int32Array(n * 2 + 64); const cnt = S.cur; cnt.fill(0);
+  for (let i = 0; i < n; i++) { const u = us[i]; const c = clamp(((u.z + M.hd) / CS) | 0, 0, nz - 1) * nx + clamp(((u.x + M.hw) / CS) | 0, 0, nx - 1); S.cell[i] = c; cnt[c]++; }
+  let acc = 0; for (let c = 0; c < NC; c++) { S.start[c] = acc; acc += cnt[c]; cnt[c] = S.start[c]; } S.start[NC] = acc;
+  S.list.length = n; for (let i = 0; i < n; i++) S.list[cnt[S.cell[i]]++] = us[i];
+}
 function separate(u, dt) {
-  const T = u.T; if (T.air && !T.rotor) return; const out = tmpA; const R = T.r + 3; hashQ(u.x, u.z, R, out); let px = 0, pz = 0;
-  for (let i = 0; i < out.length; i++) {
-    const e = out[i]; if (e === u || e.T.air !== T.air) continue; const dx = u.x - e.x, dz = u.z - e.z, dd = dx * dx + dz * dz, min = (T.r + e.T.r) * (T.air ? 1.2 : 1); if (dd >= min * min) continue;
+  const T = u.T; if (T.air && !T.rotor) return; const R = T.r + 3, S = SEP, Mm = W.M; let px = 0, pz = 0;
+  const c0 = clamp(((u.x - R + Mm.hw) / 4) | 0, 0, S.nx - 1), c1 = clamp(((u.x + R + Mm.hw) / 4) | 0, 0, S.nx - 1), r0 = clamp(((u.z - R + Mm.hd) / 4) | 0, 0, S.nz - 1), r1 = clamp(((u.z + R + Mm.hd) / 4) | 0, 0, S.nz - 1);
+  for (let ra = r0; ra <= r1; ra++) for (let cb = c0; cb <= c1; cb++) { const c = ra * S.nx + cb, k1 = S.start[c + 1]; for (let k = S.start[c]; k < k1; k++) {
+    const e = S.list[k]; if (e === u || e.T.air !== T.air) continue; const dx = u.x - e.x, dz = u.z - e.z, dd = dx * dx + dz * dz, min = (T.r + e.T.r) * (T.air ? 1.2 : 1); if (dd >= min * min) continue;
     const d = Math.sqrt(dd) || .01; let w = (min - d) / min; const em = e.moving || e.o !== 0, um = u.moving || u.o !== 0; w *= em && !um ? 1.4 : um && !em ? .35 : 1;
     px += dx / d * w; pz += dz / d * w;
-  }
+  } }
   if (px || pz) { const M = W.M; const nx = clamp(u.x + px * 9 * dt, -M.hw + 2, M.hw - 2), nz = clamp(u.z + pz * 9 * dt, -M.hd + 2, M.hd - 2); if (T.air || !navBlockedAt(M, nx, nz)) { u.x = nx; u.z = nz; } }
 }
 function groundY(u) { return W.M.H(u.x, u.z) + (u.T.air ? u.T.alt : 0); }
@@ -2108,11 +2125,11 @@ function spawnFromBuilding(b, type, idx) {
 // ---------------- world tick ----------------
 function simTick() {
   const dt = TICK; if (W.over && !W.o.sandbox) { }
-  W.tick++; W.t += dt; hashBuild(); countHomes(); FIELD_BUDGET = 3; W.shl = W.bld.filter(b => b.type === 'shieldgen' && b.prog >= 1 && b.sOn && !b.dead);
+  W.tick++; W.t += dt; hashBuild(); countHomes(); FIELD_BUDGET = 3; FIELD_BANK = Math.min(4, FIELD_BANK + FIELD_MS); W.shl = W.bld.filter(b => b.type === 'shieldgen' && b.prog >= 1 && b.sOn && !b.dead);
   const us = W.units;
   for (let i = 0; i < us.length; i++) { const u = us[i]; if (!u.dead) { updUnit(u, dt); } }
   // separation after movement (hash is slightly stale: ok)
-  for (let i = 0; i < us.length; i++) separate(us[i], dt);
+  sepBuild(); for (let i = 0; i < us.length; i++) separate(us[i], dt);
   for (let i = W.bld.length - 1; i >= 0; i--) { const b = W.bld[i]; if (!b.dead) updBuilding(b, dt); }
   // projectiles
   for (let i = W.proj.length - 1; i >= 0; i--) { const pr = W.proj[i]; if (W.t >= pr.t0 + pr.dur) { W.proj[i] = W.proj[W.proj.length - 1]; W.proj.pop(); impact(pr); } }
@@ -5692,7 +5709,7 @@ function stepInner(ts, hidden) {
   if (NET.role) netTick(ts); if (!hidden) musicTick(dt);
   if (!W.mirror) {
     if (!W.paused && (!W.over || W.o.sandbox) && !(MODE === 'demo' && W.over)) {
-      simAcc += dt * W.speed; let n = 0; while (simAcc >= TICK && n < 6) { simTick(); simAcc -= TICK; n++; if (NET.role === 'host') netHostAfterTick(); } if (n >= 6) simAcc = 0;
+      simAcc += dt * W.speed; let n = 0; const s0 = performance.now(); while (simAcc >= TICK && n < 6) { simTick(); simAcc -= TICK; n++; if (NET.role === 'host') netHostAfterTick(); if (performance.now() - s0 > 45) break; } if (n >= 6 || simAcc > TICK * 2) simAcc = Math.min(simAcc, TICK);   // 4.3: a slow computer falls a little behind instead of freezing
     }
     interpHost(W.paused ? 1 : simAcc / TICK);
     if (MODE === 'demo' && W.over) { demoT += dt; if (demoT > 5) startDemo(); }
@@ -5724,12 +5741,12 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 if (DEBUG) {
   window.__fl = {
     get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    makeAI, getField, killBuilding, squadAdd, squadIds, refreshB, selectPad, warNew, warCfg, warSave, warSpawn, warDef, get WAR() { return WAR; }, set WAR(v) { WAR = v; }, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    makeAI, getField, killBuilding, squadAdd, squadIds, renderFrame: (dt, t) => renderFrame(dt, t), interpHost: a => interpHost(a), refreshB, selectPad, warNew, warCfg, warSave, warSpawn, warDef, get WAR() { return WAR; }, set WAR(v) { WAR = v; }, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
     state() { return { tick: W.tick, t: W.t, over: W.over, winner: W.winner, reason: W.reason, units: W.units.length, bld: W.bld.length, tix: W.teamList.map(t => Math.round(t.tickets)), pts: W.pts.map(p => p.owner), sup: W.players.map(p => Math.round(p.sup)), pop: W.players.map(p => p.pop) }; },
-    navAscii(x0, z0, x1, z1, tx, tz) { const M = W.M, n = M.nav; FIELD_BUDGET = Math.max(FIELD_BUDGET, 1); const f = getField(M, tx, tz); let out = ''; const arrows = ['>', '\\', 'v', '/', '<', '\\', '^', '/']; for (let z = z1; z >= z0; z -= 2) { let row = ''; for (let x = x0; x <= x1; x += 2) { const i = n.idx(x, z); let c = (n.blk[i] | n.dyn[i]) ? '#' : (f.dir[i] >= 0 ? arrows[f.dir[i]] : '?'); for (const u of W.units) if (u.owner === ME && Math.abs(u.x - x) < 1 && Math.abs(u.z - z) < 1) c = 'U'; row += c; } out += row + '\n'; } return out; },
+    navAscii(x0, z0, x1, z1, tx, tz) { const M = W.M, n = M.nav; FIELD_BUDGET = Math.max(FIELD_BUDGET, 1); FIELD_BANK = Math.max(FIELD_BANK, 1); const f = getField(M, tx, tz); let out = ''; const arrows = ['>', '\\', 'v', '/', '<', '\\', '^', '/']; for (let z = z1; z >= z0; z -= 2) { let row = ''; for (let x = x0; x <= x1; x += 2) { const i = n.idx(x, z); let c = (n.blk[i] | n.dyn[i]) ? '#' : (f.dir[i] >= 0 ? arrows[f.dir[i]] : '?'); for (const u of W.units) if (u.owner === ME && Math.abs(u.x - x) < 1 && Math.abs(u.z - z) < 1) c = 'U'; row += c; } out += row + '\n'; } return out; },
     snapshot() { return { fps: fpsNow, mode: MODE, errs: window.__errs.slice() }; }, setME(i) { ME = i; MYTEAM = P(ME).team; }
   };
 }
