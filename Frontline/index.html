@@ -102,6 +102,7 @@ b{font-weight:700}
 .hbtns{display:flex;gap:5px;flex-wrap:wrap}
 .hbtns{flex-wrap:nowrap}.hbtns .sm{padding:3px 5px;min-height:24px;font-size:11px}
 .hbtns .sm.on{border-color:var(--gold);background:#6b4b12}
+.hbtns.fm{flex-wrap:wrap;gap:3px;margin-top:3px}.hbtns.fm .sm{padding:2px 5px;min-height:21px;font-size:10.5px}
 .card{position:relative;flex:none;width:118px;border:1px solid #3f5b78;border-radius:10px;background:linear-gradient(180deg,#26405c,#182a40);padding:5px 6px;display:flex;flex-direction:column;gap:2px;text-align:left;overflow:hidden;min-height:0}
 .card:hover{border-color:var(--gold);background:linear-gradient(180deg,#2e4d6e,#1c3149)}
 .card .crow{display:flex;gap:6px;align-items:center;min-width:0}
@@ -284,6 +285,18 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .bbadge.cool{color:#ffd37a;border-color:#a8791e}
 .bbadge i{display:block;height:3px;border-radius:2px;background:#f6c04e;margin-top:2px}
 #armystrip{position:absolute;left:178px;bottom:128px;display:flex;gap:6px;align-items:center;max-width:calc(100% - 340px);padding:3px 9px;border-radius:10px;background:rgba(10,16,24,.8);border:1px solid rgba(110,140,170,.4);font-size:12px;font-weight:700;pointer-events:none!important;overflow:hidden;white-space:nowrap}
+ #squads{position:absolute;right:10px;top:62px;display:flex;flex-direction:column;gap:4px;width:146px;pointer-events:auto}
+#squads .sqb{position:relative;display:flex;align-items:center;gap:6px;padding:4px 7px 6px;border-radius:9px;background:rgba(10,16,24,.86);border:1px solid #3f5b78;font-size:12.5px;font-weight:800;cursor:pointer;overflow:hidden;color:var(--txt)}
+#squads .sqb:hover{border-color:#8aa6c4}#squads .sqb.on{border-color:var(--gold);box-shadow:0 0 8px #f6c04e66}#squads .sqb.empty{opacity:.6}
+#squads .sqb b{width:18px;height:18px;border-radius:50%;background:var(--c);color:#000;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+#squads .sqb .nm{flex:1}#squads .sqb .ct{color:#ffe2a6}#squads .sqb i{position:absolute;left:0;bottom:0;height:3px;background:var(--c)}
+#squads .sqadd{width:20px;height:20px;border-radius:6px;border:1px solid #5b7a98;background:#1d3048;color:#fff;font-weight:900;font-size:13px;line-height:16px;padding:0;flex:none}#squads .sqadd:hover{border-color:var(--gold)}
+#squads .wm{justify-content:center;background:linear-gradient(180deg,#2a4666,#1a2d44)}#squads .wm kbd{font-size:10px;opacity:.7}#squads .wm .ic{width:16px;height:16px}
+#wmap{position:absolute;inset:52px 8px 8px 8px;z-index:40;display:flex;gap:10px;padding:10px;border-radius:14px;background:rgba(8,13,20,.95);border:1px solid var(--line);pointer-events:auto;overflow:auto}
+#wmap .wmside{width:250px;flex:none;overflow:auto}#wmap .wmside .sm{margin:2px 3px 2px 0}#wmap .wmside .sm.on{border-color:var(--gold);background:#6b4b12}
+#wmap .wmmain{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}#wmap canvas{border-radius:10px;border:1px solid #34495f;cursor:crosshair;max-width:100%}
+#wmap .wmpt{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:7px;cursor:pointer;font-size:13px}#wmap .wmpt:hover{background:#1d3048}#wmap .wmpt i{margin-left:auto;font-style:normal;color:var(--dim);font-size:11.5px}#wmap .wmpt.enemy i{color:#ff9a8c}#wmap .wmpt.yours i{color:#8ff0b4}
+@media (max-width:700px){#wmap{flex-direction:column}#wmap .wmside{width:auto;max-height:34vh}#squads{width:120px}}
 #armystrip .as{color:var(--dim);letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 #armystrip .rd{color:#8ff0b4}#armystrip .cl{color:#ffd37a}
 #armystrip .ch{position:relative;width:26px;height:26px;border:1px solid #44607c;border-radius:6px;background:#0d1620 center/contain no-repeat;flex:none}
@@ -385,6 +398,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
  <div id="chatbox"></div>
  <div id="sup" class="pop hidden"></div>
  <div id="armystrip"></div>
+ <div id="squads"></div>
  <div id="bottom">
   <div id="mmwrap"><canvas id="mm" width="162" height="108"></canvas></div>
   <div id="panel"></div>
@@ -402,7 +416,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '4.0';
+const VERSION = '4.1';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -488,11 +502,11 @@ defB('airfield', { n: 'Airfield', sz: 7, hp: [800, 1100, 1450], cost: [300, 220,
   { id: 'gunship', n: 'Combat Pilots', d: 'All your aircraft deal +15% damage. Also unlocks the Gunship.' },
   { id: 'superiority', n: 'Better Engines', d: 'All your aircraft fly 15% faster. Also unlocks the Sky Hunter jet.' },
   { id: 'swarm', n: 'Drone Factory', d: 'Holds 4 more drones. Drones cost 40% less and build twice as fast.' }] });
-defB('depot', { n: 'Supply Depot', sz: 4.5, hp: [500, 700, 950], cost: [120, 100, 150], bt: [10, 12, 14], hq1: 1, d: 'Makes extra money.', info: 'Generates extra money every second.', inc: [2.5, 4.5, 7], up: ['Makes more money.', 'Even more money.'], upl: ['Makes more money.', 'Makes even more money. Then pick 1 of 3 upgrades.'], specs: [
+defB('depot', { n: 'Supply Depot', sz: 4.5, hp: [500, 700, 950], cost: [120, 100, 150], bt: [10, 12, 14], hq1: 1, d: 'Money and +3 army space.', info: 'Generates extra money every second and raises your army limit: +3, +6 and +10 by level.', inc: [2.5, 4.5, 7], up: ['More money. +6 army space.', 'Even more money. +10 army space.'], upl: ['Makes more money and raises the army limit to +6.', 'Makes even more money and raises the army limit to +10. Then pick 1 of 3 upgrades.'], specs: [
   { id: 'trade', n: 'Trade Post', d: '+60% money from this depot.' },
   { id: 'logistics', n: 'Logistics Hub', d: 'Buildings at this flag recharge troops 25% faster.' },
   { id: 'armory', n: 'Ammo Dump', d: 'Your troops near this depot deal +12% damage.' }] });
-defB('turret', { n: 'MG Bunker', sz: 3.6, hp: [520, 800, 1100], cost: [140, 110, 170], bt: [10, 11, 13], hq1: 1, d: 'Guards the flag by itself.', info: 'A machine gun bunker that shoots enemies automatically. Defends the flag.', up: ['Stronger gun, more health.', 'Strongest. Pick an upgrade.'], specs: [
+defB('turret', { n: 'MG Bunker', sz: 3.6, hp: [800, 1500, 2600], cost: [140, 120, 180], bt: [10, 11, 13], hq1: 1, d: 'Guards the flag by itself.', info: 'A concrete machine gun bunker that shoots enemies automatically. Its armor shrugs off 15% of damage at Level 1, 30% at Level 2 and 45% at Level 3.', up: ['Much tougher, faster gun, 30% armor.', 'A fortress: huge health, 45% armor. Pick an upgrade.'], specs: [
   { id: 'twin', n: 'Twin Machine Guns', d: 'Almost twice the fire rate. Great vs soldiers.' },
   { id: 'at', n: 'Anti-Tank Gun', d: 'Long-range cannon that kills vehicles.' },
   { id: 'flak', n: 'Anti-Aircraft Gun', d: 'Flak cannon that shoots down aircraft.' }] });
@@ -980,7 +994,7 @@ const AID = {
 
 // ---------------- settings & profile ----------------
 const GFX = {
-  low: { shadows: false, shadowRes: 0, particles: 35, scale: 85, decor: 45, maxUnits: 90, pr: 1 },
+  low: { shadows: false, shadowRes: 0, particles: 35, scale: 85, decor: 45, maxUnits: 120, pr: 1 },
   medium: { shadows: true, shadowRes: 1024, particles: 60, scale: 100, decor: 75, maxUnits: 120, pr: 1.25 },
   high: { shadows: true, shadowRes: 2048, particles: 100, scale: 100, decor: 100, maxUnits: 160, pr: 2 }
 };
@@ -1001,7 +1015,7 @@ function quickGpu() {
 }
 const GPU = quickGpu();
 const SET = (() => {
-  const d = { gfx: 'auto', shadows: false, shadowRes: 1024, particles: 35, scale: 85, decor: 45, maxUnits: 90, pr: 1, vol: 60, music: 40, edge: false, fps: false, camSpd: 1, hpAlways: false, name: 'Commander', scroll: 'pan', adv: false };
+  const d = { gfx: 'auto', shadows: false, shadowRes: 1024, particles: 35, scale: 85, decor: 45, maxUnits: 120, pr: 1, vol: 60, music: 40, edge: false, fps: false, camSpd: 1, hpAlways: false, name: 'Commander', scroll: 'pan', adv: false };
   let s = readJSON('frontline_settings_v2');
   if (!s) { const o = readJSON('frontline_settings_v1'); if (o) { s = {}; for (const k of ['vol', 'music', 'camSpd', 'fps', 'hpAlways', 'name']) if (o[k] !== undefined) s[k] = o[k]; s.gfx = o.gfx === 'ultra' ? 'high' : (['auto', 'low', 'medium', 'high'].includes(o.gfx) ? o.gfx : 'auto'); } }
   if (s) for (const k in s) if (k in d && typeof s[k] === typeof d[k] && (typeof s[k] !== 'number' || isFinite(s[k]))) d[k] = s[k];   // ignore anything of the wrong type
@@ -1346,7 +1360,7 @@ function wallArcs(pt) { // list of [cx,cz,angle0,angle1,radius]
 let W = null, ME = 0;
 const UTK = Object.keys(UT), BTK = Object.keys(BT);
 const MODKEYS = ['dmgBul', 'dmgAT', 'dmgShell', 'spl', 'hpInf', 'hpVeh', 'hpHvy', 'hpBld', 'inc', 'cost', 'pop', 'spdInf', 'spdVeh', 'spdAir', 'prod', 'vis', 'rng', 'acc', 'bldDmg', 'xp', 'heal', 'callCd', 'callCost'];
-const FORMS = ['box', 'line', 'wedge', 'spread'];
+const FORMS = ['box', 'line', 'wedge', 'spread', 'column', 'ring'], FORMN = ['Box', 'Line', 'Wedge', 'Spread', 'Column', 'Ring'];
 const tmpA = [];
 
 function ev(a) { W.ev.push(a); }
@@ -1523,10 +1537,10 @@ function bestLvl(p, type) { let l = 0; for (const b of W.bld) if (b.owner === p.
 function bWeapon(b) {
   const L = b.lvl - 1, s = b.spec;
   if (b.type === 'turret') {
-    if (s === 'twin') return Wp('bullet', [6, 8, 11][L] * .9, .17, [28, 30, 32][L]);
-    if (s === 'at') return Wp('cannon', [95, 120, 150][L], 2.4, [38, 41, 44][L], { ps: 80 });
-    if (s === 'flak') return Wp('flak', [9, 11, 14][L], .2, [40, 43, 46][L], { spl: 3 });
-    return Wp('bullet', [6, 8, 11][L], .35, [26, 28, 30][L]);
+    if (s === 'twin') return Wp('bullet', 19, .1, 38);
+    if (s === 'at') return Wp('cannon', 250, 1.7, 48, { ps: 80 });
+    if (s === 'flak') return Wp('flak', 26, .17, 50, { spl: 3.5 });
+    return Wp('bullet', [8, 13, 20][L], [.32, .25, .18][L], [28, 32, 36][L]);
   }
   if (b.type === 'arty') {
     const d = [85, 105, 125][L], rg = [85, 95, 105][L];
@@ -1580,7 +1594,7 @@ function hurt(tgt, dmg, wt, src, owner, opts) {
   if (tgt.k === 'u') {
     if (tgt.shield > 0) dmg *= .55; if (tgt.cov && cls < 3) dmg *= cls === 0 ? .78 : .92; if (tgt.wrT > 0) dmg *= 1 - tgt.wr; if (tgt.triT > 0) dmg *= .85;
     if (opts && opts.shock) tgt.slow = 6;
-  } else { if (tgt.type === 'wall') dmg *= 1; }
+  } else { if (tgt.type === 'turret') dmg *= [.85, .7, .55][tgt.lvl - 1]; }   // 4.1: bunkers are armored
   if (P(tgt.owner).godmode) dmg = 0;
   tgt.hp -= dmg; tgt.flash = .1;
   if (tgt.hp > 0 && W.fx) { const key = tgt.owner; const last = W.alertT[key] || -99; if (W.t - last > 7 && P(tgt.owner).kind !== 'ai') { W.alertT[key] = W.t; alertMsg(tgt.owner, 'attack', tgt.x, tgt.z, 0, tgt.k === 'b' ? tgt.T.n : tgt.T.n); } }
@@ -1653,8 +1667,11 @@ function effMult(w, tgt) {
 }
 function uRange(u, w) { const p = P(u.owner); return w.rng * (1 + p.mod.rng) * (u.T.id === 'artillery' && u.fromArtPark ? 1.2 : 1); }
 function weaponsOf(e) { return e.k === 'u' ? e.T : null; }
+// 4.1 target types: 0 any, 1 soldiers, 2 vehicles and tanks, 3 aircraft, 4 buildings
+const TPN = ['Any', 'Soldiers', 'Vehicles', 'Aircraft', 'Buildings'];
+function tpMatch(tp, e) { return tp === 4 ? e.k === 'b' : e.k === 'u' && (tp === 1 ? e.T.cls === 0 : tp === 2 ? (e.T.cls === 1 || e.T.cls === 2) : e.T.air); }
 function scoreTarget(u, w, e, d) {
-  let s = -d; const m = effMult(w, e);
+  let s = -d; const m = effMult(w, e); if (u.tp) s += tpMatch(u.tp, e) ? 45 : -12;
   if (e.k === 'u') {
     const et = e.T; s += m * 9; if (et.w && effMult(et.w, u) > 0) s += 7; if (et.heal) s += 3; if (et.eng) s += 2;
     if (u.type === 'sniper' && et.cls === 0) s += 10; if (u.T.id === 'aa' && et.air) s += 24; if (w.wt === 'aam' && et.air) s += 12;
@@ -2039,6 +2056,12 @@ function slowTick() {
   const M = W.M, n = M.nav;
   for (const u of W.units) { u.cov = u.T.air ? 0 : n.cover[n.idx(u.x, u.z)]; }
 }
+// 4.1: the army limit. Flags and HQ levels raise it, and so does every Supply Depot (3 / 6 / 10 by level). Endless War allows much bigger armies.
+function popCapOf(p) {
+  let pn = 0, dep = 0; for (const pt of W.pts) if (pt.owner === p.id) pn++; for (const b of W.bld) if (b.owner === p.id && b.type === 'depot' && b.prog >= 1) dep += [3, 6, 10][b.lvl - 1];
+  const hqL = p.hqB ? p.hqB.lvl : 1; const base = W.o.war ? 50 + pn * 8 + (hqL - 1) * 30 : 36 + pn * 7 + (hqL - 1) * 10;
+  return Math.min(W.popMax, base + dep + p.mod.pop);
+}
 function secTick() {
   for (const p of W.players) {
     if (!p.alive) { p.inc = 0; continue; }
@@ -2046,7 +2069,7 @@ function secTick() {
     for (const b of W.bld) if (b.owner === p.id && b.type === 'depot' && b.prog >= 1) inc += BT.depot.inc[b.lvl - 1] * (b.spec === 'trade' ? 1.6 : 1);
     let hqL = p.hqB ? p.hqB.lvl : 1; inc *= 1 + (hqL - 1) * .12;
     inc *= 1 + p.mod.inc; if (p.ai) inc *= p.ai.dif.inc; p.inc = inc; p.ptsN = pn; p.stats.peakPts = Math.max(p.stats.peakPts, pn);
-    p.popCap = Math.min(W.popMax, 36 + pn * 7 + p.mod.pop + (hqL - 1) * 10);
+    p.popCap = popCapOf(p);
     if (p.hqB && p.hqB.dead && p.alive) p.alive = false;
     if (W.o.war && p.id === 1) p.popCap = Math.max(p.popCap, 200);
   }
@@ -2207,6 +2230,8 @@ function formationPositions(us, tx, tz, form) {
   const slots = [];
   if (form === 'line') { const cols = Math.min(n, 12); for (let i = 0; i < n; i++) { const c = i % cols, r = (i / cols) | 0; slots.push([(c - (cols - 1) / 2) * sp, r * sp]); } }
   else if (form === 'wedge') { let row = 0, k = 0; while (slots.length < n) { for (let c = 0; c <= row && slots.length < n; c++) slots.push([(c - row / 2) * sp * 1.1, row * sp]); row++; } }
+  else if (form === 'column') { for (let i = 0; i < n; i++) slots.push([((i % 2) - .5) * sp, ((i / 2) | 0) * sp]); }
+  else if (form === 'ring') { const R = Math.max(4, n * sp / TAU); for (let i = 0; i < n; i++) { const a = i / n * TAU; slots.push([Math.cos(a) * R, Math.sin(a) * R]); } }
   else if (form === 'spread') { sp *= 2.1; const cols = Math.ceil(Math.sqrt(n * 1.5)); for (let i = 0; i < n; i++) { const c = i % cols, r = (i / cols) | 0; slots.push([(c - (cols - 1) / 2) * sp + ((r & 1) ? sp * .4 : 0), r * sp]); } }
   else { const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.4))); for (let i = 0; i < n; i++) { const c = i % cols, r = (i / cols) | 0; slots.push([(c - (cols - 1) / 2) * sp, r * sp]); } }
   const pos = slots.map(s => { const x = tx + rx * s[0] - fx * s[1], z = tz + rz * s[0] - fz * s[1]; return snapFree(W.M, clamp(x, -W.M.hw + 3, W.M.hw - 3), clamp(z, -W.M.hd + 3, W.M.hd - 3), 4); });
@@ -2234,6 +2259,7 @@ function applyCmd(pid, c) {
     }
     case 'stop': for (const u of unitsOf(pid, c.ids)) { u.o = 0; u.tgt = null; u.am = false; u.spdCap = 0; u.anchorX = u.x; u.anchorZ = u.z; } return true;
     case 'hold': for (const u of unitsOf(pid, c.ids)) { u.o = 4; u.tgt = null; u.vx = u.vz = 0; } return true;
+    case 'tp': { const v = clamp(c.v | 0, 0, 4); for (const u of unitsOf(pid, c.ids)) { u.tp = v; u.scan = 0; } return true; }
     case 'nest': { const us = unitsOf(pid, c.ids).filter(u => u.T.eng); if (!us.length) return false; const u = us.sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; u.o = 5; u.tx = +c.x; u.tz = +c.z; u.stuck = 0; return true; }
     case 'rally': { const b = W.byId.get(c.b); if (!b || b.owner !== pid) return false; if (c.clear) { b.hasRally = false; return true; } b.hasRally = true; b.rx = clamp(+c.x, -M.hw + 3, M.hw - 3); b.rz = clamp(+c.z, -M.hd + 3, M.hd - 3); return true; }
     case 'build': return cmdBuild(p, c);
@@ -3216,7 +3242,7 @@ class Pool {
 }
 function poolFor(key, parts, cap) { return POOLS[key] || (POOLS[key] = new Pool(parts, cap, MAT_I, true)); }
 const unitPools = {};
-function uPool(type) { return unitPools[type] || (unitPools[type] = new Pool(MDL[type], type === 'rifleman' ? 160 : 90, MAT_I, true)); }
+function uPool(type) { return unitPools[type] || (unitPools[type] = new Pool(MDL[type], type === 'rifleman' ? 420 : 220, MAT_I, true)); }
 const bPools = {};
 function bPool(b) { const k = BPOOLKEY(b); if (!bPools[k]) bPools[k] = new Pool(bModel(b.type, b.lvl, b.spec), b.type === 'nest' ? 40 : 28, MAT_I, true); return bPools[k]; }
 
@@ -3908,6 +3934,8 @@ function setupInput() {
     const hbb = e.target.closest('[data-hb]'); if (hbb) { const f = CARD.hb && CARD.hb[hbb.dataset.hb]; if (f) { initAudio(); f(); } return; }
     const c = e.target.closest('[data-i]'); if (c) { const f = CARD[+c.dataset.i]; if (f) { initAudio(); f(); } }
   });
+  $('#squads').addEventListener('click', e => { if (!inGame) return; initAudio(); const a = e.target.closest('[data-sqadd]'); if (a) { e.stopPropagation(); const n = +a.dataset.sqadd, ids = selUnitsArr().map(u => u.id); if (!ids.length) { toast('Select some troops first, then press + to add them to squad ' + SQN[n - 1] + '.'); sfx('deny'); return; } squadAdd(n, ids); toast(ids.length + ' troops joined squad ' + SQN[n - 1]); sfx('click'); updSquads(true); return; } if (e.target.closest('[data-wmap]')) { toggleWarMap(); sfx('click'); return; } const q = e.target.closest('[data-sq]'); if (q) { squadSelect(+q.dataset.sq); updSquads(true); } });
+  $('#squads').addEventListener('contextmenu', e => { e.preventDefault(); const q = e.target.closest('[data-sq]'); if (q) { UI.groups[+q.dataset.sq] = []; toast('Squad ' + SQN[+q.dataset.sq - 1] + ' cleared'); updSquads(true); } });
   $('#quick').addEventListener('click', e => { const b = e.target.closest('[data-q2]'); if (b) { initAudio(); const f = QUICKFN[b.dataset.q2]; if (f) f(); } });
   $('#sup').addEventListener('click', e => { const c = e.target.closest('[data-call]'); if (c) { initAudio(); startCall(c.dataset.call); } });
   $('#scoreRow').addEventListener('click', e => { const f = e.target.closest('[data-pt]'); if (f) { const pt = W.pts[+f.dataset.pt]; if (pt) { camGoto(pt.x, pt.z); sfx('click'); UI.did.flagjump = 1; } } });
@@ -3937,6 +3965,7 @@ function onKey(e) {
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab', 'backspace', 'pageup', 'pagedown'].includes(k)) e.preventDefault();
   if ((e.ctrlKey || e.metaKey || e.altKey) && k !== 'a' && !/^[1-9]$/.test(k)) return; // leave browser shortcuts (Ctrl+R, Ctrl+W...) alone
   UI.keys[k] = true; initAudio();
+  if (k === 'escape' && UI.wmapOn) { closeWarMap(); return; }
   if (k === 'escape') { if (UI.mode) setMode(null); else if (UI.supOpen || UI.specOpen || UI.more) { closePops(); UI.cardSig = ''; hudUpdate(true); } else if (techOpen) closeTech(); else if (selIds.size || selBld || selPadState()) { clearSel(); afterSel(); } else openPause(); return; }
   if (k === 'enter') { openChat(); e.preventDefault(); return; }
   if (k === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) { if (!e.repeat) { UI.fUsed = false; clearTimeout(UI.fTimer); UI.fTimer = setTimeout(() => { if (UI.keys['f'] && !UI.fUsed && inGame && hqOk()) { UI.supOpen = true; UI.supByF = true; UI.specOpen = false; hudUpdate(true); } }, 260); } return; }   // Hold F + a number = Support power (tap F = Move + Fight)
@@ -3955,13 +3984,15 @@ function onKey(e) {
     case 'k': if (selBld) { const b = W.byId.get(selBld); if (b && b.owner === ME && b.type !== 'hq') issue({ k: 'sell', b: selBld }); } return;
     case 'h': { const ids = selUnitsArr().map(u => u.id); if (ids.length) issue({ k: 'stop', ids }); return; }
     case 'j': { const ids = selUnitsArr().map(u => u.id); if (ids.length) issue({ k: 'hold', ids }); return; }
-    case 'y': UI.form = (UI.form + 1) % 4; toast('Formation: ' + ['Box', 'Line', 'Wedge', 'Spread'][UI.form]); UI.cardSig = ''; return;
+    case 'y': UI.form = (UI.form + 1) % FORMS.length; toast('Formation: ' + FORMN[UI.form]); UI.cardSig = ''; return;
     case 'g': UI.gspd = !UI.gspd; toast('Stay together: ' + (UI.gspd ? 'on' : 'off')); UI.cardSig = ''; return;
     case 'r': retreatSel(); return;
     case 'u': { if (selBld) { issue({ k: 'upg', b: selBld }); UI.did.upg = 1; } return; }
     case 'delete': if (selBld) { const b = W.byId.get(selBld); if (b && b.owner === ME && b.type !== 'hq') issue({ k: 'sell', b: selBld }); return; } return;
   }
   if (k === 'n' && selUnitsArr().some(u => u.T.eng)) { setMode('nest'); return; }
+  if (k === 'm') { toggleWarMap(); return; }
+  if (k === 'x' && selUnitsArr().length) { cycleTarget(selUnitsArr()); return; }
   const ci = KEYCARD.indexOf(k); if (ci >= 0 && CARD[ci] && !e.ctrlKey && !e.altKey && !selUnitsArr().length && (selBld || selPad)) { CARD[ci](); return; }
 }
 function fRelease(blur) {
@@ -4094,7 +4125,7 @@ function rosMissing(b) { let n = 0; for (const k in b.ros) n += Math.max(0, b.ro
 function updStrip() {
   const el = $('#armystrip'); if (!el) return; if (!UI.known || W.t < 2.5) { UI.known = new Set(W.units.filter(u => u.owner === ME).map(u => u.id)); UI.deployLog = []; }
   const now = performance.now();
-  for (const u of W.units) if (u.owner === ME && !UI.known.has(u.id)) { UI.known.add(u.id); UI.deployLog.push({ t: u.type, at: now }); }
+  for (const u of W.units) if (u.owner === ME && !UI.known.has(u.id)) { UI.known.add(u.id); UI.deployLog.push({ t: u.type, at: now }); if (u.home && UI.bsq && UI.bsq[u.home]) squadJoin(UI.bsq[u.home], u); }
   while (UI.deployLog.length && (now - UI.deployLog[0].at > 12000 || UI.deployLog.length > 40)) UI.deployLog.shift();
   const pb = prodBlds().filter(b => b.type !== 'hq' || rosTotal(b)); let full = 0, trn = 0, money = 0, army = 0, empty = 0, miss = 0;
   for (const b of pb) { const m = rosMissing(b); miss += m; if (!rosTotal(b)) empty++; else if (b.tr && b.wait !== 2) trn++; else if (b.wait === 1) money++; else if (b.wait === 2) army++; else if (!m) full++; }
@@ -4151,7 +4182,7 @@ function hudUpdate(force) {
   updScore(); updGoal();
   for (const id of [...selIds]) { const u = W.byId.get(id); if (!u || u.dead) selIds.delete(id); }
   if (selBld && !W.byId.get(selBld)) { selBld = 0; UI.selEnemy = null; UI.cardSig = ''; }
-  updModeBar(); renderPanel(force); updStrip(); updQuick(force); updSup(force);
+  updModeBar(); renderPanel(force); updStrip(); updSquads(force); updQuick(force); updSup(force);
   if (UI.tutorialTick) UI.tutorialTick();
   if (techOpen) updTech();
 }
@@ -4231,6 +4262,72 @@ function updSup(force) {
   }).join('');
 }
 
+// ----- 4.1: five squads (one click to select or command) and the War Map -----
+const SQN = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'], SQC = ['#5aa9ff', '#7be08a', '#ffcf5a', '#ff8a5a', '#c99bff'];
+function squadIds(n) { const g = (UI.groups[n] || []).filter(id => { const u = W.byId.get(id); return u && !u.dead && u.owner === ME; }); UI.groups[n] = g; return g; }
+function squadAdd(n, ids) { const set = new Set(ids); for (let k = 1; k <= 5; k++) if (k !== n && UI.groups[k]) UI.groups[k] = UI.groups[k].filter(id => !set.has(id)); UI.groups[n] = [...new Set((UI.groups[n] || []).concat(ids))]; UI.sqSig = ''; }
+function squadCenter(ids) { let x = 0, z = 0, n = 0; for (const id of ids) { const u = W.byId.get(id); if (u && !u.dead) { x += u.x; z += u.z; n++; } } return n ? [x / n, z / n, n] : null; }
+function squadJoin(n, u) { const c = squadCenter(squadIds(n)); squadAdd(n, [u.id]); if (c && Math.hypot(c[0] - u.x, c[1] - u.z) > 18) issue({ k: 'am', ids: [u.id], x: c[0] + rr(-4, 4), z: c[1] + rr(-4, 4) }); }
+function selIsSquad(n) { const g = squadIds(n); return g.length && g.length === selIds.size && g.every(id => selIds.has(id)); }
+function updSquads(force) {
+  const el = $('#squads'); if (!el) return; let sig = (UI.wmapOn ? 'M' : '') + selIds.size;
+  const rows = []; for (let n = 1; n <= 5; n++) { const g = squadIds(n); let hp = 0; for (const id of g) { const u = W.byId.get(id); hp += u.hp / u.maxHp; } const f = g.length ? hp / g.length : 0; const on = selIsSquad(n); sig += '|' + g.length + (on ? '*' : '') + Math.round(f * 10); rows.push([n, g.length, f, on]); }
+  if (!force && el.dataset.s === sig) return; el.dataset.s = sig;
+  el.innerHTML = '<button class="sqb wm' + (UI.wmapOn ? ' on' : '') + '" data-wmap="1" data-tip="War Map (M)|See the whole map and every flag. Pick a squad or your whole army, then click a flag or a spot to attack it.">' + ic('flag') + '<span>War Map</span><kbd>M</kbd></button>'
+    + rows.map(([n, c, f, on]) => '<div class="sqb' + (on ? ' on' : '') + (c ? '' : ' empty') + '" data-sq="' + n + '" style="--c:' + SQC[n - 1] + '" data-tip="' + esc('Squad ' + n + ': ' + SQN[n - 1] + '|' + (c ? c + ' troops. Click to select (click again to jump the camera there). Then click the ground to give orders.' : 'Empty. Select troops, then press + to put them in this squad.') + ' Keys: ' + n + ' selects, Ctrl+' + n + ' saves the selection as this squad. Right-click to clear it.') + '"><b>' + n + '</b><span class="nm">' + SQN[n - 1] + '</span><span class="ct">' + c + '</span><button class="sqadd" data-sqadd="' + n + '" data-tip="Add to squad ' + n + '|Put the troops you have selected into ' + SQN[n - 1] + '.">+</button><i style="width:' + Math.round(f * 100) + '%"></i></div>').join('');
+}
+function squadSelect(n) { const g = squadIds(n); if (!g.length) { toast('Squad ' + SQN[n - 1] + ' is empty. Select troops and press its + button.'); sfx('deny'); return; } if (selIsSquad(n)) { const c = squadCenter(g); if (c) camGoto(c[0], c[1]); } else selectUnits(g); sfx('click'); UI.sqSig = ''; }
+// the War Map: the whole battlefield, every flag, and one-click orders for any squad
+const WMIMG = {};
+function wmapImage() {
+  const M = W.M; if (WMIMG[M.id]) return WMIMG[M.id]; const S = 420, cw = M.w >= M.d ? S : Math.round(S * M.w / M.d), ch = M.d >= M.w ? S : Math.round(S * M.d / M.w);
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; const c = cv.getContext('2d'), im = c.createImageData(cw, ch), tmp = [0, 0, 0];
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) { const wx = (x + .5) / cw * M.w - M.hw, wz = (y + .5) / ch * M.d - M.hd, h = M.H(wx, wz); let r, g, b; if (h < M.wl - .05) { _c4.set(M.biome.water); r = _c4.r * .9; g = _c4.g * .95; b = _c4.b; } else { terrainColor(M, wx, wz, h, M.slope(wx, wz), tmp); r = tmp[0]; g = tmp[1]; b = tmp[2]; } const i = (y * cw + x) * 4; im.data[i] = r * 255; im.data[i + 1] = g * 255; im.data[i + 2] = b * 255; im.data[i + 3] = 255; }
+  c.putImageData(im, 0, 0); for (const t of M.trees) { c.fillStyle = 'rgba(30,60,30,.45)'; c.fillRect((t.x + M.hw) / M.w * cw - 1, (t.z + M.hd) / M.d * ch - 1, 2, 2); }
+  return WMIMG[M.id] = cv;
+}
+function toggleWarMap() { if (UI.wmapOn) closeWarMap(); else openWarMap(); }
+function wmForceIds() { const f = UI.wm.force; if (f === 'sel') return selUnitsArr().map(u => u.id); if (f === 'army') return W.units.filter(u => u.owner === ME && !u.T.eng && !u.T.heal && (u.T.w || u.T.w2)).map(u => u.id); return squadIds(+f); }
+function openWarMap() {
+  if (!inGame || !W) return; UI.wmapOn = true; UI.wm = UI.wm || { force: selIds.size ? 'sel' : 'army', order: 'am' }; if (UI.wm.force === 'sel' && !selIds.size) UI.wm.force = 'army';
+  let d = $('#wmap'); if (!d) { d = document.createElement('div'); d.id = 'wmap'; $('#hud').appendChild(d); d.addEventListener('click', wmClick); d.addEventListener('contextmenu', e => e.preventDefault()); }
+  d.innerHTML = '<div class="wmside"><div class="row" style="justify-content:space-between"><b style="color:#ffe2a6;font-size:17px">War Map</b><button class="sm" data-wmx="1">Close (M)</button></div><div class="lbl">Who goes</div><div id="wmforce"></div><div class="lbl">Order</div><div id="wmorder"></div><div class="lbl">Flags (click one to send them)</div><div id="wmpts"></div></div><div class="wmmain"><canvas id="wmcv"></canvas><div class="note" style="text-align:center;margin-top:4px">Click a flag or anywhere on the map to send the troops picked on the left. The game keeps running.</div></div>';
+  d.classList.remove('hidden'); wmDraw(true); clearInterval(UI.wmT); UI.wmT = setInterval(() => { if (!UI.wmapOn || !inGame) { clearInterval(UI.wmT); return; } wmDraw(false); }, 250); updSquads(true);
+}
+function closeWarMap() { UI.wmapOn = false; clearInterval(UI.wmT); const d = $('#wmap'); if (d) d.remove(); if (inGame) updSquads(true); }
+function wmGeom() { const cv = $('#wmcv'), img = wmapImage(); const maxW = Math.max(240, Math.min(window.innerWidth - 300, 980)), maxH = Math.max(220, window.innerHeight - 120); const sc = Math.min(maxW / img.width, maxH / img.height); return { cv, img, sc, w: Math.round(img.width * sc), h: Math.round(img.height * sc) }; }
+function wmXY(g, x, z) { const M = W.M; return [(x + M.hw) / M.w * g.w, (z + M.hd) / M.d * g.h]; }
+function wmDraw(full) {
+  const g = wmGeom(); if (!g.cv) return; const cv = g.cv; if (cv.width !== g.w || cv.height !== g.h) { cv.width = g.w; cv.height = g.h; } const c = cv.getContext('2d'); c.drawImage(g.img, 0, 0, g.w, g.h);
+  // units
+  for (const u of W.units) { if (!myVisible(u)) continue; const p = wmXY(g, u.x, u.z), mine = u.owner === ME; c.fillStyle = hex3(P(u.owner).color); const r = u.T.cls >= 1 ? 2.6 : 1.7; c.fillRect(p[0] - r, p[1] - r, r * 2, r * 2); }
+  // flags
+  for (const pt of W.pts) { if (W.o.war && pt.hq >= 0 && pt.owner < 0) continue; const p = wmXY(g, pt.x, pt.z), col = pt.owner >= 0 ? hex3(P(pt.owner).color) : '#c9ced6'; c.beginPath(); c.arc(p[0], p[1], pt.hq >= 0 ? 10 : 7, 0, TAU); c.fillStyle = col + 'cc'; c.fill(); c.lineWidth = 2; c.strokeStyle = pt.contested ? '#ff4030' : '#000a'; c.stroke(); if (pt.hq >= 0) { c.fillStyle = '#000c'; c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.fillText('HQ', p[0], p[1] + 3.5); } c.font = 'bold 11px sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#000b'; const nm = pt.hq >= 0 ? (pt.owner >= 0 ? P(pt.owner).name : pt.name) : pt.name; c.strokeText(nm, p[0], p[1] - 12); c.fillStyle = '#fff'; c.fillText(nm, p[0], p[1] - 12); }
+  // field events
+  if (W.fev) for (const e of W.fev) { if (e.k === 'ace') continue; const p = wmXY(g, e.x, e.z); c.beginPath(); c.arc(p[0], p[1], e.k === 'strike' ? e.r / W.M.w * g.w : 6, 0, TAU); c.strokeStyle = e.k === 'strike' ? '#ff5a40' : '#ffd24a'; c.lineWidth = 2; c.stroke(); }
+  // squads
+  for (let n = 1; n <= 5; n++) { const ce = squadCenter(squadIds(n)); if (!ce) continue; const p = wmXY(g, ce[0], ce[1]); c.beginPath(); c.arc(p[0], p[1], 9, 0, TAU); c.fillStyle = SQC[n - 1]; c.fill(); c.lineWidth = 2; c.strokeStyle = (UI.wm.force === String(n)) ? '#fff' : '#000'; c.stroke(); c.fillStyle = '#000'; c.font = 'bold 11px sans-serif'; c.textAlign = 'center'; c.fillText(String(n), p[0], p[1] + 4); }
+  // camera view
+  { const p = wmXY(g, cam.x, cam.z); c.strokeStyle = '#ffffffaa'; c.lineWidth = 1.5; const r = cam.dist / W.M.w * g.w * .8; c.strokeRect(p[0] - r, p[1] - r * .6, r * 2, r * 1.2); }
+  // side panel (rebuilt only when something changes)
+  const fl = [['army', 'Whole army'], ['sel', 'Selected (' + selIds.size + ')']].concat([1, 2, 3, 4, 5].map(n => [String(n), n + ' ' + SQN[n - 1] + ' (' + squadIds(n).length + ')']));
+  const fs = fl.map(x => x[0] + x[1]).join() + UI.wm.force; const fe = $('#wmforce'); if (fe && fe.dataset.s !== fs) { fe.dataset.s = fs; fe.innerHTML = fl.map(x => '<button class="sm' + (UI.wm.force === x[0] ? ' on' : '') + '" data-wmf="' + x[0] + '">' + esc(x[1]) + '</button>').join(''); }
+  const oe = $('#wmorder'), os = UI.wm.order; if (oe && oe.dataset.s !== os) { oe.dataset.s = os; oe.innerHTML = [['am', 'Attack (fight on the way)'], ['mv', 'Move (ignore enemies)']].map(x => '<button class="sm' + (UI.wm.order === x[0] ? ' on' : '') + '" data-wmo="' + x[0] + '">' + x[1] + '</button>').join(''); }
+  const pts = W.pts.filter(pt => !(W.o.war && pt.hq >= 0 && pt.owner < 0)); const ps = pts.map(pt => pt.owner + (pt.contested ? 'c' : '')).join(); const pe = $('#wmpts');
+  if (pe && pe.dataset.s !== ps) { pe.dataset.s = ps; pe.innerHTML = pts.map(pt => { const who = pt.owner < 0 ? 'empty' : P(pt.owner).team === MYTEAM ? (pt.owner === ME ? 'yours' : 'ally') : 'enemy'; return '<div class="wmpt ' + who + '" data-wmpt="' + pt.id + '"><span class="cdot" style="background:' + (pt.owner >= 0 ? hex3(P(pt.owner).color) : '#8d97a3') + '"></span>' + esc(pt.hq >= 0 ? (pt.owner >= 0 ? P(pt.owner).name + "'s HQ" : pt.name) : pt.name) + '<i>' + who + (pt.contested ? ', fighting' : '') + '</i></div>'; }).join(''); }
+}
+function wmOrder(x, z, label) {
+  const ids = wmForceIds(); if (!ids.length) { toast(UI.wm.force === 'army' ? 'You have no combat troops.' : 'Nobody in that group yet.'); sfx('deny'); return; }
+  issue({ k: UI.wm.order, ids, x, z, f: UI.form, g: UI.gspd ? 1 : 0 }); orderMarker(x, z, UI.wm.order === 'am' ? [1, .5, .3] : [.4, 1, .5]); ping(x, z, '#ffd24a'); sfx('order');
+  const who = UI.wm.force === 'army' ? 'Army' : UI.wm.force === 'sel' ? 'Selected troops' : 'Squad ' + SQN[+UI.wm.force - 1]; toast(who + (UI.wm.order === 'am' ? ' attacking ' : ' moving to ') + label + ' (' + ids.length + ')');
+}
+function wmClick(e) {
+  const t = e.target; if (t.closest('[data-wmx]')) { closeWarMap(); return; }
+  const f = t.closest('[data-wmf]'); if (f) { UI.wm.force = f.dataset.wmf; sfx('click'); wmDraw(true); return; }
+  const o = t.closest('[data-wmo]'); if (o) { UI.wm.order = o.dataset.wmo; sfx('click'); wmDraw(true); return; }
+  const pr = t.closest('[data-wmpt]'); if (pr) { const pt = W.pts[+pr.dataset.wmpt]; if (pt) wmOrder(pt.x, pt.z, pt.hq >= 0 && pt.owner >= 0 ? P(pt.owner).name + "'s HQ" : pt.name); return; }
+  if (t.id === 'wmcv') { const g = wmGeom(), r = t.getBoundingClientRect(), mx = (e.clientX - r.left) / r.width * g.w, my = (e.clientY - r.top) / r.height * g.h; let best = null, bd = 16; for (const pt of W.pts) { if (W.o.war && pt.hq >= 0 && pt.owner < 0) continue; const p = wmXY(g, pt.x, pt.z), d = Math.hypot(p[0] - mx, p[1] - my); if (d < bd) { bd = d; best = pt; } } const M = W.M; if (best) wmOrder(best.x, best.z, best.hq >= 0 && best.owner >= 0 ? P(best.owner).name + "'s HQ" : best.name); else wmOrder(mx / g.w * M.w - M.hw, my / g.h * M.d - M.hd, 'that spot'); }
+}
 // ----- the context panel (changes with what you have selected) -----
 function cardHtml(i, o, compact) {
   const img = o.img ? '<div class="cimg" style="' + iconStyle(o.img) + '"></div>' : '<div class="cimg" style="color:' + (o.col || 'var(--gold2)') + ';display:flex;align-items:center;justify-content:center">' + ic(o.ico || 'star') + '</div>';
@@ -4250,6 +4347,8 @@ function rosStatus(b) {
   else h += '<b style="color:#8ff0b4">Full strength</b>';
   return h;
 }
+const FORMTIP = ['A tidy block.', 'A wide line facing the target: every gun can fire.', 'An arrow pointing at the enemy.', 'Spread far apart: less hurt by artillery and bombs.', 'Two by two in a long column: good on roads and bridges.', 'A ring around the spot: holds a flag from every side.'];
+function cycleTarget(us) { const tps = new Set(us.map(u => u.tp | 0)), cur = tps.size === 1 ? [...tps][0] : -1, nv = (cur + 1) % 5; if (issue({ k: 'tp', ids: us.map(u => u.id), v: nv })) { if (!W.mirror) for (const u of us) u.tp = nv; toast('Target: ' + TPN[nv]); sfx('click'); } UI.cardSig = ''; hudUpdate(true); }
 function hpHtml(f, col) { return '<div class="hpbar"><i style="width:' + Math.round(f * 20) * 5 + '%' + (col ? ';background:' + col : '') + '"></i></div>'; }
 function renderPanel(force) {
   const el = $('#panel'), p = P(ME), items = [], us = selUnitsArr(), b = selBld ? W.byId.get(selBld) : null; let head = '', wide = false, hbtns = ''; const hb = {};
@@ -4259,19 +4358,23 @@ function renderPanel(force) {
     if (us.length === 1) {
       const u = us[0], T = u.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle(u.type) + '"></div><div class="pt">' + T.n + (u.vet ? ' <span class="stars">' + '&#9733;'.repeat(u.vet) + '</span>' : '') + '<small>' + T.role + '</small></div></div>' + hpHtml(u.hp / u.maxHp) + '<div class="pm">' + esc(T.d) + '</div>';
     } else {
-      head = '<div class="pt">' + us.length + ' selected</div><div class="chips">' + Object.keys(by).map(t => '<div class="chip" data-grp="' + t + '" data-tip="' + esc(UT[t].n + '|' + by[t].length + ' selected. Click to pick only these.') + '" style="' + iconStyle(t) + '"><b>' + by[t].length + '</b><div class="h" style="width:' + Math.round(by[t].reduce((a, u) => a + u.hp / u.maxHp, 0) / by[t].length * 20) * 5 + '%"></div></div>').join('') + '</div><div class="pm">Click the ground to move. Click an enemy to attack.</div>';
+      head = '<div class="pt">' + us.length + ' selected</div><div class="chips">' + Object.keys(by).map(t => '<div class="chip" data-grp="' + t + '" data-tip="' + esc(UT[t].n + '|' + by[t].length + ' selected. Click to pick only these.') + '" style="' + iconStyle(t) + '"><b>' + by[t].length + '</b><div class="h" style="width:' + Math.round(by[t].reduce((a, u) => a + u.hp / u.maxHp, 0) / by[t].length * 20) * 5 + '%"></div></div>').join('') + '</div>';
     }
     const ids = () => us.map(u => u.id);
     items.push({ nm: 'Move + Fight', ico: 'fight', d: 'Go there and fight.', hk: 'F', on: UI.mode === 'amove', tip: 'Move + Fight (tap F)|Your troops walk to the spot you click and attack any enemy they meet.', fn: () => setMode(UI.mode === 'amove' ? null : 'amove') });
     items.push({ nm: 'Stop', ico: 'stop', d: 'Stay here.', hk: 'H', tip: 'Stop (H)|Cancel orders. Troops stay put and shoot what comes close.', fn: () => issue({ k: 'stop', ids: ids() }) });
     items.push({ nm: 'Fall back', ico: 'back', d: 'Run to your nearest flag.', hk: 'R', tip: 'Fall back (R)|Retreat to the closest flag you own.', fn: retreatSel });
     if (us.some(u => u.T.eng)) items.push({ nm: 'Sandbag Nest', ico: 'nest', cost: BT.nest.cost[0], d: 'Build a gun nest.', hk: 'N', on: UI.mode === 'nest', tip: 'Sandbag Nest (N)|An Engineer builds a small machine gun nest where you click.', fn: () => setMode(UI.mode === 'nest' ? null : 'nest') });
+    { const tps = new Set(us.map(u => u.tp | 0)), tv = tps.size === 1 ? [...tps][0] : -1;
+      items.push({ nm: 'Target: ' + (tv < 0 ? 'Mixed' : TPN[tv]), key: 'tp', ico: 'fight', d: 'What they shoot first.', on: tv > 0, tip: 'Target type (X)|Pick what these troops shoot first: Any, Soldiers, Vehicles, Aircraft or Buildings. Click to switch. They still fight back against anything they can hit.', fn: () => cycleTarget(us) }); }
     items.push({ nm: UI.more ? 'Fewer' : 'More', ico: 'group', d: UI.more ? 'Hide extra orders.' : 'Hold position and more.', tip: 'More orders|Hold position, formations and staying together.', fn: () => { UI.more = !UI.more; UI.cardSig = ''; hudUpdate(true); } });
     if (UI.more) {
       items.push({ nm: 'Hold', ico: 'hold', d: 'Only shoot what comes close.', hk: 'J', tip: 'Hold position (J)|Troops stand still and only fire at enemies in range.', fn: () => issue({ k: 'hold', ids: ids() }) });
-      items.push({ nm: 'Shape: ' + ['Box', 'Line', 'Wedge', 'Spread'][UI.form], ico: 'group', d: 'How a big group lines up.', hk: 'Y', tip: 'Formation (Y)|Changes how a big group arranges itself when it arrives.', fn: () => { UI.form = (UI.form + 1) % 4; UI.cardSig = ''; hudUpdate(true); } });
       items.push({ nm: 'Stay together', ico: 'army', d: 'Walk at the slowest speed.', hk: 'G', on: UI.gspd, tip: 'Stay together (G)|The whole group moves at the speed of its slowest unit.', fn: () => { UI.gspd = !UI.gspd; UI.cardSig = ''; hudUpdate(true); } });
     }
+    // 4.1: formation picker, always visible
+    FORMN.forEach((f, i) => { hb['f' + i] = () => { UI.form = i; UI.cardSig = ''; sfx('click'); hudUpdate(true); }; hbtns += '<button class="sm' + (UI.form === i ? ' on' : '') + '" data-hb="f' + i + '" data-tip="' + esc('Formation: ' + f + '|' + FORMTIP[i] + ' Used the next time you give an order (Y cycles).') + '">' + f + '</button>'; });
+    head += '<div class="hbtns fm">' + hbtns + '</div>';
   } else if (b && b.owner === ME) {
     const T = b.T, spn = b.spec ? T.specs.find(s => s.id === b.spec) : null;
     head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt">' + T.n + '<small>Level ' + b.lvl + (spn ? ' - ' + esc(spn.n) : '') + '</small></div></div>' + hpHtml(b.hp / b.maxHp) + '<div class="pm">' + (b.prog < 1 ? 'Building... ' + Math.floor(b.prog * 100) + '%' : (b.upg ? (b.upg.kind === 'lvl' ? 'Leveling up... ' : 'Adding upgrade... ') + Math.floor(b.upg.t / b.upg.dur * 100) + '% ' : '') + (b.ros ? rosStatus(b) : b.upg ? '' : esc(T.d))) + '</div>';
@@ -4292,6 +4395,9 @@ function renderPanel(force) {
       if (b.lvl >= 3 && !b.spec && !b.upg && T.specs.length) items.push({ nm: 'Pick upgrade', key: 'spec', stk: 1, ico: 'star', cost: SPEC_COST, d: 'Choose 1 of 3 upgrades.', go: p.sup >= SPEC_COST, off: p.sup < SPEC_COST && !W.o.sandbox, tip: 'Pick an upgrade|Choose 1 of 3 special upgrades for this building. It cannot be changed later.', fn: () => { UI.specOpen = true; UI.cardSig = ''; hudUpdate(true); } });
       if (b.upg) items.push({ nm: 'Working...', key: 'work', stk: 1, ico: 'build', d: b.upg.kind === 'lvl' ? 'Leveling up.' : 'Adding upgrade.', off: true, pg: b.upg.t / b.upg.dur, fn: () => { } });
       if (b.ros) {
+        const sq = (UI.bsq || {})[b.id] || 0;
+        hb.bsq = () => { UI.bsq = UI.bsq || {}; UI.bsq[b.id] = (sq + 1) % 6; sfx('click'); UI.cardSig = ''; hudUpdate(true); };
+        hbtns += '<button class="sm' + (sq ? ' on' : '') + '" data-hb="bsq" data-tip="New troops join a squad|Troops from this building automatically join the squad you pick here and walk to it. Click to switch: none, then squads 1 to 5.">' + (sq ? 'Joins: ' + SQN[sq - 1] : 'Joins: no squad') + '</button>';
         hb.rhold = () => { issue({ k: 'rhold', b: b.id }); sfx('click'); UI.cardSig = ''; hudUpdate(true); };
         hbtns += '<button class="sm' + (b.hold ? ' on' : '') + '" data-hb="rhold" data-tip="' + (b.hold ? 'Paused|This building is not training or replacing troops. Click to start again.' : 'Pause training|Stop this building from training and replacing troops (to save money). Click again to start.') + '">' + (b.hold ? 'Paused' : 'Pause') + '</button>';
         if (b.hasRally) {
@@ -4404,7 +4510,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Endless War</b>: build a huge fortress, the Bastion, and hold it against wave after wave of new enemy commanders who land from a new direction each time, with armies that grow to rival yours. Lose and you rebuild from the start of the wave; everything saves. <b>Rosters</b> now cost once per slot and troops <b>respawn for free</b>. Units no longer get stuck at the map edge. And the world now has a story: read it in the Field Guide. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Squads</b>: five squads on the right of the screen. Select troops and press + to fill one, then one click selects it; buildings can send new troops straight to a squad. The <b>War Map</b> (M) shows the whole battlefield and every flag: pick a squad and click where it should attack. Pick a <b>formation</b> (now with Column and Ring) and a <b>target type</b> (X) for any group. Endless War now allows armies of up to 320, Supply Depots raise your army limit, and <b>MG Bunkers</b> are much tougher with real armor at higher levels. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -4464,7 +4570,7 @@ SCREENS.settings = () => {
   <div class="lbl">Effects (smoke, sparks): <b id="v_particles">${SET.particles}%</b></div><input type="range" min="0" max="150" step="5" value="${SET.particles}" data-act="rng" data-k="particles">
   <div class="lbl">Sharpness: <b id="v_scale">${SET.scale}%</b></div><input type="range" min="50" max="100" step="5" value="${SET.scale}" data-act="rng" data-k="scale">
   <div class="lbl">Trees and rocks: <b id="v_decor">${SET.decor}%</b></div><input type="range" min="0" max="100" step="5" value="${SET.decor}" data-act="rng" data-k="decor">
-  <div class="lbl">Most units per player: <b id="v_maxUnits">${SET.maxUnits}</b></div><input type="range" min="40" max="220" step="10" value="${SET.maxUnits}" data-act="rng" data-k="maxUnits">` : '';
+  <div class="lbl">Most units per player: <b id="v_maxUnits">${SET.maxUnits}</b></div><input type="range" min="60" max="400" step="10" value="${SET.maxUnits}" data-act="rng" data-k="maxUnits"><div class="note">Quick Battles and the Campaign only. Endless War always allows up to 320.</div>` : '';
   return `<div class="scr bg"><div class="panel" style="width:min(580px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Settings</h2><button class="tbtn" data-act="back2">Back</button></div>
   <div class="lbl">Graphics</div>${seg('gfx', [['auto', 'Auto'], ['low', 'Fast'], ['medium', 'Normal'], ['high', 'Pretty']], SET.gfx === 'custom' ? '' : SET.gfx, 'gfxp')}
   <div class="note" style="margin-top:4px">Auto picks the best setting for your computer and adjusts if the game gets slow. Choose Fast on a school laptop.</div>
@@ -4517,7 +4623,7 @@ SCREENS.howto = () => {
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
    <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
    <div class="hc"><h4>6. Events and the Campaign</h4><div class="dg dark"><div class="coin" style="left:30px;top:34px">$</div><div class="arr" style="left:62px;top:46px;width:40px"></div>${sol(124, 38, '#58a8ff')}${sol(140, 44, '#58a8ff')}<div class="coin" style="left:196px;top:34px;background:#ff6a50">!</div></div><p>During a battle, <b>field events</b> pop up: a <b>supply crate</b> drops (keep troops next to it, with no enemies there, to claim money), an <b>Ace</b> is marked with a gold ring (destroy enemy Aces for a bounty), or an <b>artillery strike</b> is called on a busy flag (get out of the red circle, or lure the enemy in). In the <b>Campaign</b>, pick a mission at each stage, win to earn <b>Doctrines</b> that last the whole operation, and do not run out of Reserves. In <b>Endless War</b>, build up the Bastion between waves; every new enemy is tougher, and if you lose you rebuild from the start of that wave.</p></div>
-   <div class="hc"><h4>7. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b></div></div>
+   <div class="hc"><h4>7. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b><span>Squads</span><b>Press + on a squad to fill it, <kbd>1</kbd>-<kbd>5</kbd> to select</b><span>War Map</span><b><kbd>M</kbd></b><span>Target type</span><b><kbd>X</kbd></b><span>Formation</span><b><kbd>Y</kbd> or the buttons</b></div></div>
   </div>
   <div class="note" style="margin-top:12px">Tip: more of the game unlocks as you level up your HQ and your buildings. Upgrades and Support powers (airstrikes, supply drops, mercenaries) open at HQ Level 2. Fire a Support power by holding F and pressing its number (Hold F + 1 is the first one). Lists and panels scroll with the wheel or two fingers on the touchpad. The enemy warns you with an orange message when it is massing an attack. A Level 3 building lets you pick a special upgrade, and some of them unlock giant units like the Titan mech, Gunships and Sky Hunter jets.</div></div></div>`;
 };
@@ -4702,7 +4808,7 @@ function warInit() {
   for (const id of WAR.pts || []) { const pt = W.pts[id]; if (pt && pt.hq < 0) { pt.owner = 0; pt.ctrl = 1; pt.capP = 0; } }
   me.techs = Object.assign({}, WAR.techs); me.sup = WAR.sup; recalcMods(me); for (const b of W.bld) if (b.owner === 0) { refreshB(b); b.hp = b.prog >= 1 ? b.maxHp : b.maxHp * Math.max(.12, b.prog); }
   // the garrison is at full strength when a wave starts (up to the army limit; the rest train as usual)
-  { let pn = 0; for (const pt of W.pts) if (pt.owner === 0) pn++; const cap = Math.min(W.popMax, 36 + pn * 7 + me.mod.pop + ((me.hqB ? me.hqB.lvl : 1) - 1) * 10); me.popCap = cap; let pop = 0; for (const u of W.units) if (u.owner === 0) pop += u.T.pop;
+  { const cap = popCapOf(me); me.popCap = cap; let pop = 0; for (const u of W.units) if (u.owner === 0) pop += u.T.pop;
     for (const b of W.bld) if (b.owner === 0 && b.ros && b.prog >= 1) for (const k in b.ros) { let n = 0; for (let i = 0; i < b.ros[k] && pop + UT[k].pop <= cap; i++) { spawnFromBuilding(b, k, i); pop += UT[k].pop; n++; } b.made[k] = n; } }
   W.war = { phase: 'prep', t: WAR.blds ? 60 : 90, wave: WAR.wave, def: warDef(WAR.wave), saveT: 10 };
   if (WAR.blds && WAR.wave > 1) for (const u of W.units.slice()) if (u.owner === 0 && !u.home) { u.dead = true; const i = W.units.indexOf(u); W.units[i] = W.units[W.units.length - 1]; W.units.pop(); W.byId.delete(u.id); me.pop -= u.T.pop; }   // the starting squad only comes with a brand-new Bastion
@@ -4805,7 +4911,7 @@ function warLost() {
 }
 function warCfg() {
   const colors = assignColors({});
-  return { map: 'bastion', players: [{ kind: 'human', name: SET.name, team: 0, color: PCOL[colors[0]].c, docs: WAR.docs }, { kind: 'ai', name: 'Enemy', team: 1, color: PCOL[colors[1]].c, ai: { pers: 'hale', diff: 'normal' } }], tickets: 999999, supplies: 0, fog: false, speed: 1, maxPop: 160, events: true, war: true, spawnFor: [0, 1] };
+  return { map: 'bastion', players: [{ kind: 'human', name: SET.name, team: 0, color: PCOL[colors[0]].c, docs: WAR.docs }, { kind: 'ai', name: 'Enemy', team: 1, color: PCOL[colors[1]].c, ai: { pers: 'hale', diff: 'normal' } }], tickets: 999999, supplies: 0, fog: false, speed: 1, maxPop: 320, events: true, war: true, spawnFor: [0, 1] };
 }
 function warDocChips() { return Object.entries(WAR.docs).map(([k, n]) => docChip(k, n)).join(' ') || '<span class="note">None yet. Every second wave you win lets you pick one.</span>'; }
 function warDocCards(ids) { return '<div class="dgrid">' + ids.map(id => { const d = DOCS[id], n = WAR.docs[id] || 0; return '<button class="dcard" data-act="wardoc" data-v="' + id + '"><b>' + esc(d.n) + (n ? ' <i>(' + (n + 1) + ')</i>' : '') + '</b><span>' + esc(d.d) + '</span></button>'; }).join('') + '</div>'; }
@@ -5270,7 +5376,7 @@ function startGame(cfg, opt) {
 }
 function launch(cfg, opt) {
   cleanupGameUI(); const c = Object.assign({}, cfg, { mp: !!opt.mp, mirror: !!opt.mirror, debug: DEBUG }); if (opt.mp || c.tutorial) c.events = false;
-  if (c.tutorial) c.bigStart = false; if (!c.mirror) c.maxPop = Math.min(c.maxPop || 120, Math.max(40, SET.maxUnits)); createWorld(c); ME = opt.me || 0; W.o.mp = !!opt.mp;
+  if (c.tutorial) c.bigStart = false; if (!c.mirror && !c.war) c.maxPop = Math.min(c.maxPop || 120, Math.max(60, SET.maxUnits)); createWorld(c); ME = opt.me || 0; W.o.mp = !!opt.mp;
   buildWorldVisuals(); inGame = true; resultsShown = false; MODE = 'game'; $('#hud').classList.remove('hidden');
   hudInit(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.did = {}; UI.mode = null; UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
   if (UI.touch) showTouchBtns(true); simAcc = 0; applyGfx(); try { mmBuild(); } catch (e) { } hudUpdate(true); closeScreen(); startTicker();
@@ -5279,7 +5385,7 @@ function launch(cfg, opt) {
   if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion: 24 build spots around your HQ and six outposts to capture. The enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 14000); }, 1500);
   if (opt.after) opt.after();
 }
-function cleanupGameUI() { for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
+function cleanupGameUI() { closeWarMap(); UI.bsq = {}; for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
 function endGame(keepNet) {
   cleanupGameUI(); inGame = false; $('#hud').classList.add('hidden'); $('#hud').classList.remove('tuton'); $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; UI.tutorialTick = null; UI.tutFrame = null; TUT = null;
   if (!keepNet && NET.role) netLeave();
