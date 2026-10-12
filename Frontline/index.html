@@ -58,7 +58,7 @@ b{font-weight:700}
 #modebar{position:absolute;left:50%;top:92px;transform:translateX(-50%);padding:8px 14px 8px 18px;border-radius:12px;background:rgba(160,96,10,.95);border:1px solid var(--gold2);font-weight:800;display:flex;gap:12px;align-items:center;box-shadow:0 4px 18px #0008;max-width:96vw}
 #alerts{position:absolute;left:10px;top:96px;width:min(300px,56%);display:flex;flex-direction:column;gap:4px;pointer-events:none}
 #hud.tuton #alerts{left:auto;right:66px;top:100px;align-items:flex-end}
-#alerts div{padding:5px 10px;border-left:4px solid var(--gold);background:rgba(10,16,24,.88);border-radius:0 8px 8px 0;font-size:13px;font-weight:600;animation:fin .3s;pointer-events:auto;cursor:pointer}
+#alerts div{padding:5px 10px;border-left:4px solid var(--gold);background:rgba(10,16,24,.88);border-radius:0 8px 8px 0;font-size:13px;font-weight:600;animation:fin .3s;pointer-events:none}#alerts div[data-x]{pointer-events:auto;cursor:pointer}
 @keyframes fin{from{opacity:0;transform:translateX(-10px)}to{opacity:1}}
 #netbar{position:absolute;left:50%;top:94px;transform:translateX(-50%);padding:4px 14px;border-radius:12px;background:#7a2a20;border:1px solid #ff8a7a;font-size:13px;font-weight:700}
 #fps{position:absolute;left:10px;bottom:132px;font-size:11px;color:#9fe7a5;pointer-events:none}
@@ -280,7 +280,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 ::-webkit-scrollbar-thumb:hover{background:#93b3d3}
 .cdo{position:absolute;inset:0;border-radius:10px;background:conic-gradient(rgba(5,10,16,.8) calc(var(--p,0)*360deg),rgba(5,10,16,0) 0);display:flex;align-items:flex-end;justify-content:flex-end;padding:3px;pointer-events:none;font-weight:900;font-size:14px;color:#ffe2a6;text-shadow:0 1px 3px #000,0 0 6px #000}
 .card.cdn{border-color:#8a6a28}
-.card .qb{position:absolute;right:26px;top:4px;z-index:2;background:rgba(8,14,22,.92);border:1px solid #6fb4ff;border-radius:8px;padding:0 5px;font-size:13px;font-weight:900;line-height:16px;color:#bfe0ff;pointer-events:none}
+.card .rq{position:absolute;right:26px;top:4px;z-index:2;background:rgba(8,14,22,.92);border:1px solid #6fb4ff;border-radius:8px;padding:0 5px;font-size:13px;font-weight:900;line-height:16px;color:#bfe0ff;pointer-events:none}
 .card .qx{position:absolute;right:4px;top:4px;z-index:2;width:18px;height:18px;line-height:16px;text-align:center;border-radius:5px;background:#5a2a24;border:1px solid #c0584a;color:#ffd0c8;font-size:11px;font-weight:900;cursor:pointer}
 .card .qx:hover{background:#9a3a30}
 .qrow{display:flex;flex-wrap:wrap;gap:1px;margin:1px 0;min-height:17px}
@@ -390,6 +390,77 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
  #camctl{bottom:96px;top:auto;right:6px}
  #squads{top:54px}
 }
+
+/* ===================== 2.0 HUD: floating cards instead of one cramped bar ===================== */
+:root{--glass:rgba(11,17,26,.9);--glass2:rgba(20,31,46,.92);--edge:rgba(130,160,195,.22);--shadow:0 8px 24px rgba(0,0,0,.45)}
+#topbar{min-height:50px;padding:5px 12px;background:linear-gradient(180deg,rgba(6,10,16,.92),rgba(6,10,16,.6));border-bottom:1px solid var(--edge);box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.stat{font-size:18px;padding:5px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07)}
+#btnMenu{background:rgba(255,255,255,.06);border-color:var(--edge)}
+#goal{top:58px;padding:5px 8px 5px 14px;background:var(--glass);border:1px solid var(--edge);box-shadow:var(--shadow)}
+#goal .wgo{font-size:14px;padding:6px 16px;border-radius:14px}
+#alerts{top:104px;width:min(320px,40%)}
+#alerts div{border-radius:0 10px 10px 0;background:var(--glass);box-shadow:var(--shadow);padding:6px 11px}
+#squads{top:58px;right:10px;width:150px}
+#squads .sqb{background:var(--glass);border-color:var(--edge);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+@media (min-width:701px) and (min-height:521px){
+ #bottom{left:10px;right:10px;bottom:10px;height:136px;padding:0;gap:10px;background:none;border-top:0;pointer-events:none}
+ #mmwrap{width:204px;height:136px;border-radius:14px;border:1px solid var(--edge);box-shadow:var(--shadow);background:#05080c}
+ #panel{border-radius:14px;background:var(--glass);border:1px solid var(--edge);box-shadow:var(--shadow);padding:9px 10px;gap:12px}
+ #quick{grid-template-columns:repeat(3,74px);gap:7px}
+ .qb{border-radius:12px;background:var(--glass2);border:1px solid var(--edge);box-shadow:0 3px 10px rgba(0,0,0,.35);font-size:12.5px}
+ .qb:hover{border-color:var(--gold);background:#24384f}
+ .qb .qh{display:none}
+ .phead{width:236px;padding-right:12px;border-right:1px solid var(--edge)}
+ .card{border-radius:11px;border-color:rgba(120,155,195,.32);background:linear-gradient(180deg,#223851,#172840)}
+ .card.c2{width:200px;padding:4px 8px;gap:8px}
+ .card.c2 .cimg{width:36px;height:36px}
+ .card.c2 .cn{font-size:13px}
+ .card.c2 .cs .cd{font-size:11px;color:#b9c8d8}
+ .cards.compact{gap:7px 8px}
+ .coach{font-size:17px;padding:4px 10px}
+ #camctl{bottom:158px;right:10px;flex-direction:row;gap:6px}
+ #camctl .tbtn{width:40px;min-height:40px;font-size:19px;background:var(--glass);border-color:var(--edge);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+ #armystrip{left:224px;bottom:156px;background:var(--glass);border-color:var(--edge)}
+ #fps{bottom:158px}
+ #chatbox,#chatin{bottom:196px}
+ #sup{bottom:156px}
+ #specp{bottom:156px}
+ .toast{bottom:170px}
+}
+@media (min-width:701px) and (max-width:1100px) and (min-height:521px){
+ #mmwrap{width:162px;height:108px;align-self:end}
+ .phead{width:170px}.phead.bh{width:218px}
+ .card.c2{width:176px}
+ #quick{grid-template-columns:repeat(3,62px);gap:5px}
+ #armystrip{left:182px}
+}
+@media (min-width:701px) and (max-height:720px) and (min-height:521px){
+ #bottom{height:118px}
+ #mmwrap{width:177px;height:118px}
+ #panel{padding:6px 8px}
+ #camctl{bottom:138px}#armystrip{bottom:136px}#sup,#specp{bottom:136px}#chatbox,#chatin{bottom:176px}#fps{bottom:138px}.toast{bottom:150px}
+}
+
+@media (min-width:701px) and (min-height:521px){
+ .card.c2{width:var(--cw,190px)}
+ .cards.compact .card.stk{width:150px}
+ .cards.more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
+ .card[data-key="warnow"]{width:250px;justify-content:center;gap:4px;padding:10px 14px}
+ .card[data-key="warnow"] .cn{font-size:19px;color:#fff3d6}
+ .card[data-key="warnow"] .cimg{width:40px;height:40px}
+ .card[data-key="warnow"] .cd{font-size:12.5px;color:#ffe2a6}
+ #armystrip .as{opacity:.7}
+}
+
+@media (min-width:701px) and (min-height:521px){
+ .card.c2 .rq{top:auto;bottom:5px;right:6px;font-size:11.5px;line-height:15px}
+ .card.c2 .qx{top:5px;right:5px}
+ .card.c2.on .ctx{padding-right:22px}
+ .card.c2.on .cs .cd{display:none}
+}
+@media (min-width:701px) and (max-width:1400px) and (min-height:521px){ #quick{grid-template-columns:repeat(3,66px);gap:6px} }
+
+@media (min-width:701px) and (max-width:1100px) and (min-height:521px){ .coach{font-size:14px;gap:8px;padding:2px 4px}.coach .ic{width:22px;height:22px}.coach small{font-size:11.5px} }
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
@@ -437,7 +508,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '4.1';
+const VERSION = '2.0';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -3745,7 +3816,7 @@ function renderFrame(dt, now) {
     for (const [id, m] of SHDOME) if (!seenSh.has(id)) { worldGroup.remove(m); m.material.dispose(); SHDOME.delete(id); }
     const addCircle = (x, z, R, cr, cg, cb) => { if (!(R > 0)) return; const n = clamp(Math.round(R * 1.15), 16, 120); for (let k = 0; k < n; k++) { const a = k / n * TAU; addRing(x + Math.cos(a) * R, z + Math.sin(a) * R, .4, cr, cg, cb); } };
     const unitCircles = (u, foe) => { const T = u.T; let R = 0, mn = 0; for (const w of [T.w, T.w2]) if (w) { R = Math.max(R, uRange(u, w)); if (w.minr) mn = Math.max(mn, w.minr); } const x = u.rx !== undefined ? u.rx : u.x, z = u.rz !== undefined ? u.rz : u.z; if (R) addCircle(x, z, R, foe ? 1 : 1, foe ? .35 : .85, foe ? .3 : .35); if (mn) addCircle(x, z, mn, 1, .3, .25); if (T.heal) addCircle(x, z, 11, .4, 1, .5); };
-    let ni = 0; for (const id of selIds) { if (ni++ >= 30) break; const u = W.byId.get(id); if (u && !u.dead) unitCircles(u, false); }
+    let ni = 0; if (selIds.size <= 6) for (const id of selIds) { if (ni++ >= 6) break; const u = W.byId.get(id); if (u && !u.dead) unitCircles(u, false); }
     if (UI.selEnemy && !UI.selEnemy.dead && UI.selEnemy.k === 'u') unitCircles(UI.selEnemy, true);
     const sb = selBld ? W.byId.get(selBld) : null;
     if (sb && !sb.dead && sb.type !== 'wall') {
@@ -4051,7 +4122,8 @@ function setupInput() {
   const cv = glc; cv.tabIndex = 0;
   window.addEventListener('contextmenu', e => { if (inGame) e.preventDefault(); });
   cv.addEventListener('pointerdown', e => {
-    initAudio(); if (!inGame) return; try { cv.focus(); } catch (_) { } const touch = e.pointerType === 'touch'; if (touch) { UI.touch = true; showTouchBtns(true); }
+    initAudio(); if (!inGame) return; try { cv.focus(); } catch (_) { } const touch = e.pointerType === 'touch';
+    if (e.button === 0 && (techOpen || UI.supOpen || UI.specOpen)) { closeTech(); closePops(); UI.cardSig = ''; hudUpdate(true); updQuick(true); return; }   // 2.0: a click on the map closes Upgrades / Support instead of being lost if (touch) { UI.touch = true; showTouchBtns(true); }
     try { cv.setPointerCapture(e.pointerId); } catch (_) { }
     UI.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), btn: e.button, touch, moved: false });
     UI.mx = e.clientX; UI.my = e.clientY;
@@ -4061,7 +4133,7 @@ function setupInput() {
   });
   cv.addEventListener('pointermove', e => {
     UI.mx = e.clientX; UI.my = e.clientY; const p = UI.ptrs.get(e.pointerId); if (!p) return; const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
-    if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > (p.touch ? 12 : 7)) p.moved = true;
+    if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > (p.touch ? 14 : 12)) p.moved = true;   // 2.0: touchpad taps drift a few pixels; that is still a click
     if (UI.ptrs.size === 2 && UI.pinch) {
       const a = [...UI.ptrs.values()]; const d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y), cx = (a[0].x + a[1].x) / 2, cy = (a[0].y + a[1].y) / 2;
       camZoom(UI.pinch.d / Math.max(10, d)); camMoveScreen(-(cx - UI.pinch.cx), -(cy - UI.pinch.cy), true); UI.pinch.d = d; UI.pinch.cx = cx; UI.pinch.cy = cy; return;
@@ -4078,8 +4150,9 @@ function setupInput() {
     if (e.type === 'pointercancel') { UI.drag = null; return; }
     if (e.button === 2 && !p.touch) { if (!p.moved) onRightClick(e.clientX, e.clientY, e.altKey); return; }
     if (!dr || dr.id !== e.pointerId) return; UI.drag = null; if (dr.pan) return;
-    if (dr.box && p.moved) { boxSelect(dr.x0, dr.y0, e.clientX, e.clientY, e.shiftKey || dr.shift); return; }
-    if (!p.moved) onClickWorld(e.clientX, e.clientY, e.shiftKey);
+    const dd = Math.hypot(e.clientX - p.x0, e.clientY - p.y0), quick = performance.now() - p.t0 < 350;
+    if (dr.box && p.moved && !(quick && dd < 26)) { boxSelect(dr.x0, dr.y0, e.clientX, e.clientY, e.shiftKey || dr.shift); return; }
+    if (!p.moved || (quick && dd < 26)) onClickWorld(p.x0, p.y0, e.shiftKey);
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('wheel', onWheel, { passive: false }); $('#panel').addEventListener('wheel', wheelCards, { passive: false });
@@ -4125,7 +4198,7 @@ function boxSelect(x0, y0, x1, y1, add) {
   const l = Math.min(x0, x1), r = Math.max(x0, x1), t = Math.min(y0, y1), b = Math.max(y0, y1); const ids = [];
   for (const u of W.units) { if (u.owner !== ME) continue; w2s(u.rx, u.ry + 1, u.rz, _sp); if (_sp.z < 1 && _sp.x >= l && _sp.x <= r && _sp.y >= t && _sp.y <= b) ids.push(u.id); }
   if (ids.length) { selectUnits(ids, add); UI.did.box = ids.length; sfx('click'); }
-  else if (!add) { clearSel(); afterSel(); }
+  else if (!add && Math.max(r - l, b - t) > 40) { clearSel(); afterSel(); }   // 2.0: a small empty box (a sloppy click) keeps the selection
 }
 const KEYCARD = ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'];
 function onKey(e) {
@@ -4305,8 +4378,8 @@ function updStrip() {
   const chips = Object.keys(grp).slice(-7).map(t => '<div class="ch" style="' + iconStyle(t) + '" data-tip="' + esc(UT[t].n + '|Deployed recently.') + '"><b>' + grp[t] + '</b></div>').join('');
   const sig = [pb.length, full, trn, money, army, empty, miss, chips].join('/');
   if (el.dataset.s === sig) return; el.dataset.s = sig;
-  el.innerHTML = '<span class="as">Army status</span>' + (pb.length ? (trn ? '<span class="cl">' + trn + ' training</span>' : '') + (full ? '<span class="rd">' + full + ' at full strength</span>' : '') + (money ? '<span class="cl" style="color:#ff9a8c">' + money + ' waiting for money</span>' : '') + (army ? '<span class="cl" style="color:#ff9a8c">' + army + ' army full</span>' : '') + (empty ? '<span class="qd" style="color:#9fd0ff">' + empty + ' with no troops picked</span>' : '') + (miss ? '<span class="qd" style="color:#9fd0ff">' + miss + ' troops to go</span>' : '') : '<span>no barracks yet</span>') + (chips ? '<span class="as">Just deployed</span>' + chips : '');
-  el.style.display = pb.length || chips ? 'flex' : 'none';
+  el.innerHTML = (pb.length ? (trn ? '<span class="cl">' + trn + ' training</span>' : '') + (full ? '<span class="rd">' + full + ' full</span>' : '') + (money ? '<span class="cl" style="color:#ff9a8c">' + money + ' waiting for money</span>' : '') + (army ? '<span class="cl" style="color:#ff9a8c">' + army + ' army full</span>' : '') + (empty ? '<span class="qd" style="color:#9fd0ff" data-tip="Empty buildings|Click a building with a Pick troops label and choose what it keeps.">' + empty + ' empty</span>' : '') + (miss ? '<span class="qd" style="color:#9fd0ff">' + miss + ' to train</span>' : '') : '') + (chips ? '<span class="as">New</span>' + chips : '');
+  el.style.display = (pb.length && (trn || money || army || empty || miss)) || chips ? 'flex' : 'none';   // 2.0: only when there is something to say
 }
 const BADGES = new Map();
 function updBadges() {
@@ -4336,6 +4409,7 @@ function coachHint() {
   const p = P(ME), my = W.units.filter(u => u.owner === ME), blds = W.bld.filter(b => b.owner === ME), hql = playerHQLvl(p);
   const has = t => blds.some(b => b.type === t && b.prog >= 1), flags = W.pts.filter(q => q.owner === ME && q.hq < 0).length, neutral = W.pts.some(q => q.owner < 0 && q.hq < 0), soldiers = my.filter(u => !u.T.eng).length;
   const foeFlag = W.pts.some(q => q.owner >= 0 && P(q.owner).team !== MYTEAM);
+  if (W.war) { const w = W.war, d = w.def; if (w.phase === 'prep') return ['Build up the Bastion, then start wave ' + w.wave + '.', d.name + ' lands in the ' + WDIRS[d.site] + '. Click a yellow + spot to build.']; if (w.phase === 'fight') return ['Wave ' + w.wave + ': hold the Bastion!', 'Destroy the enemy HQ in the ' + WDIRS[d.site] + ' or survive until the timer ends.']; }
   if (!blds.some(b => b.type === 'barracks')) return ['Build a Barracks to train more soldiers.', p.sup >= BT.barracks.cost[0] ? 'Click your HQ flag, then pick Barracks.' : 'Save up ' + BT.barracks.cost[0] + ' money first.'];
   if (neutral && flags < 2) return ['Capture a gray flag. Flags give you money.', 'Select soldiers, then click the flag.'];
   { const eb = blds.find(b => b.ros && b.type !== 'hq' && b.prog >= 1 && rosTotal(b) < rosCap(b)); if (eb && soldiers < 14) return ['Your ' + eb.T.n + ' has room for ' + (rosCap(eb) - rosTotal(eb)) + ' more troops.', 'Click it, then click troop cards to fill its roster.']; }
@@ -4351,12 +4425,15 @@ function hudUpdate(force) {
   $('#vSup').textContent = Math.floor(p.sup); $('#vInc').textContent = '+' + Math.round(p.inc) + '/s'; $('#vPop').textContent = p.pop + '/' + (isFinite(p.popCap) ? p.popCap : '\u221e'); $('#stArmy').classList.toggle('low', p.pop >= p.popCap);
   $('#timer').textContent = fmtTime(W.t);
   { const mt = W.teams[MYTEAM]; if (mt && !W.o.sandbox) { const lvl = mt.tickets <= 25 ? 3 : mt.tickets <= 50 ? 2 : mt.tickets <= 100 ? 1 : 0; if (lvl > (UI.tixWarn || 0)) { UI.tixWarn = lvl; addAlert('Careful: your score is only ' + Math.max(0, Math.round(mt.tickets)) + '!', '#ff3b30'); sfx('alert'); } } }
-  updScore(); updGoal();
+  // 2.0: while a mouse button / finger is down on the HUD, do not rebuild it: a button replaced between press and release
+  // swallows the click (this lost most clicks on troop cards while a building was training)
+  const hold = UI.hudDown && !force;
+  if (!hold) { updScore(); updGoal(); }
   for (const id of [...selIds]) { const u = W.byId.get(id); if (!u || u.dead) selIds.delete(id); }
   if (selBld && !W.byId.get(selBld)) { selBld = 0; UI.selEnemy = null; UI.cardSig = ''; }
-  updModeBar(); renderPanel(force); updStrip(); updSquads(force); updQuick(force); updSup(force);
+  updModeBar(); if (!hold) { renderPanel(force); updStrip(); updSquads(force); updQuick(force); updSup(force); }
   if (UI.tutorialTick) UI.tutorialTick();
-  if (techOpen) updTech();
+  if (techOpen && !hold) updTech();
 }
 function updScore() {
   const bl = teamBleed(); let sig = ''; for (const t of W.teamList) sig += t.id + ':' + Math.max(0, Math.round(t.tickets)) + (t.alive ? '' : 'x') + (bl[t.id] || 0) + '|';
@@ -4381,7 +4458,7 @@ function updGoal() {
   const el = $('#goal'); let mine = ptsOfTeam(MYTEAM), theirs = 0; for (const t of W.teamList) if (t.id !== MYTEAM) theirs = Math.max(theirs, ptsOfTeam(t.id));
   if (W.war) {   // 3.1 Endless War status
     const w = W.war, d = w.def; let lg, st;
-    if (w.phase === 'prep') { lg = d.name + ' (' + d.title + ') will land in the ' + WDIRS[d.site] + '. Start when ready.'; st = w.hold || w.go ? '<span class="st t">Get ready...</span>' : '<button class="sm wgo" data-warnow="1" style="pointer-events:auto">Start Wave ' + w.wave + '</button>'; }
+    if (w.phase === 'prep') { lg = d.name + ' (' + d.title + ') will land in the ' + WDIRS[d.site] + '. Start when ready.'; st = (w.hold && (SCREEN === 'warwave' || W.t - (w.holdT || 0) <= 3)) || w.go ? '<span class="st t">Get ready...</span>' : '<button class="sm wgo" data-warnow="1" style="pointer-events:auto">Start Wave ' + w.wave + '</button>'; }
     else if (w.phase === 'fight') { const e = W.players[1], hq = e.hqB; lg = 'Wave ' + w.wave + ': destroy ' + d.name + "'s HQ in the " + WDIRS[d.site] + ', or hold out until time runs out.'; st = '<span class="st ' + (w.t < 60 ? 'w' : 't') + '">' + fmtTime(w.t) + ' left</span>' + (hq && !hq.dead ? '<span class="st l">Enemy HQ ' + Math.ceil(hq.hp / hq.maxHp * 100) + '%</span>' : ''); }
     else { lg = 'The Bastion has fallen.'; st = ''; }
     const sg = 'W' + lg + st; if (sg === el.dataset.s) return; el.dataset.s = sg; el.innerHTML = w.phase === 'prep' ? '<b>WAVE ' + w.wave + '</b>' + st + '<span class="lg">' + esc(lg) + '</span><span class="sh">Prepare</span>' : '<b>WAVE ' + w.wave + '</b><span class="lg">' + esc(lg) + '</span><span class="sh">Wave ' + w.wave + '</span>' + st;
@@ -4406,7 +4483,7 @@ function updModeBar() {
   if (UI.mode === 'amove') t = 'Click where your troops should go. They will fight on the way.';
   else if (UI.mode === 'nest') t = 'Click where the Engineer should build a Sandbag Nest.';
   else if (UI.mode === 'guard') t = 'Click a flag (or any spot) for your troops to guard.';
-  else if (UI.mode === 'rally') t = 'Click where new troops should gather. This replaces Rally: Army (auto).';
+  else if (UI.mode === 'rally') t = 'Click where new troops from this building should gather.';
   else if (UI.mode === 'call') t = 'Click the map to use ' + CALL[UI.callId].n + '.';
   else if (UI.mode === 'sbspawn') t = 'Click the map to place ' + UT[UI.sb.type].n + '.';
   if (el.dataset.t === t) return; el.dataset.t = t; if (!t) { el.classList.add('hidden'); return; } el.classList.remove('hidden'); el.innerHTML = '<span>' + esc(t) + '</span><button class="sm" id="modex">Cancel</button>'; $('#modex').onclick = () => setMode(null);
@@ -4503,11 +4580,20 @@ function wmClick(e) {
   if (t.id === 'wmcv') { const g = wmGeom(), r = t.getBoundingClientRect(), mx = (e.clientX - r.left) / r.width * g.w, my = (e.clientY - r.top) / r.height * g.h; let best = null, bd = 16; for (const pt of W.pts) { if (W.o.war && pt.hq >= 0 && pt.owner < 0) continue; const p = wmXY(g, pt.x, pt.z), d = Math.hypot(p[0] - mx, p[1] - my); if (d < bd) { bd = d; best = pt; } } const M = W.M; if (best) wmOrder(best.x, best.z, best.hq >= 0 && best.owner >= 0 ? P(best.owner).name + "'s HQ" : best.name); else wmOrder(mx / g.w * M.w - M.hw, my / g.h * M.d - M.hd, 'that spot'); }
 }
 // ----- the context panel (changes with what you have selected) -----
+// 2.0: two-row cards share the space evenly (no cut-off text when there is room; scroll only when there is not)
+function fitCards(el) {
+  const cs = el.querySelector('.cards.compact'); if (!cs) return; let n = 0; for (const c of cs.children) n += c.classList.contains('stk') ? 2 : 1;
+  const cols = Math.ceil(n / 2), w = cs.clientWidth; if (!w) return; const cw = clamp(Math.floor((w - (cols - 1) * 8 - 2) / cols), 178, 230); cs.style.setProperty('--cw', cw + 'px'); cs.classList.toggle('more', !cs.querySelector('.stk') && cols * (cw + 8) - 8 > w + 4);
+}
+window.addEventListener('resize', () => { if (inGame && W) { UI.cardSig = ''; const el = $('#panel'); if (el) el.dataset.h = ''; hudUpdate(true); } });
+window.addEventListener('pointerdown', e => { const t = $('#tip'); if (t) t.classList.add('hidden'); UI.hudDown = !!(e.target && e.target.closest && e.target.closest('#hud, #techp')) && e.target.id !== 'gl'; clearTimeout(UI.hudDownT); if (UI.hudDown) UI.hudDownT = setTimeout(() => { UI.hudDown = false; }, 1500); }, true);
+const hudUp = () => { if (UI.hudDown) setTimeout(() => { UI.hudDown = false; if (inGame && W) hudUpdate(); }, 0); };
+window.addEventListener('pointerup', hudUp, true); window.addEventListener('pointercancel', hudUp, true);   // 2.0: a click never leaves an old tooltip on screen
 function cardHtml(i, o, compact) {
   const img = o.img ? '<div class="cimg" style="' + iconStyle(o.img) + '"></div>' : '<div class="cimg" style="color:' + (o.col || 'var(--gold2)') + ';display:flex;align-items:center;justify-content:center">' + ic(o.ico || 'star') + '</div>';
   const cost = o.lock ? '<span class="cc">' + ic('lock') + (o.lockTxt || 'Locked') + '</span>' : (o.cost ? '<span class="cc">' + ic('coin') + o.cost + '</span>' : '');
   const cls = 'card' + (compact ? ' c2' : '') + (o.cdn ? ' cdn' : '') + (o.off ? ' off' : '') + (o.lock ? ' lock' : '') + (o.on ? ' on' : '') + (o.go ? ' go' : '') + (o.stk ? ' stk' : '');
-  const extra = (o.rn ? '<span class="qb" data-tip="In the roster|' + o.rh + ' alive out of ' + o.rn + ' wanted. The building keeps this many and replaces any that die.">' + o.rh + '/' + o.rn + '</span><span class="qx" data-qx="' + (o.key || '') + '" data-tip="Remove one|Take one slot out of the roster. The troop stays, it just will not be replaced. (Right-click the card does the same.)">&minus;</span>' : '') + (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
+  const extra = (o.rn ? '<span class="rq" data-tip="In the roster|' + o.rh + ' alive out of ' + o.rn + ' wanted. The building keeps this many and replaces any that die.">' + o.rh + '/' + o.rn + '</span><span class="qx" data-qx="' + (o.key || '') + '" data-tip="Remove one|Take one slot out of the roster. The troop stays, it just will not be replaced. (Right-click the card does the same.)">&minus;</span>' : '') + (o.hk ? '<span class="hk">' + o.hk + '</span>' : '') + (o.pg ? '<div class="pg" style="width:' + Math.round(o.pg * 100) + '%"></div>' : '');
   if (compact) return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '">' + img + '<div class="ctx"><div class="cn">' + esc(o.nm) + '</div><div class="cs">' + cost + '<span class="cd">' + esc(o.s || o.d || '') + '</span></div></div>' + extra + '</div>';
   return '<div class="' + cls + '" data-i="' + i + '" data-key="' + (o.key || '') + '" data-tip="' + esc(o.tip || o.nm) + '"><div class="crow">' + img + '<div class="cn">' + esc(o.nm) + '</div></div><div class="cm">' + cost + '</div><div class="cd">' + esc(o.d || '') + '</div>' + extra + '</div>';
 }
@@ -4618,13 +4704,15 @@ function renderPanel(force) {
     }
   } else {
     const h = coachHint(); head = '<div class="coach">' + ic('flag') + '<div>' + esc(h[0]) + '<small>' + esc(h[1]) + '</small></div></div>'; wide = true;
+    if (W.war && W.war.phase === 'prep' && !W.o.mp) { const w = W.war; wide = false; items.push({ nm: w.go ? 'Starting...' : 'Start Wave ' + w.wave, key: 'warnow', ico: 'fight', go: !w.go, off: !!w.go, d: w.def.title, s: w.def.title, tip: 'Start wave ' + w.wave + '|' + w.def.name + ' (' + w.def.title + ') lands in the ' + WDIRS[w.def.site] + '. Your progress is saved first.', fn: () => { initAudio(); ACT.warnow(); UI.cardSig = ''; hudUpdate(true); } }); }
   }
-  const compact = items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : bh ? 272 : 214) - 8);
+  const compact = items.length >= 3 || items.length * 124 > Math.max(300, (el.clientWidth || 800) - (wide ? 0 : bh ? 272 : 214) - 8);   // 2.0: same two-row layout on every screen size
   const sig = head + '|' + items.map(i => i.nm + (i.off ? 0 : 1) + (i.rn ? 'r' + i.rh + '/' + i.rn : '') + (i.on ? 1 : 0) + (i.go ? 'g' : '') + (i.cost || '') + (i.pg ? Math.floor(i.pg * 10) : '') + (i.lock ? 'L' : '') + (i.d || '')).join(',') + UI.mode + UI.form + compact + hbtns;
   if (el.dataset.h === sig && !force) return; const sc = el.querySelector('.cards'); const keepScroll = sc ? sc.scrollLeft : 0; el.dataset.h = sig;
   CARD = items.map(i => i.fn); CARD.hb = hb;
   el.innerHTML = '<div class="phead' + (wide ? ' wide' : '') + (bh ? ' bh' : '') + '">' + head + '</div>' + (items.length ? '<div class="cards' + (compact ? ' compact' : '') + '">' + items.map((o, i) => cardHtml(i, o, compact)).join('') + '</div>' : '');
   if (keepScroll) { const n = el.querySelector('.cards'); if (n) n.scrollLeft = keepScroll; }
+  fitCards(el);
   renderSpec();
 }
 function renderSpec() {
@@ -4687,7 +4775,7 @@ SCREENS.main = () => {
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Squads</b>: five squads on the right of the screen. Select troops and press + to fill one, then one click selects it; buildings can send new troops straight to a squad. The <b>War Map</b> (M) shows the whole battlefield and every flag: pick a squad and click where it should attack. Pick a <b>formation</b> (now with Column and Ring) and a <b>target type</b> (X) for any group. Endless War has <b>no army limit</b> at all, Supply Depots raise your army limit elsewhere, click anything to see its <b>range</b>, Shield Generators raise a <b>force field</b> that blocks all damage until it breaks and recharges, and <b>MG Bunkers</b> are much tougher with real armor at higher levels. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> a cleaner battle screen with more room, clicks that always go through (buttons no longer change under your mouse), Start Wave always shows in Endless War, and clicking the map closes Upgrades and Support. Big armies move smoothly, multiplayer works across different networks, squads and rally points are saved, and new troops wait at their building unless you set a rally point. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -5022,6 +5110,7 @@ function warSave() {
 function warTick() {
   const w = W.war; if (!w || W.over) return;
   if (w.phase === 'prep') {
+    if (w.hold && SCREEN !== 'warwave' && W.t - (w.holdT || 0) > 3) w.hold = false;   // 2.0: the after-wave screen was closed some other way (pause menu, tab switch): never get stuck without a Start Wave button
     if (w.hold) return;
     warSave();                 // everything done to the Bastion between waves is saved right away (once a second)
     if (w.go) warSpawn();      // the wave only starts when the player presses Start Wave
@@ -5093,7 +5182,7 @@ function warWon(how) {
   WAR.hist.unshift([d.wave, d.name, how === 'hq' ? 'won' : 'held']); WAR.hist.length = Math.min(WAR.hist.length, 12);
   WAR.wins++; WAR.lastSite = d.site; WAR.lastStyle = d.style; WAR.wave = d.wave + 1; WAR.best = Math.max(WAR.best, WAR.wave);
   if (d.wave % 2 === 0 && !WAR.offer) { const r = mulberry32(((WAR.seed | 0) + d.wave * 31) >>> 0), ids = WAR_DOCS.filter(id => (WAR.docs[id] || 0) < DOCS[id].max), out = []; while (out.length < 3 && ids.length) out.push(ids.splice((r() * ids.length) | 0, 1)[0]); if (out.length) WAR.offer = out; }
-  W.war = { phase: 'prep', t: 60, wave: WAR.wave, def: warDef(WAR.wave), saveT: 10, hold: true };
+  W.war = { phase: 'prep', t: 60, wave: WAR.wave, def: warDef(WAR.wave), saveT: 10, hold: true, holdT: W.t };
   warSave();
   const ms = LORE.war.milestones[WAR.wave] && !WAR.seen[WAR.wave] ? LORE.war.milestones[WAR.wave] : ''; if (ms) { WAR.seen[WAR.wave] = 1; saveWar(); }
   const info = { wave: d.wave, name: d.name, ep: d.ep, how, reward, line: warFill(wpick(Math.random, LORE.war.waveWon), d), ms, next: W.war.def };
@@ -5145,7 +5234,7 @@ ACT.warreset = () => { if (!UI.wreset) { UI.wreset = 1; showScreen('war'); retur
 ACT.warplay = () => { if (!WAR) warNew(); startGame(warCfg()); };
 ACT.wardoc = el => { const id = el.dataset.v; if (!WAR || !WAR.offer || !WAR.offer.includes(id)) return; WAR.docs[id] = (WAR.docs[id] || 0) + 1; WAR.offer = null; saveWar(); if (inGame && W && W.o.war) { const me = W.players[0]; me.perkMod = {}; for (const k in WAR.docs) { const d = DOCS[k]; if (d && d.mod) for (const m in d.mod) me.perkMod[m] = (me.perkMod[m] || 0) + d.mod[m] * WAR.docs[k]; } me.bounty = WAR.docs.bounty ? .15 : 0; me.fevMul = WAR.docs.qm ? 2 : 1; recalcMods(me); sfx('done'); ACT.warnext(); } else showScreen('war'); };
 ACT.warnext = () => { closeScreen(); if (W && W.war) { W.war.hold = false; W.paused = false; } };
-ACT.warnow = () => { if (W && W.war && W.war.phase === 'prep' && !W.war.hold && !W.war.go) { W.war.go = true; sfx('click'); hudUpdate(true); } };
+ACT.warnow = () => { if (W && W.war && W.war.hold && SCREEN !== 'warwave' && W.t - (W.war.holdT || 0) > 3) W.war.hold = false; if (W && W.war && W.war.phase === 'prep' && !W.war.hold && !W.war.go) { W.war.go = true; sfx('click'); hudUpdate(true); } };
 ACT.warmenu = () => { if (W && W.o.war && W.war && W.war.phase === 'prep') warSave(); endGame(); ACT.war(); };
 ACT.warmenu2 = () => { endGame(); ACT.war(); };
 ACT.warretry = () => { endGame(); startGame(warCfg()); };
@@ -5648,7 +5737,7 @@ function launch(cfg, opt) {
   if (c.mirror) { W.lastSnap = 0; }
   if (c.war) warRestoreSquads();
   if (c.camp && c.obj) { const mk = CAMP && CAMP.cur && CAMP.cur.final ? 'final' : c.obj.type, br = LORE.missions[mk] ? LORE.missions[mk].brief : null; if (br) setTimeout(() => { if (inGame) addAlert('HQ: ' + br[(Math.random() * br.length) | 0], '#ffe2a6', undefined, undefined, 16000); }, 1500); }
-  if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion: 24 build spots around your HQ, defense pads outside the walls and six outposts to capture. Press Start Wave (top of the screen) when you are ready; the enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 14000); }, 1500);
+  if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion, then press Start Wave. The enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 9000); }, 1500);
   if (opt.after) opt.after();
 }
 function cleanupGameUI() { closeWarMap(); UI.bsq = {}; for (const m of SHDOME.values()) { if (worldGroup) worldGroup.remove(m); m.material.dispose(); } SHDOME.clear(); for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
