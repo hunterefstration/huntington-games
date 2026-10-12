@@ -443,10 +443,10 @@ const PCOL = [
 // armour classes: 0 infantry, 1 vehicle, 2 heavy, 3 air, 4 building
 const WTM = {
   bullet: [1, .45, .2, .9, .25], rocket: [.5, 1.3, 1.2, 0, 1], shell: [1.1, .8, .5, 0, 1.2], cannon: [.6, 1.2, 1, 0, .9],
-  snipe: [2, .15, .05, 0, .1], flak: [.35, .3, .15, 2.2, .1], aam: [0, 0, 0, 1.8, 0], comm: [1, .6, .3, .5, 1.6], bomb: [1.2, 1, .8, 0, 1.5], mine: [1.1, 1.3, 1, 0, 0]
+  snipe: [2, .15, .05, 0, .1], tesla: [1.25, .8, .55, .5, .4], flak: [.35, .3, .15, 2.2, .1], aam: [0, 0, 0, 1.8, 0], comm: [1, .6, .3, .5, 1.6], bomb: [1.2, 1, .8, 0, 1.5], mine: [1.1, 1.3, 1, 0, 0]
 };
-const WTD = { bullet: 'b', rocket: 'g', shell: 'g', cannon: 'g', snipe: 'g', flak: 'b', aam: 'a', comm: 'b', bomb: 'g', mine: 'g' };
-const WKIND = { bullet: 0, rocket: 1, shell: 2, bomb: 3, flak: 4, snipe: 5, cannon: 7, aam: 9, comm: 0, mine: 2 };
+const WTD = { tesla: 'b', bullet: 'b', rocket: 'g', shell: 'g', cannon: 'g', snipe: 'g', flak: 'b', aam: 'a', comm: 'b', bomb: 'g', mine: 'g' };
+const WKIND = { tesla: 5, bullet: 0, rocket: 1, shell: 2, bomb: 3, flak: 4, snipe: 5, cannon: 7, aam: 9, comm: 0, mine: 2 };
 const VETDMG = [1, 1.1, 1.2, 1.32], VETHP = [1, 1.1, 1.22, 1.38];
 const VETNAME = ['Recruit', 'Veteran', 'Elite', 'Hero'];
 function Wp(wt, dmg, cd, rng, o) { return Object.assign({ wt, dmg, cd, rng, minr: 0, spl: 0, ps: 0, arc: 0, shots: 1, scat: 0, g: WTD[wt], k: WKIND[wt] }, o || {}); }
@@ -506,15 +506,36 @@ defB('depot', { n: 'Supply Depot', sz: 4.5, hp: [500, 700, 950], cost: [120, 100
   { id: 'trade', n: 'Trade Post', d: '+60% money from this depot.' },
   { id: 'logistics', n: 'Logistics Hub', d: 'Buildings at this flag recharge troops 25% faster.' },
   { id: 'armory', n: 'Ammo Dump', d: 'Your troops near this depot deal +12% damage.' }] });
-defB('turret', { n: 'MG Bunker', sz: 3.6, hp: [800, 1500, 2600], cost: [140, 120, 180], bt: [10, 11, 13], hq1: 1, d: 'Guards the flag by itself.', info: 'A concrete machine gun bunker that shoots enemies automatically. Its armor shrugs off 15% of damage at Level 1, 30% at Level 2 and 45% at Level 3.', up: ['Much tougher, faster gun, 30% armor.', 'A fortress: huge health, 45% armor. Pick an upgrade.'], specs: [
+defB('turret', { n: 'MG Bunker', def: 1, sz: 3.6, hp: [800, 1500, 2600], cost: [140, 120, 180], bt: [10, 11, 13], hq1: 1, d: 'Guards the flag by itself.', info: 'A concrete machine gun bunker that shoots enemies automatically. Its armor shrugs off 15% of damage at Level 1, 30% at Level 2 and 45% at Level 3.', up: ['Much tougher, faster gun, 30% armor.', 'A fortress: huge health, 45% armor. Pick an upgrade.'], specs: [
   { id: 'twin', n: 'Twin Machine Guns', d: 'Almost twice the fire rate. Great vs soldiers.' },
   { id: 'at', n: 'Anti-Tank Gun', d: 'Long-range cannon that kills vehicles.' },
   { id: 'flak', n: 'Anti-Aircraft Gun', d: 'Flak cannon that shoots down aircraft.' }] });
+// 4.2 defenses. They fit on any build spot, and also on the defense pads every flag now has just outside its walls.
+defB('cannon', { n: 'Cannon Tower', def: 1, sz: 3.8, hp: [900, 1600, 2600], cost: [220, 170, 240], bt: [12, 13, 15], hq1: 1, d: 'Long-range gun that kills vehicles.', info: 'An armored tower with a long anti-tank gun. Wrecks cars, tanks and mechs from far away, but it is slow against soldiers.', up: ['Bigger gun, tougher, more range.', 'Strongest. Pick an upgrade.'], specs: [
+  { id: 'hgun', n: 'Heavy Gun', d: '+40% damage per shot, slower reload.' },
+  { id: 'autol', n: 'Autoloader', d: 'Fires twice as fast, 30% less damage per shot.' },
+  { id: 'lbarrel', n: 'Long Barrel', d: 'Shoots 25% farther.' }] });
+defB('flakt', { n: 'Flak Tower', def: 1, sz: 3.6, hp: [800, 1400, 2300], cost: [200, 150, 220], bt: [12, 13, 15], hq1: 1, d: 'Shreds helicopters and drones.', info: 'A tall tower of quad flak cannons. It only shoots at aircraft, and nothing in the sky lasts long near it.', up: ['Faster and longer range.', 'Strongest. Pick an upgrade.'], specs: [
+  { id: 'fradar', n: 'Radar Guidance', d: 'Shoots 25% farther.' },
+  { id: 'fburst', n: 'Burst Fire', d: 'Fires 50% faster.' },
+  { id: 'fheavy', n: 'Heavy Shells', d: '60% bigger blast and +20% damage.' }] });
+defB('mortarpit', { n: 'Mortar Pit', def: 1, sz: 3.6, hp: [700, 1200, 2000], cost: [180, 140, 200], bt: [10, 12, 14], hq1: 1, d: 'Lobs shells on groups of soldiers.', info: 'A dug-in mortar crew that drops shells on enemy groups from long range. Cannot hit targets right next to it.', up: ['Bigger shells, more range.', 'Strongest. Pick an upgrade.'], specs: [
+  { id: 'mhe', n: 'High Explosive', d: '50% bigger blast.' },
+  { id: 'mrapid', n: 'Fast Crew', d: 'Fires 55% faster.' },
+  { id: 'mincend', n: 'Smoke and Fire', d: 'Shells also slow down enemies for a few seconds.' }] });
+defB('tesla', { n: 'Tesla Tower', def: 1, sz: 3.4, hp: [850, 1500, 2500], cost: [320, 240, 320], bt: [16, 18, 20], hq1: 2, d: 'Lightning that jumps between enemies.', info: 'Prototype tech from a Warden vault. Its lightning bolt jumps from enemy to enemy (3, 4 and then 5 targets) and is brutal against crowds of soldiers. Short range.', up: ['More damage, jumps to 4 targets.', 'Jumps to 5 targets. Pick an upgrade.'], specs: [
+  { id: 'tarc', n: 'Arc Chain', d: 'Lightning jumps to 2 more targets.' },
+  { id: 'tover', n: 'Overload', d: '+40% damage.' },
+  { id: 'tstun', n: 'Stun Field', d: 'Every hit slows enemies down.' }] });
+defB('shieldgen', { n: 'Shield Generator', def: 1, sz: 3.8, hp: [700, 1200, 2000], cost: [300, 220, 300], bt: [16, 18, 20], hq1: 2, d: 'Protects nearby buildings and troops.', info: 'Projects an energy screen. Your buildings nearby take 25%, 35% and then 45% less damage and slowly repair; your troops nearby take 10%, 15% and then 20% less.', up: ['Stronger shield.', 'Strongest shield. Pick an upgrade.'], specs: [
+  { id: 'sregen', n: 'Repair Field', d: 'Buildings in the shield repair three times as fast.' },
+  { id: 'swide', n: 'Wide Field', d: 'The shield covers a 50% bigger area.' },
+  { id: 'shard', n: 'Hardened Field', d: 'Everything in the shield takes 10% less damage on top.' }] });
 defB('medical', { n: 'Medical Tent', sz: 5, hp: [450, 650, 850], cost: [130, 100, 160], bt: [11, 12, 14], hq1: 2, ros: [2, 3, 4], d: 'Heals soldiers nearby.', info: 'Keeps a few Medics (2, 3 and 4 by level) and slowly heals friendly soldiers around it. Healing grows with each level.', up: ['Heals faster.', 'Heals fastest. Pick an upgrade.'], specs: [
   { id: 'triage', n: 'Triage Ward', d: 'Double healing. Nearby soldiers take 15% less damage.' },
   { id: 'stim', n: 'Stim Lab', d: 'Nearby soldiers shoot 20% faster and run 10% faster.' },
   { id: 'motor', n: 'Repair Bay', d: 'Also repairs vehicles and aircraft nearby.' }] });
-defB('arty', { n: 'Artillery Battery', sz: 4.5, hp: [520, 760, 1000], cost: [260, 200, 260], bt: [16, 18, 20], hq1: 2, d: 'Shells enemies from far away.', info: 'Long-range guns. They need a unit or building nearby to see the target.', up: ['Stronger guns, more health.', 'Strongest. Pick an upgrade.'], specs: [
+defB('arty', { n: 'Artillery Battery', def: 1, sz: 4.5, hp: [520, 760, 1000], cost: [260, 200, 260], bt: [16, 18, 20], hq1: 2, d: 'Shells enemies from far away.', info: 'Long-range guns. They need a unit or building nearby to see the target.', up: ['Stronger guns, more health.', 'Strongest. Pick an upgrade.'], specs: [
   { id: 'howitzer', n: 'Heavy Howitzer', d: 'Bigger shells and longer range, slower reload.' },
   { id: 'salvo', n: 'Rocket Barrage', d: 'Fires four rockets at once.' },
   { id: 'shock', n: 'Smoke Shells', d: 'Shells slow enemy units for a few seconds.' }] });
@@ -527,7 +548,7 @@ defB('wall', { n: 'Fortified Walls', sz: 0, hp: [900, 1800, 3200], cost: [120, 1
   { id: 'mines', n: 'Minefield', d: 'Hidden mines at the gates blast enemy ground units.' },
   { id: 'wire', n: 'Razor Wire', d: 'Enemy soldiers near the walls are slowed and hurt.' }] });
 defB('nest', { n: 'Sandbag Nest', sz: 2.2, hp: [320, 320, 320], cost: [60, 0, 0], bt: [6, 0, 0], d: 'Engineer-built machine gun nest.', specs: [], free: 1 });
-const BUILDABLE = ['barracks', 'factory', 'depot', 'turret', 'medical', 'airfield', 'arty', 'radar', 'wall'];
+const BUILDABLE = ['barracks', 'factory', 'depot', 'turret', 'cannon', 'flakt', 'mortarpit', 'medical', 'airfield', 'arty', 'tesla', 'shieldgen', 'radar', 'wall'];
 
 // ---------------- upgrades (global research) ----------------
 const TBR = [
@@ -977,7 +998,7 @@ const LORE = {
 // ---------------- AI personalities ----------------
 const AIP = {
   vex: { id: 'vex', name: 'Col. Vex', title: 'Rusher', desc: 'Attacks early with lots of cheap soldiers, scouts and cars.', aggr: 1.5, expand: 1.2, eco: .8, tech: .5, army: 5, uw: { rifleman: 3, rocket: 1, scout: .6, jeep: 2, apc: 1.2, heavy: 1.2, mortar: .5, grenadier: .8, lighttank: 1, commando: 1.2, sniper: .3, medic: .5 }, bld: ['barracks', 'barracks', 'depot', 'factory', 'barracks', 'turret', 'depot', 'medical', 'airfield', 'radar'], spec: { barracks: ['conscript', 'shock', 'elite'], factory: ['rapid'], depot: ['trade'], hq: ['warroom'], medical: ['stim'], turret: ['twin'] }, tech: ['w1', 'm1', 'a1', 'w2', 'm2', 'e1'], calls: ['para', 'merc', 'air', 'barrage'] },
-  stone: { id: 'stone', name: 'Gen. Stone', title: 'Defender', desc: 'Digs in with bunkers, walls and artillery, then rolls out with tanks and giant mechs.', aggr: .55, expand: .9, eco: 1.1, tech: 1.1, army: 11, uw: { rifleman: 1.2, rocket: 1.5, tank: 2.5, lighttank: 1.5, artillery: 2, aa: 1, heavy: 1.2, engineer: .8, medic: .6, apc: .8, sniper: .8, mortar: 1, mlrs: 1.2, titan: 1.5 }, bld: ['depot', 'barracks', 'turret', 'factory', 'arty', 'turret', 'radar', 'depot', 'wall', 'factory', 'medical', 'airfield'], spec: { factory: ['artillery', 'heavy'], turret: ['at', 'flak', 'twin'], arty: ['howitzer'], hq: ['fortress'], radar: ['jammer'], wall: ['bulwark'], depot: ['logistics', 'trade'] }, tech: ['a1', 'e1', 'w2', 'a2', 'w1', 'e2', 'a3', 'w3'], calls: ['barrage', 'supply', 'merc', 'air', 'cruise'] },
+  stone: { id: 'stone', name: 'Gen. Stone', title: 'Defender', desc: 'Digs in with bunkers, walls and artillery, then rolls out with tanks and giant mechs.', aggr: .55, expand: .9, eco: 1.1, tech: 1.1, army: 11, uw: { rifleman: 1.2, rocket: 1.5, tank: 2.5, lighttank: 1.5, artillery: 2, aa: 1, heavy: 1.2, engineer: .8, medic: .6, apc: .8, sniper: .8, mortar: 1, mlrs: 1.2, titan: 1.5 }, bld: ['depot', 'barracks', 'turret', 'factory', 'arty', 'cannon', 'mortarpit', 'radar', 'depot', 'wall', 'factory', 'shieldgen', 'flakt', 'medical', 'airfield', 'tesla'], spec: { factory: ['artillery', 'heavy'], turret: ['at', 'flak', 'twin'], arty: ['howitzer'], hq: ['fortress'], radar: ['jammer'], wall: ['bulwark'], depot: ['logistics', 'trade'] }, tech: ['a1', 'e1', 'w2', 'a2', 'w1', 'e2', 'a3', 'w3'], calls: ['barrage', 'supply', 'merc', 'air', 'cruise'] },
   hale: { id: 'hale', name: 'Maj. Hale', title: 'All-rounder', desc: 'Balanced commander who counters what you build.', aggr: 1, expand: 1.1, eco: 1, tech: 1, army: 8, uw: { rifleman: 1.5, rocket: 1.4, heavy: 1, sniper: .8, lighttank: 1.3, tank: 1.5, artillery: .8, aa: .8, heli: 1.2, medic: .7, apc: .8, jeep: .7, mortar: .7, drone: .3, scout: .5, grenadier: .7, gunship: .6 }, bld: ['barracks', 'depot', 'factory', 'depot', 'barracks', 'radar', 'airfield', 'medical', 'turret', 'factory', 'depot', 'arty'], spec: { barracks: ['elite', 'shock'], factory: ['heavy', 'rapid'], airfield: ['gunship'], depot: ['trade', 'logistics'], hq: ['logi'], medical: ['triage'], radar: ['aircon', 'scan'], turret: ['at'], arty: ['salvo'] }, tech: ['e1', 'w1', 'a1', 'o1', 'w2', 'm2', 'e2', 'a2', 'c1', 'w3'], calls: ['air', 'supply', 'merc', 'para', 'barrage', 'cruise', 'armor'] },
   kruger: { id: 'kruger', name: 'Mshl. Kruger', title: 'Tank Commander', desc: 'Masses tanks and Titan mechs behind a strong economy.', aggr: .9, expand: 1, eco: 1.2, tech: 1.2, army: 9, uw: { rifleman: .8, rocket: 1, lighttank: 2, tank: 3.5, titan: 2.2, apc: 1, artillery: 1, mlrs: 1, aa: .8, engineer: .6, jeep: .5 }, bld: ['depot', 'factory', 'barracks', 'factory', 'depot', 'radar', 'factory', 'turret', 'medical', 'arty', 'airfield'], spec: { factory: ['heavy', 'rapid', 'artillery'], depot: ['trade'], hq: ['logi'], turret: ['at'], barracks: ['conscript'] }, tech: ['e1', 'a2', 'w2', 'e2', 'm2', 'a3', 'w1', 'e3'], calls: ['armor', 'barrage', 'supply', 'air', 'cruise'] },
   voss: { id: 'voss', name: 'Adm. Voss', title: 'Air Commander', desc: 'Rules the skies with helicopters, gunships, jets and drones.', aggr: 1, expand: 1, eco: 1, tech: 1.1, army: 7, uw: { rifleman: 1, rocket: .8, aa: .8, heli: 3, gunship: 2.2, interceptor: 1.6, drone: 1.2, strike: 1.4, heavy: .6, medic: .5, jeep: .5 }, bld: ['depot', 'airfield', 'barracks', 'airfield', 'radar', 'depot', 'factory', 'airfield', 'turret', 'medical'], spec: { airfield: ['gunship', 'superiority', 'swarm'], depot: ['trade'], radar: ['aircon'], hq: ['warroom'], turret: ['flak'] }, tech: ['e1', 'm2', 'w1', 'm3', 'a3', 'w2', 'e2', 'o1'], calls: ['air', 'recon', 'supply', 'cruise', 'merc'] }
@@ -1193,7 +1214,7 @@ function genMap(def) {
     return h;
   };
   for (const p of M.points) { p.gy = h0(p.x, p.z); }
-  const padR = p => p.big ? [40, 50] : p.hq >= 0 ? [22, 30] : [15, 22];
+  const padR = p => p.big ? [45, 54] : p.hq >= 0 ? [27, 34] : [19.5, 26];
   for (let iz = 0; iz < D1; iz++) for (let ix = 0; ix < W1; ix++) {
     const x = ix - M.hw, z = iz - M.hd; let h = h0(x, z);
     for (const p of M.points) { const dx = x - p.x, dz = z - p.z, dd = dx * dx + dz * dz, r = padR(p); if (dd < r[1] * r[1]) h = lerp(h, p.gy, sstep(r[1], r[0], Math.sqrt(dd))); }
@@ -1209,7 +1230,7 @@ function genMap(def) {
   M.slope = (x, z) => { const a = M.H(x - 1, z), b = M.H(x + 1, z), c = M.H(x, z - 1), d = M.H(x, z + 1); return Math.max(Math.abs(b - a), Math.abs(d - c)) / 2; };
   M.inb = (x, z) => x > -M.hw + 2 && x < M.hw - 2 && z > -M.hd + 2 && z < M.hd - 2;
   // ---- decor ----
-  const nearPt = (x, z, r) => { for (const p of M.points) { const dx = x - p.x, dz = z - p.z, rr_ = p.big ? r + 32 : p.hq >= 0 ? r + 12 : r; if (dx * dx + dz * dz < rr_ * rr_) return true; } return false; };
+  const nearPt = (x, z, r) => { for (const p of M.points) { const dx = x - p.x, dz = z - p.z, rr_ = p.big ? r + 36 : p.hq >= 0 ? r + 16 : r + 6; if (dx * dx + dz * dz < rr_ * rr_) return true; } return false; };
   const onDeck = (x, z) => { for (const o of L.decks) { const c = Math.cos(o.rot), s = Math.sin(o.rot), dx = x - o.x, dz = z - o.z; if (Math.abs(dx * s + dz * c) < o.len / 2 + 5 && Math.abs(dx * c - dz * s) < o.wid / 2 + 4) return true; } return false; };
   M.trees = []; M.rocks = []; M.blocks = [];
   const grid = new Map(); const gk = (x, z) => ((x / 4) | 0) + ',' + ((z / 4) | 0);
@@ -1263,7 +1284,8 @@ function genMap(def) {
     }
   }
   // keep points and their surroundings walkable
-  for (const p of M.points) { const r = p.big ? 42 : p.hq >= 0 ? 24 : 15; for (let a = -r; a <= r; a += 1.5) for (let b = -r; b <= r; b += 1.5) if (a * a + b * b <= r * r) { const i = cidx(p.x + a, p.z + b); const y = M.H(p.x + a, p.z + b); if (y > M.wl - .4 && M.inb(p.x + a, p.z + b)) nav.blk[i] = 0; } }
+  for (const p of M.points) { const r = p.big ? 47 : p.hq >= 0 ? 28 : 20; for (let a = -r; a <= r; a += 1.5) for (let b = -r; b <= r; b += 1.5) if (a * a + b * b <= r * r) { const i = cidx(p.x + a, p.z + b); const y = M.H(p.x + a, p.z + b); if (y > M.wl - .4 && M.inb(p.x + a, p.z + b)) nav.blk[i] = 0; } }
+  for (const b of M.blocks) { const c = Math.cos(b.rot), sn = Math.sin(b.rot); for (let a = -b.w / 2 - .7; a <= b.w / 2 + .7; a += 1) for (let bb = -b.d / 2 - .7; bb <= b.d / 2 + .7; bb += 1) nav.blk[cidx(b.x + a * c + bb * sn, b.z - a * sn + bb * c)] = 1; }   // houses stay solid even inside a flag's cleared area
   for (let cz = 0; cz < nz; cz++) for (let cx = 0; cx < nx; cx++) if (cx < 1 || cz < 1 || cx >= nx - 1 || cz >= nz - 1) nav.blk[cz * nx + cx] = 1;   // 3.1: the map border must stay solid, or routes wrap from one edge to the other
   M.mapH = M.H;
   return M;
@@ -1348,6 +1370,14 @@ function markNav(M, x, z, r, delta) { // dynamic obstacles (buildings)
   for (let a = r0; a <= r1; a++) for (let b = c0; b <= c1; b++) { if (a < 0 || b < 0 || a >= n.nz || b >= n.nx) continue; const px = -M.hw + (b + .5) * cs - x, pz = -M.hd + (a + .5) * cs - z; if (px * px + pz * pz <= (r + 1) * (r + 1)) n.dyn[a * n.nx + b] = clamp(n.dyn[a * n.nx + b] + delta, 0, 250); }
   n.ver++;
 }
+// 4.2: defense pads, just outside each flag's walls (towers and guns only)
+function defPads(pt) {
+  const out = [];
+  if (pt.big) { for (let k = 0; k < 8; k++) for (const o of [-.16, .16]) { const a = PI / 8 + k * PI / 4 + o; out.push([pt.x + Math.cos(a) * 42, pt.z + Math.sin(a) * 42]); } }
+  else if (pt.hq >= 0) { for (let k = 0; k < 6; k++) { const a = PI / 6 + k * PI / 3; out.push([pt.x + Math.cos(a) * 24.5, pt.z + Math.sin(a) * 24.5]); } }
+  else { for (let k = 0; k < 4; k++) { const a = PI / 4 + k * PI / 2; out.push([pt.x + Math.cos(a) * 17.5, pt.z + Math.sin(a) * 17.5]); } }
+  return out;
+}
 function slotPos(pt, k) {
   if (pt.big) { if (k < 8) { const a = PI / 8 + k * PI / 4; return [pt.x + Math.cos(a) * 15, pt.z + Math.sin(a) * 15]; } const a = (k - 8) * TAU / 16; return [pt.x + Math.cos(a) * 27.5, pt.z + Math.sin(a) * 27.5]; }   // 3.1: the Bastion, 24 build spots in two rings
   if (pt.hq >= 0) { const a = PI / 6 + k * PI / 3; return [pt.x + Math.cos(a) * 12.5, pt.z + Math.sin(a) * 12.5]; } const a = PI / 4 + k * PI / 2; return [pt.x + Math.cos(a) * 7.2, pt.z + Math.sin(a) * 7.2]; }
@@ -1392,6 +1422,7 @@ function createWorld(o) {
     const pt = { id: mp.id, x: mp.x, z: mp.z, y: mp.y, r: 10, name: mp.name, val: mp.val || 1, hq: mp.hq, home: mp.home, owner: -1, capP: -1, ctrl: 0, slots: [], wall: null, cnt: [0, 0, 0, 0], contested: false, flash: 0 };
     if (mp.big) pt.big = 1; const n = pt.big ? 24 : pt.hq >= 0 ? 6 : 4;
     for (let k = 0; k < n; k++) { const sp = slotPos(pt, k); pt.slots.push({ x: sp[0], z: sp[1], b: null, y: M.H(sp[0], sp[1]) }); }
+    for (const sp of defPads(pt)) if (M.inb(sp[0], sp[1]) && Math.abs(sp[0]) < M.hw - 6 && Math.abs(sp[1]) < M.hd - 6 && M.H(sp[0], sp[1]) > M.wl + .3 && !M.blocks.some(bk => Math.hypot(bk.x - sp[0], bk.z - sp[1]) < Math.max(bk.w, bk.d) / 2 + 3.5)) pt.slots.push({ x: sp[0], z: sp[1], b: null, y: M.H(sp[0], sp[1]), d: 1 });
     W.pts.push(pt);
   }
   if (!W.mirror) for (const p of W.players) {
@@ -1549,6 +1580,10 @@ function bWeapon(b) {
     if (s === 'shock') return Wp('shell', d * .65, 6, rg, { minr: 25, spl: 8, ps: 32, arc: 1, shock: 1 });
     return Wp('shell', d, 6, rg, { minr: 25, spl: 7, ps: 32, arc: 1 });
   }
+  if (b.type === 'cannon') return Wp('cannon', [90, 140, 210][L] * (s === 'hgun' ? 1.4 : s === 'autol' ? .7 : 1), s === 'hgun' ? 3 : s === 'autol' ? 1.1 : 2.2, [40, 44, 48][L] * (s === 'lbarrel' ? 1.25 : 1), { ps: 90 });
+  if (b.type === 'flakt') return Wp('flak', [16, 24, 34][L] * (s === 'fheavy' ? 1.2 : 1), [.18, .16, .14][L] / (s === 'fburst' ? 1.5 : 1), [44, 48, 54][L] * (s === 'fradar' ? 1.25 : 1), { spl: s === 'fheavy' ? 5.6 : 3.5, g: 'a' });
+  if (b.type === 'mortarpit') return Wp('shell', [45, 65, 90][L], s === 'mrapid' ? 2.2 : 3.4, [50, 55, 60][L], { minr: 10, spl: s === 'mhe' ? 7.5 : 5, ps: 26, arc: 1, shock: s === 'mincend' ? 1 : 0 });
+  if (b.type === 'tesla') return Wp('tesla', [32, 48, 70][L] * (s === 'tover' ? 1.4 : 1), [1.5, 1.3, 1.1][L], [22, 25, 28][L], { chain: [3, 4, 5][L] + (s === 'tarc' ? 2 : 0), shock: s === 'tstun' ? 1 : 0 });
   if (b.type === 'hq' && s === 'fortress') return Wp('bullet', 11, .2, 34);
   if (b.type === 'nest') return Wp('bullet', 6, .28, 22);
   return null;
@@ -1594,7 +1629,8 @@ function hurt(tgt, dmg, wt, src, owner, opts) {
   if (tgt.k === 'u') {
     if (tgt.shield > 0) dmg *= .55; if (tgt.cov && cls < 3) dmg *= cls === 0 ? .78 : .92; if (tgt.wrT > 0) dmg *= 1 - tgt.wr; if (tgt.triT > 0) dmg *= .85;
     if (opts && opts.shock) tgt.slow = 6;
-  } else { if (tgt.type === 'turret') dmg *= [.85, .7, .55][tgt.lvl - 1]; }   // 4.1: bunkers are armored
+  } else { if (tgt.T.def) dmg *= [.85, .7, .55][tgt.lvl - 1]; }   // 4.1: defenses are armored
+  if (tgt.shU > W.t) dmg *= 1 - tgt.shR;   // 4.2: inside a Shield Generator's field
   if (P(tgt.owner).godmode) dmg = 0;
   tgt.hp -= dmg; tgt.flash = .1;
   if (tgt.hp > 0 && W.fx) { const key = tgt.owner; const last = W.alertT[key] || -99; if (W.t - last > 7 && P(tgt.owner).kind !== 'ai') { W.alertT[key] = W.t; alertMsg(tgt.owner, 'attack', tgt.x, tgt.z, 0, tgt.k === 'b' ? tgt.T.n : tgt.T.n); } }
@@ -1849,6 +1885,20 @@ function updUnit(u, dt) {
   }
   // ---- kamikaze ----
   if (T.kami) { if (tg && !tg.dead) { const d = Math.hypot(tg.x - u.x, tg.z - u.z); if (d < 2.6) { splashDmg(u.x, u.z, w1.spl, dmgOf(u, w1), 'bomb', u.team, u.owner, u, {}); ev([1, 2, r1(u.x), r1(u.y), r1(u.z), 0]); killUnit(u, null, -1); P(u.owner).stats.lost--; return; } } }
+  // ---- 4.2 guards: their post is the anchor; with nobody to fight they walk back to it ----
+  if (u.guard) {
+    const gx = u.guard[2], gz = u.guard[3];
+    if (u.o === 3 && Math.hypot(u.x - gx, u.z - gz) > 36) { u.tgt = null; tg = null; u.o = 6; u.tx = u.guard[0]; u.tz = u.guard[1]; u.arr = 1.5; u.stuck = 0; }   // do not get lured away
+    else if (u.o === 0) {
+      u.anchorX = u.guard[0]; u.anchorZ = u.guard[1];
+      if (!tg && weapons && (u.gT = (u.gT || 0) - dt) <= 0) {   // anyone inside the guarded area gets chased off
+        u.gT = .5; const out = tmpA; hashQ(gx, gz, 28, out); let best = null, bd = 1e9;
+        for (const e of out) { if (e.team === u.team || e.dead || !seen(u.team, e.x, e.z) || !weapons.some(w => effMult(w, e) >= .18)) continue; const d = Math.hypot(e.x - u.x, e.z - u.z); if (d < bd) { bd = d; best = e; } }
+        if (best) { u.o = 3; u.tid = best.id; u.tgt = best; u.am = true; tg = best; }
+      }
+      if (!tg && u.o === 0 && Math.hypot(u.x - u.guard[0], u.z - u.guard[1]) > 4) { u.o = 6; u.tx = u.guard[0]; u.tz = u.guard[1]; u.arr = 1.5; u.stuck = 0; }
+    }
+  }
   // ---- movement / engagement ----
   let engaged = false;
   if (tg) {
@@ -1895,7 +1945,7 @@ function updUnit(u, dt) {
       if (arrived) { nestBuild(u); u.o = 0; }
     } else { u.vx *= Math.max(0, 1 - dt * 8); u.vz *= Math.max(0, 1 - dt * 8); if (!engaged) u.aim = turnTo(u.aim, u.rot, 6, dt); }
   }
-  if (u.o === 0 && !engaged && u.moving === false) { u.anchorX = u.x; u.anchorZ = u.z; }
+  if (u.o === 0 && !engaged && u.moving === false && !u.guard) { u.anchorX = u.x; u.anchorZ = u.z; }
   applyVel(u, dt); u.dmv = Math.hypot(u.x - u.px, u.z - u.pz);
   if (u.vx * u.vx + u.vz * u.vz < .01) u.moving = false;
   if (T.air) u.y = lerp(u.y, M.H(u.x, u.z) + T.alt, Math.min(1, dt * 3)); else u.y = M.H(u.x, u.z);
@@ -1994,6 +2044,10 @@ function bFire(b, w, t) {
       const dd = dur + s * .08, pr = { sx: b.x, sy, sz: b.z, tx: ex, ty: w.arc ? W.M.H(ex, ez) : ty, tz: ez, t0: W.t, dur: dd, src: null, owner: b.owner, team: b.team, dmg, wt: w.wt, spl: w.spl * (1 + p.mod.spl), tid: t.id, arc: w.arc, k: w.k, shock: w.shock };
       W.proj.push(pr); ev([0, w.k, r1(b.x), r1(sy), r1(b.z), r1(ex), r1(pr.ty), r1(ez), r1(dd), b.id, w.arc ? 1 : 0]);
     }
+  } else if (w.chain) {   // 4.2 Tesla: the bolt jumps to the nearest enemies around the first target
+    const out = []; hashQ(t.x, t.z, 9, out); const hits = [t]; out.sort((a, c) => Math.hypot(a.x - t.x, a.z - t.z) - Math.hypot(c.x - t.x, c.z - t.z));
+    for (const e of out) { if (hits.length >= w.chain) break; if (e === t || e.dead || e.team === b.team || !seen(b.team, e.x, e.z)) continue; hits.push(e); }
+    let px = b.x, py = sy, pz = b.z; for (const e of hits) { const ey = e.y + (e.T.air ? 0 : 1); ev([0, 5, r1(px), r1(py), r1(pz), r1(e.x), r1(ey), r1(e.z), 0, b.id, 0]); hurt(e, dmg, 'tesla', null, b.owner, { shock: w.shock }); px = e.x; py = ey; pz = e.z; }
   } else {
     const hit = Math.random() < clamp(1.05 - d / w.rng * .4, .55, 1);
     if (w.wt === 'flak') splashDmg(t.x, t.z, Math.max(w.spl, 1.5), dmg, w.wt, b.team, b.owner, null, { hitAir: 1 }); else if (hit) hurt(t, dmg, w.wt, null, b.owner);
@@ -2005,6 +2059,11 @@ function auraTick(b) {
   if (b.type === 'medical') {
     const heal = [5, 8, 12][b.lvl - 1] * (b.spec === 'triage' ? 2 : 1) * (1 + p.mod.heal); hashQ(b.x, b.z, 17, out);
     for (const e of out) { if (e.team !== b.team) continue; if (e.T.cls === 0 || b.spec === 'motor') { if (e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + heal * .5); } if (b.spec === 'stim' && e.T.cls === 0) e.stimT = .7; if (b.spec === 'triage' && e.T.cls === 0) e.triT = .7; }
+  }
+  else if (b.type === 'shieldgen' && b.prog >= 1) {
+    const L = b.lvl - 1, R = 28 * (b.spec === 'swide' ? 1.5 : 1), hard = b.spec === 'shard' ? .1 : 0, ru = [.1, .15, .2][L] + hard, rb = [.25, .35, .45][L] + hard, rg = b.spec === 'sregen' ? .012 : .004;
+    hashQ(b.x, b.z, R, out); for (const e of out) if (e.team === b.team) { e.shU = W.t + .7; e.shR = ru; }
+    for (const o of W.bld) if (o.team === b.team && !o.dead && Math.hypot(o.x - b.x, o.z - b.z) < R) { o.shU = W.t + .7; o.shR = rb; if (o.prog >= 1 && o.hp < o.maxHp) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * rg); }
   }
   else if (b.type === 'radar' && b.spec === 'jammer') { hashQ(b.x, b.z, 55, out); for (const e of out) if (e.team !== b.team) e.jamT = .7; }
   else if (b.type === 'depot' && b.spec === 'armory') { hashQ(b.x, b.z, 45, out); for (const e of out) if (e.team === b.team) e.armT = .7; }
@@ -2250,15 +2309,21 @@ function applyCmd(pid, c) {
       if (!isFinite(x) || !isFinite(z)) return false;
       const pos = us.length === 1 ? [snapFree(M, x, z, 4)] : formationPositions(us, x, z, FORMS[c.f | 0] || 'box');
       let minSpd = 99; if (c.g) for (const u of us) if (!u.T.air) minSpd = Math.min(minSpd, unitSpeed(u));
-      us.forEach((u, i) => { u.o = c.k === 'am' ? 2 : 1; u.am = c.k === 'am'; u.tx = pos[i][0]; u.tz = pos[i][1]; u.tid = 0; u.tgt = null; u.arr = 1.2 + Math.min(3, us.length * .08); u.spdCap = c.g && !u.T.air && minSpd < 99 ? minSpd : 0; u.stuck = 0; u.unst = 0; u.wpT = 0; u.los = false; u.losT = 0; });
+      us.forEach((u, i) => { u.guard = null; u.o = c.k === 'am' ? 2 : 1; u.am = c.k === 'am'; u.tx = pos[i][0]; u.tz = pos[i][1]; u.tid = 0; u.tgt = null; u.arr = 1.2 + Math.min(3, us.length * .08); u.spdCap = c.g && !u.T.air && minSpd < 99 ? minSpd : 0; u.stuck = 0; u.unst = 0; u.wpT = 0; u.los = false; u.losT = 0; });
       return true;
     }
     case 'atk': {
       const us = unitsOf(pid, c.ids); const t = W.byId.get(c.t); if (!us.length || !t || t.dead || t.team === p.team) return false;
-      for (const u of us) { if (!u.T.w && !u.T.w2) { u.o = 1; u.tx = t.x; u.tz = t.z; continue; } u.o = 3; u.tid = t.id; u.tgt = t; u.am = false; u.spdCap = 0; } return true;
+      for (const u of us) { u.guard = null; if (!u.T.w && !u.T.w2) { u.o = 1; u.tx = t.x; u.tz = t.z; continue; } u.o = 3; u.tid = t.id; u.tgt = t; u.am = false; u.spdCap = 0; } return true;
     }
-    case 'stop': for (const u of unitsOf(pid, c.ids)) { u.o = 0; u.tgt = null; u.am = false; u.spdCap = 0; u.anchorX = u.x; u.anchorZ = u.z; } return true;
-    case 'hold': for (const u of unitsOf(pid, c.ids)) { u.o = 4; u.tgt = null; u.vx = u.vz = 0; } return true;
+    case 'stop': for (const u of unitsOf(pid, c.ids)) { u.guard = null; u.o = 0; u.tgt = null; u.am = false; u.spdCap = 0; u.anchorX = u.x; u.anchorZ = u.z; } return true;
+    case 'hold': for (const u of unitsOf(pid, c.ids)) { u.guard = null; u.o = 4; u.tgt = null; u.vx = u.vz = 0; } return true;
+    case 'guard': {   // 4.2: hold a spot: troops ring it, chase off attackers, then walk back to their posts
+      const us = unitsOf(pid, c.ids).filter(u => u.T.w || u.T.w2 || u.T.heal || u.T.eng); if (!us.length) return false; const x = clamp(+c.x, -M.hw + 3, M.hw - 3), z = clamp(+c.z, -M.hd + 3, M.hd - 3); if (!isFinite(x) || !isFinite(z)) return false;
+      const pos = us.length === 1 ? [snapFree(M, x, z, 4)] : formationPositions(us, x, z, 'ring');
+      us.forEach((u, i) => { u.guard = [pos[i][0], pos[i][1], x, z]; u.o = 2; u.am = true; u.tx = pos[i][0]; u.tz = pos[i][1]; u.tid = 0; u.tgt = null; u.arr = 1.5; u.spdCap = 0; u.stuck = 0; u.unst = 0; u.wpT = 0; u.los = false; u.losT = 0; });
+      return true;
+    }
     case 'tp': { const v = clamp(c.v | 0, 0, 4); for (const u of unitsOf(pid, c.ids)) { u.tp = v; u.scan = 0; } return true; }
     case 'nest': { const us = unitsOf(pid, c.ids).filter(u => u.T.eng); if (!us.length) return false; const u = us.sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; u.o = 5; u.tx = +c.x; u.tz = +c.z; u.stuck = 0; return true; }
     case 'rally': { const b = W.byId.get(c.b); if (!b || b.owner !== pid) return false; if (c.clear) { b.hasRally = false; return true; } b.hasRally = true; b.rx = clamp(+c.x, -M.hw + 3, M.hw - 3); b.rz = clamp(+c.z, -M.hd + 3, M.hd - 3); return true; }
@@ -2278,7 +2343,7 @@ function applyCmd(pid, c) {
 function cmdBuild(p, c) {
   const pt = W.pts[c.pt]; if (!pt || pt.owner !== p.id) return false; const T = BT[c.type]; if (!T || BUILDABLE.indexOf(c.type) < 0) return false; if ((T.hq1 || 1) > playerHQLvl(p) && !W.o.sandbox) return false;
   const cost = T.cost[0] * (c.type === 'wall' ? 1 : 1);
-  if (c.type === 'wall') { if (pt.wall) return false; } else { const sl = pt.slots[c.slot | 0]; if (!sl || sl.b) return false; }
+  if (c.type === 'wall') { if (pt.wall) return false; } else { const sl = pt.slots[c.slot | 0]; if (!sl || sl.b || (sl.d && !T.def)) return false; }
   if (T.max && bCount(p, c.type) >= T.max && !W.o.sandbox) return false;
   if (p.sup < cost && !W.o.sandbox) return false;
   if (!W.o.sandbox) p.sup -= cost;
@@ -2429,14 +2494,15 @@ function makeAI(p, cfg) {
       const s = this.s; const sup = p.sup; const own = s.ownPts; this.saveFor = 0; const saveUp = c => { if (!this.saveFor && c < 700) this.saveFor = c; };
       // pick building
       const lim = Math.max(2, Math.floor(Math.min(pers.bld.length, 3 + own.length * 2) * dif.bldMul)); const need = {}; let want = null, gated = false; const hql = playerHQLvl(p);
-      for (let i = 0; i < lim && !want; i++) { const t = pers.bld[i]; if (dif.noDef && (t === 'turret' || t === 'arty' || t === 'wall')) continue; if (BT[t].max && this.cntB(t) >= BT[t].max) continue; need[t] = (need[t] || 0) + 1; if (this.cntB(t) < need[t]) { if ((BT[t].hq1 || 1) > hql) { gated = true; continue; } want = t; } }
+      for (let i = 0; i < lim && !want; i++) { const t = pers.bld[i]; if (dif.noDef && (BT[t].def || t === 'wall')) continue; if (BT[t].max && this.cntB(t) >= BT[t].max) continue; need[t] = (need[t] || 0) + 1; if (this.cntB(t) < need[t]) { if ((BT[t].hq1 || 1) > hql) { gated = true; continue; } want = t; } }
       if (!want && sup > 450 && !dif.noTech && !dif.noDef) { const ex = ['turret', 'depot', 'barracks', 'turret', 'factory'][(Math.random() * 5) | 0]; if (this.cntB(ex) < 2 + own.length) want = ex; }
-      if (want && (want !== 'turret' || this.cntB('turret') < 1 + own.length * 2)) { if (sup >= BT[want].cost[0] + (want === 'depot' ? 0 : 20)) this.placeB(want); else saveUp(BT[want].cost[0] + 20); }
+      if (!want && !dif.noDef && sup > 600 && Math.random() < .35) { const dl = ['turret', 'cannon', 'flakt', 'mortarpit'].concat(playerHQLvl(p) >= 2 ? ['tesla', 'shieldgen'] : []), pick = s.mix[3] > s.mixT * .25 ? 'flakt' : s.mix[1] + s.mix[2] > s.mixT * .4 ? 'cannon' : dl[(Math.random() * dl.length) | 0]; let nd = 0; for (const b of W.bld) if (b.owner === p.id && BT[b.type].def) nd++; if (nd < 2 + own.length * 2) want = pick; }
+      if (want && (!BT[want].def || (() => { let nd = 0; for (const b of W.bld) if (b.owner === p.id && BT[b.type].def) nd++; return nd < 2 + own.length * 3; })())) { if (sup >= BT[want].cost[0] + (want === 'depot' ? 0 : 20)) this.placeB(want); else saveUp(BT[want].cost[0] + 20); }
       // forward walls on the contested flag (Hard and Expert commanders, and the Defender)
       if (!dif.noTech && sup > 300 && playerHQLvl(p) >= BT.wall.hq1 && Math.random() < .3 * (pers.id === 'stone' ? 2 : 1)) { const fp = this.frontPoint(); if (fp && !fp.wall && own.length >= 2 && p.sup > 400) { if (pers.id === 'stone' || Math.random() < .3) this.cmd({ k: 'build', pt: fp.id, type: 'wall', slot: 0 }); } }
       // upgrades
       let upDone = 0;
-      const order = gated ? ['hq', 'depot', 'barracks', 'factory', 'airfield', 'medical', 'radar', 'turret', 'arty'] : ['depot', 'radar', 'barracks', 'factory', 'airfield', 'medical', 'turret', 'arty', 'hq'];
+      const order = gated ? ['hq', 'depot', 'barracks', 'factory', 'airfield', 'medical', 'radar', 'turret', 'arty', 'cannon', 'flakt', 'mortarpit', 'tesla', 'shieldgen'] : ['depot', 'radar', 'barracks', 'factory', 'airfield', 'medical', 'turret', 'arty', 'cannon', 'flakt', 'mortarpit', 'tesla', 'shieldgen', 'hq'];
       for (const t of order) {
         if (upDone) break;
         for (const b of (t === 'hq' ? [p.hqB] : s.blds[t] || [])) {
@@ -2459,10 +2525,10 @@ function makeAI(p, cfg) {
     },
     placeB(type) {
       if ((BT[type].hq1 || 1) > playerHQLvl(p)) return;
-      const s = this.s; const front = ['turret', 'arty', 'wall'].includes(type); const en = W.pts.filter(q => q.owner >= 0 && P(q.owner).team !== p.team); let bestS = -1e9, bp = null, bs = -1;
+      const s = this.s; const front = !!BT[type].def || type === 'wall'; const en = W.pts.filter(q => q.owner >= 0 && P(q.owner).team !== p.team); let bestS = -1e9, bp = null, bs = -1;
       for (const pt of s.ownPts) {
         let ed = 200; for (const e of en) ed = Math.min(ed, Math.hypot(e.x - pt.x, e.z - pt.z)); if (!en.length) ed = Math.hypot(pt.x, pt.z);
-        for (let k = 0; k < pt.slots.length; k++) { if (pt.slots[k].b) continue; let sc = front ? -ed : ed * .5; if (pt.hq >= 0) sc += front ? -40 : 20; if (type === 'depot' && pt.hq >= 0) sc -= 30; sc += Math.random() * 10; if (sc > bestS) { bestS = sc; bp = pt; bs = k; } }
+        for (let k = 0; k < pt.slots.length; k++) { if (pt.slots[k].b || (pt.slots[k].d && !BT[type].def)) continue; let sc = front ? -ed : ed * .5; if (pt.slots[k].d) sc += 30; if (pt.hq >= 0) sc += front ? -40 : 20; if (type === 'depot' && pt.hq >= 0) sc -= 30; sc += Math.random() * 10; if (sc > bestS) { bestS = sc; bp = pt; bs = k; } }
       }
       if (type === 'wall') { const fp = this.frontPoint(); if (fp && !fp.wall) this.cmd({ k: 'build', pt: fp.id, type: 'wall', slot: 0 }); return; }
       if (bp) this.cmd({ k: 'build', pt: bp.id, type, slot: bs });
@@ -3181,6 +3247,38 @@ function bModel(type, lvl, spec) {
       if (spec === 'shock') { for (const x of [-.75, .75]) t.cyl(.12, .12, .5, 6, x, .9, .7, WHITE, { rx: PI / 2 - .5 }); }
       parts.push(part(g), part(t, 'turret', 0, 1.8, 0)); return parts;
     }
+    case 'cannon': {   // 4.2 cannon tower: square concrete tower, armored gun house with a long barrel
+      const H = 1.6 + L * .45; g.box(3.2, .4, 3.2, 0, .2, 0, CONC2); fcyl(g, 4, .82, 1.6, H, 1.6, 0, .4 + H / 2, 0, CONC, { ry: PI / 4 }); g.box(2.4, .12, 2.4, 0, .45 + H, 0, 0, { acc: .9 });
+      if (L >= 2) for (const s of [-1, 1]) g.box(.18, H * .8, 2.2, s * 1.05, .4 + H * .45, 0, 0x5a636c); if (L >= 3) { g.box(.05, 1.8, .05, -1, H + 1.3, -1, BLACK); sandbags(g, 2.1, 12); }
+      const t = new GB(), c = 0x5f6a55, BL = spec === 'lbarrel' ? 4.4 : 3.4; t.box(1.6, .8, 1.8, 0, .2, -.1, c); t.box(1.62, .12, 1.82, 0, .62, -.1, 0, { acc: 1 }); wedge(t, 1.6, .5, .5, 0, .25, .95, c);
+      rod(t, spec === 'hgun' ? .22 : .16, 8, 0, .25, .9, 0, .25, .9 + BL, DARK); t.cyl(.25, .25, .4, 8, 0, .25, .9 + BL, BLACK, { rx: PI / 2 }); if (spec === 'autol') t.box(.6, .5, .7, .8, .25, -.6, STEEL);
+      parts.push(part(g), part(t, 'turret', 0, .9 + H, 0)); return parts;
+    }
+    case 'flakt': {   // flak tower: tall hexagonal tower, four raised flak barrels on top
+      const H = 2.6 + L * .5; fcyl(g, 6, .78, 1.7, H, 1.7, 0, H / 2, 0, CONC); fcyl(g, 6, 1, 1.9, .3, 1.9, 0, H, 0, CONC2); fcyl(g, 6, 1, 1.92, .08, 1.92, 0, H + .17, 0, 0, { acc: .9 });
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; g.box(.3, .5, .1, Math.cos(a) * 1.75, H + .4, Math.sin(a) * 1.75, CONC2, { ry: -a + PI / 2 }); } if (L >= 2) g.box(.6, .8, .6, 1.2, .4, 1.2, CONC2); if (L >= 3) g.box(.05, 1.6, .05, -1.2, H + 1.1, -1.2, BLACK);
+      const t = new GB(), e = .7; t.cyl(.55, .65, .35, 8, 0, 0, 0, STEEL); t.box(1.2, .5, .9, 0, .3, 0, OLIVE); t.box(1.22, .08, .92, 0, .56, 0, 0, { acc: 1 });
+      for (const x of [-.45, -.15, .15, .45]) rod(t, .07, 6, x, .45, .3, x, .45 + 1.8 * Math.sin(e), .3 + 1.8 * Math.cos(e), BLACK);
+      parts.push(part(g), part(t, 'turret', 0, H + .4, 0)); return parts;
+    }
+    case 'mortarpit': {   // mortar pit: round sandbagged pit with two mortar tubes and shell stacks
+      g.cyl(1.7, 1.8, .3, 10, 0, .15, 0, TAN); sandbags(g, 1.7, 14, .45, 0, -PI / 2); if (L >= 2) sandbags(g, 1.7, 14, .45, .28, -PI / 2); if (L >= 3) sandbags(g, 1.75, 14, .45, .56, -PI / 2);
+      for (let i = 0; i < 3 + L; i++) g.cyl(.09, .09, .45, 6, -1 + i * .22, .5, -1.15, 0x8a7a3a); crate(g, 1.05, .3, -1.05, .45, WOOD); flag(g, -1.3, .3, 1.3, 2.4);
+      const t = new GB(), e = .9; for (const x of [-.45, .45]) { rod(t, .14, 8, x, 0, 0, x, 1.3 * Math.sin(e), 1.3 * Math.cos(e), DARK); t.box(.5, .08, .5, x, -.05, 0, STEEL); }
+      t.box(.24, .24, .24, 0, .1, -.3, 0, { acc: .9 }); parts.push(part(g), part(t, 'turret', 0, .4, 0)); return parts;
+    }
+    case 'tesla': {   // tesla tower: steel lattice mast with coil rings and a glowing ball
+      const H = 3.2 + L * .5; g.cyl(1.3, 1.5, .4, 8, 0, .2, 0, CONC2); g.cyl(1.32, 1.32, .08, 8, 0, .42, 0, 0, { acc: .9 }); lattice(g, 0, 0, .4, H, .7, .25, STEEL);
+      for (let i = 0; i < 3 + L; i++) g.cyl(.55 - i * .05, .55 - i * .05, .1, 10, 0, 1.2 + i * (H - 1.6) / (3 + L), 0, 0xb0763a);
+      ball(g, .55, .55, .55, 0, H + .4, 0, 0x8fe8ff); for (const a of [0, PI * 2 / 3, PI * 4 / 3]) rod(g, .05, 5, 0, H + .3, 0, Math.cos(a) * .9, H + .9, Math.sin(a) * .9, 0x8fe8ff);
+      if (spec === 'tarc') ball(g, .25, .25, .25, 0, H + 1.2, 0, 0x8fe8ff);
+      parts.push(part(g)); return parts;
+    }
+    case 'shieldgen': {   // shield generator: core under a glowing dome, three emitter pylons
+      g.cyl(1.8, 1.9, .4, 10, 0, .2, 0, CONC2); g.cyl(1.82, 1.82, .08, 10, 0, .42, 0, 0, { acc: .9 }); g.cyl(.7, .9, 1.0 + L * .2, 8, 0, .9, 0, STEEL);
+      dome(g, 1.2, 1.0 + L * .15, 1.2, 0, 1.4 + L * .2, 0, 0x6fd6ff); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU; rod(g, .09, 6, Math.cos(a) * 1.5, .4, Math.sin(a) * 1.5, Math.cos(a) * 1.5, 2.2 + L * .4, Math.sin(a) * 1.5, STEEL); ball(g, .18, .18, .18, Math.cos(a) * 1.5, 2.3 + L * .4, Math.sin(a) * 1.5, 0x8fe8ff); }
+      parts.push(part(g)); return parts;
+    }
     case 'nest': {   // engineer-built sandbag MG nest
       g.cyl(.9, 1.0, .25, 8, 0, .12, 0, TAN); sandbags(g, 1.3, 9, .5, 0, -PI / 2); sandbags(g, 1.25, 8, .55, .26, -PI / 2);
       const t = new GB(); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + PI / 2; strut(t, 0, -.05, 0, Math.sin(a) * .4, -.7, Math.cos(a) * .4, .05, .05, DARK); }
@@ -3190,7 +3288,7 @@ function bModel(type, lvl, spec) {
   }
   return [part(g)];
 }
-const BPOOLKEY = (b) => b.type + '|' + b.lvl + '|' + ((b.type === 'turret' || b.type === 'arty' || b.type === 'hq') ? b.spec : '');
+const BPOOLKEY = (b) => b.type + '|' + b.lvl + '|' + ((BT[b.type].def || b.type === 'hq') ? b.spec : '');
 function buildBModels() { }
 // ---------------- decor models ----------------
 const DM = {};
@@ -3498,7 +3596,7 @@ function renderFrame(dt, now) {
     uPool(u.type).add(u.rx, y, u.rz, u.rrot, T.cls === 0 ? dispAim : u.raim, sc, _col.r, _col.g, _col.b, fl, t);
     if ((T.air || !SET.shadows) && nbl < 400) { const br = T.air ? T.r * 1.3 : T.cls === 0 ? 1.05 : T.r * 1.25; _m.makeScale(br, 1, br * (T.air || T.cls === 0 ? 1 : 1.35)); _m.setPosition(u.rx, M.H(u.rx, u.rz) + .2, u.rz); blob.setMatrixAt(nbl++, _m); }
     const sel = selIds.has(u.id), hov = hoverId === u.id;
-    if (sel) addRing(u.rx, u.rz, T.r * 1.35 + .3, .35, 1, .5); else if (hov) addRing(u.rx, u.rz, T.r * 1.35 + .3, 1, .9, .4);
+    if (sel) { addRing(u.rx, u.rz, T.r * 1.35 + .3, .35, 1, .5); if (u.guard && u.owner === ME) addRing(u.guard[2], u.guard[3], 2.2, .4, .85, 1); } else if (hov) addRing(u.rx, u.rz, T.r * 1.35 + .3, 1, .9, .4);
     if (u.hpf < .999 || sel || hov || SET.hpAlways || u.vet > 0 && sel) addBar(u.rx, y + (T.cls === 0 ? 2.6 : T.air ? 3.2 : T.walker ? 8.6 : 3.4), u.rz, T.cls === 0 ? 1.9 : T.walker ? 4.4 : 2.8, u.hpf, u.vet, 0);
     if (u.owner !== ME && u.team !== MYTEAM && hov) addRing(u.rx, u.rz, T.r * 1.4 + .3, 1, .3, .3);
   }
@@ -3828,8 +3926,9 @@ function onClickWorld(sx, sy, shift) {
     screenToGround(sx, sy, _g); if (_g.ok) { const id = UI.callId; if (issue({ k: 'call', id, x: _g.x, z: _g.z })) { UI.did.call = 1; sfx('order'); orderMarker(_g.x, _g.z, [1, .7, .3]); } else { sfx('deny'); toast('You cannot use that there right now'); } }
     if (!shift) setMode(null); return;
   }
-  if (UI.mode === 'amove' || UI.mode === 'nest' || UI.mode === 'rally') {
+  if (UI.mode === 'amove' || UI.mode === 'nest' || UI.mode === 'rally' || UI.mode === 'guard') {
     screenToGround(sx, sy, _g); if (!_g.ok) return; const ids = selUnitsArr().map(u => u.id);
+    if (UI.mode === 'guard' && ids.length) { const pt = pickPoint(_g); const gx = pt ? pt.x : _g.x, gz = pt ? pt.z : _g.z; if (issue({ k: 'guard', ids, x: gx, z: gz })) { orderMarker(gx, gz, [.4, .85, 1]); sfx('order'); toast(ids.length + ' troops guarding ' + (pt ? (pt.hq >= 0 ? 'the base' : pt.name) : 'that spot')); } if (!shift) setMode(null); return; }
     if (UI.mode === 'amove' && ids.length) { issue({ k: 'am', ids, x: _g.x, z: _g.z, f: UI.form, g: UI.gspd ? 1 : 0 }); UI.did.am = 1; orderMarker(_g.x, _g.z, [1, .5, .3]); sfx('order'); }
     else if (UI.mode === 'nest' && ids.length) { issue({ k: 'nest', ids, x: _g.x, z: _g.z }); orderMarker(_g.x, _g.z, [.9, .9, .4]); sfx('order'); }
     else if (UI.mode === 'rally' && selBld) { issue({ k: 'rally', b: selBld, x: _g.x, z: _g.z }); orderMarker(_g.x, _g.z, [.5, .8, 1]); sfx('order'); }
@@ -3992,6 +4091,7 @@ function onKey(e) {
   }
   if (k === 'n' && selUnitsArr().some(u => u.T.eng)) { setMode('nest'); return; }
   if (k === 'm') { toggleWarMap(); return; }
+  if (k === 'v' && selUnitsArr().length) { setMode(UI.mode === 'guard' ? null : 'guard'); return; }
   if (k === 'x' && selUnitsArr().length) { cycleTarget(selUnitsArr()); return; }
   const ci = KEYCARD.indexOf(k); if (ci >= 0 && CARD[ci] && !e.ctrlKey && !e.altKey && !selUnitsArr().length && (selBld || selPad)) { CARD[ci](); return; }
 }
@@ -4233,6 +4333,7 @@ function updModeBar() {
   const el = $('#modebar'); let t = '';
   if (UI.mode === 'amove') t = 'Click where your troops should go. They will fight on the way.';
   else if (UI.mode === 'nest') t = 'Click where the Engineer should build a Sandbag Nest.';
+  else if (UI.mode === 'guard') t = 'Click a flag (or any spot) for your troops to guard.';
   else if (UI.mode === 'rally') t = 'Click where new troops should gather. This replaces Rally: Army (auto).';
   else if (UI.mode === 'call') t = 'Click the map to use ' + CALL[UI.callId].n + '.';
   else if (UI.mode === 'sbspawn') t = 'Click the map to place ' + UT[UI.sb.type].n + '.';
@@ -4312,14 +4413,14 @@ function wmDraw(full) {
   // side panel (rebuilt only when something changes)
   const fl = [['army', 'Whole army'], ['sel', 'Selected (' + selIds.size + ')']].concat([1, 2, 3, 4, 5].map(n => [String(n), n + ' ' + SQN[n - 1] + ' (' + squadIds(n).length + ')']));
   const fs = fl.map(x => x[0] + x[1]).join() + UI.wm.force; const fe = $('#wmforce'); if (fe && fe.dataset.s !== fs) { fe.dataset.s = fs; fe.innerHTML = fl.map(x => '<button class="sm' + (UI.wm.force === x[0] ? ' on' : '') + '" data-wmf="' + x[0] + '">' + esc(x[1]) + '</button>').join(''); }
-  const oe = $('#wmorder'), os = UI.wm.order; if (oe && oe.dataset.s !== os) { oe.dataset.s = os; oe.innerHTML = [['am', 'Attack (fight on the way)'], ['mv', 'Move (ignore enemies)']].map(x => '<button class="sm' + (UI.wm.order === x[0] ? ' on' : '') + '" data-wmo="' + x[0] + '">' + x[1] + '</button>').join(''); }
+  const oe = $('#wmorder'), os = UI.wm.order; if (oe && oe.dataset.s !== os) { oe.dataset.s = os; oe.innerHTML = [['am', 'Attack (fight on the way)'], ['mv', 'Move (ignore enemies)'], ['guard', 'Guard (hold it)']].map(x => '<button class="sm' + (UI.wm.order === x[0] ? ' on' : '') + '" data-wmo="' + x[0] + '">' + x[1] + '</button>').join(''); }
   const pts = W.pts.filter(pt => !(W.o.war && pt.hq >= 0 && pt.owner < 0)); const ps = pts.map(pt => pt.owner + (pt.contested ? 'c' : '')).join(); const pe = $('#wmpts');
   if (pe && pe.dataset.s !== ps) { pe.dataset.s = ps; pe.innerHTML = pts.map(pt => { const who = pt.owner < 0 ? 'empty' : P(pt.owner).team === MYTEAM ? (pt.owner === ME ? 'yours' : 'ally') : 'enemy'; return '<div class="wmpt ' + who + '" data-wmpt="' + pt.id + '"><span class="cdot" style="background:' + (pt.owner >= 0 ? hex3(P(pt.owner).color) : '#8d97a3') + '"></span>' + esc(pt.hq >= 0 ? (pt.owner >= 0 ? P(pt.owner).name + "'s HQ" : pt.name) : pt.name) + '<i>' + who + (pt.contested ? ', fighting' : '') + '</i></div>'; }).join(''); }
 }
 function wmOrder(x, z, label) {
   const ids = wmForceIds(); if (!ids.length) { toast(UI.wm.force === 'army' ? 'You have no combat troops.' : 'Nobody in that group yet.'); sfx('deny'); return; }
-  issue({ k: UI.wm.order, ids, x, z, f: UI.form, g: UI.gspd ? 1 : 0 }); orderMarker(x, z, UI.wm.order === 'am' ? [1, .5, .3] : [.4, 1, .5]); ping(x, z, '#ffd24a'); sfx('order');
-  const who = UI.wm.force === 'army' ? 'Army' : UI.wm.force === 'sel' ? 'Selected troops' : 'Squad ' + SQN[+UI.wm.force - 1]; toast(who + (UI.wm.order === 'am' ? ' attacking ' : ' moving to ') + label + ' (' + ids.length + ')');
+  issue({ k: UI.wm.order, ids, x, z, f: UI.form, g: UI.gspd ? 1 : 0 }); orderMarker(x, z, UI.wm.order === 'am' ? [1, .5, .3] : UI.wm.order === 'guard' ? [.4, .85, 1] : [.4, 1, .5]); ping(x, z, '#ffd24a'); sfx('order');
+  const who = UI.wm.force === 'army' ? 'Army' : UI.wm.force === 'sel' ? 'Selected troops' : 'Squad ' + SQN[+UI.wm.force - 1]; toast(who + (UI.wm.order === 'am' ? ' attacking ' : UI.wm.order === 'guard' ? ' guarding ' : ' moving to ') + label + ' (' + ids.length + ')');
 }
 function wmClick(e) {
   const t = e.target; if (t.closest('[data-wmx]')) { closeWarMap(); return; }
@@ -4365,6 +4466,7 @@ function renderPanel(force) {
     items.push({ nm: 'Stop', ico: 'stop', d: 'Stay here.', hk: 'H', tip: 'Stop (H)|Cancel orders. Troops stay put and shoot what comes close.', fn: () => issue({ k: 'stop', ids: ids() }) });
     items.push({ nm: 'Fall back', ico: 'back', d: 'Run to your nearest flag.', hk: 'R', tip: 'Fall back (R)|Retreat to the closest flag you own.', fn: retreatSel });
     if (us.some(u => u.T.eng)) items.push({ nm: 'Sandbag Nest', ico: 'nest', cost: BT.nest.cost[0], d: 'Build a gun nest.', hk: 'N', on: UI.mode === 'nest', tip: 'Sandbag Nest (N)|An Engineer builds a small machine gun nest where you click.', fn: () => setMode(UI.mode === 'nest' ? null : 'nest') });
+    items.push({ nm: 'Guard', key: 'guard', ico: 'hold', d: 'Hold a flag or spot.', hk: 'V', on: UI.mode === 'guard', tip: 'Guard (V)|Click a flag (or any spot) and these troops stand guard around it: they fight off anyone who comes near, then go back to their posts. Any other order ends guard duty.', fn: () => setMode(UI.mode === 'guard' ? null : 'guard') });
     { const tps = new Set(us.map(u => u.tp | 0)), tv = tps.size === 1 ? [...tps][0] : -1;
       items.push({ nm: 'Target: ' + (tv < 0 ? 'Mixed' : TPN[tv]), key: 'tp', ico: 'fight', d: 'What they shoot first.', on: tv > 0, tip: 'Target type (X)|Pick what these troops shoot first: Any, Soldiers, Vehicles, Aircraft or Buildings. Click to switch. They still fight back against anything they can hit.', fn: () => cycleTarget(us) }); }
     items.push({ nm: UI.more ? 'Fewer' : 'More', ico: 'group', d: UI.more ? 'Hide extra orders.' : 'Hold position and more.', tip: 'More orders|Hold position, formations and staying together.', fn: () => { UI.more = !UI.more; UI.cardSig = ''; hudUpdate(true); } });
@@ -4416,19 +4518,20 @@ function renderPanel(force) {
   } else if (selPad && W.pts[selPad.pt]) {
     const pt = W.pts[selPad.pt];
     if (pt.owner === ME) {
-      const free = pt.slots.filter(s => !s.b).length, wallOk = !pt.wall;
-      head = '<div class="ph1"><div class="pic" style="color:' + hex3(P(ME).color) + ';display:flex;align-items:center;justify-content:center">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Your base' : pt.name) + '<small>Your flag</small></div></div><div class="pm" style="white-space:normal">' + (free ? 'Pick a building. ' + free + ' spot' + (free > 1 ? 's' : '') + ' free.' : (wallOk && hql >= BT.wall.hq1 ? 'All spots used. You can still add walls.' : 'All spots used. Click a building to use it.')) + '</div>';
+      const free = pt.slots.filter(s => !s.b && !s.d).length, freeD = pt.slots.filter(s => !s.b && s.d).length, wallOk = !pt.wall, onPad = selPad && selPad.slot >= 0 && pt.slots[selPad.slot] && !pt.slots[selPad.slot].b ? pt.slots[selPad.slot] : null;
+      const slotFor = k => { if (onPad) return (onPad.d && !BT[k].def) ? -1 : selPad.slot; if (BT[k].def) { const d = pt.slots.findIndex(s => !s.b && s.d); if (d >= 0) return d; } return pt.slots.findIndex(s => !s.b && !s.d); };
+      head = '<div class="ph1"><div class="pic" style="color:' + hex3(P(ME).color) + ';display:flex;align-items:center;justify-content:center">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + '</div><div class="pt">' + esc(pt.hq >= 0 ? 'Your base' : pt.name) + '<small>Your flag</small></div></div><div class="pm" style="white-space:normal">' + (onPad && onPad.d ? 'Defense pad: pick a tower or gun.' : free || freeD ? 'Pick a building. ' + free + ' spot' + (free === 1 ? '' : 's') + (freeD ? ' and ' + freeD + ' defense pad' + (freeD === 1 ? '' : 's') : '') + ' free.' : (wallOk && hql >= BT.wall.hq1 ? 'All spots used. You can still add walls.' : 'All spots used. Click a building to use it.')) + '</div>';
       const buildCard = (k) => {
         const T = BT[k], gate = (T.hq1 || 1) > hql && !W.o.sandbox, can = p.sup >= T.cost[0] || W.o.sandbox, maxed = !gate && T.max && bCount(p, k) >= T.max && !W.o.sandbox;
         return { nm: T.n, key: 'b_' + k, img: 'b_' + k, cost: T.cost[0], d: T.d, lock: gate || maxed, lockTxt: maxed ? 'Max ' + T.max : 'HQ Lv ' + T.hq1, off: !gate && !can, tip: bldTip(k) + (gate ? '|Level up your HQ to Level ' + T.hq1 + ' to unlock this.' : maxed ? '|You already have ' + T.max + ', the most you can build.' : ''), fn: () => {
           if (gate) { lockMsg('the ' + T.n, T.hq1); return; }
           if (maxed) { sfx('deny'); toast('You can only have ' + T.max + ' ' + T.n + 's.'); return; }
-          let slot = selPad && selPad.slot >= 0 && !pt.slots[selPad.slot].b ? selPad.slot : pt.slots.findIndex(s => !s.b); if (slot < 0 && k !== 'wall') { toast('No free build spots here.'); return; }
+          const slot = slotFor(k); if (slot < 0 && k !== 'wall') { toast(BT[k].def ? 'No free spots or defense pads here.' : 'No free build spots here (defense pads only take towers and guns).'); return; }
           if (issue({ k: 'build', pt: pt.id, slot: Math.max(0, slot), type: k })) { UI.did.build = k; sfx('click'); clearSel(); afterSel(); } else { sfx('deny'); toast('Not enough money yet.'); } } };
       };
       const lockedNext = [];
       for (const k of BUILDABLE) {
-        const T = BT[k]; if (k === 'wall' ? !wallOk : !free) continue;
+        const T = BT[k]; if (k === 'wall' ? (!wallOk || (onPad && onPad.d)) : slotFor(k) < 0) continue;
         if ((T.hq1 || 1) > hql && !W.o.sandbox) { if ((T.hq1 || 1) === hql + 1) lockedNext.push(k); continue; }
         items.push(buildCard(k));
       }
@@ -4618,12 +4721,12 @@ SCREENS.howto = () => {
   <div class="note" style="font-size:16px;margin:6px 0 12px;color:#e6eef7"><b style="color:#ffe2a6">Goal:</b> capture flags. Hold more flags than the enemy and their score drops to zero. You can also destroy their HQ to win at once.</div>
   <div class="hw">
    <div class="hc"><h4>1. Capture flags</h4><div class="dg"><div class="c ring" style="left:128px;top:14px;width:80px;height:80px"></div><div class="pole" style="left:166px;top:34px"></div>${sol(40, 54)}${sol(60, 62)}${sol(80, 52)}<div class="arr" style="left:100px;top:72px;width:48px;transform:rotate(-12deg)"></div></div><p>Walk soldiers into the circle around a flag. When it turns your color, it is yours. Flags give you money.</p></div>
-   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click troop cards to fill its <b>roster</b> (the number on a card shows alive / wanted). You pay once for each slot; the building trains the troop and <b>respawns it for free whenever it dies</b>, even if you look away. A Barracks holds 5 soldiers, 10 at Level 2 and 20 at Level 3 (Motor Pool 3/6/10, Airfield 2/3/4). Click the minus or right-click a card to remove a slot, and press <b>Pause</b> to stop training. New troops walk to where most of your army is; use <b>Rally: Army (auto)</b> to pick a fixed rally point instead. Level the building up to hold more and unlock stronger troops.</p></div>
+   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click troop cards to fill its <b>roster</b> (the number on a card shows alive / wanted). You pay once for each slot; the building trains the troop and <b>respawns it for free whenever it dies</b>, even if you look away. A Barracks holds 5 soldiers, 10 at Level 2 and 20 at Level 3 (Motor Pool 3/6/10, Airfield 2/3/4). Click the minus or right-click a card to remove a slot, and press <b>Pause</b> to stop training. New troops walk to where most of your army is; use <b>Rally: Army (auto)</b> to pick a fixed rally point instead. Level the building up to hold more and unlock stronger troops. Every flag also has <b>defense pads</b> just outside its walls, for towers and guns only: MG Bunkers, Cannon Towers, Flak Towers, Mortar Pits, Artillery, Tesla Towers and Shield Generators.</p></div>
    <div class="hc"><h4>3. Select and move</h4><div class="dg"><div class="bx" style="left:20px;top:26px;width:80px;height:56px"></div>${sol(36, 44)}${sol(58, 54)}${sol(78, 44)}<div class="arr" style="left:110px;top:56px;width:60px;transform:rotate(-8deg)"></div><div class="cur" style="left:186px;top:34px"></div></div><p>Click a troop, or drag a box around many. Then click the ground to move there, or click an enemy to attack it. No right-click needed.</p></div>
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
    <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
    <div class="hc"><h4>6. Events and the Campaign</h4><div class="dg dark"><div class="coin" style="left:30px;top:34px">$</div><div class="arr" style="left:62px;top:46px;width:40px"></div>${sol(124, 38, '#58a8ff')}${sol(140, 44, '#58a8ff')}<div class="coin" style="left:196px;top:34px;background:#ff6a50">!</div></div><p>During a battle, <b>field events</b> pop up: a <b>supply crate</b> drops (keep troops next to it, with no enemies there, to claim money), an <b>Ace</b> is marked with a gold ring (destroy enemy Aces for a bounty), or an <b>artillery strike</b> is called on a busy flag (get out of the red circle, or lure the enemy in). In the <b>Campaign</b>, pick a mission at each stage, win to earn <b>Doctrines</b> that last the whole operation, and do not run out of Reserves. In <b>Endless War</b>, build up the Bastion between waves; every new enemy is tougher, and if you lose you rebuild from the start of that wave.</p></div>
-   <div class="hc"><h4>7. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b><span>Squads</span><b>Press + on a squad to fill it, <kbd>1</kbd>-<kbd>5</kbd> to select</b><span>War Map</span><b><kbd>M</kbd></b><span>Target type</span><b><kbd>X</kbd></b><span>Formation</span><b><kbd>Y</kbd> or the buttons</b></div></div>
+   <div class="hc"><h4>7. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b><span>Squads</span><b>Press + on a squad to fill it, <kbd>1</kbd>-<kbd>5</kbd> to select</b><span>War Map</span><b><kbd>M</kbd></b><span>Guard a flag</span><b><kbd>V</kbd>, then click the flag</b><span>Target type</span><b><kbd>X</kbd></b><span>Formation</span><b><kbd>Y</kbd> or the buttons</b></div></div>
   </div>
   <div class="note" style="margin-top:12px">Tip: more of the game unlocks as you level up your HQ and your buildings. Upgrades and Support powers (airstrikes, supply drops, mercenaries) open at HQ Level 2. Fire a Support power by holding F and pressing its number (Hold F + 1 is the first one). Lists and panels scroll with the wheel or two fingers on the touchpad. The enemy warns you with an orange message when it is massing an attack. A Level 3 building lets you pick a special upgrade, and some of them unlock giant units like the Titan mech, Gunships and Sky Hunter jets.</div></div></div>`;
 };
@@ -4862,6 +4965,10 @@ function warSpawn() {
     if (b.lvl >= 3 && T.specs.length && spend(SPEC_COST)) { const pl = (persObj.spec && persObj.spec[t]) || []; b.spec = pl[0] || T.specs[0].id; }
     refreshB(b); b.hp = b.maxHp; blds.push(b);
   });
+  // 4.2: towers on the landing site's defense pads (more and bigger as waves go up)
+  { const DL = d.style === 'turtle' || d.style === 'artillery' ? ['cannon', 'mortarpit', 'turret', 'flakt', 'tesla', 'shieldgen'] : d.style === 'air' ? ['flakt', 'turret', 'cannon'] : ['turret', 'cannon', 'flakt', 'mortarpit', 'tesla'];
+    let nd = Math.min(6, Math.floor(wave / 2) + (d.style === 'turtle' ? 2 : 0)), i = 0;
+    for (let k = 0; k < site.slots.length && nd > 0; k++) { const sl = site.slots[k]; if (!sl.d || sl.b) continue; const t = DL[i++ % DL.length], T = BT[t]; if ((T.hq1 || 1) > hq.lvl || !spend(T.cost[0])) continue; const b = placeBuilding(t, e.id, site, k, true); b.spent = T.cost[0]; while (b.lvl < maxL && (b.lvl < 2 || hq.lvl >= 2) && spend(T.cost[b.lvl])) { b.spent += T.cost[b.lvl]; b.lvl++; } if (b.lvl >= 3 && spend(SPEC_COST)) b.spec = T.specs[(Math.random() * 3) | 0].id; refreshB(b); b.hp = b.maxHp; nd--; } }
   // fill the rosters, spreading troops over every building
   money += armyMoney;
   for (let pass = 0; pass < 40 && money > 60; pass++) {
@@ -5474,7 +5581,7 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 if (DEBUG) {
   window.__fl = {
     get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    makeAI, getField, killBuilding, warNew, warCfg, warSave, warSpawn, warDef, get WAR() { return WAR; }, set WAR(v) { WAR = v; }, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    makeAI, getField, killBuilding, refreshB, selectPad, warNew, warCfg, warSave, warSpawn, warDef, get WAR() { return WAR; }, set WAR(v) { WAR = v; }, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
