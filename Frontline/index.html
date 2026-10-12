@@ -4428,8 +4428,9 @@ function warInit() {
   }
   for (const id of WAR.pts || []) { const pt = W.pts[id]; if (pt && pt.hq < 0) { pt.owner = 0; pt.ctrl = 1; pt.capP = 0; } }
   me.techs = Object.assign({}, WAR.techs); me.sup = WAR.sup; recalcMods(me); for (const b of W.bld) if (b.owner === 0) { refreshB(b); b.hp = b.prog >= 1 ? b.maxHp : b.maxHp * Math.max(.12, b.prog); }
-  // the garrison is at full strength when a wave starts
-  for (const b of W.bld) if (b.owner === 0 && b.ros && b.prog >= 1) for (const k in b.ros) { for (let i = 0; i < b.ros[k]; i++) spawnFromBuilding(b, k, i); b.made[k] = b.ros[k]; }
+  // the garrison is at full strength when a wave starts (up to the army limit; the rest train as usual)
+  { let pn = 0; for (const pt of W.pts) if (pt.owner === 0) pn++; const cap = Math.min(W.popMax, 36 + pn * 7 + me.mod.pop + ((me.hqB ? me.hqB.lvl : 1) - 1) * 10); me.popCap = cap; let pop = 0; for (const u of W.units) if (u.owner === 0) pop += u.T.pop;
+    for (const b of W.bld) if (b.owner === 0 && b.ros && b.prog >= 1) for (const k in b.ros) { let n = 0; for (let i = 0; i < b.ros[k] && pop + UT[k].pop <= cap; i++) { spawnFromBuilding(b, k, i); pop += UT[k].pop; n++; } b.made[k] = n; } }
   W.war = { phase: 'prep', t: WAR.blds ? 60 : 90, wave: WAR.wave, def: warDef(WAR.wave), saveT: 10 };
   if (WAR.blds && WAR.wave > 1) for (const u of W.units.slice()) if (u.owner === 0 && !u.home) { u.dead = true; const i = W.units.indexOf(u); W.units[i] = W.units[W.units.length - 1]; W.units.pop(); W.byId.delete(u.id); me.pop -= u.T.pop; }   // the starting squad only comes with a brand-new Bastion
   me.pop = 0; for (const u of W.units) if (u.owner === 0) me.pop += u.T.pop;
@@ -4489,8 +4490,8 @@ function warSpawn() {
     for (const b of blds) { if (!b.ros || rosTotal(b) >= rosCap(b)) continue; const ul = unitsForB(b).filter(t => rosFits(b, t)); if (!ul.length) continue; let sum = 0; const sc = ul.map(t => { const v = (persObj.uw[t] !== undefined ? persObj.uw[t] : .2) / Math.pow(1 + (b.ros[t] || 0) / 3, .8); sum += v; return v; }); let r = Math.random() * sum, pick = ul[0]; for (let i = 0; i < ul.length; i++) { r -= sc[i]; if (r <= 0) { pick = ul[i]; break; } } const c = slotCost(e, pick, b); if (!spend(c)) continue; b.ros[pick] = (b.ros[pick] || 0) + 1; b.paid[pick] = (b.paid[pick] || 0) + c; b.spent += c; added = true; }
     if (!added) break;
   }
-  for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k]; i++) { const u = spawnFromBuilding(b, k, i); if (S.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
-  e.sup = Math.max(200, money * .5); e.pop = 0; for (const u of W.units) if (u.owner === e.id) e.pop += u.T.pop;
+  let epop = 0; for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k] && epop < 170; i++) { epop += UT[k].pop; const u = spawnFromBuilding(b, k, i); if (S.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
+  e.sup = clamp(money * .5, 200, 600 + wave * 150); e.pop = 0; for (const u of W.units) if (u.owner === e.id) e.pop += u.T.pop;
   const over = Object.assign({ firstAtk: 25, hqPower: 0, warn: 4, startDelay: 0, popLim: 999 }, S.over);
   e.ai = makeAI(e, { pers: S.pers, diff: d.diff, over, persObj });
   w.phase = 'fight'; w.t = Math.min(720, 360 + wave * 20);
