@@ -232,6 +232,7 @@ kbd{display:inline-block;min-width:24px;text-align:center;padding:1px 7px;border
 .ctrack{display:flex;gap:5px;flex-wrap:wrap}.ctrack span{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #34495f;background:#0d1620;color:var(--dim);font-weight:800;font-size:13px}
 .ctrack span.done{background:#1d4a2c;border-color:#4fdc86;color:#c8ffd9}.ctrack span.now{border-color:var(--gold);color:#ffe2a6;box-shadow:0 0 10px #f6c04e66}.ctrack span.fin{border-style:dashed}
 .hearts{color:#ff5a6a;font-size:20px;letter-spacing:2px;margin-left:6px}.hearts s{color:#3a4656;text-decoration:none}
+.lore{border:1px solid #29394d;border-radius:9px;background:#0d1620;padding:7px 11px;margin-bottom:6px}.lore summary{cursor:pointer;font-weight:800;color:#ffe2a6}.lore p{margin:7px 0 2px;color:#dfe7f0;font-size:14px;line-height:1.5}
 .ach{display:flex;gap:10px;align-items:center;padding:7px 10px;border:1px solid #29394d;border-radius:9px;background:#0d1620;font-size:13px}
 .ach.ok{border-color:#3d9b5b;background:#0f2216}.ach i{font-style:normal;color:var(--dim)}
 #loading{position:fixed;inset:0;z-index:90;background:#06090d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-weight:900;letter-spacing:.2em;color:var(--gold2);font-size:20px}
@@ -401,7 +402,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '3.0';
+const VERSION = '4.0';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -556,6 +557,409 @@ CALLORDER.forEach((id, i) => { CALL[id].num = CALLKEYS[i]; CALL[id].key = 'Hold 
 const FKEYS = {}; CALLORDER.forEach(id => { FKEYS[CALL[id].num] = id; });
 const callReqText = C => C.req[0] === 'hq' ? 'HQ Lv ' + C.req[1] : BT[C.req[0]].n.replace(' Station', '') + ' Lv ' + C.req[1];
 
+// ---------------- 3.1 lore: the world of Ardena ----------------
+// Frontline: Command - world lore and story text (plain data only)
+const LORE = {
+  world: {
+    name: 'Ardena',
+    tagline: 'The Beacons went dark. The flags went up. Now every hill is worth fighting for.'
+  },
+
+  chapters: [
+    {
+      title: 'The World of Ardena',
+      text: 'Ardena is a wide, wild world of green farmland, red canyons, deep jungles and frozen lakes. Deep under its soil lies Embercore, a warm orange crystal that hums with power. One fist-sized chunk can light a town for a year. For centuries, the people of Ardena dug it up, shared it, and built amazing machines with it.\n\nBut Embercore is hard to reach. It only rises close to the surface in a few special places. Whoever controls those places controls the power that runs everything: the lights, the factories, the farms and, sooner or later, the armies.'
+    },
+    {
+      title: 'The Beacons and the Long Peace',
+      text: 'Long ago, eight great peoples agreed to stop fighting over Embercore. They built tall towers called Beacons on top of every rich Embercore site. Each Beacon pulled up the crystal energy and beamed it across the land, so everyone got a fair share.\n\nThe eight peoples signed the Lantern Accord, a promise of peace. Each people chose a color for its banner: Azure, Crimson, Emerald, Amber, Violet, Cyan, Rose and Ivory. Together they were called the Eight Banners.\n\nFor almost two hundred years, the Beacons glowed and nobody fired a shot. People called it the Long Peace, and many believed it would last forever.'
+    },
+    {
+      title: 'The Armories of Every Age',
+      text: 'To keep the peace, the Eight Banners created the Wardens, a group of neutral guardians. Their job was simple: lock away every weapon so no Banner could ever start a war.\n\nThe Wardens took this job very seriously. They collected old bolt-action rifles, rusty biplanes and clanking early tanks. They also collected brand new inventions: walking mechs, jet fighters and robot drones that were never allowed to leave the lab.\n\nAll of it was sealed inside giant underground Armories, hidden beneath mountains and cities. Rows and rows of weapons from every age sat in the dark, quietly waiting. Most people forgot they were even there.'
+    },
+    {
+      title: 'The Night the Beacons Went Dark',
+      text: 'Then came the night everything changed. Without warning, every Beacon across Ardena flickered and went dark at the same moment. Cities lost their lights. Factories stopped. Trains froze on their tracks.\n\nNobody knew who did it. The Azure Banner blamed the Crimson. The Crimson blamed the Emerald. Every Banner pointed at someone else. Angry messages flew back and forth, and the Wardens could not calm anyone down.\n\nBy sunrise, the Lantern Accord was torn to pieces. Each Banner decided that if the Beacons would not share Embercore anymore, they would simply grab the Beacon sites for themselves. The Long Peace was over.'
+    },
+    {
+      title: 'The Great Scramble',
+      text: 'Every Banner needed an army, fast. But nobody had kept an army during the Long Peace. So they did the only thing they could: they broke open the Wardens’ Armories and took everything inside.\n\nThat is why the battlefields of Ardena look so strange today. A rifleman carrying a hundred-year-old rifle might march beside a towering Titan mech. A shaky old artillery gun might fire next to a sleek jet fighter. Commanders use whatever works, from any era.\n\nThe Wardens tried to stop the raids, but they were guardians, not soldiers. Within a year, the Armories were empty and the Wardens had vanished from sight.'
+    },
+    {
+      title: 'The Eight Banners at War',
+      text: 'Today the Eight Banners are rival armies, each with its own style and pride.\n\nThe Azure Legion is famous for discipline. The Crimson Guard loves bold attacks. The Emerald Rangers are masters of jungle and forest. The Amber Company grew rich on desert trade routes. The Violet Order hides its secrets well. The Cyan Fleet rules the skies and rivers. The Rose Brigade is quick and clever. The Ivory Watch never forgets a defeat.\n\nAlliances shift all the time. Yesterday’s friend can be tomorrow’s enemy. The only thing every Banner agrees on is that the Beacons are worth fighting for.'
+    },
+    {
+      title: 'Flags on the Beacons',
+      text: 'Even dark, a Beacon still sits on top of rich Embercore. When an army captures a Beacon site, it plants its flag there and starts digging. Every flag you hold sends a steady stream of Embercore back to your base, and Embercore pays for soldiers, tanks and aircraft.\n\nThat is why every battle in Ardena is a fight over flags. More flags means more money. More money means a bigger army. A bigger army means even more flags.\n\nBut every army also has a Headquarters, its command center and its heart. Lose your flags and you grow weak. Lose your Headquarters and the battle is lost.'
+    },
+    {
+      title: 'A Short Timeline',
+      text: 'Year 1: The first Beacon is lit. Ardenans start counting years “After Lighting.”\n\nYear 210: The Eight Banners sign the Lantern Accord. The Long Peace begins.\n\nYear 215: The Wardens finish sealing the great Armories.\n\nYear 402: The Night the Beacons Went Dark. The Accord breaks.\n\nYear 403: The Great Scramble. Every Armory is raided. The Wardens disappear.\n\nYear 405: The Battle of Old Bridge at Greenfield Crossing, the first big clash of the Flag War.\n\nYear 409: The five great commanders, Vex, Stone, Hale, Kruger and Voss, rise to fame.\n\nYear 410: Today. A new commander joins the fight. That commander is you.'
+    },
+    {
+      title: 'The Five Great Commanders',
+      text: 'Out of the chaos, five commanders became legends.\n\nColonel Vex strikes first and fast, flooding the field with cheap soldiers and speeding scout cars. General Stone builds walls and bunkers so strong they seem to grow from the ground, then rolls out tanks and giant mechs when you least expect it. Major Hale studies every move you make and builds exactly what beats it. Marshal Kruger runs a rich, steady economy and pours it all into tanks and Titans. Admiral Voss rules the sky with helicopters, gunships, jets and drones.\n\nSooner or later, every new commander has to face all five.'
+    },
+    {
+      title: 'Your Story Begins',
+      text: 'You started as a Private, carrying a rifle and digging trenches like everyone else. But you noticed things. You saw where the enemy was weak. You knew when to charge and when to hold.\n\nYour officers noticed too. You were promoted to Sergeant, then Lieutenant, then Captain. Now High Command has given you your own army and your own Headquarters.\n\nEach operation you win brings new Doctrines, battle-tested tricks that make your forces stronger. Win enough, and you could climb all the way to General. Lose, and you learn, rebuild and try again. The flags are waiting, Commander.'
+    },
+    {
+      title: 'The Bastion',
+      text: 'High above the battle lines stands the Bastion, a giant fortress built on the ruins of the largest Beacon ever made, the Heart Beacon. Scouts say that if the Heart Beacon is ever lit again, it could wake up every Beacon in Ardena.\n\nHigh Command has handed the Bastion to you. Hold it, strengthen it, and never let it fall for good.\n\nBut someone else wants the Heart Beacon too. Wave after wave of enemy commanders are marching on the Bastion from every direction. Nobody knows who is sending them, or why they never stop. Your job is to hold the line and find out.'
+    }
+  ],
+
+  commanders: {
+    vex: {
+      bio: 'Colonel Vex grew up racing scout cars across the Dustbowl canyons, and she never learned to slow down. Her motto is simple: hit them before they are ready. Vex sends huge waves of cheap riflemen, scouts and fast cars in the first minutes of a battle, hoping to grab every flag before her enemy has even built a Barracks. Her soldiers love her because she always rides near the front. If you can survive her first rush, she can run out of steam. That is a big if.',
+      quotes: [
+        'Go, go, go! Grab those flags!',
+        'Speed wins wars. Move it!',
+        'They are still building? Perfect. Charge!',
+        'More soldiers! Cheap and fast!',
+        'Do not stop until you see their Headquarters!'
+      ],
+      taunt: 'Still unpacking your boxes, rookie? My scouts are already at your door.',
+      defeat: 'Not fast enough... this time. Next time I will start even sooner.'
+    },
+    stone: {
+      bio: 'General Stone is patient, calm and almost impossible to move. Before the war he was an engineer who built dams and bridges, and now he builds fortresses. Stone surrounds his Headquarters with walls, bunkers and artillery, then waits while his enemies crash against them. Once they are worn out, his gates swing open and out roll heavy tanks and giant Titan mechs. Attacking Stone too early is a mistake. Waiting too long is an even bigger one.',
+      quotes: [
+        'Dig in. Let them come to us.',
+        'Another wall. Then another.',
+        'Artillery, fire on that hill.',
+        'Patience. The walls will hold.',
+        'Open the gates. Send out the Titans.'
+      ],
+      taunt: 'Knock all you like, Commander. My walls have stood longer than you have been in uniform.',
+      defeat: 'You found the crack in my wall. I will not leave that crack open again.'
+    },
+    hale: {
+      bio: 'Major Hale never builds the same army twice. A former Warden scholar, she treats every battle like a puzzle. Hale watches what you build and answers it: tanks meet Bazooka Teams, aircraft meet Anti-Air Guns, infantry swarms meet Machine Gunners. She keeps a balanced force ready for anything and is famous for switching plans halfway through a fight. To beat Hale, you must stay one step ahead and never let her guess your next move.',
+      quotes: [
+        'Interesting. I know just the answer.',
+        'You build tanks? I build rockets.',
+        'Balance is the key to victory.',
+        'Change the plan. Adapt and win.',
+        'Every move has a counter.'
+      ],
+      taunt: 'I have already read your plan, Commander. Shall I tell you how it ends?',
+      defeat: 'Well played. You surprised me. That does not happen often.'
+    },
+    kruger: {
+      bio: 'Marshal Kruger believes that money wins wars, and tanks spend money best. He spends the first part of every battle quietly grabbing flags and building Supply Depots. Then the ground starts to shake. Rows of Main Battle Tanks and mighty Titan mechs roll forward together like a steel wall. Kruger is slow to start but almost unstoppable once he gets going. The smart move is to hit his economy early, before his factories are humming.',
+      quotes: [
+        'Build the economy. The tanks will follow.',
+        'Armor, advance in formation!',
+        'Send in the Titans.',
+        'Steel and patience win the day.',
+        'Roll over them. Do not stop.'
+      ],
+      taunt: 'Hear that rumble, Commander? That is the sound of fifty tanks with your name on them.',
+      defeat: 'My steel wall... broken. I must build a thicker one.'
+    },
+    voss: {
+      bio: 'Admiral Voss once commanded the Cyan Fleet’s airships, and she still thinks the ground is for other people. Her army lives in the sky: Attack Helicopters, heavy Gunships, Sky Hunter jets and clouds of drones. Voss strikes from unexpected angles and loves hitting bases that forgot to build Anti-Air Guns. She has few ground troops, so a commander with strong air defense and a quick push to her Airfield can catch her off guard.',
+      quotes: [
+        'All squadrons, take off!',
+        'Look up, Commander.',
+        'Drones out. Find their weak spot.',
+        'Gunships, rain fire on that flag.',
+        'The sky belongs to me.'
+      ],
+      taunt: 'You built walls, Commander? How cute. I fly over walls.',
+      defeat: 'Grounded... for now. The sky will be mine again.'
+    }
+  },
+
+  units: {
+    rifleman: 'The backbone of every army, armed with sturdy rifles from the old Armories. Cheap, quick to train and brave, Riflemen take flags and hold ground better than anyone.',
+    rocket: 'Two soldiers and one big tube that tanks fear. Bazooka Teams are slow to reload, but a few well-placed rockets can stop an armored column cold.',
+    engineer: 'Engineers build, repair and patch things up under fire. A smart commander keeps them close, because a fixed bunker is cheaper than a new one.',
+    scout: 'Fast on foot and hard to spot, Scouts run ahead to find enemy bases and empty flags. They are not great fighters, but they win wars with what they see.',
+    heavy: 'Machine Gunners lug heavy belt-fed guns that pin down enemy infantry. Anyone charging across open ground toward one will quickly wish they had not.',
+    sniper: 'Patient sharpshooters with long-range rifles and plenty of camouflage. Snipers pick off enemy soldiers from far away, then quietly slip back into cover.',
+    mortar: 'Mortar Teams lob explosive shells high over walls and hills. They cannot hit what is right in front of them, so keep them safely behind the front line.',
+    grenadier: 'Grenadiers toss explosive grenades into trenches, bunkers and clumps of enemy soldiers. They are perfect for clearing out a well-defended flag.',
+    commando: 'Elite soldiers trained in the hidden Warden camps. Commandos are tough, fast and deadly, able to sneak behind enemy lines and wreck important targets.',
+    medic: 'Medics carry bandages, splints and a lot of courage. They patch up nearby soldiers and get them back in the fight, keeping your infantry going longer.',
+    merc: 'Mercenaries fight for Embercore, not for a Banner. They arrive fast, fight hard and do not ask questions, as long as the payment keeps coming.',
+    jeep: 'A speedy open-top Scout Car with a mounted gun. Perfect for racing to empty flags, chasing down infantry and spotting what the enemy is building.',
+    apc: 'An armored troop carrier that keeps soldiers safe on the way to the front. The APC is tough enough to shrug off rifle fire and has a gun of its own.',
+    lighttank: 'Quicker and cheaper than the big tanks, the Light Tank zips across the battlefield, flanking enemies and helping infantry push forward.',
+    tank: 'The Main Battle Tank is the king of the ground war. Thick armor and a huge cannon let it smash through defenses that would stop anything smaller.',
+    artillery: 'A big cannon on tank tracks that fires shells across half the map. Self-Propelled Guns can roll into position, flatten a target and roll away again.',
+    aa: 'The Anti-Air Gun points its rapid-fire barrels at the sky. Helicopters, gunships and jets learn to fear these guns very quickly.',
+    mlrs: 'The Rocket Battery launches a whole volley of rockets at once, covering a wide area in explosions. Slow to reload, but every salvo is spectacular.',
+    titan: 'A towering walking mech from the deepest Warden vaults. The Titan stomps over obstacles, shrugs off most attacks and makes the ground tremble with every step.',
+    drone: 'A small flying eye that buzzes high over the battlefield. The Recon Drone reveals hidden enemies and lets your army see what is coming next.',
+    strike: 'A Recon Drone with teeth. The Attack Drone dives in fast, fires its small missiles and is gone before the enemy can take aim.',
+    heli: 'The Attack Helicopter hovers low and hammers tanks with rockets. It is fast and fierce, but it must watch out for Anti-Air Guns.',
+    gunship: 'A heavy flying fortress bristling with guns. The Gunship circles over the battlefield, raining fire on anything that is not hiding under cover.',
+    interceptor: 'The Sky Hunter is a screaming jet fighter built to clear the skies. It hunts enemy helicopters, gunships and drones faster than they can flee.'
+  },
+
+  buildings: {
+    hq: 'The heart of your army, where orders go out and Embercore comes in. Protect your Headquarters at all costs, because if it falls, the battle is lost.',
+    barracks: 'Where new recruits get their boots, rifles and training. The Barracks turns volunteers into soldiers, from Riflemen to elite Commandos.',
+    factory: 'A busy garage full of mechanics, cranes and spare parts. The Motor Pool builds Scout Cars, APCs, tanks, artillery and even giant Titan mechs.',
+    airfield: 'A strip of runway and a few hangars that unlock the sky. The Airfield launches drones, helicopters, gunships and Sky Hunter jets.',
+    depot: 'Crates, fuel and Embercore are stacked high at the Supply Depot. More depots means a stronger economy and a faster-growing army.',
+    turret: 'A concrete bunker with a machine gun poking out of the slot. MG Bunkers guard flags and gates, shredding enemy infantry that wander too close.',
+    medical: 'A canvas tent with a red stripe and a team of busy doctors. Wounded soldiers nearby heal up and get ready to fight again.',
+    arty: 'A fixed battery of big guns that can pound enemies from long range. The Artillery Battery turns any defensive line into a nightmare for attackers.',
+    radar: 'A spinning dish that listens to the whole battlefield. The Radar Station reveals enemy movements so no attack ever takes you by surprise.',
+    wall: 'Thick concrete and steel walls that block the enemy’s path. Fortified Walls buy precious time for your bunkers and guns to do their work.',
+    nest: 'A quick ring of sandbags that gives soldiers a safe spot to shoot from. Cheap to build and great for holding a freshly captured flag.'
+  },
+
+  maps: {
+    greenfield: 'Greenfield Crossing was once the breadbasket of Ardena, with golden wheat fields on both sides of a lazy river. The very first big battle of the Flag War was fought for the Old Bridge in the middle, and the stones still carry the scorch marks. Whoever holds the bridge controls the crossing.',
+    dustbowl: 'Dustbowl Ridge is a sun-baked desert canyon where the Amber Company once ran its trade caravans. The oasis at its center is the only fresh water for miles, so every army that passes through ends up fighting for it. The canyon walls echo every shot for miles.',
+    corners: 'Four Corners is a steaming jungle where four ancient trade roads meet at a single crossroads. The trees are so thick that armies can pass within a stone’s throw of each other without knowing it. The Emerald Rangers say the jungle chooses the winner, not the commanders.',
+    frostbite: 'Frostbite Basin is a frozen lake ringed by snowy hills, with a rocky island in the middle that hides a buried Beacon. Ice causeways are the only safe paths across, and every one of them has been fought over. Commanders who rush onto thin ice rarely get a second chance.',
+    ironworks: 'Ironworks was the biggest factory district in Ardena until the Beacons went dark and its machines fell silent. Now its ruined streets, rusting cranes and wide central plaza are a maze of cover and ambush points. The old foundry still holds stacks of steel that every army wants.'
+  },
+
+  missions: {
+    conquest: {
+      brief: [
+        'Commander, the enemy has spread across this whole region. Capture the flags, cut off their Embercore, and take down their Headquarters. Full victory is the only acceptable result.',
+        'Commander, this is a straight fight for control. Grab flags early, build up your forces, and then push all the way to the enemy base. Good luck out there.',
+        'Commander, High Command wants this sector cleared. Every flag you take makes you stronger and them weaker. Finish the job by destroying their Headquarters.'
+      ]
+    },
+    blitz: {
+      brief: [
+        'Commander, speed is everything on this one. The enemy is still setting up, so hit them hard before their defenses are ready. The clock is ticking.',
+        'Commander, we have a small window before enemy reinforcements arrive. Strike fast, strike hard, and win before time runs out. Do not slow down.',
+        'Commander, this is a lightning raid. Forget building a perfect army. Grab what you can and charge before they know what hit them.'
+      ]
+    },
+    holdout: {
+      brief: [
+        'Commander, the enemy is coming in force and help is still far away. Dig in, build defenses, and hold your ground until the timer runs out. Do not let the Headquarters fall.',
+        'Commander, we just need to survive. Wave after wave is heading your way. Walls, bunkers and guns are your best friends today. Hold the line.',
+        'Commander, reinforcements are on their way, but they need time. Keep the enemy busy and keep your base standing. Every minute you hold is a victory.'
+      ]
+    },
+    koth: {
+      brief: [
+        'Commander, there is one flag on this map that matters more than all the others. Take the hill, hold it, and do not let go. The longer you hold it, the closer we are to victory.',
+        'Commander, the central hill sits on a powerful Beacon. Whoever controls it controls the battle. Get there first and turn it into a fortress.',
+        'Commander, King of the Hill rules today. Capture the center point and keep it until the timer is full. Expect the enemy to throw everything at you.'
+      ]
+    },
+    fortress: {
+      brief: [
+        'Commander, the enemy has built a heavy defensive line across the map. Smash through the walls and bunkers and reach their Headquarters. Bring artillery and plenty of tanks.',
+        'Commander, scouts report thick walls, bunkers and guns ahead. This will not be easy. Find the weak spot in their line and break through.',
+        'Commander, the enemy thinks their fortress cannot fall. Prove them wrong. Use long-range guns to soften the walls, then send in the heavy armor.'
+      ]
+    },
+    supply: {
+      brief: [
+        'Commander, our supply lines are running dry. Capture and hold the supply flags to gather enough Embercore for High Command. Every crate counts.',
+        'Commander, this is a supply run. Grab the marked flags and keep them long enough to fill our stockpile. Protect your convoys and depots.',
+        'Commander, the army runs on Embercore, and right now we are almost empty. Secure the supply points and keep the resources flowing.'
+      ]
+    },
+    twofront: {
+      brief: [
+        'Commander, bad news. Two enemy armies are attacking at once, from opposite sides. Split your forces wisely and do not let either side break through.',
+        'Commander, you are fighting on two fronts today. Defend one side while you strike the other, then switch. Keep an eye on both directions.',
+        'Commander, two enemy commanders have teamed up against you. Beat one of them quickly and the other will be much easier. Stay sharp.'
+      ]
+    },
+    final: {
+      brief: [
+        'Commander, this is it, the last battle of the operation. The enemy has gathered everything they have left. Win here and the whole region is ours.',
+        'Commander, every fight so far has led to this moment. Use every Doctrine you have earned and give it everything. High Command is watching.',
+        'Commander, the enemy’s best commander is waiting for you. This is the final battle. Take their Headquarters and end this operation in victory.'
+      ]
+    }
+  },
+
+  operations: {
+    intro: [
+      'A new operation begins. Seven battles stand between you and control of this region. Plan carefully, Commander, because every win brings new Doctrines.',
+      'High Command has a new mission for you. The enemy holds this region, and it is your job to take it back, one battle at a time.',
+      'Maps are spread out, radios crackle, and your troops are ready. Seven battles, one goal. The operation starts now, Commander.'
+    ],
+    victory: [
+      'Operation complete! The region is secure and the Beacons here are flying your colors. High Command is very impressed, Commander.',
+      'Victory! Seven battles fought and won. Your name is spreading through every barracks in Ardena. Get some rest, Commander. You earned it.',
+      'The last enemy flag comes down and your banner goes up. The operation is a success. A promotion may be coming your way.'
+    ],
+    defeat: [
+      'The operation has failed, and our forces are pulling back. Every great commander has lost a battle. Learn from it and try again.',
+      'We could not hold the region this time. Regroup, rethink your strategy, and come back stronger, Commander.',
+      'Defeat. The enemy has won this round, but the war is far from over. High Command still believes in you. Ready for another try?'
+    ]
+  },
+
+  war: {
+    intro: 'Welcome to the Bastion, Commander. This huge fortress sits on top of the Heart Beacon, the biggest Beacon ever built. Legends say that if it is lit again, every Beacon in Ardena will glow once more.\n\nThat makes the Bastion the most wanted place in the world. Enemy commanders are coming, one after another, each from a new direction and each stronger than the last. Build walls, place guns, train troops and hold the line.\n\nEverything you build here stays. If the enemy breaks through, do not give up. Rebuild, rethink and try again. Every wave you survive brings you closer to finding out who is really behind these attacks. How long can you hold?',
+    namesFirst: [
+      'Ash', 'Brakk', 'Cinder', 'Dax', 'Ember', 'Flint', 'Garro', 'Hex',
+      'Iska', 'Jett', 'Korr', 'Lyra', 'Mace', 'Nyx', 'Orrin', 'Pike',
+      'Quill', 'Rook', 'Sable', 'Talon', 'Ursa', 'Vale', 'Wren', 'Xan',
+      'Yara', 'Zeph', 'Blitz', 'Cobalt', 'Drake', 'Fenn', 'Grit', 'Halcy',
+      'Ivo', 'Juno', 'Kestra', 'Lumo', 'Marek', 'Nova', 'Onyx', 'Riven'
+    ],
+    namesLast: [
+      'Ashgrove', 'Blackwater', 'Coldbrook', 'Drummond', 'Embersley', 'Falkrath', 'Grimsby', 'Hollowell',
+      'Ironvale', 'Jarnholt', 'Kettleby', 'Lockhart', 'Marrow', 'Northcott', 'Orlok', 'Pellmark',
+      'Quarrel', 'Ravensworth', 'Stormvald', 'Thorne', 'Underhill', 'Varrick', 'Wexford', 'Yardley',
+      'Zandor', 'Brightmoor', 'Cragg', 'Dunmere', 'Fairhallow', 'Glimmer', 'Harrowgate', 'Krell',
+      'Larkspur', 'Moorland', 'Nettlefield', 'Oakhart', 'Redfern', 'Steelgrave', 'Tarrow', 'Wolfbane'
+    ],
+    ranks: ['Col.', 'Gen.', 'Maj.', 'Brig.', 'Cmdr.', 'Mshl.', 'Adm.', 'Capt.'],
+    epithets: [
+      'the Iron Wolf', 'Ashmaker', 'the Storm', 'Stonebreaker', 'the Red Hawk', 'the Unstoppable', 'Thunderfist', 'the Silent Blade',
+      'the Fox', 'Wallcrusher', 'the Sky Shark', 'the Rusty Lion', 'the Bulldozer', 'Nightfall', 'the Steel Bear', 'the Viper',
+      'Flagtaker', 'the Hammer', 'the Gray Ghost', 'Ironclad', 'the Wildfire', 'the Juggernaut', 'Frostbite', 'the Lightning',
+      'the Old Badger', 'Skybreaker', 'the Avalanche', 'Bridgeburner', 'the Mountain', 'the Scorpion', 'Dustdevil', 'the Black Comet',
+      'the Copper Fang', 'Tankbuster', 'the Whirlwind', 'the Raven', 'Gatecrasher', 'the Tide', 'the Grinder', 'Sunstrike'
+    ],
+    styles: {
+      rush: {
+        title: 'Rusher',
+        lines: [
+          'Ready or not, here we come! All units, charge!',
+          'Your walls are not even dry yet. Perfect timing.',
+          'Why wait? We attack right now!'
+        ]
+      },
+      turtle: {
+        title: 'Siege Master',
+        lines: [
+          'I am building a fortress next to your fortress. Let us see whose walls are stronger.',
+          'Slow and steady, Commander. My siege guns are already in place.',
+          'I have all the time in the world. Do you?'
+        ]
+      },
+      armor: {
+        title: 'Tank Commander',
+        lines: [
+          'Feel the ground shaking? My tanks are coming.',
+          'Armor forward! Roll right over their bunkers!',
+          'Your walls are nothing but speed bumps to my Titans.'
+        ]
+      },
+      air: {
+        title: 'Sky Marshal',
+        lines: [
+          'Look up, Commander. My squadrons are already overhead.',
+          'Walls cannot stop what flies over them.',
+          'Gunships, find their weak spot and light it up!'
+        ]
+      },
+      artillery: {
+        title: 'Gunner',
+        lines: [
+          'Shells away! Better duck, Commander.',
+          'I can hit your base from way over here. Can you hit me?',
+          'Every gun I have is aimed at your Bastion. Fire!'
+        ]
+      },
+      balanced: {
+        title: 'Tactician',
+        lines: [
+          'I have studied your defenses. I know exactly what to send.',
+          'A little of everything, Commander. Good luck guessing my plan.',
+          'Every fortress has a weak spot. I will find yours.'
+        ]
+      },
+      swarm: {
+        title: 'Horde Leader',
+        lines: [
+          'You cannot stop all of us! Forward, everyone!',
+          'For every soldier you stop, ten more are coming.',
+          'Count them if you can, Commander. I stopped counting long ago.'
+        ]
+      },
+      elite: {
+        title: 'Elite Commander',
+        lines: [
+          'I only bring the best. Your bunkers will not be enough.',
+          'Commandos, Titans and Sky Hunters. Only the finest for your Bastion.',
+          'Few soldiers, Commander, but each one is worth a hundred of yours.'
+        ]
+      }
+    },
+    waveIntro: [
+      'Commander! Wave {wave} incoming! {name} is attacking from the {dir}!',
+      'Radar contact! {name} is moving in from the {dir}. Wave {wave}, everyone to battle stations!',
+      'Scouts report enemy forces gathering to the {dir}. It is {name}. Wave {wave} has begun!',
+      'Alert! Wave {wave}! {name} has broken through the {dir} hills and is heading for the Bastion!',
+      'All units, stand ready. {name} leads wave {wave} from the {dir}.',
+      'Commander, dust clouds on the {dir} horizon. {name} is coming with wave {wave}!',
+      'Sirens on! Wave {wave} approaching from the {dir}. Enemy commander identified as {name}.',
+      'Here they come! {name} is pushing in from the {dir}. Hold the line, wave {wave}!',
+      'Intercepted radio chatter: {name} plans to hit us from the {dir}. Wave {wave} is underway!',
+      'Commander, the {dir} watchtower is sounding the alarm. Wave {wave}, led by {name}!',
+      'Brace yourselves! {name} brings wave {wave} straight at our {dir} walls!',
+      'New enemy on the map! {name} is advancing from the {dir}. Wave {wave}, defend the Bastion!'
+    ],
+    waveWon: [
+      'Wave {wave} defeated! {name} is retreating in a hurry. Great work, Commander!',
+      'The Bastion stands! {name} could not break through. Repair the walls and get ready for more.',
+      'Victory! Wave {wave} has been pushed back. The troops are cheering on the walls.',
+      '{name} has been beaten. Wave {wave} is over. Use this break to strengthen your defenses.',
+      'Enemy forces are falling back. Wave {wave} is ours, Commander!',
+      'That is how you hold a fortress! {name} will be telling stories about this defeat.',
+      'All clear! Wave {wave} survived. Scouts say the next commander is already on the way.',
+      'Well done, Commander. {name} limps away, and the Heart Beacon is still safe.'
+    ],
+    waveLost: [
+      'The Bastion has fallen to {name}... but this is not the end. Rebuild and take it back, Commander!',
+      '{name} broke through this time. Gather the survivors, repair the walls and try again.',
+      'We lost the fight, but not the war. Rebuild your defenses and show {name} what we can really do.',
+      'The walls are down, Commander. Every great fortress has fallen at least once. Time to rebuild stronger.',
+      '{name} got the better of us today. Study what went wrong and come back ready.',
+      'Defeat. But your troops are not giving up, and neither should you. Rebuild the Bastion!',
+      'The enemy has taken the Bastion for now. Everything we built is still here to repair. Back to work, Commander!',
+      'A tough loss against {name}. Rest, rethink your plan and get ready for a comeback.'
+    ],
+    milestones: {
+      5: 'Wave 5 survived! While searching the battlefield, your scouts found a strange badge on an enemy radio: a gray hourglass with no Banner color at all. None of the Eight Banners uses that symbol. Who are these attackers really working for?',
+      10: 'Wave 10! Captured enemy officers finally talk. They are not loyal to any Banner. They are hired commanders, paid in fresh Embercore by someone they have never met. Their orders always arrive sealed with the gray hourglass.',
+      15: 'Wave 15! Your engineers tested the Embercore found on the enemy. It is old, very old, and it carries the stamp of the Wardens. Someone has found one of the lost Warden vaults, the one people call the Last Armory, and is using it to pay for this war.',
+      20: 'Wave 20! A message arrives at the Bastion, addressed to you by name. It is signed “the Gray Marshal, Commander of the Ninth Banner.” A ninth army with no color, hiding in the shadows all this time. The Gray Marshal says the Heart Beacon belongs to them.',
+      25: 'Wave 25! Old Warden records recovered from the ruins tell the truth. On the Night the Beacons Went Dark, it was the Gray Marshal who switched them off. Every war since then, every broken alliance, all of it began with that one secret act. The Gray Marshal wants the Banners fighting forever.',
+      30: 'Wave 30! Your radar crew finally understands the plan. The Gray Marshal needs the Heart Beacon to control every Beacon in Ardena at once. Whoever lights it decides who gets power and who stays in the dark. That is why the attacks never stop. The Bastion is the last thing standing in the way.',
+      40: 'Wave 40! For the first time, the Gray Marshal speaks to you over the radio. “You are stubborn, Commander. I have sent my best, and you are still here. Very well. The next waves I will lead myself.” The gray hourglass banner now flies over the enemy front line.',
+      50: 'Wave 50! The Gray Marshal’s army breaks against your walls and scatters. In the silence, a soft orange glow rises from deep beneath the Bastion. The Heart Beacon flickers to life for the first time in years. Across the land, a few Beacons glow again. The Gray Marshal has escaped, and new challengers are already coming, but for the first time in a long time, Ardena has hope.'
+    }
+  },
+
+  tips: [
+    'Every flag you hold earns Embercore. Grab empty flags early with fast Scouts and Scout Cars.',
+    'If your Headquarters falls, the battle is lost. Never leave it completely unguarded.',
+    'Bazooka Teams are the cheapest way to stop enemy tanks. Keep a few with your army.',
+    'Anti-Air Guns and Sky Hunters keep the skies clear. Admiral Voss hates them.',
+    'Colonel Vex attacks very early. A couple of MG Bunkers can stop her first rush cold.',
+    'General Stone hides behind walls. Bring artillery or Rocket Batteries to break them.',
+    'Major Hale counters what you build. Mix up your army to keep her guessing.',
+    'Marshal Kruger is slow to start. Hit his flags and depots early before his tanks roll out.',
+    'Medics and Medical Tents keep your soldiers fighting longer. Healing is cheaper than training.',
+    'Engineers can repair damaged buildings. A fixed bunker saves you money.',
+    'Mortars and artillery can fire over walls, but they are weak up close. Protect them.',
+    'Radar Stations and Recon Drones reveal the enemy. You cannot fight what you cannot see.',
+    'Supply Depots boost your economy. A stronger economy means a bigger army.',
+    'Sandbag Nests are cheap and quick. Build one right after capturing a flag to help hold it.',
+    'Doctrines earned between Campaign battles stay with you for the whole operation. Choose wisely.',
+    'In Endless War, everything you build in the Bastion stays. Keep improving your defenses between waves.',
+    'Each Endless War wave comes from a new direction. Do not put all your walls on one side.',
+    'The old rifles in your Barracks came from the Wardens’ Armories, some of them over a hundred years old.',
+    'Titans are slow but very tough. Bazookas, tanks and attack helicopters can bring them down together.',
+    'Lost a battle? Every commander in Ardena has. Rebuild, rethink and try again.'
+  ]
+};
 // ---------------- AI personalities ----------------
 const AIP = {
   vex: { id: 'vex', name: 'Col. Vex', title: 'Rusher', desc: 'Attacks early with lots of cheap soldiers, scouts and cars.', aggr: 1.5, expand: 1.2, eco: .8, tech: .5, army: 5, uw: { rifleman: 3, rocket: 1, scout: .6, jeep: 2, apc: 1.2, heavy: 1.2, mortar: .5, grenadier: .8, lighttank: 1, commando: 1.2, sniper: .3, medic: .5 }, bld: ['barracks', 'barracks', 'depot', 'factory', 'barracks', 'turret', 'depot', 'medical', 'airfield', 'radar'], spec: { barracks: ['conscript', 'shock', 'elite'], factory: ['rapid'], depot: ['trade'], hq: ['warroom'], medical: ['stim'], turret: ['twin'] }, tech: ['w1', 'm1', 'a1', 'w2', 'm2', 'e1'], calls: ['para', 'merc', 'air', 'barrage'] },
@@ -644,6 +1048,21 @@ function hash2(ix, iz, s) { let h = Math.imul(ix, 374761393) ^ Math.imul(iz, 668
 function vnoise(x, z, s) { const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz); return lerp(lerp(hash2(ix, iz, s), hash2(ix + 1, iz, s), u), lerp(hash2(ix, iz + 1, s), hash2(ix + 1, iz + 1, s), u), v); }
 function segDist(px, pz, x1, z1, x2, z2) { const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz; let t = l2 > 0 ? ((px - x1) * dx + (pz - z1) * dz) / l2 : 0; t = clamp(t, 0, 1); const cx = x1 + dx * t - px, cz = z1 + dz * t - pz; return Math.sqrt(cx * cx + cz * cz); }
 
+// 3.1: the Endless War map. The Bastion sits in the middle; enemy commanders land at one of eight sites around the edge.
+const WARMAP = { id: 'bastion', name: 'The Bastion', sym: 1, w: 300, d: 300, seed: 61, biome: 'grass', maxP: 2, amp: 1.3, desc: 'Your fortress on the Heart Beacon. Hold it against every wave.',
+  build(m) {
+    m.spawn(0, 0, 1, 'The Bastion');
+    const R = 122, DIRS = ['East', 'South-East', 'South', 'South-West', 'West', 'North-West', 'North', 'North-East'];
+    for (let k = 0; k < 8; k++) { const a = k * PI / 4, r = k % 2 ? R * .93 : R; m.spawn(Math.cos(a) * r, Math.sin(a) * r, 0, DIRS[k] + ' Landing'); }
+    const OUT = ['Gatehouse', 'Old Mill', 'Signal Hill', 'Quarry', 'Orchard', 'Waterworks'];
+    for (let k = 0; k < 6; k++) { const a = k * TAU / 6 + PI / 6; m.point(Math.cos(a) * 64, Math.sin(a) * 64, OUT[k], 1.2, -1, 1); }
+    const MID = ['Ash Ford', 'Red Barn', 'Stone Bridge', 'Crow Ridge', 'Dry Creek', 'Pine Hollow', 'Iron Gate', 'Lantern Rock'];
+    for (let k = 0; k < 8; k++) { const a = k * PI / 4 + PI / 8; m.point(Math.cos(a) * 98, Math.sin(a) * 98, MID[k], 1, -1, 1); }
+    for (let k = 0; k < 8; k++) { const a = k * PI / 4; m.road(0, 0, Math.cos(a) * R * .95, Math.sin(a) * R * .95, 4); }
+    for (let k = 0; k < 6; k++) { const a = k * TAU / 6 + PI / 6; m.hill(Math.cos(a) * 82, Math.sin(a) * 82, 16, 3.2, 1); m.forest(Math.cos(a + .35) * 80, Math.sin(a + .35) * 80, 14, .5); m.rocks(Math.cos(a - .3) * 74, Math.sin(a - .3) * 74, 8, 5); }
+    for (let k = 0; k < 8; k++) { const a = k * PI / 4 + PI / 8; m.forest(Math.cos(a) * 125, Math.sin(a) * 125, 16, .45); m.lake(Math.cos(a + .2) * 116, Math.sin(a + .2) * 116, 8, 3, 1); }
+    m.paint(0, 0, 44, 0x8f8a78, .45); m.ridge(-140, -40, -140, 40, 6, 3, 1); m.ridge(140, -40, 140, 40, 6, 3, 1);
+  } };
 const MAPS = [
   { id: 'greenfield', name: 'Greenfield Crossing', sym: 2, w: 240, d: 160, seed: 3, biome: 'grass', maxP: 2, amp: 1.5, desc: 'Rolling farmland split by a river. Fight for the bridge and the fords.',
     build(m) {
@@ -723,7 +1142,7 @@ function genMap(def) {
     lake(x, z, r, depth, c) { rep(x, z, c, (a, b) => L.lakes.push({ x: a, z: b, r, depth })); },
     deck(x, z, len, wid, rot, h, c) { rep(x, z, c, (a, b, k) => L.decks.push({ x: a, z: b, len, wid, rot: rot + (c ? 0 : rota[k]), h })); },
     point(x, z, name, val, home, c) { base.pts.push({ x, z, name, val, home: home === undefined ? -1 : home, c: !!c }); },
-    spawn(x, z) { base.spawns.push({ x, z }); },
+    spawn(x, z, big, name) { base.spawns.push({ x, z, big, name }); },
     forest(x, z, r, dens) { base.forests.push({ x, z, r, dens }); },
     rocks(x, z, r, n) { base.rocks.push({ x, z, r, n }); },
     block(x, z, w, d, h, rot, col) { base.blocks.push({ x, z, w, d, h, rot, col }); },
@@ -734,9 +1153,9 @@ function genMap(def) {
   def.build(api);
   // ---- points & spawns ----
   M.spawns = []; M.points = [];
-  for (const s of base.spawns) rep(s.x, s.z, 0, (a, b, k) => M.spawns.push({ x: a, z: b, k }));
+  for (const s of base.spawns) rep(s.x, s.z, 0, (a, b, k) => M.spawns.push({ x: a, z: b, k: sym === 1 ? M.spawns.length : k, big: s.big, name: s.name }));
   const spawnIdx = (k) => k;
-  for (const s of M.spawns) M.points.push({ id: M.points.length, x: s.x, z: s.z, name: 'HQ', val: 0, home: -1, hq: s.k, pad: 1 });
+  for (const s of M.spawns) M.points.push({ id: M.points.length, x: s.x, z: s.z, name: s.name || 'HQ', val: 0, home: -1, hq: s.k, pad: 1, big: s.big ? 1 : 0 });
   for (const p of base.pts) {
     const lbl = 'ABCD';
     rep(p.x, p.z, p.c, (a, b, k) => M.points.push({ id: M.points.length, x: a, z: b, name: p.c || sym === 1 ? p.name : p.name + ' ' + lbl[k], val: p.val, home: p.home >= 0 ? k : -1, hq: -1, pad: 0 }));
@@ -760,7 +1179,7 @@ function genMap(def) {
     return h;
   };
   for (const p of M.points) { p.gy = h0(p.x, p.z); }
-  const padR = p => p.hq >= 0 ? [22, 30] : [15, 22];
+  const padR = p => p.big ? [40, 50] : p.hq >= 0 ? [22, 30] : [15, 22];
   for (let iz = 0; iz < D1; iz++) for (let ix = 0; ix < W1; ix++) {
     const x = ix - M.hw, z = iz - M.hd; let h = h0(x, z);
     for (const p of M.points) { const dx = x - p.x, dz = z - p.z, dd = dx * dx + dz * dz, r = padR(p); if (dd < r[1] * r[1]) h = lerp(h, p.gy, sstep(r[1], r[0], Math.sqrt(dd))); }
@@ -776,7 +1195,7 @@ function genMap(def) {
   M.slope = (x, z) => { const a = M.H(x - 1, z), b = M.H(x + 1, z), c = M.H(x, z - 1), d = M.H(x, z + 1); return Math.max(Math.abs(b - a), Math.abs(d - c)) / 2; };
   M.inb = (x, z) => x > -M.hw + 2 && x < M.hw - 2 && z > -M.hd + 2 && z < M.hd - 2;
   // ---- decor ----
-  const nearPt = (x, z, r) => { for (const p of M.points) { const dx = x - p.x, dz = z - p.z, rr_ = p.hq >= 0 ? r + 12 : r; if (dx * dx + dz * dz < rr_ * rr_) return true; } return false; };
+  const nearPt = (x, z, r) => { for (const p of M.points) { const dx = x - p.x, dz = z - p.z, rr_ = p.big ? r + 32 : p.hq >= 0 ? r + 12 : r; if (dx * dx + dz * dz < rr_ * rr_) return true; } return false; };
   const onDeck = (x, z) => { for (const o of L.decks) { const c = Math.cos(o.rot), s = Math.sin(o.rot), dx = x - o.x, dz = z - o.z; if (Math.abs(dx * s + dz * c) < o.len / 2 + 5 && Math.abs(dx * c - dz * s) < o.wid / 2 + 4) return true; } return false; };
   M.trees = []; M.rocks = []; M.blocks = [];
   const grid = new Map(); const gk = (x, z) => ((x / 4) | 0) + ',' + ((z / 4) | 0);
@@ -830,7 +1249,8 @@ function genMap(def) {
     }
   }
   // keep points and their surroundings walkable
-  for (const p of M.points) { const r = p.hq >= 0 ? 24 : 15; for (let a = -r; a <= r; a += 1.5) for (let b = -r; b <= r; b += 1.5) if (a * a + b * b <= r * r) { const i = cidx(p.x + a, p.z + b); const y = M.H(p.x + a, p.z + b); if (y > M.wl - .4) nav.blk[i] = 0; } }
+  for (const p of M.points) { const r = p.big ? 42 : p.hq >= 0 ? 24 : 15; for (let a = -r; a <= r; a += 1.5) for (let b = -r; b <= r; b += 1.5) if (a * a + b * b <= r * r) { const i = cidx(p.x + a, p.z + b); const y = M.H(p.x + a, p.z + b); if (y > M.wl - .4 && M.inb(p.x + a, p.z + b)) nav.blk[i] = 0; } }
+  for (let cz = 0; cz < nz; cz++) for (let cx = 0; cx < nx; cx++) if (cx < 1 || cz < 1 || cx >= nx - 1 || cz >= nz - 1) nav.blk[cz * nx + cx] = 1;   // 3.1: the map border must stay solid, or routes wrap from one edge to the other
   M.mapH = M.H;
   return M;
 }
@@ -914,9 +1334,11 @@ function markNav(M, x, z, r, delta) { // dynamic obstacles (buildings)
   for (let a = r0; a <= r1; a++) for (let b = c0; b <= c1; b++) { if (a < 0 || b < 0 || a >= n.nz || b >= n.nx) continue; const px = -M.hw + (b + .5) * cs - x, pz = -M.hd + (a + .5) * cs - z; if (px * px + pz * pz <= (r + 1) * (r + 1)) n.dyn[a * n.nx + b] = clamp(n.dyn[a * n.nx + b] + delta, 0, 250); }
   n.ver++;
 }
-function slotPos(pt, k) { if (pt.hq >= 0) { const a = PI / 6 + k * PI / 3; return [pt.x + Math.cos(a) * 12.5, pt.z + Math.sin(a) * 12.5]; } const a = PI / 4 + k * PI / 2; return [pt.x + Math.cos(a) * 7.2, pt.z + Math.sin(a) * 7.2]; }
+function slotPos(pt, k) {
+  if (pt.big) { if (k < 8) { const a = PI / 8 + k * PI / 4; return [pt.x + Math.cos(a) * 15, pt.z + Math.sin(a) * 15]; } const a = (k - 8) * TAU / 16; return [pt.x + Math.cos(a) * 27.5, pt.z + Math.sin(a) * 27.5]; }   // 3.1: the Bastion, 24 build spots in two rings
+  if (pt.hq >= 0) { const a = PI / 6 + k * PI / 3; return [pt.x + Math.cos(a) * 12.5, pt.z + Math.sin(a) * 12.5]; } const a = PI / 4 + k * PI / 2; return [pt.x + Math.cos(a) * 7.2, pt.z + Math.sin(a) * 7.2]; }
 function wallArcs(pt) { // list of [cx,cz,angle0,angle1,radius]
-  const out = []; if (pt.hq >= 0) { for (let k = 0; k < 6; k++) { const a = PI / 6 + k * PI / 3; out.push([a - .36, a + .36, 19.5]); } } else { for (let k = 0; k < 4; k++) { const a = PI / 4 + k * PI / 2; out.push([a - .5, a + .5, 13.5]); } } return out;
+  const out = []; if (pt.big) { for (let k = 0; k < 8; k++) { const a = PI / 8 + k * PI / 4; out.push([a - .3, a + .3, 36]); } } else if (pt.hq >= 0) { for (let k = 0; k < 6; k++) { const a = PI / 6 + k * PI / 3; out.push([a - .36, a + .36, 19.5]); } } else { for (let k = 0; k < 4; k++) { const a = PI / 4 + k * PI / 2; out.push([a - .5, a + .5, 13.5]); } } return out;
 }
 // =====================================================================
 //  SIMULATION (host-authoritative; runs in single player and on the host)
@@ -931,7 +1353,7 @@ function ev(a) { W.ev.push(a); }
 const r1 = v => Math.round(v * 10) / 10;
 
 function createWorld(o) {
-  const def = MAPS.find(m => m.id === o.map) || MAPS[0];
+  const def = MAPS.find(m => m.id === o.map) || (o.map === 'bastion' ? WARMAP : MAPS[0]);
   const M = genMap(def);
   const np = o.players.length;
   W = { M, o, t: 0, tick: 0, nid: 1, units: [], bld: [], byId: new Map(), players: [], pts: [], proj: [], ev: [], sched: [], over: false, winner: -1, reason: '', mirror: !!o.mirror, reveals: [], teams: [], alertT: {}, stats: { calls: 0 }, fx: true, paused: false, speed: o.speed || 1, popMax: o.maxPop || 120 };
@@ -954,7 +1376,7 @@ function createWorld(o) {
   // points
   for (const mp of M.points) {
     const pt = { id: mp.id, x: mp.x, z: mp.z, y: mp.y, r: 10, name: mp.name, val: mp.val || 1, hq: mp.hq, home: mp.home, owner: -1, capP: -1, ctrl: 0, slots: [], wall: null, cnt: [0, 0, 0, 0], contested: false, flash: 0 };
-    const n = pt.hq >= 0 ? 6 : 4;
+    if (mp.big) pt.big = 1; const n = pt.big ? 24 : pt.hq >= 0 ? 6 : 4;
     for (let k = 0; k < n; k++) { const sp = slotPos(pt, k); pt.slots.push({ x: sp[0], z: sp[1], b: null, y: M.H(sp[0], sp[1]) }); }
     W.pts.push(pt);
   }
@@ -971,11 +1393,12 @@ function createWorld(o) {
     st.forEach((t, i) => { const a = ang + (i - st.length / 2) * .35, d = 16 + (i % 2) * 3; const q = snapFree(M, pt.x + Math.cos(a) * d, pt.z + Math.sin(a) * d); spawnUnit(t, p.id, q[0], q[1], { rot: ang }); });
   }
   // unused HQ pads become ordinary points
-  if (!W.mirror) for (const pt of W.pts) if (pt.hq >= 0 && pt.owner < 0) { pt.hq = -1; pt.name = 'Empty Base'; pt.val = 1.5; }
+  if (!W.mirror && !o.war) for (const pt of W.pts) if (pt.hq >= 0 && pt.owner < 0) { pt.hq = -1; pt.name = 'Empty Base'; pt.val = 1.5; }
   for (const p of W.players) recalcMods(p);
   W.activeTeams = W.teamList.map(t => t.id);
   battleSetup();
   if (!W.mirror) for (const p of W.players) if (p.kind === 'ai') p.ai = makeAI(p, s_ai(o, p.id));
+  if (o.war && !W.mirror) warInit();
   updateVision(); updateVision();
   return W;
 }
@@ -1049,7 +1472,10 @@ function rosTotal(b, noDrones) { let n = 0; if (b.ros) for (const k in b.ros) if
 function rosHave(b, type) { return b.have && b.have[type] || 0; }
 function rosFits(b, type) { if (rosTotal(b) + 1 > rosCap(b)) return false; if (b.spec === 'swarm' && !DRONES[type] && rosTotal(b, true) + 1 > rosBase(b)) return false; return true; }
 function isProd(b) { return !!BT[b.type].ros; }
-function refundTraining(b) { if (!b.tr) return; if (!W.o.sandbox) { const p = P(b.owner); if (p) p.sup += b.tr.c; } b.tr = null; }
+function refundTraining(b) { b.tr = null; }
+// 3.1: a roster slot is bought once (2.5x the unit's price). The building then trains that troop and respawns it for free whenever it dies.
+const SLOT_MUL = 2.5;
+function slotCost(p, type, b) { return Math.round(unitCost(p, type, b) * SLOT_MUL); }
 function popLimit(p) { return Math.min(p.popCap, p.popLim || 1e9); }
 function bCount(p, type) { let n = 0; for (const b of W.bld) if (b.owner === p.id && b.type === type && !b.dead) n++; return n; }
 // count each building's living troops (run every tick before buildings update)
@@ -1057,7 +1483,7 @@ function countHomes() {
   for (const b of W.bld) if (b.have) for (const k in b.have) b.have[k] = 0;
   for (const u of W.units) if (u.home && !u.dead) { const b = W.byId.get(u.home); if (b && b.k === 'b' && b.have && b.owner === u.owner) b.have[u.type] = (b.have[u.type] || 0) + 1; }
 }
-// b.wait: 0 = fine, 1 = waiting for money, 2 = army full, 3 = paused
+// b.wait: 0 = fine, 2 = army full, 3 = paused
 function rosterTick(b, dt) {
   const p = P(b.owner), sb = W.o.sandbox;
   if (b.tr) {
@@ -1065,17 +1491,15 @@ function rosterTick(b, dt) {
     if (!b.ros[t] || rosHave(b, t) >= b.ros[t]) { refundTraining(b); return; }
     b.tr.t = Math.min(b.tr.dur, b.tr.t + dt); if (b.tr.t < b.tr.dur) { b.wait = 0; return; }
     if (!sb && p.pop + UT[t].pop > popLimit(p)) { b.wait = 2; return; }      // finished, but no room in the army yet
-    b.tr = null; b.wait = 0; deployUnit(b, p, t); b.have[t] = (b.have[t] || 0) + 1; return;
+    b.tr = null; b.wait = 0; deployUnit(b, p, t); b.have[t] = (b.have[t] || 0) + 1; b.made[t] = (b.made[t] || 0) + 1; return;
   }
   if (b.hold) { b.wait = 3; return; }
   let pick = null, best = 0;
   for (const k in b.ros) { const want = b.ros[k], have = rosHave(b, k); if (have >= want || !canTrainAt(b, k)) continue; const sc = (want - have) / want; if (sc > best) { best = sc; pick = k; } }
   if (!pick) { b.wait = 0; return; }
   if (!sb && p.pop + UT[pick].pop > popLimit(p)) { b.wait = 2; return; }
-  const cost = unitCost(p, pick, b);
-  if (!sb && p.sup - cost < (p.resv || 0)) { b.wait = 1; return; }
-  if (!sb) p.sup -= cost;
-  b.tr = { u: pick, t: 0, dur: unitCd(b, pick), c: sb ? 0 : cost }; b.wait = 0;
+  const re = (b.made[pick] || 0) >= b.ros[pick];      // replacing a fallen troop takes twice as long as the first training
+  b.tr = { u: pick, t: 0, dur: unitCd(b, pick) * (re ? 2 : 1), re: re ? 1 : 0, c: 0 }; b.wait = 0;
 }
 // 2.3 auto-rally: the biggest cluster of the player's combat units (ignoring units parked at an enemy HQ unless that is all there is)
 function armyRally(p, b) {
@@ -1129,7 +1553,7 @@ function spawnUnit(type, owner, x, z, o) {
 function placeBuilding(type, owner, pt, slot, instant) {
   const T = BT[type], p = P(owner); let x, z;
   if (type === 'wall') { x = pt.x; z = pt.z; } else if (slot >= 0) { x = pt.slots[slot].x; z = pt.slots[slot].z; } else { x = pt.x; z = pt.z; }
-  const b = { id: W.nid++, k: 'b', type, T, owner, team: p.team, pt: pt ? pt.id : -1, slot, x, z, y: W.M.H(x, z), lvl: 1, spec: '', hp: 0, maxHp: 0, prog: instant ? 1 : 0, upg: null, ros: T.ros ? {} : null, have: T.ros ? {} : null, tr: null, wait: 0, hold: false, rx: 0, rz: 0, hasRally: false, cd: 0, cd2: 0, scan: Math.random(), tgt: null, aim: 0, flash: 0, dead: false, spent: T.cost[0], w: null, sb: 1 << p.team, aT: 0, mines: null, mineT: 0, sz: T.sz, rot: 0, fire: 0 };
+  const b = { id: W.nid++, k: 'b', type, T, owner, team: p.team, pt: pt ? pt.id : -1, slot, x, z, y: W.M.H(x, z), lvl: 1, spec: '', hp: 0, maxHp: 0, prog: instant ? 1 : 0, upg: null, ros: T.ros ? {} : null, have: T.ros ? {} : null, made: {}, paid: {}, tr: null, wait: 0, hold: false, rx: 0, rz: 0, hasRally: false, cd: 0, cd2: 0, scan: Math.random(), tgt: null, aim: 0, flash: 0, dead: false, spent: T.cost[0], w: null, sb: 1 << p.team, aT: 0, mines: null, mineT: 0, sz: T.sz, rot: 0, fire: 0 };
   refreshB(b); b.hp = instant ? b.maxHp : b.maxHp * .12;
   if (type === 'hq') { b.rot = Math.atan2(-z, -x) + PI / 2; }
   else { b.rot = Math.atan2(W.M.hd * .0 - z, -x) + (slot >= 0 ? 0 : 0); b.rot = Math.round(Math.atan2(-x, -z) / (PI / 2)) * (PI / 2); }
@@ -1140,7 +1564,7 @@ function placeBuilding(type, owner, pt, slot, instant) {
   else markNav(W.M, x, z, 1.1, 1);
   return b;
 }
-function initMines(b) { const pt = W.pts[b.pt]; b.mines = []; const rad = pt.hq >= 0 ? 19.5 : 13.5; const n = pt.hq >= 0 ? 6 : 4; for (let k = 0; k < n; k++) { const a = (pt.hq >= 0 ? 0 : 0) + k * TAU / n; for (let j = -1; j <= 1; j += 2) { const aa = a + j * .12; b.mines.push({ x: pt.x + Math.cos(aa) * rad, z: pt.z + Math.sin(aa) * rad, t: 0 }); } } }
+function initMines(b) { const pt = W.pts[b.pt]; b.mines = []; const rad = pt.big ? 36 : pt.hq >= 0 ? 19.5 : 13.5; const n = pt.big ? 8 : pt.hq >= 0 ? 6 : 4; for (let k = 0; k < n; k++) { const a = (pt.hq >= 0 ? 0 : 0) + k * TAU / n; for (let j = -1; j <= 1; j += 2) { const aa = a + j * .12; b.mines.push({ x: pt.x + Math.cos(aa) * rad, z: pt.z + Math.sin(aa) * rad, t: 0 }); } } }
 
 // ---------------- damage ----------------
 function giveXp(u, amt) {
@@ -1194,7 +1618,7 @@ function killBuilding(b, src, owner) {
   ev([1, b.type === 'hq' ? 4 : 3, r1(b.x), r1(b.y + 2), r1(b.z), 0]); if (b.type === 'hq') for (let k = 0; k < 5; k++) ev([1, 3, r1(b.x + rr(-6, 6)), r1(b.y + rr(1, 5)), r1(b.z + rr(-6, 6)), 0]);
   alertMsg(b.owner, 'bldlost', b.x, b.z, 0, b.T.n);
   if (owner !== undefined && owner >= 0) P(owner).stats.kills++;
-  if (b.type === 'hq') { b.owner === ME && alertMsg(b.owner, 'hqlost', b.x, b.z, 0, ''); eliminate(p, 'HQ destroyed', owner); }
+  if (b.type === 'hq') { if (W.o.war) { warHqDown(b); return; } b.owner === ME && alertMsg(b.owner, 'hqlost', b.x, b.z, 0, ''); eliminate(p, 'HQ destroyed', owner); }
 }
 function eliminate(p, why, killerOwner) {
   if (!p.alive) return; p.alive = false; p.out = why;
@@ -1205,7 +1629,7 @@ function eliminate(p, why, killerOwner) {
   checkWin(killerOwner);
 }
 function checkWin(killer) {
-  if (W.over || W.o.sandbox || W.inCheck) return; W.inCheck = true;
+  if (W.over || W.o.sandbox || W.o.war || W.inCheck) return; W.inCheck = true;
   try {
     for (const t of W.teamList) {
       if (!t.alive) continue;
@@ -1320,9 +1744,11 @@ function moveTo(u, tx, tz, dt, arrive) {
   let mx = dx / d, mz = dz / d;
   if (!T.air && d > 3) {
     if ((u.losT -= dt) <= 0) { u.los = d < 70 && losClear(M, u.x, u.z, tx, tz); u.losT = .25 + Math.random() * .15; }
-    if (!u.los) {
+    if (u.wpT > 0) { u.wpT -= dt; const wx = u.wpx - u.x, wz = u.wpz - u.z, wl = Math.sqrt(wx * wx + wz * wz); if (wl > .7) { mx = wx / wl; mz = wz / wl; } else u.wpT = 0; }   // 3.1: short escape waypoint
+    else if (!u.los) {
       const f = getField(M, tx, tz), n = M.nav, i = n.idx(u.x, u.z), k = f.dir[i];
-      if (k >= 0) {
+      if (k < 0 && f.dist[i] > 0) { const e = escapeCell(M, f, u.x, u.z); if (e) { u.wpx = e[0]; u.wpz = e[1]; u.wpT = 1.5; const wx = e[0] - u.x, wz = e[1] - u.z, wl = Math.sqrt(wx * wx + wz * wz) || 1; mx = wx / wl; mz = wz / wl; } }
+      else if (k >= 0) {
         let cx = i % n.nx, cz = (i / n.nx) | 0; cx += NB[k][0]; cz += NB[k][1];
         let j = cz * n.nx + cx, k2 = f.dir[j]; if (k2 >= 0) { cx += NB[k2][0]; cz += NB[k2][1]; j = cz * n.nx + cx; const k3 = f.dir[j]; if (k3 >= 0 && ((k3 + 8 - k2) & 7) < 2) { cx += NB[k3][0]; cz += NB[k3][1]; } }
         const wx = -M.hw + (cx + .5) * n.cs - u.x, wz = -M.hd + (cz + .5) * n.cs - u.z, wl = Math.sqrt(wx * wx + wz * wz) || 1; mx = wx / wl; mz = wz / wl;
@@ -1340,12 +1766,34 @@ function applyVel(u, dt) {
   const M = W.M, T = u.T; const sp = Math.sqrt(u.vx * u.vx + u.vz * u.vz);
   if (sp < .05) { u.moving = false; return; }
   let nx = u.x + u.vx * dt, nz = u.z + u.vz * dt;
-  if (!T.air) {
-    if (navBlockedAt(M, nx, nz)) { if (!navBlockedAt(M, nx, u.z)) { nz = u.z; u.vz = 0; } else if (!navBlockedAt(M, u.x, nz)) { nx = u.x; u.vx = 0; } else { nx = u.x; nz = u.z; u.vx = u.vz = 0; } }
+  if (!T.air && !navBlockedAt(M, u.x, u.z)) {      // (a unit standing inside a blocked cell may always move, so it can walk out)
+    if (navBlockedAt(M, nx, nz)) {
+      if (!navBlockedAt(M, nx, u.z)) { nz = u.z; u.vz = 0; } else if (!navBlockedAt(M, u.x, nz)) { nx = u.x; u.vx = 0; }
+      else { // 3.1: wedged in a corner: try sliding 45 degrees either way before giving up
+        const c = .7071, a = [[(u.vx - u.vz) * c, (u.vx + u.vz) * c], [(u.vx + u.vz) * c, (u.vz - u.vx) * c]]; let ok = false;
+        for (const v of a) { const px = u.x + v[0] * dt, pz = u.z + v[1] * dt; if (!navBlockedAt(M, px, pz)) { nx = px; nz = pz; ok = true; break; } }
+        if (!ok) { nx = u.x; nz = u.z; u.vx = u.vz = 0; }
+      }
+    }
   }
   if (nx < -M.hw + 2) nx = -M.hw + 2; if (nx > M.hw - 2) nx = M.hw - 2; if (nz < -M.hd + 2) nz = -M.hd + 2; if (nz > M.hd - 2) nz = M.hd - 2;
   u.x = nx; u.z = nz; u.moving = true;
   if (sp > .6) { const want = Math.atan2(u.vx, u.vz); u.rot = turnTo(u.rot, want, T.cls === 0 ? 10 : T.air ? 4 : T.cls === 2 ? 2.4 : 3.6, dt); }
+}
+// 3.1 pathfinding helpers: the nearest cell (around a blocked or cut-off one) that has a route to the target
+function escapeCell(M, f, x, z) {
+  const n = M.nav, nx = n.nx, nz = n.nz, i0 = n.idx(x, z), cx = i0 % nx, cz = (i0 / nx) | 0; let best = -1, bs = 1e18;
+  for (let r = 1; r <= 12; r++) {
+    for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) { if (Math.max(Math.abs(a), Math.abs(b)) !== r) continue; const px = cx + a, pz = cz + b; if (px < 1 || pz < 1 || px >= nx - 1 || pz >= nz - 1) continue; const j = pz * nx + px; if (n.blk[j] | n.dyn[j] || f.dist[j] >= 1e9) continue; const sc = f.dist[j] + Math.sqrt(a * a + b * b) * 3; if (sc < bs) { bs = sc; best = j; } }
+    if (best >= 0 && r >= 2) break;
+  }
+  if (best < 0) return null; return [-M.hw + (best % nx + .5) * n.cs, -M.hd + (((best / nx) | 0) + .5) * n.cs];
+}
+// a unit that has stopped making progress picks a nearby free spot that is closer to its goal (by the route, not the straight line)
+function unstick(u) {
+  const M = W.M, f = getField(M, u.tx, u.tz), n = M.nav, cur = f.dist[n.idx(u.x, u.z)]; let best = null, bs = cur >= 1e9 ? 1e18 : cur - .5;
+  for (const r of [2.5, 4.5, 7]) for (let k = 0; k < 16; k++) { const a = k / 16 * TAU + r, px = u.x + Math.cos(a) * r, pz = u.z + Math.sin(a) * r; if (!M.inb(px, pz) || navBlockedAt(M, px, pz) || !losClear(M, u.x, u.z, px, pz)) continue; const dv = f.dist[n.idx(px, pz)]; if (dv >= 1e9) continue; const sc = dv + r * .3; if (sc < bs) { bs = sc; best = [px, pz]; } }
+  if (!best) return false; u.wpx = best[0]; u.wpz = best[1]; u.wpT = 1.4; u.los = false; u.losT = 1.4; return true;
 }
 function separate(u, dt) {
   const T = u.T; if (T.air && !T.rotor) return; const out = tmpA; const R = T.r + 3; hashQ(u.x, u.z, R, out); let px = 0, pz = 0;
@@ -1354,7 +1802,7 @@ function separate(u, dt) {
     const d = Math.sqrt(dd) || .01; let w = (min - d) / min; const em = e.moving || e.o !== 0, um = u.moving || u.o !== 0; w *= em && !um ? 1.4 : um && !em ? .35 : 1;
     px += dx / d * w; pz += dz / d * w;
   }
-  if (px || pz) { const M = W.M; const nx = u.x + px * 9 * dt, nz = u.z + pz * 9 * dt; if (T.air || !navBlockedAt(M, nx, nz)) { u.x = nx; u.z = nz; } }
+  if (px || pz) { const M = W.M; const nx = clamp(u.x + px * 9 * dt, -M.hw + 2, M.hw - 2), nz = clamp(u.z + pz * 9 * dt, -M.hd + 2, M.hd - 2); if (T.air || !navBlockedAt(M, nx, nz)) { u.x = nx; u.z = nz; } }
 }
 function groundY(u) { return W.M.H(u.x, u.z) + (u.T.air ? u.T.alt : 0); }
 
@@ -1423,7 +1871,7 @@ function updUnit(u, dt) {
       if (u.o === 1 && tg && weapons && !T.sf) { const dx = tg.x - u.x, dz = tg.z - u.z; u.aim = turnTo(u.aim, Math.atan2(dx, dz), T.tur ? 5 : 11, dt); for (let wi = 0; wi < weapons.length; wi++) { const w = weapons[wi]; const cdv = wi === 0 ? u.cd1 : u.cd2; if (cdv > 0 || effMult(w, tg) <= 0) continue; const dd = Math.hypot(dx, dz); if (dd <= uRange(u, w) && !(w.minr && dd < w.minr) && Math.abs(angDiff(u.aim, Math.atan2(dx, dz))) < .35) fire(u, w, tg, wi === 0 ? 1 : 2); } }
       else if (!engaged && T.tur) u.aim = turnTo(u.aim, u.rot, 3, dt); else if (!engaged && !tg) u.aim = turnTo(u.aim, u.rot, 9, dt);
       // stuck detection
-      if (!arrived) { const mv = u.dmv || 0; if (mv < unitSpeed(u) * dt * .25) { u.stuck += dt; } else u.stuck = Math.max(0, u.stuck - dt); if (u.stuck > 1.6 && Math.hypot(u.tx - u.x, u.tz - u.z) < 12 + u.arr * 2) arrived_(u); else if (u.stuck > 9) arrived_(u); }
+      if (!arrived) { const mv = u.dmv || 0; if (mv < unitSpeed(u) * dt * .25) { u.stuck += dt; } else u.stuck = Math.max(0, u.stuck - dt); if (u.stuck > 1.6 && Math.hypot(u.tx - u.x, u.tz - u.z) < 12 + u.arr * 2) arrived_(u); else if (u.stuck > 1.2 && !T.air && (u.unst | 0) < 6 && unstick(u)) { u.stuck = 0; u.unst = (u.unst | 0) + 1; } else if (u.stuck > 9) arrived_(u); }
       else arrived_(u);
     } else if (u.o === 5) { // build nest
       const arrived = moveTo(u, u.tx, u.tz, dt, 4);
@@ -1436,6 +1884,7 @@ function updUnit(u, dt) {
   if (T.air) u.y = lerp(u.y, M.H(u.x, u.z) + T.alt, Math.min(1, dt * 3)); else u.y = M.H(u.x, u.z);
 }
 function arrived_(u) {
+  u.unst = 0; u.wpT = 0;
   if (u.o === 1 || u.o === 6) { u.o = 0; u.spdCap = 0; u.anchorX = u.x; u.anchorZ = u.z; u.stuck = 0; }
   else if (u.o === 2) { u.o = 0; u.am = false; u.spdCap = 0; u.anchorX = u.x; u.anchorZ = u.z; u.stuck = 0; }
 }
@@ -1543,9 +1992,9 @@ function auraTick(b) {
   else if (b.type === 'radar' && b.spec === 'jammer') { hashQ(b.x, b.z, 55, out); for (const e of out) if (e.team !== b.team) e.jamT = .7; }
   else if (b.type === 'depot' && b.spec === 'armory') { hashQ(b.x, b.z, 45, out); for (const e of out) if (e.team === b.team) e.armT = .7; }
   else if (b.type === 'wall' && b.spec === 'wire') {
-    const pt = W.pts[b.pt]; hashQ(pt.x, pt.z, pt.hq >= 0 ? 21 : 16, out); for (const e of out) { if (e.team === b.team || e.T.air || e.T.cls !== 0) continue; const d = Math.hypot(e.x - pt.x, e.z - pt.z); if (d > (pt.hq >= 0 ? 17 : 11.5)) { e.slow = Math.max(e.slow, .7); hurt(e, 3, 'bullet', null, b.owner); } }
+    const pt = W.pts[b.pt]; hashQ(pt.x, pt.z, pt.big ? 38 : pt.hq >= 0 ? 21 : 16, out); for (const e of out) { if (e.team === b.team || e.T.air || e.T.cls !== 0) continue; const d = Math.hypot(e.x - pt.x, e.z - pt.z); if (d > (pt.big ? 33.5 : pt.hq >= 0 ? 17 : 11.5)) { e.slow = Math.max(e.slow, .7); hurt(e, 3, 'bullet', null, b.owner); } }
   }
-  if (b.type === 'wall') { const pt = W.pts[b.pt]; const red = BT.wall.red[b.lvl - 1] + (b.spec === 'bulwark' ? .1 : 0); hashQ(pt.x, pt.z, pt.hq >= 0 ? 21 : 15, out); for (const e of out) if (e.team === b.team) { e.wr = red; e.wrT = .7; } }
+  if (b.type === 'wall') { const pt = W.pts[b.pt]; const red = BT.wall.red[b.lvl - 1] + (b.spec === 'bulwark' ? .1 : 0); hashQ(pt.x, pt.z, pt.big ? 38 : pt.hq >= 0 ? 21 : 15, out); for (const e of out) if (e.team === b.team) { e.wr = red; e.wrT = .7; } }
 }
 function spawnFromBuilding(b, type, idx) {
   const T = UT[type], p = P(b.owner), M = W.M;
@@ -1599,13 +2048,14 @@ function secTick() {
     inc *= 1 + p.mod.inc; if (p.ai) inc *= p.ai.dif.inc; p.inc = inc; p.ptsN = pn; p.stats.peakPts = Math.max(p.stats.peakPts, pn);
     p.popCap = Math.min(W.popMax, 36 + pn * 7 + p.mod.pop + (hqL - 1) * 10);
     if (p.hqB && p.hqB.dead && p.alive) p.alive = false;
+    if (W.o.war && p.id === 1) p.popCap = Math.max(p.popCap, 200);
   }
   if (W.tick % 60 === 0) bleedTick();
-  fevTick(); objTick();
+  fevTick(); objTick(); if (W.o.war) warTick();
   checkWin();
 }
 function bleedTick() {
-  if (W.o.sandbox || W.over) return; const cnt = {}; let total = 0;
+  if (W.o.sandbox || W.o.war || W.over) return; const cnt = {}; let total = 0;
   for (const t of W.teamList) cnt[t.id] = 0; for (const pt of W.pts) if (pt.owner >= 0) { cnt[P(pt.owner).team] = (cnt[P(pt.owner).team] || 0) + 1; total++; }
   let mx = 0; for (const t of W.teamList) if (t.alive) mx = Math.max(mx, cnt[t.id]);
   for (const t of W.teamList) { if (!t.alive) continue; const diff = mx - cnt[t.id]; if (diff > 0) t.tickets -= Math.ceil(diff / 2) * (W.o.bleed || 1); }
@@ -1680,7 +2130,7 @@ function fevSpawn() {
   }
 }
 function fevTick() {      // once a second
-  if (!W.fev) return; const obj = W.o.obj;
+  if (!W.fev || (W.war && W.war.phase !== 'fight')) return; const obj = W.o.obj;
   if (!W.over && W.t >= W.fevT) { W.fevT = W.t + (obj && obj.type === 'supply' ? rr(45, 60) : rr(110, 160)); fevSpawn(); }
   for (let i = W.fev.length - 1; i >= 0; i--) {
     const e = W.fev[i]; e.t++; let done = false;
@@ -1775,7 +2225,7 @@ function applyCmd(pid, c) {
       if (!isFinite(x) || !isFinite(z)) return false;
       const pos = us.length === 1 ? [snapFree(M, x, z, 4)] : formationPositions(us, x, z, FORMS[c.f | 0] || 'box');
       let minSpd = 99; if (c.g) for (const u of us) if (!u.T.air) minSpd = Math.min(minSpd, unitSpeed(u));
-      us.forEach((u, i) => { u.o = c.k === 'am' ? 2 : 1; u.am = c.k === 'am'; u.tx = pos[i][0]; u.tz = pos[i][1]; u.tid = 0; u.tgt = null; u.arr = 1.2 + Math.min(3, us.length * .08); u.spdCap = c.g && !u.T.air && minSpd < 99 ? minSpd : 0; u.stuck = 0; u.los = false; u.losT = 0; });
+      us.forEach((u, i) => { u.o = c.k === 'am' ? 2 : 1; u.am = c.k === 'am'; u.tx = pos[i][0]; u.tz = pos[i][1]; u.tid = 0; u.tgt = null; u.arr = 1.2 + Math.min(3, us.length * .08); u.spdCap = c.g && !u.T.air && minSpd < 99 ? minSpd : 0; u.stuck = 0; u.unst = 0; u.wpT = 0; u.los = false; u.losT = 0; });
       return true;
     }
     case 'atk': {
@@ -1830,8 +2280,13 @@ function unlockInfo(b, type) { const T = UT[type]; for (const s of T.src) if (s[
 // c.d = +1 adds a slot for troop c.u, -1 removes one (the troop itself stays, it just will not be replaced)
 function cmdRoster(p, c) {
   const b = W.byId.get(c.b); if (!b || b.owner !== p.id || !b.ros || !UT[c.u]) return false; const d = c.d | 0;
-  if (d > 0) { if (!canTrainAt(b, c.u) || !rosFits(b, c.u)) return false; b.ros[c.u] = (b.ros[c.u] || 0) + 1; }
-  else if (d < 0) { if (!b.ros[c.u]) return false; if (--b.ros[c.u] <= 0) delete b.ros[c.u]; if (b.tr && b.tr.u === c.u && rosHave(b, c.u) >= (b.ros[c.u] || 0)) refundTraining(b); }
+  if (d > 0) {
+    if (!canTrainAt(b, c.u) || !rosFits(b, c.u)) return false; const cost = W.o.sandbox ? 0 : slotCost(p, c.u, b); if (p.sup < cost) return false;
+    p.sup -= cost; b.spent += cost; b.paid[c.u] = (b.paid[c.u] || 0) + cost; b.ros[c.u] = (b.ros[c.u] || 0) + 1;
+  } else if (d < 0) {     // half the slot's price back; the troop itself stays until it dies
+    const n = b.ros[c.u]; if (!n) return false; const avg = (b.paid[c.u] || 0) / n; b.paid[c.u] = (b.paid[c.u] || 0) - avg; b.spent -= avg; p.sup += Math.round(avg * .5);
+    if (--b.ros[c.u] <= 0) delete b.ros[c.u]; b.made[c.u] = Math.min(b.made[c.u] || 0, b.ros[c.u] || 0); if (b.tr && b.tr.u === c.u && rosHave(b, c.u) >= (b.ros[c.u] || 0)) refundTraining(b);
+  }
   else return false;
   NET.dirty = true; return true;
 }
@@ -1901,10 +2356,10 @@ function cmdDebug(p, c) {
 //  AI COMMANDERS
 // =====================================================================
 function makeAI(p, cfg) {
-  const pers = AIP[cfg.pers] || AIP.hale, dif = Object.assign({}, AID[cfg.diff] || AID.normal, cfg.over || {});   // 3.0: missions can tune a commander
+  const pers = cfg.persObj || AIP[cfg.pers] || AIP.hale, dif = Object.assign({}, AID[cfg.diff] || AID.normal, cfg.over || {});   // 3.0: missions can tune a commander
   const SAYS = { vex: { start: 'Hit them hard, hit them fast!', attack: 'Charge! No mercy!', retreat: 'Regroup! We go again.' }, stone: { start: 'Dig in. Let them come.', attack: 'The wall advances.', retreat: 'Fall back behind the guns.' }, hale: { start: 'Adapting to the battlefield.', attack: 'Probing their weak point.', retreat: 'Recalculating.' }, kruger: { start: 'Armor will decide this.', attack: 'Tanks forward!', retreat: 'Pull back and repair.' }, voss: { start: 'The skies belong to us.', attack: 'Wings up. Strike!', retreat: 'Back to the airfield.' } };
   const ai = {
-    say(kind) { if (W.o.tutorial || W.o.demo || this.t - (this.lastSay || -99) < 50 || this.t < 4) return; const s = (SAYS[pers.id] || {})[kind]; if (!s) return; this.lastSay = this.t; ev([11, p.id, s]); },
+    say(kind) { if (W.o.tutorial || W.o.demo || W.o.war || this.t - (this.lastSay || -99) < 50 || this.t < 4) return; const lc = LORE.commanders[pers.id]; let s = (SAYS[pers.id] || {})[kind]; if (lc && (kind !== 'start' || Math.random() < .6)) s = kind === 'start' ? lc.taunt : lc.quotes[(Math.random() * lc.quotes.length) | 0]; if (!s) return; this.lastSay = this.t; ev([11, p.id, s]); },
     p, pers, dif, diff: cfg.diff, persId: pers.id, t: 0, thinkT: 1 + Math.random() * 2, state: 'mass', wave: 0, role: new Map(), tgtPt: -1, stagePt: -1, startPower: 1, lastBuild: 0, atkStart: 0, tok: 2, tokCap: 2 + dif.apm / 20, focus: 'build', focusT: -99, nextAtk: dif.firstAtk || 300, threatSince: new Map(), gatherT: 0, caps: new Map(), wants: new Map(), s: null, lastRetreat: -99, nestT: 0, lastThreat: -99,
     update(dt) { if (this.hold) return; this.t += dt; this.tok = Math.min(this.tokCap, this.tok + dt * dif.apm / 60); if (this.t < (dif.startDelay || 0)) return; if ((this.thinkT -= dt) <= 0) { this.thinkT = dif.think * (.8 + Math.random() * .4); try { this.think(); } catch (e) { if (!this.err) { this.err = 1; console.error('AI error', e); } } } },
     // a human can only do so many things per minute: every real command spends an action point (setting a rally point is free)
@@ -2010,7 +2465,7 @@ function makeAI(p, cfg) {
       const cnt = {}, plan = { all: 0, inf: 0, air: 0 }, list = [];
       for (const b of W.bld) { if (b.owner !== p.id || !b.ros) continue; for (const k in b.ros) { const n = b.ros[k]; cnt[k] = (cnt[k] || 0) + n; plan.all += n; if (UT[k].cls === 0) plan.inf += n; if (UT[k].air && !DRONES[k]) plan.air += n; } if (b.prog >= 1 && !b.dead) list.push(b); }
       list.sort((x, y) => rosTotal(x) / Math.max(1, rosCap(x)) - rosTotal(y) / Math.max(1, rosCap(y)));
-      const add = (b, t) => { if (!this.cmd({ k: 'ros', b: b.id, u: t, d: 1 })) return false; cnt[t] = (cnt[t] || 0) + 1; plan.all++; if (UT[t].cls === 0) plan.inf++; if (UT[t].air && !DRONES[t]) plan.air++; return true; };
+      const add = (b, t) => { if (slotCost(p, t, b) > p.sup - (p.resv || 0)) { this.saveFor = this.saveFor || slotCost(p, t, b); return false; } if (!this.cmd({ k: 'ros', b: b.id, u: t, d: 1 })) return false; cnt[t] = (cnt[t] || 0) + 1; plan.all++; if (UT[t].cls === 0) plan.inf++; if (UT[t].air && !DRONES[t]) plan.air++; return true; };
       let changes = 0; const maxCh = dif.burst || 1;
       for (const b of list) {
         if (!b.hasRally && this.stage) this.cmd({ k: 'rally', b: b.id, x: this.stage[0], z: this.stage[1] });
@@ -3059,7 +3514,7 @@ function pickPad(g, rad) { rad = rad || 3.4;
     for (let k = 0; k < pt.slots.length; k++) { const s = pt.slots[k]; if (!s.b && Math.hypot(g.x - s.x, g.z - s.z) < rad) return { pt, slot: k }; }
   } return null;
 }
-function pickWall(g) { for (const pt of W.pts) { const wb = pt.wall; if (!wb || wb.dead || wb.team !== MYTEAM) continue; const R = pt.hq >= 0 ? 19.5 : 13.5; if (Math.abs(Math.hypot(g.x - pt.x, g.z - pt.z) - R) < (UI.touch ? 3.6 : 2.6)) return wb; } return null; }
+function pickWall(g) { for (const pt of W.pts) { const wb = pt.wall; if (!wb || wb.dead || wb.team !== MYTEAM) continue; const R = pt.big ? 36 : pt.hq >= 0 ? 19.5 : 13.5; if (Math.abs(Math.hypot(g.x - pt.x, g.z - pt.z) - R) < (UI.touch ? 3.6 : 2.6)) return wb; } return null; }
 function pickPoint(g) { let best = null, bd = 1e9; for (const pt of W.pts) { const d = Math.hypot(g.x - pt.x, g.z - pt.z); if (d < (pt.hq >= 0 ? 14 : pt.r + 1.5) && d < bd) { bd = d; best = pt; } } return best; }
 function ping(x, z, col) { mmPings.push({ x, z, t0: performance.now() / 1000, col: col || '#ffd24a' }); }
 function orderMarker(x, z, col) { markers.push({ x, z, t0: performance.now() / 1000, dur: .55, col: col || [.4, 1, .5] }); }
@@ -3360,7 +3815,7 @@ function hudInit() {
 }
 let lastScore = '', lastQuick = '';
 // ----- 2.4: roster status on cards, the Army status strip, and the little badge over each production building -----
-const WAITTXT = ['', 'waiting for money', 'army full', 'paused'];
+const WAITTXT = ['', '', 'army full', 'paused'];
 function prodBlds() { return W.bld.filter(b => b.owner === ME && b.prog >= 1 && !b.dead && b.ros); }
 function rosMissing(b) { let n = 0; for (const k in b.ros) n += Math.max(0, b.ros[k] - rosHave(b, k)); return n; }
 function updStrip() {
@@ -3387,7 +3842,7 @@ function updBadges() {
     seen.add(b.id); let have = 0; for (const k in b.ros) have += Math.min(rosHave(b, k), b.ros[k]); const tot = rosTotal(b), cnt = have + '/' + tot; let txt, cls, bar = '';
     if (!tot) { txt = 'Pick troops (0/' + rosCap(b) + ')'; cls = 'cool que'; }
     else if (b.wait) { txt = cnt + ' - ' + WAITTXT[b.wait]; cls = 'cool que'; }
-    else if (b.tr) { txt = cnt + ' - ' + UT[b.tr.u].n + ' ' + Math.max(0, b.tr.dur - b.tr.t).toFixed(1) + 's'; cls = 'cool'; bar = '<i style="width:' + Math.round(clamp(b.tr.t / b.tr.dur, 0, 1) * 100) + '%"></i>'; }
+    else if (b.tr) { txt = cnt + ' - ' + (b.tr.re ? 'respawning ' : '') + UT[b.tr.u].n + ' ' + Math.max(0, b.tr.dur - b.tr.t).toFixed(1) + 's'; cls = 'cool'; bar = '<i style="width:' + Math.round(clamp(b.tr.t / b.tr.dur, 0, 1) * 100) + '%"></i>'; }
     else { txt = 'FULL ' + cnt; cls = 'rdy'; }
     const sig = cls + txt + bar; if (d.dataset.s !== sig) { d.dataset.s = sig; d.className = 'bbadge ' + cls; d.innerHTML = esc(txt) + bar; }
     d.style.display = 'block'; d.style.transform = 'translate(' + (_sp.x | 0) + 'px,' + (_sp.y | 0) + 'px) translate(-50%,-100%)';
@@ -3398,7 +3853,7 @@ function teamBleed() { const cnt = {}; for (const t of W.teamList) cnt[t.id] = 0
 function ptsOfTeam(t) { let n = 0; for (const pt of W.pts) if (pt.owner >= 0 && P(pt.owner).team === t) n++; return n; }
 function iconStyle(k) { return ICONS[k] ? 'background-image:url(' + ICONS[k] + ')' : ''; }
 function strongWeak(w) { if (w.g === 'a') return 'Only attacks aircraft, and is very strong against them.'; const names = ['soldiers', 'vehicles', 'tanks', 'aircraft', 'buildings']; const s = [], wk = []; for (let c = 0; c < 5; c++) { let m = WTM[w.wt][c]; if (c === 3 && w.g === 'g') m = 0; if (c !== 3 && w.g === 'a') m = 0; if (m >= 1.15) s.push(names[c]); else if (m <= .3) wk.push(names[c]); } return (s.length ? 'Good against ' + s.join(', ') + '. ' : '') + (wk.length ? 'Weak against ' + wk.join(', ') + '.' : ''); }
-function unitTip(type, b) { const T = UT[type], p = P(ME); return T.n + '|' + T.info + '|Costs ' + unitCost(p, type, b) + ' each time one is trained. Takes ' + T.pop + ' army space and ' + (b ? unitCd(b, type).toFixed(1) : unitCdBase(T).toFixed(1)) + 's to train. Click the card to add one to this building\'s roster; the building trains it and replaces it if it dies. Click the minus (or right-click the card) to remove one.|' + (T.w ? strongWeak(T.w) : '') + (T.w2 && T.w2.g === 'a' && T.w.g !== 'a' ? ' Also fires missiles that are strong against aircraft.' : ''); }
+function unitTip(type, b) { const T = UT[type], p = P(ME); return T.n + '|' + T.info + '|A slot costs ' + slotCost(p, type, b) + ', paid once. The building trains this troop and respawns it for free every time it dies (' + (b ? unitCd(b, type).toFixed(0) : unitCdBase(T).toFixed(0)) + 's to train, twice that to respawn). Takes ' + T.pop + ' army space. Click the minus (or right-click the card) to remove a slot and get half the price back.|' + (T.w ? strongWeak(T.w) : '') + (T.w2 && T.w2.g === 'a' && T.w.g !== 'a' ? ' Also fires missiles that are strong against aircraft.' : ''); }
 function bldTip(type) { const T = BT[type]; return T.n + '|' + T.info + '|Costs ' + T.cost[0] + '. You can level it up 3 times.'; }
 
 function coachHint() {
@@ -3433,12 +3888,12 @@ function updScore() {
   if (sig === lastScore) return; lastScore = sig;
   const teams = W.teamList.slice().sort((a, b) => (b.id === MYTEAM) - (a.id === MYTEAM)); const two = teams.length === 2;
   const side = (t, cls) => {
-    const pl = t.players.map(i => P(i)); const c = hex3(pl[0].color); const sc = W.o.sandbox ? '-' : Math.max(0, Math.round(t.tickets));
+    const pl = t.players.map(i => P(i)); const c = hex3(pl[0].color); const sc = W.o.sandbox || W.o.war ? '-' : Math.max(0, Math.round(t.tickets));
     const nm = t.id === MYTEAM ? (pl.length > 1 ? 'YOUR TEAM' : 'YOU') : (two ? 'ENEMY' : pl.map(q => q.name).join('+').slice(0, 10).toUpperCase());
     const drain = bl[t.id] > 0 && !W.o.sandbox ? '<span class="drain" data-tip="Losing score|You hold fewer flags than the leader, so your score is draining. Capture more flags!">&#9660;</span>' : '';
     return '<div class="side ' + cls + (t.alive ? '' : ' dead') + '" data-tip="' + esc((t.id === MYTEAM ? 'Your score' : 'Enemy score') + '|Each side starts with ' + W.o.tickets + '. You lose score when you hold fewer flags than the leader and when your units die. At 0 you lose.') + '"><span class="nm">' + esc(nm) + '</span><div class="bar"><i style="width:' + clamp(t.tickets / W.o.tickets * 100, 0, 100) + '%;background:' + c + '"></i></div><b style="color:' + c + '">' + sc + '</b>' + drain + '</div>';
   };
-  let flags = ''; W.pts.forEach(pt => {
+  let flags = ''; W.pts.forEach(pt => { if (W.o.war && pt.hq >= 0 && pt.owner < 0) return;
     const col = pt.owner >= 0 ? hex3(P(pt.owner).color) : (pt.capP >= 0 && pt.ctrl > 0 ? hex3(P(pt.capP).color) : '#8d97a3'); const who = pt.owner >= 0 ? (P(pt.owner).team === MYTEAM ? 'yours' : 'enemy') : 'nobody yet';
     flags += '<button class="fl' + (pt.hq >= 0 ? ' hq' : '') + (pt.contested ? ' ct' : '') + '" data-pt="' + pt.id + '" style="--c:' + col + '" data-tip="' + esc((pt.hq >= 0 ? 'Headquarters' : pt.name) + '|Held by: ' + who + (pt.contested ? '. Being fought over!' : '') + '|Click to look at it.') + '">' + ic(pt.hq >= 0 ? 'hq' : 'flag') + (pt.owner < 0 && pt.ctrl > 0 || pt.owner >= 0 && pt.ctrl < 1 ? '<i><s style="width:' + Math.round(pt.ctrl * 100) + '%"></s></i>' : '') + '</button>';
   });
@@ -3448,6 +3903,14 @@ function updScore() {
 }
 function updGoal() {
   const el = $('#goal'); let mine = ptsOfTeam(MYTEAM), theirs = 0; for (const t of W.teamList) if (t.id !== MYTEAM) theirs = Math.max(theirs, ptsOfTeam(t.id));
+  if (W.war) {   // 3.1 Endless War status
+    const w = W.war, d = w.def; let lg, st;
+    if (w.phase === 'prep') { lg = 'Wave ' + w.wave + ': ' + d.name + ' (' + d.title + ') lands in the ' + WDIRS[d.site] + '. Build up your Bastion!'; st = '<span class="st t">' + (w.hold ? 'Ready' : 'Arrives in ' + fmtTime(w.t)) + '</span>' + (w.hold ? '' : '<button class="sm" data-warnow="1" style="pointer-events:auto">Start now</button>'); }
+    else if (w.phase === 'fight') { const e = W.players[1], hq = e.hqB; lg = 'Wave ' + w.wave + ': destroy ' + d.name + "'s HQ in the " + WDIRS[d.site] + ', or hold out until time runs out.'; st = '<span class="st ' + (w.t < 60 ? 'w' : 't') + '">' + fmtTime(w.t) + ' left</span>' + (hq && !hq.dead ? '<span class="st l">Enemy HQ ' + Math.ceil(hq.hp / hq.maxHp * 100) + '%</span>' : ''); }
+    else { lg = 'The Bastion has fallen.'; st = ''; }
+    const sg = 'W' + lg + st; if (sg === el.dataset.s) return; el.dataset.s = sg; el.innerHTML = '<b>WAVE ' + w.wave + '</b><span class="lg">' + esc(lg) + '</span><span class="sh">Wave ' + w.wave + '</span>' + st;
+    const bt = el.querySelector('[data-warnow]'); if (bt) bt.onclick = () => { initAudio(); ACT.warnow(); }; return;
+  }
   const o = W.o.obj; if (o && !W.o.sandbox && o.type !== 'conquest' && o.type !== 'fortress' && o.type !== 'twofront') {
     const C = W.objC || {}, me = C[MYTEAM] || 0; let foe = 0; for (const t in C) if (+t !== MYTEAM) foe = Math.max(foe, C[t]); const left = Math.max(0, (o.dur || 0) - W.t);
     let lg, sh, st;
@@ -3509,8 +3972,8 @@ function rosStatus(b) {
   let h = '<b style="color:#ffe2a6">Roster ' + tot + '/' + cap + '</b> ';
   if (!tot) return h + '<span style="color:#9fd0ff">Click troop cards to pick what this building keeps.</span>';
   h += '<span style="color:#cdd8e6">' + have + ' alive.</span> ';
-  if (b.wait) h += '<b style="color:#ff9a8c">' + (b.wait === 1 ? 'Waiting for money' : b.wait === 2 ? 'Army full' : 'Paused') + '</b>';
-  else if (b.tr) h += '<b style="color:#ffd37a">Training ' + UT[b.tr.u].n + ' (' + Math.ceil(Math.max(0, b.tr.dur - b.tr.t)) + 's)</b>';
+  if (b.wait) h += '<b style="color:#ff9a8c">' + (b.wait === 2 ? 'Army full' : 'Paused') + '</b>';
+  else if (b.tr) h += '<b style="color:#ffd37a">' + (b.tr.re ? 'Respawning ' : 'Training ') + UT[b.tr.u].n + ' (' + Math.ceil(Math.max(0, b.tr.dur - b.tr.t)) + 's)</b>';
   else h += '<b style="color:#8ff0b4">Full strength</b>';
   return h;
 }
@@ -3543,9 +4006,10 @@ function renderPanel(force) {
       let hk = 0;
       if (b.ros) for (const k of Object.keys(UT)) {
         const U = UT[k], src = U.src.find(s => s[0] === b.type); if (!src || U.nobuild || !canTrainAt(b, k)) continue;
-        const cost = unitCost(p, k, b), rn = b.ros[k] || 0, rh = Math.min(rosHave(b, k), rn), fits = rosFits(b, k);
-        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: !fits, on: rn > 0, rn, rh, pg: b.tr && b.tr.u === k ? Math.max(.02, b.tr.t / b.tr.dur) : 0, tip: unitTip(k, b), fn: () => {
+        const cost = slotCost(p, k, b), rn = b.ros[k] || 0, rh = Math.min(rosHave(b, k), rn), fits = rosFits(b, k);
+        items.push({ nm: U.n, key: k, img: k, cost, d: U.d, s: U.role, off: !fits || (p.sup < cost && !W.o.sandbox), on: rn > 0, rn, rh, pg: b.tr && b.tr.u === k ? Math.max(.02, b.tr.t / b.tr.dur) : 0, tip: unitTip(k, b), fn: () => {
           if (!rosFits(b, k)) { sfx('deny'); toast(rosTotal(b) >= rosCap(b) ? 'This ' + T.n + ' is full (' + rosCap(b) + '). Level it up to hold more, or remove a troop first.' : 'The extra Drone Factory slots are for drones only.'); return; }
+          if (p.sup < cost && !W.o.sandbox) { sfx('deny'); toast('A ' + U.n + ' slot costs ' + cost + '. Not enough money yet.'); return; }
           if (issue({ k: 'ros', b: b.id, u: k, d: 1 })) { UI.did.train = (UI.did.train || 0) + 1; sfx('click'); } else { sfx('deny'); toast('Could not add that troop.'); } UI.cardSig = ''; hudUpdate(true); } });
       }
       if (b.lvl < 3 && !b.upg && BT[b.type].cost[b.lvl] !== undefined) {
@@ -3659,14 +4123,15 @@ const SCREENS = {}, SCREENS_AFTER = {};
 SCREENS.main = () => {
   const r = rankOf(PROF.xp), first = !PROF.tutDone;
   return `<div class="scr"><div class="panel" style="width:min(430px,96vw);background:rgba(10,15,22,.88)">
-  <div class="title">FRONTLINE</div><div class="sub">Command</div>
+  <div class="title">FRONTLINE</div><div class="sub">Command</div><div class="note" style="text-align:center;margin:-4px 0 6px;color:#d9c79a"><i>${esc(LORE.world.tagline)}</i></div>
   <button class="mbtn ${first ? 'go' : ''}" data-act="tutorial">${first ? 'Start here: ' : ''}Tutorial<small>Learn the game in about 3 minutes</small></button>
   <button class="mbtn ${first ? '' : 'go'}" data-act="campaign">Campaign${CAMP && !CAMP.over ? ': Continue' : ''}<small>${CAMP && !CAMP.over ? 'Operation ' + esc(CAMP.name) + ' - stage ' + (CAMP.stage + 1) + ' of ' + CSTAGES : 'A run of ' + CSTAGES + ' different missions. Earn Doctrines as you win.'}</small></button>
+  <button class="mbtn" data-act="war">Endless War${WAR ? ': Wave ' + WAR.wave : ''}<small>${WAR ? 'Your Bastion is waiting. Best wave: ' + WAR.best : 'Build a huge fortress and hold it against wave after wave. Everything saves.'}</small></button>
   <button class="mbtn" data-act="skirmish">Quick Battle<small>Pick a map and an enemy commander</small></button>
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Campaign!</b> Lead an operation of 7 battles with different missions (Blitz, Hold Out, King of the Hill, Break the Line, Supply Run, Two Fronts). Every win earns a <b>Doctrine</b> that powers up the rest of your run. Battles now have <b>field events</b> too: race the enemy for supply crates, hunt enemy Aces for a bounty, and get out from under incoming artillery strikes. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> <b>Endless War</b>: build a huge fortress, the Bastion, and hold it against wave after wave of new enemy commanders who land from a new direction each time, with armies that grow to rival yours. Lose and you rebuild from the start of the wave; everything saves. <b>Rosters</b> now cost once per slot and troops <b>respawn for free</b>. Units no longer get stuck at the map edge. And the world now has a story: read it in the Field Guide. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -3751,15 +4216,21 @@ SCREENS.profile = () => {
 SCREENS.codex = () => {
   let body = '';
   if (CODEXTAB === 'units') {
-    body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px">' + UTK.map(k => { const T = UT[k], w = T.w; const src = T.nobuild ? 'Free with the Hire Mercenaries power' : 'Cost ' + T.cost + ' - made at the ' + T.src.filter(s => s[0] !== 'hq' || T.src.length === 1).map(s => { const B = BT[s[0]], sp = s[2] ? B.specs.find(x => x.id === s[2]) : null; return B.n + (s[1] > 1 || sp ? ' (' + (s[1] > 1 ? 'Level ' + s[1] : '') + (s[1] > 1 && sp ? ', ' : '') + (sp ? sp.n + ' upgrade' : '') + ')' : ''); }).join(' or '); return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:52px;height:52px;${iconStyle(k)}"></div><div><b>${T.n}</b> <i>${T.role}</i><br>${T.info}<br><i>${w ? strongWeak(w) : ''}</i><br><i>${src}</i></div></div>`; }).join('') + '</div>';
+    body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:7px">' + UTK.map(k => { const T = UT[k], w = T.w; const src = T.nobuild ? 'Free with the Hire Mercenaries power' : 'Cost ' + T.cost + ' - made at the ' + T.src.filter(s => s[0] !== 'hq' || T.src.length === 1).map(s => { const B = BT[s[0]], sp = s[2] ? B.specs.find(x => x.id === s[2]) : null; return B.n + (s[1] > 1 || sp ? ' (' + (s[1] > 1 ? 'Level ' + s[1] : '') + (s[1] > 1 && sp ? ', ' : '') + (sp ? sp.n + ' upgrade' : '') + ')' : ''); }).join(' or '); return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:52px;height:52px;${iconStyle(k)}"></div><div><b>${T.n}</b> <i>${T.role}</i><br>${T.info}<br>${LORE.units[k] ? '<i style="color:#d9c79a">' + esc(LORE.units[k]) + '</i><br>' : ''}<i>${w ? strongWeak(w) : ''}</i><br><i>${src}</i></div></div>`; }).join('') + '</div>';
   } else if (CODEXTAB === 'buildings') {
-    body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:7px">' + ['hq', ...BUILDABLE].map(k => { const T = BT[k]; return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:58px;height:58px;${iconStyle('b_' + k)}"></div><div><b>${T.n}</b>${T.cost[0] ? ' - costs ' + T.cost[0] : ''}<br>${T.info}<br>${T.specs.map(s => '<span style="color:#ffe2a6">' + s.n + '</span>: ' + s.d).join('<br>')}</div></div>`; }).join('') + '</div>';
+    body = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:7px">' + ['hq', ...BUILDABLE].map(k => { const T = BT[k]; return `<div class="ach" style="align-items:flex-start"><div class="chip" style="width:58px;height:58px;${iconStyle('b_' + k)}"></div><div><b>${T.n}</b>${T.cost[0] ? ' - costs ' + T.cost[0] : ''}<br>${T.info}<br>${LORE.buildings[k] ? '<i style="color:#d9c79a">' + esc(LORE.buildings[k]) + '</i><br>' : ''}${T.specs.map(s => '<span style="color:#ffe2a6">' + s.n + '</span>: ' + s.d).join('<br>')}</div></div>`; }).join('') + '</div>';
   } else if (CODEXTAB === 'callins') {
     body = CALLORDER.map(id => { const C = CALL[id]; return `<div class="ach" style="margin-bottom:5px"><span style="font-size:24px;color:${C.col};width:28px;text-align:center">${C.ic}</span><div><b>${C.n}</b> (${C.key}) - costs ${C.cost}, recharges in ${C.cd}s, needs ${C.req[0] === 'hq' ? 'HQ Level ' + C.req[1] : 'a Level ' + C.req[1] + ' Radar Station'}<br><i style="color:#ccd">${C.d}</i></div></div>`; }).join('');
+  } else if (CODEXTAB === 'lore') {
+    const L = LORE; body = '<div class="note" style="font-size:15px;color:#ffe2a6;margin-bottom:8px"><b>' + esc(L.world.name) + '</b>: ' + esc(L.world.tagline) + '</div>'
+      + L.chapters.map((c, i) => '<details class="lore"' + (i === 0 ? ' open' : '') + '><summary>' + (i + 1) + '. ' + esc(c.title) + '</summary><p>' + esc(c.text) + '</p></details>').join('')
+      + '<div class="lbl">The commanders</div>' + Object.keys(AIP).map(id => { const c = L.commanders[id], A = AIP[id]; return c ? '<details class="lore"><summary>' + esc(A.name) + ' - ' + esc(A.title) + '</summary><p>' + esc(c.bio) + '</p><p><i style="color:#d9c79a">"' + esc(c.quotes[0]) + '"</i></p></details>' : ''; }).join('')
+      + '<div class="lbl">Battlefields</div>' + MAPS.map(m => L.maps[m.id] ? '<details class="lore"><summary>' + esc(m.name) + '</summary><p>' + esc(L.maps[m.id]) + '</p></details>' : '').join('')
+      + (WAR && WAR.seen ? '<div class="lbl">War reports (Endless War)</div>' + Object.keys(L.war.milestones).filter(k => WAR.seen[k]).map(k => '<details class="lore"><summary>Wave ' + k + '</summary><p>' + esc(L.war.milestones[k]) + '</p></details>').join('') : '');
   } else {
     body = '<div class="note" style="margin-bottom:6px">Unlock Upgrades by leveling your HQ to Level 2. They help your whole army. One at a time. There are ' + TECH.length + ' in total.</div><div class="tech">' + TBR.map(b => '<div class="tcol"><h5>' + b.n + '</h5>' + TECH.filter(t => t.br === b.id).map(t => `<div class="tcard" style="cursor:default"><b>${t.n}</b>${t.d}<br><span style="color:#ffe2a6">Costs ${t.cost}</span></div>`).join('') + '</div>').join('') + '</div>';
   }
-  return `<div class="scr bg"><div class="panel" style="width:min(1000px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Field Guide</h2><button class="tbtn" data-act="back2">Back</button></div><div class="row" style="margin:8px 0">${seg('ctab', [['units', 'Troops'], ['buildings', 'Buildings'], ['callins', 'Support'], ['tech', 'Upgrades']], CODEXTAB, 'ctab')}</div>${body}</div></div>`;
+  return `<div class="scr bg"><div class="panel" style="width:min(1000px,98vw)"><div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Field Guide</h2><button class="tbtn" data-act="back2">Back</button></div><div class="row" style="margin:8px 0">${seg('ctab', [['lore', 'Story'], ['units', 'Troops'], ['buildings', 'Buildings'], ['callins', 'Support'], ['tech', 'Upgrades']], CODEXTAB, 'ctab')}</div>${body}</div></div>`;
 };
 SCREENS_AFTER.codex = () => { if (!ICONS.rifleman && renderer) { try { makeIcons(); } catch (e) { } } };
 SCREENS.howto = () => {
@@ -3768,18 +4239,18 @@ SCREENS.howto = () => {
   <div class="note" style="font-size:16px;margin:6px 0 12px;color:#e6eef7"><b style="color:#ffe2a6">Goal:</b> capture flags. Hold more flags than the enemy and their score drops to zero. You can also destroy their HQ to win at once.</div>
   <div class="hw">
    <div class="hc"><h4>1. Capture flags</h4><div class="dg"><div class="c ring" style="left:128px;top:14px;width:80px;height:80px"></div><div class="pole" style="left:166px;top:34px"></div>${sol(40, 54)}${sol(60, 62)}${sol(80, 52)}<div class="arr" style="left:100px;top:72px;width:48px;transform:rotate(-12deg)"></div></div><p>Walk soldiers into the circle around a flag. When it turns your color, it is yours. Flags give you money.</p></div>
-   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click troop cards to fill its <b>roster</b> (the number on a card shows alive / wanted). The building trains them one at a time, paying for each as it starts, and <b>replaces any that die</b>, even if you look away. A Barracks holds 5 soldiers, 10 at Level 2 and 20 at Level 3 (Motor Pool 3/6/10, Airfield 2/3/4). Click the minus or right-click a card to remove a slot, and press <b>Pause</b> to stop training. New troops walk to where most of your army is; use <b>Rally: Army (auto)</b> to pick a fixed rally point instead. Level the building up to hold more and unlock stronger troops.</p></div>
+   <div class="hc"><h4>2. Build and train</h4><div class="dg dark"><div class="coin" style="left:16px;top:38px">$</div><div class="arr" style="left:46px;top:50px;width:30px"></div><div class="bld" style="left:92px;top:30px;width:50px;height:38px"></div><div class="arr" style="left:150px;top:50px;width:26px"></div>${sol(196, 40, '#58a8ff')}${sol(214, 46, '#58a8ff')}</div><p>Click a flag you own and pick a building. Click the building, then click troop cards to fill its <b>roster</b> (the number on a card shows alive / wanted). You pay once for each slot; the building trains the troop and <b>respawns it for free whenever it dies</b>, even if you look away. A Barracks holds 5 soldiers, 10 at Level 2 and 20 at Level 3 (Motor Pool 3/6/10, Airfield 2/3/4). Click the minus or right-click a card to remove a slot, and press <b>Pause</b> to stop training. New troops walk to where most of your army is; use <b>Rally: Army (auto)</b> to pick a fixed rally point instead. Level the building up to hold more and unlock stronger troops.</p></div>
    <div class="hc"><h4>3. Select and move</h4><div class="dg"><div class="bx" style="left:20px;top:26px;width:80px;height:56px"></div>${sol(36, 44)}${sol(58, 54)}${sol(78, 44)}<div class="arr" style="left:110px;top:56px;width:60px;transform:rotate(-8deg)"></div><div class="cur" style="left:186px;top:34px"></div></div><p>Click a troop, or drag a box around many. Then click the ground to move there, or click an enemy to attack it. No right-click needed.</p></div>
    <div class="hc"><h4>4. Win the war</h4><div class="dg dark" style="padding:14px"><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:78%;background:#58a8ff"></i></div><div style="height:14px;border-radius:7px;background:#000a;overflow:hidden;margin-bottom:8px"><i style="display:block;height:100%;width:42%;background:#ff6b5e"></i></div><div style="font-size:12px;color:#cdd8e6">You: 312 &nbsp;&nbsp; Enemy: 168</div></div><p>Holding fewer flags drains your score. Losing troops costs score too. At zero you lose. Hold more flags!</p></div>
    <div class="hc"><h4>5. Pick good counters</h4><div class="dg dark"><div class="tri"><div class="n" style="left:8px;top:6px">Soldiers</div><div class="n" style="left:176px;top:6px">Bazookas</div><div class="n" style="left:92px;top:66px">Tanks</div><div class="ln" style="left:86px;top:20px;width:84px"></div><div class="ln" style="left:214px;top:38px;width:60px;transform:rotate(148deg)"></div><div class="ln" style="left:98px;top:66px;width:54px;transform:rotate(211deg)"></div></div></div><p>Soldiers beat Bazookas. Bazookas beat Tanks. Tanks beat Soldiers. Anti-Air Guns and Sky Hunter jets shoot down helicopters, gunships and drones.</p></div>
-   <div class="hc"><h4>6. Events and the Campaign</h4><div class="dg dark"><div class="coin" style="left:30px;top:34px">$</div><div class="arr" style="left:62px;top:46px;width:40px"></div>${sol(124, 38, '#58a8ff')}${sol(140, 44, '#58a8ff')}<div class="coin" style="left:196px;top:34px;background:#ff6a50">!</div></div><p>During a battle, <b>field events</b> pop up: a <b>supply crate</b> drops (keep troops next to it, with no enemies there, to claim money), an <b>Ace</b> is marked with a gold ring (destroy enemy Aces for a bounty), or an <b>artillery strike</b> is called on a busy flag (get out of the red circle, or lure the enemy in). In the <b>Campaign</b>, pick a mission at each stage, win to earn <b>Doctrines</b> that last the whole operation, and do not run out of Reserves.</p></div>
+   <div class="hc"><h4>6. Events and the Campaign</h4><div class="dg dark"><div class="coin" style="left:30px;top:34px">$</div><div class="arr" style="left:62px;top:46px;width:40px"></div>${sol(124, 38, '#58a8ff')}${sol(140, 44, '#58a8ff')}<div class="coin" style="left:196px;top:34px;background:#ff6a50">!</div></div><p>During a battle, <b>field events</b> pop up: a <b>supply crate</b> drops (keep troops next to it, with no enemies there, to claim money), an <b>Ace</b> is marked with a gold ring (destroy enemy Aces for a bounty), or an <b>artillery strike</b> is called on a busy flag (get out of the red circle, or lure the enemy in). In the <b>Campaign</b>, pick a mission at each stage, win to earn <b>Doctrines</b> that last the whole operation, and do not run out of Reserves. In <b>Endless War</b>, build up the Bastion between waves; every new enemy is tougher, and if you lose you rebuild from the start of that wave.</p></div>
    <div class="hc"><h4>7. Controls</h4><div class="kv" style="font-size:13px;gap:5px 14px"><span>Move the camera</span><b>Two-finger scroll, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</b><span>Zoom</span><b>Pinch, <kbd>Ctrl</kbd>+scroll, or + -</b><span>Support powers</span><b>Hold <kbd>F</kbd> + <kbd>1</kbd>-<kbd>8</kbd></b><span>Jump to your base</span><b><kbd>Space</kbd></b><span>Select all troops</span><b><kbd>Ctrl</kbd>+<kbd>A</kbd></b><span>Select idle troops</span><b><kbd>Tab</kbd></b><span>Move and fight</span><b>tap <kbd>F</kbd>, then click</b><span>Save / pick a group</span><b><kbd>Ctrl</kbd>+<kbd>1</kbd> / <kbd>1</kbd></b><span>Sell a building</span><b><kbd>K</kbd></b><span>Turn the camera</span><b><kbd>Q</kbd> <kbd>E</kbd></b><span>Pause</span><b><kbd>Esc</kbd></b></div></div>
   </div>
   <div class="note" style="margin-top:12px">Tip: more of the game unlocks as you level up your HQ and your buildings. Upgrades and Support powers (airstrikes, supply drops, mercenaries) open at HQ Level 2. Fire a Support power by holding F and pressing its number (Hold F + 1 is the first one). Lists and panels scroll with the wheel or two fingers on the touchpad. The enemy warns you with an orange message when it is massing an attack. A Level 3 building lets you pick a special upgrade, and some of them unlock giant units like the Titan mech, Gunships and Sky Hunter jets.</div></div></div>`;
 };
 SCREENS.pause = () => `<div class="scr bg"><div class="panel" style="width:min(360px,96vw)"><h2 style="margin:0 0 8px;color:#ffe2a6;text-align:center">${W && W.mirror || (W && W.o.mp) ? 'Menu' : 'Paused'}</h2>
   <button class="mbtn go" data-act="resume">Resume</button><button class="mbtn" data-act="help">How to Play</button><button class="mbtn" data-act="psettings">Settings</button><button class="mbtn" data-act="pcodex">Field Guide</button>
-  ${W && W.o.mp ? '<div class="note" style="text-align:center">Online games cannot be paused.</div>' : ''}${W && W.o.camp && !W.over ? '<div class="note" style="text-align:center">Quitting a Campaign battle counts as a loss.</div>' : ''}<button class="mbtn" data-act="quit" style="border-color:#8a3a30">${W && W.o.mp ? 'Give up and leave' : 'Quit to menu'}</button></div></div>`;
+  ${W && W.o.mp ? '<div class="note" style="text-align:center">Online games cannot be paused.</div>' : ''}${W && W.o.camp && !W.over ? '<div class="note" style="text-align:center">Quitting a Campaign battle counts as a loss.</div>' : ''}${W && W.war ? '<div class="note" style="text-align:center">' + (W.war.phase === 'fight' ? 'Leaving during a wave restarts it from the beginning (your base as it was when the wave began).' : 'Your Bastion is saved. You can leave any time.') + '</div>' : ''}<button class="mbtn" data-act="quit" style="border-color:#8a3a30">${W && W.o.mp ? 'Give up and leave' : 'Quit to menu'}</button></div></div>`;
 function openPause() { if (!inGame || !W) return; if (!W.o.mp) W.paused = true; showScreen('pause'); }
 SCREENS.results = (r) => {
   const rows = r.rows.map(x => `<tr><td style="color:${hex3(x.color)}"><b>${esc(x.name)}</b></td><td>${x.kills}</td><td>${x.lost}</td><td>${x.built}</td><td>${x.captured}</td></tr>`).join('');
@@ -3888,23 +4359,220 @@ SCREENS.campaign = () => {
   if (CAMP && CAMP.cur) { campAfter(false); toast('The battle was left unfinished, so it counts as a loss.'); }
   const head = t => `<div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">${t}</h2><button class="tbtn" data-act="back">Back</button></div>`;
   if (!CAMP || CAMP.over) {
-    const last = CAMP && CAMP.over ? `<div class="note" style="margin:8px 0;padding:10px;border:1px solid ${CAMP.over === 'won' ? '#3d9b5b' : '#8a3a30'};border-radius:10px;background:#0d1620"><b style="color:${CAMP.over === 'won' ? '#7be08a' : '#ff9a8c'}">Operation ${esc(CAMP.name)}: ${CAMP.over === 'won' ? 'complete!' : 'failed at stage ' + (CAMP.stage + 1)}</b> (${CDIFF[CAMP.diff].n})<br>${Object.keys(CAMP.docs).length ? 'Doctrines: ' + Object.entries(CAMP.docs).map(([k, n]) => docChip(k, n)).join(' ') : ''}</div>` : '';
+    const last = CAMP && CAMP.over ? `<div class="note" style="margin:8px 0;padding:10px;border:1px solid ${CAMP.over === 'won' ? '#3d9b5b' : '#8a3a30'};border-radius:10px;background:#0d1620"><b style="color:${CAMP.over === 'won' ? '#7be08a' : '#ff9a8c'}">Operation ${esc(CAMP.name)}: ${CAMP.over === 'won' ? 'complete!' : 'failed at stage ' + (CAMP.stage + 1)}</b> (${CDIFF[CAMP.diff].n})<br><i style="color:#d9c79a">${esc((CAMP.over === 'won' ? LORE.operations.victory : LORE.operations.defeat)[(CAMP.seed | 0) % 3])}</i><br>${Object.keys(CAMP.docs).length ? 'Doctrines: ' + Object.entries(CAMP.docs).map(([k, n]) => docChip(k, n)).join(' ') : ''}</div>` : '';
     return `<div class="scr bg"><div class="panel" style="width:min(640px,98vw)">${head('Campaign')}
     <div class="note" style="font-size:15px;color:#e6eef7;margin-top:6px">Lead an <b>operation</b> of ${CSTAGES} battles. At each stage pick 1 of 3 missions: Blitz, Hold Out, King of the Hill, Break the Line, Supply Run, Two Fronts and more. Every win earns a <b>Doctrine</b>, a bonus that lasts the whole operation. Losing costs one of your 3 <b>Reserves</b>. The last battle is against two commanders at once.</div>${last}
     <div class="lbl">Pick a difficulty to start a new operation</div>${Object.entries(CDIFF).map(([k, d]) => `<button class="mbtn ${k === 'recruit' ? 'go' : ''}" data-act="cstart" data-v="${k}">${d.n}<small>${d.d}</small></button>`).join('')}
     <div class="note" style="text-align:center;margin-top:8px">Operations won: <b>${PROF.cWins}</b> - furthest stage: <b>${PROF.cBest || 0}</b> of ${CSTAGES}</div></div></div>`;
   }
   const docs = Object.entries(CAMP.docs).map(([k, n]) => docChip(k, n)).join(' ') || '<span class="note">None yet. Win a battle to earn one.</span>';
+  const narr = CAMP.stage === 0 && !CAMP.offer && !CAMP.log.length ? '<div class="note" style="margin-top:8px;color:#d9c79a;font-size:14.5px"><i>' + esc(LORE.operations.intro[(CAMP.seed | 0) % LORE.operations.intro.length]) + '</i></div>' : '';
   let body;
   if (CAMP.offer) body = `<div class="lbl">Victory! Choose a Doctrine</div>${docCards(CAMP.offer)}`;
   else body = `<div class="lbl">${CAMP.stage === CSTAGES - 1 ? 'Final battle' : 'Stage ' + (CAMP.stage + 1) + ': pick your next mission'}</div><div class="mgrid">${CAMP.choices.map((c, i) => { const M = MISSIONS[c.type], md = mapDef(c.map); return `<button class="mcard" data-act="cgo" data-v="${i}"><img src="${mapPreview(c.map)}"/><b>${c.final ? 'Final Offensive: ' : ''}${M.n}</b><span>${esc(M.d)}</span><span class="mi">${esc(md.name)} - vs ${c.foes.map(f => esc(AIP[f].name)).join(' + ')} (${AID[c.diff].n})</span>${c.mod ? `<span class="mm" data-tip="${esc(MODS[c.mod].join('|'))}">${MODS[c.mod][0]}</span>` : ''}<span class="mr">${c.final ? 'Win to complete the operation' : M.reward}</span></button>`; }).join('')}</div>`;
   return `<div class="scr bg"><div class="panel" style="width:min(900px,98vw)">${head('Operation ' + esc(CAMP.name))}
   <div class="row" style="justify-content:space-between;align-items:center;margin-top:6px">${campTrack()}<div>${CDIFF[CAMP.diff].n} ${campHearts()}</div></div>
-  <div class="lbl">Doctrines</div><div>${docs}</div>${body}
+  ${narr}<div class="lbl">Doctrines</div><div>${docs}</div>${body}
   <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="tbtn" data-act="cquit" style="border-color:#8a3a30">${UI.cquit ? 'Click again to give up this operation' : 'Give up operation'}</button></div></div></div>`;
 };
+// =====================================================================
+//  3.1 ENDLESS WAR: hold the Bastion. Each wave a new enemy commander lands at one of eight sites, with a base and army
+//  built to rival yours. Destroy their HQ (or outlast them) to win the wave. Lose and you rebuild from the start of
+//  that wave. Your base, money, upgrades and Doctrines are saved.
+// =====================================================================
+const WSTYLE = {
+  rush: { pers: 'vex', bld: ['barracks', 'barracks', 'factory', 'depot', 'turret', 'barracks'], uw: { rifleman: 3, scout: 1, jeep: 2.5, apc: 1.4, rocket: 1, grenadier: 1, heavy: 1, lighttank: 1 }, over: { atkMul: .35, pause: 22 } },
+  turtle: { pers: 'stone', bld: ['turret', 'turret', 'barracks', 'arty', 'factory', 'wall'], uw: null, over: { atkMul: .7, pause: 50 } },
+  armor: { pers: 'kruger', bld: ['factory', 'factory', 'barracks', 'depot', 'turret', 'factory'], uw: null, over: { atkMul: .5, pause: 35 } },
+  air: { pers: 'voss', bld: ['airfield', 'airfield', 'barracks', 'factory', 'turret', 'depot'], uw: null, over: { atkMul: .5, pause: 35 } },
+  artillery: { pers: 'stone', bld: ['factory', 'arty', 'barracks', 'arty', 'turret', 'factory'], uw: { artillery: 3, mlrs: 2, mortar: 2, rocket: 1.2, rifleman: 1, aa: .6, heavy: 1, engineer: .5 }, over: { atkMul: .55, pause: 40 } },
+  balanced: { pers: 'hale', bld: ['barracks', 'factory', 'depot', 'turret', 'airfield', 'barracks'], uw: null, over: { atkMul: .5, pause: 32 } },
+  swarm: { pers: 'vex', bld: ['barracks', 'barracks', 'barracks', 'depot', 'barracks', 'turret'], uw: { rifleman: 3, scout: 1.5, grenadier: 1.5, heavy: 1.3, rocket: 1.2, medic: .6, engineer: .5 }, over: { atkMul: .3, pause: 18 } },
+  elite: { pers: 'hale', bld: ['barracks', 'factory', 'airfield', 'turret', 'factory', 'barracks'], uw: { commando: 2.5, tank: 2, titan: 1.5, sniper: 1, gunship: .5, rocket: 1.2, heavy: 1, medic: .5 }, over: { atkMul: .55, pause: 35 }, vet: 1 }
+};
+const WAR_DOCS = ['logi', 'rapid', 'bargain', 'armor', 'plating', 'rifles', 'ap', 'guns', 'drill', 'eyes', 'march', 'bounty', 'qm', 'support'];
+let WAR = (() => { const w = readJSON('frontline_war_v1'); return w && w.v === 1 ? w : null; })();
+function saveWar() { lsSet('frontline_war_v1', JSON.stringify(WAR)); }
+function warNew() { WAR = { v: 1, wave: 1, seed: (Math.random() * 1e9) | 0, sup: 1500, techs: {}, docs: {}, blds: null, pts: [], hist: [], best: 1, lastSite: -1, lastStyle: '', losses: 0, wins: 0, kills: 0, offer: null, seen: {} }; saveWar(); }
+const wpick = (r, a) => a[(r() * a.length) | 0];
+function warDef(wave) {
+  const r = mulberry32(((WAR.seed | 0) + wave * 7919) >>> 0), L = LORE.war;
+  let keys = Object.keys(WSTYLE).filter(k => k !== WAR.lastStyle && (k !== 'elite' || wave >= 8) && (k !== 'air' || wave >= 4)); if (wave === 1) keys = ['balanced', 'rush'];
+  const style = wpick(r, keys); let site = (r() * 8) | 0; if (site === WAR.lastSite) site = (site + 3) % 8;
+  const name = wpick(r, L.ranks) + ' ' + wpick(r, L.namesFirst) + ' ' + wpick(r, L.namesLast), ep = wpick(r, L.epithets);
+  const diff = wave < 3 ? 'normal' : wave < 9 ? 'hard' : 'brutal';
+  return { wave, style, site, name, ep, diff, title: L.styles[style].title, taunt: wpick(r, L.styles[style].lines) };
+}
+const WDIRS = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
+function warFill(t, d) { return t.replace(/\{name\}/g, d.name).replace(/\{dir\}/g, WDIRS[d.site]).replace(/\{wave\}/g, d.wave); }
+function warValue(p) { let v = 0; for (const b of W.bld) if (b.owner === p.id && b.type !== 'nest') v += b.spent || 0; for (const id in p.techs) v += TECHBY[id] ? TECHBY[id].cost : 0; return v; }
+function sitePt(i) { return W.pts[W.M.spawnPts[i + 1]]; }
+function warWipe(p) {   // remove a commander from the map without ending the game
+  for (const pt of W.pts) if (pt.owner === p.id) { pt.owner = -1; pt.ctrl = 0; pt.capP = -1; }
+  for (const u of W.units.slice()) if (u.owner === p.id) { u.dead = true; const i = W.units.indexOf(u); if (i >= 0) { W.units[i] = W.units[W.units.length - 1]; W.units.pop(); } W.byId.delete(u.id); }
+  for (const b of W.bld.slice()) if (b.owner === p.id) { b.dead = true; const pt = b.pt >= 0 ? W.pts[b.pt] : null; if (b.type === 'wall') { if (pt) pt.wall = null; for (const a of b.arcs) markNav(W.M, a[0], a[1], .6, -1); } else if (b.slot >= 0 && pt) { pt.slots[b.slot].b = null; markNav(W.M, b.x, b.z, b.T.sz * .52, -1); } else if (b.type === 'hq') markNav(W.M, b.x, b.z, 4.4, -1); else markNav(W.M, b.x, b.z, 1.1, -1); const i = W.bld.indexOf(b); if (i >= 0) { W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } W.byId.delete(b.id); }
+  p.pop = 0; p.hqB = null; p.alive = false; p.ai = null; p.res = null; if (W.fev) W.fev = W.fev.filter(e => !(e.k === 'ace' && e.team === p.team));
+}
+// called at the end of createWorld for a war battle: rebuild the saved Bastion and set up the preparation phase
+function warInit() {
+  const me = W.players[0], foe = W.players[1]; warWipe(foe); W.teams[foe.team].alive = false; W.players.forEach(q => { q.popCap = 60; });
+  for (const sb of (WAR.blds || [])) {
+    const pt = W.pts[sb.pt]; if (!pt) continue;
+    if (sb.type === 'hq') { const h = me.hqB; if (h) { h.lvl = sb.lvl; h.spec = sb.spec || ''; h.hasRally = !!sb.rally; if (sb.rally) { h.rx = sb.rally[0]; h.rz = sb.rally[1]; } if (h.ros && sb.ros) { h.ros = Object.assign({}, sb.ros); h.paid = Object.assign({}, sb.paid || {}); } h.spent = sb.spent || 0; } continue; }
+    if (sb.type === 'wall') { if (pt.wall) continue; } else if (!pt.slots[sb.slot] || pt.slots[sb.slot].b) continue;
+    const b = placeBuilding(sb.type, 0, pt, sb.type === 'wall' ? -2 : sb.slot, true); if (sb.type === 'wall') b.slot = -2;
+    b.lvl = sb.lvl || 1; b.spec = sb.spec || ''; b.spent = sb.spent || 0; b.prog = sb.prog === undefined ? 1 : sb.prog; b.hold = !!sb.hold;
+    if (b.ros && sb.ros) { b.ros = Object.assign({}, sb.ros); b.paid = Object.assign({}, sb.paid || {}); }
+    if (sb.rally) { b.hasRally = true; b.rx = sb.rally[0]; b.rz = sb.rally[1]; }
+    if (b.type === 'wall' && b.spec === 'mines') initMines(b);
+  }
+  for (const id of WAR.pts || []) { const pt = W.pts[id]; if (pt && pt.hq < 0) { pt.owner = 0; pt.ctrl = 1; pt.capP = 0; } }
+  me.techs = Object.assign({}, WAR.techs); me.sup = WAR.sup; recalcMods(me); for (const b of W.bld) if (b.owner === 0) { refreshB(b); b.hp = b.prog >= 1 ? b.maxHp : b.maxHp * Math.max(.12, b.prog); }
+  // the garrison is at full strength when a wave starts
+  for (const b of W.bld) if (b.owner === 0 && b.ros && b.prog >= 1) for (const k in b.ros) { for (let i = 0; i < b.ros[k]; i++) spawnFromBuilding(b, k, i); b.made[k] = b.ros[k]; }
+  W.war = { phase: 'prep', t: WAR.blds ? 60 : 90, wave: WAR.wave, def: warDef(WAR.wave), saveT: 10 };
+  if (WAR.blds && WAR.wave > 1) for (const u of W.units.slice()) if (u.owner === 0 && !u.home) { u.dead = true; const i = W.units.indexOf(u); W.units[i] = W.units[W.units.length - 1]; W.units.pop(); W.byId.delete(u.id); me.pop -= u.T.pop; }   // the starting squad only comes with a brand-new Bastion
+  me.pop = 0; for (const u of W.units) if (u.owner === 0) me.pop += u.T.pop;
+  if (!WAR.blds) warSave();
+}
+// what gets saved: the player's buildings, flags, money, finished upgrades (anything half-done is refunded)
+function warSave() {
+  if (!W || !W.o.war || !WAR) return; const me = W.players[0]; let sup = me.sup; const blds = [];
+  for (const b of W.bld) {
+    if (b.owner !== 0 || b.dead || b.type === 'nest') continue;
+    if (b.upg) sup += b.upg.kind === 'lvl' ? BT[b.type].cost[b.lvl] : SPEC_COST;
+    blds.push({ type: b.type, pt: b.pt, slot: b.slot, lvl: b.lvl, spec: b.spec, spent: Math.round(b.spent || 0), prog: b.prog >= 1 ? 1 : +b.prog.toFixed(3), ros: b.ros ? Object.assign({}, b.ros) : null, paid: b.paid ? Object.assign({}, b.paid) : null, rally: b.hasRally ? [b.rx, b.rz] : 0, hold: b.hold ? 1 : 0 });
+  }
+  if (me.res) sup += TECHBY[me.res.id].cost;
+  WAR.blds = blds; WAR.pts = W.pts.filter(q => q.owner === 0 && q.hq < 0).map(q => q.id); WAR.techs = Object.assign({}, me.techs); WAR.sup = Math.floor(sup); saveWar();
+}
+function warTick() {
+  const w = W.war; if (!w || W.over) return;
+  if (w.phase === 'prep') {
+    if (w.hold) return; w.t--;
+    if ((w.saveT -= 1) <= 0) { w.saveT = 10; warSave(); }
+    if (w.t === 20) ev([3, 0, 'msg', 0, 0, 3, 'Scouts report ' + w.def.name + ' is 20 seconds out!']);
+    if (w.t <= 0) warSpawn();
+  } else if (w.phase === 'fight') {
+    if ((w.rt = (w.rt === undefined ? 60 : w.rt) - 1) <= 0) { w.rt = Math.max(45, 90 - w.wave * 2); warReinforce(); }
+    w.t--; if (w.t === 60) ev([3, 0, 'msg', 0, 0, 3, 'One minute left. Hold the Bastion and the enemy will give up!']);
+    if (w.t <= 0) warWon('held');
+  }
+}
+function warSpawn() {
+  const w = W.war, d = w.def, me = W.players[0], e = W.players[1], S = WSTYLE[d.style], wave = d.wave; warSave();
+  const site = sitePt(d.site); for (const sl of site.slots) if (sl.b) killBuilding(sl.b, null, -1);
+  e.alive = true; e.out = ''; e.techs = {}; e.res = null; e.cd = {}; e.stats = { kills: 0, lost: 0, built: 0, captured: 0, air: 0, specs: 0, calls: 0, sup: 0, hero: 0, peakPts: 0 }; e.name = d.name;
+  const tm = W.teams[e.team]; tm.alive = true; tm.tickets = 999999;
+  site.owner = e.id; site.ctrl = 1; site.capP = e.id;
+  const hq = placeBuilding('hq', e.id, site, -1, true); e.hqB = hq;
+  // build a base and army that rivals the player's
+  const base = AIP[S.pers], persObj = Object.assign({}, base, { id: base.id, uw: S.uw || base.uw, bld: S.bld.filter(t => t !== 'wall').concat(base.bld) });
+  let money = 1400 + wave * 350 + warValue(me) * Math.min(1.4, .5 + wave * .05); const spend = c => { if (money < c) return false; money -= c; return true; };
+  const armyMoney = money * .5, techMoney = money * .15; money -= armyMoney + techMoney;     // 35% base, 15% upgrades, 50% army
+  if (wave >= 3 && spend(BT.hq.cost[1])) hq.lvl = 2; if (wave >= 9 && hq.lvl === 2 && spend(BT.hq.cost[2])) hq.lvl = 3; refreshB(hq); hq.hp = hq.maxHp;
+  { let tm = techMoney; const nt = Math.min(TECH.length, Math.floor(wave * .7)); for (const id of persObj.tech.concat(TECH.map(t => t.id))) { if (Object.keys(e.techs).length >= nt) break; const t = TECHBY[id]; if (e.techs[id] || !t || (t.tier > 1 && !e.techs[TECH.find(x => x.br === t.br && x.tier === t.tier - 1).id])) continue; if (tm >= t.cost * .7) { tm -= t.cost * .7; e.techs[id] = 1; } } money += tm; }
+  recalcMods(e);
+  const maxL = Math.min(3, 1 + Math.floor(wave / 3)), blds = [];
+  S.bld.forEach((t, k) => {
+    if (t === 'wall') { if (!site.wall && spend(BT.wall.cost[0])) { const b = placeBuilding('wall', e.id, site, -2, true); b.slot = -2; } return; }
+    const T = BT[t]; if (k >= site.slots.length || site.slots[k].b || (T.hq1 || 1) > hq.lvl || (T.max && bCount(e, t) >= T.max) || !spend(T.cost[0])) return;
+    const b = placeBuilding(t, e.id, site, k, true); b.spent = T.cost[0];
+    while (b.lvl < maxL && (b.lvl < 2 || hq.lvl >= 2) && spend(T.cost[b.lvl])) { b.spent += T.cost[b.lvl]; b.lvl++; }
+    if (b.lvl >= 3 && T.specs.length && spend(SPEC_COST)) { const pl = (persObj.spec && persObj.spec[t]) || []; b.spec = pl[0] || T.specs[0].id; }
+    refreshB(b); b.hp = b.maxHp; blds.push(b);
+  });
+  // fill the rosters, spreading troops over every building
+  money += armyMoney;
+  for (let pass = 0; pass < 40 && money > 60; pass++) {
+    let added = false;
+    for (const b of blds) { if (!b.ros || rosTotal(b) >= rosCap(b)) continue; const ul = unitsForB(b).filter(t => rosFits(b, t)); if (!ul.length) continue; let sum = 0; const sc = ul.map(t => { const v = (persObj.uw[t] !== undefined ? persObj.uw[t] : .2) / Math.pow(1 + (b.ros[t] || 0) / 3, .8); sum += v; return v; }); let r = Math.random() * sum, pick = ul[0]; for (let i = 0; i < ul.length; i++) { r -= sc[i]; if (r <= 0) { pick = ul[i]; break; } } const c = slotCost(e, pick, b); if (!spend(c)) continue; b.ros[pick] = (b.ros[pick] || 0) + 1; b.paid[pick] = (b.paid[pick] || 0) + c; b.spent += c; added = true; }
+    if (!added) break;
+  }
+  for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k]; i++) { const u = spawnFromBuilding(b, k, i); if (S.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
+  e.sup = Math.max(200, money * .5); e.pop = 0; for (const u of W.units) if (u.owner === e.id) e.pop += u.T.pop;
+  const over = Object.assign({ firstAtk: 25, hqPower: 0, warn: 4, startDelay: 0, popLim: 999 }, S.over);
+  e.ai = makeAI(e, { pers: S.pers, diff: d.diff, over, persObj });
+  w.phase = 'fight'; w.t = Math.min(720, 360 + wave * 20);
+  ev([3, 0, 'msg', r1(site.x), r1(site.z), 3, warFill(wpick(Math.random, LORE.war.waveIntro), d)]);
+  ev([11, e.id, d.taunt]);
+}
+// waves keep coming: every so often the enemy commander gets a free group of troops at its landing site
+function warReinforce() {
+  const w = W.war, d = w.def, e = W.players[1], hq = e.hqB; if (!hq || hq.dead || !e.alive) return;
+  const S = WSTYLE[d.style], uw = S.uw || AIP[S.pers].uw, tier = d.wave < 4 ? 1 : d.wave < 9 ? 2 : 3, pool = [];
+  for (const t in uw) { const T = UT[t]; if (!T || T.nobuild || T.air || !T.w) continue; const need = Math.max(...T.src.map(x => x[1]), 1); if (need <= tier) pool.push([t, uw[t]]); }
+  if (!pool.length) pool.push(['rifleman', 1]); let sum = 0; for (const x of pool) sum += x[1];
+  const n = Math.min(14, 2 + Math.floor(d.wave * .8)), ids = [];
+  for (let i = 0; i < n; i++) { let r = Math.random() * sum, t = pool[0][0]; for (const x of pool) { r -= x[1]; if (r <= 0) { t = x[0]; break; } } const a = Math.random() * TAU, q = snapFree(W.M, hq.x + Math.cos(a) * 14, hq.z + Math.sin(a) * 14, 6); const u = spawnUnit(t, e.id, q[0], q[1], { vet: d.wave >= 15 ? 2 : d.wave >= 7 ? 1 : 0 }); refreshUnit(u); u.hp = u.maxHp; ids.push(u.id); }
+  const me = W.players[0].hqB; if (me) applyCmd(e.id, { k: 'am', ids, x: me.x + rr(-10, 10), z: me.z + rr(-10, 10) });
+  if ((w.rn = (w.rn | 0) + 1) % 2 === 1) ev([3, 0, 'msg', r1(hq.x), r1(hq.z), 3, 'Enemy reinforcements have landed in the ' + WDIRS[d.site] + ' (' + n + ' troops).']);
+}
+function warHqDown(b) { if (b.owner === 0) warLost(); else warWon('hq'); }
+function warWon(how) {
+  const w = W.war, d = w.def, me = W.players[0], e = W.players[1]; if (w.phase !== 'fight') return;
+  const reward = Math.round((300 + d.wave * 110) * (how === 'hq' ? 1.5 : 1)); me.sup += reward;
+  WAR.kills += me.stats.kills - (w.k0 || 0); w.k0 = me.stats.kills;
+  warWipe(e); W.teams[e.team].alive = false;
+  WAR.hist.unshift([d.wave, d.name, how === 'hq' ? 'won' : 'held']); WAR.hist.length = Math.min(WAR.hist.length, 12);
+  WAR.wins++; WAR.lastSite = d.site; WAR.lastStyle = d.style; WAR.wave = d.wave + 1; WAR.best = Math.max(WAR.best, WAR.wave);
+  if (d.wave % 2 === 0 && !WAR.offer) { const r = mulberry32(((WAR.seed | 0) + d.wave * 31) >>> 0), ids = WAR_DOCS.filter(id => (WAR.docs[id] || 0) < DOCS[id].max), out = []; while (out.length < 3 && ids.length) out.push(ids.splice((r() * ids.length) | 0, 1)[0]); if (out.length) WAR.offer = out; }
+  W.war = { phase: 'prep', t: 60, wave: WAR.wave, def: warDef(WAR.wave), saveT: 10, hold: true };
+  warSave();
+  const ms = LORE.war.milestones[WAR.wave] && !WAR.seen[WAR.wave] ? LORE.war.milestones[WAR.wave] : ''; if (ms) { WAR.seen[WAR.wave] = 1; saveWar(); }
+  const info = { wave: d.wave, name: d.name, ep: d.ep, how, reward, line: warFill(wpick(Math.random, LORE.war.waveWon), d), ms, next: W.war.def };
+  setTimeout(() => { if (W && W.o.war && inGame) { W.paused = true; showScreen('warwave', info); } }, 1800);
+}
+function warLost() {
+  const w = W.war, d = w.def; if (w.phase !== 'fight') return; w.phase = 'lost'; W.over = true;
+  WAR.losses++; WAR.hist.unshift([d.wave, d.name, 'lost']); WAR.hist.length = Math.min(WAR.hist.length, 12); saveWar();
+  const info = { wave: d.wave, name: d.name, line: warFill(wpick(Math.random, LORE.war.waveLost), d) };
+  setTimeout(() => { if (W && W.o.war && inGame) { W.paused = true; showScreen('warlost', info); } }, 2300);
+}
+function warCfg() {
+  const colors = assignColors({});
+  return { map: 'bastion', players: [{ kind: 'human', name: SET.name, team: 0, color: PCOL[colors[0]].c, docs: WAR.docs }, { kind: 'ai', name: 'Enemy', team: 1, color: PCOL[colors[1]].c, ai: { pers: 'hale', diff: 'normal' } }], tickets: 999999, supplies: 0, fog: false, speed: 1, maxPop: 160, events: true, war: true, spawnFor: [0, 1] };
+}
+function warDocChips() { return Object.entries(WAR.docs).map(([k, n]) => docChip(k, n)).join(' ') || '<span class="note">None yet. Every second wave you win lets you pick one.</span>'; }
+function warDocCards(ids) { return '<div class="dgrid">' + ids.map(id => { const d = DOCS[id], n = WAR.docs[id] || 0; return '<button class="dcard" data-act="wardoc" data-v="' + id + '"><b>' + esc(d.n) + (n ? ' <i>(' + (n + 1) + ')</i>' : '') + '</b><span>' + esc(d.d) + '</span></button>'; }).join('') + '</div>'; }
+SCREENS.war = () => {
+  const head = `<div class="row" style="justify-content:space-between"><h2 style="margin:0;color:#ffe2a6">Endless War</h2><button class="tbtn" data-act="back">Back</button></div>`;
+  const intro = `<div class="note" style="font-size:14.5px;color:#e6eef7;margin-top:6px;white-space:pre-line">${esc(LORE.war.intro)}</div>
+  <div class="note" style="margin-top:8px">You hold <b>the Bastion</b>, a huge fortress with 24 build spots and six outposts around it. Each wave a <b>new enemy commander</b> lands from a new direction with a base and army built to rival yours, and it gets tougher every time. <b>Destroy their HQ</b> (big reward) or <b>hold out</b> until they give up. Lose and you rebuild from the start of that wave. Your base, money, upgrades and Doctrines are always saved.</div>`;
+  if (!WAR) return `<div class="scr bg"><div class="panel" style="width:min(640px,98vw)">${head}${intro}<button class="mbtn go" style="margin-top:14px" data-act="warnew">Raise the Bastion<small>Start your Endless War</small></button></div></div>`;
+  const hist = WAR.hist.slice(0, 6).map(h => `<div class="ach ${h[2] === 'lost' ? '' : 'ok'}"><b style="min-width:70px">Wave ${h[0]}</b><span>${esc(h[1])}</span><i style="margin-left:auto">${h[2] === 'won' ? 'HQ destroyed' : h[2] === 'held' ? 'held out' : 'Bastion fell'}</i></div>`).join('');
+  const nd = warDef(WAR.wave);
+  return `<div class="scr bg"><div class="panel" style="width:min(680px,98vw)">${head}${intro}
+  <div class="row" style="gap:18px;margin-top:10px"><div><div class="lbl">Wave</div><b style="font-size:26px;color:#ffe2a6">${WAR.wave}</b></div><div><div class="lbl">Best</div><b style="font-size:20px">${WAR.best}</b></div><div><div class="lbl">Won / lost</div><b style="font-size:20px">${WAR.wins} / ${WAR.losses}</b></div><div><div class="lbl">Money saved</div><b style="font-size:20px">${WAR.sup}</b></div></div>
+  <div class="lbl">Next enemy</div><div class="note"><b style="color:#ff9a8c">${esc(nd.name)}</b>, ${esc(nd.ep)} (${esc(nd.title)}) is coming from the ${WDIRS[nd.site]}.</div>
+  <div class="lbl">Doctrines</div><div>${warDocChips()}</div>${WAR.offer ? `<div class="lbl">Pick a Doctrine</div>${warDocCards(WAR.offer)}` : ''}
+  ${hist ? `<div class="lbl">Recent waves</div><div style="display:grid;gap:5px">${hist}</div>` : ''}
+  <button class="mbtn go" style="margin-top:14px" data-act="warplay">Defend the Bastion: Wave ${WAR.wave}<small>${WAR.blds ? 'Your base is waiting' : 'Build up before the first enemy lands'}</small></button>
+  <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="tbtn" data-act="warreset" style="border-color:#8a3a30">${UI.wreset ? 'Click again to delete this war and start over' : 'Start a new war'}</button></div></div></div>`;
+};
+SCREENS.warwave = (r) => `<div class="scr bg"><div class="panel" style="width:min(560px,98vw);text-align:center"><div class="title" style="font-size:clamp(28px,6vw,48px)">WAVE ${r.wave} WON</div>
+  <div class="sub">${esc(r.name)}, ${esc(r.ep)}: ${r.how === 'hq' ? 'HQ destroyed' : 'gave up the attack'}</div>
+  <div class="note" style="font-size:15px;color:#e6eef7;margin:8px 0">${esc(r.line)}</div><div class="note"><b style="color:#7be08a">+${r.reward} money</b>${r.how === 'hq' ? ' (HQ bonus)' : ''}. Progress saved.</div>
+  ${r.ms ? `<div class="note" style="margin:10px 0;padding:10px;border:1px solid #8a6a28;border-radius:10px;background:#1a150a;color:#ffe2a6;text-align:left"><b>War report, wave ${WAR.wave}</b><br>${esc(r.ms)}</div>` : ''}
+  ${WAR.offer ? `<div class="lbl" style="text-align:left">Pick a Doctrine (lasts for the whole war)</div>${warDocCards(WAR.offer)}` : ''}
+  <div class="note" style="margin-top:10px">Next: <b style="color:#ff9a8c">${esc(r.next.name)}</b> (${esc(r.next.title)}) from the ${WDIRS[r.next.site]}. You have time to build.</div>
+  ${WAR.offer ? '' : '<button class="mbtn go" data-act="warnext">Prepare for wave ' + WAR.wave + '</button>'}<button class="mbtn" data-act="warmenu">Save and leave</button></div></div>`;
+SCREENS.warlost = (r) => `<div class="scr bg"><div class="panel" style="width:min(520px,98vw);text-align:center"><div class="title" style="font-size:clamp(28px,6vw,48px);background:linear-gradient(180deg,#ffd0c8,#d4483a 60%,#7a1d14);-webkit-background-clip:text;background-clip:text">THE BASTION FELL</div>
+  <div class="sub">Wave ${r.wave} - ${esc(r.name)}</div><div class="note" style="font-size:15px;color:#e6eef7;margin:10px 0">${esc(r.line)}</div>
+  <div class="note">Your base is restored to how it was when wave ${r.wave} began. Nothing else is lost.</div>
+  <button class="mbtn go" data-act="warretry">Rebuild and try again</button><button class="mbtn" data-act="warmenu2">Endless War menu</button></div></div>`;
 // ----- screen actions -----
 let ACT = {};
+ACT.war = () => { UI.wreset = 0; showScreen('war'); };
+ACT.warnew = () => { warNew(); showScreen('war'); };
+ACT.warreset = () => { if (!UI.wreset) { UI.wreset = 1; showScreen('war'); return; } UI.wreset = 0; WAR = null; lsSet('frontline_war_v1', ''); showScreen('war'); };
+ACT.warplay = () => { if (!WAR) warNew(); startGame(warCfg()); };
+ACT.wardoc = el => { const id = el.dataset.v; if (!WAR || !WAR.offer || !WAR.offer.includes(id)) return; WAR.docs[id] = (WAR.docs[id] || 0) + 1; WAR.offer = null; saveWar(); if (inGame && W && W.o.war) { const me = W.players[0]; me.perkMod = {}; for (const k in WAR.docs) { const d = DOCS[k]; if (d && d.mod) for (const m in d.mod) me.perkMod[m] = (me.perkMod[m] || 0) + d.mod[m] * WAR.docs[k]; } me.bounty = WAR.docs.bounty ? .15 : 0; me.fevMul = WAR.docs.qm ? 2 : 1; recalcMods(me); sfx('done'); ACT.warnext(); } else showScreen('war'); };
+ACT.warnext = () => { closeScreen(); if (W && W.war) { W.war.hold = false; W.paused = false; } };
+ACT.warnow = () => { if (W && W.war && W.war.phase === 'prep' && !W.war.hold) { W.war.t = Math.min(W.war.t, 1); sfx('click'); } };
+ACT.warmenu = () => { if (W && W.o.war && W.war && W.war.phase === 'prep') warSave(); endGame(); ACT.war(); };
+ACT.warmenu2 = () => { endGame(); ACT.war(); };
+ACT.warretry = () => { endGame(); startGame(warCfg()); };
 ACT.campaign = () => { UI.cquit = 0; showScreen('campaign'); };
 ACT.cstart = el => { campNew(el.dataset.v); PROF.cRuns++; saveProf(); showScreen('campaign'); };
 ACT.cgo = el => { const c = CAMP && CAMP.choices && CAMP.choices[+el.dataset.v]; if (!c) return; CAMP.cur = c; saveCamp(); startGame(campCfg(c)); };
@@ -3944,7 +4612,7 @@ ACT.ctab = el => { CODEXTAB = el.dataset.v; showScreen('codex'); };
 ACT.resume = () => { closeScreen(); if (W) W.paused = false; };
 ACT.psettings = () => { BACKSCREEN = 'pause'; showScreen('settings'); };
 ACT.pcodex = () => { BACKSCREEN = 'pause'; showScreen('codex'); };
-ACT.quit = () => { if (W && W.o.mp) netSurrender(); const camp = W && W.o.camp && !resultsShown; endGame(); if (camp) { campAfter(false); ACT.campaign(); } else showScreen('main'); };
+ACT.quit = () => { if (W && W.o.mp) netSurrender(); const camp = W && W.o.camp && !resultsShown, war = W && W.o.war; if (war && W.war && W.war.phase === 'prep') warSave(); endGame(); if (camp) { campAfter(false); ACT.campaign(); } else if (war) ACT.war(); else showScreen('main'); };
 ACT.quit2 = () => { endGame(); showScreen('main'); };
 ACT.rematch = () => { if (LASTCFG) startGame(LASTCFG, LASTOPT); };
 ACT.tolobby = () => { endGame(true); netBackToLobby(); };
@@ -4254,7 +4922,7 @@ function buildSnapshot() {
 function buildMeta() {
   const pl = W.players.map(p => ({ s: Math.floor(p.sup), i: +p.inc.toFixed(2), p: p.pop, c: p.popCap, a: p.alive ? 1 : 0, t: Object.keys(p.techs), r: p.res ? [p.res.id, +p.res.t.toFixed(1), p.res.dur] : 0, cd: Object.fromEntries(Object.entries(p.cd).filter(e => e[1] > 0).map(e => [e[0], +e[1].toFixed(1)])), st: p.stats, o: p.out || '' }));
   const pts = W.pts.map(p => [p.owner, +p.ctrl.toFixed(3), p.capP, p.contested ? 1 : 0, p.hq]);
-  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, b.ros || 0, b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.tr ? [b.tr.u, +b.tr.t.toFixed(1), +b.tr.dur.toFixed(1)] : 0, b.wait || 0, b.have || 0, b.hold ? 1 : 0]);
+  const bs = W.bld.map(b => [b.id, b.type, b.pt, b.slot, b.lvl, b.spec, Math.round(b.hp), Math.round(b.maxHp), +b.prog.toFixed(3), b.owner, +b.aim.toFixed(2), b.upg ? [b.upg.kind, +b.upg.t.toFixed(1), b.upg.dur] : 0, b.hasRally ? [b.rx, b.rz] : 0, b.ros || 0, b.sb, +b.x.toFixed(1), +b.z.toFixed(1), +b.rot.toFixed(2), b.tr ? [b.tr.u, +b.tr.t.toFixed(1), +b.tr.dur.toFixed(1), b.tr.re | 0] : 0, b.wait || 0, b.have || 0, b.hold ? 1 : 0]);
   return { t: 'meta', tick: W.tick, time: W.t, tix: W.teamList.map(t => [t.id, Math.round(t.tickets), t.alive ? 1 : 0]), pl, pts, bs, over: W.over ? 1 : 0 };
 }
 function netHostAfterTick() { if (!NET.peer || !W.o.mp) return; if (W.tick % 2 === 0) { sendBin(buildSnapshot()); NET.snapsTx++; } if (W.tick % 4 === 0 || NET.dirty) { NET.dirty = false; sendRel(buildMeta()); } }
@@ -4286,7 +4954,7 @@ function applyMeta(m) {
     if (!b) { const T = BT[d[1]]; b = { id, k: 'b', type: d[1], T, owner: d[9], team: W.players[d[9]].team, pt: d[2], slot: d[3], x: d[15], z: d[16], y: W.M.H(d[15], d[16]), lvl: 1, spec: '', hp: 1, maxHp: 1, prog: 0, upg: null, ros: null, have: null, tr: null, wait: 0, hold: false, hasRally: false, rx: 0, rz: 0, aim: 0, flash: 0, fire: 0, dead: false, sz: T.sz, w: null, sb: 0, rot: d[17], born: performance.now() }; W.byId.set(id, b); W.bld.push(b); if (b.type === 'hq') W.players[b.owner].hqB = b; if (b.type === 'wall') { const pt = W.pts[b.pt]; pt.wall = b; } else if (b.slot >= 0) W.pts[b.pt].slots[b.slot].b = b; }
     if (b.hp > d[6] + 1) b.flash = .1; const T0 = BT[b.type];
     if (b.type === 'hq' && b.spec !== d[5]) { b.spec = d[5]; recalcMods(W.players[b.owner]); }
-    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.ros = d[13] || (T0.ros ? {} : null); b.tr = d[18] && UT[d[18][0]] ? { u: d[18][0], t: d[18][1], dur: d[18][2], c: 0 } : null; b.wait = d[19] | 0; b.have = d[20] || (T0.ros ? {} : null); b.hold = !!d[21]; b.sb = d[14]; b.w = bWeapon(b);
+    b.lvl = d[4]; b.spec = d[5]; b.hp = d[6]; b.maxHp = d[7]; b.prog = d[8]; b.aim = d[10]; b.upg = d[11] ? { kind: d[11][0], t: d[11][1], dur: d[11][2] } : null; b.hasRally = !!d[12]; if (d[12]) { b.rx = d[12][0]; b.rz = d[12][1]; } b.ros = d[13] || (T0.ros ? {} : null); b.tr = d[18] && UT[d[18][0]] ? { u: d[18][0], t: d[18][1], dur: d[18][2], re: d[18][3] | 0, c: 0 } : null; b.wait = d[19] | 0; b.have = d[20] || (T0.ros ? {} : null); b.hold = !!d[21]; b.sb = d[14]; b.w = bWeapon(b);
   }
   for (let i = W.bld.length - 1; i >= 0; i--) { const b = W.bld[i]; if (!seenB.has(b.id) && performance.now() - b.born > 600) { b.dead = true; W.byId.delete(b.id); if (b.type === 'wall') { const pt = W.pts[b.pt]; if (pt.wall === b) pt.wall = null; } else if (b.slot >= 0) { const pt = W.pts[b.pt]; if (pt.slots[b.slot].b === b) pt.slots[b.slot].b = null; } W.bld[i] = W.bld[W.bld.length - 1]; W.bld.pop(); } }
   if (m.over && !W.over) { W.over = true; }
@@ -4323,7 +4991,7 @@ window.addEventListener('unhandledrejection', e => { window.__errs.push('rejecti
 function keepEv() { const k = W.ev.filter(e => e[0] === 12); W.ev.length = 0; for (const e of k) W.ev.push(e); }
 function showLoading(on, txt) { const l = $('#loading'); if (!l) return; l.style.display = on ? 'flex' : 'none'; if (txt) l.firstChild.textContent = txt; }
 function startGame(cfg, opt) {
-  opt = opt || {}; LASTCFG = cfg; LASTOPT = opt.mp ? null : opt; showLoading(true, 'Getting ready...'); closeScreen();
+  opt = opt || {}; LASTCFG = cfg; LASTOPT = opt.mp ? null : opt; showLoading(true, 'Tip: ' + LORE.tips[(Math.random() * LORE.tips.length) | 0]); closeScreen();
   setTimeout(() => { try { launch(cfg, opt); } catch (err) { console.error(err); window.__errs.push('launch: ' + (err && err.stack || err)); inGame = false; showScreen('notice', { title: 'Could not start', msg: String(err && err.message || err) }); } showLoading(false); }, 40);
 }
 function launch(cfg, opt) {
@@ -4333,6 +5001,8 @@ function launch(cfg, opt) {
   hudInit(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.did = {}; UI.mode = null; UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
   if (UI.touch) showTouchBtns(true); simAcc = 0; applyGfx(); try { mmBuild(); } catch (e) { } hudUpdate(true); closeScreen(); startTicker();
   if (c.mirror) { W.lastSnap = 0; }
+  if (c.camp && c.obj) { const mk = CAMP && CAMP.cur && CAMP.cur.final ? 'final' : c.obj.type, br = LORE.missions[mk] ? LORE.missions[mk].brief : null; if (br) setTimeout(() => { if (inGame) addAlert('HQ: ' + br[(Math.random() * br.length) | 0], '#ffe2a6', undefined, undefined, 16000); }, 1500); }
+  if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion: 24 build spots around your HQ and six outposts to capture. The enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 14000); }, 1500);
   if (opt.after) opt.after();
 }
 function cleanupGameUI() { for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
@@ -4424,7 +5094,7 @@ window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } 
 if (DEBUG) {
   window.__fl = {
     get renderer() { return renderer; }, get scene() { return scene; }, get W() { return W; }, get ME() { return ME; }, UI, NET, cam, SET, PROF, UT, BT, TECH, CALL, MAPS, AIP, AID, WTM, GPU, selectBuilding, selectPoint, pickEntity, onClickWorld, prof(n) { const t0 = performance.now(); for (let i = 0; i < n; i++) { simTick(); } const t1 = performance.now(); for (let i = 0; i < n; i++) { interpHost(.5); renderFrame(.016, performance.now()); } const t2 = performance.now(); renderer.getContext().finish(); const t3 = performance.now(); const inf = renderer.info; return { simMs: (t1 - t0) / n, renderCpuMs: (t2 - t1) / n, finishMs: (t3 - t2) / n, calls: inf.render.calls, tris: inf.render.triangles, geos: inf.memory.geometries, tex: inf.memory.textures, units: W.units.length, pr: renderer.getPixelRatio() }; }, __camPos() { const c = camera.position; return { x: c.x, y: c.y, z: c.z, fy: cam.gy }; }, get TUT() { return TUT; }, tutAdvance, tutExit, startTutorial, camGoto, setMode, selAllArmy, selIdle, goHome, renderPanel, coachHint, cleanupGameUI, openPause, ACT, applySimple, defaultSK, get SK() { return SK; }, set SK(v) { SK = v; },  get inGame() { return inGame; }, get mode() { return MODE; }, get fps() { return fpsNow; },
-    makeAI, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
+    makeAI, getField, killBuilding, warNew, warCfg, warSave, warSpawn, warDef, get WAR() { return WAR; }, set WAR(v) { WAR = v; }, rosCap, rosTotal, campNew, campCfg, campAfter, campChoices, get CAMP() { return CAMP; }, DOCS, MISSIONS, fevSpawn, fevTick, armyRally, CALLORDER, BUILDABLE, TBR, canTrainAt, unitCost, bestLvl, playerHQLvl, pickWall, UTK, startGame, startTutorial, startSandbox, applyCmd, issue, selectUnits, clearSel, hudUpdate, fxEvent, showScreen, openTech, makeIcons, ICONS, genMap, createWorld, simTick, spawnUnit, placeBuilding, unitsForB, callAvail, killUnit, eliminate, w2s, screenToGround,
     step(n) { for (let i = 0; i < n; i++) simTick(); }, fast(sec, nofx) { const fx = W.fx; W.fx = false; const n = Math.round(sec / TICK); for (let i = 0; i < n && !(W.over && !W.o.sandbox); i++) { simTick(); if (NET.role === 'host') netHostAfterTick(); if (i % 40 === 0) keepEv(); } keepEv(); W.fx = fx; interpHost(1); hudUpdate(true); return W.tick; },
     spawn(type, owner, x, z, vet) { const u = spawnUnit(type, owner, x, z, { vet: vet || 0 }); return u.id; },
     build(owner, ptId, slot, type, instant) { const p = P(owner), pt = W.pts[ptId]; const b = placeBuilding(type, owner, pt, slot, !!instant); return b; },
