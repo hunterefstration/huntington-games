@@ -4980,7 +4980,7 @@ function warTick() {
   const w = W.war; if (!w || W.over) return;
   if (w.phase === 'prep') {
     if (w.hold) return;
-    if ((w.saveT -= 1) <= 0) { w.saveT = 10; warSave(); }
+    warSave();                 // everything done to the Bastion between waves is saved right away (once a second)
     if (w.go) warSpawn();      // the wave only starts when the player presses Start Wave
   } else if (w.phase === 'fight') {
     if ((w.rt = (w.rt === undefined ? 60 : w.rt) - 1) <= 0) { w.rt = Math.max(45, 90 - w.wave * 2); warReinforce(); }
@@ -5620,8 +5620,9 @@ function stepInner(ts, hidden) {
     if (SET.fps) { const f = $('#fps'); f.textContent = Math.round(fpsNow) + ' fps | ' + W.units.length + ' units'; }
   }
 }
-document.addEventListener('visibilitychange', () => { if (document.hidden && inGame && W && !W.o.mp && !W.paused && !W.over && !SCREEN) openPause(); });
-window.addEventListener('pagehide', () => { try { if (NET.role && NET.peer) sendRel({ t: 'bye' }); } catch (e) { } });
+function warSafeSave() { try { if (W && W.o.war && W.war && W.war.phase === 'prep' && !W.over) warSave(); } catch (e) { } }
+document.addEventListener('visibilitychange', () => { if (document.hidden) warSafeSave(); if (document.hidden && inGame && W && !W.o.mp && !W.paused && !W.over && !SCREEN) openPause(); });
+window.addEventListener('pagehide', () => { warSafeSave(); try { if (NET.role && NET.peer) sendRel({ t: 'bye' }); } catch (e) { } });
 window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } catch (e) { } } });
 // ---------------- debug hook ----------------
 if (DEBUG) {
