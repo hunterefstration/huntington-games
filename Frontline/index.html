@@ -462,7 +462,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.1';
+const VERSION = '2.2';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -1411,6 +1411,8 @@ function getField(M, tx, tz, coarse) {
   return f;
 }
 function navBlockedAt(M, x, z) { const n = M.nav; const i = n.idx(x, z); return (n.blk[i] | n.dyn[i]) !== 0; }
+// 2.2: a unit in 'pass-through' mode (just spawned, or stuck) ignores buildings and only stops at cliffs, water and rocks
+function blockedFor(u, M, x, z) { if (u.ghost > 0) { const n = M.nav; return n.blk[n.idx(x, z)] !== 0; } return navBlockedAt(M, x, z); }
 function losClear(M, x0, z0, x1, z1) {
   const n = M.nav, dx = x1 - x0, dz = z1 - z0, L = Math.sqrt(dx * dx + dz * dz); if (L < 1) return true; const st = Math.ceil(L / 1.2);
   for (let i = 1; i < st; i++) { const t = i / st; if (navBlockedAt(M, x0 + dx * t, z0 + dz * t)) return false; } return true;
@@ -1445,7 +1447,7 @@ function wallArcs(pt) { // list of [cx,cz,angle0,angle1,radius]
 let W = null, ME = 0;
 const UTK = Object.keys(UT), BTK = Object.keys(BT);
 const MODKEYS = ['dmgBul', 'dmgAT', 'dmgShell', 'spl', 'hpInf', 'hpVeh', 'hpHvy', 'hpBld', 'inc', 'cost', 'pop', 'spdInf', 'spdVeh', 'spdAir', 'prod', 'vis', 'rng', 'acc', 'bldDmg', 'xp', 'heal', 'callCd', 'callCost'];
-const FORMS = ['box', 'line', 'wedge', 'spread', 'column', 'ring'], FORMN = ['Box', 'Line', 'Wedge', 'Spread', 'Column', 'Ring'];
+const FORMS = ['box', 'line', 'wedge', 'spread', 'column', 'ring', 'free'], FORMN = ['Box', 'Line', 'Wedge', 'Spread', 'Column', 'Ring', 'Free'], FORMUI = [6, 0, 1, 2, 3, 4, 5];   // 2.2: 'free' keeps the group's shape
 const tmpA = [];
 
 function ev(a) { W.ev.push(a); }
@@ -1693,6 +1695,7 @@ function splashDmg(x, z, r, dmg, wt, team, owner, src, opts) {
 function ticketCost(T) { return Math.max(1, Math.round(T.pop / 2)); }
 function killUnit(u, src, owner) {
   if (u.dead) return; u.dead = true; const p = P(u.owner); p.pop -= u.T.pop; p.stats.lost++;
+  if (u.boss && W.war) { const me = W.players[0], b = 600 + W.war.wave * 80; me.sup += b; ev([3, 0, 'msg', r1(u.x), r1(u.z), 3, (u.nick || 'The Warlord') + ' is down! Bounty: +' + b + ' money.']); }
   const i = W.units.indexOf(u); if (i >= 0) { W.units[i] = W.units[W.units.length - 1]; W.units.pop(); } W.byId.delete(u.id);
   const sz = u.T.cls >= 2 ? 3 : u.T.cls === 1 || u.T.cls === 3 ? 2 : 1;
   ev([2, UTK.indexOf(u.type), r1(u.x), r1(u.y), r1(u.z), r1(u.rot), u.owner]);
@@ -1864,12 +1867,12 @@ function applyVel(u, dt) {
   const M = W.M, T = u.T; const sp = Math.sqrt(u.vx * u.vx + u.vz * u.vz);
   if (sp < .05) { u.moving = false; return; }
   let nx = u.x + u.vx * dt, nz = u.z + u.vz * dt;
-  if (!T.air && !navBlockedAt(M, u.x, u.z)) {      // (a unit standing inside a blocked cell may always move, so it can walk out)
-    if (navBlockedAt(M, nx, nz)) {
-      if (!navBlockedAt(M, nx, u.z)) { nz = u.z; u.vz = 0; } else if (!navBlockedAt(M, u.x, nz)) { nx = u.x; u.vx = 0; }
+  if (!T.air && !blockedFor(u, M, u.x, u.z)) {      // (a unit standing inside a blocked cell may always move, so it can walk out)
+    if (blockedFor(u, M, nx, nz)) {
+      if (!blockedFor(u, M, nx, u.z)) { nz = u.z; u.vz = 0; } else if (!blockedFor(u, M, u.x, nz)) { nx = u.x; u.vx = 0; }
       else { // 3.1: wedged in a corner: try sliding 45 degrees either way before giving up
         const c = .7071, a = [[(u.vx - u.vz) * c, (u.vx + u.vz) * c], [(u.vx + u.vz) * c, (u.vz - u.vx) * c]]; let ok = false;
-        for (const v of a) { const px = u.x + v[0] * dt, pz = u.z + v[1] * dt; if (!navBlockedAt(M, px, pz)) { nx = px; nz = pz; ok = true; break; } }
+        for (const v of a) { const px = u.x + v[0] * dt, pz = u.z + v[1] * dt; if (!blockedFor(u, M, px, pz)) { nx = px; nz = pz; ok = true; break; } }
         if (!ok) { nx = u.x; nz = u.z; u.vx = u.vz = 0; }
       }
     }
@@ -1912,12 +1915,13 @@ function separate(u, dt) {
     const d = Math.sqrt(dd) || .01; let w = (min - d) / min; const em = e.moving || e.o !== 0, um = u.moving || u.o !== 0; w *= em && !um ? 1.4 : um && !em ? .35 : 1;
     px += dx / d * w; pz += dz / d * w;
   } }
-  if (px || pz) { const M = W.M; const nx = clamp(u.x + px * 9 * dt, -M.hw + 2, M.hw - 2), nz = clamp(u.z + pz * 9 * dt, -M.hd + 2, M.hd - 2); if (T.air || !navBlockedAt(M, nx, nz)) { u.x = nx; u.z = nz; } }
+  if (px || pz) { const M = W.M; const nx = clamp(u.x + px * 9 * dt, -M.hw + 2, M.hw - 2), nz = clamp(u.z + pz * 9 * dt, -M.hd + 2, M.hd - 2); if (T.air || !blockedFor(u, M, nx, nz)) { u.x = nx; u.z = nz; } }
 }
 function groundY(u) { return W.M.H(u.x, u.z) + (u.T.air ? u.T.alt : 0); }
 
 function updUnit(u, dt) {
   const T = u.T, M = W.M;
+  if (u.ghost > 0) u.ghost -= dt;
   u.px = u.x; u.pz = u.z; u.prot = u.rot; u.paim = u.aim;
   if (u.flash > 0) u.flash -= dt; if (u.slow > 0) u.slow -= dt; if (u.shield > 0) u.shield -= dt; if (u.firing > 0) u.firing -= dt;
   if (u.cd1 > 0) u.cd1 -= dt; if (u.cd2 > 0) u.cd2 -= dt;
@@ -1995,7 +1999,7 @@ function updUnit(u, dt) {
       if (u.o === 1 && tg && weapons && !T.sf) { const dx = tg.x - u.x, dz = tg.z - u.z; u.aim = turnTo(u.aim, Math.atan2(dx, dz), T.tur ? 5 : 11, dt); for (let wi = 0; wi < weapons.length; wi++) { const w = weapons[wi]; const cdv = wi === 0 ? u.cd1 : u.cd2; if (cdv > 0 || effMult(w, tg) <= 0) continue; const dd = Math.hypot(dx, dz); if (dd <= uRange(u, w) && !(w.minr && dd < w.minr) && Math.abs(angDiff(u.aim, Math.atan2(dx, dz))) < .35) fire(u, w, tg, wi === 0 ? 1 : 2); } }
       else if (!engaged && T.tur) u.aim = turnTo(u.aim, u.rot, 3, dt); else if (!engaged && !tg) u.aim = turnTo(u.aim, u.rot, 9, dt);
       // stuck detection
-      if (!arrived) { const mv = u.dmv || 0; if (mv < unitSpeed(u) * dt * .25) { u.stuck += dt; } else u.stuck = Math.max(0, u.stuck - dt); if (u.stuck > 1.6 && Math.hypot(u.tx - u.x, u.tz - u.z) < 12 + u.arr * 2) arrived_(u); else if (u.stuck > 1.2 && !T.air && (u.unst | 0) < 6 && unstick(u)) { u.stuck = 0; u.unst = (u.unst | 0) + 1; } else if (u.stuck > 9) arrived_(u); }
+      if (!arrived) { const mv = u.dmv || 0; if (mv < unitSpeed(u) * dt * .25) { u.stuck += dt; } else u.stuck = Math.max(0, u.stuck - dt); if (u.stuck > 1.6 && Math.hypot(u.tx - u.x, u.tz - u.z) < 12 + u.arr * 2) arrived_(u); else if (u.stuck > 1.2 && !T.air && (u.unst | 0) < 6 && unstick(u)) { u.stuck = 0; u.unst = (u.unst | 0) + 1; if (u.unst >= 2) u.ghost = 3; } else if (u.stuck > 2.5 && !T.air && !(u.ghost > 0)) { u.ghost = 3.5; u.stuck = 1.2; } else if (u.stuck > 9) arrived_(u); }
       else arrived_(u);
     } else if (u.o === 5) { // build nest
       const arrived = moveTo(u, u.tx, u.tz, dt, 4);
@@ -2141,7 +2145,7 @@ function spawnFromBuilding(b, type, idx) {
   ang += (idx || 0) * .8 - ((b.id * 7) % 5) * .15; const d = b.sz * .5 + 2.6 + (T.cls >= 1 ? 1.5 : 0);
   let x = b.x + Math.cos(ang) * d, z = b.z + Math.sin(ang) * d; const q = snapFree(M, x, z, 5); x = q[0]; z = q[1];
   const o = { rot: ang }; if (b.spec === 'elite' && T.cls === 0) o.vet = 1; if (b.spec === 'shock' && T.cls === 0) { o.hpB = 1.2; o.spB = 1.1; o.dmB = 1.1; } if (b.spec === 'heavy' && (T.cls === 1 || T.cls === 2)) o.hpB = 1.15;
-  const u = spawnUnit(type, b.owner, x, z, o); u.home = b.id; if (o.vet) refreshUnit(u), u.hp = u.maxHp;
+  const u = spawnUnit(type, b.owner, x, z, o); u.home = b.id; u.ghost = 3; if (o.vet) refreshUnit(u), u.hp = u.maxHp;
   if (b.type === 'factory' && b.spec === 'artillery' && type === 'artillery') u.fromArtPark = true;
   if (b.hasRally) { u.o = 1; u.tx = b.rx; u.tz = b.rz; u.arr = 3; }
   return u;
@@ -2344,22 +2348,43 @@ function battleSetup() {
 }
 // ---------------- commands ----------------
 function unitsOf(pid, ids) { const r = []; for (const id of ids) { const u = W.byId.get(id); if (u && u.k === 'u' && u.owner === pid && !u.dead) r.push(u); } return r; }
+// 2.2 formations: soldiers in front, vehicles behind them, artillery and support at the back, each with spacing that fits
+// its size; every shape has a size cap so a huge army stays a compact block instead of covering the map
 function formationPositions(us, tx, tz, form) {
-  const n = us.length; let cx = 0, cz = 0; for (const u of us) { cx += u.x; cz += u.z; } cx /= n; cz /= n;
+  const n = us.length, M = W.M; let cx = 0, cz = 0; for (const u of us) { cx += u.x; cz += u.z; } cx /= n; cz /= n;
   let fx = tx - cx, fz = tz - cz; const fl = Math.hypot(fx, fz); if (fl < 1) { fx = 0; fz = 1; } else { fx /= fl; fz /= fl; }
-  const rx = fz, rz = -fx; let sp = 2.5; for (const u of us) sp = Math.max(sp, u.T.r * 2.1 + .5);
-  const slots = [];
-  if (form === 'line') { const cols = Math.min(n, 12); for (let i = 0; i < n; i++) { const c = i % cols, r = (i / cols) | 0; slots.push([(c - (cols - 1) / 2) * sp, r * sp]); } }
-  else if (form === 'wedge') { let row = 0, k = 0; while (slots.length < n) { for (let c = 0; c <= row && slots.length < n; c++) slots.push([(c - row / 2) * sp * 1.1, row * sp]); row++; } }
-  else if (form === 'column') { for (let i = 0; i < n; i++) slots.push([((i % 2) - .5) * sp, ((i / 2) | 0) * sp]); }
-  else if (form === 'ring') { const R = Math.max(4, n * sp / TAU); for (let i = 0; i < n; i++) { const a = i / n * TAU; slots.push([Math.cos(a) * R, Math.sin(a) * R]); } }
-  else if (form === 'spread') { sp *= 2.1; const cols = Math.ceil(Math.sqrt(n * 1.5)); for (let i = 0; i < n; i++) { const c = i % cols, r = (i / cols) | 0; slots.push([(c - (cols - 1) / 2) * sp + ((r & 1) ? sp * .4 : 0), r * sp]); } }
-  else { const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.4))); for (let i = 0; i < n; i++) { const c = i % cols, r = (i / cols) | 0; slots.push([(c - (cols - 1) / 2) * sp, r * sp]); } }
-  const pos = slots.map(s => { const x = tx + rx * s[0] - fx * s[1], z = tz + rz * s[0] - fz * s[1]; return snapFree(W.M, clamp(x, -W.M.hw + 3, W.M.hw - 3), clamp(z, -W.M.hd + 3, W.M.hd - 3), 4); });
-  const prio = u => u.T.cls >= 2 ? 3 : (u.T.heal || u.T.sf || u.T.eng) ? 0 : u.T.cls === 1 ? 2 : 1;
-  const idx = us.map((u, i) => i).sort((a, b) => prio(us[b]) - prio(us[a]) || Math.hypot(us[a].x - tx, us[a].z - tz) - Math.hypot(us[b].x - tx, us[b].z - tz));
-  const sidx = pos.map((p, i) => i).sort((a, b) => Math.hypot(pos[a][0] - tx, pos[a][1] - tz) - Math.hypot(pos[b][0] - tx, pos[b][1] - tz) || a - b);
-  const res = new Array(n); for (let i = 0; i < n; i++) res[idx[i]] = pos[sidx[i]];
+  const rx = fz, rz = -fx, snap = (x, z) => snapFree(M, clamp(x, -M.hw + 3, M.hw - 3), clamp(z, -M.hd + 3, M.hd - 3), 4);
+  if (form === 'free') {   // keep the shape the group already has, squeezed if it is spread out too far
+    let mr = 0; for (const u of us) mr = Math.max(mr, Math.hypot(u.x - cx, u.z - cz)); const lim = 4 + Math.sqrt(n) * 1.25, k = mr > lim ? lim / mr : 1;
+    return us.map(u => snap(tx + (u.x - cx) * k, tz + (u.z - cz) * k));
+  }
+  const spread = form === 'spread' ? 1.7 : 1;
+  const wid = u => (u.T.air ? 3 : u.T.cls === 0 ? 1.9 : Math.max(3, u.T.r * 2 + .6)) * spread;
+  const pri = u => { const T = u.T, w = T.w || T.w2; if (T.heal || T.eng || (w && w.minr)) return 3; if (T.air) return 2; return T.cls === 0 ? 0 : 1; };
+  const lat = u => (u.x - cx) * rx + (u.z - cz) * rz;
+  const order = us.map((u, i) => i).sort((a, b) => pri(us[a]) - pri(us[b]) || Math.hypot(us[a].x - tx, us[a].z - tz) - Math.hypot(us[b].x - tx, us[b].z - tz));
+  let avg = 0; for (const u of us) avg += wid(u); avg /= n;
+  const res = new Array(n);
+  if (form === 'ring') {   // rings around the spot, outer ring first, support in the middle; never wider than ~30 m
+    let area0 = 0; for (const u of us) area0 += wid(u) * wid(u); let R = clamp(Math.sqrt(area0) * .62, 5, 28), k = 0; const rings = [];
+    while (k < n) { const cap = Math.max(4, Math.floor(TAU * R / avg)); rings.push([R, Math.min(cap, n - k)]); k += cap; R = Math.max(2.5, R - avg * 1.1); if (R <= 2.5 && k < n) { rings.push([2.5, n - k]); break; } }
+    k = 0; for (const [Rr, c] of rings) for (let j = 0; j < c && k < n; j++, k++) { const a = j / c * TAU + (Rr * .37); res[order[k]] = snap(tx + Math.cos(a) * Rr, tz + Math.sin(a) * Rr); }
+    return res;
+  }
+  // rows from the front (at the target) to the back
+  // row width in metres, from the area the whole group really needs (so 600 troops make a ~70 m block, not a quarter of the map)
+  let area = 0; for (const u of us) area += wid(u) * wid(u); const side = Math.sqrt(area);
+  const rowW = r => form === 'line' ? clamp(side * 3, 12, 110) : form === 'column' ? clamp(side * .65, 4, 50) : form === 'wedge' ? Math.min((2 * r + 1) * avg, clamp(side * 1.5, 8, 90)) : clamp(side * 1.25, 8, form === 'spread' ? 130 : 85);
+  const rows = []; let row = [], rp = -1, rw = 0;
+  for (const i of order) { const p = pri(us[i]), w = wid(us[i]); if (row.length && (rw + w > rowW(rows.length) + .01 || p !== rp)) { rows.push(row); row = []; rw = 0; } row.push(i); rw += w; rp = p; }
+  if (row.length) rows.push(row);
+  let depth = 0;
+  for (const r of rows) {
+    r.sort((a, b) => lat(us[a]) - lat(us[b]));   // keep left units on the left, so paths do not cross
+    let tw = 0, dep = 2; for (const i of r) { tw += wid(us[i]); dep = Math.max(dep, wid(us[i])); }
+    let x = -tw / 2; for (const i of r) { const w = wid(us[i]); const ox = x + w / 2; x += w; res[i] = snap(tx + rx * ox - fx * (depth + dep / 2), tz + rz * ox - fz * (depth + dep / 2)); }
+    depth += dep * .95;
+  }
   return res;
 }
 function applyCmd(pid, c) {
@@ -2388,6 +2413,7 @@ function applyCmd(pid, c) {
     }
     case 'tp': { const v = clamp(c.v | 0, 0, 4); for (const u of unitsOf(pid, c.ids)) { u.tp = v; u.scan = 0; } return true; }
     case 'nest': { const us = unitsOf(pid, c.ids).filter(u => u.T.eng); if (!us.length) return false; const u = us.sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0]; u.o = 5; u.tx = +c.x; u.tz = +c.z; u.stuck = 0; return true; }
+    case 'repall': { let cost = 0; const bs = W.bld.filter(b => b.owner === pid && !b.dead && b.prog >= 1 && b.hp < b.maxHp - .5); for (const b of bs) cost += (b.maxHp - b.hp) * .3; cost = Math.ceil(cost); if (!bs.length || (p.sup < cost && !W.o.sandbox)) return false; p.sup -= cost; for (const b of bs) b.hp = b.maxHp; ev([3, pid, 'msg', 0, 0, 1, bs.length + ' buildings repaired for ' + cost + '.']); return true; }
     case 'rally': { const b = W.byId.get(c.b); if (!b || b.owner !== pid) return false; if (c.clear) { b.hasRally = false; return true; } b.hasRally = true; b.rx = clamp(+c.x, -M.hw + 3, M.hw - 3); b.rz = clamp(+c.z, -M.hd + 3, M.hd - 3); return true; }
     case 'build': return cmdBuild(p, c);
     case 'upg': return cmdUpgrade(p, c);
@@ -3934,7 +3960,7 @@ function sfx(name, x, z) {
 // =====================================================================
 //  UI STATE / INPUT
 // =====================================================================
-const UI = { mode: null, callId: null, form: 0, gspd: false, groups: {}, mx: 0, my: 0, overCanvas: false, keys: {}, lastClick: { t: 0, id: 0 }, touch: false, boxTouch: false, drag: null, ptrs: new Map(), pinch: null, selEnemy: null, did: {}, cardSig: '', selSig: '', specOpen: false, supOpen: false, more: false, lastAlert: null, chatOpen: false, mmDrag: false, camMoved: 0, hoverT: 0, inWin: false, tutorialTick: null };
+const UI = { mode: null, callId: null, form: 6, gspd: false, groups: {}, mx: 0, my: 0, overCanvas: false, keys: {}, lastClick: { t: 0, id: 0 }, touch: false, boxTouch: false, drag: null, ptrs: new Map(), pinch: null, selEnemy: null, did: {}, cardSig: '', selSig: '', specOpen: false, supOpen: false, more: false, lastAlert: null, chatOpen: false, mmDrag: false, camMoved: 0, hoverT: 0, inWin: false, tutorialTick: null };
 const CAMD = { min: 30, max: 135 };
 let CARD = [], inGame = false;
 function selUnitsArr() { const r = []; for (const id of selIds) { const u = W.byId.get(id); if (u && !u.dead) r.push(u); } return r; }
@@ -4184,7 +4210,7 @@ function onKey(e) {
     case 'k': if (selBld) { const b = W.byId.get(selBld); if (b && b.owner === ME && b.type !== 'hq') issue({ k: 'sell', b: selBld }); } return;
     case 'h': { const ids = selUnitsArr().map(u => u.id); if (ids.length) issue({ k: 'stop', ids }); return; }
     case 'j': { const ids = selUnitsArr().map(u => u.id); if (ids.length) issue({ k: 'hold', ids }); return; }
-    case 'y': UI.form = (UI.form + 1) % FORMS.length; toast('Formation: ' + FORMN[UI.form]); UI.cardSig = ''; return;
+    case 'y': { const j = FORMUI.indexOf(UI.form); UI.form = FORMUI[(j + 1) % FORMUI.length]; toast('Formation: ' + FORMN[UI.form]); UI.cardSig = ''; return; }
     case 'g': UI.gspd = !UI.gspd; toast('Stay together: ' + (UI.gspd ? 'on' : 'off')); UI.cardSig = ''; return;
     case 'r': retreatSel(); return;
     case 'u': { if (selBld) { issue({ k: 'upg', b: selBld }); UI.did.upg = 1; } return; }
@@ -4330,7 +4356,7 @@ function updStrip() {
   while (UI.deployLog.length && (now - UI.deployLog[0].at > 12000 || UI.deployLog.length > 40)) UI.deployLog.shift();
   const pb = prodBlds().filter(b => b.type !== 'hq' || rosTotal(b)); let full = 0, trn = 0, money = 0, army = 0, empty = 0, miss = 0;
   for (const b of pb) { const m = rosMissing(b); miss += m; if (!rosTotal(b)) empty++; else if (b.tr && b.wait !== 2) trn++; else if (b.wait === 1) money++; else if (b.wait === 2) army++; else if (!m) full++; }
-  const grp = {}; for (const d of UI.deployLog) grp[d.t] = (grp[d.t] || 0) + 1;
+  const grp = {}; for (const d of UI.deployLog) if (UT[d.t]) grp[d.t] = (grp[d.t] || 0) + 1;
   const chips = Object.keys(grp).slice(-7).map(t => '<div class="ch" style="' + iconStyle(t) + '" data-tip="' + esc(UT[t].n + '|Deployed recently.') + '"><b>' + grp[t] + '</b></div>').join('');
   const sig = [pb.length, full, trn, money, army, empty, miss, chips].join('/');
   if (el.dataset.s === sig) return; el.dataset.s = sig;
@@ -4365,7 +4391,7 @@ function coachHint() {
   const p = P(ME), my = W.units.filter(u => u.owner === ME), blds = W.bld.filter(b => b.owner === ME), hql = playerHQLvl(p);
   const has = t => blds.some(b => b.type === t && b.prog >= 1), flags = W.pts.filter(q => q.owner === ME && q.hq < 0).length, neutral = W.pts.some(q => q.owner < 0 && q.hq < 0), soldiers = my.filter(u => !u.T.eng).length;
   const foeFlag = W.pts.some(q => q.owner >= 0 && P(q.owner).team !== MYTEAM);
-  if (W.war) { const w = W.war, d = w.def; if (w.phase === 'prep') return ['Build up the Bastion, then start wave ' + w.wave + '.', d.name + ' lands in the ' + WDIRS[d.site] + '. Click a yellow + spot to build.']; if (w.phase === 'fight') return ['Wave ' + w.wave + ': hold the Bastion!', 'Destroy the enemy HQ in the ' + WDIRS[d.site] + ' or survive until the timer ends.']; }
+  if (W.war) { const w = W.war, d = w.def; if (w.phase === 'prep') return ['Wave ' + w.wave + (d.boss ? ' (BOSS)' : '') + ': ' + d.name + ', ' + d.title + '.', (warIntel(d) || 'Lands in the ' + WDIRS[d.site] + '.') + ' Build up, then press Start Wave.']; if (w.phase === 'fight') return ['Wave ' + w.wave + ': hold the Bastion!', 'Destroy the enemy HQ in the ' + WDIRS[d.site] + ' or survive until the timer ends.']; }
   if (!blds.some(b => b.type === 'barracks')) return ['Build a Barracks to train more soldiers.', p.sup >= BT.barracks.cost[0] ? 'Click your HQ flag, then pick Barracks.' : 'Save up ' + BT.barracks.cost[0] + ' money first.'];
   if (neutral && flags < 2) return ['Capture a gray flag. Flags give you money.', 'Select soldiers, then click the flag.'];
   { const eb = blds.find(b => b.ros && b.type !== 'hq' && b.prog >= 1 && rosTotal(b) < rosCap(b)); if (eb && soldiers < 14) return ['Your ' + eb.T.n + ' has room for ' + (rosCap(eb) - rosTotal(eb)) + ' more troops.', 'Click it, then click troop cards to fill its roster.']; }
@@ -4376,6 +4402,8 @@ function coachHint() {
   return ['Hold more flags than the enemy to win.', 'Drag to select troops. Click to send them.'];
 }
 
+// 2.2: one broken HUD part must not break the game (it is logged, the rest keeps working)
+function hudSafe(f, a) { try { f(a); } catch (e) { const k = f.name + ':' + e.message; UI.hudErr = UI.hudErr || {}; if (!UI.hudErr[k]) { UI.hudErr[k] = 1; console.error('HUD', f.name, e); window.__errs.push('hud ' + f.name + ': ' + (e && e.stack || e)); } if (f === renderPanel) { selIds.clear(); selBld = 0; UI.selEnemy = null; } } }
 function hudUpdate(force) {
   if (!W || !inGame) return; const p = P(ME); if (!p) return;
   $('#vSup').textContent = Math.floor(p.sup); $('#vInc').textContent = '+' + Math.round(p.inc) + '/s'; $('#vPop').textContent = p.pop + '/' + (isFinite(p.popCap) ? p.popCap : '\u221e'); $('#stArmy').classList.toggle('low', p.pop >= p.popCap);
@@ -4384,12 +4412,12 @@ function hudUpdate(force) {
   // 2.0: while a mouse button / finger is down on the HUD, do not rebuild it: a button replaced between press and release
   // swallows the click (this lost most clicks on troop cards while a building was training)
   const hold = UI.hudDown && !force;
-  if (!hold) { updScore(); updGoal(); }
+  if (!hold) { hudSafe(updScore); hudSafe(updGoal); }
   for (const id of [...selIds]) { const u = W.byId.get(id); if (!u || u.dead) selIds.delete(id); }
   if (selBld && !W.byId.get(selBld)) { selBld = 0; UI.selEnemy = null; UI.cardSig = ''; }
-  updModeBar(); if (!hold) { renderPanel(force); updStrip(); updSquads(force); updQuick(force); updSup(force); }
+  hudSafe(updModeBar); if (!hold) { hudSafe(renderPanel, force); hudSafe(updStrip); hudSafe(updSquads, force); hudSafe(updQuick, force); hudSafe(updSup, force); }
   if (UI.tutorialTick) UI.tutorialTick();
-  if (techOpen && !hold) updTech();
+  if (techOpen && !hold) hudSafe(updTech);
 }
 function updScore() {
   const bl = teamBleed(); let sig = ''; for (const t of W.teamList) sig += t.id + ':' + Math.max(0, Math.round(t.tickets)) + (t.alive ? '' : 'x') + (bl[t.id] || 0) + '|';
@@ -4414,7 +4442,7 @@ function updGoal() {
   const el = $('#goal'); let mine = ptsOfTeam(MYTEAM), theirs = 0; for (const t of W.teamList) if (t.id !== MYTEAM) theirs = Math.max(theirs, ptsOfTeam(t.id));
   if (W.war) {   // 3.1 Endless War status
     const w = W.war, d = w.def; let lg, st;
-    if (w.phase === 'prep') { lg = d.name + ' (' + d.title + ') will land in the ' + WDIRS[d.site] + '. Start when ready.'; st = (w.hold && (SCREEN === 'warwave' || W.t - (w.holdT || 0) <= 3)) || w.go ? '<span class="st t">Get ready...</span>' : '<button class="sm wgo" data-warnow="1" style="pointer-events:auto">Start Wave ' + w.wave + '</button>'; }
+    if (w.phase === 'prep') { lg = (d.boss ? 'BOSS WAVE. ' : '') + d.name + ' (' + d.title + ') lands in the ' + WDIRS[d.site] + (WMODS[d.mod] ? '. Twist: ' + WMODS[d.mod].n : '') + '.'; st = (w.hold && (SCREEN === 'warwave' || W.t - (w.holdT || 0) <= 3)) || w.go ? '<span class="st t">Get ready...</span>' : '<button class="sm wgo" data-warnow="1" style="pointer-events:auto">Start Wave ' + w.wave + '</button>'; }
     else if (w.phase === 'fight') { const e = W.players[1], hq = e.hqB; lg = 'Wave ' + w.wave + ': destroy ' + d.name + "'s HQ in the " + WDIRS[d.site] + ', or hold out until time runs out.'; st = '<span class="st ' + (w.t < 60 ? 'w' : 't') + '">' + fmtTime(w.t) + ' left</span>' + (hq && !hq.dead ? '<span class="st l">Enemy HQ ' + Math.ceil(hq.hp / hq.maxHp * 100) + '%</span>' : ''); }
     else { lg = 'The Bastion has fallen.'; st = ''; }
     const sg = 'W' + lg + st; if (sg === el.dataset.s) return; el.dataset.s = sg; el.innerHTML = w.phase === 'prep' ? '<b>WAVE ' + w.wave + '</b>' + st + '<span class="lg">' + esc(lg) + '</span><span class="sh">Prepare</span>' : '<b>WAVE ' + w.wave + '</b><span class="lg">' + esc(lg) + '</span><span class="sh">Wave ' + w.wave + '</span>' + st;
@@ -4440,8 +4468,8 @@ function updModeBar() {
   else if (UI.mode === 'nest') t = 'Click where the Engineer should build a Sandbag Nest.';
   else if (UI.mode === 'guard') t = 'Click a flag (or any spot) for your troops to guard.';
   else if (UI.mode === 'rally') t = 'Click where new troops from this building should gather.';
-  else if (UI.mode === 'call') t = 'Click the map to use ' + CALL[UI.callId].n + '.';
-  else if (UI.mode === 'sbspawn') t = 'Click the map to place ' + UT[UI.sb.type].n + '.';
+  else if (UI.mode === 'call' && CALL[UI.callId]) t = 'Click the map to use ' + CALL[UI.callId].n + '.';
+  else if (UI.mode === 'sbspawn' && UI.sb && UT[UI.sb.type]) t = 'Click the map to place ' + UT[UI.sb.type].n + '.';
   if (el.dataset.t === t) return; el.dataset.t = t; if (!t) { el.classList.add('hidden'); return; } el.classList.remove('hidden'); el.innerHTML = '<span>' + esc(t) + '</span><button class="sm" id="modex">Cancel</button>'; $('#modex').onclick = () => setMode(null);
 }
 function updQuick(force) {
@@ -4585,11 +4613,11 @@ function rosStatus(b) {
   if (!tot) return h + '<span style="color:#9fd0ff">Click troop cards to pick what this building keeps.</span>';
   h += '<span style="color:#cdd8e6">' + have + ' alive.</span> ';
   if (b.wait) h += '<b style="color:#ff9a8c">' + (b.wait === 2 ? 'Army full' : 'Paused') + '</b>';
-  else if (b.tr) h += '<b style="color:#ffd37a">' + (b.tr.re ? 'Respawning ' : 'Training ') + UT[b.tr.u].n + ' (' + Math.ceil(Math.max(0, b.tr.dur - b.tr.t)) + 's)</b>';
+  else if (b.tr) h += '<b style="color:#ffd37a">' + (b.tr.re ? 'Respawning ' : 'Training ') + (UT[b.tr.u] ? UT[b.tr.u].n : 'troops') + ' (' + Math.ceil(Math.max(0, b.tr.dur - b.tr.t)) + 's)</b>';
   else h += '<b style="color:#8ff0b4">Full strength</b>';
   return h;
 }
-const FORMTIP = ['A tidy block.', 'A wide line facing the target: every gun can fire.', 'An arrow pointing at the enemy.', 'Spread far apart: less hurt by artillery and bombs.', 'Two by two in a long column: good on roads and bridges.', 'A ring around the spot: holds a flag from every side.'];
+const FORMTIP = ['A tidy block.', 'A wide line facing the target: every gun can fire.', 'An arrow pointing at the enemy.', 'Spread far apart: less hurt by artillery and bombs.', 'Two by two in a long column: good on roads and bridges.', 'A ring around the spot: holds a flag from every side.', 'No formation: the group keeps its shape (squeezed together if it is spread out). Clicking the selected formation again also switches back to this.'];
 function cycleTarget(us) { const tps = new Set(us.map(u => u.tp | 0)), cur = tps.size === 1 ? [...tps][0] : -1, nv = (cur + 1) % 5; if (issue({ k: 'tp', ids: us.map(u => u.id), v: nv })) { if (!W.mirror) for (const u of us) u.tp = nv; toast('Target: ' + TPN[nv]); sfx('click'); } UI.cardSig = ''; hudUpdate(true); }
 function hpHtml(f, col) { return '<div class="hpbar"><i style="width:' + Math.round(f * 20) * 5 + '%' + (col ? ';background:' + col : '') + '"></i></div>'; }
 function renderPanel(force) {
@@ -4615,7 +4643,7 @@ function renderPanel(force) {
       items.push({ nm: 'Stay together', ico: 'army', d: 'Walk at the slowest speed.', hk: 'G', on: UI.gspd, tip: 'Stay together (G)|The whole group moves at the speed of its slowest unit.', fn: () => { UI.gspd = !UI.gspd; UI.cardSig = ''; hudUpdate(true); } });
     }
     // 4.1: formation picker, always visible
-    FORMN.forEach((f, i) => { hb['f' + i] = () => { UI.form = i; UI.cardSig = ''; sfx('click'); hudUpdate(true); }; hbtns += '<button class="sm' + (UI.form === i ? ' on' : '') + '" data-hb="f' + i + '" data-tip="' + esc('Formation: ' + f + '|' + FORMTIP[i] + ' Used the next time you give an order (Y cycles).') + '">' + f + '</button>'; });
+    FORMUI.forEach(i => { const f = FORMN[i]; hb['f' + i] = () => { UI.form = UI.form === i ? 6 : i; UI.cardSig = ''; sfx('click'); hudUpdate(true); }; hbtns += '<button class="sm' + (UI.form === i ? ' on' : '') + '" data-hb="f' + i + '" data-tip="' + esc('Formation: ' + f + '|' + FORMTIP[i] + ' Used the next time you give an order. Y cycles; click it again to go back to Free.') + '">' + f + '</button>'; });
     head += '<div class="hbtns fm">' + hbtns + '</div>';
   } else if (b && b.owner === ME) {
     const T = b.T, spn = b.spec ? T.specs.find(s => s.id === b.spec) : null;
@@ -4655,7 +4683,7 @@ function renderPanel(force) {
   } else if (b) {
     const T = b.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle('b_' + b.type) + '"></div><div class="pt" style="color:' + (b.team === MYTEAM ? '#9fd0ff' : '#ff9a8c') + '">' + T.n + '<small>' + (b.team === MYTEAM ? 'Ally' : 'Enemy') + ' Lv ' + b.lvl + '</small></div></div>' + hpHtml(b.hp / b.maxHp, b.team === MYTEAM ? '' : '#e14a3a') + '<div class="pm">' + (b.team === MYTEAM ? '' : 'Select your troops, then click this to attack.') + '</div>';
   } else if (UI.selEnemy && !UI.selEnemy.dead) {
-    const e = UI.selEnemy, T = e.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle(e.type) + '"></div><div class="pt" style="color:#ff9a8c">' + T.n + '<small>Enemy ' + T.role + '</small></div></div>' + hpHtml(e.hp / e.maxHp, '#e14a3a') + '<div class="pm">Select your troops, then click it to attack.</div>';
+    const e = UI.selEnemy, T = e.T; head = '<div class="ph1"><div class="pic" style="' + iconStyle(e.type) + '"></div><div class="pt" style="color:#ff9a8c">' + esc(e.nick || T.n) + '<small>Enemy ' + (e.boss ? 'BOSS' : T.role) + '</small></div></div>' + hpHtml(e.hp / e.maxHp, '#e14a3a') + '<div class="pm">Select your troops, then click it to attack.</div>';
   } else if (selPad && W.pts[selPad.pt]) {
     const pt = W.pts[selPad.pt];
     if (pt.owner === ME) {
@@ -4685,7 +4713,8 @@ function renderPanel(force) {
     }
   } else {
     const h = coachHint(); head = '<div class="coach">' + ic('flag') + '<div>' + esc(h[0]) + '<small>' + esc(h[1]) + '</small></div></div>'; wide = true;
-    if (W.war && W.war.phase === 'prep' && !W.o.mp) { const w = W.war; wide = false; items.push({ nm: w.go ? 'Starting...' : 'Start Wave ' + w.wave, key: 'warnow', big: 1, ico: 'fight', go: !w.go, off: !!w.go, d: w.def.title, s: w.def.title, tip: 'Start wave ' + w.wave + '|' + w.def.name + ' (' + w.def.title + ') lands in the ' + WDIRS[w.def.site] + '. Your progress is saved first.', fn: () => { initAudio(); ACT.warnow(); UI.cardSig = ''; hudUpdate(true); } }); }
+    if (W.war && W.war.phase === 'prep' && !W.o.mp) { const w = W.war; wide = false; let rc = 0, rn = 0; for (const bb of W.bld) if (bb.owner === ME && !bb.dead && bb.prog >= 1 && bb.hp < bb.maxHp - .5) { rc += (bb.maxHp - bb.hp) * .3; rn++; } rc = Math.ceil(rc);
+      if (rn) items.push({ nm: 'Repair all', key: 'repall', ico: 'build', cost: rc, off: p.sup < rc, d: rn + ' damaged', tip: 'Repair all|Fix all ' + rn + ' damaged buildings at once for ' + rc + ' money (Engineers do it for free, but slowly).', fn: () => { if (issue({ k: 'repall' })) sfx('done'); else { sfx('deny'); toast('Not enough money to repair everything (' + rc + ').'); } UI.cardSig = ''; hudUpdate(true); } }); items.push({ nm: w.go ? 'Starting...' : 'Start Wave ' + w.wave, key: 'warnow', big: 1, ico: 'fight', go: !w.go, off: !!w.go, d: w.def.title, s: w.def.title, tip: 'Start wave ' + w.wave + '|' + w.def.name + ' (' + w.def.title + ') lands in the ' + WDIRS[w.def.site] + '. Your progress is saved first.', fn: () => { initAudio(); ACT.warnow(); UI.cardSig = ''; hudUpdate(true); } }); }
   }
   // 2.1: the deck is built once; the selection side is replaced only when it changes, and the tiles are updated in
   // place (same elements), so a button never disappears from under the mouse
@@ -4768,14 +4797,14 @@ SCREENS.main = () => {
   const r = rankOf(PROF.xp), first = !PROF.tutDone;
   return `<div class="scr"><div class="panel" style="width:min(430px,96vw);background:rgba(10,15,22,.88)">
   <div class="title">FRONTLINE</div><div class="sub">Command</div><div class="note" style="text-align:center;margin:-4px 0 6px;color:#d9c79a"><i>${esc(LORE.world.tagline)}</i></div>
-  <button class="mbtn ${first ? 'go' : ''}" data-act="tutorial">${first ? 'Start here: ' : ''}Tutorial<small>Learn the game in about 3 minutes</small></button>
-  <button class="mbtn ${first ? '' : 'go'}" data-act="campaign">Campaign${CAMP && !CAMP.over ? ': Continue' : ''}<small>${CAMP && !CAMP.over ? 'Operation ' + esc(CAMP.name) + ' - stage ' + (CAMP.stage + 1) + ' of ' + CSTAGES : 'A run of ' + CSTAGES + ' different missions. Earn Doctrines as you win.'}</small></button>
-  <button class="mbtn" data-act="war">Endless War${WAR ? ': Wave ' + WAR.wave : ''}<small>${WAR ? 'Your Bastion is waiting. Best wave: ' + WAR.best : 'Build a huge fortress and hold it against wave after wave. Everything saves.'}</small></button>
+  <button class="mbtn go" data-act="war" style="font-size:20px">Endless War${WAR ? ': Wave ' + WAR.wave : ''}<small>${WAR ? 'Your Bastion is waiting. Best wave: ' + WAR.best : 'Build a huge fortress and hold it against wave after wave. Everything saves.'}</small></button>
+  <button class="mbtn" data-act="tutorial">${first ? 'New? Start here: ' : ''}Tutorial<small>Learn the game in about 3 minutes</small></button>
+  <button class="mbtn" data-act="campaign">Campaign${CAMP && !CAMP.over ? ': Continue' : ''}<small>${CAMP && !CAMP.over ? 'Operation ' + esc(CAMP.name) + ' - stage ' + (CAMP.stage + 1) + ' of ' + CSTAGES : 'A run of ' + CSTAGES + ' different missions. Earn Doctrines as you win.'}</small></button>
   <button class="mbtn" data-act="skirmish">Quick Battle<small>Pick a map and an enemy commander</small></button>
   <button class="mbtn" data-act="mp">Play a Friend Online<small>Share a 6-digit code. 1 vs 1.</small></button>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="help">How to Play</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:15px;padding:10px 4px" data-act="settings">Settings</button></div>
   <div class="row" style="gap:6px;margin-top:6px"><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="codex">Field Guide</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="sandbox">Sandbox</button><button class="mbtn" style="flex:1;margin:0;text-align:center;font-size:14px;padding:8px 4px;min-height:44px" data-act="profile">Profile</button></div>
-  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> a brand-new battle screen that fits any screen size (nothing gets cut off; change its size in Settings), square command tiles with pages instead of a scrolling row, and buttons that react the moment you press them so clicks are never lost. Clicking next to your own buildings with troops selected now moves them, and clicking the map closes Upgrades and Support. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
+  ${PROF.games > 0 && PROF.seenVer !== VERSION ? `<div class="note" style="margin-top:10px;padding:8px 10px;border:1px solid #3a566f;border-radius:10px;background:#0d1a28"><b style="color:#ffe2a6">New in ${VERSION}:</b> Endless War waves now have twists (Air Raid, Siege, Blitz, Fortress and more) and every 5th wave brings a Warlord boss with a bounty; Repair All between waves. Formations rebuilt: Free is the default (click a formation again to go back), soldiers form up in front with vehicles and support behind, and big armies stay compact. Troops that spawn in tight spots can walk through buildings to get out. Fixed a crash when loading a save. <button class="sm" data-act="newsok">Got it</button></div>` : ''}
   <div class="note" style="text-align:center;margin-top:12px">${esc(SET.name)} - <b style="color:#ffe2a6">${RANKS[r][0]}</b> - ${PROF.wins} wins - v${VERSION}</div></div></div>`;
 };
 SCREENS.welcome = () => `<div class="scr bg"><div class="panel" style="width:min(460px,96vw);text-align:center">
@@ -5046,8 +5075,21 @@ function warDef(wave) {
   const style = wpick(r, keys); let site = (r() * 8) | 0; if (site === WAR.lastSite) site = (site + 3) % 8;
   const name = wpick(r, L.ranks) + ' ' + wpick(r, L.namesFirst) + ' ' + wpick(r, L.namesLast), ep = wpick(r, L.epithets);
   const diff = wave < 3 ? 'normal' : wave < 9 ? 'hard' : 'brutal';
-  return { wave, style, site, name, ep, diff, title: L.styles[style].title, taunt: wpick(r, L.styles[style].lines) };
+  const boss = wave % 5 === 0, mod = wave >= 4 ? wpick(r, Object.keys(WMODS).filter(k => !(k === 'air' && style === 'air') && !(k === 'armor' && style === 'armor'))) : '';
+  return { wave, style, site, name, ep, diff, title: L.styles[style].title, taunt: wpick(r, L.styles[style].lines), mod, boss };
 }
+// 2.2: every wave from 4 on has a twist, and every 5th wave the enemy commander comes with a Warlord
+const WMODS = {
+  armor: { n: 'Armored Push', d: 'The enemy brings far more tanks. Bazookas and Cannon Towers!', rw: 1.2, bld: ['factory'], uw: { tank: 3, lighttank: 2.5, apc: 1.5, heavy: 1 } },
+  air: { n: 'Air Raid', d: 'Swarms of helicopters and planes. Build Flak Towers and AA.', rw: 1.2, bld: ['airfield', 'airfield'], uw: { heli: 3, gunship: 2, drone: 2.5, strike: 1.5 } },
+  siege: { n: 'Siege', d: 'Artillery and mortars shell you from long range. Hit them fast.', rw: 1.25, bld: ['arty'], uw: { artillery: 3, mlrs: 2.5, mortar: 2 } },
+  swarm: { n: 'Swarm', d: 'Half again as many enemy troops, mostly cheap infantry.', rw: 1.2, army: 1.5, uw: { rifleman: 4, grenadier: 2, scout: 1.5 } },
+  veterans: { n: 'Veterans', d: 'Every enemy troop is a veteran: tougher and deadlier.', rw: 1.3, vet: 1 },
+  blitz: { n: 'Blitz', d: 'Only 4 minutes, and they attack at once. Survive for a big reward.', rw: 1.5, time: 240, atk: .2 },
+  fortress: { n: 'Fortress', d: 'Their landing site bristles with towers. Their HQ is worth more.', rw: 1.35, towers: 4 },
+  relentless: { n: 'Relentless', d: 'Enemy reinforcements land twice as often.', rw: 1.3, rein: .5 }
+};
+function warIntel(d) { const M = WMODS[d.mod]; return (M ? M.n + ': ' + M.d : '') + (d.boss ? (M ? ' ' : '') + 'BOSS WAVE: a Warlord leads the attack (big bounty).' : ''); }
 const WDIRS = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
 function warFill(t, d) { return t.replace(/\{name\}/g, d.name).replace(/\{dir\}/g, WDIRS[d.site]).replace(/\{wave\}/g, d.wave); }
 function warValue(p) { let v = 0; for (const b of W.bld) if (b.owner === p.id && b.type !== 'nest') v += b.spent || 0; for (const id in p.techs) v += TECHBY[id] ? TECHBY[id].cost : 0; return v; }
@@ -5116,7 +5158,7 @@ function warTick() {
     warSave();                 // everything done to the Bastion between waves is saved right away (once a second)
     if (w.go) warSpawn();      // the wave only starts when the player presses Start Wave
   } else if (w.phase === 'fight') {
-    if ((w.rt = (w.rt === undefined ? 60 : w.rt) - 1) <= 0) { w.rt = Math.max(45, 90 - w.wave * 2); warReinforce(); }
+    if ((w.rt = (w.rt === undefined ? 60 : w.rt) - 1) <= 0) { w.rt = Math.max(45, 90 - w.wave * 2) * ((WMODS[w.def.mod] || {}).rein || 1); warReinforce(); }
     w.t--; if (w.t === 60) ev([3, 0, 'msg', 0, 0, 3, 'One minute left. Hold the Bastion and the enemy will give up!']);
     if (w.t <= 0) warWon('held');
   }
@@ -5129,14 +5171,15 @@ function warSpawn() {
   site.owner = e.id; site.ctrl = 1; site.capP = e.id;
   const hq = placeBuilding('hq', e.id, site, -1, true); e.hqB = hq;
   // build a base and army that rivals the player's
-  const base = AIP[S.pers], persObj = Object.assign({}, base, { id: base.id, uw: S.uw || base.uw, bld: S.bld.filter(t => t !== 'wall').concat(base.bld) });
+  const MD = WMODS[d.mod] || {}, sbld = (MD.bld || []).concat(S.bld).slice(0, Math.max(S.bld.length, 6));
+  const base = AIP[S.pers], persObj = Object.assign({}, base, { id: base.id, uw: Object.assign({}, S.uw || base.uw, MD.uw || {}), bld: sbld.filter(t => t !== 'wall').concat(base.bld) });
   let money = 1400 + wave * 350 + warValue(me) * Math.min(1.4, .5 + wave * .05); const spend = c => { if (money < c) return false; money -= c; return true; };
-  const armyMoney = money * .5, techMoney = money * .15; money -= armyMoney + techMoney;     // 35% base, 15% upgrades, 50% army
+  const armyMoney = money * .5 * (MD.army || 1) * (d.boss ? 1.2 : 1), techMoney = money * .15; money -= money * .65;     // 35% base, 15% upgrades, 50% army
   if (wave >= 3 && spend(BT.hq.cost[1])) hq.lvl = 2; if (wave >= 9 && hq.lvl === 2 && spend(BT.hq.cost[2])) hq.lvl = 3; refreshB(hq); hq.hp = hq.maxHp;
   { let tm = techMoney; const nt = Math.min(TECH.length, Math.floor(wave * .7)); for (const id of persObj.tech.concat(TECH.map(t => t.id))) { if (Object.keys(e.techs).length >= nt) break; const t = TECHBY[id]; if (e.techs[id] || !t || (t.tier > 1 && !e.techs[TECH.find(x => x.br === t.br && x.tier === t.tier - 1).id])) continue; if (tm >= t.cost * .7) { tm -= t.cost * .7; e.techs[id] = 1; } } money += tm; }
   recalcMods(e);
   const maxL = Math.min(3, 1 + Math.floor(wave / 3)), blds = [];
-  S.bld.forEach((t, k) => {
+  sbld.forEach((t, k) => {
     if (t === 'wall') { if (!site.wall && spend(BT.wall.cost[0])) { const b = placeBuilding('wall', e.id, site, -2, true); b.slot = -2; } return; }
     const T = BT[t]; if (k >= site.slots.length || site.slots[k].b || (T.hq1 || 1) > hq.lvl || (T.max && bCount(e, t) >= T.max) || !spend(T.cost[0])) return;
     const b = placeBuilding(t, e.id, site, k, true); b.spent = T.cost[0];
@@ -5146,7 +5189,7 @@ function warSpawn() {
   });
   // 4.2: towers on the landing site's defense pads (more and bigger as waves go up)
   { const DL = d.style === 'turtle' || d.style === 'artillery' ? ['cannon', 'mortarpit', 'turret', 'flakt', 'tesla', 'shieldgen'] : d.style === 'air' ? ['flakt', 'turret', 'cannon'] : ['turret', 'cannon', 'flakt', 'mortarpit', 'tesla'];
-    let nd = Math.min(6, Math.floor(wave / 2) + (d.style === 'turtle' ? 2 : 0)), i = 0;
+    let nd = Math.min(MD.towers ? 10 : 6, Math.floor(wave / 2) + (d.style === 'turtle' ? 2 : 0) + (MD.towers || 0)), i = 0;
     for (let k = 0; k < site.slots.length && nd > 0; k++) { const sl = site.slots[k]; if (!sl.d || sl.b) continue; const t = DL[i++ % DL.length], T = BT[t]; if ((T.hq1 || 1) > hq.lvl || !spend(T.cost[0])) continue; const b = placeBuilding(t, e.id, site, k, true); b.spent = T.cost[0]; while (b.lvl < maxL && (b.lvl < 2 || hq.lvl >= 2) && spend(T.cost[b.lvl])) { b.spent += T.cost[b.lvl]; b.lvl++; } if (b.lvl >= 3 && spend(SPEC_COST)) b.spec = T.specs[(Math.random() * 3) | 0].id; refreshB(b); b.hp = b.maxHp; nd--; } }
   // fill the rosters, spreading troops over every building
   money += armyMoney;
@@ -5155,11 +5198,15 @@ function warSpawn() {
     for (const b of blds) { if (!b.ros || rosTotal(b) >= rosCap(b)) continue; const ul = unitsForB(b).filter(t => rosFits(b, t)); if (!ul.length) continue; let sum = 0; const sc = ul.map(t => { const v = (persObj.uw[t] !== undefined ? persObj.uw[t] : .2) / Math.pow(1 + (b.ros[t] || 0) / 3, .8); sum += v; return v; }); let r = Math.random() * sum, pick = ul[0]; for (let i = 0; i < ul.length; i++) { r -= sc[i]; if (r <= 0) { pick = ul[i]; break; } } const c = slotCost(e, pick, b); if (!spend(c)) continue; b.ros[pick] = (b.ros[pick] || 0) + 1; b.paid[pick] = (b.paid[pick] || 0) + c; b.spent += c; added = true; }
     if (!added) break;
   }
-  let epop = 0; for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k] && epop < 400; i++) { epop += UT[k].pop; const u = spawnFromBuilding(b, k, i); if (S.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
+  let epop = 0; for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k] && epop < 400; i++) { epop += UT[k].pop; const u = spawnFromBuilding(b, k, i); if (S.vet || MD.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
   e.sup = clamp(money * .5, 200, 600 + wave * 150); e.pop = 0; for (const u of W.units) if (u.owner === e.id) e.pop += u.T.pop;
-  const over = Object.assign({ firstAtk: 25, hqPower: 0, warn: 4, startDelay: 0, popLim: 999 }, S.over);
+  const over = Object.assign({ firstAtk: 25, hqPower: 0, warn: 4, startDelay: 0, popLim: 999 }, S.over); if (MD.atk) { over.atkMul = MD.atk; over.firstAtk = 5; }
   e.ai = makeAI(e, { pers: S.pers, diff: d.diff, over, persObj });
-  w.phase = 'fight'; w.t = Math.min(720, 360 + wave * 20);
+  w.phase = 'fight'; w.t = MD.time || Math.min(720, 360 + wave * 20);
+  if (d.boss && UT.titan) {   // the Warlord: a huge, tough walker with the commander's name
+    const q = snapFree(W.M, hq.x + 10, hq.z + 10, 8), bu = spawnUnit('titan', e.id, q[0], q[1], { vet: 2, hpB: 4 + wave * .1, dmB: 1.5 }); refreshUnit(bu); bu.hp = bu.maxHp; bu.boss = 1; bu.nick = 'Warlord ' + d.name.split(' ').slice(-1)[0];
+    ev([3, 0, 'msg', r1(q[0]), r1(q[1]), 3, 'BOSS WAVE: ' + bu.nick + ' leads the attack. Destroy it for a big bounty!']);
+  }
   ev([3, 0, 'msg', r1(site.x), r1(site.z), 3, warFill(wpick(Math.random, LORE.war.waveIntro), d)]);
   ev([11, e.id, d.taunt]);
 }
@@ -5177,7 +5224,7 @@ function warReinforce() {
 function warHqDown(b) { if (b.owner === 0) warLost(); else warWon('hq'); }
 function warWon(how) {
   const w = W.war, d = w.def, me = W.players[0], e = W.players[1]; if (w.phase !== 'fight') return;
-  const reward = Math.round((300 + d.wave * 110) * (how === 'hq' ? 1.5 : 1)); me.sup += reward;
+  const reward = Math.round((300 + d.wave * 110) * (how === 'hq' ? 1.5 : 1) * ((WMODS[d.mod] || {}).rw || 1) * (d.boss ? 1.5 : 1)); me.sup += reward;
   WAR.kills += me.stats.kills - (w.k0 || 0); w.k0 = me.stats.kills;
   warWipe(e); W.teams[e.team].alive = false;
   WAR.hist.unshift([d.wave, d.name, how === 'hq' ? 'won' : 'held']); WAR.hist.length = Math.min(WAR.hist.length, 12);
@@ -5221,7 +5268,7 @@ SCREENS.warwave = (r) => `<div class="scr bg"><div class="panel" style="width:mi
   <div class="note" style="font-size:15px;color:#e6eef7;margin:8px 0">${esc(r.line)}</div><div class="note"><b style="color:#7be08a">+${r.reward} money</b>${r.how === 'hq' ? ' (HQ bonus)' : ''}. Progress saved.</div>
   ${r.ms ? `<div class="note" style="margin:10px 0;padding:10px;border:1px solid #8a6a28;border-radius:10px;background:#1a150a;color:#ffe2a6;text-align:left"><b>War report, wave ${WAR.wave}</b><br>${esc(r.ms)}</div>` : ''}
   ${WAR.offer ? `<div class="lbl" style="text-align:left">Pick a Doctrine (lasts for the whole war)</div>${warDocCards(WAR.offer)}` : ''}
-  <div class="note" style="margin-top:10px">Next: <b style="color:#ff9a8c">${esc(r.next.name)}</b> (${esc(r.next.title)}) from the ${WDIRS[r.next.site]}. Take your time to build; the wave starts when you press <b>Start Wave</b>.</div>
+  <div class="note" style="margin-top:10px">Next: <b style="color:#ff9a8c">${esc(r.next.name)}</b> (${esc(r.next.title)}) from the ${WDIRS[r.next.site]}.${warIntel(r.next) ? ' <b style="color:#ffe2a6">' + esc(warIntel(r.next)) + '</b>' : ''} Take your time to build; the wave starts when you press <b>Start Wave</b>.</div>
   ${WAR.offer ? '' : '<button class="mbtn go" data-act="warnext">Prepare for wave ' + WAR.wave + '</button>'}<button class="mbtn" data-act="warmenu">Save and leave</button></div></div>`;
 SCREENS.warlost = (r) => `<div class="scr bg"><div class="panel" style="width:min(520px,98vw);text-align:center"><div class="title" style="font-size:clamp(28px,6vw,48px);background:linear-gradient(180deg,#ffd0c8,#d4483a 60%,#7a1d14);-webkit-background-clip:text;background-clip:text">THE BASTION FELL</div>
   <div class="sub">Wave ${r.wave} - ${esc(r.name)}</div><div class="note" style="font-size:15px;color:#e6eef7;margin:10px 0">${esc(r.line)}</div>
@@ -5727,13 +5774,15 @@ function keepEv() { const k = W.ev.filter(e => e[0] === 12); W.ev.length = 0; fo
 function showLoading(on, txt) { const l = $('#loading'); if (!l) return; l.style.display = on ? 'flex' : 'none'; if (txt) l.firstChild.textContent = txt; }
 function startGame(cfg, opt) {
   opt = opt || {}; LASTCFG = cfg; LASTOPT = opt.mp ? null : opt; showLoading(true, 'Tip: ' + LORE.tips[(Math.random() * LORE.tips.length) | 0]); closeScreen();
-  setTimeout(() => { try { launch(cfg, opt); } catch (err) { console.error(err); window.__errs.push('launch: ' + (err && err.stack || err)); inGame = false; showScreen('notice', { title: 'Could not start', msg: String(err && err.message || err) }); } showLoading(false); }, 40);
+  setTimeout(() => { try { launch(cfg, opt); } catch (err) { console.error(err); window.__errs.push('launch: ' + (err && err.stack || err)); inGame = false; const at = String(err && err.stack || '').split('\n').slice(1, 3).map(l => l.trim().replace(/^at /, '').replace(/\(?https?:[^)]*?:(\d+):\d+\)?/, 'line $1')).join(' < '); showScreen('notice', { title: 'Could not start', msg: String(err && err.message || err) + (at ? ' [' + at + ']' : '') + ' - please send a screenshot of this.' }); } showLoading(false); }, 40);
 }
 function launch(cfg, opt) {
+  // 2.2: forget everything about the last battle BEFORE the new world exists (ids from the old world must never be looked up in the new one)
+  try { clearSel(); } catch (e) { } selIds.clear(); selBld = 0; UI.selEnemy = null; UI.mode = null; UI.callId = null; UI.groups = {}; UI.sqInfo = {}; UI.sqPend = {}; UI.known = null; UI.deployLog = []; UI.bsq = {}; UI.page = 0; UI.pageKey = ''; UI.supOpen = false; UI.specOpen = false; UI.more = false; UI.hudDown = false; try { closeTech(); } catch (e) { }
   cleanupGameUI(); const c = Object.assign({}, cfg, { mp: !!opt.mp, mirror: !!opt.mirror, debug: DEBUG }); if (opt.mp || c.tutorial) c.events = false;
   if (c.tutorial) c.bigStart = false; if (!c.mirror && !c.war) c.maxPop = Math.min(c.maxPop || 120, Math.max(60, SET.maxUnits)); createWorld(c); ME = opt.me || 0; W.o.mp = !!opt.mp;
   buildWorldVisuals(); inGame = true; resultsShown = false; MODE = 'game'; $('#hud').classList.remove('hidden');
-  hudInit(); hudScale(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.sqInfo = {}; UI.sqPend = {}; UI.did = {}; UI.mode = null; UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
+  hudInit(); UI.tixWarn = 0; UI.known = null; UI.deployLog = []; clearSel(); UI.groups = {}; UI.sqInfo = {}; UI.sqPend = {}; UI.did = {}; UI.mode = null; hudScale(); UI.camMoved = 0; UI.lastAlert = null; UI.tutorialTick = null; UI.tutFrame = null; TUT = null; $('#tut').classList.add('hidden'); $('#tut').innerHTML = ''; $('#netbar').classList.add('hidden');
   if (UI.touch) showTouchBtns(true); simAcc = 0; applyGfx(); try { mmBuild(); } catch (e) { } hudUpdate(true); closeScreen(); startTicker();
   if (c.mirror) { W.lastSnap = 0; }
   if (c.war) warRestoreSquads();
