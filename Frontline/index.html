@@ -462,7 +462,7 @@ import * as THREE from 'three';
 //  FRONTLINE: COMMAND 2.3  -  single file RTS for Huntington Games
 //  Armies from the 1900s to the far future. Capture flags, hold more than the enemy.
 // =====================================================================
-const VERSION = '2.2';
+const VERSION = '2.3';
 const TICK = 0.05;                 // simulation step (20 Hz)
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -512,6 +512,7 @@ defU('grenadier', { n: 'Grenadier', role: 'Grenade thrower', cls: 0, pop: 1, cos
 defU('commando', { n: 'Commando', role: 'Elite soldier', cls: 0, pop: 2, cost: 240, bt: 16, hp: 175, spd: 7.5, vis: 30, r: 1, w: Wp('comm', 14, .55, 20), src: [['barracks', 3, 'elite']], d: 'Elite fighter. Wrecks buildings.', info: 'A tough, fast elite soldier with demolition charges. Strong against everything on the ground and brilliant against buildings. Needs the Veteran Training upgrade on a Level 3 Barracks.' });
 defU('medic', { n: 'Medic', role: 'Healer', cls: 0, pop: 1, cost: 80, bt: 9, hp: 55, spd: 6, vis: 24, r: .9, heal: 16, src: [['barracks', 2], ['medical', 1]], d: 'Heals nearby soldiers.', info: 'Heals wounded soldiers nearby automatically.' });
 defU('merc', { n: 'Mercenary', role: 'Hired gun', cls: 0, pop: 0, cost: 0, bt: 0, hp: 125, spd: 6.5, vis: 28, r: 1, w: Wp('bullet', 11, .55, 20), nobuild: 1, d: 'Hired soldier. Leaves after 2 minutes.', info: 'A hired veteran with a rifle. Arrives by parachute with the Hire Mercenaries power, takes no army space and leaves when the contract ends.' });
+defU('mechanic', { n: 'Mechanic', role: 'Repairs vehicles', cls: 0, pop: 1, cost: 80, bt: 9, hp: 75, spd: 6, vis: 24, r: .9, w: Wp('bullet', 4, 1, 10), mech: 1, rep: 34, src: [['factory', 1]], d: 'Repairs vehicles and buildings fast.', info: 'A Motor Pool grease monkey with a wrench and a toolbox. Follows your army and repairs damaged vehicles (first) and buildings more than twice as fast as an Engineer.' });
 defU('jeep', { n: 'Scout Car', role: 'Fast scout', cls: 1, pop: 2, cost: 100, bt: 9, hp: 140, spd: 12, vis: 34, r: 1.5, w: Wp('bullet', 5, .25, 17), src: [['factory', 1]], d: 'Very fast. Great for taking flags.', info: 'A fast, light car with a machine gun. Excellent at grabbing flags and chasing down weak units.' });
 defU('apc', { n: 'APC', role: 'Armored carrier', cls: 1, pop: 3, cost: 170, bt: 12, hp: 480, spd: 8.5, vis: 28, r: 1.7, tur: 1, w: Wp('bullet', 7, .2, 19), src: [['factory', 1]], d: 'Tough. Great vs soldiers.', info: 'An armored troop carrier with a roof-mounted machine gun. Tough and strong against soldiers, weak against bazookas.' });
 defU('lighttank', { n: 'Light Tank', role: 'Tank', cls: 1, pop: 3, cost: 220, bt: 15, hp: 400, spd: 8, vis: 28, r: 1.8, tur: 1, w: Wp('cannon', 36, 1.5, 25, { ps: 60 }), src: [['factory', 2]], d: 'Fast. Good vs cars and tanks.', info: 'A mobile cannon platform. Good against vehicles and buildings.' });
@@ -759,6 +760,7 @@ const LORE = {
   units: {
     rifleman: 'The backbone of every army, armed with sturdy rifles from the old Armories. Cheap, quick to train and brave, Riflemen take flags and hold ground better than anyone.',
     rocket: 'Two soldiers and one big tube that tanks fear. Bazooka Teams are slow to reload, but a few well-placed rockets can stop an armored column cold.',
+    mechanic: 'Mechanics keep the Motor Pool rolling. Send them behind your tanks and the wrecks keep fighting.',
     engineer: 'Engineers build, repair and patch things up under fire. A smart commander keeps them close, because a fixed bunker is cheaper than a new one.',
     scout: 'Fast on foot and hard to spot, Scouts run ahead to find enemy bases and empty flags. They are not great fighters, but they win wars with what they see.',
     heavy: 'Machine Gunners lug heavy belt-fed guns that pin down enemy infantry. Anyone charging across open ground toward one will quickly wish they had not.',
@@ -1930,7 +1932,7 @@ function updUnit(u, dt) {
   if (u.vet >= 3 && u.hp < u.maxHp) u.hp = Math.min(u.maxHp, u.hp + u.maxHp * .008 * dt);
   const w1 = T.w, w2 = T.w2; const weapons = w1 ? (w2 ? [w1, w2] : [w1]) : null;
   // ---- support abilities ----
-  if (T.heal) healTick(u, dt); if (T.eng) engTick(u, dt);
+  if (T.heal) healTick(u, dt); if (T.eng || T.mech) engTick(u, dt);
   // ---- target maintenance ----
   let tg = null;
   if (u.o === 3) { tg = W.byId.get(u.tid); if (!tg || tg.dead || (tg.k === 'u' && !teamVisible(u.team, tg) && Math.random() < .02)) { tg = null; u.o = u.am ? 2 : 0; } }
@@ -2035,12 +2037,12 @@ function engTick(u, dt) {
     u.healT = .5; const T = u.T; let best = null, bd = 1e9; const M = W.M;
     for (const b of W.bld) { if (b.team !== u.team || b.dead) continue; if (b.hp >= b.maxHp - 1 && b.prog >= 1 && !b.upg) continue; const d = Math.hypot(b.x - u.x, b.z - u.z); if (d < 36 && d < bd) { bd = d; best = b; } }
     const out = []; hashQ(u.x, u.z, 28, out);
-    for (const e of out) { if (e === u || e.team !== u.team || e.T.cls < 1 || e.hp >= e.maxHp - 1) continue; const d = Math.hypot(e.x - u.x, e.z - u.z); if (d < bd) { bd = d; best = e; } }
+    for (const e of out) { if (e === u || e.team !== u.team || e.T.cls < 1 || e.hp >= e.maxHp - 1) continue; const d = Math.hypot(e.x - u.x, e.z - u.z) * (T.mech ? .4 : 1); if (d < bd) { bd = d; best = e; } }   // mechanics go for vehicles first
     u.rep = best;
   }
   const r = u.rep; if (r && !r.dead && (r.hp < r.maxHp - .5 || (r.k === 'b' && (r.prog < 1 || r.upg)))) {
     const d = Math.hypot(r.x - u.x, r.z - u.z) - (r.k === 'b' ? r.sz * .5 : 1);
-    if (d < 6) { if (r.hp < r.maxHp) r.hp = Math.min(r.maxHp, r.hp + 14 * dt); u.aim = turnTo(u.aim, Math.atan2(r.x - u.x, r.z - u.z), 9, dt); u.repairing = .3; if (u.o === 0) { u.vx *= .7; u.vz *= .7; } }
+    if (d < 6) { if (r.hp < r.maxHp) r.hp = Math.min(r.maxHp, r.hp + (u.T.rep || 14) * dt); u.aim = turnTo(u.aim, Math.atan2(r.x - u.x, r.z - u.z), 9, dt); u.repairing = .3; if (u.o === 0) { u.vx *= .7; u.vz *= .7; } }
     else if (u.o === 0) moveTo(u, r.x, r.z, dt, 4);
   }
 }
@@ -2360,7 +2362,7 @@ function formationPositions(us, tx, tz, form) {
   }
   const spread = form === 'spread' ? 1.7 : 1;
   const wid = u => (u.T.air ? 3 : u.T.cls === 0 ? 1.9 : Math.max(3, u.T.r * 2 + .6)) * spread;
-  const pri = u => { const T = u.T, w = T.w || T.w2; if (T.heal || T.eng || (w && w.minr)) return 3; if (T.air) return 2; return T.cls === 0 ? 0 : 1; };
+  const pri = u => { const T = u.T, w = T.w || T.w2; if (T.heal || T.eng || T.mech || (w && w.minr)) return 3; if (T.air) return 2; return T.cls === 0 ? 0 : 1; };
   const lat = u => (u.x - cx) * rx + (u.z - cz) * rz;
   const order = us.map((u, i) => i).sort((a, b) => pri(us[a]) - pri(us[b]) || Math.hypot(us[a].x - tx, us[a].z - tz) - Math.hypot(us[b].x - tx, us[b].z - tz));
   let avg = 0; for (const u of us) avg += wid(u); avg /= n;
@@ -2985,6 +2987,7 @@ const MDL = {};
 function buildModels() {
   MDL.rifleman = infModel({ vest: OLIVE, pants: 0x3a4030 });
   MDL.rocket = infModel({ vest: 0x5a5f4a, gun: 'rocket', pants: 0x333a2c, pack: 'rocket' });
+  MDL.mechanic = infModel({ vest: 0x2f5f8f, rig: 0x26405c, hat: 'hard', helm: 0xd94a2a, gun: 'pistol', pants: 0x2f5f8f, pack: 'tools', extra: g => { g.box(.09, .4, .09, .4, .8, .16, STEEL); g.box(.22, .09, .09, .4, 1.0, .16, STEEL); g.box(.5, .06, .3, 0, 1.25, .2, 0x1d3550); } });
   MDL.engineer = infModel({ vest: 0xc9922f, rig: 0x6a5a3a, hat: 'hard', helm: 0xe9c33a, gun: 'pistol', pants: 0x4a4636, pack: 'tools', extra: g => { g.box(.68, .05, .42, 0, 1.3, 0, 0xd8dcd0); g.box(.68, .05, .42, 0, 1.0, 0, 0xd8dcd0); g.box(.07, .3, .07, -.42, .84, .12, STEEL); g.box(.2, .07, .07, -.42, .7, .12, STEEL); } });
   MDL.scout = infModel({ vest: 0x6b7a50, rig: 0x55603f, hat: 'cap', gun: 'pistol', pack: 'radio', lh: [-.07, 1.6, .26], extra: g => { g.box(.22, .1, .14, -.02, 1.67, .22, BLACK); g.box(.24, .12, .3, -.2, .56, .1, 0x55603f); } });
   MDL.heavy = infModel({ vest: 0x4b5240, rig: 0x2e3328, gun: 'lmg', pants: 0x2c3128, w: 1.18, pack: 'ammo', extra: g => { g.box(.27, .07, .04, 0, 1.7, .15, 0x1f2327); g.box(.5, .3, .1, 0, .7, .17, 0x2e3328); } });
@@ -4391,7 +4394,7 @@ function coachHint() {
   const p = P(ME), my = W.units.filter(u => u.owner === ME), blds = W.bld.filter(b => b.owner === ME), hql = playerHQLvl(p);
   const has = t => blds.some(b => b.type === t && b.prog >= 1), flags = W.pts.filter(q => q.owner === ME && q.hq < 0).length, neutral = W.pts.some(q => q.owner < 0 && q.hq < 0), soldiers = my.filter(u => !u.T.eng).length;
   const foeFlag = W.pts.some(q => q.owner >= 0 && P(q.owner).team !== MYTEAM);
-  if (W.war) { const w = W.war, d = w.def; if (w.phase === 'prep') return ['Wave ' + w.wave + (d.boss ? ' (BOSS)' : '') + ': ' + d.name + ', ' + d.title + '.', (warIntel(d) || 'Lands in the ' + WDIRS[d.site] + '.') + ' Build up, then press Start Wave.']; if (w.phase === 'fight') return ['Wave ' + w.wave + ': hold the Bastion!', 'Destroy the enemy HQ in the ' + WDIRS[d.site] + ' or survive until the timer ends.']; }
+  if (W.war) { const w = W.war, d = w.def; if (w.phase === 'prep') return ['Wave ' + w.wave + (d.boss ? ' (BOSS)' : '') + ': ' + d.name + ', ' + d.title + '.', 'Build up, then press Start Wave.']; if (w.phase === 'fight') return ['Wave ' + w.wave + ': ' + (w.left || 0) + ' enemy troops left', 'They land in drops and go for your buildings. Wipe them all out to win the wave.']; }
   if (!blds.some(b => b.type === 'barracks')) return ['Build a Barracks to train more soldiers.', p.sup >= BT.barracks.cost[0] ? 'Click your HQ flag, then pick Barracks.' : 'Save up ' + BT.barracks.cost[0] + ' money first.'];
   if (neutral && flags < 2) return ['Capture a gray flag. Flags give you money.', 'Select soldiers, then click the flag.'];
   { const eb = blds.find(b => b.ros && b.type !== 'hq' && b.prog >= 1 && rosTotal(b) < rosCap(b)); if (eb && soldiers < 14) return ['Your ' + eb.T.n + ' has room for ' + (rosCap(eb) - rosTotal(eb)) + ' more troops.', 'Click it, then click troop cards to fill its roster.']; }
@@ -5158,68 +5161,62 @@ function warTick() {
     warSave();                 // everything done to the Bastion between waves is saved right away (once a second)
     if (w.go) warSpawn();      // the wave only starts when the player presses Start Wave
   } else if (w.phase === 'fight') {
-    if ((w.rt = (w.rt === undefined ? 60 : w.rt) - 1) <= 0) { w.rt = Math.max(45, 90 - w.wave * 2) * ((WMODS[w.def.mod] || {}).rein || 1); warReinforce(); }
-    w.t--; if (w.t === 60) ev([3, 0, 'msg', 0, 0, 3, 'One minute left. Hold the Bastion and the enemy will give up!']);
-    if (w.t <= 0) warWon('held');
+    if (w.q && w.q.length && (w.dropT = (w.dropT || 0) - 1) <= 0) warDrop();      // the next drop lands
+    if ((w.retT = (w.retT || 0) - 1) <= 0) { w.retT = 2; warRetarget(false); }
+    let left = 0; for (const u of W.units) if (u.owner === 1 && !u.dead) left++;
+    w.left = left + (w.q ? w.q.length : 0);
+    if (!w.left) { warWon('held'); return; }                                         // every landed trooper is down: wave won
+    w.t--; if (w.t <= 0) warWon('held');
   }
 }
 function warSpawn() {
+  // 2.3: no enemy base and no warnings - the enemy army simply lands in waves of drops and goes for your buildings
   const w = W.war, d = w.def, me = W.players[0], e = W.players[1], S = WSTYLE[d.style], wave = d.wave; warSave();
   const site = sitePt(d.site); for (const sl of site.slots) if (sl.b) killBuilding(sl.b, null, -1);
-  e.alive = true; e.out = ''; e.techs = {}; e.res = null; e.cd = {}; e.stats = { kills: 0, lost: 0, built: 0, captured: 0, air: 0, specs: 0, calls: 0, sup: 0, hero: 0, peakPts: 0 }; e.name = d.name;
+  e.alive = true; e.out = ''; e.techs = {}; e.res = null; e.cd = {}; e.stats = { kills: 0, lost: 0, built: 0, captured: 0, air: 0, specs: 0, calls: 0, sup: 0, hero: 0, peakPts: 0 }; e.name = d.name; e.hqB = null; e.ai = null; e.sup = 0;
   const tm = W.teams[e.team]; tm.alive = true; tm.tickets = 999999;
-  site.owner = e.id; site.ctrl = 1; site.capP = e.id;
-  const hq = placeBuilding('hq', e.id, site, -1, true); e.hqB = hq;
-  // build a base and army that rivals the player's
-  const MD = WMODS[d.mod] || {}, sbld = (MD.bld || []).concat(S.bld).slice(0, Math.max(S.bld.length, 6));
-  const base = AIP[S.pers], persObj = Object.assign({}, base, { id: base.id, uw: Object.assign({}, S.uw || base.uw, MD.uw || {}), bld: sbld.filter(t => t !== 'wall').concat(base.bld) });
-  let money = 1400 + wave * 350 + warValue(me) * Math.min(1.4, .5 + wave * .05); const spend = c => { if (money < c) return false; money -= c; return true; };
-  const armyMoney = money * .5 * (MD.army || 1) * (d.boss ? 1.2 : 1), techMoney = money * .15; money -= money * .65;     // 35% base, 15% upgrades, 50% army
-  if (wave >= 3 && spend(BT.hq.cost[1])) hq.lvl = 2; if (wave >= 9 && hq.lvl === 2 && spend(BT.hq.cost[2])) hq.lvl = 3; refreshB(hq); hq.hp = hq.maxHp;
-  { let tm = techMoney; const nt = Math.min(TECH.length, Math.floor(wave * .7)); for (const id of persObj.tech.concat(TECH.map(t => t.id))) { if (Object.keys(e.techs).length >= nt) break; const t = TECHBY[id]; if (e.techs[id] || !t || (t.tier > 1 && !e.techs[TECH.find(x => x.br === t.br && x.tier === t.tier - 1).id])) continue; if (tm >= t.cost * .7) { tm -= t.cost * .7; e.techs[id] = 1; } } money += tm; }
+  const MD = WMODS[d.mod] || {}, base = AIP[S.pers];
+  // upgrades for the enemy troops (more as the waves go up)
+  { const nt = Math.min(TECH.length, Math.floor(wave * .7)); for (const id of (base.tech || []).concat(TECH.map(t => t.id))) { if (Object.keys(e.techs).length >= nt) break; const t = TECHBY[id]; if (e.techs[id] || !t || (t.tier > 1 && !e.techs[TECH.find(x => x.br === t.br && x.tier === t.tier - 1).id])) continue; e.techs[id] = 1; } }
   recalcMods(e);
-  const maxL = Math.min(3, 1 + Math.floor(wave / 3)), blds = [];
-  sbld.forEach((t, k) => {
-    if (t === 'wall') { if (!site.wall && spend(BT.wall.cost[0])) { const b = placeBuilding('wall', e.id, site, -2, true); b.slot = -2; } return; }
-    const T = BT[t]; if (k >= site.slots.length || site.slots[k].b || (T.hq1 || 1) > hq.lvl || (T.max && bCount(e, t) >= T.max) || !spend(T.cost[0])) return;
-    const b = placeBuilding(t, e.id, site, k, true); b.spent = T.cost[0];
-    while (b.lvl < maxL && (b.lvl < 2 || hq.lvl >= 2) && spend(T.cost[b.lvl])) { b.spent += T.cost[b.lvl]; b.lvl++; }
-    if (b.lvl >= 3 && T.specs.length && spend(SPEC_COST)) { const pl = (persObj.spec && persObj.spec[t]) || []; b.spec = pl[0] || T.specs[0].id; }
-    refreshB(b); b.hp = b.maxHp; blds.push(b);
-  });
-  // 4.2: towers on the landing site's defense pads (more and bigger as waves go up)
-  { const DL = d.style === 'turtle' || d.style === 'artillery' ? ['cannon', 'mortarpit', 'turret', 'flakt', 'tesla', 'shieldgen'] : d.style === 'air' ? ['flakt', 'turret', 'cannon'] : ['turret', 'cannon', 'flakt', 'mortarpit', 'tesla'];
-    let nd = Math.min(MD.towers ? 10 : 6, Math.floor(wave / 2) + (d.style === 'turtle' ? 2 : 0) + (MD.towers || 0)), i = 0;
-    for (let k = 0; k < site.slots.length && nd > 0; k++) { const sl = site.slots[k]; if (!sl.d || sl.b) continue; const t = DL[i++ % DL.length], T = BT[t]; if ((T.hq1 || 1) > hq.lvl || !spend(T.cost[0])) continue; const b = placeBuilding(t, e.id, site, k, true); b.spent = T.cost[0]; while (b.lvl < maxL && (b.lvl < 2 || hq.lvl >= 2) && spend(T.cost[b.lvl])) { b.spent += T.cost[b.lvl]; b.lvl++; } if (b.lvl >= 3 && spend(SPEC_COST)) b.spec = T.specs[(Math.random() * 3) | 0].id; refreshB(b); b.hp = b.maxHp; nd--; } }
-  // fill the rosters, spreading troops over every building
-  money += armyMoney;
-  for (let pass = 0; pass < 40 && money > 60; pass++) {
-    let added = false;
-    for (const b of blds) { if (!b.ros || rosTotal(b) >= rosCap(b)) continue; const ul = unitsForB(b).filter(t => rosFits(b, t)); if (!ul.length) continue; let sum = 0; const sc = ul.map(t => { const v = (persObj.uw[t] !== undefined ? persObj.uw[t] : .2) / Math.pow(1 + (b.ros[t] || 0) / 3, .8); sum += v; return v; }); let r = Math.random() * sum, pick = ul[0]; for (let i = 0; i < ul.length; i++) { r -= sc[i]; if (r <= 0) { pick = ul[i]; break; } } const c = slotCost(e, pick, b); if (!spend(c)) continue; b.ros[pick] = (b.ros[pick] || 0) + 1; b.paid[pick] = (b.paid[pick] || 0) + c; b.spent += c; added = true; }
-    if (!added) break;
-  }
-  let epop = 0; for (const b of blds) if (b.ros) for (const k in b.ros) { for (let i = 0; i < b.ros[k] && epop < 400; i++) { epop += UT[k].pop; const u = spawnFromBuilding(b, k, i); if (S.vet || MD.vet || wave >= 12) { u.vet = Math.max(u.vet, wave >= 20 ? 2 : 1); refreshUnit(u); u.hp = u.maxHp; } } b.made[k] = b.ros[k]; }
-  e.sup = clamp(money * .5, 200, 600 + wave * 150); e.pop = 0; for (const u of W.units) if (u.owner === e.id) e.pop += u.T.pop;
-  const over = Object.assign({ firstAtk: 25, hqPower: 0, warn: 4, startDelay: 0, popLim: 999 }, S.over); if (MD.atk) { over.atkMul = MD.atk; over.firstAtk = 5; }
-  e.ai = makeAI(e, { pers: S.pers, diff: d.diff, over, persObj });
-  w.phase = 'fight'; w.t = MD.time || Math.min(720, 360 + wave * 20);
-  if (d.boss && UT.titan) {   // the Warlord: a huge, tough walker with the commander's name
-    const q = snapFree(W.M, hq.x + 10, hq.z + 10, 8), bu = spawnUnit('titan', e.id, q[0], q[1], { vet: 2, hpB: 4 + wave * .1, dmB: 1.5 }); refreshUnit(bu); bu.hp = bu.maxHp; bu.boss = 1; bu.nick = 'Warlord ' + d.name.split(' ').slice(-1)[0];
-    ev([3, 0, 'msg', r1(q[0]), r1(q[1]), 3, 'BOSS WAVE: ' + bu.nick + ' leads the attack. Destroy it for a big bounty!']);
-  }
-  ev([3, 0, 'msg', r1(site.x), r1(site.z), 3, warFill(wpick(Math.random, LORE.war.waveIntro), d)]);
-  ev([11, e.id, d.taunt]);
-}
-// waves keep coming: every so often the enemy commander gets a free group of troops at its landing site
-function warReinforce() {
-  const w = W.war, d = w.def, e = W.players[1], hq = e.hqB; if (!hq || hq.dead || !e.alive) return;
-  const S = WSTYLE[d.style], uw = S.uw || AIP[S.pers].uw, tier = d.wave < 4 ? 1 : d.wave < 9 ? 2 : 3, pool = [];
-  for (const t in uw) { const T = UT[t]; if (!T || T.nobuild || T.air || !T.w) continue; const need = Math.max(...T.src.map(x => x[1]), 1); if (need <= tier) pool.push([t, uw[t]]); }
+  // what lands: the commander's favourite troops, the stronger ones as the waves go up
+  const uw = Object.assign({}, S.uw || base.uw, MD.uw || {}), tier = wave < 4 ? 1 : wave < 9 ? 2 : 3, pool = [];
+  for (const t in uw) { const T = UT[t]; if (!T || T.nobuild || !(T.w || T.w2) || !T.src) continue; if (T.air && wave < 4) continue; const need = Math.min(...T.src.map(x => x[1])); if (need <= tier) pool.push([t, uw[t]]); }
   if (!pool.length) pool.push(['rifleman', 1]); let sum = 0; for (const x of pool) sum += x[1];
-  const n = Math.min(14, 2 + Math.floor(d.wave * .8)), ids = [];
-  for (let i = 0; i < n; i++) { let r = Math.random() * sum, t = pool[0][0]; for (const x of pool) { r -= x[1]; if (r <= 0) { t = x[0]; break; } } const a = Math.random() * TAU, q = snapFree(W.M, hq.x + Math.cos(a) * 14, hq.z + Math.sin(a) * 14, 6); const u = spawnUnit(t, e.id, q[0], q[1], { vet: d.wave >= 15 ? 2 : d.wave >= 7 ? 1 : 0 }); refreshUnit(u); u.hp = u.maxHp; ids.push(u.id); }
-  const me = W.players[0].hqB; if (me) applyCmd(e.id, { k: 'am', ids, x: me.x + rr(-10, 10), z: me.z + rr(-10, 10) });
-  if ((w.rn = (w.rn | 0) + 1) % 2 === 1) ev([3, 0, 'msg', r1(hq.x), r1(hq.z), 3, 'Enemy reinforcements have landed in the ' + WDIRS[d.site] + ' (' + n + ' troops).']);
+  let money = (1000 + wave * 330 + warValue(me) * Math.min(1.2, .4 + wave * .05)) * (MD.army || 1) * (d.boss ? 1.2 : 1);
+  const q = []; let pop = 0;
+  while (money > 40 && pop < 420) { let r = Math.random() * sum, t = pool[0][0]; for (const x of pool) { r -= x[1]; if (r <= 0) { t = x[0]; break; } } money -= UT[t].cost; pop += UT[t].pop; q.push(t); }
+  w.q = q; w.dropT = 0; w.dropN = 0; w.retT = 0;
+  w.phase = 'fight'; w.t = MD.time || Math.min(900, 420 + wave * 20);
+  if (d.boss && UT.titan) w.q.splice(Math.min(6, w.q.length), 0, 'BOSS');
+  warDrop();
+}
+// one drop: a group of troops lands at the landing site and heads for your buildings
+function warDrop() {
+  const w = W.war, d = w.def, e = W.players[1], site = sitePt(d.site); if (!w.q || !w.q.length) return;
+  const n = Math.min(w.q.length, w.dropN === 0 ? Math.max(8, Math.ceil(w.q.length * .35)) : Math.max(5, Math.ceil(w.q.length * .3)), 60); w.dropN++;
+  const vet = d.wave >= 15 ? 2 : d.wave >= 7 || (WMODS[d.mod] || {}).vet ? 1 : 0;
+  for (const t of w.q.splice(0, n)) {
+    const a = Math.random() * TAU, r = 4 + Math.random() * 16, p = snapFree(W.M, site.x + Math.cos(a) * r, site.z + Math.sin(a) * r, 8);
+    let u;
+    if (t === 'BOSS') { u = spawnUnit('titan', e.id, p[0], p[1], { vet: 2, hpB: 4 + d.wave * .1, dmB: 1.5 }); u.boss = 1; u.nick = 'Warlord ' + d.name.split(' ').slice(-1)[0]; }
+    else u = spawnUnit(t, e.id, p[0], p[1], { vet });
+    refreshUnit(u); u.hp = u.maxHp; u.ghost = 3;
+  }
+  w.dropT = Math.max(14, 26 - d.wave * .5);
+  warRetarget(true);
+}
+// landed troops go after the nearest of your buildings (and the next one once it's gone)
+function warRetarget(all) {
+  const e = W.players[1], mine = W.bld.filter(b => b.owner === 0 && !b.dead && b.type !== 'nest'); if (!mine.length) return;
+  const groups = new Map();
+  for (const u of W.units) {
+    if (u.owner !== e.id || u.dead) continue;
+    if (!all && u.o !== 0 && u.tgt && !u.tgt.dead) continue;
+    let best = null, bd = 1e9; for (const b of mine) { const dd = Math.hypot(b.x - u.x, b.z - u.z) * (b.type === 'wall' ? 1.6 : 1); if (dd < bd) { bd = dd; best = b; } }
+    if (!best) continue; let g = groups.get(best); if (!g) groups.set(best, g = []); g.push(u.id);
+  }
+  for (const [b, ids] of groups) applyCmd(e.id, { k: 'atk', ids, t: b.id });
 }
 function warHqDown(b) { if (b.owner === 0) warLost(); else warWon('hq'); }
 function warWon(how) {
@@ -5787,7 +5784,6 @@ function launch(cfg, opt) {
   if (c.mirror) { W.lastSnap = 0; }
   if (c.war) warRestoreSquads();
   if (c.camp && c.obj) { const mk = CAMP && CAMP.cur && CAMP.cur.final ? 'final' : c.obj.type, br = LORE.missions[mk] ? LORE.missions[mk].brief : null; if (br) setTimeout(() => { if (inGame) addAlert('HQ: ' + br[(Math.random() * br.length) | 0], '#ffe2a6', undefined, undefined, 16000); }, 1500); }
-  if (c.war) setTimeout(() => { if (inGame && W && W.war) addAlert('Build up the Bastion, then press Start Wave. The enemy lands in the ' + WDIRS[W.war.def.site] + '.', '#ffe2a6', undefined, undefined, 9000); }, 1500);
   if (opt.after) opt.after();
 }
 function cleanupGameUI() { closeWarMap(); UI.bsq = {}; for (const m of SHDOME.values()) { if (worldGroup) worldGroup.remove(m); m.material.dispose(); } SHDOME.clear(); for (const id of ['#sbx', '#specp', '#qchat']) { const e = $(id); if (e) e.remove(); } $('#sup').classList.add('hidden'); closeTech(); const ci = $('#chatin'); if (ci) ci.remove(); UI.chatOpen = false; hideTgtRing(); hideBox(); }
