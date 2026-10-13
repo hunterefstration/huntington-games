@@ -224,7 +224,7 @@
 
     <div id="main-menu-overlay" class="absolute inset-0 z-50 flex" style="background: linear-gradient(90deg, rgba(3,4,10,0.95) 0%, rgba(3,4,10,0.86) 36%, rgba(3,4,10,0.3) 62%, rgba(3,4,10,0) 100%);">
         <div class="w-[min(660px,100vw)] h-full flex flex-col px-10 py-7">
-            <div class="text-yellow-500 font-bold tracking-widest text-sm">VERSION 3.7 &middot; THE ZOMBIE UPDATE &middot; NEW: AUTO-SAVE EVERY WAVE</div>
+            <div class="text-yellow-500 font-bold tracking-widest text-sm">VERSION 3.8 &middot; NEW: SPLITTERS, SCREAMERS, CROSSBOW, FLAMETHROWER &middot; PERMADEATH</div>
             <h1 class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 italic tracking-tighter pr-2 leading-tight">BLOCKY SHOOTER</h1>
             <p class="text-amber-300 text-xs font-bold tracking-widest mb-2 h-4" id="menu-best"></p>
             <div id="menu-rank" class="flex items-center gap-3 mb-2"></div>
@@ -363,7 +363,7 @@
         // ==========================================
 
 
-        const VERSION = '3.7';
+        const VERSION = '3.8';
         const V3 = THREE.Vector3;
         const $ = (id) => document.getElementById(id);
         const clamp = THREE.MathUtils.clamp, lerp = THREE.MathUtils.lerp;
@@ -395,7 +395,9 @@
             burst:    { name: 'Burst Rifle', cost: 2000, color: 0x14b8a6, damage: 18,  fireRate: 290,  auto: true,  burst: 3, burstGap: 55, magSize: 36, reloadTime: 1650, range: 170, pellets: 1, spread: 0.0025, recoil: 0.026, punch: 0.006, zoomFov: 48, hsMult: 1.15, reloadStyle: 'mag', hip: [0.144, -0.162, -0.36], adsDist: 0.12, flash: 0.28, desc: 'Hold to fire 3-round bursts. One burst to the head drops a grunt.' },
             shotgun:  { name: 'Shotgun',     cost: 2200, color: 0xef4444, damage: 30,  fireRate: 600,  auto: false, magSize: 8,   reloadTime: 250,  shellTime: 400, range: 60, pellets: 12, spread: 0.042, recoil: 0.2, punch: 0.05, zoomFov: 62, hsMult: 2, knock: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.46, desc: '12 heavy pellets. Knocks enemies back.' },
             dmr:      { name: 'Marksman',    cost: 3500, color: 0xc2a36b, damage: 75,  fireRate: 280,  auto: false, magSize: 12,  reloadTime: 2200, range: 260, pellets: 1,  spread: 0.002, recoil: 0.08, punch: 0.022, zoomFov: 30, hsMult: 2.5, pierce: 1, scoped: 'optic', reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.12, flash: 0.32, desc: '4x optic. Punches through 1 enemy.' },
+            crossbow: { name: 'Crossbow',    cost: 2800, color: 0x92400e, damage: 150, fireRate: 260,  auto: false, magSize: 1,   reloadTime: 1050, range: 220, pellets: 1,  spread: 0.0025, recoil: 0.09, punch: 0.028, zoomFov: 42, hsMult: 3, pierce: 4, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.18, flash: 0.06, desc: 'Silent bolts that pass through up to 4 zombies. Headshots do triple damage.' },
             lmg:      { name: 'LMG',         cost: 4500, color: 0x84cc16, damage: 28,  fireRate: 92,   auto: true,  magSize: 90,  reloadTime: 3600, range: 150, pellets: 1,  spread: 0.008, bloom: 0.05, recoil: 0.04, punch: 0.008, zoomFov: 55, hsMult: 2, moveMult: 0.85, reloadStyle: 'box', hip: [0.156, -0.168, -0.36], adsDist: 0.2, flash: 0.34, desc: '90-round box. Heavy and hungry.' },
+            flamer:   { name: 'Flamethrower', cost: 5500, color: 0xf97316, damage: 6,  fireRate: 60,   auto: true,  magSize: 150, reloadTime: 2600, range: 13,  pellets: 1,  spread: 0, recoil: 0.006, punch: 0.002, zoomFov: 66, hsMult: 1, flame: true, cone: 0.36, noAds: true, reloadStyle: 'mag', hip: [0.16, -0.17, -0.4], adsDist: 0.3, flash: 0.5, desc: 'A short stream of fire that burns everything in front of you, goes round riot shields and sets zombies alight.' },
             sniper:   { name: 'Sniper',      cost: 5000, color: 0x8b5cf6, damage: 900, fireRate: 1100, auto: false, magSize: 5,   reloadTime: 2300, range: 500, pellets: 1,  spread: 0.012, recoil: 0.25, punch: 0.07, zoomFov: 14, hsMult: 2.5, pierce: 5, shieldPierce: true, scoped: 'sniper', reloadStyle: 'bolt', hip: [0.144, -0.156, -0.336], adsDist: 0.12, flash: 0.46, desc: 'Pierces 5 enemies and shields.' },
             minigun:  { name: 'Minigun',     cost: 8000, color: 0xfb7185, damage: 16,  fireRate: 45,   auto: true,  magSize: 240, reloadTime: 4200, range: 120, pellets: 1,  spread: 0.02, recoil: 0.02, punch: 0.004, zoomFov: 70, hsMult: 1.8, spinUp: 0.55, moveMult: 0.7, noAds: true, reloadStyle: 'box', hip: [0.168, -0.186, -0.432], adsDist: 0.3, flash: 0.3, desc: 'Hold right-click to pre-spin.' },
             rpg:      { name: 'RPG',         cost: 6000, color: 0x65a30d, damage: 300, fireRate: 900,  auto: false, magSize: 1,   reloadTime: 1000, range: 400, pellets: 1,  spread: 0.004, recoil: 0.3, punch: 0.06, zoomFov: 50, hsMult: 1, rocket: true, radius: 7, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.55, desc: 'Rocket launcher. Huge splash damage and a lightning-fast reload - keep your distance!' }
@@ -450,6 +452,9 @@
             shielder: { id: 'shielder', name: 'Shielder', color: 0x94a3b8, hp: 1.6, speed: 0.75, scale: 1.1,  reward: 2.5, damage: 14, ai: 'shielder', eye: 0x67e8f9, minLvl: 5, intel: 'Its riot shield blocks bullets. Flank it, aim for the head, or use explosives. Sniper rounds punch through.', drops: [0.24, 25, 0.25, 45] },
             marksman: { id: 'marksman', name: 'Marksman', color: 0x3f4a5c, hp: 0.9, speed: 0.85, scale: 1.0,  reward: 3,   damage: 15, ai: 'marksman', eye: 0xff2020, minLvl: 8, cap: 2, intel: 'Laser-sights you from range. When the beam flashes bright it is about to fire - strafe or duck behind cover!', drops: [0.28, 25, 0.38, 75] },
             medic:    { id: 'medic',    name: 'Medic',    color: 0xe2e8f0, hp: 1.0, speed: 0.9,  scale: 0.95, reward: 3.5, damage: 8,  ai: 'medic', eye: 0x86efac, minLvl: 9, cap: 2, intel: 'Heals nearby enemies. Kill it first!', drops: [0.55, 40, 0.20, 50] },
+            splitter: { id: 'splitter', name: 'Splitter', color: 0x7c3aed, hp: 1.8, speed: 0.85, scale: 1.15, reward: 2.5, damage: 12, ai: 'melee', eye: 0xd8b4fe, minLvl: 7, intel: 'Swollen with Mites. When it dies it bursts into three fast little Mites. Explosives and fire clear them up.', drops: [0.2, 25, 0.22, 40] },
+            mite:     { id: 'mite',     name: 'Mite',     color: 0xa78bfa, hp: 0.25, speed: 2.1, scale: 0.5,  reward: 0.3, damage: 4,  ai: 'melee', slim: 0.9, eye: 0xf5d0fe, minLvl: 999, drops: [0, 0, 0, 0] },
+            screamer: { id: 'screamer', name: 'Screamer', color: 0xdc2626, hp: 1.1, speed: 0.9,  scale: 1.0,  reward: 3.5, damage: 8,  ai: 'screamer', eye: 0xfca5a5, minLvl: 10, cap: 2, intel: 'Hangs back and SHRIEKS: every zombie near it goes into a rage (faster, harder hits) for a few seconds. Kill it first!', drops: [0.4, 35, 0.25, 50] },
             boss:     { id: 'boss',     name: 'Boss',     color: 0x9333ea, hp: 40,  speed: 0.45, scale: 2.3,  reward: 15,  damage: 35, ai: 'boss', eye: 0xff3bd4, drops: [1, 999, 1, 500] }
         };
 
@@ -548,7 +553,9 @@
             speed:  { name: 'AGILITY',      color: 0x22d3ee, desc: '+7% move speed per level.' },
             dmg:    { name: 'FIREPOWER',    color: 0xf97316, desc: '+8% damage from guns and explosives per level.' },
             reload: { name: 'QUICK HANDS',  color: 0xfacc15, desc: '8% faster reloads per level.' },
-            regen:  { name: 'REGENERATION', color: 0x4ade80, desc: 'Heal 1 HP/s per level after 4s without getting hit.' }
+            regen:  { name: 'REGENERATION', color: 0x4ade80, desc: 'Heal 1 HP/s per level after 4s without getting hit.' },
+            scav:   { name: 'SCAVENGER',    color: 0xa3e635, desc: '+25% more cash and health drops from zombies per level.' },
+            dead:   { name: 'DEADEYE',      color: 0xe879f9, desc: '+12% headshot damage per level.' }
         };
         const PERK_COSTS = [500, 1000, 1800, 2800, 4000];
         const perk = (id) => (playerStats.perks && playerStats.perks[id]) || 0;
@@ -807,6 +814,9 @@
                     case 'lock':     sfxTone('sine', 1500, 1500, 0.07, 0.05); break;
                     case 'laser':    sfxTone('sawtooth', 2200, 300, 0.18, 0.12); sfxNoise(0.2, 5000, 0.12, 800); break;
                     case 'medic':    sfxTone('sine', 600, 1200, 0.3, 0.07); break;
+                    case 'scream':   sfxTone('sawtooth', 700, 1700, 0.55, 0.09); sfxNoise(0.5, 3000, 0.1, 400); break;
+                    case 'crossbow': sfxTone('triangle', 320, 110, 0.14, 0.13); sfxNoise(0.08, 2600, 0.08, 500); break;
+                    case 'flamer':   sfxNoise(0.09, 900, 0.07, 200); break;
                     case 'ting':     sfxTone('triangle', 2400, 1800, 0.1, 0.06); break;
                     case 'slam':     sfxNoise(0.5, 500, 0.4, 40); sfxTone('sine', 70, 30, 0.4, 0.4); break;
                     case 'supply':   sfxTone('triangle', 660, 990, 0.2, 0.12); sfxTone('triangle', 990, 1320, 0.25, 0.1, 0.18); break;
@@ -3259,6 +3269,47 @@
                     def = { sight: [0.15, 0.1], muzzle: [0, 0.07, -0.64], eject: [0, 0.07, 0.42] };
                     break;
                 }
+                case 'crossbow': {
+                    const wood = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x6b4423).lerp(body.color, L ? 0.7 : 0), roughness: 0.7, metalness: 0.05 });
+                    B(g, 0.05, 0.07, 0.36, wood, 0, 0.02, 0.12);                             // stock
+                    B(g, 0.056, 0.12, 0.045, mt.poly, 0, 0.0, 0.31);                         // butt
+                    B(g, 0.036, 0.03, 0.56, mt.metal, 0, 0.05, -0.2);                        // rail
+                    B(g, 0.05, 0.05, 0.08, wood, 0, 0.04, -0.45);                            // bow head
+                    for (const sx of [-1, 1]) { B(g, 0.26, 0.022, 0.04, accent, sx * 0.14, 0.05, -0.44, 0, sx * -0.28, 0); B(g, 0.02, 0.03, 0.02, mt.steel, sx * 0.265, 0.05, -0.37); }   // limbs + cams
+                    for (const sx of [-1, 1]) B(g, 0.004, 0.004, 0.31, mt.steel, sx * 0.135, 0.056, -0.33, 0, sx * -1.02, 0);   // string, drawn back
+                    P.mag = G(g, 0, 0.07, -0.25);                                            // the bolt
+                    B(P.mag, 0.009, 0.009, 0.42, wood, 0, 0, -0.06);
+                    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.05, 8), mt.steel); tip.rotation.x = -Math.PI / 2; tip.position.z = -0.29; P.mag.add(tip);
+                    for (const sx of [-1, 1]) B(P.mag, 0.002, 0.016, 0.04, mt.red, sx * 0.006, 0.006, 0.13);
+                    B(g, 0.02, 0.028, 0.02, mt.poly, 0, 0.1, 0.03); ring(g, 0.012, 0.002, mt.poly, 0, 0.118, 0.03);   // rear aperture
+                    B(g, 0.006, 0.034, 0.006, mt.poly, 0, 0.1, -0.4); B(g, 0.004, 0.004, 0.004, mt.red, 0, 0.117, -0.4);   // front post
+                    B(g, 0.038, 0.11, 0.055, mt.poly, 0, -0.045, 0.03, 0.25);                // grip
+                    trigger(-0.02, 0.005);
+                    P.rh = makeArm(g, [0, -0.045, 0.03], ER, 'grip', 0.25, SW);
+                    P.lh = makeArm(g, [0, 0.02, -0.24], EL, 'support', 0, SW);
+                    def = { sight: [0.118, 0.03], muzzle: [0, 0.07, -0.5], eject: [0.03, 0.06, -0.05] };
+                    break;
+                }
+                case 'flamer': {
+                    B(g, 0.062, 0.085, 0.38, body, 0, 0.02, -0.02);                         // body
+                    C(g, 0.022, 0.44, mt.metal, 0, 0.035, -0.41);                            // nozzle tube
+                    C(g, 0.034, 0.07, mt.poly, 0, 0.035, -0.64, 14);                         // nozzle
+                    for (const z of [-0.3, -0.45]) C(g, 0.03, 0.025, mt.poly, 0, 0.035, z, 12);   // heat rings
+                    const pilot = new THREE.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x3b82f6, emissiveIntensity: 2 });
+                    B(g, 0.012, 0.012, 0.02, pilot, 0, 0.008, -0.63);                        // pilot light
+                    P.mag = G(g, 0, -0.07, -0.08);                                           // fuel tank
+                    C(P.mag, 0.052, 0.26, accent, 0, 0, 0, 16); C(P.mag, 0.054, 0.02, mt.metal, 0, 0, 0.1, 16); C(P.mag, 0.054, 0.02, mt.metal, 0, 0, -0.1, 16);
+                    B(P.mag, 0.02, 0.03, 0.02, mt.steel, 0, 0.05, 0.12);
+                    B(g, 0.016, 0.016, 0.2, mt.steel, 0.04, 0.0, -0.1);                      // fuel line
+                    B(g, 0.04, 0.11, 0.055, mt.poly, 0, -0.06, 0.12, 0.25);                  // rear grip
+                    B(g, 0.03, 0.1, 0.036, mt.poly, 0, -0.035, -0.28);                       // front grip
+                    B(g, 0.02, 0.03, 0.1, mt.poly, 0, 0.09, 0.0);                            // top handle
+                    trigger(0.09, -0.01);
+                    P.rh = makeArm(g, [0, -0.06, 0.12], ER, 'grip', 0.25, SW);
+                    P.lh = makeArm(g, [0, -0.035, -0.28], EL, 'vgrip', 0, SW);
+                    def = { sight: [0.12, 0.0], muzzle: [0, 0.035, -0.69], eject: [0.03, 0.05, 0.0] };
+                    break;
+                }
                 case 'minigun': {
                     B(g, 0.13, 0.14, 0.34, body, 0, 0.0, 0.02);
                     B(g, 0.135, 0.02, 0.3, accent, 0, 0.055, 0.02);
@@ -3286,7 +3337,8 @@
                         burst: { by: 0.03, b0: -0.26, b1: -0.48, w: 0.06, stock: 0.37, rf: -0.27, rr: 0.3 }, shotgun: { by: 0.05, b0: -0.52, b1: -0.74, w: 0.05, stock: 0.5, rf: -0.52, rr: 0.14 },
                         dmr: { by: 0.048, b0: -0.58, b1: -0.85, w: 0.058, stock: 0.5, rf: -0.23, rr: 0.16 }, lmg: { by: 0.05, b0: -0.6, b1: -0.8, w: 0.068, stock: 0.49, rf: -0.24, rr: 0.18 },
                         sniper: { by: 0.04, b0: -0.46, b1: -0.96, w: 0.056, stock: 0.6, rf: -0.16, rr: 0.22 }, minigun: { by: 0, b0: -0.44, b1: -0.74, w: 0.12, rf: -0.3, rr: 0.18 },
-                        rpg: { by: 0.07, b0: -0.3, b1: -0.57, w: 0.1, rf: -0.3, rr: 0.3 } }[id];
+                        rpg: { by: 0.07, b0: -0.3, b1: -0.57, w: 0.1, rf: -0.3, rr: 0.3 }, crossbow: { by: 0.05, b0: -0.28, b1: -0.44, w: 0.04, stock: 0.33, rf: -0.15, rr: 0.1 },
+                        flamer: { by: 0.035, b0: -0.2, b1: -0.6, w: 0.06, rf: -0.2, rr: 0.16 } }[id];
             const handgun = id === 'pistol' || id === 'revolver';
             // each tier has its own paint scheme (a camo, if you picked one, wins)
             if (camo === CAMOS.stock && L >= 1 && L <= 3) {
@@ -3324,7 +3376,7 @@
                 }
             }
             const LASER = { pistol: [-0.03, 0.012, -0.11], revolver: [-0.024, 0.04, -0.2], smg: [-0.035, 0.035, -0.27], ar: [-0.038, 0.045, -0.46], burst: [-0.038, 0.0, -0.22],
-                            shotgun: [-0.03, 0.05, -0.6], dmr: [-0.036, 0.045, -0.5], lmg: [-0.036, 0.05, -0.52], sniper: [-0.038, 0.035, -0.4], minigun: [-0.08, 0.03, -0.25], rpg: [-0.06, 0.04, -0.3] };
+                            shotgun: [-0.03, 0.05, -0.6], dmr: [-0.036, 0.045, -0.5], lmg: [-0.036, 0.05, -0.52], sniper: [-0.038, 0.035, -0.4], minigun: [-0.08, 0.03, -0.25], rpg: [-0.06, 0.04, -0.3], crossbow: [-0.03, 0.03, -0.3], flamer: [-0.045, 0.0, -0.3] };
             if (L >= 1) {   // TACTICAL: laser sight, handstop, rubber buttpad
                 const [lx, ly, lz] = LASER[id];
                 B(g, 0.018, 0.024, 0.065, mt.poly, lx - (L >= 2 ? A.w * 0.12 : 0), ly, lz);
@@ -3355,7 +3407,7 @@
                 if (def.muzzle[2] > A.b1 - 0.005) def.muzzle = [def.muzzle[0], def.muzzle[1], A.b1 - 0.005];
             }
             if (L >= 3) {   // ELITE: muzzle brake, glowing side strips, top fin, cheek riser
-                if (id !== 'minigun' && id !== 'rpg') {
+                if (id !== 'minigun' && id !== 'rpg' && id !== 'crossbow' && id !== 'flamer') {
                     const r = handgun ? 0.02 : 0.028;
                     const md = G(g, def.muzzle[0], def.muzzle[1], def.muzzle[2] - 0.03);
                     B(md, r * 2, r * 2, 0.06, mt.poly, 0, 0, 0);
@@ -3961,7 +4013,7 @@
                 case 'revolver': vm.cylTarget += Math.PI / 3; vm.hammer = 1; break;
                 case 'shotgun': vm.pump = 0.5; setTimeout(() => { if (vmModel && vmModel.id === 'shotgun') { ejectCasing(vmModel, 'shell'); sfx('pump'); } }, 170); break;
                 case 'sniper': vm.bolt = 0; vm.boltEjected = false; break;
-                case 'rpg': break;
+                case 'rpg': case 'crossbow': case 'flamer': break;
                 default: ejectCasing(vmModel);
             }
             shake = Math.max(shake, w.recoil * 0.3);
@@ -3976,12 +4028,13 @@
             const spread = currentSpread(w);
             const dmgMul = powerOn('dmg') ? 2 : 1;
             if (w.rocket) { fireRocket(w, dmgMul, spread); updateAmmoHUD(); return; }
+            if (w.flame) { fireFlame(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0 && !powerOn('ammo')) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, 200); return; }
             const perEnemy = new Map();
             for (let p = 0; p < w.pellets; p++) {
                 const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * spread;
                 _dir.copy(_fwd).addScaledVector(_right, Math.cos(a) * r).addScaledVector(_up, Math.sin(a) * r).normalize();
                 const end = traceShot(camera.position, _dir, w, perEnemy, dmgMul);
-                if (p < 6) spawnTracer(_muzzleW, end, tracerColor(id === 'sniper' ? 0xc4b5fd : (id === 'dmr' ? 0xfde68a : 0xffe9a8)), id === 'sniper' ? 0.07 : 0.022, id === 'sniper' ? 0.2 : 0.09);
+                if (p < 6) spawnTracer(_muzzleW, end, tracerColor(id === 'sniper' ? 0xc4b5fd : (id === 'dmr' ? 0xfde68a : id === 'crossbow' ? 0xb45309 : 0xffe9a8)), id === 'sniper' ? 0.07 : id === 'crossbow' ? 0.035 : 0.022, id === 'sniper' ? 0.2 : id === 'crossbow' ? 0.18 : 0.09);
                 if (NET.inGame && p < 3) netRecordShot(_muzzleW, end);
             }
             perEnemy.forEach((rec, enemy) => damageEnemy(enemy, rec.dmg, rec.head, rec.point, false, w.knock ? rec.dir : null, rec.hits));
@@ -3991,6 +4044,23 @@
         }
 
 
+        // 3.8 Flamethrower: everything in a short cone in front of you (walls stop it, riot shields do not) takes damage and catches fire
+        const _fl = new V3();
+        function fireFlame(w, dmgMul) {
+            const o = camera.position, wall = raySolids(o, _fwd, w.range), reach = wall ? wall.t : w.range, cosA = Math.cos(w.cone);
+            for (let k = 1; k <= 4; k++) { const d = reach * k / 4.5; _fl.copy(_muzzleW).addScaledVector(_fwd, d).add(new V3((Math.random() - 0.5) * d * 0.25, (Math.random() - 0.5) * d * 0.2, (Math.random() - 0.5) * d * 0.25)); spawnParticles(_fl, k % 2 ? 0xff6a1f : 0xffb020, 2, 1.5 + k, 0.32, 0.22 + k * 0.1, false, { grav: -3 }); }
+            let hit = false;
+            for (const e of enemies.slice()) {
+                const u = e.userData; if (u.dead) continue;
+                _fl.set(e.position.x - o.x, e.position.y + u.totalHeight * 0.5 - o.y, e.position.z - o.z);
+                const d = _fl.length(); if (d > reach + u.radius) continue;
+                _fl.multiplyScalar(1 / (d || 1)); if (_fl.dot(_fwd) < cosA && d > u.radius * 1.5) continue;
+                damageEnemy(e, w.damage * dmgMul, false, null, true, null, 1, 'flamer');
+                if (!u.dead) { u.burnT = 3; u.burnDps = w.damage * 2.2 * dmgMul; }
+                hit = true;
+            }
+            if (hit) runStats.hits++;
+        }
         // One bullet/pellet: nearest block vs enemy body parts, with piercing and riot shields.
         const _box = new THREE.Box3(), _tmp = new V3();
         function rayBoxT(o, d, x0, y0, z0, x1, y1, z1) {
@@ -4047,7 +4117,7 @@
                     end = h.point; break;
                 }
                 const rec = perEnemy.get(e) || { dmg: 0, head: false, point: h.point.clone(), dir: dir.clone(), hits: 0 };
-                rec.dmg += dmg * (ud.isHead ? w.hsMult : 1) * (u.state === 'stun' ? 1.5 : 1);
+                rec.dmg += dmg * (ud.isHead ? w.hsMult * (1 + 0.12 * perk('dead')) : 1) * (u.state === 'stun' ? 1.5 : 1);
                 rec.head = rec.head || !!ud.isHead; rec.hits++;
                 perEnemy.set(e, rec);
                 spawnParticles(h.point, zLook(u.config).blood, 3, 5, 0.35, 0.1, true, { grav: 20 });
@@ -4654,7 +4724,10 @@
             shielder: { skin: 0x7a9278, pants: 0x1e293b, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x334155, blood: 0x7a1414 },
             marksman: { skin: 0x738a66, pants: 0x3b4636, hair: null, shoe: 0x2a2419, sleeves: 'long', armor: 0x2f3a2a, blood: 0x7a1414 },
             medic:    { skin: 0x9eab96, pants: 0x4f8791, hair: 0x3a2e22, shoe: 0xe5e7eb, sleeves: 'long', noBelly: true, blood: 0x8b1a1a },
-            boss:     { skin: 0x6e5a80, pants: 0x2a1f3a, hair: null, shoe: null, sleeves: 'none', claws: true, blood: 0x7a1fa8 }
+            boss:     { skin: 0x6e5a80, pants: 0x2a1f3a, hair: null, shoe: null, sleeves: 'none', claws: true, blood: 0x7a1fa8 },
+            splitter: { skin: 0x8a7aa8, pants: 0x3a2f55, hair: null, shoe: 0x1f1a2e, sleeves: 'none', blood: 0xa78bfa },
+            mite:     { skin: 0xb9a6e8, pants: 0x4c3d75, hair: null, shoe: null, sleeves: 'none', shorts: true, noBelly: true, bigEyes: true, blood: 0xa78bfa },
+            screamer: { skin: 0x9c8f86, pants: 0x3b2a2a, hair: 0x111111, shoe: 0x222222, sleeves: 'long', noBelly: true, blood: 0x8b1a1a }
         };
         const zLook = cfg => ZLOOK[cfg.id] || ZLOOK.grunt;
         function mixHex(a, b, t) { return new THREE.Color(a).lerp(new THREE.Color(b), t).getHex(); }
@@ -4801,6 +4874,23 @@
                     k.headGlow.push([0.08, 0.2, 0.03, 0, 0.46, 0.42, 0xef4444], [0.2, 0.08, 0.03, 0, 0.46, 0.42, 0xef4444]);
                     extra = { size: [0.32, 0.44, 0.12], pos: [0, 2.3, -0.46], color: 0x4ade80 };
                     break;
+                case 'splitter':
+                    // bloated with mites: a huge belly covered in glowing purple sacs that wriggle
+                    T.push([1.24 * sl, 0.86, 0.5, 0, 1.66, 0.2, skin], [0.9, 0.06, 0.04, 0, 1.98, 0.46, rot], [0.8, 0.06, 0.04, 0, 1.36, 0.46, rot]);
+                    k.torsoGlow.push([0.22, 0.22, 0.08, -0.3, 1.8, hd + 0.2, 0xc084fc], [0.18, 0.18, 0.08, 0.28, 1.55, hd + 0.2, 0xc084fc], [0.16, 0.16, 0.08, 0.05, 2.05, hd + 0.2, 0xd8b4fe], [0.2, 0.2, 0.08, 0.1, 2.0, -hd - 0.03, 0xc084fc], [0.14, 0.14, 0.08, -0.25, 1.6, -hd - 0.03, 0xc084fc]);
+                    k.headGlow.push([0.12, 0.12, 0.05, 0.22, 0.3, 0.2, 0xc084fc]);
+                    break;
+                case 'mite':
+                    // tiny, fast, all eyes: a glowing sac on its back
+                    k.torsoGlow.push([0.3, 0.3, 0.1, 0, 2.0, -hd - 0.04, 0xd8b4fe]);
+                    break;
+                case 'screamer':
+                    // the shrieker: jaw hanging wide open on a glowing throat, wild hair, torn shroud
+                    k.headGlow.push([0.44, 0.34, 0.04, 0, -0.3, 0.39, 0xff4d4d], [0.2, 0.12, 0.04, 0, -0.52, 0.37, 0xff8a8a]);
+                    H.push([0.5, 0.06, 0.04, 0, -0.1, 0.4, BONE], [0.5, 0.06, 0.04, 0, -0.5, 0.4, BONE]);
+                    T.push([1.08 * sl, 0.9, 0.62 * sl, 0, 1.55, 0, cloth], [0.4, 0.5, 0.02, -0.2, 1.4, hd + 0.02, clothD]);
+                    k.torsoGlow.push([0.2, 0.3, 0.04, 0, 2.3, hd + 0.02, 0xff4d4d]);
+                    break;
                 case 'boss':
                     // abomination: ribcage torn open over a glowing heart, bone crown, fangs, spine of glowing pustules, shoulder spikes
                     T.push([0.36 * sl, 0.42, 0.02, 0.2 * sl, 1.98, hd + 0.012, HOLE]);
@@ -4820,7 +4910,7 @@
                 k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
             }
             // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18 }[id] ?? 0.2;
+            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14 }[id] ?? 0.2;
             return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id, hunch, rough: 0.84, shield, extra, headZ: 0.06 }));
         }
         // build the merged part meshes. Torso (and anything riding on it) is stored relative to the hip joint.
@@ -4985,7 +5075,7 @@
                 shield.position.set(0.05 * s, 1.55 * s, 0.78 * s);
             }
             if (cfg.ai === 'marksman') { laser = new THREE.Mesh(sharedBox, _laserMat.clone()); laser.visible = false; laser.frustumCulled = false; scene.add(laser); }
-            if (cfg.ai === 'medic') { aura = new THREE.Mesh(_auraGeo, _auraMat.clone()); aura.position.y = 0.06; aura.scale.setScalar(11); group.add(aura); }
+            if (cfg.ai === 'medic' || cfg.ai === 'screamer') { aura = new THREE.Mesh(_auraGeo, _auraMat.clone()); aura.position.y = 0.06; aura.scale.setScalar(cfg.ai === 'screamer' ? 18 : 11); if (cfg.ai === 'screamer') aura.material.color.setHex(0xef4444); group.add(aura); }
 
 
             // HP bar: drawn by one shared instanced mesh for all enemies (see updateHpBars)
@@ -5033,11 +5123,12 @@
         function pickEnemyType(level, counts) {
             const r = Math.random();
             let acc = 0;
-            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05]];
+            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03]];
+            const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
             for (const [id, chance] of table) {
                 const t = enemyTypes[id];
                 if (level < t.minLvl) continue;
-                acc += chance;
+                acc += chance * sk;
                 if (r < acc) { if (t.cap && (counts[id] || 0) >= t.cap) return enemyTypes.grunt; return t; }
             }
             return enemyTypes.grunt;
@@ -5086,6 +5177,15 @@
             }
             return null;
         }
+        // 3.8: from wave 6, most waves (not boss waves) come with a twist that pays extra (single player)
+        const TWISTS = {
+            horde:       { name: 'HORDE',       color: '#f87171', desc: '40% more zombies. +30% cash.', count: 1.4, cash: 1.3 },
+            armored:     { name: 'ARMORED',     color: '#93c5fd', desc: 'Zombies have 50% more health. +40% cash.', hp: 1.5, cash: 1.4 },
+            frenzy:      { name: 'FRENZY',      color: '#fbbf24', desc: 'Zombies move 20% faster. +30% cash.', speed: 1.2, cash: 1.3 },
+            goldrush:    { name: 'GOLD RUSH',   color: '#fde047', desc: 'Double cash this wave!', cash: 2 },
+            specialists: { name: 'SPECIALISTS', color: '#c084fc', desc: 'Twice as many special zombies. +30% cash.', special: 2, cash: 1.3 }
+        };
+        let twist = null;
         function waveSpeed(level) { return Math.min(3 + level * 0.3, 9); }
         function waveReward(level) { return 10 + level * 5; }
 
@@ -5170,7 +5270,8 @@
             enemies.forEach(e => { scene.remove(e); disposeEnemy(e); });
             enemies = [];
             const level = playerStats.level;
-            const count = Math.min(Math.round((6 + level * 2) * DIFF().count), 60);
+            twist = (!NET.inGame && run.mode !== 'sandbox' && level >= 6 && level % 5 !== 0 && Math.random() < 0.7) ? TWISTS[Object.keys(TWISTS)[(Math.random() * 5) | 0]] : null;
+            const count = Math.min(Math.round((6 + level * 2) * DIFF().count * (twist && twist.count || 1)), twist && twist.count ? 80 : 60);
             const pp = camera.position;
             const counts = {};
             const list = [];
@@ -5193,15 +5294,18 @@
                 }
                 let sy = 18 + Math.random() * 10;
                 if (VOID) { const sp = navSpot(pp.x, pp.z, camping ? 18 : 24, 999) || navSpot(pp.x, pp.z, 10, 999) || navSpot(pp.x, pp.z, 0, 999); if (sp) { x = sp[0]; z = sp[2]; sy = sp[1] + 10 + Math.random() * 8; } }
-                spawnEnemy(eConf, x, z, sy, waveSpeed(level), waveReward(level));   // drop them in from the sky
+                const ne = spawnEnemy(eConf, x, z, sy, waveSpeed(level), waveReward(level));   // drop them in from the sky
+                if (twist) { if (twist.hp && eConf.id !== 'boss') { ne.userData.hp *= twist.hp; ne.userData.maxHp = ne.userData.hp; } if (twist.speed) ne.userData.speed *= twist.speed; }
             }
             waveActive = true;
             if (NET.inGame) netWaveStarted(level);
             sfx('wave');
-            toast(level % 5 === 0 ? `WAVE ${level} - BOSS INCOMING` : (level === 1 ? `WAVE 1  \u00b7  ARENA: ${theme.name}` : `WAVE ${level}`), level % 5 === 0 ? '#e879f9' : '#ffffff', 2.2);
+            toast(level % 5 === 0 ? `WAVE ${level} - BOSS INCOMING` : (level === 1 ? `WAVE 1  \u00b7  ARENA: ${theme.name}` : twist ? `WAVE ${level}  \u00b7  ${twist.name}` : `WAVE ${level}`), level % 5 === 0 ? '#e879f9' : (twist ? twist.color : '#ffffff'), 2.2);
+            const twistHtml = twist ? `<div class="text-sm font-black hud-text" style="color:${twist.color}">WAVE TWIST: ${twist.name}</div><div class="text-xs text-gray-200 mb-1">${twist.desc}</div>` : '';
             const newTypes = [...new Set(list)].filter(t => t.intel && !seenTypes.has(t.id));
             newTypes.forEach(t => seenTypes.add(t.id));
-            if (newTypes.length) showIntel(newTypes.map(t => `<div class="text-sm font-black hud-text" style="color:${hex(t.color === 0x3f4a5c ? 0x9fb1cc : t.color)}">NEW ENEMY: ${t.name.toUpperCase()}</div><div class="text-xs text-gray-200 mb-1">${t.intel}</div>`).join(''), 9);
+            if (newTypes.length) showIntel(twistHtml + newTypes.map(t => `<div class="text-sm font-black hud-text" style="color:${hex(t.color === 0x3f4a5c ? 0x9fb1cc : t.color)}">NEW ENEMY: ${t.name.toUpperCase()}</div><div class="text-xs text-gray-200 mb-1">${t.intel}</div>`).join(''), 9);
+            else if (twist) showIntel(twistHtml, 5);
             scheduleSupply();
             updateHUD();
         }
@@ -5256,6 +5360,10 @@
                 if (headshot) { u.head.visible = false; spawnParticles(new V3(e.position.x, e.position.y + 2.8 * u.config.scale, e.position.z), zLook(u.config).skin, 10, 7, 0.9, 0.2 * u.config.scale, true, { bounce: true, spin: 12, grav: 26 }); }
                 corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1 });
                 if (award && !u.noLoot) dropLoot(u, e.position);
+                if (u.config.id === 'splitter' && (!NET.inGame || NET.host)) {   // 3.8: bursts into Mites
+                    spawnParticles(c, 0xc084fc, 14, 8, 0.7, 0.25, false, { grav: 14 });
+                    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.random(); const m = spawnEnemy(enemyTypes.mite, e.position.x + Math.cos(a) * 1.4, e.position.z + Math.sin(a) * 1.4, e.position.y + 0.6, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }
+                }
             }
             updateHUD();
             if (!NET.inGame || NET.host) checkWaveStatus();
@@ -5264,7 +5372,7 @@
             {
                 combo++; comboTimer = 3.5;
                 const mult = 1 + Math.min(combo - 1, 10) * 0.1;
-                const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1));
+                const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1));
                 playerStats.money += reward;
                 spawnDamageNumber(c.clone().setY(c.y + 0.8), `+$${reward}`, 'cash');
                 runStats.kills++;
@@ -5307,7 +5415,7 @@
         function checkWaveStatus() {
             if (enemies.length === 0 && waveActive) {
                 waveActive = false;
-                const bonus = Math.round((40 + playerStats.level * 15) * DIFF().cash * (run.mode === 'rush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1));
+                const bonus = Math.round((40 + playerStats.level * 15) * DIFF().cash * (run.mode === 'rush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1)); twist = null;
                 playerStats.money += bonus;
                 gainXP(40 + 10 * playerStats.level);
                 playerStats.level++;
@@ -5395,17 +5503,16 @@
         }
         function die() {
             if (NET.inGame) { netLocalDeath(); return; }
-            // the auto-save from the last cleared wave survives death: you can continue from the start of the wave you died on
+            // 3.8: permadeath - dying ends the run for good and deletes its save (the auto-save is only for quitting and coming back)
             const sv = runSaveOK() ? loadRunSave() : null;
-            const kept = !!(sv && sv.run.seed === run.seed && sv.run.map === run.map);
+            const kept = false;
             const s = runStats, wave = playerStats.level;
             const acc = s.shots ? Math.round(s.hits / s.shots * 100) : 0;
             const mm = Math.floor(s.time / 60), ss = Math.floor(s.time % 60);
             const favorite = Object.entries(s.weaponKills).sort((a, b) => b[1] - a[1])[0];
             const newBest = commitLife();
-            if (kept) keepSaveAfterDeath(sv);
-            else if (sv) clearRunSave();
-            document.querySelector('#gameover-overlay p').textContent = kept ? `PROGRESS SAVED - CONTINUE FROM WAVE ${sv.stats.level}` : 'ALL PROGRESS LOST';
+            if (sv) clearRunSave();
+            document.querySelector('#gameover-overlay p').textContent = sv ? 'RUN OVER - YOUR SAVE WAS DELETED' : 'ALL PROGRESS LOST';
             $('btn-go-continue').classList.toggle('hidden', !kept);
             if (kept) $('btn-go-continue').textContent = `CONTINUE FROM WAVE ${sv.stats.level}`;
             ui.btnRespawn.textContent = kept ? 'NEW RUN' : 'START OVER';
@@ -5476,7 +5583,7 @@
         // Single player auto-saves a checkpoint to this browser every time a wave is cleared (and again when you leave the
         // between-wave armory, so purchases stick): the map (same layout), lighting, wave, money, weapons, upgrades, perks,
         // health, armour and power-ups. CONTINUE on the main menu picks it back up at the start of the next wave.
-        // Dying keeps it (continue from the start of the wave you died on). Never in sandbox or multiplayer.
+        // 3.8: dying deletes it (permadeath). Never in sandbox or multiplayer.
         const RUN_KEY = 'huntington.blockyshooter.run.v1';   // namespaced: every Huntington game shares one browser origin
         const RUN_KEY_OLD = 'blocky_run_save';                  // 3.5 auto-save: still readable, replaced by the next save
         const runSaveOK = () => !NET.on && run.mode !== 'sandbox';
@@ -5533,15 +5640,15 @@
             if (st === 'none') return;
             if (st === 'off') { note.textContent = 'Auto-save unavailable here (browser storage is blocked)'; return; }
             const sv = loadRunSave();
-            if (inShop) note.textContent = sv ? `Progress saved - you'll continue from Wave ${sv.stats.level}. Purchases save when the wave starts.` : 'Progress auto-saves after every wave.';
-            else note.textContent = sv ? `Auto-saved: continue from Wave ${sv.stats.level} (even after dying). Saves after every wave.` : 'Progress auto-saves after every wave you clear.';
+            if (inShop) note.textContent = sv ? `Progress saved - quit any time and continue from Wave ${sv.stats.level}. If you die, the save is deleted.` : 'Progress auto-saves after every wave. If you die, the save is deleted.';
+            else note.textContent = sv ? `Auto-saved: you can quit and continue from Wave ${sv.stats.level}. Dying deletes the save.` : 'Progress auto-saves after every wave you clear. Dying deletes the save.';
         }
         function refreshSaveUI() {
             paintSaveNote($('shop-save-note'), true);
             if (currentGameState === 'shop' && returnMenuState !== 'nextwave') $('shop-save-note').classList.add('hidden');
             paintSaveNote($('pause-save-note'), false);
         }
-        // Death keeps the checkpoint. Its stats were just folded into the lifetime stats, so the save restarts the run
+        // (no longer used since 3.8: death deletes the save) Death used to keep the checkpoint. Its stats were folded into the lifetime stats, so the save restarted the run
         // stats from zero (no double counting when you continue and later die or start over).
         function keepSaveAfterDeath(sv) {
             sv.runStats = Object.assign(freshRunStats(), { waveBase: Math.max(0, sv.stats.level - 1) });
@@ -5649,7 +5756,7 @@
         }
         function meleeHit(u, cfg, enemy, mult = 1, kb) {
             if (u.attackCooldown > 0) return;
-            hurtTarget(_aiT, cfg.damage * lvlDmg() * mult, enemy.position, kb, 'a ' + cfg.name);
+            hurtTarget(_aiT, cfg.damage * lvlDmg() * mult * (u.rage > 0 ? 1.25 : 1), enemy.position, kb, 'a ' + cfg.name);
             u.attackCooldown = cfg.id === 'charger' ? 2.6 : 1.3; u.armSwing = 0.3;
         }
         function slam(pos, radius, dmg, color, by = 'a ground slam') {
@@ -5685,6 +5792,11 @@
 
                 if (u.flash > 0) { u.flash -= delta; if (u.flash <= 0) { u.mat.emissive.setHex(u.baseEmissive); u.mat.emissiveIntensity = u.baseEmissiveI; } }
                 if (u.attackCooldown > 0) u.attackCooldown -= delta;
+                if (u.rage > 0) u.rage -= delta;
+                if (u.burnT > 0) {   // 3.8: on fire (Flamethrower): burns every quarter second
+                    u.burnT -= delta; u.burnAcc = (u.burnAcc || 0) + delta;
+                    if (u.burnAcc >= 0.25) { u.burnAcc -= 0.25; spawnParticles(new V3(enemy.position.x, enemy.position.y + u.totalHeight * 0.55, enemy.position.z), Math.random() < 0.5 ? 0xff6a1f : 0xffb020, 2, 2.5, 0.5, 0.3 * cfg.scale, false, { grav: -4 }); damageEnemy(enemy, u.burnDps * 0.25, false, null, true, null, 1, 'flamer'); if (u.dead) continue; }
+                }
 
 
                 const sx0 = enemy.position.x, sz0 = enemy.position.z;   // start-of-frame spot (charge wall check)
@@ -5854,6 +5966,23 @@
                         }
                         break;
                     }
+                    case 'screamer': {
+                        let best = null, bd = 1e9;
+                        for (const o of enemies) { if (o === enemy || o.userData.dead || o.userData.config.ai === 'screamer') continue; const d = Math.hypot(o.position.x - enemy.position.x, o.position.z - enemy.position.z); if (d < bd) { bd = d; best = o; } }
+                        if (hd < 14) { mx = -mx; mz = -mz; spMul = 1.15; }
+                        else if (best) { const bx = best.position.x - pos.x, bz = best.position.z - pos.z, bl = Math.hypot(bx, bz) || 1; const tx = best.position.x + bx / bl * 5 - enemy.position.x, tz = best.position.z + bz / bl * 5 - enemy.position.z, tl = Math.hypot(tx, tz); if (tl < 1.5) wantMove = false; else { mx = tx / tl; mz = tz / tl; } }
+                        else if (hd < 24) { mx = -mx; mz = -mz; } else wantMove = false;
+                        if (u.aura) u.aura.material.opacity = 0.15 + 0.12 * Math.sin(gameTime * 3);
+                        u.aiT -= delta;
+                        if (u.aiT <= 0 && hd < 45) {
+                            u.aiT = 6;
+                            let n = 0; for (const o of enemies) { const ou = o.userData; if (o === enemy || ou.dead) continue; if (Math.hypot(o.position.x - enemy.position.x, o.position.z - enemy.position.z) < 18) { ou.rage = 5; n++; } }
+                            spawnBlastFx(new V3(enemy.position.x, enemy.position.y + 0.2, enemy.position.z), 18, 0xef4444, true, 0.6);
+                            sfxAt('scream', camera.position.distanceTo(enemy.position));
+                            if (n && !u.warned) { u.warned = true; toast('A SCREAMER enraged the horde!', '#fca5a5', 1.6); }
+                        }
+                        break;
+                    }
                     case 'medic': {
                         let best = null, bd = 1e9;
                         for (const o of enemies) {
@@ -5935,7 +6064,7 @@
 
                 const feet = enemy.position.y, top = feet + u.totalHeight, ox = enemy.position.x, oz = enemy.position.z;
                 if (!custom && wantMove && !(VOID && u.dropping)) {       // (on Sky Islands they don't steer while dropping in from the sky)
-                    const step = u.speed * spMul * delta;
+                    const step = u.speed * spMul * (u.rage > 0 ? 1.45 : 1) * delta;
                     // Sky Islands: don't walk off the edge of a cloud (being knocked off is another story)
                     if (VOID && u.onGround && !skyOK(enemy.position.x + mx * (step + u.radius * 0.6), enemy.position.z + mz * (step + u.radius * 0.6), feet)) { mx = 0; mz = 0; }
                     enemy.position.x += mx * step; enemy.position.z += mz * step;
@@ -6077,8 +6206,9 @@
             }
             // drop-table cash grows 5% every wave (compounding, capped at 4x) so money keeps up with the waves
             const cashMul = Math.min(4, Math.pow(1.05, playerStats.level - 1)) * DIFF().cash * (boostOn('gold') ? 1.5 : 1);
-            if (Math.random() < d[0]) spawnPickup(pos, 'health', d[1], -0.7);
-            if (Math.random() < d[2]) spawnPickup(pos, 'cash', Math.round(d[3] * cashMul), 0.7);
+            const sc = 1 + 0.25 * perk('scav');
+            if (Math.random() < d[0] * sc) spawnPickup(pos, 'health', d[1], -0.7);
+            if (Math.random() < d[2] * sc) spawnPickup(pos, 'cash', Math.round(d[3] * cashMul * (twist && twist.cash || 1)), 0.7);
         }
         function spawnPickup(pos, kind, amount, offset = 0) {
             const g = new THREE.Group();
@@ -6990,6 +7120,9 @@
             tank: 'A bloated brute zombie in chains. Slow and tough, hits hard - keep your distance.',
             spitter: 'A swollen acid zombie. Lobs acid balls from medium range (about 24m) - back off out of range or sidestep them.',
             bomber: 'A glowing, bloated exploder zombie. Rushes you and bursts. Pop it early - it hurts its friends too.',
+            splitter: 'A bloated zombie full of Mites. Kill it and three fast little Mites burst out. From wave 7.',
+            mite: 'A tiny, very fast critter that bursts out of a dead Splitter. One hit kills it.',
+            screamer: 'Hangs back behind the horde and shrieks: every zombie near it goes into a rage (faster, harder hits) for 5 seconds. From wave 10.',
             boss: 'A giant zombie abomination, every 5th wave. Ground-slams when you get close and calls in sprinters for backup.'
         };
         const hexC = (c) => '#' + new THREE.Color(c).getHexString();
@@ -7059,7 +7192,7 @@
                 }
                 h += `</div>`;
             } else if (menuTab === 'bestiary') {
-                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'marksman', 'medic', 'boss'];
+                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'boss'];
                 h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id], seen = life.kills > 0 || id === 'grunt';
                     return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${id === 'boss' ? 'every 5th wave' : 'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
             } else if (menuTab === 'controls') {
@@ -7150,6 +7283,7 @@
             menu: () => changeGameState('main'),
             charges: (n) => { strikeCharges = n; },
             turret: (L, x, z) => { playerStats.upgrades.turret = L; deployTurret(x, groundAt(x, z, 0.3, 1), z); },
+            get twist() { return twist; },
             get nav() { return nav; }, skyOK: (x, z, f) => skyOK(x, z, f), ground: (x, z, m, f) => groundAt(x, z, m, f), ceil: (x, z, m, t) => ceilingAt(x, z, m, t), navSteer: (x, z, y) => navSteer(x, z, y, camera.position.x, camera.position.z) ? { ...navGoal } : null, navField: (d) => updateNavField(d || 1),
             orb: (kind, x, z, y = 0) => { const n = orbs.length; spawnOrb(); if (orbs.length > n) { const o = orbs[orbs.length - 1]; o.kind = kind || o.kind; if (x !== undefined) { o.g.position.set(x, y + 1.1, z); o.baseY = y + 1.1; } return o; } },
             get orbs() { return orbs; }, get boosts() { return boosts; }, get turrets() { return turrets; }, get arena() { return ARENA; }, get spawnPt() { return spawnPt; },
