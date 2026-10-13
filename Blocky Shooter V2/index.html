@@ -224,7 +224,7 @@
 
     <div id="main-menu-overlay" class="absolute inset-0 z-50 flex" style="background: linear-gradient(90deg, rgba(3,4,10,0.95) 0%, rgba(3,4,10,0.86) 36%, rgba(3,4,10,0.3) 62%, rgba(3,4,10,0) 100%);">
         <div class="w-[min(660px,100vw)] h-full flex flex-col px-10 py-7">
-            <div class="text-yellow-500 font-bold tracking-widest text-sm">VERSION 3.8 &middot; NEW: SPLITTERS, SCREAMERS, CROSSBOW, FLAMETHROWER &middot; PERMADEATH</div>
+            <div class="text-yellow-500 font-bold tracking-widest text-sm">VERSION 3.9 &middot; THE BOSS UPDATE &middot; 8 BOSSES + BOSS RUSH MODE</div>
             <h1 class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 italic tracking-tighter pr-2 leading-tight">BLOCKY SHOOTER</h1>
             <p class="text-amber-300 text-xs font-bold tracking-widest mb-2 h-4" id="menu-best"></p>
             <div id="menu-rank" class="flex items-center gap-3 mb-2"></div>
@@ -363,7 +363,7 @@
         // ==========================================
 
 
-        const VERSION = '3.8';
+        const VERSION = '3.9';
         const V3 = THREE.Vector3;
         const $ = (id) => document.getElementById(id);
         const clamp = THREE.MathUtils.clamp, lerp = THREE.MathUtils.lerp;
@@ -455,8 +455,30 @@
             splitter: { id: 'splitter', name: 'Splitter', color: 0x7c3aed, hp: 1.8, speed: 0.85, scale: 1.15, reward: 2.5, damage: 12, ai: 'melee', eye: 0xd8b4fe, minLvl: 7, intel: 'Swollen with Mites. When it dies it bursts into three fast little Mites. Explosives and fire clear them up.', drops: [0.2, 25, 0.22, 40] },
             mite:     { id: 'mite',     name: 'Mite',     color: 0xa78bfa, hp: 0.25, speed: 2.1, scale: 0.5,  reward: 0.3, damage: 4,  ai: 'melee', slim: 0.9, eye: 0xf5d0fe, minLvl: 999, drops: [0, 0, 0, 0] },
             screamer: { id: 'screamer', name: 'Screamer', color: 0xdc2626, hp: 1.1, speed: 0.9,  scale: 1.0,  reward: 3.5, damage: 8,  ai: 'screamer', eye: 0xfca5a5, minLvl: 10, cap: 2, intel: 'Hangs back and SHRIEKS: every zombie near it goes into a rage (faster, harder hits) for a few seconds. Kill it first!', drops: [0.4, 35, 0.25, 50] },
-            boss:     { id: 'boss',     name: 'Boss',     color: 0x9333ea, hp: 40,  speed: 0.45, scale: 2.3,  reward: 15,  damage: 35, ai: 'boss', eye: 0xff3bd4, drops: [1, 999, 1, 500] }
+            boss:     { id: 'boss',     name: 'The Abomination', color: 0x9333ea, hp: 40,  speed: 0.45, scale: 2.3,  reward: 15,  damage: 35, ai: 'boss', eye: 0xff3bd4, drops: [1, 999, 1, 500], boss: true, glow: 0x3b0764, bar: '#e879f9',
+                        title: 'MOTHER OF THE HORDE', tip: 'Back off when it raises its arms. When enraged, its slams send out a shockwave - JUMP over it.' },
+            // ---- 3.9: the boss roster. Every boss fights its own way and gets ENRAGED (phase 2) below half health ----
+            jugg:     { id: 'jugg',     name: 'The Juggernaut', color: 0x57534e, hp: 46,  speed: 0.5,  scale: 2.4,  reward: 15,  damage: 34, ai: 'jugg', eye: 0xff7a1a, drops: [1, 999, 1, 500], boss: true, glow: 0x431407, bar: '#fb923c', armor: 0.45, slim: 1.1,
+                        title: 'THE UNSTOPPABLE', tip: 'Armor halves your bullets. Dodge its charge so it hits a WALL - while stunned the armor cracks and it takes extra damage.' },
+            brood:    { id: 'brood',    name: 'The Broodmother', color: 0x65a30d, hp: 34, speed: 0.55, scale: 2.2,  reward: 15,  damage: 20, ai: 'brood', eye: 0xd9f99d, drops: [1, 999, 1, 500], boss: true, glow: 0x1a2e05, bar: '#a3e635',
+                        title: 'QUEEN OF THE MITES', tip: 'Lobs acid that leaves burning pools and lays egg sacs. Shoot the eggs before they hatch into Mites.' },
+            pyro:     { id: 'pyro',     name: 'The Inferno', color: 0xc2410c, hp: 38,  speed: 0.55, scale: 2.2,  reward: 15,  damage: 26, ai: 'pyro', eye: 0xfde047, drops: [1, 999, 1, 500], boss: true, glow: 0x7c2d12, bar: '#f97316', fireImmune: true,
+                        title: 'THE BURNING ONE', tip: 'Immune to fire. Throws fireballs and erupts in a flame ring when you get close - get out of the glowing circle!' },
+            phantom:  { id: 'phantom',  name: 'The Phantom', color: 0x334155, hp: 26,  speed: 0.95, scale: 1.75, reward: 15,  damage: 28, ai: 'phantom', eye: 0x67e8f9, drops: [1, 999, 1, 500], boss: true, glow: 0x083344, bar: '#67e8f9', slim: 0.9,
+                        title: 'THE UNSEEN', tip: 'Turns invisible and strikes from behind. Listen for it, keep moving - shooting it while cloaked reveals it.' },
+            warlord:  { id: 'warlord',  name: 'The Warlord', color: 0x4d5d2a, hp: 36,  speed: 0.5,  scale: 2.2,  reward: 15,  damage: 30, ai: 'warlord', eye: 0xff2020, drops: [1, 999, 1, 500], boss: true, glow: 0x1a2e05, bar: '#ef4444',
+                        title: 'GENERAL OF THE DEAD', tip: 'Minigun: break line of sight when it spins up. Red circles on the ground mean a rocket strike is coming.' },
+            titan:    { id: 'titan',    name: 'The Colossus', color: 0x78716c, hp: 60,  speed: 0.36, scale: 3.0,  reward: 18,  damage: 40, ai: 'titan', eye: 0xfbbf24, drops: [1, 999, 1, 500], boss: true, glow: 0x292524, bar: '#fbbf24', slim: 1.15,
+                        title: 'THE MOUNTAIN THAT WALKS', tip: 'Its stomps send out shockwaves - JUMP over them. It hurls boulders where the orange circle is.' },
+            necro:    { id: 'necro',    name: 'The Necromancer', color: 0x2e1065, hp: 30, speed: 0.6, scale: 2.0,  reward: 15,  damage: 18, ai: 'necro', eye: 0xa78bfa, drops: [1, 999, 1, 500], boss: true, glow: 0x2e1065, bar: '#a78bfa', slim: 0.9,
+                        title: 'LORD OF THE RISEN', tip: 'Shielded while its Acolytes chant. Hunt down the Acolytes, then unload on it. It raises the dead and fires homing skulls.' },
+            // boss helpers (never spawn on their own)
+            egg:      { id: 'egg',      name: 'Egg Sac',  color: 0x84cc16, hp: 0.9, speed: 0,    scale: 0.85, reward: 0.5, damage: 0,  ai: 'egg', eye: 0xd9f99d, minLvl: 999, fixed: true, drops: [0, 0, 0.3, 15] },
+            phclone:  { id: 'phclone',  name: 'Phantom Decoy', look: 'phantom', color: 0x334155, hp: 0.3, speed: 1.05, scale: 1.75, reward: 0.2, damage: 10, ai: 'melee', eye: 0x67e8f9, slim: 0.9, minLvl: 999, drops: [0, 0, 0, 0] },
+            acolyte:  { id: 'acolyte',  name: 'Acolyte',  color: 0x4c1d95, hp: 2.2, speed: 0,    scale: 1.05, reward: 2,   damage: 0,  ai: 'acolyte', eye: 0xc4b5fd, minLvl: 999, fixed: true, drops: [0.3, 25, 0.3, 40] },
+            risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] }
         };
+        const BOSS_IDS = Object.keys(enemyTypes).filter(k => enemyTypes[k].boss);
 
 
         const THEMES = {
@@ -496,6 +518,7 @@
         const MODES = {
             classic: { name: 'CLASSIC', color: '#e5e7eb', desc: 'Survive the waves. The Armory opens between waves.' },
             rush:    { name: 'RUSH',    color: '#f97316', desc: 'No breaks - waves roll straight into each other. 1.5x cash and extra supply drops. Shop from the pause menu.' },
+            bossrush: { name: 'BOSS RUSH', color: '#e879f9', desc: 'Every wave is a boss fight - all 8 bosses, one after another, then two at a time. Fewer zombies, 1.5x cash, $2000 to start.' },
             sandbox: { name: 'SANDBOX', color: '#a78bfa', desc: 'Every weapon and gadget unlocked, unlimited cash, and you cannot die. Mess around!' }
         };
         const MAPS = {
@@ -591,6 +614,7 @@
         // same, but power-ups you haven't reached yet stay secret (they're never shown until you unlock them)
         const shownUnlocksAtRank = (r) => unlocksAtRank(r).filter(u => u.kind !== 'power' || rankInfo().rank >= r);
         const DIFF = () => DIFFICULTIES[run.diff] || DIFFICULTIES.normal;
+        const bestKey = (diff, mode) => diff + (mode === 'rush' ? '_rush' : mode === 'bossrush' ? '_boss' : '');
 
 
         const POWERUPS = {
@@ -815,6 +839,10 @@
                     case 'laser':    sfxTone('sawtooth', 2200, 300, 0.18, 0.12); sfxNoise(0.2, 5000, 0.12, 800); break;
                     case 'medic':    sfxTone('sine', 600, 1200, 0.3, 0.07); break;
                     case 'scream':   sfxTone('sawtooth', 700, 1700, 0.55, 0.09); sfxNoise(0.5, 3000, 0.1, 400); break;
+                    case 'roar':     sfxTone('sawtooth', 130, 38, 1.3, 0.22); sfxTone('square', 65, 30, 1.2, 0.12); sfxNoise(1.1, 380, 0.22, 60); break;
+                    case 'minigun':  sfxNoise(0.05, 2800, 0.14, 600); sfxTone('square', 150, 70, 0.04, 0.06); break;
+                    case 'cloak':    sfxTone('sine', 1100, 160, 0.55, 0.12); sfxNoise(0.4, 4000, 0.05, 800); break;
+                    case 'warn':     sfxTone('square', 920, 920, 0.09, 0.06); sfxTone('square', 920, 920, 0.09, 0.06, 0.14); break;
                     case 'crossbow': sfxTone('triangle', 320, 110, 0.14, 0.13); sfxNoise(0.08, 2600, 0.08, 500); break;
                     case 'flamer':   sfxNoise(0.09, 900, 0.07, 200); break;
                     case 'ting':     sfxTone('triangle', 2400, 1800, 0.1, 0.06); break;
@@ -2619,7 +2647,7 @@
             let n = 0;
             for (const e of enemies) {
                 const u = e.userData;
-                if (!u.barShow || u.dead || n >= HMAX) continue;
+                if (!u.barShow || u.dead || !e.visible || n >= HMAX) continue;
                 const r = Math.max(0, Math.min(1, u.hp / u.maxHp));
                 _p.set(e.position.x, e.position.y + u.barY, e.position.z);
                 _m4.compose(_p, camera.quaternion, _s.set(u.barW + 0.08, 0.2, 1)); hpBg.setMatrixAt(n, _m4); hpBg.instanceColor.setXYZ(n, 1, 1, 1);
@@ -4056,7 +4084,7 @@
                 const d = _fl.length(); if (d > reach + u.radius) continue;
                 _fl.multiplyScalar(1 / (d || 1)); if (_fl.dot(_fwd) < cosA && d > u.radius * 1.5) continue;
                 damageEnemy(e, w.damage * dmgMul, false, null, true, null, 1, 'flamer');
-                if (!u.dead) { u.burnT = 3; u.burnDps = w.damage * 2.2 * dmgMul; }
+                if (!u.dead && !u.config.fireImmune) { u.burnT = 3; u.burnDps = w.damage * 2.2 * dmgMul; }
                 hit = true;
             }
             if (hit) runStats.hits++;
@@ -4350,6 +4378,7 @@
                     if (boom || p.fuse <= 0) { removeProjectile(p); explode(p.mesh.position.clone(), p.damage, p.radius, { src: 'rpg', color: 0xff8a3c }); }
                     continue;
                 }
+                if (p.kind === 'bshot') { stepBossShot(p, dt); continue; }
                 if (p.kind === 'spit') {
                     p.mesh.position.addScaledVector(p.vel, dt); p.life -= dt;
                     p.mesh.scale.setScalar(1 + Math.sin(gameTime * 20) * 0.15);
@@ -4666,6 +4695,7 @@
             turrets.forEach(t => { scene.remove(t.g); t.ring.material.dispose(); }); turrets = [];
             fires.forEach(f => { scene.remove(f.mesh); f.mesh.material.dispose(); }); fires = [];
             strikes.forEach(s => { scene.remove(s.marker); s.marker.material.dispose(); }); strikes = [];
+            clearBossFx();
         }
 
 
@@ -4727,15 +4757,26 @@
             boss:     { skin: 0x6e5a80, pants: 0x2a1f3a, hair: null, shoe: null, sleeves: 'none', claws: true, blood: 0x7a1fa8 },
             splitter: { skin: 0x8a7aa8, pants: 0x3a2f55, hair: null, shoe: 0x1f1a2e, sleeves: 'none', blood: 0xa78bfa },
             mite:     { skin: 0xb9a6e8, pants: 0x4c3d75, hair: null, shoe: null, sleeves: 'none', shorts: true, noBelly: true, bigEyes: true, blood: 0xa78bfa },
-            screamer: { skin: 0x9c8f86, pants: 0x3b2a2a, hair: 0x111111, shoe: 0x222222, sleeves: 'long', noBelly: true, blood: 0x8b1a1a }
+            screamer: { skin: 0x9c8f86, pants: 0x3b2a2a, hair: 0x111111, shoe: 0x222222, sleeves: 'long', noBelly: true, blood: 0x8b1a1a },
+            jugg:     { skin: 0x7d6f62, pants: 0x292524, hair: null, shoe: 0x1c1917, sleeves: 'none', armor: 0x44403c, blood: 0x6a1212 },
+            brood:    { skin: 0x8fa35a, pants: 0x3f4a1a, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x9be15a },
+            pyro:     { skin: 0x5a2a1a, pants: 0x1c0f0a, hair: null, shoe: 0x111111, sleeves: 'none', claws: true, blood: 0xff7a1a },
+            phantom:  { skin: 0x8a9aa8, pants: 0x0f172a, hair: 0x0b0f19, shoe: null, sleeves: 'long', claws: true, bigEyes: true, noBelly: true, blood: 0x22d3ee },
+            warlord:  { skin: 0x6b7a5a, pants: 0x2f3a1e, hair: null, shoe: 0x1a1a14, sleeves: 'long', armor: 0x3a4a22, blood: 0x7a1414 },
+            titan:    { skin: 0x8a8378, pants: 0x3a3530, hair: null, shoe: null, sleeves: 'none', claws: true, blood: 0x6a1212 },
+            necro:    { skin: 0xb8b0c8, pants: 0x1e1b4b, hair: 0xe5e7eb, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
+            egg:      { skin: 0x9bbf4a, pants: 0x4d6b1a, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9be15a },
+            acolyte:  { skin: 0xa7a3b8, pants: 0x2e1065, hair: null, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
+            risen:    { skin: 0xd6d3c4, pants: 0x3a3632, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9ca3af }
         };
-        const zLook = cfg => ZLOOK[cfg.id] || ZLOOK.grunt;
+        const zLook = cfg => ZLOOK[cfg.look || cfg.id] || ZLOOK.grunt;
         function mixHex(a, b, t) { return new THREE.Color(a).lerp(new THREE.Color(b), t).getHex(); }
 
 
         function enemyKit(cfg) {
             if (enemyKits[cfg.id]) return enemyKits[cfg.id];
-            const s = cfg.scale, sl = cfg.slim || 1, id = cfg.id, Z = zLook(cfg);
+            if (cfg.id === 'egg') return (enemyKits.egg = eggKit(cfg));
+            const s = cfg.scale, sl = cfg.slim || 1, id = cfg.look || cfg.id, Z = zLook(cfg);
             const eye = cfg.eye || 0xd9ff5a;
             const cloth = mixHex(cfg.color, 0x55554a, 0.18), clothD = darken(cloth, 0.58);
             const skin = Z.skin, skinD = darken(skin, 0.74), rot = darken(skin, 0.42), pants = Z.pants, pantsD = darken(pants, 0.6);
@@ -4891,6 +4932,96 @@
                     T.push([1.08 * sl, 0.9, 0.62 * sl, 0, 1.55, 0, cloth], [0.4, 0.5, 0.02, -0.2, 1.4, hd + 0.02, clothD]);
                     k.torsoGlow.push([0.2, 0.3, 0.04, 0, 2.3, hd + 0.02, 0xff4d4d]);
                     break;
+                case 'jugg': {
+                    // walking siege engine: riveted chest plate, huge pauldrons, a bucket helm with a glowing slit, iron gauntlets
+                    const PL = 0x57534e, PLD = 0x3a3633, RIV = 0xa8a29e;
+                    T.push([1.12 * sl, 1.0, 0.14, 0, 1.88, hd + 0.06, PL], [1.12 * sl, 1.0, 0.14, 0, 1.88, -hd - 0.06, PLD], [1.16 * sl, 0.12, 0.7 * sl, 0, 1.4, 0, PLD]);
+                    for (const x of [-0.4, 0, 0.4]) T.push([0.08, 0.08, 0.04, x * sl, 2.28, hd + 0.14, RIV], [0.08, 0.08, 0.04, x * sl, 1.48, hd + 0.14, RIV]);
+                    T.push([0.8, 0.46, 0.92, -0.86, 2.46, 0, PL], [0.8, 0.46, 0.92, 0.86, 2.46, 0, PL], [0.84, 0.1, 0.96, -0.86, 2.24, 0, PLD], [0.84, 0.1, 0.96, 0.86, 2.24, 0, PLD]);
+                    T.push([0.14, 0.4, 0.14, -0.95, 2.82, 0, RIV, 0, 0, 0.3], [0.14, 0.4, 0.14, 0.95, 2.82, 0, RIV, 0, 0, -0.3]);
+                    k.torsoGlow.push([0.36, 0.08, 0.04, 0, 1.7, hd + 0.135, eye], [0.2, 0.2, 0.06, 0, 1.95, -hd - 0.14, eye]);
+                    H.push([0.86, 0.56, 0.84, 0, 0.12, 0, PL], [0.9, 0.08, 0.88, 0, 0.42, 0, PLD], [0.9, 0.1, 0.88, 0, -0.16, 0, PLD], [0.08, 0.5, 0.06, 0, 0.12, 0.43, PLD]);
+                    k.headGlow.push([0.62, 0.07, 0.04, 0, 0.06, 0.435, eye]);
+                    for (const A of [k.armL, k.armR]) A.push([0.48, 0.56, 0.48, 0, -0.95, 0, PL], [0.52, 0.1, 0.52, 0, -0.66, 0, PLD], [0.4, 0.3, 0.44, 0, -1.22, 0.02, PLD]);
+                    eyes = false;
+                    break;
+                }
+                case 'brood': {
+                    // bloated spider-queen: a huge glowing egg abdomen on her back, extra legs out of the ribs, a crown of little eyes, mandibles
+                    T.push([1.3, 1.05, 1.15, 0, 1.55, -0.8, skin], [1.0, 0.8, 0.9, 0, 1.6, -1.35, skinD], [0.5, 0.06, 0.02, 0, 1.75, -1.82, rot]);
+                    for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) T.push([0.1, 1.1, 0.1, sd * 0.78, 1.55 + i * 0.22, -0.2 - i * 0.18, skinD, 0, 0, sd * (0.9 + i * 0.15)], [0.08, 0.7, 0.08, sd * 1.25, 1.0 + i * 0.22, -0.2 - i * 0.18, BONE, 0, 0, -sd * 0.25]);
+                    extra = { size: [0.9, 0.7, 0.8], pos: [0, 1.7, -1.0], color: 0xbef264 };
+                    for (let i = 0; i < 5; i++) k.torsoGlow.push([0.16, 0.16, 0.06, (i - 2) * 0.24, 1.3 + (i % 2) * 0.4, -1.92, 0xd9f99d]);
+                    for (const [x, y] of [[-0.24, 0.18], [0.24, 0.18], [-0.1, 0.28], [0.1, 0.28], [-0.3, 0.02], [0.3, 0.02]]) k.headGlow.push([0.09, 0.09, 0.03, x, y, 0.385, eye]);
+                    H.push([0.1, 0.32, 0.1, -0.2, -0.46, 0.36, BONE, 0.4, 0, 0.3], [0.1, 0.32, 0.1, 0.2, -0.46, 0.36, BONE, 0.4, 0, -0.3]);
+                    eyes = false;
+                    break;
+                }
+                case 'pyro':
+                    // a walking furnace: charred skin split by glowing lava cracks, a molten core in the chest, a crown of fire, burning fists
+                    extra = { size: [0.44, 0.44, 0.2], pos: [0, 1.95, 0.36], color: 0xffb020 };
+                    for (const [x, y, w, h] of [[-0.3, 1.6, 0.05, 0.5], [0.3, 2.2, 0.05, 0.36], [0.1, 1.45, 0.4, 0.05], [-0.15, 2.3, 0.3, 0.05]]) k.torsoGlow.push([w, h, 0.03, x * sl, y, hd + 0.02, 0xff6a1f]);
+                    for (const [x, y] of [[-0.2, 1.7], [0.15, 2.05], [0, 1.4]]) k.torsoGlow.push([0.05, 0.4, 0.03, x * sl, y, -hd - 0.02, 0xff6a1f]);
+                    for (let i = 0; i < 5; i++) k.headGlow.push([0.12, 0.3 + (i % 2) * 0.22, 0.12, (i - 2) * 0.17, 0.52 + (i % 2) * 0.1, 0, i % 2 ? 0xffd24d : 0xff6a1f]);
+                    k.headGlow.push([0.4, 0.06, 0.03, 0, -0.24, 0.385, 0xff8a1f], [0.04, 0.3, 0.03, -0.25, 0.1, 0.385, 0xff6a1f]);
+                    k.armLGlow = [[0.34, 0.3, 0.36, 0, -1.18, 0.02, 0xff8a1f], [0.04, 0.5, 0.03, 0, -0.5, 0.15, 0xff6a1f]];
+                    k.armRGlow = [[0.34, 0.3, 0.36, 0, -1.18, 0.02, 0xff8a1f], [0.04, 0.5, 0.03, 0, -0.6, 0.15, 0xff6a1f]];
+                    T.push([0.55, 0.3, 0.7, -0.72, 2.4, 0, BLACK], [0.55, 0.3, 0.7, 0.72, 2.4, 0, BLACK]);
+                    break;
+                case 'phantom':
+                    // tall hooded wraith: a long tattered coat, a deep hood hiding the face, glowing eyes and long blade claws
+                    T.push([1.06 * sl, 1.5, 0.64 * sl, 0, 1.45, 0, cloth], [0.24, 0.6, 0.04, -0.3, 0.55, hd + 0.04, clothD], [0.3, 0.5, 0.04, 0.25, 0.6, -hd - 0.04, clothD]);
+                    T.push([0.8, 0.5, 0.7, 0, 2.5, -0.1, clothD]);
+                    H.push([0.9, 0.9, 0.36, 0, 0.06, -0.26, clothD], [0.9, 0.24, 0.92, 0, 0.46, 0, clothD], [0.12, 0.9, 0.92, -0.42, 0.06, 0, clothD], [0.12, 0.9, 0.92, 0.42, 0.06, 0, clothD], [0.6, 0.62, 0.03, 0, -0.02, 0.39, BLACK]);
+                    for (const A of [k.armL, k.armR]) for (const fx of [-0.1, 0, 0.1]) A.push([0.05, 0.8, 0.1, fx, -1.75, 0.12, 0xcbd5e1, 0.3, 0, 0]);
+                    k.armRGlow = [[0.02, 0.8, 0.11, 0, -1.75, 0.13, eye, 0.3, 0, 0]]; k.armLGlow = [[0.02, 0.8, 0.11, 0, -1.75, 0.13, eye, 0.3, 0, 0]];
+                    k.headGlow.push([0.14, 0.07, 0.03, -0.15, 0.04, 0.4, eye], [0.14, 0.07, 0.03, 0.15, 0.04, 0.4, eye]);
+                    eyes = false;
+                    break;
+                case 'warlord': {
+                    // zombie general: armored vest, crossed ammo belts, an officer cap with a red star, and a MINIGUN for a right arm
+                    const OL = 0x3a4a22, AM = 0xc9a227;
+                    T.push([1.08 * sl, 0.9, 0.66 * sl, 0, 1.9, 0, OL], [0.12, 1.2, 0.06, 0, 1.9, hd + 0.08, 0x5c4a2a, 0, 0, 0.6], [0.12, 1.2, 0.06, 0, 1.9, hd + 0.09, 0x5c4a2a, 0, 0, -0.6]);
+                    for (let i = 0; i < 5; i++) T.push([0.07, 0.14, 0.04, -0.34 + i * 0.17, 1.62 + i * 0.12, hd + 0.12, AM]);
+                    T.push([0.66, 0.34, 0.84, -0.8, 2.42, 0, OL], [0.66, 0.34, 0.84, 0.8, 2.42, 0, OL], [0.3, 0.06, 0.3, -0.8, 2.6, 0.1, AM]);
+                    H.push([0.84, 0.18, 0.84, 0, 0.44, 0, OL], [0.84, 0.05, 0.32, 0, 0.36, 0.5, BLACK], [0.86, 0.06, 0.86, 0, 0.34, 0, 0x5c4a2a]);
+                    k.headGlow.push([0.14, 0.14, 0.03, 0, 0.45, 0.43, 0xff2020]);
+                    k.armR = [[0.4, 0.4, 0.44, 0, -0.05, 0, OL], [0.5, 1.0, 0.5, 0, -0.75, 0, IRON], [0.56, 0.18, 0.56, 0, -1.2, 0, BLACK],
+                              [0.11, 0.9, 0.11, -0.13, -1.75, -0.13, BLACK], [0.11, 0.9, 0.11, 0.13, -1.75, -0.13, BLACK], [0.11, 0.9, 0.11, -0.13, -1.75, 0.13, BLACK], [0.11, 0.9, 0.11, 0.13, -1.75, 0.13, BLACK],
+                              [0.4, 0.08, 0.4, 0, -2.1, 0, IRON], [0.3, 0.5, 0.2, 0.36, -0.8, 0, 0x5c4a2a]];
+                    k.armRGlow = [[0.36, 0.04, 0.36, 0, -2.2, 0, 0xff6a1f]];
+                    break;
+                }
+                case 'titan': {
+                    // living mountain: stone plates grown over its shoulders, boulders on its back, moss, glowing amber cracks, fists like rocks
+                    const ST = 0x78716c, STD = 0x57534e, MOSS = 0x4d7c0f;
+                    T.push([0.8, 0.6, 1.0, -0.84, 2.45, 0, ST, 0, 0, 0.2], [0.8, 0.6, 1.0, 0.84, 2.45, 0, ST, 0, 0, -0.2], [0.6, 0.12, 0.7, -0.8, 2.78, 0, MOSS], [0.5, 0.12, 0.6, 0.85, 2.76, 0.05, MOSS]);
+                    T.push([0.9, 0.8, 0.6, -0.2, 2.1, -0.55, STD, 0.2, 0.3, 0], [0.7, 0.6, 0.5, 0.35, 1.6, -0.5, ST, 0, 0.5, 0.2], [1.0, 0.5, 0.2, 0, 1.75, hd + 0.08, ST]);
+                    k.torsoGlow.push([0.05, 0.6, 0.03, -0.2, 1.9, hd + 0.19, 0xfbbf24], [0.4, 0.05, 0.03, 0.1, 1.65, hd + 0.19, 0xfbbf24], [0.05, 0.4, 0.03, 0.3, 2.2, -hd - 0.02, 0xfbbf24]);
+                    for (const A of [k.armL, k.armR]) A.push([0.64, 0.64, 0.64, 0, -1.15, 0, STD], [0.5, 0.4, 0.5, 0, -0.5, 0, ST], [0.3, 0.1, 0.3, 0, -0.25, 0.1, MOSS]);
+                    H.push([0.3, 0.3, 0.3, -0.25, 0.48, 0, ST, 0, 0, 0.3], [0.34, 0.34, 0.34, 0.2, 0.5, -0.05, STD, 0, 0, -0.2], [0.8, 0.2, 0.8, 0, 0.36, 0, ST]);
+                    break;
+                }
+                case 'necro':
+                    // the lich: long robes, a skull face under a tall bone crown, a high spiked collar and a staff topped with a glowing orb
+                    T.push([1.1 * sl, 1.6, 0.72 * sl, 0, 1.4, 0, cloth], [1.16 * sl, 0.12, 0.76 * sl, 0, 0.62, 0, clothD], [0.2, 1.4, 0.04, 0, 1.5, hd + 0.08, 0x7c3aed]);
+                    T.push([0.2, 0.6, 0.1, -0.4, 2.7, -0.15, clothD, 0, 0, 0.3], [0.2, 0.6, 0.1, 0.4, 2.7, -0.15, clothD, 0, 0, -0.3], [0.9, 0.5, 0.1, 0, 2.6, -0.32, clothD]);
+                    for (let i = 0; i < 5; i++) H.push([0.08, 0.34 + (i % 2) * 0.24, 0.08, (i - 2) * 0.17, 0.56 + (i % 2) * 0.12, 0, BONE]);
+                    k.headGlow.push([0.1, 0.1, 0.1, 0, 0.82, 0, eye]);
+                    k.armR.push([0.09, 3.0, 0.09, 0, -0.9, 0.26, 0x3f2a1e], [0.2, 0.12, 0.2, 0, 0.5, 0.26, BONE]);
+                    k.armRGlow = [[0.3, 0.3, 0.3, 0, 0.72, 0.26, eye]];
+                    break;
+                case 'acolyte':
+                    // kneeling cultist: hooded robe, hands raised to the Necromancer, a glowing rune on its chest
+                    T.push([1.04 * sl, 1.2, 0.66 * sl, 0, 1.55, 0, cloth]);
+                    H.push([0.84, 0.84, 0.3, 0, 0.06, -0.26, clothD], [0.84, 0.2, 0.86, 0, 0.44, 0, clothD], [0.1, 0.84, 0.86, -0.4, 0.06, 0, clothD], [0.1, 0.84, 0.86, 0.4, 0.06, 0, clothD]);
+                    k.torsoGlow.push([0.24, 0.24, 0.04, 0, 1.95, hd + 0.04, eye]);
+                    k.armLGlow = [[0.16, 0.16, 0.16, 0, -1.3, 0.08, eye]]; k.armRGlow = [[0.16, 0.16, 0.16, 0, -1.3, 0.08, eye]];
+                    break;
+                case 'risen':
+                    // a raised skeleton: bare ribs front and back
+                    for (let i = 0; i < 4; i++) T.push([0.7 * sl, 0.05, 0.03, 0, 1.75 + i * 0.13, hd + 0.03, BONE], [0.7 * sl, 0.05, 0.03, 0, 1.75 + i * 0.13, -hd - 0.03, BONE]);
+                    break;
                 case 'boss':
                     // abomination: ribcage torn open over a glowing heart, bone crown, fangs, spine of glowing pustules, shoulder spikes
                     T.push([0.36 * sl, 0.42, 0.02, 0.2 * sl, 1.98, hd + 0.012, HOLE]);
@@ -4910,8 +5041,19 @@
                 k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
             }
             // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14 }[id] ?? 0.2;
-            return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id, hunch, rough: 0.84, shield, extra, headZ: 0.06 }));
+            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26 }[id] ?? 0.2;
+            return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
+        }
+        // the Broodmother's egg sac: a lumpy, veiny, glowing blob on a puddle of goo (no real arms or legs)
+        function eggKit(cfg) {
+            const s = cfg.scale, Z = zLook(cfg), skin = Z.skin, skinD = darken(skin, 0.7), vein = darken(skin, 0.45), G = 0xd9f99d;
+            const nub = (y) => [[0.04, 0.04, 0.04, 0, y, 0, skinD]];
+            const k = { legL: nub(-0.5), legR: nub(-0.5), armL: nub(-0.3), armR: nub(-0.3), torso: [], head: [], torsoGlow: [], headGlow: [] };
+            k.torso.push([1.7, 0.08, 1.7, 0, 0.04, 0, 0x3f6212], [1.15, 1.2, 1.15, 0, 0.7, 0, skin], [1.3, 0.7, 0.95, 0, 0.65, 0, skinD], [0.95, 0.5, 0.95, 0, 1.45, 0, skin], [0.55, 0.3, 0.55, 0, 1.78, 0, skinD]);
+            k.torso.push([0.05, 1.0, 0.03, -0.25, 0.9, 0.59, vein], [0.05, 0.8, 0.03, 0.3, 0.8, -0.59, vein], [0.03, 0.9, 0.05, 0.59, 0.85, 0.1, vein]);
+            for (const [x, y, z] of [[-0.3, 0.8, 0.6], [0.32, 1.1, 0.6], [0.05, 0.5, -0.6], [0.6, 0.6, -0.2], [-0.6, 1.0, 0.1]]) k.torsoGlow.push([0.2, 0.2, 0.2, x, y, z, G]);
+            k.head.push([0.32, 0.3, 0.32, 0, -0.9, 0, skinD]); k.headGlow.push([0.12, 0.08, 0.34, 0, -0.84, 0, G]);
+            return finishKit(cfg, k, s, 1, { id: cfg.id, hunch: 0, rough: 0.6, extra: { size: [0.7, 0.7, 0.7], pos: [0, 0.9, 0], color: 0xbef264 }, headZ: 0 });
         }
         // build the merged part meshes. Torso (and anything riding on it) is stored relative to the hip joint.
         function finishKit(cfg, k, s, sl, o) {
@@ -4977,11 +5119,11 @@
             sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vFlash;')
                 .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(vFlash);');
         }
-        function ziMat(kit, boss) {
-            const key = (kit.rough + (boss ? 'b' : '')) + (Q.lite ? 'L' : 'S');
+        function ziMat(kit, boss) {        // boss = the boss's glow colour (0 for normal zombies)
+            const key = (kit.rough + (boss ? 'b' + boss : '')) + (Q.lite ? 'L' : 'S');
             if (ZI.mats.has(key)) return ZI.mats.get(key);
             const m = Q.lite ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: kit.rough, metalness: 0, envMapIntensity: theme.envInt * 0.6 });
-            if (boss) { m.emissive.setHex(0x3b0764); m.emissiveIntensity = 0.6; }
+            if (boss) { m.emissive.setHex(boss); m.emissiveIntensity = 0.6; }
             m.onBeforeCompile = enemyInstShader;
             m.customProgramCacheKey = () => 'zinst';
             ZI.mats.set(key, m);
@@ -5028,7 +5170,7 @@
                 const fl = u.flash > 0 ? 0.8 : 0;
                 for (const p of u.iparts) {
                     if (!p.mesh.visible) continue;
-                    const z = ziSet(u.kit, p.part, u.config.id === 'boss', need.get(u.kit.id + '|' + p.part));
+                    const z = ziSet(u.kit, p.part, u.config.glow || 0, need.get(u.kit.id + '|' + p.part));
                     z.mesh.setMatrixAt(z.n, p.mesh.matrixWorld);
                     z.mesh.setColorAt(z.n, u.tint);
                     z.flash.array[z.n] = fl;
@@ -5046,7 +5188,7 @@
             const kit = opt.classic ? classicKit(cfg) : enemyKit(cfg), s = kit.s, sl = kit.sl;
             const group = new THREE.Group();
             // stand-in "material": the real one is shared by the instanced meshes. Hit flash reads u.flash.
-            const mat = { emissive: new THREE.Color(cfg.id === 'boss' ? 0x3b0764 : 0), emissiveIntensity: cfg.id === 'boss' ? 0.6 : 1, dispose() {} };
+            const mat = { emissive: new THREE.Color(cfg.glow || 0), emissiveIntensity: cfg.glow ? 0.6 : 1, dispose() {} };
             const shadowParts = [], hitParts = [], iparts = [];
             const mk = (geo, parent, part, flags = {}) => {
                 const m = new THREE.Mesh(geo, flags.mat || glowMat);
@@ -5075,6 +5217,8 @@
                 shield.position.set(0.05 * s, 1.55 * s, 0.78 * s);
             }
             if (cfg.ai === 'marksman') { laser = new THREE.Mesh(sharedBox, _laserMat.clone()); laser.visible = false; laser.frustumCulled = false; scene.add(laser); }
+            let bubble = null;
+            if (cfg.ai === 'necro') { bubble = new THREE.Mesh(_bubbleGeo, fxMat(0xa78bfa, 0.2)); bubble.scale.setScalar(2.3 * s); bubble.position.y = 1.7 * s; bubble.visible = false; group.add(bubble); }
             if (cfg.ai === 'medic' || cfg.ai === 'screamer') { aura = new THREE.Mesh(_auraGeo, _auraMat.clone()); aura.position.y = 0.06; aura.scale.setScalar(cfg.ai === 'screamer' ? 18 : 11); if (cfg.ai === 'screamer') aura.material.color.setHex(0xef4444); group.add(aura); }
 
 
@@ -5088,7 +5232,7 @@
             group.userData = {
                 isEnemy: true, velocityY: 0, onGround: false, dead: false,
                 totalHeight: 3.2 * s, radius: 0.62 * s * (cfg.id === 'sprinter' ? 0.85 : 1),
-                config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, aura, barShow: false, barW: bw, barY: 3.6 * s + 0.3,
+                config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, aura, bubble, barShow: false, barW: bw, barY: 3.6 * s + 0.3,
                 mat, baseEmissive: mat.emissive.getHex(), baseEmissiveI: mat.emissiveIntensity, flash: 0,
                 walkPhase: Math.random() * 6, knock: new V3(), limp: 0.55 + Math.random() * 0.4, tilt: (Math.random() - 0.5) * 0.3, lurch: 0.7 + Math.random() * 0.6,
                 wanderT: 0, wanderDir: new V3(), stuckT: 0, lastX: 0, lastZ: 0,
@@ -5117,7 +5261,9 @@
             if (u.shield) u.shield.material.dispose();
             if (u.laser) { scene.remove(u.laser); u.laser.material.dispose(); }
             if (u.aura) u.aura.material.dispose();
+            if (u.bubble) u.bubble.material.dispose();
         }
+        const _bubbleGeo = new THREE.IcosahedronGeometry(1, 1);
 
 
         function pickEnemyType(level, counts) {
@@ -5140,13 +5286,14 @@
             enemy.position.set(x, y, z);
             const u = enemy.userData;
             // normal enemies have fixed health; the boss scales with the wave (2000 HP on wave 5, 10000 on wave 25)
-            u.hp = ENEMY_BASE_HP * cfg.hp * (cfg.id === 'boss' ? Math.max(1, playerStats.level / 5) : 1); u.maxHp = u.hp;
+            u.hp = ENEMY_BASE_HP * cfg.hp * bossHpMul(cfg); u.maxHp = u.hp;
             u.speed = baseSpeed * cfg.speed * DIFF().speed;
             u.reward = baseReward * cfg.reward;
             u.lastX = x; u.lastZ = z; u.dropping = true;
             u.netId = netEnemySeq = (netEnemySeq % 65000) + 1; enemyById.set(u.netId, enemy);
             scene.add(enemy);
             enemies.push(enemy);
+            if (cfg.boss) bossIntro(cfg);
             return enemy;
         }
         let netEnemySeq = 0; const enemyById = new Map();
@@ -5201,7 +5348,7 @@
         const campState = new Map();
         function resetCampState() { campState.clear(); }
         function flankIn(p) {
-            const far = enemies.filter(e => !e.userData.dead && e.userData.config.id !== 'boss' && Math.hypot(e.position.x - p.x, e.position.z - p.z) > Math.min(45, ARENA * 0.6))
+            const far = enemies.filter(e => !e.userData.dead && !e.userData.config.boss && !e.userData.config.fixed && Math.hypot(e.position.x - p.x, e.position.z - p.z) > Math.min(45, ARENA * 0.6))
                                .sort((a, b) => Math.hypot(b.position.x - p.x, b.position.z - p.z) - Math.hypot(a.position.x - p.x, a.position.z - p.z)).slice(0, 2);
             // drop them in on the open side (toward the middle of the arena)
             const toMid = Math.atan2(-p.z, -p.x);
@@ -5270,12 +5417,13 @@
             enemies.forEach(e => { scene.remove(e); disposeEnemy(e); });
             enemies = [];
             const level = playerStats.level;
-            twist = (!NET.inGame && run.mode !== 'sandbox' && level >= 6 && level % 5 !== 0 && Math.random() < 0.7) ? TWISTS[Object.keys(TWISTS)[(Math.random() * 5) | 0]] : null;
-            const count = Math.min(Math.round((6 + level * 2) * DIFF().count * (twist && twist.count || 1)), twist && twist.count ? 80 : 60);
+            const bossList = waveBosses(level), bossWave = bossList.length > 0;
+            twist = (!NET.inGame && run.mode !== 'sandbox' && run.mode !== 'bossrush' && level >= 6 && !bossWave && Math.random() < 0.7) ? TWISTS[Object.keys(TWISTS)[(Math.random() * 5) | 0]] : null;
+            const count = Math.min(Math.round((6 + level * 2) * DIFF().count * (twist && twist.count || 1) * (run.mode === 'bossrush' ? 0.35 : 1)), twist && twist.count ? 80 : 60);
             const pp = camera.position;
             const counts = {};
             const list = [];
-            if (level % 5 === 0) { list.push(enemyTypes.boss); if (level >= 15) list.push(enemyTypes.boss); }
+            bossList.forEach(id => list.push(enemyTypes[id]));
             // a new enemy type always shows up on the wave it unlocks, so you actually meet it
             const fresh = Object.values(enemyTypes).filter(t => t.minLvl === level && t.intel);
             fresh.forEach(t => list.push(...(t.id === 'marksman' ? [t] : [t, t])));
@@ -5295,12 +5443,12 @@
                 let sy = 18 + Math.random() * 10;
                 if (VOID) { const sp = navSpot(pp.x, pp.z, camping ? 18 : 24, 999) || navSpot(pp.x, pp.z, 10, 999) || navSpot(pp.x, pp.z, 0, 999); if (sp) { x = sp[0]; z = sp[2]; sy = sp[1] + 10 + Math.random() * 8; } }
                 const ne = spawnEnemy(eConf, x, z, sy, waveSpeed(level), waveReward(level));   // drop them in from the sky
-                if (twist) { if (twist.hp && eConf.id !== 'boss') { ne.userData.hp *= twist.hp; ne.userData.maxHp = ne.userData.hp; } if (twist.speed) ne.userData.speed *= twist.speed; }
+                if (twist) { if (twist.hp && !eConf.boss) { ne.userData.hp *= twist.hp; ne.userData.maxHp = ne.userData.hp; } if (twist.speed) ne.userData.speed *= twist.speed; }
             }
             waveActive = true;
             if (NET.inGame) netWaveStarted(level);
             sfx('wave');
-            toast(level % 5 === 0 ? `WAVE ${level} - BOSS INCOMING` : (level === 1 ? `WAVE 1  \u00b7  ARENA: ${theme.name}` : twist ? `WAVE ${level}  \u00b7  ${twist.name}` : `WAVE ${level}`), level % 5 === 0 ? '#e879f9' : (twist ? twist.color : '#ffffff'), 2.2);
+            toast(bossWave ? `WAVE ${level} - BOSS INCOMING` : (level === 1 ? `WAVE 1  \u00b7  ARENA: ${theme.name}` : twist ? `WAVE ${level}  \u00b7  ${twist.name}` : `WAVE ${level}`), bossWave ? '#e879f9' : (twist ? twist.color : '#ffffff'), 2.2);
             const twistHtml = twist ? `<div class="text-sm font-black hud-text" style="color:${twist.color}">WAVE TWIST: ${twist.name}</div><div class="text-xs text-gray-200 mb-1">${twist.desc}</div>` : '';
             const newTypes = [...new Set(list)].filter(t => t.intel && !seenTypes.has(t.id));
             newTypes.forEach(t => seenTypes.add(t.id));
@@ -5314,11 +5462,18 @@
         function damageEnemy(enemyGroup, amount, isHeadshot, point, isExplosion = false, knockDir = null, pellets = 1, src = null) {
             const u = enemyGroup.userData;
             if (u.dead) return;
-            if (boostOn('instakill') && !dmgOwner && u.config.id !== 'boss' && u.hp - amount < u.maxHp * 0.25) amount = Math.max(amount, u.hp);
+            // 3.9 boss rules: the Necromancer is untouchable while its Acolytes live, the Inferno shrugs off fire
+            if (u.shielded || (u.config.fireImmune && (src === 'flamer' || src === 'molotov'))) {
+                if (!dmgOwner && gameTime - (u.immT || -9) > 0.6) { u.immT = gameTime; spawnDamageNumber(point || new V3(enemyGroup.position.x, enemyGroup.position.y + u.totalHeight * 0.7, enemyGroup.position.z), u.shielded ? 'SHIELDED' : 'IMMUNE', 'boom'); sfx('thud'); }
+                return;
+            }
+            if (u.state === 'cloak') { u.state = 'walk'; u.aiT = 2.5; enemyGroup.visible = true; u.barShow = true; spawnDamageNumber(new V3(enemyGroup.position.x, enemyGroup.position.y + u.totalHeight, enemyGroup.position.z), 'REVEALED!', 'head'); }
+            if (boostOn('instakill') && !dmgOwner && !u.config.boss && u.hp - amount < u.maxHp * 0.25) amount = Math.max(amount, u.hp);
             // explosive rounds: bullet hits set off a small blast (queued, handled next frame)
             if (!isExplosion && point && boostOn('boom') && !dmgOwner && gameTime - boomLast > 0.1) { boomLast = gameTime; boomQ.push(point.clone()); }
             // multiplayer guest: tell the host (the referee) and show the hit right away so there's no lag
             if (NET.inGame && !NET.host) { netClientHit(enemyGroup, amount, isHeadshot, point, isExplosion, src || (isExplosion ? 'explosive' : playerStats.currentWeapon)); return; }
+            if (u.config.armor && u.state !== 'stun' && !isExplosion) amount *= u.config.armor;     // the Juggernaut's plating
             const mine = !dmgOwner;              // host applying someone else's hit: no hit marker / numbers here
             if (mine) runStats.damage += Math.min(amount, Math.max(0, u.hp));
             u.hp -= amount;
@@ -5326,7 +5481,7 @@
             u.mat.emissive.setHex(0xffffff); u.mat.emissiveIntensity = 0.8;
             u.barShow = true;
             if (knockDir) {
-                const k = Math.min(16, 1.3 * pellets) / Math.max(0.8, u.config.scale * (u.config.id === 'boss' ? 3 : 1));
+                const k = Math.min(16, 1.3 * pellets) / Math.max(0.8, u.config.scale * (u.config.boss ? 3 : 1));
                 u.knock.x += knockDir.x * k; u.knock.z += knockDir.z * k;
             }
             const kill = u.hp <= 0;
@@ -5341,9 +5496,12 @@
             if (u.dead) return;
             u.dead = true;
             enemies = enemies.filter(x => x !== e);
-            u.barShow = false;
+            u.barShow = false; e.visible = true;
             if (u.laser) u.laser.visible = false;
             if (u.aura) u.aura.visible = false;
+            if (u.bubble) u.bubble.visible = false;
+            // a boss takes its helpers with it (Phantom decoys, the Necromancer's Acolytes)
+            if (u.config.boss && (!NET.inGame || NET.host)) for (const o of [...enemies]) { const ou = o.userData; if (!ou.dead && (ou.master === e || (u.clones && u.clones.includes(o)))) { ou.noLoot = true; killEnemy(o, true); } }
 
 
             enemyById.delete(u.netId);
@@ -5372,7 +5530,7 @@
             {
                 combo++; comboTimer = 3.5;
                 const mult = 1 + Math.min(combo - 1, 10) * 0.1;
-                const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1));
+                const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1));
                 playerStats.money += reward;
                 spawnDamageNumber(c.clone().setY(c.y + 0.8), `+$${reward}`, 'cash');
                 runStats.kills++;
@@ -5380,8 +5538,8 @@
                 streak++;
                 if (streak >= STREAK_FOR_STRIKE) { streak = 0; if (strikeCharges < 2) { strikeCharges++; toast('AIRSTRIKE READY - press G', '#fca5a5', 2); sfx('strike'); } }
                 if (headshot) runStats.headshots++;
-                if (u.config.id === 'boss') runStats.bosses++;
-                gainXP(u.config.id === 'boss' ? 200 : 10 + (headshot ? 5 : 0) + (u.config.hp >= 2 ? 10 : 0));
+                if (u.config.boss) { runStats.bosses++; bossDefeated(u.config); }
+                gainXP(u.config.boss ? 200 : 10 + (headshot ? 5 : 0) + (u.config.hp >= 2 ? 10 : 0));
                 sfx(headshot ? 'headkill' : 'kill');
                 if (boostOn('vamp') && currentHp > 0) currentHp = Math.min(maxHp, currentHp + 5);
             }
@@ -5415,7 +5573,7 @@
         function checkWaveStatus() {
             if (enemies.length === 0 && waveActive) {
                 waveActive = false;
-                const bonus = Math.round((40 + playerStats.level * 15) * DIFF().cash * (run.mode === 'rush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1)); twist = null;
+                const bonus = Math.round((40 + playerStats.level * 15) * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1)); twist = null;
                 playerStats.money += bonus;
                 gainXP(40 + 10 * playerStats.level);
                 playerStats.level++;
@@ -5486,7 +5644,7 @@
             life.shots += s.shots; life.hits += s.hits; life.damage += Math.round(s.damage); life.time += s.time;
             life.waves += Math.max(0, playerStats.level - 1 - (s.waveBase || 0));   // waveBase: waves already counted by a death before a continue
             for (const k in s.weaponKills) life.weaponKills[k] = (life.weaponKills[k] || 0) + s.weaponKills[k];
-            const key = run.diff + (run.mode === 'rush' ? '_rush' : '');
+            const key = bestKey(run.diff, run.mode);
             const prev = life.best[key] || 0, newBest = playerStats.level > prev;
             if (newBest) life.best[key] = playerStats.level;
             saveJSON('blocky21_life', life);
@@ -5516,7 +5674,7 @@
             $('btn-go-continue').classList.toggle('hidden', !kept);
             if (kept) $('btn-go-continue').textContent = `CONTINUE FROM WAVE ${sv.stats.level}`;
             ui.btnRespawn.textContent = kept ? 'NEW RUN' : 'START OVER';
-            const best = life.best[run.diff + (run.mode === 'rush' ? '_rush' : '')] || wave;
+            const best = life.best[bestKey(run.diff, run.mode)] || wave;
             $('gameover-stats').innerHTML = (lastHurtBy ? `<span class="text-red-300 font-bold">Killed by ${lastHurtBy}.</span> ` : '') + `You reached <b class="text-white">Wave ${wave}</b> on <b style="color:${DIFF().color}">${DIFF().name}</b> (${MODES[run.mode].name}, ${MAPS[run.map].name}).` + (newBest ? ' <b class="text-amber-300">NEW PERSONAL BEST!</b>' : ` Best: Wave ${best}.`);
             $('gameover-grid').innerHTML = [['KILLS', s.kills], ['HEADSHOTS', s.headshots], ['ACCURACY', acc + '%'], ['DAMAGE', Math.round(s.damage)], ['TIME', `${mm}:${String(ss).padStart(2, '0')}`], ['TOP KILLER', favorite ? killerName(favorite[0]) : '-']]
                 .map(([k, v]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
@@ -5534,7 +5692,7 @@
         function gainXP(n) {
             if (run.mode === 'sandbox') return;
             const before = rankInfo().rank;
-            const amt = Math.round(n * (XP_MULT[run.diff] || 1) * (run.mode === 'rush' ? 1.2 : 1));
+            const amt = Math.round(n * (XP_MULT[run.diff] || 1) * (run.mode === 'rush' ? 1.2 : run.mode === 'bossrush' ? 1.3 : 1));
             life.xp += amt; runXP += amt;
             const after = rankInfo().rank;
             if (after > before) {
@@ -5695,7 +5853,7 @@
             strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(s.seen || []);
             resetAmmo();
             updateGunModel();
-            if (s.phase === 'shop' && run.mode === 'classic') { returnMenuState = 'nextwave'; changeGameState('shop'); }
+            if (s.phase === 'shop' && run.mode !== 'rush') { returnMenuState = 'nextwave'; changeGameState('shop'); }
             else changeGameState('playing');
         }
         function startFreshRun() {
@@ -5723,6 +5881,7 @@
                 playerStats.money = 999999; playerStats.armorTier = 'heavy'; currentArmor = armorDb.heavy.max;
                 strikeCharges = 2;
             }
+            if (run.mode === 'bossrush') playerStats.money = Math.max(playerStats.money, 2000);
             updateGunModel();
         }
 
@@ -5756,7 +5915,7 @@
         }
         function meleeHit(u, cfg, enemy, mult = 1, kb) {
             if (u.attackCooldown > 0) return;
-            hurtTarget(_aiT, cfg.damage * lvlDmg() * mult * (u.rage > 0 ? 1.25 : 1), enemy.position, kb, 'a ' + cfg.name);
+            hurtTarget(_aiT, cfg.damage * lvlDmg() * mult * (u.rage > 0 ? 1.25 : 1), enemy.position, kb, cfg.name.startsWith('The ') ? 'the' + cfg.name.slice(3) : 'a ' + cfg.name);
             u.attackCooldown = cfg.id === 'charger' ? 2.6 : 1.3; u.armSwing = 0.3;
         }
         function slam(pos, radius, dmg, color, by = 'a ground slam') {
@@ -5772,6 +5931,212 @@
                 const k = 10 / (dt || 1);
                 hurtTarget(t, dmg * (1 - 0.5 * dt / radius), pos, [(t.pos.x - pos.x) * k, 10, (t.pos.z - pos.z) * k], by);
             }
+        }
+
+
+        // ---------- 3.9 BOSSES: shared attack pieces ----------
+        // Warning circles that fill up and then go off, burning pools, shockwaves you have to JUMP over and boss
+        // projectiles. The host (or single player) does the damage; co-op guests get the same effects as a show ('bfx').
+        let bossFx = [];
+        const _bRingGeo = new THREE.RingGeometry(0.9, 1, 48); _bRingGeo.rotateX(-Math.PI / 2);
+        const _bWaveGeo = new THREE.CylinderGeometry(1, 1, 1, 56, 1, true); _bWaveGeo.translate(0, 0.5, 0);
+        const _bShotGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+        const bossAuth = () => !NET.inGame || NET.host;
+        const fxMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+        function bossNet(m) { if (NET.inGame && NET.host) netBroadcast(Object.assign({ t: 'bfx' }, m)); }
+        const r2a = (v) => [r2(v.x), r2(v.y), r2(v.z)];
+        // velocity to lob something from 'from' to (tx, ty, tz) in T seconds under gravity g
+        function lobVel(from, tx, ty, tz, T, g) { return new V3((tx - from.x) / T, (ty - from.y + 0.5 * g * T * T) / T, (tz - from.z) / T); }
+        // a ground warning circle: fills up over t seconds, then act() goes off (host only)
+        function bossTele(x, y, z, r, t, color, act, net = true) {
+            const ring = new THREE.Mesh(_bRingGeo, fxMat(color, 0.85)); ring.position.set(x, y + 0.08, z); ring.scale.setScalar(r);
+            const disc = new THREE.Mesh(_fireGeo, fxMat(color, 0.3)); disc.position.set(x, y + 0.06, z); disc.scale.setScalar(0.01);
+            scene.add(ring, disc);
+            bossFx.push({ k: 'tele', ring, disc, x, y, z, r, t, T: t, act: bossAuth() ? act : null });
+            if (net) bossNet({ k: 'tele', p: [r2(x), r2(y), r2(z)], r: r2(r), d: r2(t), c: color });
+            if (Math.hypot(camera.position.x - x, camera.position.z - z) < r + 3) sfx('warn');
+        }
+        // a pool of fire / acid on the ground that hurts players standing in it
+        function bossHazard(x, y, z, r, dps, t, color, by, net = true) {
+            const m = new THREE.Mesh(_fireGeo, fxMat(color, 0.5)); m.position.set(x, y + 0.05 + Math.random() * 0.02, z); m.scale.setScalar(r);
+            scene.add(m);
+            bossFx.push({ k: 'haz', m, x, y, z, r, dps, t, T: t, color, by, tick: 0.3 });
+            if (net) bossNet({ k: 'haz', p: [r2(x), r2(y), r2(z)], r: r2(r), d: r2(t), c: color });
+        }
+        // an expanding ring along the ground: anyone standing on the ground when it passes gets hit - jump over it!
+        function bossWave(x, y, z, maxR, speed, dmg, color, by, net = true) {
+            const m = new THREE.Mesh(_bWaveGeo, fxMat(color, 0.75)); m.position.set(x, y, z); m.scale.set(0.5, 0.9, 0.5);
+            scene.add(m);
+            bossFx.push({ k: 'wave', m, x, y, z, R: 0.5, maxR, speed, dmg, color, by, hit: new Set() });
+            if (net) bossNet({ k: 'wave', p: [r2(x), r2(y), r2(z)], r: r2(maxR), sp: speed, c: color });
+        }
+        // an explosion that only hurts players (fire = leave a burning pool behind)
+        function bossBlast(p, r, dmg, color, by, fire, inner = 0) {
+            explode(p, 0, r, { fxOnly: true, color });
+            if (NET.inGame) netSendFx('boom', p, r, color);
+            for (const t of aiTargets()) {
+                if (!t.alive) continue;
+                const d = Math.hypot(t.pos.x - p.x, t.pos.z - p.z);
+                if (d >= r + 0.4 || d < inner || Math.abs(t.feet - p.y) > Math.max(2.5, r * 0.6)) continue;
+                const k = 7 / (d || 1);
+                hurtTarget(t, dmg * (1 - 0.45 * Math.min(1, d / r)), p, [(t.pos.x - p.x) * k, 6, (t.pos.z - p.z) * k], by);
+            }
+            if (fire) bossHazard(p.x, groundAt(p.x, p.z, 0, p.y + 0.5), p.z, fire.r, fire.dps, fire.t, fire.c, by);
+        }
+        // a boss projectile. o: { c colour, s size, g gravity, life, dmg, r hit radius, boom blast radius, fire pool, home turn rate, tg target id, by, lit }
+        function bossShot(from, vel, o, net = true) {
+            const mat = o.lit ? new THREE.MeshLambertMaterial({ color: o.c }) : new THREE.MeshBasicMaterial({ color: o.c, toneMapped: false });
+            const mesh = new THREE.Mesh(_bShotGeo, mat); mesh.scale.setScalar(o.s || 1); mesh.position.copy(from);
+            scene.add(mesh);
+            projectiles.push({ kind: 'bshot', mesh, vel: vel.clone(), o, life: o.life || 4, from: from.clone(), fxOnly: !net });
+            if (net) bossNet({ k: 'shot', p: r2a(from), v: r2a(vel), o: { c: o.c, s: o.s, g: o.g, life: o.life, home: o.home, tg: o.tg, lit: o.lit, boom: o.boom } });
+        }
+        function bossTargetPos(id) {
+            if (id === undefined || id === NET.id || !NET.inGame) return camera.position;
+            if (NET.host) { for (const t of aiTargets()) if (t.id === id) return t.pos; return null; }
+            const p = netPlayers.get(id); return p && p.av ? p.av.g.position.clone().setY(p.av.g.position.y + 1.4) : null;
+        }
+        function stepBossShot(p, dt) {
+            const o = p.o, q = p.mesh.position;
+            p.life -= dt;
+            if (o.home) {
+                const tp = bossTargetPos(o.tg);
+                if (tp) { _tmp.set(tp.x - q.x, tp.y - 0.5 - q.y, tp.z - q.z).normalize().multiplyScalar(p.vel.length()); p.vel.lerp(_tmp, Math.min(1, o.home * dt)); }
+            }
+            if (o.g) p.vel.y -= o.g * dt;
+            q.addScaledVector(p.vel, dt);
+            p.mesh.rotation.x += dt * 5; p.mesh.rotation.y += dt * 3;
+            if (Math.random() < 0.6) spawnParticles(q, o.c, 1, 0.8, 0.35, 0.12 * (o.s || 1), !!o.lit, { grav: o.lit ? 3 : -1 });
+            let hitT = null;
+            const hr = 0.45 + 0.25 * (o.s || 1);
+            if (!p.fxOnly) for (const t of aiTargets()) if (t.alive && Math.abs(q.y - (t.feet + 0.9)) < 0.9 + hr && Math.hypot(q.x - t.pos.x, q.z - t.pos.z) < 0.35 + hr) { hitT = t; break; }
+            const gy = groundAt(q.x, q.z, 0, q.y + 0.3), ground = q.y <= gy + 0.1;
+            if (!(hitT || ground || p.life <= 0 || pointInSolid(q, 0.05))) return;
+            removeProjectile(p); p.mesh.material.dispose();
+            spawnParticles(q, o.c, 8, 5, 0.4, 0.14 * (o.s || 1), !!o.lit);
+            if (p.fxOnly) return;
+            if (o.boom) bossBlast(q.clone(), o.boom, o.dmg, o.c, o.by, o.fire);
+            else {
+                if (hitT) hurtTarget(hitT, o.dmg, p.from, null, o.by);
+                if (o.fire && (ground || hitT)) bossHazard(q.x, groundAt(q.x, q.z, 0, q.y + 0.5), q.z, o.fire.r, o.fire.dps, o.fire.t, o.fire.c, o.by);
+            }
+        }
+        function updateBossFx(dt) {
+            if (!bossFx.length) return;
+            const auth = bossAuth(), T = auth ? aiTargets() : null;
+            for (let i = bossFx.length - 1; i >= 0; i--) {
+                const f = bossFx[i];
+                let done = false;
+                if (f.k === 'tele') {
+                    f.t -= dt;
+                    const k = 1 - Math.max(0, f.t) / f.T;
+                    f.disc.scale.setScalar(Math.max(0.01, f.r * k));
+                    f.ring.material.opacity = f.t < 0.35 ? (Math.floor(f.t * 20) % 2 ? 1 : 0.4) : 0.85;
+                    if (f.t <= 0) { done = true; if (f.act) f.act(); }
+                } else if (f.k === 'haz') {
+                    f.t -= dt; f.tick -= dt;
+                    f.m.material.opacity = (0.32 + 0.14 * Math.sin(gameTime * 9 + i)) * Math.min(1, f.t);
+                    if (Math.random() < 0.5) spawnParticles(new V3(f.x + (Math.random() - 0.5) * f.r * 1.4, f.y + 0.2, f.z + (Math.random() - 0.5) * f.r * 1.4), f.color, 1, 2, 0.6, 0.18, false, { grav: -5 });
+                    if (auth && f.tick <= 0) {
+                        f.tick = 0.3;
+                        for (const t of T) if (t.alive && Math.hypot(t.pos.x - f.x, t.pos.z - f.z) < f.r && Math.abs(t.feet - f.y) < 1.4) hurtTarget(t, f.dps * 0.3, null, null, f.by);
+                    }
+                    done = f.t <= 0;
+                } else if (f.k === 'wave') {
+                    f.R += f.speed * dt;
+                    f.m.scale.set(f.R, 0.9, f.R);
+                    f.m.material.opacity = 0.75 * Math.min(1, (f.maxR - f.R) / 4);
+                    if (auth) for (const t of T) {
+                        if (!t.alive || f.hit.has(t.id)) continue;
+                        const d = Math.hypot(t.pos.x - f.x, t.pos.z - f.z);
+                        if (Math.abs(d - f.R) < 0.9 && t.feet - f.y < 0.75 && t.feet - f.y > -2) {
+                            f.hit.add(t.id); const k = 7 / (d || 1);
+                            hurtTarget(t, f.dmg, new V3(f.x, f.y, f.z), [(t.pos.x - f.x) * k, 7, (t.pos.z - f.z) * k], f.by);
+                        }
+                    }
+                    done = f.R >= f.maxR;
+                }
+                if (done) { for (const m of [f.ring, f.disc, f.m]) if (m) { scene.remove(m); m.material.dispose(); } bossFx.splice(i, 1); }
+            }
+        }
+        function clearBossFx() { for (const f of bossFx) for (const m of [f.ring, f.disc, f.m]) if (m) { scene.remove(m); m.material.dispose(); } bossFx = []; }
+        function netBossFx(m) {
+            const p = m.p || [0, 0, 0];
+            if (m.k === 'tele') bossTele(p[0], p[1], p[2], m.r, m.d, m.c, null, false);
+            else if (m.k === 'haz') bossHazard(p[0], p[1], p[2], m.r, 0, m.d, m.c, '', false);
+            else if (m.k === 'wave') bossWave(p[0], p[1], p[2], m.r, m.sp, 0, m.c, '', false);
+            else if (m.k === 'shot' && m.o) bossShot(new V3(p[0], p[1], p[2]), new V3(m.v[0], m.v[1], m.v[2]), m.o, false);
+            else if (m.k === 'rage') toast(`${String(m.n).slice(0, 30).toUpperCase()} IS ENRAGED!`, m.c || '#f87171', 2.2);
+        }
+        // a spot near (cx, cz) between minD and maxD away that's on the map: [x, y, z]
+        function bossSpot(cx, cz, minD, maxD, y0 = 50) {
+            if (VOID) return navSpot(cx, cz, minD, maxD) || navSpot(cx, cz, 0, maxD + 20);
+            for (let i = 0; i < 20; i++) {
+                const a = Math.random() * Math.PI * 2, r = minD + Math.random() * (maxD - minD);
+                const x = clamp(cx + Math.cos(a) * r, -ARENA + 6, ARENA - 6), z = clamp(cz + Math.sin(a) * r, -ARENA + 6, ARENA - 6);
+                if (inCage(x, z)) continue;
+                return [x, groundAt(x, z, 0, y0), z];
+            }
+            return [cx, groundAt(cx, cz, 0, y0), cz];
+        }
+        function bossMinion(id, cx, cz, cy, minD, maxD) {
+            const sp = bossSpot(cx, cz, minD, maxD, cy + 4);
+            if (!sp) return null;
+            const e = spawnEnemy(enemyTypes[id], sp[0], sp[2], sp[1] + 0.2, waveSpeed(playerStats.level), waveReward(playerStats.level));
+            e.userData.dropping = false;
+            spawnParticles(new V3(sp[0], sp[1] + 1, sp[2]), enemyTypes[id].eye || 0xffffff, 10, 5, 0.6, 0.15);
+            return e;
+        }
+        function bossHpMul(cfg) {
+            if (!cfg.boss) return 1;
+            const L = playerStats.level;
+            return run.mode === 'bossrush' ? 0.45 + L * 0.17 : Math.max(1, L / 5);
+        }
+        // Which bosses come on this wave. The 7 newer bosses come in a random order that's fixed for the run
+        // (from the run's seed, so a saved run meets the same bosses), after the Abomination opens on wave 5.
+        function bossOrder() {
+            const ids = BOSS_IDS.filter(k => k !== 'boss');
+            let x = (run.seed || 777) >>> 0;
+            const rnd = () => (x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296;
+            for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+            return ['boss', ...ids];
+        }
+        function waveBosses(level) {
+            const order = bossOrder(), n = order.length;
+            if (run.mode === 'bossrush') { const out = [order[(level - 1) % n]]; if (level > n) out.push(order[(level + 2) % n]); return out; }
+            if (level % 5) return [];
+            const i = level / 5 - 1, out = [order[i % n]];
+            if (level >= 25) out.push(order[(i + 4) % n]);      // from wave 25 they come in pairs
+            return out;
+        }
+        // big title card when a boss shows up
+        let bossIntroT = 0, bossIntroList = [];
+        function bossIntro(cfg) {
+            if (!cfg.boss || currentGameState === 'main') return;
+            let el = $('boss-intro');
+            if (!el) {
+                el = document.createElement('div'); el.id = 'boss-intro';
+                el.style.cssText = 'position:fixed;left:50%;top:24%;transform:translateX(-50%);text-align:center;pointer-events:none;z-index:30;transition:opacity .4s;opacity:0;width:min(640px,92vw);text-shadow:0 3px 10px #000,0 0 2px #000';
+                document.body.appendChild(el);
+            }
+            if (bossIntroT <= 0) bossIntroList = [];
+            if (bossIntroList.includes(cfg)) return;
+            bossIntroList.push(cfg);
+            const duo = bossIntroList.length > 1;
+            el.innerHTML = bossIntroList.slice(-2).map(c => `<div style="font-weight:900;letter-spacing:.3em;font-size:${duo ? 11 : 13}px;color:${c.bar}">${c.title}</div>` +
+                `<div style="font-weight:900;font-size:${duo ? 'clamp(22px,3.4vw,34px)' : 'clamp(28px,5vw,52px)'};line-height:1.05;color:#fff;letter-spacing:.04em">${c.name.toUpperCase()}</div>` +
+                `<div style="font-weight:700;font-size:${duo ? 12 : 13}px;color:#e5e7eb;margin:4px auto ${duo ? 8 : 14}px;max-width:520px">${c.tip}</div>`).join('');
+            el.style.opacity = '1'; bossIntroT = 5;
+            sfx('roar');
+            life.bossSeen = life.bossSeen || {};
+            if (!life.bossSeen[cfg.id]) { life.bossSeen[cfg.id] = 1; saveJSON('blocky21_life', life); }
+        }
+        function tickBossIntro(dt) { if (bossIntroT > 0 && (bossIntroT -= dt) <= 0) { const el = $('boss-intro'); if (el) el.style.opacity = '0'; } }
+        function bossDefeated(cfg) {
+            life.bossKills = life.bossKills || {};
+            life.bossKills[cfg.id] = (life.bossKills[cfg.id] || 0) + 1;
+            toast(`${cfg.name.toUpperCase()} DEFEATED!`, cfg.bar, 2.6);
+            saveJSON('blocky21_life', life);
         }
 
 
@@ -5838,6 +6203,14 @@
                 // just got shoved out of punching range by the crowd? pause a moment instead of shuffling back and forth
                 if (inMelee) u.holdT = 0.35; else if (u.holdT > 0) u.holdT -= delta;
                 const holdMelee = !inMelee && u.holdT > 0 && hd < meleeRange + 0.9;
+                // 3.9: bosses get ENRAGED below half health (phase 2: faster, new and nastier attacks)
+                if (cfg.boss && !u.phase2 && u.hp < u.maxHp * 0.5) {
+                    u.phase2 = true; u.speed *= 1.2;
+                    toast(`${cfg.name.toUpperCase()} IS ENRAGED!`, cfg.bar, 2.2); sfx('roar'); bossNet({ k: 'rage', n: cfg.name, c: cfg.bar });
+                    spawnBlastFx(new V3(enemy.position.x, enemy.position.y + 0.2, enemy.position.z), 7, cfg.eye, true, 0.7);
+                    if (cfg.ai === 'necro') u.acoT = Math.min(u.acoT ?? 5, 5);
+                }
+                const bp = (k) => new V3(enemy.position.x, enemy.position.y + k * cfg.scale, enemy.position.z);
 
 
                 switch (cfg.ai) {
@@ -6021,25 +6394,288 @@
                         if (inMelee) meleeHit(u, cfg, enemy);
                         break;
                     }
+                    case 'jugg': {
+                        // THE JUGGERNAUT: armored (halves bullets) and charges. Hitting a wall stuns it and cracks the armor.
+                        u.aiT -= delta;
+                        if (u.state === 'windup') {
+                            wantMove = false; u.stateT -= delta;
+                            enemy.position.x += (Math.random() - 0.5) * 0.08;
+                            if (u.stateT <= 0) { u.state = 'charge'; u.stateT = 1.5; u.cdir.set(dx / hd, 0, dz / hd); sfx('charge'); }
+                        } else if (u.state === 'charge') {
+                            custom = true; u.stateT -= delta;
+                            const st = 24 * delta;
+                            enemy.position.x += u.cdir.x * st; enemy.position.z += u.cdir.z * st;
+                            faceX = u.cdir.x; faceZ = u.cdir.z; u.walkPhase += st * 1.3 / cfg.scale;
+                            if (Math.random() < 0.7) spawnParticles(new V3(enemy.position.x, enemy.position.y + 0.1, enemy.position.z), 0x8a7f73, 1, 3, 0.6, 0.4, true, { grav: 3, drag: 2 });
+                            if (hd < u.radius + 1.3 && vGap < 2.5 && vGap > -u.totalHeight) {
+                                if (_aiT.local) { push.set(0, 0, 0); shake = Math.max(shake, 0.8); }
+                                hurtTarget(_aiT, cfg.damage * ld, enemy.position, [u.cdir.x * 14, 7, u.cdir.z * 14], 'the Juggernaut');
+                                u.state = 'walk'; u.aiT = 3.5; u.chain = 0;
+                            } else if (u.stateT <= 0) {
+                                if (u.phase2) slam(enemy.position, 6, 18 * ld, 0xfb923c, "the Juggernaut's stomp");
+                                if (u.phase2 && (u.chain = (u.chain || 0) + 1) < 3) { u.state = 'windup'; u.stateT = 0.45; }   // enraged: charges three times in a row
+                                else { u.chain = 0; u.state = 'walk'; u.aiT = u.phase2 ? 3 : 4.5; }
+                            }
+                        } else if (u.state === 'stun') {
+                            wantMove = false; u.stateT -= delta;
+                            u.head.rotation.y = Math.sin(gameTime * 14) * 0.4;
+                            if (Math.random() < 0.3) spawnParticles(bp(3.2), 0xfde047, 1, 2, 0.5, 0.15);
+                            if (u.stateT <= 0) { u.state = 'walk'; u.head.rotation.y = 0; u.aiT = 2.5; u.chain = 0; }
+                        } else {
+                            if (u.aiT <= 0 && u.onGround && hd > 6 && hd < 45 && Math.abs(vGap) < 3) {
+                                if (losClear(enemy.position.x, enemy.position.y + 1.5, enemy.position.z, pos.x, pos.y - 0.6, pos.z)) { u.state = 'windup'; u.stateT = u.phase2 ? 0.75 : 1.15; u.chain = 0; sfx('growl'); }
+                                else u.aiT = 0.4;
+                            }
+                            if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy, 1, [dx / hd * 14, 5, dz / hd * 14]); }
+                        }
+                        break;
+                    }
+                    case 'brood': {
+                        // THE BROODMOTHER: keeps her distance, lobs acid that leaves burning pools, lays egg sacs that hatch into Mites
+                        u.strafeT -= delta; if (u.strafeT <= 0) { u.strafe *= -1; u.strafeT = 2 + Math.random() * 2; }
+                        if (hd < 12) { mx = -mx; mz = -mz; } else if (hd < 28) { mx = -dz / hd * u.strafe; mz = dx / hd * u.strafe; spMul = 0.7; }
+                        u.aiT -= delta; u.summonT -= delta;
+                        if (u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 4) * 0.12);
+                        if (u.aiT <= 0 && hd < 42 && u.onGround) {
+                            u.aiT = u.phase2 ? 2.6 : 3.6;
+                            const from = bp(2.4);
+                            for (let i = 0, n = u.phase2 ? 5 : 3; i < n; i++) {
+                                const a = Math.random() * Math.PI * 2, r = i === 0 ? 0 : 2 + Math.random() * 3.5;
+                                const tx = pos.x + Math.cos(a) * r, tz = pos.z + Math.sin(a) * r, ty = groundAt(tx, tz, 0, pFeet + 2), T = 0.9 + hd * 0.02 + i * 0.08;
+                                bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0xa3e635, s: 1.1, g: 20, life: T + 1, dmg: 14 * ld, fire: { r: 2.3, dps: 14 * ld, t: 5, c: 0x84cc16 }, by: "the Broodmother's acid" });
+                            }
+                            sfx('spit');
+                        }
+                        if (u.summonT <= 0 && enemies.length < 50) {
+                            u.summonT = u.phase2 ? 8 : 12;
+                            for (let i = 0, n = u.phase2 ? 3 : 2; i < n; i++) { const e2 = bossMinion('egg', enemy.position.x, enemy.position.z, enemy.position.y, 2.5, 5); if (e2) e2.userData.hatch = 7; }
+                            if (!u.warned) { u.warned = true; toast('SHOOT THE EGG SACS BEFORE THEY HATCH!', '#bef264', 2); }
+                            sfx('spit');
+                        }
+                        if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
+                        break;
+                    }
+                    case 'egg': {
+                        wantMove = false;
+                        u.hatch = (u.hatch ?? 7) - delta;
+                        const k = 1 + Math.sin(gameTime * (5 + (7 - u.hatch) * 1.6)) * (0.06 + (7 - u.hatch) * 0.015);
+                        u.body.scale.set(k, 2 - k, k);
+                        if (u.hatch <= 0) {
+                            spawnParticles(bp(1), 0xbef264, 14, 7, 0.6, 0.2, false, { grav: 12 });
+                            for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2; const m = spawnEnemy(enemyTypes.mite, enemy.position.x + Math.cos(a) * 1.2, enemy.position.z + Math.sin(a) * 1.2, enemy.position.y + 0.5, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }
+                            u.noLoot = true; killEnemy(enemy, true); continue;
+                        }
+                        break;
+                    }
+                    case 'pyro': {
+                        // THE INFERNO: fireballs that leave fire, a flame-ring eruption when you're close; enraged it leaves a trail of fire
+                        u.aiT -= delta; u.slamT -= delta;
+                        if (Math.random() < 0.5) spawnParticles(bp(3.1), Math.random() < 0.5 ? 0xff6a1f : 0xffd24d, 1, 2.5, 0.5, 0.35 * cfg.scale, false, { grav: -6 });
+                        if (u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 8) * 0.15);
+                        if (u.state === 'slam') {
+                            wantMove = false; u.stateT -= delta;
+                            if (u.stateT <= 0) { u.state = 'walk'; u.slamT = u.phase2 ? 4 : 6; }
+                        } else {
+                            if (hd < 22) spMul = 0.6;
+                            if (u.slamT <= 0 && hd < 10 && u.onGround) {
+                                u.state = 'slam'; u.stateT = 1.25; sfx('growl');
+                                const c = enemy.position.clone();
+                                bossTele(c.x, c.y, c.z, 8.5, 1.2, 0xff6a1f, () => bossBlast(new V3(c.x, c.y + 0.4, c.z), 8.5, 30 * ld, 0xff6a1f, "the Inferno's eruption"));
+                                if (u.phase2) bossTele(c.x, c.y, c.z, 15, 2.0, 0xff2a1a, () => bossBlast(new V3(c.x, c.y + 0.4, c.z), 15, 24 * ld, 0xff2a1a, "the Inferno's eruption", null, 8));
+                            } else if (u.aiT <= 0 && hd > 6 && hd < 45 && u.onGround) {
+                                u.aiT = u.phase2 ? 3 : 4.2;
+                                const from = bp(2.6);
+                                for (let i = 0; i < 3; i++) {
+                                    const lead = _aiT.local ? 0.5 + i * 0.35 : 0;
+                                    const tx = pos.x + (velocity.x || 0) * lead * (_aiT.local ? 1 : 0) + (Math.random() - 0.5) * 3, tz = pos.z + (velocity.z || 0) * lead * (_aiT.local ? 1 : 0) + (Math.random() - 0.5) * 3;
+                                    const ty = groundAt(tx, tz, 0, pFeet + 2), T = 1.0 + hd * 0.015 + i * 0.15;
+                                    bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0xff6a1f, s: 1.3, g: 20, life: T + 1, dmg: 20 * ld, boom: 3.2, fire: { r: 2.2, dps: 12 * ld, t: 3.5, c: 0xff6a1f }, by: "the Inferno's fireball" });
+                                }
+                                sfx('throw');
+                            }
+                            if (u.phase2 && u.onGround && (u.trailT = (u.trailT || 0) - delta) <= 0) { u.trailT = 0.55; bossHazard(enemy.position.x, enemy.position.y, enemy.position.z, 1.9, 14 * ld, 4, 0xff6a1f, "the Inferno's flames"); }
+                            if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
+                        }
+                        break;
+                    }
+                    case 'phantom': {
+                        // THE PHANTOM: vanishes, sneaks around behind you and strikes. Shooting it while it's invisible reveals it.
+                        u.aiT -= delta;
+                        if (u.state === 'cloak') {
+                            u.stateT -= delta; spMul = 1.7;
+                            let bx = pos.x + dx / hd * 3, bz = pos.z + dz / hd * 3;
+                            if (_aiT.local) { camera.getWorldDirection(_camDir); _camDir.y = 0; _camDir.normalize(); bx = pos.x - _camDir.x * 2.6; bz = pos.z - _camDir.z * 2.6; }
+                            const gx = bx - enemy.position.x, gz = bz - enemy.position.z, gl = Math.hypot(gx, gz) || 1;
+                            if (!u.navOn || hd < 8) { mx = gx / gl; mz = gz / gl; }
+                            if ((u.shimT = (u.shimT || 0) - delta) <= 0) { u.shimT = 0.22; spawnParticles(bp(1.6), 0x67e8f9, 1, 1, 0.5, 0.12, false, { grav: -1, jitter: 0.5 }); }
+                            if (gl < 1.4 || hd < 2.6 || u.stateT <= 0) {
+                                u.state = 'windup'; u.stateT = 0.5; enemy.visible = true; sfx('growl');
+                                spawnParticles(bp(1.6), 0x67e8f9, 14, 6, 0.5, 0.15);
+                            }
+                        } else if (u.state === 'windup') {
+                            wantMove = false; u.stateT -= delta;
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.aiT = u.phase2 ? 3.5 : 5; u.armSwing = 0.3;
+                                if (hd < 4.4 && Math.abs(vGap) < 2.4) hurtTarget(_aiT, cfg.damage * ld, enemy.position, [dx / hd * 10, 4, dz / hd * 10], "the Phantom's blades");
+                                spawnBlastFx(bp(1.4).addScaledVector(_tmp.set(dx / hd, 0, dz / hd), 1.8), 2.4, 0x67e8f9, true, 0.25);
+                                sfx('throw');
+                            }
+                        } else {
+                            if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy, 0.6); }   // its real damage is the ambush slash
+                            if (u.aiT <= 0 && u.onGround) {
+                                u.state = 'cloak'; u.stateT = 3.4; enemy.visible = false; u.barShow = false;
+                                spawnParticles(bp(1.6), 0x67e8f9, 16, 5, 0.6, 0.16); sfxAt('cloak', hd);
+                                if (!u.warned) { u.warned = true; toast('THE PHANTOM VANISHED - KEEP MOVING!', '#67e8f9', 1.8); }
+                            }
+                        }
+                        if (u.phase2 && !u.cloned && enemies.length < 55) {
+                            u.cloned = true; u.clones = [];
+                            for (let i = 0; i < 3; i++) { const c = bossMinion('phclone', enemy.position.x, enemy.position.z, enemy.position.y, 3, 7); if (c) { c.userData.noLoot = true; u.clones.push(c); } }
+                            toast('THE PHANTOM SPLITS INTO DECOYS!', '#67e8f9', 2);
+                        }
+                        break;
+                    }
+                    case 'warlord': {
+                        // THE WARLORD: minigun bursts (break line of sight!), rocket strikes on red circles, enraged he calls reinforcements
+                        u.aiT -= delta; u.slamT -= delta; u.summonT -= delta;
+                        if (u.state === 'aim') {
+                            wantMove = false; u.stateT -= delta;
+                            u.aimTo.lerp(_tmp.set(pos.x, pos.y - 0.5, pos.z), Math.min(1, delta * (u.phase2 ? 2.2 : 1.6)));
+                            const fwd = _dir.set(u.aimTo.x - enemy.position.x, 0, u.aimTo.z - enemy.position.z).normalize();
+                            faceX = fwd.x; faceZ = fwd.z;
+                            const from = new V3(enemy.position.x + fwd.x * 1.9 * cfg.scale * 0.6 - fwd.z * 0.68 * cfg.scale, enemy.position.y + 2.0 * cfg.scale, enemy.position.z + fwd.z * 1.9 * cfg.scale * 0.6 + fwd.x * 0.68 * cfg.scale);
+                            if (u.stateT > 2.2) { if (Math.random() < 0.5) spawnParticles(from, 0xffb454, 1, 1.5, 0.2, 0.12); }
+                            else {
+                                u.fireAcc = (u.fireAcc || 0) + delta;
+                                while (u.fireAcc > 0.075) {
+                                    u.fireAcc -= 0.075; u.shotN = (u.shotN || 0) + 1;
+                                    const to = new V3(u.aimTo.x + (Math.random() - 0.5) * 1.3, u.aimTo.y + (Math.random() - 0.5) * 1.0, u.aimTo.z + (Math.random() - 0.5) * 1.3);
+                                    to.sub(from).normalize().multiplyScalar(70).add(from);
+                                    const wall = raySolids(from, _tmp.copy(to).sub(from).normalize(), 70); if (wall) to.copy(wall.point);
+                                    spawnTracer(from, to, 0xffd27a, 0.05, 0.08);
+                                    if (NET.inGame && u.shotN % 3 === 0) netSendTracer(from, to, 0xffd27a);
+                                    if (u.shotN % 2 === 0) sfxAt('minigun', hd);
+                                    // hit if the bullet passes close to the target's body
+                                    const tc = _tmp.set(pos.x, pos.y - 0.6, pos.z), ab = to.clone().sub(from), L = ab.length(); ab.divideScalar(L || 1);
+                                    const tt = clamp(tc.clone().sub(from).dot(ab), 0, L), dist = from.clone().addScaledVector(ab, tt).distanceTo(tc);
+                                    if (dist < 0.6) hurtTarget(_aiT, 3.2 * ld, enemy.position, null, "the Warlord's minigun");
+                                }
+                            }
+                            if (u.stateT <= 0) { u.state = 'walk'; u.aiT = u.phase2 ? 3 : 4.5; }
+                        } else {
+                            u.strafeT -= delta; if (u.strafeT <= 0) { u.strafe *= -1; u.strafeT = 2 + Math.random() * 2; }
+                            if (hd < 14) { mx = -mx; mz = -mz; } else if (hd < 34) { mx = -dz / hd * u.strafe; mz = dx / hd * u.strafe; spMul = 0.6; }
+                            if (u.aiT <= 0 && hd < 55 && u.onGround) {
+                                if (losClear(enemy.position.x, enemy.position.y + 2 * cfg.scale, enemy.position.z, pos.x, pos.y - 0.4, pos.z)) { u.state = 'aim'; u.stateT = 3.0; u.fireAcc = 0; u.aimTo.set(pos.x, pos.y - 0.5, pos.z); sfxAt('lock', hd); }
+                                else u.aiT = 0.5;
+                            }
+                            if (u.slamT <= 0 && hd < 70) {
+                                u.slamT = u.phase2 ? 7 : 10;
+                                for (let i = 0, n = u.phase2 ? 6 : 4; i < n; i++) {
+                                    const a = Math.random() * Math.PI * 2, r = i === 0 ? 0 : 3 + Math.random() * 5;
+                                    const x = pos.x + Math.cos(a) * r, z = pos.z + Math.sin(a) * r, y = groundAt(x, z, 0, pFeet + 2);
+                                    bossTele(x, y, z, 3.2, 1.5 + i * 0.15, 0xef4444, () => bossBlast(new V3(x, y + 0.3, z), 3.4, 24 * ld, 0xff8a3c, "the Warlord's rockets"));
+                                }
+                                if (!u.warned) { u.warned = true; toast('INCOMING ROCKETS - GET OUT OF THE RED CIRCLES!', '#fca5a5', 2); }
+                            }
+                            if (u.phase2 && u.summonT <= 0 && enemies.length < 45) {
+                                u.summonT = 14;
+                                for (const id of ['shielder', 'shielder', 'grunt', 'grunt']) bossMinion(id, enemy.position.x, enemy.position.z, enemy.position.y, 3, 7);
+                                toast('THE WARLORD CALLS REINFORCEMENTS', '#fca5a5', 1.6);
+                            }
+                            if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
+                        }
+                        break;
+                    }
+                    case 'titan': {
+                        // THE COLOSSUS: stomps send out shockwaves you have to jump, hurls boulders; enraged, its stomps bring rocks down from the sky
+                        u.slamT -= delta; u.aiT -= delta;
+                        if (u.state === 'slam') {
+                            wantMove = false; u.stateT -= delta;
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.slamT = u.phase2 ? 4 : 5.5;
+                                const c = enemy.position;
+                                slam(c, 8, 34 * ld, 0xfbbf24, "the Colossus's stomp");
+                                bossWave(c.x, c.y, c.z, 34, 12, 22 * ld, 0xfbbf24, "the Colossus's shockwave");
+                                if (u.phase2) for (let i = 0; i < 6; i++) {
+                                    const a = Math.random() * Math.PI * 2, r = 2 + Math.random() * 9;
+                                    const x = pos.x + Math.cos(a) * r, z = pos.z + Math.sin(a) * r, y = groundAt(x, z, 0, pFeet + 2);
+                                    bossTele(x, y, z, 2.4, 1.3 + i * 0.15, 0xa8a29e, () => bossBlast(new V3(x, y + 0.3, z), 2.6, 22 * ld, 0xa8a29e, 'falling rocks'));
+                                }
+                            }
+                        } else {
+                            if (u.slamT <= 0 && hd < 26 && u.onGround) { u.state = 'slam'; u.stateT = 1.1; sfx('growl'); }
+                            else if (u.aiT <= 0 && hd > 10 && hd < 60 && u.onGround) {
+                                u.aiT = u.phase2 ? 4 : 6;
+                                const from = bp(3.3), tx = pos.x, tz = pos.z, ty = groundAt(tx, tz, 0, pFeet + 2), T = 1.3 + hd * 0.012;
+                                bossTele(tx, ty, tz, 4, T, 0xf59e0b, null);
+                                bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0x8a8378, s: 2.8, g: 20, life: T + 1, dmg: 30 * ld, boom: 4, by: "the Colossus's boulder", lit: true });
+                                sfx('throw');
+                            }
+                            if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy, 1, [dx / hd * 14, 6, dz / hd * 14]); }
+                        }
+                        break;
+                    }
+                    case 'necro': {
+                        // THE NECROMANCER: shielded while its Acolytes live, raises the dead, fires homing skulls
+                        u.shielded = false;
+                        for (const o of enemies) if (o.userData.master === enemy && !o.userData.dead) { u.shielded = true; break; }
+                        if (u.bubble) { u.bubble.visible = u.shielded; u.bubble.material.opacity = 0.16 + 0.08 * Math.sin(gameTime * 5); u.bubble.rotation.y += delta * 0.6; }
+                        u.strafeT -= delta; if (u.strafeT <= 0) { u.strafe *= -1; u.strafeT = 2 + Math.random() * 2; }
+                        if (hd < 15) { mx = -mx; mz = -mz; } else if (hd < 30) { mx = -dz / hd * u.strafe; mz = dx / hd * u.strafe; spMul = 0.6; }
+                        u.aiT -= delta; u.summonT -= delta;
+                        u.acoT = (u.acoT ?? 0.3) - delta;
+                        if (u.acoT <= 0 && !u.shielded) {
+                            u.acoT = u.phase2 ? 22 : 30;
+                            for (let i = 0; i < 3; i++) { const a = bossMinion('acolyte', enemy.position.x, enemy.position.z, enemy.position.y, 12, 24); if (a) a.userData.master = enemy; }
+                            toast('ACOLYTES SHIELD THE NECROMANCER - KILL THEM!', '#c4b5fd', 2.2);
+                        }
+                        if (u.aiT <= 0 && hd < 50 && u.onGround) {
+                            u.aiT = u.phase2 ? 1.8 : 2.6;
+                            for (const sd of [-1, 1]) {
+                                const from = bp(2.6).add(_tmp.set(-dz / hd * sd * 1.2, 0, dx / hd * sd * 1.2));
+                                const v = new V3(pos.x - from.x, pos.y - 0.5 - from.y, pos.z - from.z).normalize().multiplyScalar(9);
+                                bossShot(from, v, { c: 0xa78bfa, s: 1.1, life: 5, dmg: 13 * ld, home: 2.2, tg: _aiT.id, by: "the Necromancer's skull" });
+                            }
+                            sfxAt('laser', hd);
+                        }
+                        if (u.summonT <= 0 && enemies.length < 50) {
+                            u.summonT = u.phase2 ? 7 : 10;
+                            let risen = 0; for (const o of enemies) if (o.userData.config.id === 'risen') risen++;
+                            for (let i = 0, n = Math.min(u.phase2 ? 4 : 3, 8 - risen); i < n; i++) bossMinion('risen', enemy.position.x, enemy.position.z, enemy.position.y, 3, 7);
+                            sfx('growl');
+                        }
+                        if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
+                        break;
+                    }
+                    case 'acolyte': {
+                        wantMove = false;
+                        const m = u.master;
+                        if ((u.aiT -= delta) <= 0 && m && !m.userData.dead) { u.aiT = 0.3; spawnTracer(bp(2.2), new V3(m.position.x, m.position.y + 2 * m.userData.config.scale, m.position.z), 0xa78bfa, 0.06, 0.3); }
+                        break;
+                    }
                     case 'boss': {
                         u.slamT -= delta; u.summonT -= delta;
                         if (u.state === 'slam') {
                             wantMove = false; u.stateT -= delta;
                             u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9;
-                            if (u.stateT <= 0) { u.state = 'walk'; u.slamT = 4.5; slam(enemy.position, 9, 32 * ld, 0xc084fc, "the Boss's ground slam"); }
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.slamT = u.phase2 ? 3.5 : 4.5; slam(enemy.position, 9, 32 * ld, 0xc084fc, "the Abomination's ground slam");
+                                if (u.phase2) bossWave(enemy.position.x, enemy.position.y, enemy.position.z, 24, 13, 20 * ld, 0xc084fc, "the Abomination's shockwave");
+                            }
                         } else {
                             if (u.slamT <= 0 && hd < 7.5 && u.onGround && Math.abs(vGap) < 3) { u.state = 'slam'; u.stateT = 0.55; sfx('growl'); }
                             else if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
                             if (u.summonT <= 0 && enemies.length < 50) {
-                                u.summonT = 13;
-                                for (let i = 0; i < 2; i++) {
+                                u.summonT = u.phase2 ? 9 : 13;
+                                for (let i = 0; i < (u.phase2 ? 3 : 2); i++) {
                                     const a = Math.random() * Math.PI * 2;
                                     let sx = clamp(enemy.position.x + Math.cos(a) * 4, -ARENA + 5, ARENA - 5), sz = clamp(enemy.position.z + Math.sin(a) * 4, -ARENA + 5, ARENA - 5), sy = enemy.position.y + 3;
                                     if (VOID) { const sp = navSpot(enemy.position.x, enemy.position.z, 0, 12) || navSpot(enemy.position.x, enemy.position.z, 0, 40); if (!sp) continue; sx = sp[0]; sz = sp[2]; sy = sp[1] + 3; }
                                     spawnEnemy(enemyTypes.sprinter, sx, sz, sy, waveSpeed(playerStats.level), waveReward(playerStats.level));
                                     spawnParticles(new V3(sx, enemy.position.y + 1.5, sz), 0xc084fc, 10, 6, 0.6, 0.14);
                                 }
-                                toast('THE BOSS CALLS FOR BACKUP', '#e879f9', 1.4);
+                                toast('THE ABOMINATION CALLS FOR BACKUP', '#e879f9', 1.4);
                             }
                         }
                         break;
@@ -6102,10 +6738,11 @@
                 enemy.position.x = clamp(enemy.position.x, -ARENA + 2, ARENA - 2); enemy.position.z = clamp(enemy.position.z, -ARENA + 2, ARENA - 2);
                 // a charging charger that slams into a wall gets stunned
                 if (custom && u.state === 'charge' && Math.hypot(enemy.position.x - sx0, enemy.position.z - sz0) < 27 * delta * 0.35) {
-                    u.state = 'stun'; u.stateT = 1.8; sfx('thud');
+                    u.state = 'stun'; u.stateT = cfg.armor ? 3.2 : 1.8; sfx('thud');
                     spawnParticles(new V3(enemy.position.x + u.cdir.x, enemy.position.y + 2, enemy.position.z + u.cdir.z), 0xfde047, 8, 4, 0.8, 0.12);
                     shake = Math.max(shake, clamp(0.5 - hd / 40, 0, 0.4));
-                    toastOnce(u, 'STUNNED! +50% DAMAGE');
+                    if (cfg.armor) { spawnDamageNumber(bp(3.4), 'ARMOR CRACKED!', 'head'); slam(enemy.position, 5, 14 * ld, 0xfde047, 'the Juggernaut crashing'); }
+                    else toastOnce(u, 'STUNNED! +50% DAMAGE');
                 }
 
 
@@ -6119,7 +6756,7 @@
                 const gY = groundAt(enemy.position.x, enemy.position.z, VOID ? Math.max(0.42, u.radius * 0.7) : u.radius * 0.4, feet);
                 if (ny <= gY) { ny = gY; u.velocityY = 0; u.onGround = true; u.dropping = false; } else u.onGround = false;
                 enemy.position.y = ny;
-                if (VOID && ny < FALL_DEATH_Y) { u.noLoot = true; killEnemy(enemy, cfg.id === 'boss'); continue; }     // fell off the clouds (counts as your kill)
+                if (VOID && ny < FALL_DEATH_Y) { u.noLoot = true; killEnemy(enemy, !!cfg.boss); continue; }     // fell off the clouds (counts as your kill)
                 if (u.leaping && u.onGround && u.airT > 0.15) {
                     u.leaping = false; u.aiT = 1.3 + Math.random() * 0.8;
                     slam(enemy.position, 4.2, cfg.damage * ld, 0xf472b6, 'a Leaper landing on you');
@@ -6154,7 +6791,11 @@
                 if (cfg.ai === 'ranged' || cfg.ai === 'medic') { u.armL.rotation.x = -sw; u.armR.rotation.x = sw; }
                 else if (cfg.ai === 'marksman') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.4; u.armL.rotation.x = u.state === 'aim' ? -1.3 : -sw; u.armL.rotation.z = u.state === 'aim' ? -0.5 : 0; }
                 else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
-                else if (cfg.ai === 'boss' && u.state === 'slam') { /* arms raised above */ }
+                else if (cfg.boss && u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
+                else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }
+                else if (cfg.ai === 'acolyte') { acolytePose(u); }
+                else if (cfg.ai === 'egg') { /* no limbs */ }
+                else if (cfg.ai === 'necro') { u.armR.rotation.x = -0.25; u.armL.rotation.x = u.state === 'slam' ? -2.6 : -1.2 + sw * 0.2; }
                 else if (u.state === 'charge') { u.armL.rotation.x = u.armR.rotation.x = 0.6; }
                 else if (u.state === 'windup') { u.armL.rotation.x = u.armR.rotation.x = -2.4 + Math.sin(gameTime * 20) * 0.2; }
                 else if (u.leaping) { u.armL.rotation.x = u.armR.rotation.x = -2.6; }
@@ -6183,6 +6824,13 @@
                 }
             }
         }
+        function acolytePose(u) {   // kneeling, both hands raised, swaying as it chants
+            const y = (HIP_Y - 0.82) * u.config.scale;
+            u.legL.position.y = u.legR.position.y = u.body.position.y = y;
+            u.legL.rotation.x = u.legR.rotation.x = 1.45;
+            u.armL.rotation.x = u.armR.rotation.x = -2.5 + Math.sin(gameTime * 3 + u.walkPhase) * 0.15;
+            u.armL.rotation.z = -0.3; u.armR.rotation.z = 0.3;
+        }
         function toastOnce(u, msg) { if (!u.toasted) { u.toasted = true; spawnDamageNumber(new V3(0, 0, 0).copy(u.head.getWorldPosition(new V3())), msg, 'boom'); } }
         function startWander(u, mx, mz, dur) {
             const sign = Math.random() < 0.5 ? 1 : -1;
@@ -6199,7 +6847,7 @@
                             full: new THREE.MeshBasicMaterial({ color: 0x86efac, toneMapped: false }), gold: new THREE.MeshBasicMaterial({ color: 0xffd700, toneMapped: false }) };
         function dropLoot(u, pos) {
             const d = u.config.drops || [0.1, 15, 0.1, 20];
-            if (u.config.id === 'boss') {
+            if (u.config.boss) {
                 spawnPickup(pos, 'health', 999, -1.2);
                 spawnPickup(pos, 'cash', Math.round(500 * (boostOn('gold') ? 1.5 : 1)), 1.2);
                 return;
@@ -6469,7 +7117,7 @@
             if (o.kind === 'nuke') {
                 screenFlash('rgba(255,255,255,0.7)'); sfx('boom'); shake = Math.max(shake, 0.8);
                 if (NET.inGame && !NET.host) netSend({ t: 'nuke' });
-                else for (const e of [...enemies]) if (!e.userData.dead && e.userData.config.id !== 'boss') killEnemy(e, false, false, 'nuke');
+                else for (const e of [...enemies]) if (!e.userData.dead && !e.userData.config.boss) killEnemy(e, false, false, 'nuke');
                 toast('NUKE! Every enemy wiped out', '#ffffff', 2.4);
             } else {
                 boosts[o.kind] = b.dur;
@@ -6536,9 +7184,10 @@
             }
             for (const enemy of enemies) {
                 const u = enemy.userData;
+                if (!enemy.visible) continue;
                 const x = (enemy.position.x + off) * scale, y = (enemy.position.z + off) * scale;
-                c.fillStyle = hex(u.config.color === 0x3f4a5c ? 0x9fb1cc : u.config.color);
-                c.beginPath(); c.arc(x, y, u.config.id === 'boss' ? 5 : 3, 0, Math.PI * 2); c.fill();
+                c.fillStyle = u.config.boss ? u.config.bar : hex(u.config.color === 0x3f4a5c ? 0x9fb1cc : u.config.color);
+                c.beginPath(); c.arc(x, y, u.config.boss ? 5 : 3, 0, Math.PI * 2); c.fill();
                 if (u.state === 'aim') { c.strokeStyle = '#ff2020'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, 6, 0, Math.PI * 2); c.stroke(); }
             }
             for (const o of orbs) {
@@ -6749,7 +7398,8 @@
                 }
                 updateCorpses(delta);
                 updateCageRam(delta);
-                if (simOn()) { updateFires(delta); updateTurrets(delta); updateStrikes(delta); updateMines(delta); updateCornerPressure(delta); updateBossBar(); }
+                tickBossIntro(delta);
+                if (simOn()) { updateBossFx(delta); updateFires(delta); updateTurrets(delta); updateStrikes(delta); updateMines(delta); updateCornerPressure(delta); updateBossBar(); }
                 ui.strike.classList.toggle('hidden', strikeCharges <= 0);
                 if (strikeCharges > 0) setText(ui.strike, `\u2708 AIRSTRIKE x${strikeCharges}  \u2014  PRESS G`);
                 setText(ui.streak, streak > 0 ? `STREAK ${streak} / ${STREAK_FOR_STRIKE}` : '');
@@ -6864,13 +7514,19 @@
         }
         // Boss health bar across the top of the screen while a boss is alive
         function updateBossBar() {
-            let boss = null, n = 0;
-            for (const e of enemies) if (e.userData.config.id === 'boss' && !e.userData.dead) { n++; if (!boss) boss = e; }
-            ui.boss.classList.toggle('hidden', !boss);
-            if (!boss) return;
-            const u = boss.userData;
-            setText(ui.bossName, `BOSS${n > 1 ? ' x' + n : ''}  \u00b7  ${Math.max(0, Math.ceil(u.hp)).toLocaleString()} / ${Math.round(u.maxHp).toLocaleString()}`);
-            setWidth(ui.bossBar, Math.max(0, u.hp / u.maxHp * 100));
+            let hp = 0, max = 0; const names = [], tags = [];
+            let first = null;
+            for (const e of enemies) {
+                const u = e.userData; if (!u.config.boss || u.dead) continue;
+                if (!first) first = u.config;
+                hp += Math.max(0, u.hp); max += u.maxHp; names.push(u.config.name.toUpperCase());
+                if (u.shielded) tags.push('SHIELDED'); else if (u.hp < u.maxHp * 0.5) tags.push('ENRAGED');
+            }
+            ui.boss.classList.toggle('hidden', !first);
+            if (!first) return;
+            setText(ui.bossName, `${names.join(' + ')}${tags.length ? '  \u00b7  ' + [...new Set(tags)].join(' / ') : ''}  \u00b7  ${Math.ceil(hp).toLocaleString()} / ${Math.round(max).toLocaleString()}`);
+            setWidth(ui.bossBar, Math.max(0, hp / max * 100));
+            if (ui.bossBar._c !== first.bar) { ui.bossBar._c = first.bar; ui.bossBar.style.background = `linear-gradient(90deg, ${first.bar}, #ffffff55)`; ui.bossName.style.color = first.bar; }
         }
         function updateAmmoHUD() {
             const wp = W(playerStats.currentWeapon);
@@ -7107,8 +7763,8 @@
 
 
         function updateMenuBest() {
-            const b = life.best[settings.diff + (settings.mode === 'rush' ? '_rush' : '')];
-            ui.menuBest.textContent = settings.mode === 'sandbox' ? 'SANDBOX - JUST HAVE FUN' : (b ? `PERSONAL BEST (${DIFFICULTIES[settings.diff].name}${settings.mode === 'rush' ? ' RUSH' : ''}): WAVE ${b}` : `NO BEST YET ON ${DIFFICULTIES[settings.diff].name}${settings.mode === 'rush' ? ' RUSH' : ''}`);
+            const b = life.best[bestKey(settings.diff, settings.mode)], ml = settings.mode === 'rush' ? ' RUSH' : settings.mode === 'bossrush' ? ' BOSS RUSH' : '';
+            ui.menuBest.textContent = settings.mode === 'sandbox' ? 'SANDBOX - JUST HAVE FUN' : (b ? `PERSONAL BEST (${DIFFICULTIES[settings.diff].name}${ml}): WAVE ${b}` : `NO BEST YET ON ${DIFFICULTIES[settings.diff].name}${ml}`);
         }
 
 
@@ -7123,7 +7779,7 @@
             splitter: 'A bloated zombie full of Mites. Kill it and three fast little Mites burst out. From wave 7.',
             mite: 'A tiny, very fast critter that bursts out of a dead Splitter. One hit kills it.',
             screamer: 'Hangs back behind the horde and shrieks: every zombie near it goes into a rage (faster, harder hits) for 5 seconds. From wave 10.',
-            boss: 'A giant zombie abomination, every 5th wave. Ground-slams when you get close and calls in sprinters for backup.'
+            boss: 'A giant zombie abomination. Ground-slams when you get close and calls in sprinters for backup.'
         };
         const hexC = (c) => '#' + new THREE.Color(c).getHexString();
         const KEY_KIND = { sleeve: 'sleeve', glove: 'glove', xhStyle: 'xhStyle', xhColor: 'xhColor', camo: 'camo', tracer: 'tracer', killfx: 'killfx', power: 'power' };
@@ -7178,7 +7834,7 @@
                 const hrs = Math.floor(life.time / 3600), mins = Math.floor(life.time % 3600 / 60);
                 const tile = (k, v) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
                 h += `<div class="mlabel">LIFETIME</div><div class="grid grid-cols-3 gap-2">${tile('RUNS', life.runs)}${tile('KILLS', life.kills)}${tile('HEADSHOTS', `${life.headshots} <span class="text-sm text-gray-400">${hs}%</span>`)}${tile('ACCURACY', acc + '%')}${tile('BOSSES', life.bosses)}${tile('WAVES CLEARED', life.waves)}${tile('TIME PLAYED', hrs ? `${hrs}h ${mins}m` : `${mins}m`)}${tile('DAMAGE', life.damage >= 10000 ? Math.round(life.damage / 1000) + 'k' : life.damage)}${tile('AVG WAVE', life.runs ? (life.waves / life.runs + 1).toFixed(1) : '-')}</div>`;
-                h += `<div class="mlabel">BEST WAVES</div><div class="grid grid-cols-3 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">DIFFICULTY</div><div class="text-gray-400">CLASSIC</div><div class="text-gray-400">RUSH</div>${Object.entries(DIFFICULTIES).map(([k, d]) => `<div style="color:${d.color}">${d.name}</div><div>${life.best[k] || '-'}</div><div>${life.best[k + '_rush'] || '-'}</div>`).join('')}</div>`;
+                h += `<div class="mlabel">BEST WAVES</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">DIFFICULTY</div><div class="text-gray-400">CLASSIC</div><div class="text-gray-400">RUSH</div><div class="text-gray-400">BOSS RUSH</div>${Object.entries(DIFFICULTIES).map(([k, d]) => `<div style="color:${d.color}">${d.name}</div><div>${life.best[k] || '-'}</div><div>${life.best[k + '_rush'] || '-'}</div><div>${life.best[k + '_boss'] || '-'}</div>`).join('')}</div>`;
                 const wk = Object.entries(life.weaponKills).sort((a, b) => b[1] - a[1]).slice(0, 6), top = wk.length ? wk[0][1] : 1;
                 h += `<div class="mlabel">FAVORITE WEAPONS</div>` + (wk.length ? wk.map(([k, n]) => `<div class="flex items-center gap-3 text-sm font-bold mb-1"><div class="w-28 truncate">${killerName(k)}</div><div class="flex-1 h-3 bg-black/40 rounded overflow-hidden"><div class="h-full" style="width:${n / top * 100}%;background:${weaponsDb[k] ? hex(weaponsDb[k].color) : '#f97316'}"></div></div><div class="w-12 text-right">${n}</div></div>`).join('') : '<div class="mdesc">Play a run to start tracking.</div>');
                 h += `<button class="chip mt-4" data-act="resetstats">RESET STATS</button>`;
@@ -7192,9 +7848,14 @@
                 }
                 h += `</div>`;
             } else if (menuTab === 'bestiary') {
-                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'boss'];
-                h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id], seen = life.kills > 0 || id === 'grunt';
-                    return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${id === 'boss' ? 'every 5th wave' : 'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
+                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer'];
+                h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
+                    return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
+                // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
+                const seenB = life.bossSeen || {}, killsB = life.bossKills || {};
+                h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the other seven in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back.</div>`;
+                h += `<div class="flex flex-col gap-2 mt-2">${BOSS_IDS.map(id => { const t = enemyTypes[id], met = seenB[id] || killsB[id];
+                    return `<div class="bcard" style="border-color:${t.bar}55"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${t.bar}"></div><div class="flex-1"><div class="flex justify-between items-baseline gap-2"><div><span class="font-black tracking-wide" style="color:${t.bar}">${t.name.toUpperCase()}</span> <span class="text-[10px] font-black text-gray-400 tracking-widest">${t.title}</span></div><div class="text-xs font-bold text-gray-400 whitespace-nowrap">${killsB[id] ? 'DEFEATED x' + killsB[id] : met ? 'MET' : 'NOT MET YET'}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.tip}</div></div></div>`; }).join('')}</div>`;
             } else if (menuTab === 'controls') {
                 const rows = [['W A S D', 'Move'], ['SPACE', 'Jump (hold to bunny hop)'], ['SHIFT', 'Sprint'], ['C', 'Slide (while running)'], ['LEFT CLICK', 'Shoot'], ['RIGHT CLICK / E', 'Aim down sights (hold) / spin up minigun'], ['R', 'Reload'], ['V', 'Melee shove (interrupts attacks)'], ['Q', 'Use secondary gadget'], ['G', 'Call airstrike (earned with a 12-kill streak)'], ['F', 'Inspect weapon'], ['1-9, 0, - / WHEEL', 'Switch weapons (- is the RPG)'], ['ESC', 'Pause']];
                 h += `<div class="flex flex-col gap-2 mt-3">${rows.map(([k, v]) => `<div class="flex items-center gap-3 text-sm"><div class="w-40 flex flex-wrap gap-1">${k.split(' / ').map(x => `<span class="key">${x}</span>`).join('')}</div><div class="text-gray-300 font-semibold">${v}</div></div>`).join('')}</div>`;
@@ -7283,7 +7944,7 @@
             menu: () => changeGameState('main'),
             charges: (n) => { strikeCharges = n; },
             turret: (L, x, z) => { playerStats.upgrades.turret = L; deployTurret(x, groundAt(x, z, 0.3, 1), z); },
-            get twist() { return twist; },
+            get twist() { return twist; }, heal: () => { currentHp = maxHp; }, get lastHurtBy() { return lastHurtBy; }, get bossFx() { return bossFx; }, waveBosses: (n) => waveBosses(n), netBossFx: (m) => netBossFx(m), get runInfo() { return run; }, fresh: () => { resetRun(); needsNewWorld = true; changeGameState("playing"); },
             get nav() { return nav; }, skyOK: (x, z, f) => skyOK(x, z, f), ground: (x, z, m, f) => groundAt(x, z, m, f), ceil: (x, z, m, t) => ceilingAt(x, z, m, t), navSteer: (x, z, y) => navSteer(x, z, y, camera.position.x, camera.position.z) ? { ...navGoal } : null, navField: (d) => updateNavField(d || 1),
             orb: (kind, x, z, y = 0) => { const n = orbs.length; spawnOrb(); if (orbs.length > n) { const o = orbs[orbs.length - 1]; o.kind = kind || o.kind; if (x !== undefined) { o.g.position.set(x, y + 1.1, z); o.baseY = y + 1.1; } return o; } },
             get orbs() { return orbs; }, get boosts() { return boosts; }, get turrets() { return turrets; }, get arena() { return ARENA; }, get spawnPt() { return spawnPt; },
@@ -7334,7 +7995,7 @@
         const NET_SRC = WEAPON_ORDER.concat(['explosive', 'molotov', 'turret', 'melee', 'airstrike', 'landmine', 'nuke', 'boom', 'grenade', 'c4', 'launcher', 'rpg']);
         const srcIdx = (s) => Math.max(0, NET_SRC.indexOf(s));
         const ENEMY_IDS = Object.keys(enemyTypes);
-        const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam'];
+        const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak'];
         const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
         const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp ? ' TEAM DEATHMATCH' : '');
         const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -7679,7 +8340,7 @@
                 case 'ph': if (NET.inGame && NET.pvp) hostApplyPvpHits(p, m.l); break;
                 case 'dead': hostOnDeath(p.id, m.by, m.s); break;
                 case 'fx': netBroadcast(m, p.id); netPlayFx(m); break;
-                case 'nuke': if (NET.inGame && !NET.pvp) { dmgOwner = p.id; try { for (const e of [...enemies]) if (!e.userData.dead && e.userData.config.id !== 'boss') killEnemy(e, false, false, 'nuke'); } finally { dmgOwner = 0; } } break;
+                case 'nuke': if (NET.inGame && !NET.pvp) { dmgOwner = p.id; try { for (const e of [...enemies]) if (!e.userData.dead && !e.userData.config.boss) killEnemy(e, false, false, 'nuke'); } finally { dmgOwner = 0; } } break;
                 case 'slow': NET.slowT = Math.max(NET.slowT, +m.d || 0); break;
             }
         }
@@ -7731,6 +8392,7 @@
                 case 'd': if (NET.inGame) { takeDamage(m.a, m.f ? new V3(m.f[0], 0, m.f[1]) : null, typeof m.by === 'string' ? m.by.slice(0, 40) : undefined); if (m.kb) { push.x += m.kb[0]; push.z += m.kb[2]; if (m.kb[1]) { velocity.y = Math.max(velocity.y, m.kb[1]); onGround = false; } } } break;
                 case 'pd': netPvpDamaged(m.a, m.by, m.h, m.s, m.f); break;
                 case 'fx': netPlayFx(m); break;
+                case 'bfx': netBossFx(m); break;
                 case 'sp': netSpitFx(m); break;
                 case 'tr': spawnTracer(new V3(...m.a), new V3(...m.b), m.c, 0.09, 0.18); sfxAt('laser', camera.position.distanceTo(new V3(...m.a))); break;
                 case 'feed': netOnFeed(m); break;
@@ -7827,7 +8489,7 @@
                 const e = list[i], u = e.userData;
                 const st = Math.max(0, E_STATES.indexOf(u.state));
                 dv.setUint16(o, u.netId); dv.setUint8(o + 2, ENEMY_IDS.indexOf(u.config.id));
-                dv.setUint8(o + 3, st | (u.onGround ? 16 : 0) | (u.leaping ? 32 : 0) | (u.fuse >= 0 ? 64 : 0));
+                dv.setUint8(o + 3, st | (u.onGround ? 16 : 0) | (u.leaping ? 32 : 0) | (u.fuse >= 0 ? 64 : 0) | (u.shielded ? 128 : 0));
                 dv.setInt16(o + 4, clamp(Math.round(e.position.x * 32), -32767, 32767));
                 dv.setInt16(o + 6, clamp(Math.round(e.position.y * 32), -32767, 32767));
                 dv.setInt16(o + 8, clamp(Math.round(e.position.z * 32), -32767, 32767));
@@ -7848,12 +8510,13 @@
             e.position.set(x, y, z);
             const u = e.userData;
             u.netId = id;
-            u.maxHp = ENEMY_BASE_HP * cfg.hp * (cfg.id === 'boss' ? Math.max(1, playerStats.level / 5) : 1); u.hp = u.maxHp;
+            u.maxHp = ENEMY_BASE_HP * cfg.hp * bossHpMul(cfg); u.hp = u.maxHp;
             u.reward = waveReward(playerStats.level) * cfg.reward;
             u.speed = 0;
             u.net = { buf: new Interp([3]), seen: performance.now(), fl: 16, tg: 255, predT: 0, aimT: 0 };
             enemyById.set(id, e);
             scene.add(e); enemies.push(e);
+            if (cfg.boss) bossIntro(cfg);
             return e;
         }
         function netClientHit(e, amount, head, point, expl, src) {
@@ -7890,7 +8553,9 @@
                 if (u.net.buf.sample(rt, _ev)) { e.position.set(_ev[0], _ev[1], _ev[2]); e.rotation.y = _ev[3]; }
                 const sp = Math.hypot(e.position.x - ox, e.position.z - oz) / Math.max(dt, 1e-3);
                 const fl = u.net.fl, cfg = u.config;
-                u.state = E_STATES[fl & 15] || 'walk'; u.onGround = !!(fl & 16); u.leaping = !!(fl & 32);
+                u.state = E_STATES[fl & 15] || 'walk'; u.onGround = !!(fl & 16); u.leaping = !!(fl & 32); u.shielded = !!(fl & 128);
+                e.visible = u.state !== 'cloak';
+                if (u.bubble) { u.bubble.visible = u.shielded; u.bubble.material.opacity = 0.16 + 0.08 * Math.sin(gameTime * 5); }
                 if (u.flash > 0) { u.flash -= dt; if (u.flash <= 0) { u.mat.emissive.setHex(u.baseEmissive); u.mat.emissiveIntensity = u.baseEmissiveI; } }
                 // animation from how fast it's actually sliding along
                 const moving = sp > 0.4 && u.onGround;
@@ -7903,10 +8568,16 @@
                 else if (cfg.ai === 'marksman') { const aim = u.state === 'aim'; u.armR.rotation.x = aim ? -Math.PI / 2 : -0.4; u.armL.rotation.x = aim ? -1.3 : -sw; u.armL.rotation.z = aim ? -0.5 : 0; }
                 else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
                 else if (u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
+                else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }
+                else if (cfg.ai === 'acolyte') acolytePose(u);
+                else if (cfg.ai === 'egg') { /* no limbs */ }
+                else if (cfg.ai === 'necro') { u.armR.rotation.x = -0.25; u.armL.rotation.x = -1.2 + sw * 0.2; }
                 else if (u.state === 'charge') { u.armL.rotation.x = u.armR.rotation.x = 0.6; }
                 else if (u.state === 'windup') { u.armL.rotation.x = u.armR.rotation.x = -2.4 + Math.sin(gameTime * 20) * 0.2; }
                 else if (u.leaping) { u.armL.rotation.x = u.armR.rotation.x = -2.6; }
                 else zombieArms(u, reach, sw);
+                if (cfg.ai === 'pyro' && Math.random() < 0.4) spawnParticles(new V3(e.position.x, e.position.y + 3.1 * cfg.scale, e.position.z), Math.random() < 0.5 ? 0xff6a1f : 0xffd24d, 1, 2.5, 0.5, 0.35 * cfg.scale, false, { grav: -6 });
+                if (u.extra && (cfg.ai === 'brood' || cfg.ai === 'pyro')) u.extra.scale.setScalar(1 + Math.sin(gameTime * 6) * 0.13);
                 if (u.state === 'stun') u.head.rotation.y = Math.sin(gameTime * 14) * 0.4; else { u.head.rotation.y = 0; zombieHead(u); }
                 if (cfg.ai === 'bomber' && u.extra) u.extra.visible = !(fl & 64) || Math.floor(gameTime * 20) % 2 === 0;
                 if (cfg.id === 'spitter' && u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 5) * 0.12);
