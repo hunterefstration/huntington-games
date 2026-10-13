@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huntington Games</title>
+</head>
+<body style="margin:0;background:#0d1117;color:#8b949e;font:16px 'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">
+<div id="msg">Loading Huntington Games...</div>
+<script>
+// Huntington Games loader. Paste this into the HTML panel at jsbin.com (or save it as a .html file).
+// It downloads the newest hub from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
+// and it works even where github.io is blocked.
+function findLatest(repo, floor, cb) {
+  // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
+  // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
+  function exists(n) {
+    return fetch('https://cdn.jsdelivr.net/gh/' + repo + '@r' + n + '/latest.json').then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+  var lo = floor, step = 1;
+  function bisect(a, b) {
+    if (b - a <= 1) return cb(a);
+    var m = (a + b) >> 1;
+    exists(m).then(function (ok) { if (ok) bisect(m, b); else bisect(a, m); });
+  }
+  function gallop() {
+    exists(lo + step).then(function (ok) { if (ok) { lo += step; step *= 2; gallop(); } else bisect(lo, lo + step); });
+  }
+  gallop();
+}
+function cachedHub(cb) {
+  // the hub saves a copy of itself in IndexedDB the first time it runs, for when jsDelivr cannot be reached
+  try {
+    var rq = indexedDB.open('hg-offline', 1);
+    rq.onupgradeneeded = function () { try { rq.result.createObjectStore('files'); } catch (e) {} };
+    rq.onerror = function () { cb(null); };
+    rq.onsuccess = function () {
+      try {
+        var g = rq.result.transaction('files').objectStore('files').get('hub');
+        g.onsuccess = function () { cb(g.result && g.result.text ? g.result : null); };
+        g.onerror = function () { cb(null); };
+      } catch (e) { cb(null); }
+    };
+  } catch (e) { cb(null); }
+}
+(function () {
+  var repo = 'hunterefstration/huntington-games';
+  var hosts = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0, version = null, booted = false, saved = null, savedDone = false, timer = null;
+  function boot(html, ver) {
+    if (booted) return; booted = true; clearTimeout(timer);
+    var tag = '<script>window.HG_VERSION = ' + JSON.stringify(ver) + ';<\/script>';
+    html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
+    document.open(); document.write(html); document.close();
+  }
+  function useSaved() { // no network: run the copy of the hub saved on an earlier visit
+    if (saved) { document.getElementById('msg').textContent = 'Offline - loading the saved copy...'; boot(saved.text, saved.rel); return true; }
+    return false;
+  }
+  cachedHub(function (r) { saved = r; savedDone = true; });
+  function next() {
+    if (booted) return;
+    if (i >= hosts.length) {
+      if (useSaved()) return;
+      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>cdn.jsdelivr.net may be blocked on this network.';
+      return;
+    }
+    var url = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@' + version + '/index.html';
+    var ctl = window.AbortController ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 10000);
+    fetch(url, ctl ? { signal: ctl.signal } : {}).then(function (r) {
+      clearTimeout(t);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).then(function (html) { boot(html, version); }).catch(next);
+  }
+  var floor = 1;
+  try { floor = Math.max(1, parseInt(localStorage.getItem('hg_release'), 10) || 1); } catch (e) {}
+  // a slow or blocked network should not leave kids waiting when a saved copy exists
+  timer = setTimeout(function () { if (!booted) useSaved(); }, 8000);
+  findLatest(repo, floor, function (n) {
+    if (booted) return;
+    try { localStorage.setItem('hg_release', n); } catch (e) {}
+    version = 'r' + n; next();
+  });
+})();
+</script>
+</body>
+</html>
