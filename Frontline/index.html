@@ -5151,7 +5151,7 @@ function warSave() {
   WAR.blds = blds; WAR.pts = W.pts.filter(q => q.owner === 0 && q.hq < 0).map(q => q.id); WAR.techs = Object.assign({}, me.techs); WAR.sup = Math.floor(sup); saveWar();
 }
 function warTick() {
-  const w = W.war; if (!w || W.over) return;
+  const w = W.war; if (!w || W.over || !inGame) return;   // after quitting, the old world can tick a moment longer: never autosave it then (the squad settings are already cleared)
   if (w.phase === 'prep') {
     if (w.hold && SCREEN !== 'warwave' && W.t - (w.holdT || 0) > 3) w.hold = false;   // 2.0: the after-wave screen was closed some other way (pause menu, tab switch): never get stuck without a Start Wave button
     if (w.hold) return;
@@ -5872,7 +5872,7 @@ function stepInner(ts, hidden) {
     if (SET.fps) { const f = $('#fps'); f.textContent = Math.round(fpsNow) + ' fps | ' + W.units.length + ' units'; }
   }
 }
-function warSafeSave() { try { if (W && W.o.war && W.war && W.war.phase === 'prep' && !W.over) warSave(); } catch (e) { } }
+function warSafeSave() { try { if (inGame && W && W.o.war && W.war && W.war.phase === 'prep' && !W.over) warSave(); } catch (e) { } }
 document.addEventListener('visibilitychange', () => { if (document.hidden) warSafeSave(); if (document.hidden && inGame && W && !W.o.mp && !W.paused && !W.over && !SCREEN) openPause(); });
 window.addEventListener('pagehide', () => { warSafeSave(); try { if (NET.role && NET.peer) sendRel({ t: 'bye' }); } catch (e) { } });
 window.addEventListener('resize', () => { if (inGame && W) { try { mmBuild(); } catch (e) { } } });
