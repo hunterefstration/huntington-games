@@ -8,7 +8,7 @@
   if (ok) return;
   /* replace document with "This site is not authorized" */ throw new Error('HG-site');
 })();
-var HG_BUILD_N = 31, HG_SECRET = 'hGx9__k3v7';
+var HG_BUILD_N = 31, HG_SECRET = '__SECRET__' /* random per release, injected by tools/build-release.py */;
 function HG_h(x) { var n = 5381, i = 0; for (; i < x.length; i++) n = ((n << 5) + n + x.charCodeAt(i)) >>> 0; return n.toString(36); }
 function HG_build() { return HG_BUILD_N || parseInt(String(window.HG_VERSION || (window.HG_BUNDLE && window.HG_BUNDLE.version) || '').replace(/[^0-9]/g, ''), 10) || 0; }
 function HG_tokenTag(g) { var b = HG_build(); return '<script>window.HG_HUB={b:' + b + ',sig:"' + HG_h(b + '|' + g.dir + '|' + HG_SECRET) + '"};<' + '/script>'; }
