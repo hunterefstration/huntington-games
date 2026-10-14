@@ -114,6 +114,13 @@
         .stat { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 16px; min-width: 130px; }
         .stat .v { font-size: 26px; font-weight: 900; color: #fff; }
         .stat .k { font-size: 11px; font-weight: 800; color: #9ca3af; letter-spacing: 0.12em; }
+        /* 4.0 classes: ability card, class-coloured screen edge, 4-column armory row */
+        #cls-fx { position: absolute; inset: 0; pointer-events: none; z-index: 21; opacity: 0; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, var(--cfx, rgba(249,115,22,0.6)) 100%); }
+        #hud-abil { transition: border-color 0.2s, box-shadow 0.2s; }
+        #hud-abil.ready .abil-key { animation: abilpulse 1.1s ease-in-out infinite; }
+        @keyframes abilpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+        #hud-health-wrap { transition: box-shadow 0.2s, border-color 0.2s; }
+        @media (min-width: 1024px) { .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
     </style>
 
 
@@ -131,6 +138,7 @@
 
     <div id="game-container"></div>
     <div id="vignette"></div>
+    <div id="cls-fx"></div>
     <div id="screen-flash"></div>
     <div id="scope" class="hidden"><div class="lens"></div><div class="ph"></div><div class="pv"></div><div class="rh"></div><div class="rv"></div><div class="dot"></div></div>
     <div id="optic" class="hidden"><div class="ring"></div><div class="ln h"></div><div class="ln v"></div><div class="chev"></div></div>
@@ -178,11 +186,12 @@
 
         <div class="flex justify-between items-end">
             <div class="flex flex-col gap-1">
+                <div id="hud-healing" class="text-xs font-black tracking-widest text-green-300 hud-text hidden"></div>
                 <div id="hud-armor-wrap" class="w-64 bg-gray-900/80 border-2 border-gray-700 rounded-md overflow-hidden h-5 relative hidden">
                     <div id="hud-armor-bar" class="absolute top-0 left-0 h-full bg-sky-500 transition-all duration-200" style="width: 100%;"></div>
                     <div class="absolute inset-0 flex items-center justify-center font-bold text-xs hud-text" id="hud-armor-text">ARMOR 0</div>
                 </div>
-                <div class="w-64 bg-gray-900/80 border-4 border-gray-700 rounded-lg overflow-hidden h-10 relative">
+                <div id="hud-health-wrap" class="w-64 bg-gray-900/80 border-4 border-gray-700 rounded-lg overflow-hidden h-10 relative">
                     <div id="hud-health-bar" class="absolute top-0 left-0 h-full bg-red-600 transition-all duration-200" style="width: 100%;"></div>
                     <div class="absolute inset-0 flex items-center justify-center font-bold text-lg hud-text" id="hud-health-text">100 / 100</div>
                 </div>
@@ -193,6 +202,12 @@
                 <div id="hud-slots" class="flex gap-1 flex-wrap justify-end max-w-[520px]"></div>
                 <div id="hud-pu" class="hidden text-xs font-black tracking-wider bg-black/45 border border-white/10 rounded-lg px-3 py-1 hud-text"></div>
                 <div class="flex items-end gap-3">
+                    <div id="hud-abil" class="relative bg-black/40 p-3 rounded-xl border border-white/10 w-48 overflow-hidden hidden">
+                        <div class="text-[10px] font-bold text-gray-400 tracking-widest whitespace-nowrap"><span id="hud-abil-cls">CLASS</span> ABILITY <span class="abil-key inline-block text-white bg-white/20 px-1 rounded">X</span></div>
+                        <div class="text-base font-black hud-text uppercase whitespace-nowrap" id="hud-abil-name">-</div>
+                        <div class="text-xs font-bold text-gray-300 whitespace-nowrap" id="hud-abil-status">READY</div>
+                        <div class="absolute bottom-0 left-0 h-1" id="abil-cd" style="width:0%"></div>
+                    </div>
                     <div class="relative bg-black/40 p-3 rounded-xl border border-white/10 w-56 overflow-hidden">
                         <div class="text-[10px] font-bold text-gray-400 tracking-widest">SECONDARY <span class="text-white bg-white/20 px-1 rounded">Q</span></div>
                         <div class="text-base font-black hud-text uppercase whitespace-nowrap" id="hud-sec-name">NONE</div>
@@ -383,7 +398,7 @@
         function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
         const settings = Object.assign({ quality: 'auto', fov: 75, sens: 1, volume: 0.8, showFps: false,
             sleeve: 'navy', glove: 'grey', xhStyle: 'cross', xhColor: '#ffffff', camo: 'stock', tracer: 'default', killfx: 'blocks',
-            mode: 'classic', map: 'random', light: 'random', diff: 'normal', powers: [] }, loadJSON('blocky21_settings', {}));
+            mode: 'classic', map: 'random', light: 'random', diff: 'normal', powers: [], cls: 'assault' }, loadJSON('blocky21_settings', {}));
         if (!Array.isArray(settings.powers)) settings.powers = [];
         // lifetime stats (the run itself is still permadeath - only these totals are kept)
         const life = Object.assign({ xp: undefined, runs: 0, kills: 0, headshots: 0, bosses: 0, shots: 0, hits: 0, damage: 0, time: 0, waves: 0, best: {}, weaponKills: {} }, loadJSON('blocky21_life', {}));
@@ -587,6 +602,43 @@
         };
         const PERK_COSTS = [500, 1000, 1800, 2800, 4000];
         const perk = (id) => (playerStats.perks && playerStats.perks[id]) || 0;
+        // ---------- 4.0 CLASSES ----------
+        // Picked on the Play tab before a run, switched between waves in the Armory. Each class has an ability on X (with a
+        // cooldown), a passive, and a 3-step upgrade tree bought with cash during the run. Upgrades are kept per class, so
+        // switching back to a class keeps what you bought for it. Off in PvP (like power-ups) so it stays fair.
+        const CLASSES = {
+            assault:  { name: 'ASSAULT',  color: 0xf97316, role: 'Front-line shooter', ability: 'ADRENALINE', cd: [40, 40, 40, 28],
+                        abilityDesc: 'Instant reload of every gun, +35% speed and +25% damage for 6 seconds.',
+                        passive: 'Every kill takes 1s off the Adrenaline cooldown.',
+                        tree: [{ name: 'SECOND WIND', desc: 'Adrenaline also heals 30 HP and lasts 8 seconds.' },
+                               { name: 'BERSERKER', desc: 'The damage boost goes up to +50% and you fire 20% faster.' },
+                               { name: 'UNSTOPPABLE', desc: 'Take 40% less damage during Adrenaline. Cooldown 40s to 28s.' }] },
+            medic:    { name: 'MEDIC',    color: 0x4ade80, role: 'Keeps the squad alive', ability: 'HEALING FIELD', cd: [45, 45, 45, 30],
+                        abilityDesc: 'Drop a field that heals you and co-op teammates 8 HP/s for 8 seconds.',
+                        passive: 'Regenerate 2 HP/s after 3 seconds without getting hit.',
+                        tree: [{ name: 'WIDE FIELD', desc: 'Field radius 6m to 9m, and it lasts 12 seconds.' },
+                               { name: 'FIELD ARMOR', desc: 'The field also repairs armor, and your passive regen doubles to 4 HP/s.' },
+                               { name: 'TRIAGE', desc: 'The field heals 14 HP/s instead of 8. Cooldown 45s to 30s.' }] },
+            engineer: { name: 'ENGINEER', color: 0xfacc15, role: 'Builds and resupplies', ability: 'FIELD KIT', cd: [45, 45, 45, 32],
+                        abilityDesc: 'Deploy a mini sentry and an ammo crate that refills your mags and gadgets.',
+                        passive: 'Secondaries and Sentry Turret upgrades cost 25% less.',
+                        tree: [{ name: 'HARDENED', desc: 'The mini sentry gets +60% health and ammo and lasts 35 seconds.' },
+                               { name: 'MEDKIT CRATE', desc: 'The crate holds 5 resupplies and each one also heals 20 HP.' },
+                               { name: 'ROCKET SENTRY', desc: 'The mini sentry fires rockets too. Cooldown 45s to 32s.' }] },
+            recon:    { name: 'RECON',    color: 0xa78bfa, role: 'Sees everything', ability: 'RADAR PULSE', cd: [30, 30, 30, 20],
+                        abilityDesc: 'A sonar pulse marks every zombie within 70m through walls for 6 seconds.',
+                        passive: 'Bigger minimap, and zombies you hit stay marked for 3 seconds.',
+                        tree: [{ name: 'WIDE BAND', desc: 'The pulse covers the whole map and marks last 9 seconds.' },
+                               { name: 'WEAK SPOT', desc: 'Marked zombies take +15% damage from you.' },
+                               { name: 'UPLINK', desc: 'Co-op teammates get your marks too. Cooldown 30s to 20s.' }] }
+        };
+        const CLASS_ORDER = Object.keys(CLASSES);
+        const CLASS_COSTS = [750, 1500, 2750];
+        const validClass = (id) => CLASSES[id] ? id : 'assault';
+        // the class you're playing right now (null in PvP), and how far its upgrade tree goes
+        const myClass = () => (!NET.pvp && CLASSES[playerStats.cls]) ? playerStats.cls : null;
+        const clsLvl = (id) => (playerStats.clsUp && playerStats.clsUp[id]) || 0;
+        const clsUp = (id, n) => myClass() === id && clsLvl(id) >= n;          // does the current class have upgrade step n?
         // weapon camos (upgrade levels 4-5 keep their own gold / plasma look)
         const CAMOS = {
             stock: { name: 'STOCK' }, desert: { name: 'DESERT', c: 0xb89a6a }, forest: { name: 'FOREST', c: 0x3f5a36 }, arctic: { name: 'ARCTIC', c: 0xe5e9f0 },
@@ -631,8 +683,10 @@
         };
 
 
-        const defaultStats = { level: 1, money: 0, weapons: ['pistol'], currentWeapon: 'pistol', secondaries: [], currentSecondary: null, armorTier: null, upgrades: {}, perks: {} };
+        // cls / clsUp (4.0): your class and the upgrade steps bought for each class this run - saved with the run
+        const defaultStats = { level: 1, money: 0, weapons: ['pistol'], currentWeapon: 'pistol', secondaries: [], currentSecondary: null, armorTier: null, upgrades: {}, perks: {}, cls: 'assault', clsUp: {} };
         let playerStats = JSON.parse(JSON.stringify(defaultStats));
+        playerStats.cls = validClass(settings.cls);
         let currentHp = 100;
         let maxHp = 100;               // goes up with the VITALITY upgrade
         let currentArmor = 0;
@@ -706,6 +760,9 @@
 
 
         let secondaryCooldown = 0, turretCd = 0;
+        // class ability (X): cooldown left, time left on whatever it's doing right now (and how long that lasts in total)
+        let abilityCd = 0, abilityT = 0, abilityDur = 1;
+        let healFields = [], crates = [], radarT = 0, markUntil = -1, radarSweep = 0;
         let activeC4 = null;
         let projectiles = [];          // player grenades/shells/c4 + enemy spit
         let pickups = [];
@@ -751,6 +808,8 @@
             slots: $('hud-slots'), intel: $('hud-intel'), power: $('hud-power'), powerName: $('hud-power-name'), powerBar: $('hud-power-bar'),
             fps: $('fps'), menuBest: $('menu-best'), pauseStats: $('pause-stats'), strike: $('hud-strike'), streak: $('hud-streak'), boss: $('hud-boss'), bossName: $('hud-boss-name'), bossBar: $('hud-boss-bar'), boosts: $('hud-boosts'), pu: $('hud-pu')
         };
+        Object.assign(ui, { abil: $('hud-abil'), abilCls: $('hud-abil-cls'), abilName: $('hud-abil-name'), abilStatus: $('hud-abil-status'), abilBar: $('abil-cd'),
+                            clsFx: $('cls-fx'), healing: $('hud-healing'), healthWrap: $('hud-health-wrap') });
         const minimapCtx = ui.minimap.getContext('2d');
         // Only touch the DOM when a value actually changes (cheap HUD updates every frame)
         function setText(el, s) { if (el._t !== s) { el._t = s; el.textContent = s; } }
@@ -868,6 +927,15 @@
                     case 'pop':      sfxNoise(0.14, 1800, 0.14, 300); sfxTone('sine', 160, 60, 0.12, 0.12); break;
                     case 'orb':      sfxTone('sine', 880, 1320, 0.25, 0.06); sfxTone('sine', 1320, 1760, 0.25, 0.04, 0.12); break;
                     case 'mine':     sfxTone('square', 700, 900, 0.06, 0.07); sfxTone('square', 900, 1200, 0.06, 0.06, 0.09); break;
+                    // 4.0 class abilities
+                    case 'adren':    sfxTone('sawtooth', 80, 320, 0.55, 0.16); sfxTone('square', 220, 880, 0.4, 0.05, 0.05); sfxNoise(0.5, 2200, 0.14, 300); sfxTone('sine', 70, 40, 0.14, 0.4, 0.45); break;
+                    case 'beat':     sfxTone('sine', 72, 40, 0.13, 0.32); sfxTone('sine', 66, 38, 0.11, 0.22, 0.15); break;
+                    case 'field':    sfxTone('sine', 520, 1040, 0.5, 0.12); sfxTone('triangle', 780, 1560, 0.6, 0.08, 0.12); sfxTone('sine', 1040, 2080, 0.5, 0.05, 0.26); break;
+                    case 'mend':     sfxTone('sine', 880, 1320, 0.14, 0.035); break;
+                    case 'kit':      sfxTone('sine', 200, 70, 0.18, 0.3); sfxNoise(0.12, 800, 0.15, 200); sfxTone('square', 300, 600, 0.12, 0.07, 0.12); sfxTone('square', 600, 900, 0.12, 0.05, 0.24); break;
+                    case 'resupply': sfxTone('square', 420, 300, 0.04, 0.08); sfxNoise(0.05, 3000, 0.06); sfxTone('triangle', 600, 1200, 0.2, 0.1, 0.06); break;
+                    case 'radar':    sfxTone('sine', 1250, 1180, 0.7, 0.16); sfxTone('sine', 1250, 1180, 0.5, 0.06, 0.38); sfxTone('sine', 1250, 1180, 0.4, 0.025, 0.76); sfxTone('sawtooth', 160, 900, 0.3, 0.035); break;
+                    case 'ready':    sfxTone('triangle', 660, 990, 0.12, 0.08); sfxTone('triangle', 990, 1320, 0.15, 0.07, 0.1); break;
                 }
             } catch (e) {}
         }
@@ -3707,6 +3775,7 @@
             currentGameState = newState;
             clearInputs();
             for (const el of [ui.mainMenu, ui.pauseMenu, ui.shop, ui.gameOver, ui.hud, ui.minimap, ui.crosshair, ui.scope, ui.optic, ui.settings]) el.classList.add('hidden');
+            if (newState !== 'playing') setStyle(ui.clsFx, 'opacity', '0');      // the class screen-edge glow only shows in play
             if (vmModel) vmModel.root.visible = newState === 'playing' || newState === 'paused' || newState === 'main';
 
 
@@ -3720,6 +3789,7 @@
                     ui.pauseMenu.classList.remove('hidden');
                     ui.pauseStats.textContent = NET.inGame ? `MULTIPLAYER \u00b7 ${netModeName()} \u00b7 ${MAPS[run.map].name}  \u2014  the game keeps running while you're in here!`
                         : `${MODES[run.mode].name} \u00b7 ${DIFF().name} \u00b7 ${MAPS[run.map].name} \u00b7 ${theme.name}  \u2014  Wave ${playerStats.level}, ${runStats.kills} kills`;
+                    if (myClass()) ui.pauseStats.textContent += `  \u00b7  ${CLASSES[myClass()].name}${clsLvl(myClass()) ? ' ' + '\u2605'.repeat(clsLvl(myClass())) : ''}`;   // 4.0: your class + upgrade stars
                     ui.btnQuit.textContent = NET.on ? 'LEAVE PARTY' : 'QUIT TO MENU';
                     ui.btnPauseShop.classList.toggle('hidden', NET.pvp);
                     refreshSaveUI();
@@ -3814,6 +3884,7 @@
                 case 'KeyV': if (!event.repeat) melee(); break;
                 case 'KeyE': aimHeld = true; break;
                 case 'KeyG': if (!event.repeat) callAirstrike(); break;
+                case 'KeyX': if (!event.repeat) useAbility(); break;
                 case 'KeyF': if (!event.repeat && !isReloading && vm.adsT < 0.2 && vm.inspect <= 0) vm.inspect = 2.4; break;
                 case 'Digit1': case 'Digit2': case 'Digit3': case 'Digit4': case 'Digit5':
                 case 'Digit6': case 'Digit7': case 'Digit8': case 'Digit9': case 'Digit0': {
@@ -3994,7 +4065,7 @@
                 if (reloadStyle === 'shell' && ammoState[id] > 0) { isReloading = false; reloadEnding = 0.2; ui.txtReloading.classList.add('hidden'); }
                 else return;
             }
-            const rate = w.fireRate * (powerOn('rapid') ? 0.6 : 1);
+            const rate = w.fireRate * (powerOn('rapid') ? 0.6 : 1) * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
             if ((gameTime - lastShootTime) * 1000 < rate) return;
             if (vm.bolt >= 0) return;
             if (w.spinUp && spinT < 1) return;
@@ -4059,7 +4130,7 @@
             _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
             _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
             const spread = currentSpread(w);
-            const dmgMul = powerOn('dmg') ? 2 : 1;
+            const dmgMul = (powerOn('dmg') ? 2 : 1) * clsDmg();
             if (w.rocket) { fireRocket(w, dmgMul, spread); updateAmmoHUD(); return; }
             if (w.flame) { fireFlame(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0 && !powerOn('ammo')) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, 200); return; }
             const perEnemy = new Map();
@@ -4238,7 +4309,7 @@
                 projectiles.push({ kind: 'molotov', mesh, vel: dir.clone().multiplyScalar(22).add(new V3(0, 6, 0)), fuse: 4, sec });
                 secondaryCooldown = sec.cooldown; sfx('throw'); vm.kickRot -= 0.25;
             } else if (id === 'turret') {
-                if (turrets.length) { toast('Your sentry is still out there', '#9ca3af'); sfx('deny'); return; }
+                if (mainTurret()) { toast('Your sentry is still out there', '#9ca3af'); sfx('deny'); return; }
                 if (turretCd > 0) { sfx('deny'); return; }
                 const p = camera.position.clone().addScaledVector(new V3(dir.x, 0, dir.z).normalize(), 2.6);
                 if (pointInSolid(new V3(p.x, feetY + 0.5, p.z), 0.4)) { toast('No room to deploy here', '#9ca3af'); sfx('deny'); return; }
@@ -4293,7 +4364,8 @@
             if (NET.inGame && !opts.hurtsPlayer && !opts.mini) netSendFx('boom', pos, radius, opts.color || 0xffa64d);
             if (NET.pvp) netExplodeAvatars(pos, damage, radius, opts.src);
             if (NET.inGame && NET.host && opts.hurtsPlayer) netExplodeRemotes(pos, damage, radius, opts.by);
-            const dmgMul = (!opts.hurtsPlayer && powerOn('dmg') ? 2 : 1) * (!opts.hurtsPlayer && opts.src !== 'turret' ? 1 + 0.08 * perk('dmg') : 1);
+            const dmgMul = (!opts.hurtsPlayer && powerOn('dmg') ? 2 : 1) * (!opts.hurtsPlayer && opts.src !== 'turret' ? 1 + 0.08 * perk('dmg') : 1)
+                         * (!opts.hurtsPlayer && opts.src !== 'turret' && opts.src !== 'rpg' ? clsDmg() : 1);     // Adrenaline (RPG rockets already have it)
 
 
             // damage enemies (explosions ignore riot shields)
@@ -4437,7 +4509,7 @@
                     f.tick = 0.25;
                     for (const e of [...enemies]) {
                         const u = e.userData;
-                        if (!u.dead && Math.hypot(e.position.x - f.x, e.position.z - f.z) < f.r + u.radius && Math.abs(e.position.y - f.y) < 1.5) damageEnemy(e, f.dps * 0.25 * (powerOn('dmg') ? 2 : 1), false, null, true, null, 1, 'molotov');
+                        if (!u.dead && Math.hypot(e.position.x - f.x, e.position.z - f.z) < f.r + u.radius && Math.abs(e.position.y - f.y) < 1.5) damageEnemy(e, f.dps * 0.25 * (powerOn('dmg') ? 2 : 1) * clsDmg(), false, null, true, null, 1, 'molotov');
                     }
                 }
                 if (f.t <= 0) { scene.remove(f.mesh); f.mesh.material.dispose(); fires.splice(i, 1); }
@@ -4451,11 +4523,14 @@
         const _turretPlasma = new THREE.MeshStandardMaterial({ color: 0x2a2140, roughness: 0.25, metalness: 0.5, emissive: 0x1c0f33, emissiveIntensity: 1 });
         const _turretAcc = new THREE.MeshBasicMaterial({ color: 0x38bdf8, toneMapped: false });
         const _turretCore = new THREE.MeshBasicMaterial({ color: 0xc084fc, toneMapped: false });
-        // Each upgrade level adds visible hardware: armor, radar, quad guns, rocket pods, plasma core
-        function deployTurret(x, y, z) {
-            const L = playerStats.upgrades.turret || 0, st = turretStats(L);
-            const body = L >= 5 ? _turretPlasma : (L >= 4 ? _turretGold : _turretMat), acc = L >= 5 ? _turretCore : _turretAcc;
+        const _turretAccMini = new THREE.MeshBasicMaterial({ color: 0xfacc15, toneMapped: false });
+        // Each upgrade level adds visible hardware: armor, radar, quad guns, rocket pods, plasma core.
+        // mini = the Engineer's Field Kit sentry (4.0): its own stats, a smaller model with amber lights, never uses the Q cooldown.
+        function deployTurret(x, y, z, mini = null) {
+            const L = mini ? (mini.hard ? 1 : 0) : (playerStats.upgrades.turret || 0), st = mini || turretStats(L);
+            const body = mini ? _turretMat : L >= 5 ? _turretPlasma : (L >= 4 ? _turretGold : _turretMat), acc = mini ? _turretAccMini : L >= 5 ? _turretCore : _turretAcc;
             const g = new THREE.Group(); g.position.set(x, y, z);
+            if (mini) g.scale.setScalar(0.72);
             const B = (p, sx, sy, sz, m, px, py, pz) => { const o = new THREE.Mesh(sharedBox, m); o.scale.set(sx, sy, sz); o.position.set(px, py, pz); o.castShadow = true; p.add(o); return o; };
             const h = L >= 5 ? 0.35 : 0;
             B(g, 1.2, 0.3, 1.2, _turretDark, 0, 0.15, 0);
@@ -4474,25 +4549,29 @@
                 B(radar, 0.5, 0.3, 0.05, body, 0, 0, 0); B(radar, 0.1, 0.1, 0.1, acc, 0, 0, 0.06);
             }
             let pods = [];
-            if (L >= 4) for (const sx of [-0.6, 0.6]) {
+            if (mini ? mini.rockets : L >= 4) for (const sx of [-0.6, 0.6]) {
                 const pod = B(head, 0.3, 0.32, 0.5, _turretDark, sx, 0.05, 0.1); pods.push(pod);
                 for (const [ox, oy] of [[-0.07, 0.07], [0.07, 0.07], [-0.07, -0.07], [0.07, -0.07]]) B(head, 0.08, 0.08, 0.04, acc, sx + ox, 0.05 + oy, 0.36);
             }
             let core = null;
             if (L >= 5) { core = B(g, 0.42, 0.42, 0.42, _turretCore, 0, 0.9, 0); core.castShadow = false; }
-            const ring = new THREE.Mesh(_auraGeo, new THREE.MeshBasicMaterial({ color: L >= 5 ? 0xc084fc : 0x38bdf8, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+            const ring = new THREE.Mesh(_auraGeo, new THREE.MeshBasicMaterial({ color: mini ? 0xfacc15 : L >= 5 ? 0xc084fc : 0x38bdf8, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
             ring.scale.setScalar(1.2); ring.position.y = 0.05; g.add(ring);
             scene.add(g);
-            turrets.push({ g, head, ring, radar, core, t: st.life, cd: 0, rocketCd: 1, st, target: null, side: 1, gi: 0, guns, L, hp: st.hp, ammo: st.ammo, hurt: 0 });
-            spawnParticles(new V3(x, y + 0.5, z), L >= 5 ? 0xc084fc : 0x38bdf8, 14, 5, 0.5, 0.1);
+            turrets.push({ g, head, ring, radar, core, t: st.life, cd: 0, rocketCd: 1, st, target: null, side: 1, gi: 0, guns, L, hp: st.hp, ammo: st.ammo, hurt: 0, mini: !!mini, s: mini ? 0.72 : 1 });
+            spawnParticles(new V3(x, y + 0.5, z), mini ? 0xfacc15 : L >= 5 ? 0xc084fc : 0x38bdf8, 14, 5, 0.5, 0.1);
         }
+        // the Q Sentry Turret (not the Engineer's mini sentry) if it's deployed
+        function mainTurret() { for (const t of turrets) if (!t.mini) return t; return null; }
+        function miniTurret() { for (const t of turrets) if (t.mini) return t; return null; }
         const _tp = new V3(), _tq = new V3();
         function updateTurrets(dt) {
             for (let i = turrets.length - 1; i >= 0; i--) {
                 const t = turrets[i], st = t.st; t.t -= dt; t.cd -= dt; t.rocketCd -= dt; t.hurt -= dt;
                 // the ring shows its health: blue -> red, blinking when it's about to go
                 const hpF = Math.max(0, t.hp / st.hp), dying = t.t < 3 || hpF < 0.25 || t.ammo <= 0;
-                t.ring.material.color.setRGB(lerp(1, t.L >= 5 ? 0.75 : 0.22, hpF), lerp(0.2, t.L >= 5 ? 0.52 : 0.74, hpF), lerp(0.2, 0.98, hpF));
+                if (t.mini) t.ring.material.color.setRGB(1, lerp(0.2, 0.8, hpF), lerp(0.2, 0.08, hpF));
+                else t.ring.material.color.setRGB(lerp(1, t.L >= 5 ? 0.75 : 0.22, hpF), lerp(0.2, t.L >= 5 ? 0.52 : 0.74, hpF), lerp(0.2, 0.98, hpF));
                 t.ring.material.opacity = dying ? (Math.floor(gameTime * 6) % 2 ? 0.6 : 0.08) : (t.hurt > 0 ? 0.7 : 0.3);
                 if (t.radar) t.radar.rotation.y += dt * 3;
                 if (t.core) { t.core.rotation.y += dt * 2; t.core.rotation.x += dt; t.core.scale.setScalar(0.42 * (1 + Math.sin(gameTime * 6) * 0.12)); }
@@ -4515,22 +4594,22 @@
                     if (Math.abs(dA) < 0.2 && t.cd <= 0) {
                         t.cd = st.delay; t.gi = (t.gi + 1) % t.guns.length; t.ammo--;
                         const [gx, gy] = t.guns[t.gi];
-                        const from = _tp.clone().add(new V3(Math.sin(want) * 1.0 + Math.cos(want) * gx, gy, Math.cos(want) * 1.0 - Math.sin(want) * gx));
+                        const from = _tp.clone().add(new V3((Math.sin(want) * 1.0 + Math.cos(want) * gx) * t.s, gy * t.s, (Math.cos(want) * 1.0 - Math.sin(want) * gx) * t.s));
                         // it isn't a perfect aimbot any more: some rounds miss, more at long range
                         const hit = Math.random() < st.aim - _tp.distanceTo(_tq) / st.range * 0.25;
                         if (!hit) _tq.add(_tmp.set(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).multiplyScalar(2.2));
-                        spawnTracer(from, _tq, t.L >= 5 ? 0xd8b4fe : 0x7dd3fc, 0.03, 0.07);
+                        spawnTracer(from, _tq, t.mini ? 0xfde68a : t.L >= 5 ? 0xd8b4fe : 0x7dd3fc, 0.03, 0.07);
                         spawnParticles(from, 0xbfe9ff, 2, 3, 0.1, 0.06);
                         if (hit) damageEnemy(e, st.damage * (powerOn('dmg') ? 2 : 1), false, null, true, null, 1, 'turret');
                         if (Math.random() < 0.5) sfx('turret');
-                        if (t.ammo === 0) toast('SENTRY OUT OF AMMO', '#7dd3fc', 1.4);
+                        if (t.ammo === 0) toast(t.mini ? 'MINI SENTRY OUT OF AMMO' : 'SENTRY OUT OF AMMO', t.mini ? '#fde047' : '#7dd3fc', 1.4);
                     }
                     if (st.rockets && t.rocketCd <= 0 && Math.abs(dA) < 0.3) {
                         t.rocketCd = st.rockets;
                         const mesh = new THREE.Mesh(_shellGeo, _shellMat); mesh.position.copy(_tp).add(new V3(0, 0.1, 0));
                         scene.add(mesh);
                         const v = _tq.clone().sub(mesh.position).normalize().multiplyScalar(38);
-                        projectiles.push({ kind: 'shell', mesh, vel: v.add(new V3(0, 1.5, 0)), fuse: 2.5, sec: { damage: 60 + 15 * (t.L - 4), radius: 4 }, trail: 0, noSelf: true });
+                        projectiles.push({ kind: 'shell', mesh, vel: v.add(new V3(0, 1.5, 0)), fuse: 2.5, sec: { damage: st.rocketDmg || 60 + 15 * (t.L - 4), radius: 4 }, trail: 0, noSelf: true });
                         sfx('thump');
                     }
                 }
@@ -4546,8 +4625,8 @@
             t.head.getWorldPosition(_tp);
             scene.remove(t.g); t.ring.material.dispose(); turrets.splice(i, 1);
             spawnParticles(_tp, 0x94a3b8, 10, 5, 0.8, 0.2, true, { bounce: true });
-            if (destroyed) { spawnBlastFx(_tp, 3, 0x7dd3fc, false, 0.5); spawnParticles(_tp, 0xffc266, 12, 9, 0.5, 0.12); sfx('boom'); toast('SENTRY DESTROYED', '#fca5a5', 1.4); }
-            turretCd = t.st.cooldown;
+            if (destroyed) { spawnBlastFx(_tp, 3, t.mini ? 0xfacc15 : 0x7dd3fc, false, 0.5); spawnParticles(_tp, 0xffc266, 12, 9, 0.5, 0.12); sfx('boom'); toast(t.mini ? 'MINI SENTRY DESTROYED' : 'SENTRY DESTROYED', '#fca5a5', 1.4); }
+            if (!t.mini) turretCd = t.st.cooldown;     // the Engineer's mini sentry runs on the class ability cooldown instead
             updateHUD();
         }
         // an enemy bashing the sentry
@@ -4593,7 +4672,7 @@
                     const pt = new V3(best.position.x, best.position.y + u.totalHeight * 0.55, best.position.z);
                     u.knock.addScaledVector(_fwd, 16 / Math.max(0.8, u.config.scale));
                     if (u.state === 'aim' || u.state === 'windup') { u.state = 'walk'; u.aiT = 1.5; if (u.laser) u.laser.visible = false; }   // interrupts attacks
-                    damageEnemy(best, 70 * (powerOn('dmg') ? 2 : 1), false, pt, false, null, 1, 'melee');
+                    damageEnemy(best, 70 * (powerOn('dmg') ? 2 : 1) * clsDmg(), false, pt, false, null, 1, 'melee');
                     spawnParticles(pt, 0xffffff, 6, 5, 0.3, 0.08);
                     sfx('melee'); shake = Math.max(shake, 0.18);
                 }, 110);
@@ -4701,6 +4780,305 @@
             fires.forEach(f => { scene.remove(f.mesh); f.mesh.material.dispose(); }); fires = [];
             strikes.forEach(s => { scene.remove(s.marker); s.marker.material.dispose(); }); strikes = [];
             clearBossFx();
+            clearClassFx();
+        }
+
+
+        // ---------- 4.0 CLASS ABILITIES (X) ----------
+        // ASSAULT Adrenaline, MEDIC Healing Field, ENGINEER Field Kit (mini sentry + ammo crate), RECON Radar Pulse.
+        // Multiplayer: the Healing Field heals teammates and Recon's UPLINK shares marks (both ride the existing 'fx' relay, and
+        // each computer only ever heals / marks for its own player). Everything else is local to your own computer: Adrenaline,
+        // the Engineer's mini sentry and crate (teammates don't see them; the sentry isn't a decoy on the host) and your marks.
+        const adrenOn = () => abilityT > 0 && myClass() === 'assault';
+        const clsDmg = () => adrenOn() ? (clsUp('assault', 2) ? 1.5 : 1.25) : 1;       // your damage multiplier from the class
+        const abilityCooldown = (id = myClass()) => CLASSES[id] ? CLASSES[id].cd[Math.min(3, clsLvl(id))] : 1;
+        const gadgetMul = () => myClass() === 'engineer' ? 0.75 : 1;                      // ENGINEER passive: cheaper gadgets
+        const secCost = (sec) => Math.round(sec.cost * gadgetMul() / 10) * 10;
+        const _clsP = new V3(), _clsD = new V3();
+        let beatT = 0, healTick = 0, healingNow = 0, radarScan = 0, clsWas = null, fxBeat = 0, abilReadyWas = true;
+        function useAbility() {
+            if (currentGameState !== 'playing' || currentHp <= 0 || NET.dead) return;
+            const id = myClass();
+            if (!id) { toast('Class abilities are off in PvP', '#9ca3af', 1.2); sfx('deny'); return; }
+            const C = CLASSES[id];
+            if (abilityCd > 0) { toast(`${C.ability} RECHARGING - ${Math.ceil(abilityCd)}s`, '#9ca3af', 1); sfx('deny'); return; }
+            const ok = id === 'assault' ? adrenaline() : id === 'medic' ? healingField() : id === 'engineer' ? fieldKit() : radarPulse();
+            if (!ok) return;
+            abilityCd = abilityCooldown(id);
+            updateAbilityHUD();
+        }
+        // ASSAULT: every gun topped up on the spot, then faster and harder-hitting for a few seconds
+        function adrenaline() {
+            abilityDur = abilityT = clsUp('assault', 1) ? 8 : 6;
+            cancelReload(); burstLeft = 0;
+            for (const w of playerStats.weapons) ammoState[w] = W(w).magSize;
+            if (clsUp('assault', 1)) currentHp = Math.min(maxHp, currentHp + 30);
+            beatT = 0.35; fxBeat = 1;
+            sfx('adren'); screenFlash('rgba(249,115,22,0.4)'); shake = Math.max(shake, 0.25);
+            spawnBlastFx(_clsP.set(camera.position.x, feetY + 0.3, camera.position.z), 6, 0xff7a1a, true, 0.5);
+            toast(clsUp('assault', 3) ? 'ADRENALINE!  UNSTOPPABLE' : 'ADRENALINE!', '#fb923c', 1.4);
+            updateHUD();
+            return true;
+        }
+        // MEDIC: a glowing ring on the ground that heals everyone standing in it
+        function healStats() { return { r: clsUp('medic', 1) ? 9 : 6, d: clsUp('medic', 1) ? 12 : 8, h: clsUp('medic', 3) ? 14 : 8, a: clsUp('medic', 2) ? 6 : 0 }; }
+        function healingField() {
+            const s = healStats(), x = camera.position.x, z = camera.position.z;
+            let y = groundAt(x, z, 0.3, feetY + 0.5); if (y < feetY - 6) y = feetY;
+            addHealField(x, y, z, s.r, s.d, s.h, s.a, true);
+            abilityDur = abilityT = s.d;
+            if (NET.inGame) netSendFx('heal', _clsP.set(x, y, z), s.r, 0x4ade80, { d: s.d, h: s.h, a: s.a });
+            sfx('field'); screenFlash('rgba(74,222,128,0.3)');
+            toast('HEALING FIELD', '#4ade80', 1.4);
+            return true;
+        }
+        const _hfOpts = { grav: -3.5, drag: 1.2 };
+        function addHealField(x, y, z, r, d, h, a, own) {
+            if (own) for (const f of healFields) if (f.own) f.t = Math.min(f.t, 0.4);      // one of yours at a time: the old one fades
+            if (healFields.length >= 6) removeHealField(0);
+            const disc = new THREE.Mesh(_fireGeo, fxMat(0x22c55e, 0.15)); disc.position.set(x, y + 0.05, z); disc.scale.setScalar(r);
+            const ring = new THREE.Mesh(_bRingGeo, fxMat(0x4ade80, 0.85)); ring.position.set(x, y + 0.07, z); ring.scale.setScalar(r);
+            const wall = new THREE.Mesh(_bWaveGeo, fxMat(0x4ade80, 0.1)); wall.position.set(x, y, z); wall.scale.set(r, 2.2, r);
+            const plusMat = new THREE.MeshBasicMaterial({ color: 0x86efac, toneMapped: false });
+            const plus = new THREE.Group(); plus.position.set(x, y + 2.7, z);
+            for (const [sx, sy] of [[0.7, 0.22], [0.22, 0.7]]) { const m = new THREE.Mesh(sharedBox, plusMat); m.scale.set(sx, sy, 0.12); plus.add(m); }
+            scene.add(disc, ring, wall, plus);
+            healFields.push({ x, y, z, r, t: d, T: d, h, a, own, disc, ring, wall, plus, plusMat, pt: 0 });
+            spawnParticles(_clsP.set(x, y + 0.4, z), 0x4ade80, 16, 6, 0.6, 0.14, false, { jitter: r * 0.8, grav: -2 });
+        }
+        function removeHealField(i) {
+            const f = healFields[i];
+            for (const m of [f.disc, f.ring, f.wall]) { scene.remove(m); m.material.dispose(); }
+            scene.remove(f.plus); f.plusMat.dispose();
+            healFields.splice(i, 1);
+        }
+        function updateHealFields(dt) {
+            let heal = 0, arm = 0;
+            for (let i = healFields.length - 1; i >= 0; i--) {
+                const f = healFields[i]; f.t -= dt;
+                if (f.t <= 0) { removeHealField(i); continue; }
+                const fade = Math.min(1, f.t / 0.5), grow = Math.min(1, (f.T - f.t) / 0.35), pulse = 0.5 + 0.5 * Math.sin(gameTime * 5 + i);
+                f.ring.scale.setScalar(f.r * (0.3 + 0.7 * grow)); f.disc.scale.setScalar(f.r * (0.3 + 0.7 * grow));
+                f.ring.material.opacity = (0.55 + 0.35 * pulse) * fade;
+                f.disc.material.opacity = (0.09 + 0.08 * pulse) * fade;
+                f.wall.material.opacity = 0.09 * fade * grow;
+                f.plus.rotation.y += dt * 2; f.plus.position.y = f.y + 2.7 + Math.sin(gameTime * 2.5 + i) * 0.15; f.plus.scale.setScalar(Math.max(0.01, fade * grow));
+                f.pt -= dt;
+                if (f.pt <= 0) {     // rising green sparkles
+                    f.pt = 0.07;
+                    const a = Math.random() * Math.PI * 2, rr = Math.sqrt(Math.random()) * f.r;
+                    _clsP.set(f.x + Math.cos(a) * rr, f.y + 0.15, f.z + Math.sin(a) * rr);
+                    // not right under your nose: up close a sparkle fills half the screen
+                    if (Math.hypot(_clsP.x - camera.position.x, _clsP.z - camera.position.z) > 1.8) spawnParticles(_clsP, Math.random() < 0.5 ? 0x4ade80 : 0xbbf7d0, 1, 1.2, 1.1, 0.16, false, _hfOpts);
+                }
+                // every computer heals its own player when they stand in any field (fields don't stack: the strongest wins)
+                if (currentHp > 0 && !NET.dead && Math.hypot(camera.position.x - f.x, camera.position.z - f.z) < f.r && Math.abs(feetY - f.y) < 3) { heal = Math.max(heal, f.h); arm = Math.max(arm, f.a); }
+            }
+            healingNow = heal;
+            if (!heal) return;
+            const before = currentHp;
+            currentHp = Math.min(maxHp, currentHp + heal * dt);
+            const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
+            if (arm && tier && currentArmor < tier.max) currentArmor = Math.min(tier.max, currentArmor + arm * dt);
+            if ((healTick -= dt) <= 0 && currentHp > before) { healTick = 0.9; sfx('mend'); }
+        }
+        // ENGINEER: a small sentry plus an ammo crate
+        const _kitCrateMat = new THREE.MeshStandardMaterial({ color: 0x4d5a2b, roughness: 0.8, metalness: 0.1 });
+        const _kitCrateBand = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5, emissive: 0x3a2a00 });
+        const _kitCrateGlow = new THREE.MeshBasicMaterial({ color: 0xfde047, toneMapped: false });
+        function miniSentryStats() {
+            const hard = clsUp('engineer', 1);
+            return { hard, damage: 7, hp: hard ? 240 : 150, ammo: hard ? 145 : 90, delay: 0.22, range: 22, cooldown: 0, life: hard ? 35 : 25, aim: 0.72, aggro: 12, rockets: clsUp('engineer', 3) ? 5 : 0, rocketDmg: 45 };
+        }
+        function fieldKit() {
+            camera.getWorldDirection(_clsD); _clsD.y = 0; if (_clsD.lengthSq() < 1e-4) _clsD.set(0, 0, -1); _clsD.normalize();
+            const px = camera.position.x, pz = camera.position.z;
+            const sx = px + _clsD.x * 2.6, sz = pz + _clsD.z * 2.6, sy = groundAt(sx, sz, 0.3, feetY + 0.5);
+            if (pointInSolid(_clsP.set(sx, feetY + 0.5, sz), 0.4) || sy < feetY - 3) { toast('No room to deploy here', '#9ca3af'); sfx('deny'); return false; }
+            // the crate goes beside you (right, then left, then right where you're standing)
+            let cx = px, cz = pz, cy = feetY;
+            for (const side of [1, -1]) {
+                const x = px + _clsD.x * 2.1 - _clsD.z * 1.7 * side, z = pz + _clsD.z * 2.1 + _clsD.x * 1.7 * side, y = groundAt(x, z, 0.3, feetY + 0.5);
+                if (!pointInSolid(_clsP.set(x, feetY + 0.4, z), 0.35) && y >= feetY - 2) { cx = x; cz = z; cy = y; break; }
+            }
+            // a new kit replaces the old one
+            for (let i = turrets.length - 1; i >= 0; i--) if (turrets[i].mini) removeTurret(turrets[i], false);
+            while (crates.length) removeCrate(0);
+            const st = miniSentryStats();
+            deployTurret(sx, sy, sz, st);
+            makeCrate(cx, cy, cz);
+            abilityDur = abilityT = st.life;
+            sfx('kit'); toast('FIELD KIT DEPLOYED', '#fde047', 1.4);
+            return true;
+        }
+        function makeCrate(x, y, z) {
+            const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = Math.atan2(_clsD.x, _clsD.z);
+            const B = (p, sx, sy, sz, m, px, py, pz, sh = true) => { const o = new THREE.Mesh(sharedBox, m); o.scale.set(sx, sy, sz); o.position.set(px, py, pz); o.castShadow = sh; p.add(o); return o; };
+            B(g, 0.95, 0.5, 0.62, _kitCrateMat, 0, 0.25, 0);
+            B(g, 0.99, 0.08, 0.66, _turretDark, 0, 0.53, 0);
+            B(g, 0.97, 0.11, 0.64, _kitCrateBand, 0, 0.3, 0);
+            B(g, 0.12, 0.12, 0.02, _kitCrateGlow, 0.3, 0.3, 0.33, false);
+            const icon = new THREE.Group(); icon.position.y = 1.2; g.add(icon);
+            for (let i = -1; i <= 1; i++) { B(icon, 0.09, 0.28, 0.09, _kitCrateGlow, i * 0.16, 0, 0, false); B(icon, 0.055, 0.09, 0.055, _kitCrateGlow, i * 0.16, 0.18, 0, false); }
+            const ring = new THREE.Mesh(_auraGeo, fxMat(0xfacc15, 0.4)); ring.scale.setScalar(1.9); ring.position.y = 0.05; g.add(ring);
+            scene.add(g);
+            const n = clsUp('engineer', 2) ? 5 : 3;
+            crates.push({ g, icon, ring, x, y, z, n, t: 45, cd: 0.6, heal: clsUp('engineer', 2) ? 20 : 0 });
+            spawnParticles(_clsP.set(x, y + 0.5, z), 0xfacc15, 10, 4, 0.5, 0.1);
+        }
+        function removeCrate(i, poof) {
+            const c = crates[i];
+            scene.remove(c.g); c.ring.material.dispose();
+            if (poof) spawnParticles(_clsP.set(c.x, c.y + 0.4, c.z), 0x6b7a3a, 8, 4, 0.7, 0.18, true, { bounce: true });
+            crates.splice(i, 1);
+        }
+        function needsResupply(c) {
+            const id = playerStats.currentWeapon, tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
+            if (ammoState[id] < W(id).magSize || secondaryCooldown > 1) return true;
+            for (const w of playerStats.weapons) if (ammoState[w] < W(w).magSize * 0.5) return true;
+            return (tier && currentArmor < tier.max * 0.9) || (c.heal > 0 && currentHp < maxHp - 10);
+        }
+        function updateCrates(dt) {
+            for (let i = crates.length - 1; i >= 0; i--) {
+                const c = crates[i]; c.t -= dt; c.cd -= dt;
+                c.icon.rotation.y += dt * 2.2; c.icon.position.y = 1.2 + Math.sin(gameTime * 3 + i) * 0.1;
+                c.icon.visible = c.cd <= 0 && (c.t > 4 || Math.floor(gameTime * 6) % 2 === 0);
+                c.ring.material.opacity = c.cd > 0 ? 0.1 : 0.28 + 0.14 * Math.sin(gameTime * 5);
+                if (c.cd <= 0 && currentHp > 0 && !NET.dead && Math.hypot(camera.position.x - c.x, camera.position.z - c.z) < 1.9 && Math.abs(feetY - c.y) < 2.2 && needsResupply(c)) resupply(c);
+                if (c.t <= 0 || c.n <= 0) removeCrate(i, true);
+            }
+        }
+        // walk up to the crate: every mag full, gadgets recharged, some armor (and HP with MEDKIT CRATE)
+        function resupply(c) {
+            c.n--; c.cd = 3;
+            cancelReload(); burstLeft = 0;
+            for (const w of playerStats.weapons) ammoState[w] = W(w).magSize;
+            secondaryCooldown = 0; if (!mainTurret()) turretCd = 0;
+            const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
+            if (tier) currentArmor = Math.min(tier.max, currentArmor + 25);
+            if (c.heal) currentHp = Math.min(maxHp, currentHp + c.heal);
+            sfx('resupply'); screenFlash('rgba(250,204,21,0.22)');
+            spawnParticles(_clsP.set(c.x, c.y + 0.8, c.z), 0xfde047, 10, 4, 0.5, 0.1);
+            toast(c.n > 0 ? `RESUPPLIED  ·  ${c.n} LEFT` : 'RESUPPLIED  ·  CRATE EMPTY', '#fde047', 1.3);
+            updateHUD();
+        }
+        // RECON: a sonar pulse that marks zombies (outlined through walls + on the minimap)
+        function radarStats() { return { r: clsUp('recon', 1) ? 999 : 70, d: clsUp('recon', 1) ? 9 : 6 }; }
+        function markEnemy(u, until) { if (!(u.markT >= until)) u.markT = until; if (until > markUntil) markUntil = until; }
+        function radarMark(x, z, r, d) {
+            let n = 0; const until = gameTime + d;
+            for (const e of enemies) {
+                const u = e.userData; if (u.dead || Math.hypot(e.position.x - x, e.position.z - z) > r) continue;
+                markEnemy(u, until); n++;
+            }
+            return n;
+        }
+        function radarPulse() {
+            const s = radarStats();
+            const n = radarMark(camera.position.x, camera.position.z, s.r, s.d);
+            abilityDur = abilityT = radarT = s.d; radarScan = 0.5; radarSweep = 1;
+            spawnBlastFx(_clsP.set(camera.position.x, feetY + 0.2, camera.position.z), Math.min(s.r, 80), 0xa78bfa, true, 1.2);
+            if (NET.inGame && clsUp('recon', 3)) netSendFx('radar', _clsP.set(camera.position.x, feetY, camera.position.z), s.r, 0xa78bfa, { d: s.d });
+            sfx('radar'); screenFlash('rgba(167,139,250,0.22)');
+            toast(n ? `RADAR  ·  ${n} ZOMBIE${n > 1 ? 'S' : ''} MARKED` : 'RADAR  ·  ALL CLEAR', '#c4b5fd', 1.6);
+            return true;
+        }
+        // a hit from you (RECON passive: marks it; WEAK SPOT: marked zombies take +15%). Returns the damage to apply.
+        function reconHit(u, amount) {
+            if (myClass() !== 'recon') return amount;
+            if (clsUp('recon', 2) && u.markT > gameTime) amount *= 1.15;
+            markEnemy(u, gameTime + 3);
+            return amount;
+        }
+        function clearClassFx() {
+            while (healFields.length) removeHealField(0);
+            while (crates.length) removeCrate(0);
+            abilityT = 0; radarT = 0; radarSweep = 0; markUntil = -1; healingNow = 0;
+        }
+        // keep the health + armor bars live every frame (regeneration, healing fields, crates) - only does any work when a number changes
+        const hpShown = { hp: -1, max: -1, arm: -1, tier: '' };
+        function refreshHealthHUD(force) {
+            const hp = Math.max(0, Math.ceil(currentHp));
+            if (force || hp !== hpShown.hp || maxHp !== hpShown.max) {
+                hpShown.hp = hp; hpShown.max = maxHp;
+                setWidth(ui.healthBar, Math.max(0, (currentHp / maxHp) * 100));
+                setText(ui.healthText, `${hp} / ${maxHp}`);
+            }
+            const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
+            if (!tier) return;
+            const arm = Math.ceil(currentArmor);
+            if (force || arm !== hpShown.arm || tier.id !== hpShown.tier) {
+                hpShown.arm = arm; hpShown.tier = tier.id;
+                setWidth(ui.armorBar, Math.max(0, currentArmor / tier.max * 100));
+                setText(ui.armorText, `${tier.name.toUpperCase()}  ${arm} / ${tier.max}`);
+            }
+        }
+        function updateClass(dt) {
+            const id = myClass();
+            if (id !== clsWas) { clsWas = id; applyMinimapSize(); }
+            if (abilityCd > 0) abilityCd = Math.max(0, abilityCd - dt);
+            // recharge chime (also when an Assault kill knocks the last second off)
+            const ready = abilityCd <= 0;
+            if (ready && !abilReadyWas && id && currentHp > 0) sfx('ready');
+            abilReadyWas = ready;
+            if (abilityT > 0) abilityT = Math.max(0, abilityT - dt);
+            if (adrenOn()) { if ((beatT -= dt) <= 0) { beatT = 0.45; fxBeat = 1; sfx('beat'); } }
+            if (radarT > 0) {
+                radarT = Math.max(0, radarT - dt);
+                // the pulse keeps sweeping while it lasts: zombies that wander into range get marked too
+                if ((radarScan -= dt) <= 0 && radarT > 0) { radarScan = 0.5; radarMark(camera.position.x, camera.position.z, radarStats().r, radarT); }
+            }
+            if (radarSweep > 0) radarSweep = Math.max(0, radarSweep - dt / 1.4);
+            updateHealFields(dt);
+            updateCrates(dt);
+            if (id === 'engineer') { const m = miniTurret(); abilityT = m ? Math.max(0, m.t) : 0; }
+            refreshHealthHUD();
+            updateAbilityHUD();
+            updateClassFx(dt);
+        }
+        function updateAbilityHUD() {
+            const id = myClass();
+            const show = !!id && currentGameState !== 'main';
+            if (ui.abil._on !== show) { ui.abil._on = show; ui.abil.classList.toggle('hidden', !show); }
+            if (!show) return;
+            const C = CLASSES[id], col = hex(C.color);
+            setText(ui.abilCls, C.name); setText(ui.abilName, C.ability); setStyle(ui.abilName, 'color', col);
+            let status, pct, bar = col;
+            const ready = abilityCd <= 0;
+            if (ready) { status = 'READY  ·  PRESS X'; pct = 100; bar = '#4ade80'; }
+            else if (abilityT > 0) {
+                const kit = id === 'engineer' ? miniTurret() : null;
+                status = kit ? `SENTRY ${Math.ceil(kit.t)}s  ·  ${kit.ammo} AMMO` : `ACTIVE  ${abilityT.toFixed(1)}s`;
+                pct = abilityT / abilityDur * 100;
+            } else { status = `RECHARGING  ${abilityCd.toFixed(1)}s`; pct = (1 - abilityCd / abilityCooldown(id)) * 100; bar = '#fbbf24'; }
+            setText(ui.abilStatus, status); setWidth(ui.abilBar, clamp(pct, 0, 100)); setStyle(ui.abilBar, 'background', bar);
+            if (ui.abil._r !== ready) { ui.abil._r = ready; ui.abil.classList.toggle('ready', ready); }
+            setStyle(ui.abil, 'border-color', ready ? col : 'rgba(255,255,255,0.1)');
+            setStyle(ui.abil, 'box-shadow', ready ? `0 0 14px ${col}66` : 'none');
+        }
+        // class-coloured screen edge: Adrenaline heartbeat, standing in a Healing Field, the Radar sweep
+        function updateClassFx(dt) {
+            fxBeat = Math.max(0, fxBeat - dt * 2.6);
+            let op = 0, c = 'rgba(249,115,22,0.6)';
+            if (adrenOn()) op = 0.45 + 0.4 * fxBeat;
+            else if (healingNow > 0 && currentHp < maxHp) { op = 0.38; c = 'rgba(74,222,128,0.5)'; }
+            else if (radarSweep > 0) { op = radarSweep * 0.7; c = 'rgba(167,139,250,0.55)'; }
+            setStyle(ui.clsFx, '--cfx', c);
+            setStyle(ui.clsFx, 'opacity', op.toFixed(2));
+            const healing = healingNow > 0 && currentHp > 0;
+            if (ui.healing._on !== healing) { ui.healing._on = healing; ui.healing.classList.toggle('hidden', !healing); }
+            if (healing) setText(ui.healing, currentHp < maxHp ? `✚ HEALING  +${healingNow} HP/s` : '✚ HEALING FIELD  ·  FULL HEALTH');
+            setStyle(ui.healthWrap, 'border-color', healing ? '#4ade80' : '#374151');
+            setStyle(ui.healthWrap, 'box-shadow', healing ? '0 0 14px rgba(74,222,128,0.7)' : 'none');
+        }
+        // RECON passive: a bigger minimap (and the top-right HUD moves over to make room for it)
+        function applyMinimapSize() {
+            const px = myClass() === 'recon' ? 260 : 200;
+            if (ui.minimap.width === px) return;
+            ui.minimap.width = ui.minimap.height = px;
+            ui.txtMoney.parentElement.style.marginRight = (px + 20) + 'px';
+            const feed = $('net-feed'); if (feed) feed.style.top = (px + 36) + 'px';
+            if (worldBlocks.length) buildMinimapStatic();
         }
 
 
@@ -5186,6 +5564,88 @@
                 z.mesh.count = z.n; z.mesh.visible = z.n > 0;
                 if (z.n) { z.mesh.instanceMatrix.needsUpdate = true; z.mesh.instanceColor.needsUpdate = true; z.flash.needsUpdate = true; }
             }
+            updateXray();
+        }
+        // ---------- 4.0 RECON MARKS: X-RAY OUTLINES ----------
+        // A marked zombie gets a glowing copy of its body drawn on top of everything (so you see it through walls): brightest
+        // along its edges, like an outline. Same part geometry as the instances above, one extra InstancedMesh per part, and
+        // only while something is marked - nothing at all runs when nobody is marked.
+        const XR = { sets: new Map(), need: new Map(), on: false, mat: null };
+        const _xc = new THREE.Color();
+        function xrayMat() {
+            if (XR.mat) return XR.mat;
+            XR.mat = new THREE.ShaderMaterial({
+                uniforms: { uTime: { value: 0 } },
+                vertexShader: `varying float vRim; varying vec3 vCol;
+                    void main() {
+                        vec4 p = vec4(position, 1.0); vec3 n = normal;
+                        #ifdef USE_INSTANCING
+                            p = instanceMatrix * p; n = mat3(instanceMatrix) * n;
+                        #endif
+                        #ifdef USE_INSTANCING_COLOR
+                            vCol = instanceColor;
+                        #else
+                            vCol = vec3(1.0, 0.35, 0.25);
+                        #endif
+                        vec4 mv = modelViewMatrix * p;
+                        vRim = 1.0 - abs(dot(normalize(normalMatrix * n), normalize(-mv.xyz)));
+                        gl_Position = projectionMatrix * mv;
+                    }`,
+                fragmentShader: `uniform float uTime; varying float vRim; varying vec3 vCol;
+                    void main() {
+                        // blocky bodies are mostly flat faces looking straight at you, so they get a solid see-through
+                        // fill (the silhouette) and the faces turned edge-on glow brighter (the outline)
+                        float r = pow(vRim, 2.2), k = 0.85 + 0.15 * sin(uTime * 9.0);
+                        gl_FragColor = vec4((vCol * (0.26 + 0.74 * r) + vec3(0.38) * r * r) * k, 1.0);
+                        #include <colorspace_fragment>
+                    }`,
+                transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending
+            });
+            return XR.mat;
+        }
+        function xraySet(kit, part, key, need) {
+            let z = XR.sets.get(key);
+            if (z && z.cap >= need) return z;
+            let cap = z ? z.cap : 8; while (cap < need) cap *= 2;
+            if (z) { scene.remove(z.mesh); z.mesh.dispose(); }
+            const mesh = new THREE.InstancedMesh(kit[part], xrayMat(), cap);
+            mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            mesh.setColorAt(0, _xc.setRGB(1, 1, 1)); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+            mesh.frustumCulled = false; mesh.count = 0; mesh.renderOrder = 50;
+            scene.add(mesh);
+            z = { mesh, cap, n: 0 };
+            XR.sets.set(key, z);
+            return z;
+        }
+        const xrMarked = (e) => { const u = e.userData; return !!e.parent && !u.dead && u.markT > gameTime; };
+        function updateXray() {
+            if (!(markUntil > gameTime)) {
+                if (XR.on) { XR.on = false; for (const z of XR.sets.values()) { z.mesh.count = 0; z.mesh.visible = false; } }
+                return;
+            }
+            XR.on = true;
+            XR.need.clear();
+            for (const e of zombieSet) {
+                if (!xrMarked(e)) continue;
+                for (const p of e.userData.iparts) { const k = p.xk || (p.xk = e.userData.kit.id + '|' + p.part); XR.need.set(k, (XR.need.get(k) || 0) + 1); }
+            }
+            for (const z of XR.sets.values()) z.n = 0;
+            for (const e of zombieSet) {
+                if (!xrMarked(e)) continue;
+                const u = e.userData;
+                if (!e.visible) e.updateMatrixWorld(true);         // cloaked (the Phantom): the normal pass skipped it
+                _xc.setHex(u.config.boss ? 0xffc23c : 0xff4a32).multiplyScalar(Math.min(1, (u.markT - gameTime) / 0.6));
+                for (const p of u.iparts) {
+                    if (!p.mesh.visible) continue;
+                    const z = xraySet(u.kit, p.part, p.xk, XR.need.get(p.xk));
+                    z.mesh.setMatrixAt(z.n, p.mesh.matrixWorld); z.mesh.setColorAt(z.n, _xc); z.n++;
+                }
+            }
+            for (const z of XR.sets.values()) {
+                z.mesh.count = z.n; z.mesh.visible = z.n > 0;
+                if (z.n) { z.mesh.instanceMatrix.needsUpdate = true; z.mesh.instanceColor.needsUpdate = true; }
+            }
+            XR.mat.uniforms.uTime.value = gameTime;
         }
 
 
@@ -5472,6 +5932,7 @@
                 if (!dmgOwner && gameTime - (u.immT || -9) > 0.6) { u.immT = gameTime; spawnDamageNumber(point || new V3(enemyGroup.position.x, enemyGroup.position.y + u.totalHeight * 0.7, enemyGroup.position.z), u.shielded ? 'SHIELDED' : 'IMMUNE', 'boom'); sfx('thud'); }
                 return;
             }
+            if (!dmgOwner) amount = reconHit(u, amount);          // 4.0 RECON: your hits mark zombies (WEAK SPOT: marked ones take more)
             if (u.state === 'cloak') { u.state = 'walk'; u.aiT = 2.5; enemyGroup.visible = true; u.barShow = true; spawnDamageNumber(new V3(enemyGroup.position.x, enemyGroup.position.y + u.totalHeight, enemyGroup.position.z), 'REVEALED!', 'head'); }
             if (boostOn('instakill') && !dmgOwner && !u.config.boss && u.hp - amount < u.maxHp * 0.25) amount = Math.max(amount, u.hp);
             // explosive rounds: bullet hits set off a small blast (queued, handled next frame)
@@ -5547,6 +6008,7 @@
                 gainXP(u.config.boss ? 200 : 10 + (headshot ? 5 : 0) + (u.config.hp >= 2 ? 10 : 0));
                 sfx(headshot ? 'headkill' : 'kill');
                 if (boostOn('vamp') && currentHp > 0) currentHp = Math.min(maxHp, currentHp + 5);
+                if (myClass() === 'assault' && abilityCd > 0) abilityCd = Math.max(0, abilityCd - 1);   // 4.0 ASSAULT passive
             }
         }
         // Enemies topple over, then burst into blocks
@@ -5603,6 +6065,7 @@
             if (by) lastHurtBy = by;
             // no one-shots: a single hit from an enemy can never take more than 45% of your max health (PvP excluded)
             if (!NET.pvp) amount = Math.min(amount, maxHp * 0.45);
+            if (adrenOn() && clsUp('assault', 3)) amount *= 0.6;     // 4.0 ASSAULT: UNSTOPPABLE
             if (overshield > 0) {      // OVERSHIELD soaks damage before armor and health
                 const s = Math.min(overshield, amount); overshield -= s; amount -= s;
                 if (amount <= 0.01) { screenFlash('rgba(96,165,250,0.3)'); sfx('hit'); if (fromPos) showHurtDir(fromPos); updateHUD(); return; }
@@ -5718,6 +6181,8 @@
         function resetRun() {
             waveActive = false; intermission = 0; savedWave = -1;
             playerStats = JSON.parse(JSON.stringify(defaultStats));
+            playerStats.cls = validClass(settings.cls);             // 4.0: the class picked on the Play tab (or in the multiplayer menu)
+            abilityCd = 0; abilityT = 0; abilReadyWas = true;
             resetAmmo();
             maxHp = 100; currentHp = maxHp; lastHurtBy = ''; currentArmor = 0; secondaryCooldown = 0; activeC4 = null; combo = 0; comboTimer = 0; lastHurtT = -99;
             streak = 0; strikeCharges = 0; meleeCd = 0;
@@ -5771,7 +6236,7 @@
             if (!runSaveOK() || currentHp <= 0 || !storageOK()) return false;
             try {
                 const json = JSON.stringify({ v: 1, phase, run, theme: themeId, mods: [...MODS], stats: playerStats, hp: currentHp, maxHp, armor: currentArmor,
-                                strikes: strikeCharges, streak, runStats, runXP, seen: [...seenTypes], savedAt: Date.now() });
+                                strikes: strikeCharges, streak, runStats, runXP, seen: [...seenTypes], abil: Math.ceil(abilityCd), savedAt: Date.now() });   // 4.0: stats.cls / stats.clsUp = class + upgrades
                 localStorage.setItem(RUN_KEY, json);
                 if (localStorage.getItem(RUN_KEY) !== json) return false;
                 localStorage.removeItem(RUN_KEY_OLD);
@@ -5837,7 +6302,7 @@
             const s = loadRunSave();
             b.classList.toggle('hidden', !s);
             const d = $('btn-delete-save'); if (d) { d.classList.toggle('hidden', !s); if (delArm) { clearTimeout(delArm); delArm = 0; } d.textContent = 'Delete save'; }
-            if (s) b.innerHTML = `CONTINUE FROM WAVE ${s.stats.level} - ${MAPS[s.run.map].name}, ${(DIFFICULTIES[s.run.diff] || DIFFICULTIES.normal).name}, ${(MODES[s.run.mode] || MODES.classic).name} <span class="text-sm font-bold" style="display:block">$${s.stats.money} &middot; ${Math.ceil(s.hp)} HP</span>`;
+            if (s) b.innerHTML = `CONTINUE FROM WAVE ${s.stats.level} - ${MAPS[s.run.map].name}, ${(DIFFICULTIES[s.run.diff] || DIFFICULTIES.normal).name}, ${(MODES[s.run.mode] || MODES.classic).name} <span class="text-sm font-bold" style="display:block">$${s.stats.money} &middot; ${Math.ceil(s.hp)} HP${CLASSES[s.stats.cls] ? ` &middot; ${CLASSES[s.stats.cls].name}` : ''}</span>`;
         }
         function continueRun() {
             const s = loadRunSave(); if (!s) { updateContinueBtn(); return; }
@@ -5853,6 +6318,11 @@
             camera.quaternion.identity();
             velocity.set(0, 0, 0); push.set(0, 0, 0); slideT = 0;
             playerStats = Object.assign(JSON.parse(JSON.stringify(defaultStats)), s.stats);
+            // 4.0 classes: saves from before classes get the class picked on the Play tab and an empty upgrade tree
+            playerStats.cls = validClass(s.stats.cls || settings.cls);
+            if (!playerStats.clsUp || typeof playerStats.clsUp !== 'object') playerStats.clsUp = {};
+            for (const k in playerStats.clsUp) playerStats.clsUp[k] = CLASSES[k] ? clamp(playerStats.clsUp[k] | 0, 0, 3) : 0;
+            abilityCd = clamp(+s.abil || 0, 0, 60); abilityT = 0; abilReadyWas = abilityCd <= 0;
             maxHp = s.maxHp || 100; currentHp = clamp(s.hp || maxHp, 1, maxHp); currentArmor = s.armor || 0;
             overshield = MODS.has('shield') ? 50 : 0;
             strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(s.seen || []);
@@ -7135,7 +7605,10 @@
         function updateOrbs(dt) {
             updatePowerHUD();
             // REGENERATION upgrade: heal after a few seconds without getting hit
-            if (perk('regen') && currentHp > 0 && currentHp < maxHp && gameTime - lastHurtT > 4) currentHp = Math.min(maxHp, currentHp + perk('regen') * dt);
+            // 4.0 MEDIC passive: regenerates on its own (2 HP/s, 4 with FIELD ARMOR) and REGENERATION kicks in after 3s instead of 4
+            const medic = myClass() === 'medic', calm = gameTime - lastHurtT > (medic ? 3 : 4);
+            if (perk('regen') && currentHp > 0 && currentHp < maxHp && calm) currentHp = Math.min(maxHp, currentHp + perk('regen') * dt);
+            if (medic && currentHp > 0 && currentHp < maxHp && calm && !NET.dead) currentHp = Math.min(maxHp, currentHp + (clsUp('medic', 2) ? 4 : 2) * dt);
             const p = camera.position;
             for (let i = orbs.length - 1; i >= 0; i--) {
                 const o = orbs[i]; o.life -= dt;
@@ -7187,20 +7660,24 @@
                 c.strokeStyle = hex(POWERUPS[s.kind].color); c.lineWidth = 2;
                 c.strokeRect((s.x + off) * scale - pulse, (s.z + off) * scale - pulse, pulse * 2, pulse * 2);
             }
+            const markPulse = 5.5 + Math.sin(gameTime * 8) * 1.2;
             for (const enemy of enemies) {
-                const u = enemy.userData;
-                if (!enemy.visible) continue;
+                const u = enemy.userData, marked = u.markT > gameTime;       // 4.0 RECON marks show even cloaked zombies
+                if (!enemy.visible && !marked) continue;
                 const x = (enemy.position.x + off) * scale, y = (enemy.position.z + off) * scale;
                 c.fillStyle = u.config.boss ? u.config.bar : hex(u.config.color === 0x3f4a5c ? 0x9fb1cc : u.config.color);
                 c.beginPath(); c.arc(x, y, u.config.boss ? 5 : 3, 0, Math.PI * 2); c.fill();
                 if (u.state === 'aim') { c.strokeStyle = '#ff2020'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, 6, 0, Math.PI * 2); c.stroke(); }
+                if (marked) { c.strokeStyle = '#c4b5fd'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, markPulse + (u.config.boss ? 3 : 0), 0, Math.PI * 2); c.stroke(); }
             }
+            for (const k of crates) { c.fillStyle = '#facc15'; c.fillRect((k.x + off) * scale - 2.5, (k.z + off) * scale - 2.5, 5, 5); }
+            for (const f of healFields) { c.strokeStyle = 'rgba(74,222,128,0.85)'; c.lineWidth = 1.5; c.beginPath(); c.arc((f.x + off) * scale, (f.z + off) * scale, Math.max(3, f.r * scale), 0, Math.PI * 2); c.stroke(); }
             for (const o of orbs) {
                 const x = (o.g.position.x + off) * scale, y = (o.g.position.z + off) * scale, r = 4 + Math.sin(gameTime * 6) * 1.2;
                 c.fillStyle = hex(BOOSTS[o.kind].color);
                 c.beginPath(); c.moveTo(x, y - r); c.lineTo(x + r, y); c.lineTo(x, y + r); c.lineTo(x - r, y); c.closePath(); c.fill();
             }
-            for (const t of turrets) { c.fillStyle = '#38bdf8'; c.fillRect((t.g.position.x + off) * scale - 2.5, (t.g.position.z + off) * scale - 2.5, 5, 5); }
+            for (const t of turrets) { c.fillStyle = t.mini ? '#facc15' : '#38bdf8'; c.fillRect((t.g.position.x + off) * scale - 2.5, (t.g.position.z + off) * scale - 2.5, 5, 5); }
             if (NET.inGame) netDrawMinimap(c, scale, off);
             c.fillStyle = '#facc15';
             for (const m of mines) c.fillRect((m.x + off) * scale - 1.5, (m.z + off) * scale - 1.5, 3, 3);
@@ -7209,6 +7686,10 @@
 
             const pPos = camera.position;
             const px = (pPos.x + off) * scale, py = (pPos.z + off) * scale;
+            if (radarSweep > 0) {      // the radar pulse sweeping out across the map
+                c.strokeStyle = `rgba(196,181,253,${(radarSweep * 0.9).toFixed(2)})`; c.lineWidth = 2.5;
+                c.beginPath(); c.arc(px, py, (1 - radarSweep) * w * 0.75 + 4, 0, Math.PI * 2); c.stroke();
+            }
             camera.getWorldDirection(_camDir);
             const ang = Math.atan2(_camDir.z, _camDir.x);
             c.fillStyle = 'rgba(59,130,246,0.25)';
@@ -7253,7 +7734,7 @@
 
 
             const sprinting = sprintHeld && moveForward && !aimHeld && !isMouseDown && !sliding;
-            const speed = (sprinting ? 78.0 : 52.0) * (boostOn('speed') ? 1.3 : 1) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1);
+            const speed = (sprinting ? 78.0 : 52.0) * (boostOn('speed') ? 1.3 : 1) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1.35 : 1);
             if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
             if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
@@ -7297,7 +7778,7 @@
             const wantAds = aimHeld && !isReloading && vm.raise > 0.8 && !w.noAds;
             vm.adsT = clamp(vm.adsT + (wantAds ? 1 : -1) * delta * (w.scoped === 'sniper' ? 6 : 7.5), 0, 1);
             const a = ease(vm.adsT);
-            const baseFov = settings.fov + (sprinting ? 6 : 0) + (slideT > 0 ? 5 : 0);
+            const baseFov = settings.fov + (sprinting ? 6 : 0) + (slideT > 0 ? 5 : 0) + (adrenOn() ? 7 : 0);
             const targetFov = w.noAds ? baseFov : lerp(baseFov, Math.min(w.zoomFov, settings.fov - 5), a);
             if (Math.abs(targetFov - fovNow) > 0.05) { fovNow = damp(fovNow, targetFov, 16, delta); camera.fov = fovNow; camera.updateProjectionMatrix(); }
             controls.pointerSpeed = settings.sens * clamp(fovNow / settings.fov, 0.15, 1);
@@ -7404,7 +7885,7 @@
                 updateCorpses(delta);
                 updateCageRam(delta);
                 tickBossIntro(delta);
-                if (simOn()) { updateBossFx(delta); updateFires(delta); updateTurrets(delta); updateStrikes(delta); updateMines(delta); updateCornerPressure(delta); updateBossBar(); }
+                if (simOn()) { updateBossFx(delta); updateFires(delta); updateTurrets(delta); updateStrikes(delta); updateMines(delta); updateCornerPressure(delta); updateBossBar(); updateClass(delta); }
                 ui.strike.classList.toggle('hidden', strikeCharges <= 0);
                 if (strikeCharges > 0) setText(ui.strike, `\u2708 AIRSTRIKE x${strikeCharges}  \u2014  PRESS G`);
                 setText(ui.streak, streak > 0 ? `STREAK ${streak} / ${STREAK_FOR_STRIKE}` : '');
@@ -7412,7 +7893,7 @@
 
                 // timers
                 if (secondaryCooldown > 0) secondaryCooldown = Math.max(0, secondaryCooldown - delta);
-                if (turretCd > 0 && !turrets.length) turretCd = Math.max(0, turretCd - delta);
+                if (turretCd > 0 && !mainTurret()) turretCd = Math.max(0, turretCd - delta);
                 updateSecondaryHUD();
                 if (comboTimer > 0) { comboTimer -= delta; if (comboTimer <= 0) combo = 0; }
                 ui.combo.classList.toggle('hidden', combo < 2);
@@ -7501,18 +7982,12 @@
             updateAmmoHUD();
 
 
-            const hpPercent = Math.max(0, (currentHp / maxHp) * 100);
-            setWidth(ui.healthBar, hpPercent);
-            setText(ui.healthText, `${Math.max(0, Math.ceil(currentHp))} / ${maxHp}`);
+            refreshHealthHUD(true);
             ui.vignette.style.opacity = currentHp < 35 && currentGameState === 'playing' ? String(1 - currentHp / 35) : '0';
 
 
             const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
             ui.armorWrap.classList.toggle('hidden', !tier);
-            if (tier) {
-                setWidth(ui.armorBar, Math.max(0, currentArmor / tier.max * 100));
-                setText(ui.armorText, `${tier.name.toUpperCase()}  ${Math.ceil(currentArmor)} / ${tier.max}`);
-            }
             const slots = WEAPON_ORDER.map((id, i) => playerStats.weapons.includes(id) ? `<span class="slot${id === playerStats.currentWeapon ? ' on' : ''}"><b>${keyLabel(i)}</b>${weaponsDb[id].name.toUpperCase()}</span>` : '').join('');
             if (ui.slots._h !== slots) { ui.slots._h = slots; ui.slots.innerHTML = slots; }
             updateSecondaryHUD();
@@ -7549,14 +8024,14 @@
             const sec = secondariesDb[id];
             setText(ui.secName, sec.name); setStyle(ui.secName, 'color', hex(sec.color));
             if (id === 'c4' && activeC4) { setText(ui.secStatus, 'ARMED - Q to detonate'); setWidth(ui.secCd, 100); setStyle(ui.secCd, 'background', '#ef4444'); }
-            else if (id === 'turret' && turrets.length) { const t = turrets[0]; setText(ui.secStatus, `ACTIVE - ${t.ammo} ammo, ${Math.max(0, Math.round(t.hp / t.st.hp * 100))}% hp`); setWidth(ui.secCd, Math.max(0, t.hp / t.st.hp * 100)); setStyle(ui.secCd, 'background', '#38bdf8'); }
+            else if (id === 'turret' && mainTurret()) { const t = mainTurret(); setText(ui.secStatus, `ACTIVE - ${t.ammo} ammo, ${Math.max(0, Math.round(t.hp / t.st.hp * 100))}% hp`); setWidth(ui.secCd, Math.max(0, t.hp / t.st.hp * 100)); setStyle(ui.secCd, 'background', '#38bdf8'); }
             else if (id === 'turret' && turretCd > 0) { setText(ui.secStatus, `Cooldown ${turretCd.toFixed(1)}s`); setWidth(ui.secCd, (1 - turretCd / turretStats(playerStats.upgrades.turret || 0).cooldown) * 100); setStyle(ui.secCd, 'background', '#fbbf24'); }
             else if (secondaryCooldown > 0) { setText(ui.secStatus, `Cooldown ${secondaryCooldown.toFixed(1)}s`); setWidth(ui.secCd, (1 - secondaryCooldown / (id === 'turret' ? turretStats(playerStats.upgrades.turret || 0).cooldown : sec.cooldown)) * 100); setStyle(ui.secCd, 'background', '#fbbf24'); }
             else { setText(ui.secStatus, 'READY'); setWidth(ui.secCd, 100); setStyle(ui.secCd, 'background', '#4ade80'); }
         }
 
 
-        function shopCard({ title, color, tag, rows, btnText, btnKind, onclick, highlight, desc, extra }) {
+        function shopCard({ title, color, tag, rows, btnText, btnKind, onclick, highlight, desc, extra, tallDesc }) {
             const kinds = {
                 buy: 'bg-blue-600 hover:bg-blue-500 text-white', poor: 'bg-red-900/40 text-red-400 cursor-not-allowed',
                 equip: 'bg-gray-600 hover:bg-gray-500 text-white', on: 'bg-green-600/30 text-green-300 border border-green-500/50 cursor-default',
@@ -7568,7 +8043,7 @@
                 <div>
                     <h3 class="text-xl font-black mb-1 truncate" style="color:${color}">${title}</h3>
                     <div class="text-[10px] text-gray-400 font-mono uppercase mb-2 bg-black/30 inline-block px-2 py-0.5 rounded">${tag}</div>
-                    ${desc ? `<div class="text-xs text-gray-400 mb-2 h-8 leading-4">${desc}</div>` : ''}
+                    ${desc ? `<div class="text-xs text-gray-400 mb-2 ${tallDesc ? 'h-12' : 'h-8'} leading-4">${desc}</div>` : ''}
                     <div class="space-y-1 text-xs text-gray-300 bg-black/20 p-2 rounded">
                         ${rows.map(([k, v]) => `<div class="flex justify-between"><span>${k}:</span> <span class="font-bold text-white">${v}</span></div>`).join('')}
                     </div>
@@ -7581,7 +8056,7 @@
         }
         function upgradeCost(id) {
             const lvl = playerStats.upgrades[id] || 0;
-            if (id === 'turret') return 700 * (lvl + 1);
+            if (id === 'turret') return Math.round(700 * (lvl + 1) * gadgetMul() / 10) * 10;      // ENGINEER: -25%
             return Math.round(Math.max(250, weaponsDb[id].cost * 0.25) * (lvl + 1) / 10) * 10;
         }
 
@@ -7618,7 +8093,7 @@
                 let btnText, btnKind, onclick = '';
                 if (eq) { btnText = 'EQUIPPED (Q)'; btnKind = 'on'; }
                 else if (owned) { btnText = 'EQUIP'; btnKind = 'equip'; onclick = `window.equipSecondary('${sec.id}')`; }
-                else { btnText = `BUY $${sec.cost}`; btnKind = money >= sec.cost ? 'buy' : 'poor'; onclick = `window.buySecondary('${sec.id}')`; }
+                else { const c = secCost(sec); btnText = `BUY $${c}${c < sec.cost ? ' (-25%)' : ''}`; btnKind = money >= c ? 'buy' : 'poor'; onclick = `window.buySecondary('${sec.id}')`; }
                 let rows, extra = null, title = sec.name;
                 if (sec.id === 'turret') {
                     const L = playerStats.upgrades.turret || 0, ts = turretStats(L);
@@ -7661,10 +8136,27 @@
                     btnText: L >= 5 ? 'MAXED' : `UPGRADE $${cost}`, btnKind: L >= 5 ? 'off' : (money >= cost ? 'gold' : 'poor'), onclick: L >= 5 ? '' : `window.buyPerk('${id}')`,
                     rows: [['NOW', now], ['LEVEL', `${L} / 5`]] });
             });
+            // 4.0 classes: pick / switch (between waves) and the current class's 3-step upgrade tree
+            const cid = validClass(playerStats.cls), CC = CLASSES[cid], CL = clsLvl(cid), canSwitch = classSwitchOK();
+            const classCards = CLASS_ORDER.map(id => {
+                const c = CLASSES[id], mine = id === cid, L = clsLvl(id);
+                return shopCard({ title: c.name + (L ? ' ' + '\u2605'.repeat(L) : ''), color: hex(c.color), tag: `${c.ability} \u00b7 X \u00b7 ${c.cd[Math.min(3, L)]}s`, desc: c.abilityDesc, tallDesc: true, highlight: mine,
+                    btnText: mine ? 'YOUR CLASS' : (canSwitch ? 'SWITCH' : 'SWITCH BETWEEN WAVES'), btnKind: mine ? 'on' : (canSwitch ? 'equip' : 'off'), onclick: mine || !canSwitch ? '' : `window.pickClass('${id}')`,
+                    rows: [['ROLE', c.role], ['UPGRADES', `${L} / 3`]] });
+            });
+            const treeCards = CC.tree.map((t, i) => {
+                const own = CL > i, next = CL === i, cost = CLASS_COSTS[i];
+                return shopCard({ title: `${['I', 'II', 'III'][i]} \u00b7 ${t.name}`, color: hex(CC.color), tag: `${CC.name} upgrade \u00b7 step ${i + 1} of 3`, desc: t.desc, tallDesc: true, highlight: own,
+                    btnText: own ? 'OWNED' : next ? `UNLOCK $${cost}` : `NEEDS STEP ${['I', 'II', 'III'][i - 1]}`, btnKind: own ? 'on' : next ? (money >= cost ? 'gold' : 'poor') : 'off', onclick: next ? `window.buyClassUp(${i})` : '',
+                    rows: [['COST', `$${cost}`], ['STATUS', own ? 'Active' : next ? 'Next up' : 'Locked']] });
+            });
+            const classSub = NET.pvp ? 'Classes are off in PvP.' : `Your ability is on X. ${canSwitch ? 'Switch class any time between waves' : 'You can switch class between waves'} - upgrades stay with each class.`;
             container.innerHTML =
+                section(`CLASS \u00b7 <span style="color:${hex(CC.color)}">${CC.name}</span>`, classSub, classCards, 'lg:grid-cols-4') +
+                section(`${CC.name} UPGRADES`, `<b class="text-gray-200">Passive:</b> ${CC.passive} Buy the steps in order - they last until the run ends.`, treeCards, 'lg:grid-cols-3') +
                 section('PLAYER UPGRADES', 'Make yourself tougher, faster and deadlier. 5 levels each - they last until the run ends.', perkCards) +
                 section('WEAPONS', 'Switch in-game with 1-9, 0 or the scroll wheel. Upgrades: 5 levels, each a new gun model (Tactical, Heavy, Elite, Gold Elite, Plasma Prototype). Per level: +18% damage, +20% mag, -10% reload, +5% fire rate, tighter spread, less recoil.', weaponCards) +
-                section('SECONDARIES', 'Press Q to use. One equipped at a time, on a cooldown. The Sentry Turret upgrades to level 5.', secCards, 'lg:grid-cols-3') +
+                section('SECONDARIES', 'Press Q to use. One equipped at a time, on a cooldown. The Sentry Turret upgrades to level 5.' + (gadgetMul() < 1 ? ' <b class="text-yellow-300">ENGINEER: gadgets and sentry upgrades cost 25% less.</b>' : ''), secCards, 'lg:grid-cols-3') +
                 section('ARMOR & SUPPLIES', 'Armor soaks up part of every hit until it breaks.', armorCards);
         }
 
@@ -7702,9 +8194,9 @@
             renderShopItems(); updateHUD(); sfx('upgrade');
         };
         window.buySecondary = (id) => {
-            const sec = secondariesDb[id];
-            if (playerStats.money >= sec.cost && !playerStats.secondaries.includes(id)) {
-                playerStats.money -= sec.cost;
+            const sec = secondariesDb[id], cost = secCost(sec);
+            if (playerStats.money >= cost && !playerStats.secondaries.includes(id)) {
+                playerStats.money -= cost;
                 playerStats.secondaries.push(id);
                 window.equipSecondary(id);
             }
@@ -7743,6 +8235,26 @@
                 currentHp = Math.min(maxHp, currentHp + HEALTH_AMOUNT);
                 afterPurchase();
             }
+        };
+
+
+        // 4.0 classes: switching is free but only between waves (or from the main menu); each class keeps its own upgrades
+        function classSwitchOK() { return !NET.pvp && (returnMenuState === 'main' || !waveActive); }
+        window.pickClass = (id) => {
+            if (!CLASSES[id] || id === playerStats.cls || !classSwitchOK()) return;
+            playerStats.cls = id; settings.cls = id; saveSettings();       // the menu remembers it for the next run too
+            abilityCd = Math.min(abilityCd, abilityCooldown(id)); abilityT = 0; radarT = 0;
+            applyMinimapSize();
+            renderShopItems(); updateHUD(); sfx('upgrade');
+        };
+        window.buyClassUp = (i) => {
+            const id = validClass(playerStats.cls), L = clsLvl(id), cost = CLASS_COSTS[i];
+            if (NET.pvp || i !== L || L >= 3 || playerStats.money < cost) return;
+            playerStats.money -= cost;
+            if (!playerStats.clsUp || typeof playerStats.clsUp !== 'object') playerStats.clsUp = {};
+            playerStats.clsUp[id] = L + 1;
+            abilityCd = Math.min(abilityCd, abilityCooldown(id));      // a shorter cooldown applies straight away
+            renderShopItems(); updateHUD(); sfx('upgrade');
         };
 
 
@@ -7810,6 +8322,8 @@
             const P = $('menu-panel');
             let h = '';
             if (menuTab === 'play') {
+                h += chipRow('CLASS', 'cls', CLASS_ORDER.map(k => [k, CLASSES[k].name, hexC(CLASSES[k].color)]));
+                h += classInfoCard(validClass(settings.cls));
                 h += chipRow('MODE', 'mode', Object.entries(MODES).map(([k, m]) => [k, m.name, m.color]), MODES[settings.mode].desc);
                 h += chipRow('MAP', 'map', [['random', 'RANDOM']].concat(Object.entries(MAPS).map(([k, m]) => [k, m.name])), settings.map === 'random' ? 'A different map every run.' : MAPS[settings.map].desc);
                 h += chipRow('LIGHTING', 'light', [['random', 'RANDOM']].concat(Object.entries(THEMES).map(([k, t]) => [k, t.name, hexC(t.neon)])), settings.light === 'random' ? 'A different time of day every run.' : 'Preview it on the right.');
@@ -7862,7 +8376,7 @@
                 h += `<div class="flex flex-col gap-2 mt-2">${BOSS_IDS.map(id => { const t = enemyTypes[id], met = seenB[id] || killsB[id];
                     return `<div class="bcard" style="border-color:${t.bar}55"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${t.bar}"></div><div class="flex-1"><div class="flex justify-between items-baseline gap-2"><div><span class="font-black tracking-wide" style="color:${t.bar}">${t.name.toUpperCase()}</span> <span class="text-[10px] font-black text-gray-400 tracking-widest">${t.title}</span></div><div class="text-xs font-bold text-gray-400 whitespace-nowrap">${killsB[id] ? 'DEFEATED x' + killsB[id] : met ? 'MET' : 'NOT MET YET'}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.tip}</div></div></div>`; }).join('')}</div>`;
             } else if (menuTab === 'controls') {
-                const rows = [['W A S D', 'Move'], ['SPACE', 'Jump (hold to bunny hop)'], ['SHIFT', 'Sprint'], ['C', 'Slide (while running)'], ['LEFT CLICK', 'Shoot'], ['RIGHT CLICK / E', 'Aim down sights (hold) / spin up minigun'], ['R', 'Reload'], ['V', 'Melee shove (interrupts attacks)'], ['Q', 'Use secondary gadget'], ['G', 'Call airstrike (earned with a 12-kill streak)'], ['F', 'Inspect weapon'], ['1-9, 0, - / WHEEL', 'Switch weapons (- is the RPG)'], ['ESC', 'Pause']];
+                const rows = [['W A S D', 'Move'], ['SPACE', 'Jump (hold to bunny hop)'], ['SHIFT', 'Sprint'], ['C', 'Slide (while running)'], ['LEFT CLICK', 'Shoot'], ['RIGHT CLICK / E', 'Aim down sights (hold) / spin up minigun'], ['R', 'Reload'], ['V', 'Melee shove (interrupts attacks)'], ['Q', 'Use secondary gadget'], ['G', 'Call airstrike (earned with a 12-kill streak)'], ['X', 'Class ability (pick your class on the Play tab)'], ['F', 'Inspect weapon'], ['1-9, 0, - / WHEEL', 'Switch weapons (- is the RPG)'], ['ESC', 'Pause']];
                 h += `<div class="flex flex-col gap-2 mt-3">${rows.map(([k, v]) => `<div class="flex items-center gap-3 text-sm"><div class="w-40 flex flex-wrap gap-1">${k.split(' / ').map(x => `<span class="key">${x}</span>`).join('')}</div><div class="text-gray-300 font-semibold">${v}</div></div>`).join('')}</div>`;
                 h += `<div class="mdesc mt-4">Tip: a Charger that hits a wall is stunned and takes +50% damage. Melee a Marksman to cancel its shot.</div>`;
             }
@@ -7870,6 +8384,16 @@
             renderRankBar();
             updateMenuPreview();
             updateMenuBest();
+        }
+        // 4.0: what a class does, for the Play tab and the multiplayer menu
+        function classInfoCard(id) {
+            const C = CLASSES[id], col = hexC(C.color);
+            return `<div class="bcard flex-col mt-2" style="gap:4px;border-color:${col}66">
+                <div class="flex items-baseline justify-between gap-2"><div class="font-black tracking-wide" style="color:${col}">${C.name} <span class="text-[10px] text-gray-400 tracking-widest">${C.role.toUpperCase()}</span></div><div class="text-[10px] font-bold text-gray-400 whitespace-nowrap">OFF IN PVP</div></div>
+                <div class="text-xs text-gray-200"><span class="key">X</span> <b style="color:${col}">${C.ability}</b> - ${C.abilityDesc} <span class="text-gray-400">${C.cd[0]}s cooldown.</span></div>
+                <div class="text-xs text-gray-300"><b class="text-white">PASSIVE</b> - ${C.passive}</div>
+                <div class="text-[11px] text-gray-400"><b class="text-gray-300">UPGRADES</b> (Armory, during a run): ${C.tree.map((t, i) => `<b class="text-gray-200" title="${t.desc}" style="cursor:help">${i + 1}. ${t.name}</b>`).join(' › ')}</div>
+            </div>`;
         }
         function updateMenuPreview() {
             $('menu-preview-name').textContent = MAPS[currentMap].name;
@@ -7898,6 +8422,7 @@
             const key = b.dataset.set, val = b.dataset.val;
             if (b.dataset.rank) { sfx('deny'); const d = document.createElement('div'); d.className = 'mdesc'; d.style.color = '#fcd34d'; d.textContent = `Reach RANK ${b.dataset.rank} to unlock this.`; b.parentElement.after(d); setTimeout(() => d.remove(), 1600); return; }
             settings[key] = val; saveSettings();
+            if (key === 'cls' && currentGameState === 'main') playerStats.cls = validClass(val);
             if (key === 'map') buildWorld(val === 'random' ? pickRandom(Object.keys(MAPS)) : val);
             if (key === 'light') applyTheme(val === 'random' ? pickRandom(Object.keys(THEMES)) : val);
             if (key === 'sleeve' || key === 'glove') applyArmColors();
@@ -7910,14 +8435,17 @@
         // Warm up shaders up front so the first wave / first weapon swap doesn't stutter
         function prewarm() {
             const tmp = [createEnemy(enemyTypes.grunt), createEnemy(enemyTypes.shielder), createEnemy(enemyTypes.medic), createEnemy(enemyTypes.boss)];
-            tmp.forEach((e, i) => { e.position.set(i * 3, -40, 0); scene.add(e); });
+            tmp.forEach((e, i) => { e.position.set(i * 3, -40, 0); scene.add(e); e.userData.markT = 1e9; });
+            markUntil = 1e9;            // 4.0: compile the Recon x-ray shader too
             updateZombieInstances();
+            markUntil = -1;
             const orb = new THREE.Mesh(_orbGeo, _spitMat); orb.position.set(0, -40, 3); scene.add(orb);
             WEAPON_ORDER.forEach(id => { const m = getModel(id); m.root.visible = true; });
             try { renderer.compile(scene, camera); renderer.compile(viewScene, weaponCam); } catch (e) {}
             WEAPON_ORDER.forEach(id => { models[id].root.visible = false; });
             // keep the temp materials alive so their compiled shader programs stay cached
             tmp.forEach(e => { scene.remove(e); zombieSet.delete(e); }); scene.remove(orb);
+            updateXray();
         }
 
 
@@ -7971,6 +8499,18 @@
             inspect: () => { vm.inspect = 2.4; },
             reload: () => triggerReload(),
             slide: () => startSlide(),
+            // 4.0 classes
+            cls: (id) => { playerStats.cls = validClass(id); applyMinimapSize(); },
+            clsUp: (id, L) => { playerStats.clsUp[id] = L; },
+            ability: () => useAbility(),
+            resetCd: () => { abilityCd = 0; },
+            pause: () => changeGameState('paused'),
+            hit: (i, n) => { const e = enemies[i]; if (!e) return null; damageEnemy(e, n, false, null); return e.userData.hp; },
+            get abil() { const m = miniTurret(); return { cd: abilityCd, t: abilityT, dur: abilityDur, cls: myClass(), radarT, markUntil, gameTime, healFields: healFields.length, healing: healingNow,
+                                                         crates: crates.map(c => ({ n: c.n, x: c.x, y: c.y, z: c.z })), mini: m ? { hp: m.hp, ammo: m.ammo, t: m.t, x: m.g.position.x, z: m.g.position.z } : null,
+                                                         marked: enemies.filter(e => e.userData.markT > gameTime).length, ammo: { ...ammoState }, armor: currentArmor, hp: currentHp, maxHp, feetY, dmgMul: clsDmg(),
+                                                         fieldR: healFields.length ? healFields[healFields.length - 1].r : 0, fieldT: healFields.length ? healFields[healFields.length - 1].T : 0, fieldH: healFields.length ? healFields[healFields.length - 1].h : 0,
+                                                         sentry: m ? { hp: m.st.hp, rockets: m.st.rockets, life: m.st.life } : null, cdMax: abilityCooldown(), turretCost: upgradeCost('turret'), grenadeCost: secCost(secondariesDb.grenade) }; },
             // drive frames by hand (for automated testing when the tab is hidden)
             run(seconds, fps = 60) { let t = prevTime ?? performance.now(); for (let i = 0; i < seconds * fps; i++) { t += 1000 / fps; frame(t); } }
         };
@@ -8519,8 +9059,9 @@
             netReviveIfDown();
         }
         function netWaveCleared(levelAfter) { if (NET.host) netBroadcast({ t: 'clr', n: levelAfter }); }
-        function netSendFx(kind, pos, r, color) {
+        function netSendFx(kind, pos, r, color, extra) {
             const m = { t: 'fx', k: kind, p: [r2(pos.x), r2(pos.y), r2(pos.z)], r: r2(r), c: color };
+            if (extra) Object.assign(m, extra);
             if (NET.host) netBroadcast(m); else sendRel(NET.hostPeer, m);
         }
         function netPlayFx(m) {
@@ -8530,6 +9071,17 @@
                 spawnBlastFx(p, m.r, m.c, true, 0.5);
                 spawnParticles(new V3(p.x, p.y + 0.2, p.z), 0x9ca3af, 12, 6, 0.7, 0.3, true, { grav: 6, drag: 2, jitter: m.r * 0.5 });
                 sfxAt('slam', camera.position.distanceTo(p));
+            }
+            // 4.0 classes: a teammate's Healing Field (heals you here when you stand in it) and Recon UPLINK marks
+            else if (m.k === 'heal' && !NET.pvp) {
+                addHealField(p.x, p.y, p.z, clamp(+m.r || 6, 2, 12), clamp(+m.d || 8, 1, 15), clamp(+m.h || 8, 0, 20), clamp(+m.a || 0, 0, 10), false);
+                sfxAt('field', camera.position.distanceTo(p));
+            } else if (m.k === 'radar' && !NET.pvp) {
+                const n = radarMark(p.x, p.z, clamp(+m.r || 70, 5, 999), clamp(+m.d || 6, 1, 12));
+                spawnBlastFx(p, Math.min(+m.r || 70, 80), 0xa78bfa, true, 1.2);
+                radarSweep = Math.max(radarSweep, 0.6);
+                sfxAt('radar', camera.position.distanceTo(p) * 0.5);
+                if (n && currentGameState === 'playing') toast(`TEAMMATE RADAR  \u00b7  ${n} MARKED`, '#c4b5fd', 1.4);
             }
         }
         function netSendSpit(from, v) { netBroadcast({ t: 'sp', p: [r2(from.x), r2(from.y), r2(from.z)], v: [r2(v.x), r2(v.y), r2(v.z)] }); }
@@ -9238,6 +9790,7 @@
                 h += `<div class="mdesc text-sm mb-4">Play with friends straight from your browsers - no accounts. One person <b class="text-white">hosts</b> (their computer runs the game) and gets a <b class="text-white">6-digit party code</b>. Everyone else clicks <b class="text-white">JOIN</b> and types it in.</div>`;
                 if (NET.homeMsg) h += `<div class="bg-red-900/50 border border-red-500/50 rounded-lg px-4 py-2 font-bold text-red-200 mb-4">${escHtml(NET.homeMsg)}</div>`;
                 h += `<div class="mlabel">YOUR NAME</div><input id="mp-name" maxlength="16" value="${escHtml(NET.name)}" class="bg-gray-900 border-2 border-gray-700 rounded-lg px-3 py-2 font-black text-lg w-72 text-white focus:outline-none focus:border-purple-400">`;
+                h += mpClassRow();
                 h += `<label class="flex items-center gap-3 text-sm font-bold text-gray-300 mt-4"><input type="checkbox" id="mp-lan" class="w-4 h-4 accent-purple-500"${NET.lanOnly ? ' checked' : ''}> Same Wi-Fi only (skips the one-time "what's my address?" lookup - only works on the same network)</label>`;
                 h += `<div class="grid grid-cols-2 gap-4 mt-6">
                         <button id="mp-host" class="py-6 bg-purple-700 hover:bg-purple-600 rounded-xl font-black text-2xl">HOST A PARTY<div class="text-xs font-bold text-purple-200 mt-1">You pick the mode. Up to 10 players.</div></button>
@@ -9250,7 +9803,7 @@
                         <div><div class="text-xs font-black tracking-widest text-purple-200">PARTY CODE</div><div class="text-5xl font-black font-mono tracking-widest">${codeTxt}</div></div>
                         <div class="flex-1 min-w-[220px] text-sm font-bold ${cs === 'error' ? 'text-red-300' : 'text-gray-200'}">${cs === 'ready' ? 'Tell your friends this number. They click <b>JOIN A PARTY</b> and type it in.' : cs === 'error' ? escHtml(NET.codeErr || 'Could not get a code.') + ' <button id="mp-code-retry" class="chip ml-2">TRY AGAIN</button><div class="text-xs text-gray-400 mt-1">You can still invite people with a long code below.</div>' : 'Getting a party code...'}</div>
                       </div>`;
-                h += `<div id="mp-settings"></div><div class="mlabel">PLAYERS</div><div id="mp-players" class="flex flex-col gap-1.5"></div>`;
+                h += `<div id="mp-settings"></div>` + mpClassRow() + `<div class="mlabel">PLAYERS</div><div id="mp-players" class="flex flex-col gap-1.5"></div>`;
                 h += `<button id="mp-long-toggle" class="chip mt-4">${NET.showLong ? 'HIDE LONG-CODE INVITES' : "CAN'T CONNECT? INVITE WITH A LONG CODE INSTEAD"}</button>`;
                 if (NET.showLong) {
                     h += `<div class="mdesc mb-2">Backup method that uses no matchmaking server at all: each friend gets their own invite code, and sends one back.</div><div id="mp-invites" class="flex flex-col gap-3"></div>`;
@@ -9262,6 +9815,7 @@
                     const L = NET.lobby, mode = MP_MODES[L.mode] || MP_MODES.coop;
                     h += `<div class="bg-green-900/40 border border-green-500/40 rounded-lg px-4 py-3 font-black text-green-300">CONNECTED! Waiting for the host to start...</div>`;
                     h += `<div class="mt-4 text-lg font-black">${mode.name} <span class="text-gray-400 text-sm">on ${L.map === 'random' ? 'a random map' : (MAPS[L.map] ? MAPS[L.map].name : L.map)}${L.mode === 'coop' ? ' - ' + (DIFFICULTIES[L.diff] || DIFFICULTIES.normal).name : ''}</span></div>`;
+                    h += mpClassRow();
                     h += `<div class="mlabel">PLAYERS</div><div id="mp-players" class="flex flex-col gap-1.5"></div>`;
                 } else if (!NET.showLong) {
                     h += `<div class="mlabel">ENTER THE 6-DIGIT PARTY CODE</div>
@@ -9286,6 +9840,12 @@
             ui.mpBody.innerHTML = h;
             if (v === 'host') { renderMPSettings(); renderMPPlayers(); renderMPInvites(); }
             if (v === 'join' && NET.joinState === 'connected') renderMPPlayers();
+        }
+        // 4.0: your class for co-op (the same setting as the Play tab; PvP plays without classes)
+        function mpClassRow() {
+            const cur = validClass(settings.cls), C = CLASSES[cur];
+            return `<div class="mlabel">YOUR CLASS <span class="text-gray-500">- CO-OP ONLY, OFF IN PVP</span></div><div class="flex flex-wrap gap-2">${CLASS_ORDER.map(k => chip(k === cur, `data-mpcls="${k}"`, CLASSES[k].name, hex(CLASSES[k].color))).join('')}</div>
+                <div class="mdesc"><b style="color:${hex(C.color)}">${C.ability} (X)</b> - ${C.abilityDesc} <b class="text-gray-300">Passive</b> - ${C.passive}</div>`;
         }
         function renderMPSettings() {
             const el = $('mp-settings'); if (!el) return;
@@ -9345,6 +9905,7 @@
             else if (b.id === 'mp-copy-reply') copyText(NET.replyCode);
             else if (b.id === 'mp-invite') hostCreateInvite();
             else if (b.id === 'mp-start') { initAudio(); hostStartGame(); }
+            else if (b.dataset.mpcls) { settings.cls = validClass(b.dataset.mpcls); saveSettings(); if (!NET.inGame) playerStats.cls = settings.cls; sfx('click'); renderMP(); if (currentGameState === 'main') renderMenu(); }
             else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
             else if (b.dataset.mpteam !== undefined && NET.host) {
                 const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - p.team;

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HGNet test bench</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #0d1117; color: #e6edf3; font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { opacity: .7; margin-bottom: 12px; }
+  fieldset { border: 1px solid #30363d; border-radius: 8px; margin: 0 0 12px; padding: 10px 12px; }
+  legend { padding: 0 6px; opacity: .8; }
+  label { display: inline-block; margin: 0 12px 6px 0; }
+  input[type=text], input:not([type]) { background: #161b22; color: inherit; border: 1px solid #30363d; border-radius: 6px; padding: 5px 8px; font: inherit; }
+  button { background: #238636; color: #fff; border: 0; border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; margin: 0 6px 6px 0; }
+  button.alt { background: #30363d; }
+  #code { font-size: 28px; letter-spacing: 4px; font-weight: 700; color: #56d364; }
+  #status { color: #e3b341; }
+  table { border-collapse: collapse; }
+  td, th { border-bottom: 1px solid #30363d; padding: 3px 10px 3px 0; text-align: left; }
+  #log { height: 220px; overflow: auto; background: #010409; border: 1px solid #30363d; border-radius: 6px; padding: 6px; font: 12px/1.35 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .row > * { flex: 1 1 320px; }
+</style>
+</head>
+<body>
+<h1>HGNet test bench</h1>
+<div class="sub">Loads <code>hgnet.js</code> from the same folder. URL parameters: <code>relays=</code> (comma list), <code>peer=host:port/path</code>, <code>forceRelay=1</code>, <code>name=</code>, <code>game=</code>. HGNet's own <code>hg*</code> parameters work too (see the README).</div>
+
+<fieldset>
+  <legend>Setup</legend>
+  <label>Game <input id="game" value="hgtest" size="10"></label>
+  <label>Name <input id="name" value="Player" size="10"></label>
+  <label>Relays <input id="relays" size="60" placeholder="(default public relays)"></label>
+  <label>PeerJS server <input id="peer" size="22" placeholder="(default 0.peerjs.com)"></label>
+  <label><input type="checkbox" id="forceRelay"> forceRelay (no WebRTC)</label>
+</fieldset>
+
+<div class="row">
+  <fieldset>
+    <legend>Room</legend>
+    <button id="btnHost">Host a game</button>
+    <input id="joinCode" placeholder="6-digit code" size="10" inputmode="numeric">
+    <button id="btnJoin">Join</button>
+    <button id="btnClose" class="alt">Leave / close</button>
+    <div>Code: <span id="code">------</span></div>
+    <div>Status: <span id="status">idle</span></div>
+  </fieldset>
+  <fieldset>
+    <legend>Send</legend>
+    <label>To <input id="to" value="all" size="6"></label>
+    <label>Text <input id="text" value="hello" size="20"></label>
+    <label><input type="checkbox" id="fast"> fast</label>
+    <button id="btnSend">Send</button>
+  </fieldset>
+</div>
+
+<fieldset>
+  <legend>Players</legend>
+  <table id="peers"><tr><th>id</th><th>name</th><th>route</th><th>rtt</th><th>state</th></tr></table>
+</fieldset>
+
+<fieldset>
+  <legend>Test my connection</legend>
+  <button id="btnDiag" class="alt">Test my connection</button>
+  <div id="diag" style="margin-top:8px"></div>
+</fieldset>
+
+<div id="log"></div>
+
+<script src="hgnet.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var qs = new URLSearchParams(location.search);
+  if (qs.get('relays')) $('relays').value = qs.get('relays');
+  if (qs.get('peer')) $('peer').value = qs.get('peer');
+  if (qs.get('name')) $('name').value = qs.get('name');
+  if (qs.get('game')) $('game').value = qs.get('game');
+  if (qs.get('forceRelay') === '1') $('forceRelay').checked = true;
+
+  function log(line) {
+    var el = $('log');
+    el.textContent += new Date().toISOString().slice(11, 23) + ' ' + line + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function parsePeer(s) {
+    var m = /^([^:\/]+)(?::(\d+))?(\/.*)?$/.exec(s.trim());
+    if (!m) return undefined;
+    var port = m[2] ? +m[2] : 443;
+    return { host: m[1], port: port, path: m[3] || '/', secure: port === 443 };
+  }
+
+  // ---- hooks for automated tests (Playwright) ----
+  var T = window.T = {
+    net: null, events: [], msgs: [], statuses: [], routes: [], closed: null,
+    // T.create(opts): opts are passed to HGNet.create (merged over the form values)
+    create: function (opts) {
+      opts = opts || {};
+      if (T.net && !T.net.closed) T.net.close();
+      T.events = []; T.msgs = []; T.statuses = []; T.routes = []; T.closed = null;
+      var o = { game: $('game').value, log: false };
+      var relays = $('relays').value.trim();
+      if (relays) o.relays = relays.split(',').map(function (s) { return s.trim(); });
+      var peer = $('peer').value.trim();
+      if (peer) o.peer = parsePeer(peer);
+      if ($('forceRelay').checked) o.forceRelay = true;
+      for (var k in opts) o[k] = opts[k];
+      var net = T.net = HGNet.create(o);
+      var ev = function (name) {
+        net.on(name, function (a, b, c) {
+          var rec = { e: name, t: Date.now() };
+          if (a && typeof a === 'object' && 'id' in a) rec.peer = a.id; else if (a !== undefined) rec.a = a;
+          if (b !== undefined) rec.b = b;
+          if (name !== 'message') { T.events.push(rec); log(name + ' ' + JSON.stringify(rec)); }
+          render();
+        });
+      };
+      ['join', 'leave', 'route', 'lagging', 'reconnecting', 'reconnected', 'closed'].forEach(ev);
+      net.on('status', function (s) { T.statuses.push(s); $('status').textContent = s; });
+      net.on('route', function (p, r) { T.routes.push({ peer: p.id, route: r, t: Date.now() }); });
+      net.on('closed', function (reason, text) { T.closed = { reason: reason, text: text }; });
+      net.on('message', function (peer, msg, meta) {
+        T.msgs.push({ from: peer.id, msg: msg, fast: !!meta.fast, to: meta.to, t: Date.now() });
+        if (T.msgs.length <= 50 || T.msgs.length % 100 === 0) log('message from #' + peer.id + (meta.fast ? ' (fast)' : '') + ': ' + JSON.stringify(msg).slice(0, 120));
+      });
+      return true;
+    },
+    host: function (hopts) {
+      if (!T.net) T.create();
+      return T.net.host(hopts || { name: $('name').value, maxPlayers: 8 }).then(function (r) {
+        $('code').textContent = r.code; log('hosting ' + r.code); return r;
+      }, function (e) { log('host failed: ' + e.code + ' ' + e.message); throw { code: e.code, message: e.message }; });
+    },
+    join: function (code, jopts) {
+      if (!T.net) T.create();
+      return T.net.join(code, jopts || { name: $('name').value }).then(function (r) {
+        $('code').textContent = T.net.code; log('joined as #' + r.id); return r;
+      }, function (e) { log('join failed: ' + e.code + ' ' + e.message); return Promise.reject({ code: e.code, message: e.message }); });
+    },
+    send: function (to, msg, opts) { return T.net ? T.net.send(to, msg, opts) : false; },
+    peers: function () { return T.net ? T.net.peers() : []; },
+    stats: function () { return T.net ? T.net.getStats() : null; },
+    close: function () { if (T.net) T.net.close(); },
+    // received messages (optionally only from one sender / one kind)
+    got: function (from, kind) {
+      return T.msgs.filter(function (m) { return (from === undefined || m.from === from) && (kind === undefined || (m.msg && m.msg.k === kind)); });
+    }
+  };
+
+  function render() {
+    var rows = '<tr><th>id</th><th>name</th><th>route</th><th>rtt</th><th>state</th></tr>';
+    T.peers().forEach(function (p) {
+      rows += '<tr><td>' + p.id + '</td><td>' + String(p.name).replace(/</g, '&lt;') + '</td><td>' + p.route + '</td><td>' + (p.rtt === null ? '' : p.rtt + ' ms') + '</td><td>' + p.state + '</td></tr>';
+    });
+    $('peers').innerHTML = rows;
+  }
+  setInterval(render, 1000);
+
+  $('btnHost').onclick = function () { T.create(); T.host().catch(function () {}); };
+  $('btnJoin').onclick = function () { T.create(); T.join($('joinCode').value).catch(function () {}); };
+  $('btnClose').onclick = function () { T.close(); };
+  $('btnSend').onclick = function () {
+    var to = $('to').value.trim(); if (/^\d+$/.test(to)) to = +to;
+    log('send ' + T.send(to, { text: $('text').value }, { fast: $('fast').checked }));
+  };
+  $('btnDiag').onclick = function () {
+    var o = { game: $('game').value };
+    var relays = $('relays').value.trim(); if (relays) o.relays = relays.split(',').map(function (s) { return s.trim(); });
+    var peer = $('peer').value.trim(); if (peer) o.peer = parsePeer(peer);
+    HGNet.renderDiagnostics($('diag'), null, o).then(function (r) { T.diag = r; log('diagnose: ' + r.summary.text); });
+  };
+  log('HGNet ' + HGNet.version + ' loaded');
+})();
+</script>
+</body>
+</html>
