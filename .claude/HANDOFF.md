@@ -22,7 +22,7 @@
 **r35 is staged, not pushed** (all 6 games + updated cards in `/home/user/hg-release`, which is lost with the container). The auto-mode
 classifier blocked `tools/release.sh finish` (push to main); the owner must allow it or run it. To redo in a new container:
 restore wip (above), `tools/release.sh prepare 35 "Tower Defense 2.0" "Blocky Shooter V2" Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9"`,
-then re-edit the 6 cards (name with version, 'New' tag, desc "NEW x.y: ..."), then finish. Afterwards update the Google Doc.
+then copy the cards from `release-staging/r35-hub-index.html` on wip/content-wave (or re-edit: name with version, 'New' tag, desc "NEW x.y: ..."), then finish. Afterwards update the Google Doc.
 The Workflow tool was also blocked this session; the same steps were run as individual Sonnet agents (build, play-test, fix).
 
 Plan: run ONE game at a time with the `game-finish` workflow, release it (`tools/release.sh`), update the doc, repeat.
