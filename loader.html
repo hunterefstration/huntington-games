@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Huntington Games</title>
+<title>Huntington Games Launcher</title>
 </head>
 <body style="margin:0;background:#0d1117;color:#8b949e;font:16px 'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">
-<div id="msg">Loading Huntington Games...</div>
+<div id="msg">Loading Huntington Games Launcher...</div>
 <script>
-// Huntington Games loader. Paste this into the HTML panel at jsbin.com (or save it as a .html file).
-// It downloads the newest hub from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
+// Huntington Games Launcher. Paste this into the HTML panel at jsfiddle.net or jsbin.com. Official copy: the Launcher tab of the Huntington Games doc.
+// It downloads the newest launcher from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
 // and it works even where github.io is blocked.
 function findLatest(repo, floor, cb) {
   // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
@@ -29,7 +29,7 @@ function findLatest(repo, floor, cb) {
   gallop();
 }
 function cachedHub(cb) {
-  // the hub saves a copy of itself in IndexedDB the first time it runs, for when jsDelivr cannot be reached
+  // the launcher saves a copy of itself in IndexedDB the first time it runs, for when jsDelivr cannot be reached
   try {
     var rq = indexedDB.open('hg-offline', 1);
     rq.onupgradeneeded = function () { try { rq.result.createObjectStore('files'); } catch (e) {} };
@@ -52,7 +52,7 @@ function cachedHub(cb) {
     html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
     document.open(); document.write(html); document.close();
   }
-  function useSaved() { // no network: run the copy of the hub saved on an earlier visit
+  function useSaved() { // no network: run the copy of the launcher saved on an earlier visit
     if (saved) { document.getElementById('msg').textContent = 'Offline - loading the saved copy...'; boot(saved.text, saved.rel); return true; }
     return false;
   }
@@ -61,7 +61,7 @@ function cachedHub(cb) {
     if (booted) return;
     if (i >= hosts.length) {
       if (useSaved()) return;
-      document.getElementById('msg').innerHTML = 'Could not download Huntington Games.<br>cdn.jsdelivr.net may be blocked on this network.';
+      document.getElementById('msg').innerHTML = 'Could not download the Huntington Games Launcher.<br>cdn.jsdelivr.net may be blocked on this network.';
       return;
     }
     var url = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@' + version + '/index.html';
