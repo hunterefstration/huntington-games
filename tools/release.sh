@@ -1,6 +1,6 @@
 #!/bin/sh
 # Release flow (replaces the old root release.sh). Needs tools/setup-tools.sh once per container.
-#   tools/release.sh prepare <N> "<game dir>" ...  - worktree of the newest rN tag at $W, copies those game files
+#   tools/release.sh prepare <N> "<game dir>" ...  - worktree of origin/main at $W, copies those game files
 #                                                   from this checkout, renames the hub to Launcher.
 #   (now edit $W/index.html game cards: name/version/desc/tags)
 #   tools/release.sh finish <N> "<message>"         - rotates the licence secret, sets latest.json, runs the gate
@@ -14,10 +14,10 @@ prepare)
   LAST=$(git -C "$R" tag -l 'r*' | sed 's/^r//' | grep -E '^[0-9]+$' | sort -n | tail -1)
   [ "$N" -eq $((LAST + 1)) ] || { echo "next release should be r$((LAST + 1))"; exit 1; }
   git -C "$R" worktree remove --force "$W" 2>/dev/null || rm -rf "$W"
-  git -C "$R" worktree add -q --detach "$W" "r$LAST"
+  git -C "$R" fetch -q origin main; git -C "$R" worktree add -q --detach "$W" origin/main
   for d in "$@"; do cp "$R/$d/index.html" "$W/$d/index.html"; echo "copied $d"; done
   python3 "$R/tools/rebrand-hub.py" "$W/index.html"
-  echo "prepared $W from r$LAST - edit the game cards in $W/index.html, then: tools/release.sh finish $N \"message\"" ;;
+  echo "prepared $W from main (after r$LAST) - edit the game cards in $W/index.html, then: tools/release.sh finish $N \"message\"" ;;
 finish)
   cd "$W"
   HG_ROOT="$W" HG_TOOLS="$T" python3 "$R/tools/build-release.py" "$N"

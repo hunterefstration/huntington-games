@@ -1,7 +1,7 @@
 # Handoff (updated 2026-10-15)
 
 ## Where things stand
-- Live: release **r33** (100 Levels of Spikes 2.0), released Oct 14 2026, 6:16 AM EDT. Launcher code in `loader.html`.
+- Live: release **r34** (Frontline 3.0), released Oct 15 2026, 5:06 AM EDT. Hub is now named "Launcher". Launcher code in `loader.html`.
 - Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
   `git fetch origin wip/content-wave && git checkout origin/wip/content-wave -- "Blocky Shooter V2" "Tower Defense 2.0" Frontline Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9" "50 Levels Of Spikes 1.2" src/hgnet.js src/hgnet-test.html src/hgnet-README.md`
   then `git reset -q` so nothing is staged. Do not commit these to `main` until each game passes its play-test.
@@ -10,7 +10,7 @@
 
 | Game | Version | Built | Left to do |
 |---|---|---|---|
-| Frontline | 3.0 | Iron Legion faction, navy + 5 maps, night/weather, General perks | play-test + fix |
+| Frontline | 3.0 | released in r34 (Escape now leaves General/Profile/News; Settings/Field Guide still Back-only) | nothing |
 | Tetris | 2.0 | ranks, perks, bosses, daily, achievements, 70 puzzles, themes, tutorial | play-test + fix |
 | Coffee Shop NEW (Bean & Brew) | 2.0 | cities, recipes, staff skills, events, franchises, seasons, story, latte art | play-test + fix |
 | Tower Defense 2.0 | 3.0 | heroes, 18 towers, alien era, 12 maps, stars, bosses, daily, map editor | play-test found issues; fix + re-test |
@@ -20,6 +20,8 @@
 | 50 Levels Of Spikes 1.2 | 2.0 | released in r33 (the wip copy matches) | nothing |
 
 Plan: run ONE game at a time with the `game-finish` workflow, release it (`tools/release.sh`), update the doc, repeat.
+
+Note: the play-tester flags the wip copies' licence block as "modified" because wip games carry an older block. That is expected; release.sh rewrites it. Do not restore it by hand.
 
 ## Running a game through `game-finish`
 `Workflow({name: 'game-finish', args: {chains: [ <one entry below> ]}})`. Entries with `chunks: []` only play-test and fix.
@@ -35,7 +37,7 @@ Plan: run ONE game at a time with the `game-finish` workflow, release it (`tools
 
 ## Releasing a finished game
 1. `sh tools/setup-tools.sh` (once per container).
-2. `tools/release.sh prepare <N> "<game dir>"` (N = newest tag + 1). The first release after r33 also renames the hub to "Launcher".
+2. `tools/release.sh prepare <N> "<game dir>"` (N = newest tag + 1). Builds from origin/main.
 3. Edit that game's card in `/home/user/hg-release/index.html` (name with version, `desc` starting "NEW x.y: ...", `tags` with 'New').
 4. `HG_TRAILER="Claude-Session: <session url>" tools/release.sh finish <N> "<Game x.y: summary>"`: runs the 9 licence tests and pushes only if all pass.
 5. Update the doc (below).
