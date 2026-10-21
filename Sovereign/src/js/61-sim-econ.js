@@ -34,6 +34,10 @@ function applyTraits(n, ids) {
   n.corruption = clamp(n.base.corruption + m.corruption, 0.02, 0.9);
 }
 
+// Named effects added by other systems (laws, war, trade, events, technology...): n.mod.growth['Trade deals'] = 0.3
+function extra(n, k) { const m = n.mod && n.mod[k]; return m ? Object.entries(m).filter(e => e[1]) : []; }
+function setMod(n, stat, label, v) { n.mod = n.mod || {}; (n.mod[stat] = n.mod[stat] || {})[label] = v; }
+const sumMap = m => { let a = 0; if (m) for (const k in m) a += m[k]; return a; };
 function potentialOf(n) { return clamp(5.5 - 4.2 * n.dev, 1.2, 6); }
 function safeDebt(n) { return 60 + 160 * reserveShareOf(n) + 45 * n.dev; }
 function reserveShareOf(n) { const c = G.cur[n.mon.cur]; return c && (n.mon.type === 'float' || n.mon.type === 'union') ? c.share : 0; }
@@ -125,7 +129,8 @@ function yieldOf(n) {
     ['Instability', 0.05 * Math.max(0, b.stability - n.stability)],
     ['Reserve currency', -4 * (reserveShareOf(n) - (G.cur[n.mon.cur] ? G.cur[n.mon.cur].share0 : 0)) * (n.mon.type === 'float' || n.mon.type === 'union' ? 1 : 0)],
     ['Past default', n.defaulted > 0 ? 6 * n.defaulted / 60 : 0],
-    ['Leader traits', n.mods.yield || 0]
+    ['Leader traits', n.mods.yield || 0],
+    ...extra(n, 'yield')
   ];
   let y = parts.reduce((a, p) => a + p[1], 0);
   if (n.imf > 0 && y > 6) { parts.push(['IMF programme', 6 - y]); y = 6; }
@@ -134,10 +139,11 @@ function yieldOf(n) {
 }
 function budgetOf(n) {
   const rev = revenueOf(n), W = G.world, gl = gdpL(n);
-  const rent = n.rent * (n.res.includes('oil') || n.res.includes('gas') ? W.oil / 100 : 1);
+  const rent = n.rent * (n.rentMult || 1) * (n.res.includes('oil') || n.res.includes('gas') ? W.oil / 100 : 1);
   const seign = reserveShareOf(n) * 0.9;
-  const spend = spendOf(n), interest = n.debt * n.effRate / 100 / gl * 100;
-  return { rev: rev.total, parts: rev.parts, rent, seign, spend, interest, deficit: spend + interest - rev.total - rent - seign };
+  const other = sumMap(n.cost), income = sumMap(n.income); // laws, projects, wars, aid / arms sales, state companies
+  const spend = spendOf(n) + other, interest = n.debt * n.effRate / 100 / gl * 100;
+  return { rev: rev.total + income, parts: rev.parts, rent, seign, spend, other, income, interest, deficit: spend + interest - rev.total - income - rent - seign };
 }
 function feelOf(n) { return -1.8 * (n.feel.infl - 3) - 1.4 * (n.feel.un - 5) + 0.6 * (n.feel.growth - 2); }
 
@@ -162,7 +168,7 @@ function econMonth(n, noise = true) {
     ['Research', 0.6 * m.learn * (n.k.know - b.k.know)],
     ['Education', 0.3 * m.learn * (n.k.human - b.k.human)],
     ['Health', 0.12 * (n.k.health - b.k.health)],
-    ['Taxes', -0.08 * (bud.rev - b.rev) - 0.03 * (n.tax.corporate - b.tax.corporate)],
+    ['Taxes', -0.08 * (bud.rev - bud.income - b.rev) - 0.03 * (n.tax.corporate - b.tax.corporate)],
     ['Import tariffs', -0.08 * (n.tax.tariff - b.tax.tariff) * n.open],
     ['Government borrowing', clamp(0.22 * dOp * (1 - Math.min(1, stress)), -3, 3)],
     ['Interest rates', clamp(-0.15 * (realRate - b.realRate), -3, 3)],
@@ -175,7 +181,8 @@ function econMonth(n, noise = true) {
     ['Oil prices', clamp(0.02 * (W.oil - 100) * oilX, -3, 3)],
     ['Leader traits', m.growth],
     ['Events', n.evGrowth || 0],
-    ['Luck', n.shock]
+    ['Luck', n.shock],
+    ...extra(n, 'growth')
   ]);
   n.growth += (clamp(gT, -25, 25) - n.growth) * 0.3;
   n.real *= 1 + n.growth / 1200; n.pop *= 1 + n.popGrowth / 1200;
@@ -195,7 +202,8 @@ function econMonth(n, noise = true) {
     ['Sales tax', 0.1 * (n.tax.sales - b.tax.sales)],
     ['Weaker currency', 0.25 * depr],
     ['Oil prices', 0.025 * (W.oil - 100) * (oilX > 0 ? 0.3 : 1)],
-    ['Events', n.evInfl || 0]
+    ['Events', n.evInfl || 0],
+    ...extra(n, 'infl')
   ]);
   n.infl += (clamp(iT, -5, 2000) - n.infl) * 0.18;
   n.P *= 1 + n.infl / 1200;
@@ -206,7 +214,8 @@ function econMonth(n, noise = true) {
     ['Welfare', 0.12 * (n.spend.welfare - b.spend.welfare)],
     ['Skills (education)', -0.2 * (n.k.human - b.k.human)],
     ['Income tax', 0.03 * (n.tax.income - b.tax.income)],
-    ['Debt crisis', 4 * stress]
+    ['Debt crisis', 4 * stress],
+    ...extra(n, 'unemp')
   ]);
   n.unemp += (clamp(uT, 0.3, 60) - n.unemp) * 0.12;
   // central bank
@@ -253,9 +262,12 @@ function econMonth(n, noise = true) {
     ['Honeymoon', n.honeymoon ? 8 * Math.max(0, 1 - months / m.honeymoon) : 0],
     ['Time in office', n.idx === G.player.idx ? -Math.min(10, 0.12 * Math.max(0, months - m.fatigue)) : 0],
     ['Leader traits', m.approval],
-    ['Events', n.evAppr]
+    ['Events', n.evAppr],
+    ...extra(n, 'approval')
   ]);
-  n.approval += (clamp(aT, 2, 98) - n.approval) * (free ? 0.2 : 0.1);
+  // the player's approval is the sum of what each group of society thinks (politics module)
+  const aGoal = n.idx === G.player.idx && typeof groupsApproval === 'function' ? groupsApproval(n, aT) : aT;
+  n.approval += (clamp(aGoal, 2, 98) - n.approval) * (free ? 0.2 : 0.1);
   const sT = sum('stability', [
     ['Starting point', b.stability],
     ['Approval', 0.35 * (n.approval - b.approval)],
@@ -266,7 +278,8 @@ function econMonth(n, noise = true) {
     ['Defence', m.hawk ? cut(n.spend.defence - b.spend.defence, 2) * 2 : 0],
     ['Debt crisis', -15 * Math.min(1, stress) ** 2],
     ['Leader traits', m.stability],
-    ['Events', n.evStab]
+    ['Events', n.evStab],
+    ...extra(n, 'stability')
   ]);
   n.stability += (clamp(sT, 0, 100) - n.stability) * 0.12;
   n.evAppr *= 0.9; n.evStab *= 0.92; n.evGrowth = (n.evGrowth || 0) * 0.9; n.evInfl = (n.evInfl || 0) * 0.85;

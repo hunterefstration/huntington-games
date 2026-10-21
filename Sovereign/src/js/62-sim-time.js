@@ -16,12 +16,14 @@ const Clock = {
 
 function nextDay() {
   G.day++;
+  for (const f of DAILY) f();
   if (dateOf(G.day).getUTCDate() === 1) nextMonth();
   Bus.emit('day');
 }
 function nextMonth() {
   const p = G.nations[G.player.idx], before = { approval: p.approval, gdp: gdpUsd(p), infl: p.infl, unemp: p.unemp, debt: debtPct(p) };
   worldMonth(true);
+  for (const f of MONTHLY) f();
   recordHistory(false);
   const d = (a, b, f) => (b - a >= 0 ? '+' : '') + f(b - a);
   inbox('report', 'Monthly report: ' + fmtMonth(G.day - 1),
@@ -46,23 +48,27 @@ const Gov = {
   me() { return G.nations[G.player.idx]; },
   applyBudget(tax, spend) {
     const n = this.me(), b0 = budgetOf(n);
+    const st = budgetStances(n, tax, spend);
     Object.assign(n.tax, tax); Object.assign(n.spend, spend);
     const b1 = budgetOf(n);
     n.budget = b1;
     inbox('info', 'New budget passed', `Spending ${b1.spend.toFixed(1)}% of GDP, tax income ${b1.rev.toFixed(1)}%. The budget ${b1.deficit > 0 ? 'deficit' : 'surplus'} is now ${Math.abs(b1.deficit).toFixed(1)}% of GDP (was ${b0.deficit.toFixed(1)}%).`);
+    react(n, { title: 'New budget: ' + (b1.spend > b0.spend + 0.3 ? 'more spending' : b1.spend < b0.spend - 0.3 ? 'spending cuts' : 'tax changes'), stance: st, size: 1, topic: 'Budget' });
     Bus.emit('changed');
   },
   setIndependent(on) {
     const n = this.me(); if (n.mon.type !== 'float') return;
     n.mon.independent = on;
+    react(n, { title: on ? 'Central bank made independent' : 'Government takes over the central bank', stance: on ? { business: 3, media: 1 } : { business: -5, elite: -3, media: -2 }, size: 1, topic: 'CentralBank' });
     if (!on) { n.evGrowth -= 0.3; n.ratingOff -= 1; inbox('bad', 'You took control of the central bank', 'Investors are nervous: borrowing costs rise and inflation expectations will now follow real inflation.'); }
     else { n.ratingOff += 1; inbox('good', 'Central bank made independent', 'Markets cheer. Inflation expectations will slowly settle at the ' + n.mon.target + '% target.'); }
     Bus.emit('changed');
   },
   setRate(v) { const n = this.me(); if (n.mon.type === 'float' && !n.mon.independent) { n.mon.rate = clamp(v, 0, 200); Bus.emit('changed'); } },
-  setQE(v) { const n = this.me(); if (n.mon.type === 'float') { n.mon.qe = clamp(v, 0, 25); Bus.emit('changed'); } },
+  setQE(v) { const n = this.me(); if (n.mon.type === 'float') { const up = v > n.mon.qe; n.mon.qe = clamp(v, 0, 25); react(n, { title: up ? 'Printing presses roll' : 'Money printing slowed', stance: up ? { retirees: -3, business: -2, elite: -3, workers: 1 } : { retirees: 2, business: 1 }, size: 0.7, topic: 'MoneyPrinting' }); Bus.emit('changed'); } },
   devalue(pct) {
     const n = this.me(); if (n.mon.type !== 'peg' && n.mon.type !== 'float') return;
+    react(n, { title: 'Currency devalued by ' + pct + '%', stance: { farmers: 3, business: 2, retirees: -4, workers: -2 }, size: pct / 12, topic: 'Devaluation' });
     n.fx *= 1 - pct / 100; n.devalued = (n.devalued || 1) * (1 - pct / 100); n.mon.pressure = 0; n.evAppr -= pct / 5; n.evGrowth += pct / 25;
     inbox('info', 'Currency devalued by ' + pct + '%', 'Exports get cheaper and factories gain, but imports and fuel cost more. Expect higher inflation for a year.');
     Bus.emit('changed');
@@ -82,12 +88,14 @@ const Gov = {
   default() {
     const n = this.me(); if (n.debt <= 0) return;
     const cutAmt = doDefault(n);
+    react(n, { title: 'Government stops paying its debts', stance: { business: -8, elite: -8, retirees: -4, workers: -2 }, size: 2, mood: -0.6, abroad: -6, topic: 'Default' });
     inbox('crisis', 'We stopped paying our debts', 'Lenders lose ' + fmtBig(cutAmt * n.fx / 100) + ' dollars. Our debt is cut, but nobody will lend cheaply for years, the currency fell and the economy is in shock.');
     Bus.emit('changed');
   },
   imf() {
     const n = this.me(); if (!(n.crisis || n.rating <= 7) || n.imf > 0) return;
     doIMF(n);
+    react(n, { title: 'IMF bailout with spending cuts', stance: { workers: -6, retirees: -5, students: -4, business: 3 }, size: 1.5, abroad: 2, topic: 'IMF' });
     inbox('info', 'IMF bailout agreed', 'Cheap emergency loans for 3 years. In return we cut spending by 12% and raised sales tax by 2 points. People are angry about the cuts.');
     Bus.emit('changed');
   }
@@ -114,6 +122,7 @@ function deserialize(json) {
   const g = JSON.parse(json);
   migrate(g);
   g.rng = makeRng(0); g.rng.set(g.rngState);
+  ensureSystems(g);
   g.nations = g.nations.map(n => n && Object.assign(n, { why: {} }));
   for (const n of g.nations) if (n) n.budget = null;
   return g;

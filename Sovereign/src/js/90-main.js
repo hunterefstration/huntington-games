@@ -24,6 +24,7 @@ async function boot() {
   const geo = await runSliced(buildLand(World.maps['110m'], 2.5), p => loadStep(0.25 + p * 0.6));
   setLandGeometry('110m', geo, buildLines(World.maps['110m'], 1, 1.5));
   buildCityPoints();
+  Life.init();
   UI.init();
   loadStep(1, 'Ready'); updateCamera();
   requestAnimationFrame(loop);
@@ -40,7 +41,7 @@ async function boot() {
   window.__sov.detailed = true;
 }
 
-let lastT = 0, ambientT = 0, labelsDirty = true;
+let lastT = 0, ambientT = 0, labelsDirty = true, lastDraw = 0;
 function loop(now) {
   requestAnimationFrame(loop);
   const t = now / 1000, dt = Math.min(0.1, lastT ? t - lastT : 0.016); lastT = t;
@@ -48,12 +49,15 @@ function loop(now) {
   if (Clock.step(dt)) Game.refresh();
   UI.updateHover();
   // ambient animation (clouds drifting, selection glow) only needs a few frames per second
-  const ambient = (Globe.clouds && Globe.clouds.visible) || UI.selected != null || Globe.night !== Globe.nightTarget;
+  // ships, planes and people keep the world moving, so there is always a gentle frame rate (lower on Low quality)
+  const ambient = Life.ready || (Globe.clouds && Globe.clouds.visible) || UI.selected != null || Globe.night !== Globe.nightTarget;
   let draw = Globe.dirty || moved;
-  if (!draw && ambient && t - ambientT > (Perf.level === 'high' ? 1 / 30 : 1 / 15)) draw = true;
-  if (!draw) return;
+  if (!draw && ambient && t - ambientT > ({ high: 1 / 45, medium: 1 / 30, low: 1 / 15 }[Perf.level])) draw = true;
+  if (!draw || document.hidden) return;
   if (Globe.dirty || moved) labelsDirty = true;
   ambientT = t;
+  const ddt = Math.min(0.2, lastDraw ? t - lastDraw : dt); lastDraw = t;
+  Life.t = t; Life.update(ddt, t);
   renderGlobe(dt, t);
   if (labelsDirty) { Overlay.draw(); labelsDirty = false; }
   Perf.tick(dt, moved || !!Input.down);

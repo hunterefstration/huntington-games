@@ -55,6 +55,9 @@ const STABILITY0 = { UKR: 38, RUS: 55, SDN: 8, SSD: 12, SOM: 14, YEM: 10, HTI: 8
 const CB_TARGET = d => d > 0.75 ? 2 : d > 0.5 ? 3 : 4.5;
 
 let G = null; // the running game
+// Systems register here: SYSTEM_INITS fill missing state (new games and old saves), DAILY/MONTHLY run for the player's world
+const SYSTEM_INITS = [], DAILY = [], MONTHLY = [];
+function ensureSystems(g) { g.feed = g.feed || []; for (const f of SYSTEM_INITS) f(g); }
 
 function devOf(gdpUsd, pop) { return clamp((Math.log10(Math.max(gdpUsd / Math.max(pop, 1), 100)) - 2.7) / 2.2, 0, 1); }
 
@@ -132,9 +135,10 @@ function newGame(opt) {
     face: opt.face, real: !!opt.real, startDay: 0
   };
   n.leader = opt.name; n.title = opt.title;
-  if (!opt.real) n.approval = Math.max(n.approval, GOV[n.gov].free ? 48 : 60);
+  if (!opt.real) { n.approval = Math.max(n.approval, GOV[n.gov].free ? 48 : 60); n.base.approval = n.approval; } // a fresh face starts with a clean slate
   n.honeymoon = opt.real ? 0 : 1;
   applyTraits(n, G.player.traits);
+  ensureSystems(G);
   recordHistory(true);
   return G;
 }

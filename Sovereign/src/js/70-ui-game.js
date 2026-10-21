@@ -58,11 +58,12 @@ const Game = {
     UI.home = c.idx; Globe.uni.home.value = c.idx;
     $('#hud-nation').innerHTML = `<span class="fl">${c.flag}</span><span>${esc(c.name)}<div class="sub">${esc(G.player.title + ' ' + G.player.name)}</div></span>`;
     flyToCountry(c);
+    syncCrowds(); if (Life.refreshProjects) Life.refreshProjects();
     Clock.paused = true; Bus.emit('clock');
     this.open('overview');
   },
   renderNav() {
-    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['world', '🌍', 'World'], ['inbox', '✉', 'Inbox']];
+    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['news', '📰', 'News'], ['world', '🌍', 'World'], ['inbox', '✉', 'Inbox']];
     $('#nav').innerHTML = items.map(([id, ic, name]) => `<button data-panel="${id}"><i>${ic}</i>${name}</button>`).join('');
   },
   renderSpeeds() { $('#speeds').innerHTML = [1, 2, 3, 4, 5].map(s => `<button data-speed="${s}" title="Speed ${s} (${s})"></button>`).join(''); },
