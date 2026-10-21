@@ -440,3 +440,6 @@ Possible later: scenario packs (Cold War 1962...), Opposition Leader mode, multi
 ## 17. Progress
 
 - Chunk 1 (engine and map): done. Build with `node tools/build-sovereign.js`; data with `node tools/sovereign-data.js`.
+- Chunk 2 (country and economy core): done. `Sovereign/data/stats.tsv` holds every country's 2025 figures and mid-2026
+  leader (edit it to correct a leader or number). Real-time clock, economy, budget, central bank, pegs, euro, reserve
+  currencies, IMF and default, Why? breakdowns, forecasts, charts, leader setup with face maker, 3 save slots + autosave.

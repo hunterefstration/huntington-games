@@ -48,13 +48,31 @@
   <div id="sel-card" class="panel card hidden"></div>
 </div>
 
+<div id="setup" class="screen">
+  <div class="panel setup-box">
+    <div class="ph"><button class="icon" data-act="setup-back" title="Back">&larr;</button><h2>Take office</h2></div>
+    <div id="setup-body"></div>
+  </div>
+</div>
+
 <div id="hud" class="screen">
   <div class="topbar panel">
     <button class="icon" data-act="menu" title="Menu (Esc)">&#9776;</button>
     <div id="hud-nation" class="nation"></div>
+    <div class="game-only clock">
+      <button class="icon" data-act="pause" id="btn-pause" title="Pause (Space)">&#10074;&#10074;</button>
+      <div class="speeds" id="speeds"></div>
+      <div id="date" class="date"></div>
+    </div>
+    <div class="game-only chips-stats" id="stats"></div>
     <div class="grow"></div>
+    <button class="icon game-only bell" data-act="inbox" title="Inbox"><span>&#9993;</span><b id="unread"></b></button>
     <div id="hud-note" class="note"></div>
   </div>
+  <nav class="side panel game-only" id="nav"></nav>
+  <div id="panel" class="panel bigpanel hidden"></div>
+  <div id="why" class="panel why hidden"></div>
+  <div id="legend" class="panel legend hidden"></div>
   <div class="modes panel" id="hud-modes"></div>
   <div class="zoom panel">
     <button class="icon" data-act="zin" title="Zoom in (+)">+</button>

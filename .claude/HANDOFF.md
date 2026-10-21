@@ -67,5 +67,9 @@ Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: n
   one land mesh with a per-vertex country index + 256x1 colour texture (map modes = `MapModes.add(id, name, c => '#hex')`),
   2D overlay canvas for labels. Debug: `window.__sov` (`ready`, `detailed`, `info()`, `pick(lon,lat)`, `select(id)`, `flyTo`).
 - Test locally: serve repo on a port, open `/Sovereign/index.html`, route three@0.160.0 as in CLAUDE.md.
+- Chunk 2 done: sim in `src/js/60-62` (state, formulas, time/actions/saves), UI in `70-74`. Effects are measured
+  against each nation's start (`n.base`) so the 2026 data is the starting point; AI nations run the same formulas plus
+  `aiFiscal`. Balance check: run 120 x `__sov.worldMonth(true)` after `__sov.newGame(...)` and look for NaN/extremes.
+  Next: chunk 3 (living map), see the plan.
 - Not yet in the Launcher (another agent is editing it): at release add the card + `hub/sovereign.jpg`, and add
   'Sovereign' to GAMES in `tools/build-release.py`.

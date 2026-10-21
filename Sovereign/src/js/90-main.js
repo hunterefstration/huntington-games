@@ -14,6 +14,8 @@ async function boot() {
   applyUiScale(); $('#fps').classList.toggle('hidden', !Settings.fps);
   loadStep(0.05, 'Reading the atlas...'); await frame();
   initCountries(readData('countries'), readData('cities'));
+  World.stats = Object.fromEntries(readData('stats').map(r => [r.id, r]));
+  World.nat0 = [null]; for (const c of World.countries) if (c) World.nat0[c.idx] = makeNation(c, World.stats[c.id]);
   const topo110 = readData('map110m');
   World.maps['110m'] = decodeTopo(topo110);
   assignColors(); computeLabels(World.maps['110m']); prepareLabels();
@@ -43,6 +45,7 @@ function loop(now) {
   requestAnimationFrame(loop);
   const t = now / 1000, dt = Math.min(0.1, lastT ? t - lastT : 0.016); lastT = t;
   const moved = stepCamera(dt);
+  if (Clock.step(dt)) Game.refresh();
   UI.updateHover();
   // ambient animation (clouds drifting, selection glow) only needs a few frames per second
   const ambient = (Globe.clouds && Globe.clouds.visible) || UI.selected != null || Globe.night !== Globe.nightTarget;
@@ -57,7 +60,8 @@ function loop(now) {
 }
 
 window.__sov = {
-  ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes,
+  ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
+  get G() { return G; }, newGame, worldMonth, nextMonth, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
   flyTo, flyToCountry, screenToLL, llToScreen, pickLL,
   pick: (lon, lat) => { const h = pickLL(lon, lat); return h && h.c ? World.countries[h.c].id : null; },
   select: id => UI.select(id == null ? null : World.byId[id].idx, true),

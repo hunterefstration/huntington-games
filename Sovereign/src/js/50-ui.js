@@ -14,8 +14,13 @@ const UI = {
 
   show(name) {
     this.screen = name;
-    $$('.screen').forEach(s => s.classList.toggle('on', s.id === name));
-    Overlay.visible = name === 'select' || name === 'hud';
+    const el = name === 'game' ? 'hud' : name;
+    $$('.screen').forEach(s => s.classList.toggle('on', s.id === el));
+    $('#hud').classList.toggle('playing', name === 'game');
+    Overlay.visible = name === 'select' || name === 'hud' || name === 'game';
+    if (name !== 'game') { Clock.paused = true; $('#panel').classList.add('hidden'); $('#why').classList.add('hidden'); }
+    showLegend(MapModes.get(this.mode));
+    if (name === 'title') this.titleButtons();
     const cam = Globe.camera;
     if (name === 'title') {
       Cam.spin = 4; flyTo(Cam.lon, 18, 2.5, 1.2);
@@ -30,8 +35,13 @@ const UI = {
     document.addEventListener('click', e => {
       const b = e.target.closest('[data-act]'); if (!b) return;
       const a = b.dataset.act;
-      if (a === 'new') { this.show('select'); this.renderList(); $('#sel-search').focus(); }
-      else if (a === 'explore') { this.home = null; this.startHud(); }
+      if (a === 'new') { G = null; this.show('select'); this.renderList(); $('#sel-search').focus(); }
+      else if (a === 'continue') { const slot = Saves.latest(); if (slot) loadFrom(slot).then(ok => ok && Game.start(), e => toast(e.message)); }
+      else if (a === 'load') Saves.open(false);
+      else if (a === 'save') Saves.open(true);
+      else if (a === 'setup-back') this.show('select');
+      else if (a === 'take-office') Setup.go();
+      else if (a === 'explore') { G = null; this.home = null; this.startHud(); }
       else if (a === 'settings') this.settings();
       else if (a === 'credits') this.credits();
       else if (a === 'back') this.show('title');
@@ -40,11 +50,12 @@ const UI = {
       else if (a === 'zout') { Cam.fly = null; camZoom(2); }
       else if (a === 'home') this.goHome();
       else if (a === 'night') this.toggleNight();
-      else if (a === 'lead') this.lead(+b.dataset.idx);
+      else if (a === 'lead') Setup.open(+b.dataset.idx);
       else if (a === 'fly') { const c = World.countries[+b.dataset.idx]; flyToCountry(c); }
       else if (a === 'close-card') this.select(null);
       else if (a === 'close-modal') this.closeModal();
-      else if (a === 'quit') { this.closeModal(); this.show('title'); }
+      else if (a === 'quit') { this.closeModal(); if (G) autosave(); G = null; this.show('title'); }
+      else if (a === 'confirm-ok') { this.closeModal(); if (this.onOk) this.onOk(); }
     });
     // country select
     const regions = ['All', 'Africa', 'Americas', 'Asia', 'Europe', 'Oceania'];
@@ -62,7 +73,7 @@ const UI = {
     this.setMode('political');
     // globe interaction
     Bus.on('click', (x, y) => {
-      if (this.screen !== 'select' && this.screen !== 'hud') return;
+      if (this.screen !== 'select' && this.screen !== 'hud' && this.screen !== 'game') return;
       const small = Overlay.hitSmall(x, y);
       if (small != null) return this.select(small, false);
       const ll = screenToLL(x, y), hit = ll && pickLL(ll.lon, ll.lat);
@@ -72,11 +83,14 @@ const UI = {
     Bus.on('key', (k, e) => {
       if (k === 'Escape') {
         if (!$('#modal').classList.contains('hidden')) this.closeModal();
+        else if (!$('#why').classList.contains('hidden')) $('#why').classList.add('hidden');
+        else if (this.screen === 'game' && Game.panel) Game.close();
         else if (this.selected != null && this.screen !== 'title') this.select(null);
-        else if (this.screen === 'hud') this.menu();
+        else if (this.screen === 'hud' || this.screen === 'game') this.menu();
+        else if (this.screen === 'setup') this.show('select');
         else if (this.screen === 'select') this.show('title');
-      } else if (this.screen === 'hud' && k === 'n') this.toggleNight();
-      else if (this.screen === 'hud' && k === 'Home') this.goHome();
+      } else if ((this.screen === 'hud' || this.screen === 'game') && k === 'n') this.toggleNight();
+      else if ((this.screen === 'hud' || this.screen === 'game') && k === 'Home') this.goHome();
       else if (this.screen === 'hud' && /^[1-9]$/.test(k) && MapModes.list[+k - 1]) this.setMode(MapModes.list[+k - 1].id);
     });
   },
@@ -86,7 +100,7 @@ const UI = {
     if (!this.hoverAt || Input.down) return;
     const [x, y] = this.hoverAt; this.hoverAt = null;
     let idx = null;
-    if (this.screen === 'select' || this.screen === 'hud') {
+    if (this.screen === 'select' || this.screen === 'hud' || this.screen === 'game') {
       idx = Overlay.hitSmall(x, y);
       if (idx == null) { const ll = screenToLL(x, y), hit = ll && pickLL(ll.lon, ll.lat); idx = hit && hit.c ? hit.c : null; }
     }
@@ -100,6 +114,7 @@ const UI = {
     this.mode = id; const m = MapModes.get(id);
     setCountryColors(m.color);
     $$('#hud-modes button').forEach(b => b.classList.toggle('on', b.dataset.mode === id));
+    showLegend(m);
   },
 
   renderList() {
@@ -115,7 +130,7 @@ const UI = {
     this.selected = idx;
     setSelectedOutline(idx);
     $$('#sel-list .row').forEach(r => r.classList.toggle('on', +r.dataset.idx === idx));
-    const card = this.screen === 'hud' ? $('#info') : $('#sel-card');
+    const card = this.screen === 'select' ? $('#sel-card') : $('#info');
     if (idx == null) { $('#sel-card').classList.add('hidden'); $('#info').classList.add('hidden'); return; }
     const c = World.countries[idx];
     if (fly) flyToCountry(c);
@@ -125,13 +140,11 @@ const UI = {
   },
 
   cardHtml(c) {
-    const nb = c.borders.map(id => World.byId[id].name), cities = World.cities.filter(x => x.c === c.idx).sort((a, b) => b.pop - a.pop);
-    const facts = [
-      ['Capital', c.capital || '-'], ['Region', c.sub || c.region], ['Area', fmtInt(c.area) + ' km²'],
-      ['Largest city', cities[0] ? cities[0].name : '-'], ['Languages', c.langs.join(', ') || '-'], ['Currency', c.curName ? c.curName + ' (' + c.cur + ')' : '-'],
-      ['Neighbours', nb.length ? (nb.length > 6 ? nb.slice(0, 6).join(', ') + ' +' + (nb.length - 6) : nb.join(', ')) : (c.landlocked ? 'none' : 'none (island or coast only)')]
-    ];
+    const nb = c.borders.map(id => World.byId[id].name);
+    const facts = nationFacts(c).concat([['Region', c.sub || c.region], ['Area', fmtInt(c.area) + ' km²'], ['Languages', c.langs.join(', ') || '-'],
+      ['Neighbours', nb.length ? (nb.length > 6 ? nb.slice(0, 6).join(', ') + ' +' + (nb.length - 6) : nb.join(', ')) : 'none (island or coast only)']]);
     const isSel = this.screen === 'select';
+    if (isSel) facts.unshift(['Difficulty', '★'.repeat(difficultyOf(c.idx)) + '☆'.repeat(5 - difficultyOf(c.idx))]);
     return `<button class="icon x" data-act="close-card" title="Close">&times;</button>
       <div class="big-flag">${c.flag}</div><h3>${esc(c.name)}</h3><div class="off">${esc(c.official)}</div>
       <div class="facts">${facts.map(([k, v]) => `<b>${k}</b><span>${esc(v)}</span>`).join('')}</div>
@@ -139,10 +152,15 @@ const UI = {
         : `<button class="btn small" data-act="fly" data-idx="${c.idx}">Fly here</button>`}`;
   },
 
-  lead(idx) {
-    this.home = idx; Globe.uni.home.value = idx;
-    this.startHud();
-    toast('Early build: you can explore the living map. Running ' + World.countries[idx].name + ' arrives in the next update.', 5000);
+  titleButtons() {
+    const has = !!Saves.latest();
+    $('#title .menu').innerHTML = (has ? '<button class="btn gold" data-act="continue">Continue</button><button class="btn" data-act="new">New Game</button><button class="btn" data-act="load">Load Game</button>'
+      : '<button class="btn gold" data-act="new">New Game</button>') +
+      '<button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
+  },
+  confirm(title, text, ok, fn) {
+    this.onOk = fn;
+    this.modal(`<h2>${esc(title)}</h2><p class="sub" style="font-size:14px">${esc(text)}</p><div class="actions"><button class="btn small" data-act="close-modal">Cancel</button><button class="btn small gold" data-act="confirm-ok">${esc(ok)}</button></div>`);
   },
   startHud() {
     this.show('hud'); this.select(null);
@@ -159,6 +177,7 @@ const UI = {
   menu() {
     this.modal(`<h2>Menu</h2><div class="menu" style="width:auto">
       <button class="btn" data-act="close-modal">Resume</button>
+      ${G ? '<button class="btn" data-act="save">Save game</button><button class="btn" data-act="load">Load game</button>' : ''}
       <button class="btn" data-act="settings">Settings</button>
       <button class="btn" data-act="credits">Credits</button>
       <button class="btn" data-act="quit">Quit to title</button></div>`);
@@ -185,6 +204,7 @@ const UI = {
     this.modal(`<h2>Credits</h2><div class="credits">
       <div class="hg">A Huntington Games production</div>
       <p><b>Sovereign</b> early build ${VERSION}. Made by Huntington Games.</p>
+      <p><b>Country figures:</b> rounded public estimates for 2025. Leaders as of mid 2026. Portraits are drawings, not photos.</p>
       <p><b>Map borders:</b> Natural Earth (public domain), via world-atlas.</p>
       <p><b>Country facts:</b> mledoze/countries (Open Database License).</p>
       <p><b>Cities:</b> GeoNames (CC BY 4.0).</p>

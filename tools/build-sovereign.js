@@ -8,8 +8,11 @@ const list = (d, ext) => fs.readdirSync(d).filter(f => f.endsWith(ext)).sort().m
 const read = f => fs.readFileSync(f, 'utf8');
 const css = list(path.join(SRC, 'css'), '.css').map(read).join('\n');
 const js = list(path.join(SRC, 'js'), '.js').map(f => '// ---- ' + path.basename(f) + ' ----\n' + read(f)).join('\n');
-const data = list(path.join(DIR, 'data'), '.json').map(f => {
-  const id = path.basename(f, '.json'), body = JSON.stringify(JSON.parse(read(f))).replace(/<\//g, '<\\/');
+// data/*.json as is; data/*.tsv (first row = column names) become arrays of objects, numbers parsed
+const tsv = t => { const [head, ...rows] = t.trim().split('\n').map(l => l.split('\t')); return rows.map(r => Object.fromEntries(head.map((h, i) => [h, r[i] === '-' || r[i] == null ? '' : isNaN(+r[i]) || r[i] === '' ? r[i] : +r[i]]))); };
+const data = list(path.join(DIR, 'data'), '.json').concat(list(path.join(DIR, 'data'), '.tsv')).map(f => {
+  const id = path.basename(f).replace(/\.(json|tsv)$/, ''), v = f.endsWith('.tsv') ? tsv(read(f)) : JSON.parse(read(f));
+  const body = JSON.stringify(v).replace(/<\//g, '<\\/');
   return '<script type="application/json" id="sov-data-' + id + '">' + body + '</script>';
 }).join('\n');
 if (js.includes('</script')) throw new Error('"</script" inside the game code would end the script tag early');
