@@ -54,3 +54,18 @@ Built, 324 local checks pass. Stress test found, still to fix:
 - major: one-way WebRTC failure keeps guest sending into a dead channel for 30 s.
 - minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
 Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
+
+## New game: Sovereign (grand strategy, branch `claude/wizardly-hawking-27f3jp`, not on `main`)
+Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
+- Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE
+  ES module, so top-level names are shared), data in `Sovereign/data/*.json` (embedded as JSON script tags, read with
+  `readData(id)`). `node tools/build-sovereign.js --check` writes `Sovereign/index.html` (the only file the Launcher
+  loads; keeps the HG licence block). Always rebuild and commit index.html with source changes.
+- Data: `node tools/sovereign-data.js` (npm packs world-atlas, world-countries, all-the-cities into $HG_TOOLS/sov-src;
+  needs `npm i pbf@3` in $HG_TOOLS).
+- Engine: three.js globe (radius 1), camera = lon/lat/alt with auto tilt, 110m map at boot, 50m built in background,
+  one land mesh with a per-vertex country index + 256x1 colour texture (map modes = `MapModes.add(id, name, c => '#hex')`),
+  2D overlay canvas for labels. Debug: `window.__sov` (`ready`, `detailed`, `info()`, `pick(lon,lat)`, `select(id)`, `flyTo`).
+- Test locally: serve repo on a port, open `/Sovereign/index.html`, route three@0.160.0 as in CLAUDE.md.
+- Not yet in the Launcher (another agent is editing it): at release add the card + `hub/sovereign.jpg`, and add
+  'Sovereign' to GAMES in `tools/build-release.py`.

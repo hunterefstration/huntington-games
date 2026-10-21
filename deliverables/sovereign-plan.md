@@ -187,8 +187,10 @@ gets a public reaction, and that reaction changes the game.
 ## 7. Foreign relations
 
 - **Relations (−100 to +100), trust, and memory** with every country. Insults fade fast, broken treaties very slowly.
-- **World leaders**: generated fictional people with real titles and personalities (aggressive, greedy, proud,
-  honourable, paranoid, ideological), likes and dislikes, and their own domestic problems that change how they act.
+- **World leaders**: the **real leaders** of every country (as of 2026, kept in an editable data file), each with a
+  personality (aggressive, greedy, proud, honourable, paranoid, ideological), likes and dislikes, and their own
+  domestic problems that change how they act. When a leader loses an election, resigns or is removed, the game
+  generates a fictional successor. Real people are never shown being hurt or killed.
 - **Talk to them**: phone calls and summits are short conversations with choices (flatter, threaten, offer, bluff,
   bring up the past). A **summit screen** shows both leaders and the deal table.
 - **Actions**: embassies, state visits, aid, loans, trade deals, tariffs, sanctions, embargoes, arms sales, military
@@ -428,10 +430,13 @@ Possible later: scenario packs (Cold War 1962...), Opposition Leader mode, multi
 
 ---
 
-## 16. Things for you to decide
+## 16. Decisions
 
-1. **Name**: "Sovereign" or something else?
-2. **Leaders**: fictional generated leaders (my recommendation, safer for school and never out of date), or real
-   current leaders' names?
-3. **Losing an election**: game over, or keep playing as Opposition Leader?
-4. **Release**: one big release after chunk 10, or an "Early Access" release after chunk 3 or 4 and updates after that?
+1. **Name**: Sovereign (decided).
+2. **Leaders**: real leaders (decided).
+3. **Losing an election**: still open (default: game over with an ending screen; Opposition Leader mode later).
+4. **Release**: still open (one big release after chunk 10, or Early Access after chunk 3 or 4).
+
+## 17. Progress
+
+- Chunk 1 (engine and map): done. Build with `node tools/build-sovereign.js`; data with `node tools/sovereign-data.js`.
