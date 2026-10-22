@@ -1,7 +1,7 @@
 # Handoff (updated 2026-10-15)
 
 ## Where things stand
-- Live: release **r33** (100 Levels of Spikes 2.0), released Oct 14 2026, 6:16 AM EDT. Launcher code in `loader.html`.
+- Live: release **r36** (Sovereign 1.0, new game), released Oct 21 2026, 8:32 PM EDT. r34/r35 shipped Frontline 3.0 and the content wave. Launcher code in `loader.html`.
 - Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
   `git fetch origin wip/content-wave && git checkout origin/wip/content-wave -- "Blocky Shooter V2" "Tower Defense 2.0" Frontline Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9" "50 Levels Of Spikes 1.2" src/hgnet.js src/hgnet-test.html src/hgnet-README.md`
   then `git reset -q` so nothing is staged. Do not commit these to `main` until each game passes its play-test.
@@ -55,7 +55,7 @@ Built, 324 local checks pass. Stress test found, still to fix:
 - minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
 Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
 
-## New game: Sovereign (grand strategy, branch `claude/wizardly-hawking-27f3jp`, not on `main`)
+## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE
   ES module, so top-level names are shared), data in `Sovereign/data/*.json` (embedded as JSON script tags, read with
@@ -75,5 +75,4 @@ Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: n
   missing state so old saves keep working. Top-level code in a file may only use names from files that sort before it.
   Full-game check: start a game, call __sov.nextDay() in a loop and answer any #modal (see the play-through test idea in
   the plan). Release: `tools/release.sh prepare N Sovereign` now also copies Sovereign/src, data, tools and hub/sovereign.jpg.
-- Not yet in the Launcher (another agent is editing it): at release add the card + `hub/sovereign.jpg`, and add
-  'Sovereign' to GAMES in `tools/build-release.py`.
+- In the Launcher since r36 (card + `hub/sovereign.jpg`, 'Sovereign' in `tools/build-release.py` GAMES).
