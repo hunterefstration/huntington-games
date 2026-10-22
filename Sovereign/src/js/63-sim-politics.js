@@ -117,7 +117,8 @@ L(11, 'culture', 'National culture push', 'None|Some|Strong', n => free(n) ? 0 :
 L(11, 'sport', 'Sports & Olympics funding', 'Low|Normal|High', n => 1, { $: 0.1, a: 0.3, x: 1 }, { youth: 4, workers: 1 });
 L(11, 'language', 'Official languages', 'One only|Main + regional|All equal', n => 1, { s: 0.3, f: 1 }, { minorities: 7, religious: -1, retirees: -2 });
 // Constitution (need two thirds of parliament in free countries)
-L(12, 'termlimit', 'Term limits', 'None|3 terms|2 terms', n => free(n) ? 2 : (['USA', 'MEX', 'BRA', 'COL', 'KOR', 'PHL'].includes(n.id) ? 2 : 0), { f: 3, s: 0.2 }, { media: 3, students: 2, military: -1 }, { sup: true, k: -1 });
+L(12, 'termlimit', 'Term limits', 'None|3 terms|2 terms|1 term', n => ONE_TERM.includes(n.id) ? 3 : ['PRES', 'SEMI'].includes(n.gov) || ['TUR', 'RUS'].includes(n.id) ? 2 : 0, { f: 3, s: 0.2 }, { media: 3, students: 2, military: -1 }, { sup: true, k: -1 });
+const ONE_TERM = ['MEX', 'KOR', 'PHL', 'CHL', 'COL', 'PER', 'PRY', 'GTM', 'HND', 'CRI', 'SLV', 'URY', 'PAN', 'DOM'];
 L(12, 'emergency', 'Emergency powers', 'None|Limited|Broad', n => free(n) ? 0 : 2, { s: 1.5, f: -8 }, { police: 4, military: 4, media: -7, students: -6, minorities: -4 }, { k: 1, sup: true });
 L(12, 'federal', 'Power of regions', 'Central|Devolved|Federal', n => ['USA', 'DEU', 'IND', 'BRA', 'CAN', 'AUS', 'MEX', 'ARG', 'NGA', 'RUS', 'CHE', 'AUT', 'BEL', 'MYS', 'ETH', 'PAK', 'ARE', 'NPL', 'BIH', 'SOM', 'SSD', 'IRQ', 'VEN', 'FSM', 'KNA', 'COM'].includes(n.id) ? 2 : 1, { s: 0.6, c: 0.01, f: 2 }, { minorities: 5, farmers: 2, elite: -1 }, { sup: true });
 L(12, 'court', 'Supreme court size', 'Normal|Expanded', n => 0, { f: -4 }, { media: -6, students: -3, elite: -2 }, { sup: false, k: 0, courtPack: true });

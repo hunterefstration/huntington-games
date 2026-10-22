@@ -85,6 +85,7 @@ function newsLocal(n, text) { G.feed = [{ type: 'news', day: G.day, outlet: 'The
 function syncCrowds() {
   if (!G) { Life.crowds = []; return; }
   const n = G.nations[G.player.idx];
+  Globe.dirty = true;
   Life.crowds = (n.crowds || []).map(c => ({ city: World.cities[c.city], size: c.size, seed: c.seed, sign: c.kind === 'protest' ? [0.9, 0.15, 0.15] : [1, 0.85, 0.3], shirt: c.kind === 'protest' ? [0.45, 0.3, 0.3] : [0.3, 0.4, 0.6] }));
 }
 function reactionDay(n) {

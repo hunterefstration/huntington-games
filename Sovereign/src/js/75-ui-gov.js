@@ -110,3 +110,4 @@ UI.courtRuling = (law, from) => {
   $('#ct-ok').onclick = () => { UI.closeModal(); courtStrike(n, law, from, true); };
   $('#ct-defy').onclick = () => { UI.closeModal(); courtStrike(n, law, from, false); };
 };
+Object.assign(Panels, ElectionPanel);

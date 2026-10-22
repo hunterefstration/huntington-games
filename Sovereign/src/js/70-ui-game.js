@@ -63,7 +63,7 @@ const Game = {
     this.open('overview');
   },
   renderNav() {
-    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['news', '📰', 'News'], ['world', '🌍', 'World'], ['inbox', '✉', 'Inbox']];
+    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['election', '🗳', 'Elections'], ['news', '📰', 'News'], ['world', '🌍', 'World'], ['inbox', '✉', 'Inbox']];
     $('#nav').innerHTML = items.map(([id, ic, name]) => `<button data-panel="${id}"><i>${ic}</i>${name}</button>`).join('');
   },
   renderSpeeds() { $('#speeds').innerHTML = [1, 2, 3, 4, 5].map(s => `<button data-speed="${s}" title="Speed ${s} (${s})"></button>`).join(''); },
@@ -128,7 +128,7 @@ document.addEventListener('click', e => {
 }, true);
 Bus.on('clock', () => Game.refresh());
 Bus.on('day', () => { $('#date').textContent = fmtDate(G.day); });
-Bus.on('month', () => { Game.refresh(); Game.renderPanel(); Game.colorsTick(); if (UI.selected != null && UI.screen === 'game') UI.select(UI.selected); });
+Bus.on('month', () => { Globe.dirty = true; Game.refresh(); Game.renderPanel(); Game.colorsTick(); if (UI.selected != null && UI.screen === 'game') UI.select(UI.selected); });
 Bus.on('changed', () => { const n = G.nations[G.player.idx]; n.budget = budgetOf(n); Game.refresh(); Game.renderPanel(); });
 Bus.on('inbox', () => Game.refresh());
 Bus.on('key', (k, e) => {

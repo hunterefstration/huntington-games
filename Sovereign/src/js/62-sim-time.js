@@ -3,7 +3,7 @@ const SPEEDS = [0, 1, 2.5, 6, 15, 30]; // days per second
 const Clock = {
   acc: 0, paused: true, speed: 1,
   step(dt) {
-    if (!G || this.paused || UI.screen !== 'game' || !$('#modal').classList.contains('hidden')) return false;
+    if (!G || G.over || this.paused || UI.screen !== 'game' || !$('#modal').classList.contains('hidden')) return false;
     this.acc += dt * SPEEDS[this.speed];
     let changed = false;
     while (this.acc >= 1) { this.acc -= 1; nextDay(); changed = true; if (this.paused) { this.acc = 0; break; } }

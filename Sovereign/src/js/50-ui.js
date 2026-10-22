@@ -40,6 +40,7 @@ const UI = {
       else if (a === 'load') Saves.open(false);
       else if (a === 'save') Saves.open(true);
       else if (a === 'setup-back') this.show('select');
+      else if (a === 'hall') Hall.open();
       else if (a === 'take-office') Setup.go();
       else if (a === 'explore') { G = null; this.home = null; this.startHud(); }
       else if (a === 'settings') this.settings();
@@ -156,7 +157,7 @@ const UI = {
     const has = !!Saves.latest();
     $('#title .menu').innerHTML = (has ? '<button class="btn gold" data-act="continue">Continue</button><button class="btn" data-act="new">New Game</button><button class="btn" data-act="load">Load Game</button>'
       : '<button class="btn gold" data-act="new">New Game</button>') +
-      '<button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
+      '<button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
   },
   confirm(title, text, ok, fn) {
     this.onOk = fn;

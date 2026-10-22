@@ -57,6 +57,7 @@ const Overlay = {
       const col = ct.idx === sel ? '#ffe2a0' : ct.idx === home ? '#fff4d8' : 'rgba(240,244,250,.92)';
       this.text(name, p.x, tiny ? p.y - 12 : p.y, Math.round(size), col, size >= 15 ? 700 : 600, size >= 15 ? 1.5 : 0);
     }
+    this.drawMarks();
     // cities when close enough
     if (alt < 0.42) {
       const tgt = ll2v(Cam.lon, Cam.lat), lim = Math.cos(Math.min(80, alt * 60 + 4) * DEG);
@@ -72,6 +73,24 @@ const Overlay = {
           star(c, p.x, p.y, 4.5, '#ffd98a');
         }
       }
+    }
+  },
+  // markers from the game: election results, protests, wars, disasters
+  drawMarks() {
+    const c = this.ctx, s = {};
+    for (const m of this.marks || []) {
+      const p = llToScreen(m.lon, m.lat, 1.001, s); if (!p.front) continue;
+      c.beginPath(); c.arc(p.x, p.y, 10, 0, 7); c.fillStyle = m.color; c.globalAlpha = 0.85; c.fill(); c.globalAlpha = 1;
+      c.lineWidth = 2; c.strokeStyle = '#0b1424'; c.stroke(); this.text(m.label, p.x, p.y - 18, 12, '#fff', 700);
+    }
+    const icons = typeof mapIcons === 'function' && G ? mapIcons() : [];
+    c.font = '18px system-ui'; this.iconHits = [];
+    for (const ic of icons) {
+      const p = llToScreen(ic.lon, ic.lat, 1.001, s); if (!p.front || p.x < 0 || p.y < 0 || p.x > innerWidth || p.y > innerHeight) continue;
+      if (ic.minAlt && Cam.alt < ic.minAlt) continue;
+      c.beginPath(); c.arc(p.x, p.y, 13, 0, 7); c.fillStyle = ic.bg || 'rgba(10,18,34,.8)'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = ic.ring || 'rgba(255,255,255,.6)'; c.stroke();
+      c.fillStyle = '#fff'; c.fillText(ic.icon, p.x, p.y + 1);
+      this.iconHits.push({ x: p.x, y: p.y, ic });
     }
   },
   hitSmall(x, y) { for (const m of this.small) if (Math.hypot(m.x - x, m.y - y) < 11) return m.idx; return null; },
