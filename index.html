@@ -4,17 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Huntington Games Launcher</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #0d1117; --card: #161b22; --line: #2b3440; --text: #e6edf3; --dim: #8b949e; --gold: #f1c40f; --blue: #58a6ff; }
+:root {
+  /* The Grapevine theme (amber on warm black), same variables and mixes as Grapevine's own client. */
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; --sans: "IBM Plex Sans", system-ui, "Segoe UI", Tahoma, sans-serif;
+  --tint: #8a7c62; --signal: #f0a02c; --signal2: #ff6a3d; --live: #4fd1a5; --danger: #e5484d; --on-signal: #0a0a0c;
+  --text: #ececf0; --dim: #8a8a96; --dimmer: #4a4a54;
+  --ground: color-mix(in srgb, var(--tint) 7%, #070708); --panel: color-mix(in srgb, var(--tint) 9%, #0c0c0e);
+  --raise: color-mix(in srgb, var(--tint) 12%, #111114); --line: color-mix(in srgb, var(--tint) 15%, #1b1b20); --line2: color-mix(in srgb, var(--tint) 20%, #26262d);
+  /* the launcher's older names, mapped onto the theme so every dialog and button follows it */
+  --bg: var(--ground); --card: var(--panel); --gold: var(--signal); --blue: var(--signal);
+  color-scheme: dark;
+}
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
 #hub { max-width: 1100px; margin: 0 auto; padding: 26px 16px 60px; }
 h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spacing: 1px; }
 .sub { color: var(--dim); margin: 4px 0 20px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
 .game { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.12s, border-color 0.12s; display: flex; flex-direction: column; text-align: left; color: var(--text); padding: 0; font: inherit; }
 .game:hover { transform: translateY(-2px); border-color: var(--blue); }
-.shot { aspect-ratio: 16 / 9; width: 100%; background: #0a0d12; position: relative; overflow: hidden; }
+.shot { aspect-ratio: 16 / 9; width: 100%; background: var(--ground); position: relative; overflow: hidden; }
 .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .shot .fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px; color: var(--dim); padding: 10px; text-align: center; }
 .info { padding: 10px 12px 12px; }
@@ -23,11 +34,11 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 .tags { margin-top: 7px; }
 .tag { display: inline-block; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.07); color: var(--dim); margin-right: 3px; }
 .tag.new { background: rgba(241,196,15,0.18); color: var(--gold); }
-#exp-btn { position: fixed; left: 8px; bottom: 6px; background: transparent; border: none; color: #3d4652; font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
+#exp-btn { position: fixed; left: 8px; bottom: 6px; background: transparent; border: none; color: var(--dimmer); font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
 #exp-btn:hover { color: var(--dim); }
 #offbar { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; color: var(--dim); }
 #offbar.off { display: none; }
-#offprog { display: none; width: 140px; height: 6px; background: #1f2630; border-radius: 3px; overflow: hidden; }
+#offprog { display: none; width: 140px; height: 6px; background: var(--raise); border-radius: 3px; overflow: hidden; }
 #offprog.on { display: inline-block; }
 #offfill { display: block; height: 100%; width: 0; background: var(--blue); transition: width 0.3s; }
 #offdl { background: transparent; border: 1px solid var(--line); color: var(--dim); border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
@@ -38,7 +49,7 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 #offdlg .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 16px; font-size: 14px; line-height: 1.5; }
 #offdlg h2 { margin: 0 0 6px; font-size: 18px; }
 #offdlg .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-#offdlg .btns button { background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+#offdlg .btns button { background: var(--raise); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 12px; font: inherit; font-weight: 700; cursor: pointer; }
 #exp { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 5; }
 #exp.open { display: flex; }
 #exp .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 16px; }
@@ -47,24 +58,58 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 .row:hover .rname { color: var(--blue); }
 .rname { font-weight: 700; }
 .rdesc { color: var(--dim); font-size: 12px; }
-.close { float: right; background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 3px 10px; cursor: pointer; font: inherit; }
+.close { float: right; background: var(--raise); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 3px 10px; cursor: pointer; font: inherit; }
 #player { position: fixed; inset: 0; background: #000; display: none; flex-direction: column; z-index: 10; }
 #player.open { display: flex; }
-#ptop { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #11161d; border-bottom: 1px solid var(--line); }
-#ptop button, #ptop a { background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 5px 11px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; }
+#ptop { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: var(--panel); border-bottom: 1px solid var(--line); }
+#ptop button, #ptop a { background: var(--raise); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 5px 11px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; }
 #ptitle { flex: 1; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #frame { flex: 1; width: 100%; border: 0; background: #000; }
 #ptop.hide { display: none; }
-.note { color: #4b5563; font-size: 11px; margin-top: 26px; }
+.note { color: var(--dimmer); font-size: 11px; margin-top: 26px; }
+
+/* ---- the Grapevine look: amber on warm black, mono labels, square corners ---- */
+h1 { font-family: var(--mono); font-weight: 600; font-size: clamp(13px, 2.6vw, 18px); letter-spacing: .28em; text-transform: uppercase; color: var(--signal); background: linear-gradient(90deg, var(--signal), var(--signal2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; }
+#hub { padding-top: 14px; }
+#topbar { display: flex; align-items: center; gap: 6px 22px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 20px; padding-bottom: 0; }
+#topbar h1 { padding: 10px 0; }
+#tabs { display: flex; gap: 2px; flex: 1; min-width: 0; }
+.tab { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 12px 14px; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); cursor: pointer; white-space: nowrap; }
+.tab:hover { color: var(--text); }
+.tab.on { color: var(--signal); border-bottom-color: var(--signal); }
+#chip { display: none; align-items: center; gap: 8px; background: var(--raise); border: 1px solid var(--line2); border-radius: 3px; padding: 5px 11px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--text); cursor: pointer; max-width: 200px; }
+#chip.on { display: inline-flex; }
+#chip:hover { border-color: var(--signal); color: var(--signal); }
+#chip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdot { width: 8px; height: 8px; border-radius: 50%; background: var(--dimmer); flex: none; }
+.cdot.on { background: var(--live); box-shadow: 0 0 8px color-mix(in srgb, var(--live) 60%, transparent); }
+.cdot.wait { background: var(--signal); }
+.sub { font-size: 13px; }
+.game { border-radius: 4px; }
+.game:hover { box-shadow: 0 8px 26px color-mix(in srgb, var(--signal) 14%, transparent); }
+.name { font-weight: 600; }
+.tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; border-radius: 2px; padding: 1px 7px; }
+.tag.new { background: color-mix(in srgb, var(--signal) 18%, transparent); color: var(--signal); }
+#offdl, #offdlg .btns button, .close, #ptop button, #ptop a, #exp .box, #offdlg .box { border-radius: 3px; }
+#ptop button, #ptop a, .close, #offdlg .btns button, #offdl { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+#view-lite { padding-bottom: 40px; }
+#view-lite[hidden], #view-games[hidden] { display: none; }
 </style>
 </head>
 <body>
 <div id="hub">
-  <h1>HUNTINGTON GAMES LAUNCHER</h1>
+  <div id="topbar">
+    <h1>HUNTINGTON GAMES LAUNCHER</h1>
+    <nav id="tabs"><button class="tab on" id="tab-games" data-tab="games">Games</button><button class="tab" id="tab-lite" data-tab="lite">Grapevine Lite</button></nav>
+    <button id="chip" title="Grapevine Lite"><span class="cdot" id="chip-dot"></span><span class="nm" id="chip-nm"></span></button>
+  </div>
+  <div id="view-games">
   <div class="sub">Pick a game.</div>
   <div class="grid" id="grid"></div>
   <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
+  </div>
+  <div id="view-lite" hidden></div>
 </div>
 <div id="offdlg"><div class="box"><h2 id="offdlg-title">Offline copy</h2><div id="offdlg-text"></div><div class="btns"><button id="offdlg-again">Download again</button><button id="offdlg-tab">Open in a new tab</button><button id="offdlg-close">Close</button></div></div></div>
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
@@ -586,6 +631,57 @@ render();
 if (!local && !BUNDLE) startCache(); // download every game and library right away
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
+
+// ===== Grapevine Lite: your Grapevine account in the launcher (lite/lite.js, loaded on demand) =====
+// Games read it as window.parent.HGLite (their name, verified players, +Friend). It is only downloaded when
+// someone opens the tab or has signed in before, so the launcher itself stays small.
+var liteP = null, liteMounted = false;
+function loadLite() {
+  if (liteP) return liteP;
+  liteP = new Promise(function (resolve, reject) {
+    if (window.HGLite) return resolve(window.HGLite);
+    if (BUNDLE) return reject(new Error('Grapevine Lite needs the internet, so it is not in the offline copy.'));
+    function run(code) {
+      try { var sc = document.createElement('script'); sc.textContent = code; document.head.appendChild(sc); resolve(window.HGLite); }
+      catch (e) { reject(e); }
+    }
+    if (local) { var sc = document.createElement('script'); sc.src = 'lite/lite.js'; sc.onload = function () { resolve(window.HGLite); }; sc.onerror = function () { reject(new Error('Could not load Grapevine Lite.')); }; document.head.appendChild(sc); return; }
+    fetchRepo('lite/lite.js').then(function (r) { run(r.html); }, function () { reject(new Error('Could not load Grapevine Lite. The game CDN (cdn.jsdelivr.net) may be blocked on this network.')); });
+  }).then(function (L) { L.on('change', paintChip); paintChip(); return L; }, function (e) { liteP = null; throw e; });
+  return liteP;
+}
+function savedName() { try { return localStorage.getItem('hglite:name') || ''; } catch (e) { return ''; } }
+function paintChip() {
+  var L = window.HGLite, me = L && L.me(), name = me ? me.name : (savedName() && hasSavedKey() ? savedName() : '');
+  var chip = document.getElementById('chip');
+  chip.className = name ? 'on' : '';
+  if (!name) return;
+  document.getElementById('chip-nm').textContent = name;
+  var s = L ? L.status().status : 'connecting';
+  document.getElementById('chip-dot').className = 'cdot' + (s === 'online' ? ' on' : s === 'signed-out' || s === 'error' ? '' : ' wait');
+}
+function hasSavedKey() { try { return !!localStorage.getItem('hglite:key'); } catch (e) { return false; } }
+function showTab(which) {
+  document.getElementById('view-games').hidden = which !== 'games';
+  document.getElementById('view-lite').hidden = which !== 'lite';
+  document.getElementById('tab-games').className = 'tab' + (which === 'games' ? ' on' : '');
+  document.getElementById('tab-lite').className = 'tab' + (which === 'lite' ? ' on' : '');
+  if (which !== 'lite' || liteMounted) return;
+  var box = document.getElementById('view-lite');
+  box.innerHTML = '<div class="sub" style="text-align:center;padding:30px 0">Loading Grapevine Lite...</div>';
+  loadLite().then(function (L) {
+    liteMounted = true; window.HGLiteUI.mount(box);
+    if (!L.me() && hasSavedKey()) L.resume();
+  }, function (e) {
+    box.innerHTML = ''; var d = document.createElement('div'); d.className = 'sub'; d.style.cssText = 'text-align:center;padding:30px 0'; d.textContent = e.message;
+    var b = document.createElement('button'); b.className = 'tab'; b.textContent = 'Try again'; b.onclick = function () { showTab('lite'); }; d.appendChild(document.createElement('br')); d.appendChild(b); box.appendChild(d);
+  });
+}
+document.getElementById('tab-games').onclick = function () { showTab('games'); };
+document.getElementById('tab-lite').onclick = function () { showTab('lite'); };
+document.getElementById('chip').onclick = function () { showTab('lite'); };
+if (!BUNDLE && hasSavedKey()) { paintChip(); loadLite().then(function (L) { L.resume(); }, function () {}); }   // signed in before: bring the account up quietly
+if (start === 'lite') showTab('lite');
 </script>
 </body>
 </html>

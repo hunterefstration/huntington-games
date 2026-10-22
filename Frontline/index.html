@@ -489,6 +489,25 @@ const rr = (a, b) => a + Math.random() * (b - a);
 const PI = Math.PI, TAU = PI * 2;
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > PI) d -= TAU; if (d < -PI) d += TAU; return d; };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Grapevine Lite (the launcher's account): one commander name everywhere, players proven by their account key, and a
+// Friend button that sends a real Grapevine friend request. The launcher owns the account (window.parent.HGLite); opened on
+// its own, or while signed out, none of this shows and the game behaves exactly as before.
+const GVL = {
+  get L() { try { return window.parent && window.parent !== window ? (window.parent.HGLite || null) : null; } catch (e) { return null; } },
+  name() {
+    const L = this.L, me = L && L.me();
+    if (me) return me.name;
+    try { return (localStorage.getItem('hglite:key') && localStorage.getItem('hglite:name')) || ''; } catch (e) { return ''; }   // new-tab copy: the name only
+  },
+  on() { const L = this.L; return !!(L && L.online()); },
+  tag(name) {   // a verified mark, plus a Friend button when it is somebody else
+    if (!name) return '';
+    const L = this.L, st = L ? L.friendState(name) : 'self';
+    const btn = st === 'none' ? ` <button class="tbtn" data-act="gvfriend" data-n="${esc(name)}" data-tip="Friend|Send a Grapevine friend request to ${esc(name)}.">+ Friend</button>`
+      : st === 'friend' ? ' <span class="note" style="color:#7be08a">friends</span>' : st === 'outgoing' ? ' <span class="note">request sent</span>' : st === 'incoming' ? ' <span class="note" style="color:#ffe2a6">asked you</span>' : '';
+    return ` <span style="color:#7be08a" data-tip="Verified|This is the Grapevine account ${esc(name)}.">&#10003;</span>` + btn;
+  }
+};
 const fmtTime = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -5640,6 +5659,7 @@ function mapPreview(id) {
 function seg(k, opts, cur, act) { return '<div class="seg">' + opts.map(o => '<button class="' + (String(o[0]) === String(cur) ? 'on' : '') + '" data-act="' + (act || 'opt') + '" data-k="' + k + '" data-v="' + o[0] + '">' + o[1] + '</button>').join('') + '</div>'; }
 function sel(k, opts, cur, act, extra) { return '<select data-act="' + (act || 'optsel') + '" data-k="' + k + '" ' + (extra || '') + '>' + opts.map(o => '<option value="' + o[0] + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>'; }
 function showScreen(name, arg) {
+  { const ln = GVL.name(); if (ln && SET.name !== ln.slice(0, 14)) SET.name = ln.slice(0, 14); }   // the Grapevine Lite name wins
   SCREEN = name; const m = MENU(); closeTech(); $('#tip').classList.add('hidden');
   const fn = SCREENS[name]; if (!fn) { m.innerHTML = ''; return; }
   const html = fn(arg); m.innerHTML = html; const ao = m.querySelector('[data-autofocus]'); if (ao) setTimeout(() => ao.focus(), 30); if (SCREENS_AFTER[name]) SCREENS_AFTER[name](arg);
@@ -5742,7 +5762,7 @@ SCREENS.settings = () => {
   <div class="row" style="gap:18px"><div><div class="lbl">Scroll with mouse edges</div>${o('edge', [[1, 'On'], [0, 'Off']])}</div><div><div class="lbl">Mouse wheel</div>${seg('scroll', [['pan', 'Moves the map'], ['zoom', 'Zooms']], SET.scroll === 'zoom' ? 'zoom' : 'pan', 'setv')}</div></div>
   <div class="lbl">Screen buttons size</div>${seg('uiSize', [['s', 'Small'], ['m', 'Normal'], ['l', 'Large']], SET.uiSize || 'm', 'setv')}
   <div class="row" style="gap:18px"><div><div class="lbl">Health bars</div>${seg('hpAlways', [[0, 'When hurt'], [1, 'Always']], SET.hpAlways ? 1 : 0, 'setb')}</div><div><div class="lbl">Show FPS</div>${o('fps', [[1, 'On'], [0, 'Off']])}</div></div>
-  <div class="lbl">Commander name</div><input type="text" maxlength="14" value="${esc(SET.name)}" data-act="name">
+  <div class="lbl">Commander name</div><input type="text" maxlength="14" value="${esc(SET.name)}" data-act="name"${GVL.name() ? ' readonly' : ''}>${GVL.name() ? '<div class="note">Your Grapevine Lite name.</div>' : ''}
   <div style="margin-top:14px"><button class="tbtn" data-act="adv">${SET.adv ? 'Hide' : 'Show'} advanced graphics</button></div>${adv}</div></div>`;
 };
 SCREENS.profile = () => {
@@ -6432,7 +6452,7 @@ function netReset(keepLobby) {
   try { if (NET.peer) { try { NET.peer.rel.onclose = null; } catch (e) { } NET.peer.pc.close(); } } catch (e) { }
   if (NET.pj) { const pj = NET.pj; NET.pj = null; setTimeout(() => { try { pj.destroy(); } catch (e) { } }, 200); }
   const mq = NET.mq; NET.mq = []; setTimeout(() => { for (const c of mq) { try { c.end(); } catch (e) { } } }, 300);
-  Object.assign(NET, { role: '', peer: null, via: '', code: '', codeState: '', codeErr: '', joinState: '', joinErr: '', lobby: null, guestName: '', hostName: '', guestReady: false, myReady: false, dirty: false, matchGuest: -1, leaving: false, guestFac: 0 });
+  Object.assign(NET, { role: '', peer: null, via: '', code: '', codeState: '', codeErr: '', joinState: '', joinErr: '', lobby: null, guestName: '', hostName: '', guestReady: false, myReady: false, dirty: false, matchGuest: -1, leaving: false, guestFac: 0, gvn: null, hostGvn: null, guestGv: '', hostGv: '' });
 }
 // ---------- host ----------
 // a guest that reached us (directly or through the relay) becomes THE guest once it says hello on that link
@@ -6486,7 +6506,7 @@ async function netJoin(raw) {
   const fail = msg => { if (!live()) return; done = true; timers.forEach(clearTimeout); netReset(); NET.joinCode = code; NET.joinState = 'error'; NET.joinErr = msg; if (SCREEN === 'mp') showScreen('mp'); };
   const use = (peer, via) => {
     if (!live()) { try { peer.pc.close(); } catch (e) { } return; } done = true; timers.forEach(clearTimeout);
-    NET.peer = peer; NET.via = via; wirePeer(peer, () => guestHostGone()); NET.joinState = 'connected'; NET.myFac = SET.fac | 0; sendRel({ t: 'hello', name: SET.name, ver: VERSION, nv: NETV, fac: NET.myFac });
+    NET.peer = peer; NET.via = via; wirePeer(peer, () => guestHostGone()); NET.joinState = 'connected'; NET.myFac = SET.fac | 0; sendRel({ t: 'hello', name: SET.name, ver: VERSION, nv: NETV, fac: NET.myFac }); if (GVL.on()) { NET.hostGvn = GVL.L.newChallenge(); sendRel({ t: 'gvq', n: NET.hostGvn }); }
     relayEnd(peer.relay ? peer.client : null);
     if (pj) { if (peer.relay) { NET.pj = null; setTimeout(() => { try { pj.destroy(); } catch (e) { } }, 200); } else setTimeout(() => { try { pj.disconnect(); } catch (e) { } }, 1500); }
     showScreen('mplobby');
@@ -6524,7 +6544,19 @@ function netMessage(m) {
     case 'pong': NET.rtt = performance.now() - m.ts; if (W && NET.role === 'host') { const g = W.players.find(p => p.kind === 'remote'); if (g) g.rtt = NET.rtt; } break;
     case 'full': NET.joinState = 'error'; NET.joinErr = 'That game is already full.'; netReset(); showScreen('mp'); break;
     case 'badver': NET.joinState = 'error'; NET.joinErr = 'That game uses a different version of Frontline. Ask your friend to reload the page.'; netReset(); showScreen('mp'); break;
-    case 'hello': if (NET.role === 'host') { if ((m.ver && m.ver !== VERSION) || (m.nv | 0) !== NETV) { sendRel({ t: 'badver' }); const pp = NET.peer; setTimeout(() => { try { pp && pp.pc.close(); } catch (e) { } }, 300); NET.peer = null; return; } NET.guestName = String(m.name || 'Friend').slice(0, 14); if (NET.guestName === SET.name) NET.guestName += ' 2'; setGuestFac(m.fac); lobbyChanged(); if (SCREEN === 'mplobby') refreshLobby(); lobbyChat('System', NET.guestName + ' joined.'); } break;
+    case 'hello': if (NET.role === 'host') { if ((m.ver && m.ver !== VERSION) || (m.nv | 0) !== NETV) { sendRel({ t: 'badver' }); const pp = NET.peer; setTimeout(() => { try { pp && pp.pc.close(); } catch (e) { } }, 300); NET.peer = null; return; } NET.guestName = String(m.name || 'Friend').slice(0, 14); if (NET.guestName === SET.name) NET.guestName += ' 2'; setGuestFac(m.fac); NET.guestGv = ''; if (GVL.on()) { NET.gvn = GVL.L.newChallenge(); sendRel({ t: 'gvq', n: NET.gvn }); } lobbyChanged(); if (SCREEN === 'mplobby') refreshLobby(); lobbyChat('System', NET.guestName + ' joined.'); } break;
+    case 'gvq': { const L = GVL.L; if (L && L.online() && typeof m.n === 'string' && m.n.length <= 64) L.prove(m.n, 'frontline').then(pr => { if (pr) sendRel({ t: 'gva', p: pr }); }); break; }
+    case 'gva': {
+      const L = GVL.L, host = NET.role === 'host', n = host ? NET.gvn : NET.hostGvn; if (!L || !n) break;
+      if (host) NET.gvn = null; else NET.hostGvn = null;
+      L.check(m.p, n, 'frontline').then(r => {
+        if (!r.ok || !NET.peer) return;
+        L.noteMet(r.name, 'Frontline');
+        if (host) { NET.guestGv = r.name; NET.guestName = r.name.slice(0, 14); lobbyChanged(); } else NET.hostGv = r.name;
+        if (SCREEN === 'mplobby') refreshLobby();
+      });
+      break;
+    }
     case 'ready': if (NET.role === 'host') { NET.guestReady = !!m.v; if (SCREEN === 'mplobby') refreshLobby(); lobbyChanged(); } break;
     case 'fac': if (NET.role === 'host') { setGuestFac(m.v); lobbyChanged(); if (SCREEN === 'mplobby') refreshLobby(); } break;   // 3.0: the guest picked an army
     case 'lobby': if (NET.role === 'guest') { NET.lobby = m.l; NET.hostName = m.l.hostName; if (SCREEN !== 'mplobby' && SCREEN !== 'results' && !inGame) showScreen('mplobby'); else refreshLobby(); } break;
@@ -6578,8 +6610,8 @@ function lobbyMainHtml() {
     if (NET.codeState === 'error') return '<div class="note" style="padding:20px;color:#ff9a8a;text-align:center">' + esc(NET.codeErr) + '</div><button class="mbtn" data-act="mphost">Try again</button>';
     for (let i = 0; i < n; i++) {
       const s = SK.slots[i]; rows += `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span>`;
-      if (i === 0) rows += `<b style="min-width:130px">${esc(SET.name)} (Host)</b>` + sel('hfac', FACS.map(f => [f.id, f.n]), SK.fac | 0, 'hostfac', 'data-tip="Your army|Pick the army you lead."');
-      else if (i === 1) rows += `<b style="min-width:130px">${NET.peer ? esc(NET.guestName) : '<span style="color:#8c9db1">Waiting for friend...</span>'}</b><span style="color:${NET.guestReady ? '#7be08a' : '#8c9db1'}">${NET.peer ? (NET.guestReady ? 'Ready' : 'Not ready') : ''}</span>${NET.peer ? '<span class="note" style="margin-left:8px">' + FACS[NET.guestFac | 0].n + '</span>' : ''}${viaTag()}`;
+      if (i === 0) rows += `<b style="min-width:130px">${esc(SET.name)} (Host)${GVL.on() ? ' <span style="color:#7be08a" data-tip="Verified|You are signed in to Grapevine Lite.">&#10003;</span>' : ''}</b>` + sel('hfac', FACS.map(f => [f.id, f.n]), SK.fac | 0, 'hostfac', 'data-tip="Your army|Pick the army you lead."');
+      else if (i === 1) rows += `<b style="min-width:130px">${NET.peer ? esc(NET.guestName) + GVL.tag(NET.guestGv) : '<span style="color:#8c9db1">Waiting for friend...</span>'}</b><span style="color:${NET.guestReady ? '#7be08a' : '#8c9db1'}">${NET.peer ? (NET.guestReady ? 'Ready' : 'Not ready') : ''}</span>${NET.peer ? '<span class="note" style="margin-left:8px">' + FACS[NET.guestFac | 0].n + '</span>' : ''}${viaTag()}`;
       else rows += sel('kind' + i, [['ai', 'AI Commander'], ['closed', 'Closed']], s.kind, 'slotkind', 'data-i="' + i + '"');
       if (s.kind === 'ai') rows += sel('pers' + i, Object.values(AIP).map(p => [p.id, p.name]), s.pers, 'slotpers', 'data-i="' + i + '"') + sel('diff' + i, Object.entries(AID).map(([k, v]) => [k, v.n]), s.diff, 'slotdiff', 'data-i="' + i + '"') + slotFacSel(s, i);
       if (s.kind !== 'closed') rows += sel('team' + i, [[0, 'Team A'], [1, 'Team B'], [2, 'Team C'], [3, 'Team D']], s.team, 'slotteam', 'data-i="' + i + '"');
@@ -6593,7 +6625,7 @@ function lobbyMainHtml() {
   }
   const L = NET.lobby; if (!L) return '<div class="note" style="padding:30px;text-align:center">Connected! Waiting for the host...</div>';
   const colors = assignColors({ slots: L.slots }); const pl = L.slots.map((s, i) => ({ s, i })).filter(x => x.s.kind !== 'closed');
-  const rows = pl.map(({ s, i }) => `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span><b style="min-width:130px">${s.kind === 'remote' ? esc(SET.name) + ' (You)' : i === 0 ? esc(L.hostName) + ' (Host)' : esc(AIP[s.pers] ? AIP[s.pers].name : 'AI')}</b><span class="note">${s.kind === 'ai' ? 'AI - ' + AID[s.diff].n : ''} Team ${'ABCD'[s.team]} - ${FACS[(s.kind === 'remote' ? NET.myFac : s.fac) | 0].n}</span></div>`).join('');
+  const rows = pl.map(({ s, i }) => `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span><b style="min-width:130px">${s.kind === 'remote' ? esc(SET.name) + ' (You)' : i === 0 ? esc(L.hostName) + ' (Host)' + GVL.tag(NET.hostGv) : esc(AIP[s.pers] ? AIP[s.pers].name : 'AI')}</b><span class="note">${s.kind === 'ai' ? 'AI - ' + AID[s.diff].n : ''} Team ${'ABCD'[s.team]} - ${FACS[(s.kind === 'remote' ? NET.myFac : s.fac) | 0].n}</span></div>`).join('');
   return `<div class="row"><img src="${mapPreview(L.map)}" style="width:150px;border-radius:6px"><div><b style="color:#ffe2a6;font-size:18px">${esc(L.mapName)}</b><div class="note">Score ${L.tickets} | Money ${L.supplies} | Fog ${L.fog ? 'on' : 'off'} | Army limit ${L.maxPop} | ${esc(wxName({ tod: mapDef(L.map).tod, weather: mapDef(L.map).wx }))}${mapDef(L.map).naval ? ' | Ships' : ''}</div></div></div><div class="lbl">Players</div>${rows}
   <div class="lbl">Your army</div>${seg('gfac', FACS.map(f => [f.id, f.n]), NET.myFac | 0, 'gfac')}<div class="note">${esc(FACS[NET.myFac | 0].d)}</div>
   <div style="margin-top:8px">${viaTag()}</div>
@@ -6609,6 +6641,7 @@ function refreshLobby() { const l = $('#lobbyMain'); if (l && SCREEN === 'mplobb
 ACT.mpback = () => { netReset(); showScreen('main'); };
 ACT.mphost = () => { netReset(); showScreen('mplobby'); netHostStart(); };
 ACT.mpjoin = () => { const i = $('#joincode'); netJoin(i ? i.value : NET.joinCode); };
+ACT.gvfriend = el => { const L = GVL.L, who = el.dataset.n; if (!L || !who) return; el.disabled = true; L.addFriend(who).then(() => { toast('Friend request sent to ' + who); if (SCREEN === 'mplobby') refreshLobby(); }, e => { el.disabled = false; toast(e.message || 'Could not send that request'); }); };
 ACT.mpready = () => { NET.myReady = !NET.myReady; sendRel({ t: 'ready', v: NET.myReady ? 1 : 0 }); refreshLobby(); };
 ACT.gfac = el => { NET.myFac = +el.dataset.v === 1 ? 1 : 0; SET.fac = NET.myFac; saveSet(); sendRel({ t: 'fac', v: NET.myFac }); refreshLobby(); };   // 3.0: guest picks an army
 ACT.hostfac = el => { SK.fac = +el.value === 1 ? 1 : 0; SET.fac = SK.fac; saveSet(); refreshLobby(); };
@@ -6817,7 +6850,7 @@ if (DEBUG) {
     FACS, LEG_OF, fu, techList, techPrev, btx, callText, bIcon, bFac, MDL, hurt, recalcMods, refreshUnit, uRange, get CODEXFAC() { return CODEXFAC; }, aiFac, warSpawnNow() { if (W && W.war) { W.war.go = true; warTick(); } }, warDrop, warTick, lgBModel, bModel, get NETV() { return NETV; }, buildSnapshot, netBinary, buildMeta, applyMeta,
     // offline online-match tests: a page becomes a lobby host without the matchmaking service, and a test link (any object shaped like a peer) joins it
     netFakeHost() { netReset(); NET.role = 'host'; NET.codeState = 'ready'; NET.code = '123456'; SK = SK || defaultSK(); SK.speed = 1; SK.slots[1] = Object.assign(SK.slots[1], { kind: 'remote', team: 1 }); showScreen('mplobby'); },
-    netAttach(role, peer) { if (role === 'host') { hostCandidate(peer); return; } netReset(); NET.role = 'guest'; NET.peer = peer; NET.via = 'direct'; wirePeer(peer, () => guestHostGone()); NET.joinState = 'connected'; NET.myFac = SET.fac | 0; sendRel({ t: 'hello', name: SET.name, ver: VERSION, nv: NETV, fac: NET.myFac }); showScreen('mplobby'); }
+    netAttach(role, peer) { if (role === 'host') { hostCandidate(peer); return; } netReset(); NET.role = 'guest'; NET.peer = peer; NET.via = 'direct'; wirePeer(peer, () => guestHostGone()); NET.joinState = 'connected'; NET.myFac = SET.fac | 0; sendRel({ t: 'hello', name: SET.name, ver: VERSION, nv: NETV, fac: NET.myFac }); if (GVL.on()) { NET.hostGvn = GVL.L.newChallenge(); sendRel({ t: 'gvq', n: NET.hostGvn }); } showScreen('mplobby'); }
   };
 }
 // ---------------- boot ----------------

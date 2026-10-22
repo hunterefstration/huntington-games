@@ -54,3 +54,18 @@ Built, 324 local checks pass. Stress test found, still to fix:
 - major: one-way WebRTC failure keeps guest sending into a dead channel for 30 s.
 - minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
 Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
+
+## Grapevine Lite + Grapevine relay (branch claude/intelligent-goodall-akekpu, NOT released)
+- Why Grapevine failed at school: its server is a home Mac reached over WebRTC; school networks block that. Blocky works because two
+  browsers just need to find each other. Fix lives in the **grapevine** repo (same branch name): `relay/` (HGNet over public MQTT relays on 443,
+  end-to-end encrypted, raced against PeerJS) + the same PeerJS TURN servers Blocky uses. The owner must restart `archive.js` and paste the new client.html.
+- **Grapevine Lite** = the launcher's second tab (`lite/` here; `tools/build-lite.sh` builds `lite/lite.js`). Same account/recovery key, relay link to the
+  real server. `window.HGLite` is what games read as `window.parent.HGLite`: `me()`, `friendState()`, `addFriend()`, `prove()`/`check()`.
+  The hub (index.html) was restyled to Grapevine's amber/dark theme (CSS variables at the top); the licence block is untouched.
+- Games with multiplayer (Blocky Shooter, Frontline): name locked to the Lite name, host and guest prove their account to each other
+  (challenge -> signed proof, checked against the server's public key for that name), verified players get a check mark and a +Friend button.
+  Their transports are unchanged. Other games have no multiplayer.
+- Release: `tools/release.sh prepare` copies only the named game folders from the checkout; the hub (index.html) and `lite/` must be copied into
+  the worktree by hand before `finish` (they are not game folders), and the release must also add `Blocky Shooter V2` and `Frontline`.
+- Tests: `tools/tests/lite.mjs` (tab, accounts, friends, proofs) and `tools/tests/lite-games.mjs` need the Grapevine rig (see its test/README.md and relay notes).
+- Lite config (archive ids, pinned server key) is copied in `lite/core.js`; keep in step with Grapevine's `client.html` CONFIG.

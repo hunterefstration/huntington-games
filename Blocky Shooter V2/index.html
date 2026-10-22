@@ -10303,9 +10303,27 @@
         const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
         const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp ? ' TEAM DEATHMATCH' : '');
         const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        // Grapevine Lite (the launcher's account): one name in every game, players proven by their account key, and a
+        // + FRIEND button that sends a real Grapevine friend request. The launcher page owns the account (window.parent.HGLite);
+        // opened on its own, or while signed out, none of this shows and the game behaves exactly as before.
+        const GVL = {
+            get L() { try { return window.parent && window.parent !== window ? (window.parent.HGLite || null) : null; } catch (e) { return null; } },
+            name() {
+                const L = this.L, me = L && L.me();
+                if (me) return me.name;
+                try { return (localStorage.getItem('hglite:key') && localStorage.getItem('hglite:name')) || ''; } catch (e) { return ''; }   // new-tab copy: the name only
+            },
+            on() { const L = this.L; return !!(L && L.online()); },
+            friendBtn(name) {
+                const L = this.L; if (!L) return '';
+                const st = L.friendState(name);
+                if (st === 'none') return `<button class="chip" data-gvfriend="${escHtml(name)}" title="Send a Grapevine friend request">+ FRIEND</button>`;
+                return st === 'friend' ? '<span class="text-[10px] text-green-300 font-black">FRIEND</span>' : st === 'outgoing' ? '<span class="text-[10px] text-gray-400 font-black">REQUEST SENT</span>' : st === 'incoming' ? '<span class="text-[10px] text-amber-300 font-black">ASKED YOU</span>' : '';
+            }
+        };
 
         Object.assign(NET, {
-            name: String(settings.mpName || ('Player' + (100 + Math.floor(Math.random() * 900)))).slice(0, 16), lanOnly: !!settings.mpLan,
+            name: String(GVL.name() || settings.mpName || ('Player' + (100 + Math.floor(Math.random() * 900)))).slice(0, 16), lanOnly: !!settings.mpLan,
             lobby: { mode: 'coop', map: 'random', diff: 'normal' }, hostPeer: null, invites: [], view: 'home', joinState: '',
             sendAcc: 0, hitOut: [], pvpOut: new Map(), myShots: [], shotOut: [], fireT: 0, score: [0, 0], target: 0, feed: [],
             me: null, respawnT: 0, lastBy: -1, lastSrc: 0, over: false, pingAt: 0, tickAt: 0, rtt: 0, deadIds: new Map(), hudT: 0, spawns: [[], []], nextId: 1
@@ -10574,7 +10592,7 @@
         }
         function hostLobbyUpdate() {
             if (!NET.host) return;
-            const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color }));
+            const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv }));
             for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
             renderMP();
         }
@@ -10668,7 +10686,7 @@
             for (const q of NET.joinPeers || []) { q.gone = true; try { q.pc.close(); } catch (e) {} }     // reply codes still waiting
             NET.joinPeers = []; NET.joinVia = ''; NET.inviteText = ''; NET.replyFor = '';
             if (NET.pj) { const pj = NET.pj; NET.pj = null; setTimeout(() => { try { pj.destroy(); } catch (e) {} }, 300); }
-            Object.assign(NET, { saidHi: false, code: '', codeState: '', showLong: false, joinCode: '', on: false, host: false, pvp: false, inGame: false, dead: false, id: 0, team: 0, mode: 'coop', invites: [], hostPeer: null, joinState: '', replyCode: '', me: null, over: false, nextId: 1, feed: [], slowT: 0 });
+            Object.assign(NET, { saidHi: false, hostGvn: null, hostAsked: false, code: '', codeState: '', showLong: false, joinCode: '', on: false, host: false, pvp: false, inGame: false, dead: false, id: 0, team: 0, mode: 'coop', invites: [], hostPeer: null, joinState: '', replyCode: '', me: null, over: false, nextId: 1, feed: [], slowT: 0 });
             NET.hitOut.length = 0; NET.pvpOut.clear(); NET.myShots.length = 0; NET.shotOut.length = 0; NET.deadIds.clear();
             netHud(false);
             stopHiddenTicker();
@@ -10679,6 +10697,10 @@
         function netMessage(peer, m) {
             if (NET.host) hostMessage(peer.player, peer, m); else clientMessage(m);
         }
+        function gvAnswer(peer, m) {
+            const L = GVL.L; if (!L || !L.online() || typeof m.n !== 'string' || m.n.length > 64 || !peer) return;
+            L.prove(m.n, 'blocky').then(pr => { if (pr) sendRel(peer, { t: 'gva', p: pr }); });
+        }
         function hostMessage(p, peer, m) {
             if (!p) return;
             const now = performance.now();
@@ -10686,11 +10708,21 @@
                 case 'hi': {
                     const first = p.pending;
                     p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false;
+                    if (GVL.on() && !p.gvn) { p.gvn = GVL.L.newChallenge(); sendRel(peer, { t: 'gvq', n: p.gvn }); }   // "prove you are your Grapevine account"
                     hostLobbyUpdate();
                     if (first && NET.inGame) hostLateJoin(p);          // jumped into a match that's already going (or rejoined after a drop)
                     break;
                 }
                 case 'mods': p.mods = Array.isArray(m.l) ? m.l.slice(0, 10) : []; break;
+                case 'gvq': gvAnswer(peer, m); break;
+                case 'gva': {
+                    const L = GVL.L, n = p.gvn; if (!L || !n) break; p.gvn = null;
+                    L.check(m.p, n, 'blocky').then(r => {
+                        if (!r.ok || netPlayers.get(p.id) !== p) return;
+                        p.gv = true; p.name = r.name.slice(0, 16); L.noteMet(r.name, 'Blocky Shooter'); hostLobbyUpdate();
+                    });
+                    break;
+                }
                 case 'bye': netRemovePlayer(p.id, 'left the party'); break;
                 case 'po': p.rtt = now - m.ts; break;
                 case 'S': {
@@ -10714,8 +10746,15 @@
         function clientMessage(m) {
             const now = performance.now();
             switch (m.t) {
+                case 'gvq': gvAnswer(NET.hostPeer, m); break;
+                case 'gva': {
+                    const L = GVL.L, n = NET.hostGvn; if (!L || !n) break; NET.hostGvn = null;
+                    L.check(m.p, n, 'blocky').then(r => { if (!r.ok) return; const hp = netPlayers.get(0); if (hp) { hp.gv = true; hp.gvSelf = true; L.noteMet(r.name, 'Blocky Shooter'); renderMPPlayers(); } });
+                    break;
+                }
                 case 'lobby': {
                     if (!NET.saidHi) { NET.saidHi = true; sendRel(NET.hostPeer, { t: 'hi', name: NET.name }); }
+                    if (GVL.on() && !NET.hostGvn && !NET.hostAsked) { NET.hostAsked = true; NET.hostGvn = GVL.L.newChallenge(); sendRel(NET.hostPeer, { t: 'gvq', n: NET.hostGvn }); }   // and the host proves itself to us
                     NET.id = m.you; NET.lobby = { mode: m.mode, map: m.map, diff: m.diff };
                     const seen = new Set();
                     for (const q of m.players) {
@@ -10724,6 +10763,8 @@
                         let p = netPlayers.get(q.id);
                         if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
                         p.name = q.name; p.team = q.team; p.color = q.color;
+                        if (q.id !== 0) p.gv = !!q.gv;               // the host vouches for the others; the host proves itself (gva)
+                        if (q.gv && q.id !== 0 && GVL.L) GVL.L.noteMet(q.name, 'Blocky Shooter');
                     }
                     for (const id of [...netPlayers.keys()]) if (!seen.has(id)) netRemovePlayer(id);
                     renderMP();
@@ -11547,9 +11588,10 @@
             const v = NET.view;
             let h = '';
             if (v === 'home') {
+                const lname = GVL.name(); if (lname && NET.name !== lname) NET.name = lname;
                 h += `<div class="mdesc text-sm mb-4">Play with friends straight from your browsers - no accounts. One person <b class="text-white">hosts</b> (their computer runs the game) and gets a <b class="text-white">6-digit party code</b>. Everyone else clicks <b class="text-white">JOIN</b> and types it in.</div>`;
                 if (NET.homeMsg) h += `<div class="bg-red-900/50 border border-red-500/50 rounded-lg px-4 py-2 font-bold text-red-200 mb-4">${escHtml(NET.homeMsg)}</div>`;
-                h += `<div class="mlabel">YOUR NAME</div><input id="mp-name" maxlength="16" value="${escHtml(NET.name)}" class="bg-gray-900 border-2 border-gray-700 rounded-lg px-3 py-2 font-black text-lg w-72 text-white focus:outline-none focus:border-purple-400">`;
+                h += `<div class="mlabel">YOUR NAME</div><input id="mp-name" maxlength="16" value="${escHtml(NET.name)}"${GVL.name() ? ' readonly title="Your Grapevine Lite name"' : ''} class="bg-gray-900 border-2 border-gray-700 rounded-lg px-3 py-2 font-black text-lg w-72 text-white focus:outline-none focus:border-purple-400">${GVL.name() ? '<div class="text-xs text-gray-400 mt-1">Playing as your Grapevine account.</div>' : (GVL.L ? '<div class="text-xs text-gray-400 mt-1">Tip: sign in to Grapevine Lite in the launcher to keep one name and make friends from here.</div>' : '')}`;
                 h += mpClassRow();
                 h += `<label class="flex items-center gap-3 text-sm font-bold text-gray-300 mt-4"><input type="checkbox" id="mp-lan" class="w-4 h-4 accent-purple-500"${NET.lanOnly ? ' checked' : ''}> Same Wi-Fi only (skips the one-time "what's my address?" lookup - only works on the same network)</label>`;
                 h += `<div class="grid grid-cols-2 gap-4 mt-6">
@@ -11619,11 +11661,11 @@
         function renderMPPlayers() {
             const el = $('mp-players'); if (!el) return;
             const pvp = NET.lobby.mode !== 'coop';
-            const list = [{ id: NET.id, name: NET.name, team: NET.host && NET.me ? NET.me.team : NET.team, color: NET.host ? COOP_COLORS[0] : (NET.color || 0x888888), rtt: 0, me: true }]
-                .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending })));
+            const list = [{ id: NET.id, name: NET.name, team: NET.host && NET.me ? NET.me.team : NET.team, color: NET.host ? COOP_COLORS[0] : (NET.color || 0x888888), rtt: 0, me: true, gv: GVL.on() }]
+                .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv })));
             el.innerHTML = list.sort((a, b) => a.id - b.id).map(p => {
                 const col = pvp ? TEAM_COLORS[p.team] : p.color;
-                return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${escHtml(p.name)}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 ? '' : Math.round(p.rtt) + ' ms'}</div>${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
+                return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 ? '' : Math.round(p.rtt) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
             }).join('');
         }
         function renderMPInvites() {
@@ -11671,6 +11713,7 @@
                 const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - p.team;
                 NET.hostMsg = ''; hostLobbyUpdate();
             }
+            else if (b.dataset.gvfriend) { const L = GVL.L, who = b.dataset.gvfriend; if (L) { b.disabled = true; L.addFriend(who).then(renderMPPlayers, (e) => { b.disabled = false; netFeed(escHtml(e.message || 'Could not send that request')); }); } }
             else if (b.dataset.mpkick) { const id = +b.dataset.mpkick; const p = netPlayers.get(id); if (p) { sendRel(p.peer, { t: 'bye' }); netRemovePlayer(id, 'was kicked'); } }
             else if (b.dataset.invcopy) { const i = inv(b.dataset.invcopy); if (i && i.code) copyText(i.code); }
             else if (b.dataset.invcancel) { const i = inv(b.dataset.invcancel); if (i) { try { i.peer.pc.close(); } catch (e) {} NET.invites = NET.invites.filter(x => x !== i); renderMPInvites(); } }
@@ -11679,7 +11722,7 @@
         ui.mp.addEventListener('keydown', (ev) => { if (ev.target.id === 'mp-join-code' && ev.key === 'Enter') clientJoinCode(ev.target.value); });
         ui.mp.addEventListener('input', (ev) => {
             if (ev.target.id === 'mp-join-code') { ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 6); NET.joinCode = ev.target.value; }
-            if (ev.target.id === 'mp-name') { NET.name = ev.target.value.replace(/[<>]/g, '').slice(0, 16) || 'Player'; if (NET.me) NET.me.name = NET.name; settings.mpName = NET.name; saveJSON('blocky21_settings', settings); }
+            if (ev.target.id === 'mp-name' && !GVL.name()) { NET.name = ev.target.value.replace(/[<>]/g, '').slice(0, 16) || 'Player'; if (NET.me) NET.me.name = NET.name; settings.mpName = NET.name; saveJSON('blocky21_settings', settings); }
             // pasted codes survive the menu redrawing (someone joining, a status update) instead of vanishing
             if (ev.target.id === 'mp-code') NET.inviteText = ev.target.value;
             if (ev.target.dataset && ev.target.dataset.invreply) { const i = NET.invites.find(x => x.key === ev.target.dataset.invreply); if (i) i.reply = ev.target.value; }
