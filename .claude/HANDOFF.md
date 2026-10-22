@@ -70,6 +70,10 @@ Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: n
 - Chunk 2 done: sim in `src/js/60-62` (state, formulas, time/actions/saves), UI in `70-74`. Effects are measured
   against each nation's start (`n.base`) so the 2026 data is the starting point; AI nations run the same formulas plus
   `aiFiscal`. Balance check: run 120 x `__sov.worldMonth(true)` after `__sov.newGame(...)` and look for NaN/extremes.
-  Next: chunk 3 (living map), see the plan.
+  All chunks done (v1.0): 21-life (living map), 63 politics, 64 reaction, 65 elections, 66 diplomacy, 67 war, 68/68b events,
+  69 progress, 75-79 screens. Systems register with SYSTEM_INITS / DAILY / MONTHLY (60-sim-state.js); ensureSystems() fills
+  missing state so old saves keep working. Top-level code in a file may only use names from files that sort before it.
+  Full-game check: start a game, call __sov.nextDay() in a loop and answer any #modal (see the play-through test idea in
+  the plan). Release: `tools/release.sh prepare N Sovereign` now also copies Sovereign/src, data, tools and hub/sovereign.jpg.
 - Not yet in the Launcher (another agent is editing it): at release add the card + `hub/sovereign.jpg`, and add
   'Sovereign' to GAMES in `tools/build-release.py`.

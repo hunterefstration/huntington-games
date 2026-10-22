@@ -2,7 +2,7 @@
 // Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-sovereign.js.
 import * as THREE from 'three';
 
-const VERSION = '0.1';
+const VERSION = '1.0';
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;

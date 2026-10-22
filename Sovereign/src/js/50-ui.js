@@ -31,7 +31,7 @@ const UI = {
   },
 
   init() {
-    $('#title .ver').textContent = 'early build ' + VERSION;
+    $('#title .ver').textContent = 'version ' + VERSION;
     document.addEventListener('click', e => {
       const b = e.target.closest('[data-act]'); if (!b) return;
       const a = b.dataset.act;
@@ -55,7 +55,7 @@ const UI = {
       else if (a === 'fly') { const c = World.countries[+b.dataset.idx]; flyToCountry(c); }
       else if (a === 'close-card') this.select(null);
       else if (a === 'close-modal') this.closeModal();
-      else if (a === 'quit') { this.closeModal(); if (G) autosave(); G = null; this.show('title'); }
+      else if (a === 'quit') { this.closeModal(); Clock.pause(); (G && !G.over ? saveTo('auto') : Promise.resolve()).then(() => { G = null; this.show('title'); }); }
       else if (a === 'confirm-ok') { this.closeModal(); if (this.onOk) this.onOk(); }
     });
     // country select
@@ -204,7 +204,7 @@ const UI = {
   credits() {
     this.modal(`<h2>Credits</h2><div class="credits">
       <div class="hg">A Huntington Games production</div>
-      <p><b>Sovereign</b> early build ${VERSION}. Made by Huntington Games.</p>
+      <p><b>Sovereign</b> version ${VERSION}. Made by Huntington Games.</p>
       <p><b>Country figures:</b> rounded public estimates for 2025. Leaders as of mid 2026. Portraits are drawings, not photos.</p>
       <p><b>Map borders:</b> Natural Earth (public domain), via world-atlas.</p>
       <p><b>Country facts:</b> mledoze/countries (Open Database License).</p>

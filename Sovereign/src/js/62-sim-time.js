@@ -142,7 +142,7 @@ async function loadFrom(slot) {
   G = deserialize(raw.startsWith('gz:') ? await gunzip64(raw.slice(3)) : raw); for (const n of G.nations) if (n) n.budget = budgetOf(n);
   return true;
 }
-function autosave() { if (G) saveTo('auto'); }
+function autosave() { return G && !G.over ? saveTo('auto') : Promise.resolve(); }
 async function exportSave() { return 'SOV1:' + await gzip64(serialize()); }
 async function importSave(code) {
   G = deserialize(await gunzip64(code.trim().replace(/^SOV1:/, ''))); for (const n of G.nations) if (n) n.budget = budgetOf(n);

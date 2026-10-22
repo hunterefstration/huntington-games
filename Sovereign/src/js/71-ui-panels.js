@@ -56,8 +56,7 @@ const Panels = {
       <div class="facts"><b>Blocs</b><span>${n.blocs.map(b => BLOCS[b] || b).join(', ') || 'none'}</span>
       <b>Strengths</b><span>${n.res.map(r => RES_NAMES[r] || r).join(', ')}</span>
       <b>Military</b><span>${fmtInt(n.mil)} troops, ${usd(n.milx)} a year${n.nukes ? ', about ' + fmtInt(n.nukes) + ' nuclear warheads' : ''}</span>
-      <b>Currency</b><span>${esc(World.countries[n.idx].curName)} (${n.mon.cur})</span></div>
-      <div class="note-box">This early build runs the economy, budget and money. Laws, parliament, elections, diplomacy and war arrive in the next updates.</div>`;
+      <b>Currency</b><span>${esc(World.countries[n.idx].curName)} (${n.mon.cur})</span></div>`;
   },
 
   economy(el) {

@@ -439,7 +439,17 @@ Possible later: scenario packs (Cold War 1962...), Opposition Leader mode, multi
 
 ## 17. Progress
 
-- Chunk 1 (engine and map): done. Build with `node tools/build-sovereign.js`; data with `node tools/sovereign-data.js`.
-- Chunk 2 (country and economy core): done. `Sovereign/data/stats.tsv` holds every country's 2025 figures and mid-2026
-  leader (edit it to correct a leader or number). Real-time clock, economy, budget, central bank, pegs, euro, reserve
-  currencies, IMF and default, Why? breakdowns, forecasts, charts, leader setup with face maker, 3 save slots + autosave.
+All 10 chunks are built (version 1.0). What is in the game, honestly counted:
+- 197 countries with 2025 data and mid-2026 leaders; 3D globe with zoom to street level; cities, roads, ships on 14 sea
+  lanes, planes, people, cars, crowds, project landmarks, war fronts, soldiers, explosions, disaster icons.
+- Economy, budget (7 taxes, 14 ministries), central bank, pegs, euro, dollarisation, reserve currencies, IMF, default.
+- 14 groups of society, about 80 laws in 13 categories, parliament with votes, courts, cabinet of 8, 25 projects.
+- Public reaction to every action: headlines from 4 outlets, social posts, protests and rallies, markets, spin.
+- Elections with campaigns, debates, promises, election night map; term limits; coups, revolutions, no-confidence, impeachment.
+- Diplomacy: relations for every pair, leader personalities, 17 actions, treaties, sanctions, tariffs, organisations, UN
+  Security Council with vetoes, 6 world goods prices, AI countries acting, requests to the player.
+- War: armies from real data, fronts on real borders, allies and foreign aid, strikes, blockades, nuclear weapons, peace
+  deals, annexation, spies with 5 operations. The Russia-Ukraine war is under way at the start.
+- 133 events (fewer than the 400 first planned, each with 2-3 choices), 9 key people, 36 technologies, 97 achievements,
+  7 victories, Legacy Score, endings with a newspaper front page, Hall of Leaders, tutorial, help and encyclopedia.
+- Not built: scenario packs (Cold War 1962...), Opposition Leader mode, multiplayer.

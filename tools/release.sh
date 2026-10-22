@@ -15,7 +15,9 @@ prepare)
   [ "$N" -eq $((LAST + 1)) ] || { echo "next release should be r$((LAST + 1))"; exit 1; }
   git -C "$R" worktree remove --force "$W" 2>/dev/null || rm -rf "$W"
   git -C "$R" worktree add -q --detach "$W" "r$LAST"
-  for d in "$@"; do cp "$R/$d/index.html" "$W/$d/index.html"; echo "copied $d"; done
+  for d in "$@"; do mkdir -p "$W/$d"; cp "$R/$d/index.html" "$W/$d/index.html"; echo "copied $d"; done
+  # Sovereign is built from many source files: ship them too (the Launcher still loads only index.html)
+  case " $* " in *" Sovereign "*) cp -r "$R/Sovereign/src" "$R/Sovereign/data" "$W/Sovereign/"; cp "$R/tools/build-sovereign.js" "$R/tools/sovereign-data.js" "$R/tools/build-release.py" "$R/tools/release.sh" "$W/tools/"; cp "$R/hub/sovereign.jpg" "$W/hub/"; echo "copied Sovereign sources";; esac
   python3 "$R/tools/rebrand-hub.py" "$W/index.html"
   echo "prepared $W from r$LAST - edit the game cards in $W/index.html, then: tools/release.sh finish $N \"message\"" ;;
 finish)
