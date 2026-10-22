@@ -1,10 +1,10 @@
-// Grapevine Lite - the launcher tab. Draws into any element with HGLiteUI.mount(el).
+// Grapevine - the launcher tab. Draws into any element with HGGrapevineUI.mount(el).
 // Styled by the launcher's Grapevine theme variables (--panel, --raise, --line, --signal ...); the
 // small stylesheet below only uses those, so it follows the theme wherever it is mounted.
 (function () {
   'use strict';
-  if (window.HGLiteUI) return;
-  var L = window.HGLite;
+  if (window.HGGrapevineUI) return;
+  var L = window.HGGrapevine;
 
   var css = [
     '.gl{max-width:640px;margin:0 auto;font-family:var(--sans)}',
@@ -69,12 +69,12 @@
     return e;
   }
 
-  var root, view = 'friends', mode = 'in', pendingKey = null, toastT = null, busy = false, diagHtml = null;
+  var root, gate = false, mounts = [], view = 'friends', mode = 'in', pendingKey = null, toastT = null, busy = false, diagHtml = null;
 
   function toast(msg, bad) {
-    var old = root && root.querySelector('.toast'); if (old) old.remove();
-    var t = h('div', { class: 'toast' + (bad ? ' bad' : ''), text: msg, role: 'status' });
-    root.appendChild(t); clearTimeout(toastT); toastT = setTimeout(function () { t.remove(); }, 4200);
+    var old = document.getElementById('gl-toast'); if (old) old.remove();
+    var w = h('div', { class: 'gl', id: 'gl-toast' }, h('div', { class: 'toast' + (bad ? ' bad' : ''), text: msg, role: 'status' }));
+    document.body.appendChild(w); clearTimeout(toastT); toastT = setTimeout(function () { w.remove(); }, 4200);
   }
   function statusDot() {
     var s = L.status().status;
@@ -92,8 +92,10 @@
   // ---------------- signed out ----------------
   function signedOut() {
     var wrap = h('div', { class: 'card' });
-    wrap.appendChild(h('h2', { text: 'Grapevine Lite' }));
-    wrap.appendChild(h('p', { class: 'sub', text: 'Your Grapevine account, right here. Keep one name in every game, see who is online, and make friends with people you meet in multiplayer - they show up in the full Grapevine too.' }));
+    wrap.appendChild(h('h2', { text: 'Grapevine' }));
+    wrap.appendChild(h('p', { class: 'sub', text: gate
+      ? 'One account for everything here. Your name in every game, your saves on every device, and friends, chat and rooms in Grapevine. Sign in with your recovery key, or create an account to get started.'
+      : 'Your Grapevine account.' }));
     var seg = h('div', { class: 'seg' },
       h('button', { class: mode === 'in' ? 'on' : '', text: 'Sign in', onclick: function () { mode = 'in'; pendingKey = null; render(); } }),
       h('button', { class: mode === 'up' ? 'on' : '', text: 'Create account', onclick: function () { mode = 'up'; pendingKey = null; render(); } }));
@@ -159,13 +161,20 @@
       h('div', null, h('div', { class: 'nm', id: 'gl-me', text: me.name }), h('div', { class: 'st' }, h('span', { class: 'dot ' + statusDot() }), h('span', { id: 'gl-status', text: statusLine() }))),
       h('div', { class: 'sp' }),
       h('button', { class: 'mbtn', text: 'My key', title: 'Copy your recovery key', onclick: function () { copy(L.key(), 'Key copied. Keep it private.'); } }),
-      h('button', { class: 'mbtn warn', id: 'gl-out', text: 'Sign out', onclick: function () { if (confirm('Sign out of Grapevine Lite on this device? Your account is not deleted - you can sign in again with your key.')) { L.signOut(); view = 'friends'; render(); } } })));
+      h('button', { class: 'mbtn warn', id: 'gl-out', text: 'Sign out', onclick: function () {
+        var b = this; b.disabled = true;
+        L.signOut().then(function (r) {
+          if (r.saved) { view = 'friends'; render(); return; }
+          if (confirm('Grapevine could not save your games to your account right now (no connection). Signing out would clear them from this device. Sign out anyway?')) { L.signOut({ force: true }).then(function () { view = 'friends'; render(); }); }
+          else b.disabled = false;
+        });
+      } })));
     var nIn = f.incoming.length;
-    var tabs = [['friends', 'Friends'], ['requests', 'Requests' + (nIn ? ' (' + nIn + ')' : '')], ['met', 'Met in games'], ['conn', 'Connection']];
+    var tabs = [['friends', 'Friends'], ['requests', 'Requests' + (nIn ? ' (' + nIn + ')' : '')], ['met', 'Met in games'], ['saves', 'Saves'], ['conn', 'Connection']];
     wrap.appendChild(h('div', { class: 'seg' }, tabs.map(function (t) {
       return h('button', { class: view === t[0] ? 'on' : '', 'data-view': t[0], text: t[1], onclick: function () { view = t[0]; render(); } });
     })));
-    wrap.appendChild(view === 'friends' ? friendsView(f) : view === 'requests' ? requestsView(f) : view === 'met' ? metView() : connView());
+    wrap.appendChild(view === 'friends' ? friendsView(f) : view === 'requests' ? requestsView(f) : view === 'met' ? metView() : view === 'saves' ? savesView() : connView());
     return wrap;
   }
 
@@ -225,10 +234,28 @@
     return box;
   }
 
+  function ago(t) {
+    if (!t) return 'never';
+    var s = Math.round((Date.now() - t) / 1000);
+    return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : Math.round(s / 86400) + ' days ago';
+  }
+  function savesView() {
+    var box = h('div'), st = L.sync.status();
+    box.appendChild(h('div', { class: 'sect', text: 'saves and devices' }));
+    box.appendChild(h('p', { class: 'sub', text: 'Every game\'s progress is saved to your account. Sign in on another device with the same recovery key and it all loads there. Saves are kept up to date automatically; closing a game saves it right away.' }));
+    box.appendChild(h('div', { class: 'row' }, h('span', { class: 'dot ' + (st.state === 'ok' ? 'on' : st.state === 'error' ? 'bad' : 'wait') }),
+      h('span', { class: 'nm', id: 'gl-sync', text: st.text || (st.at ? 'Last saved ' + ago(st.at) : 'Not saved yet') }), h('span', { class: 'sm', text: st.at ? ago(st.at) : '' })));
+    var b = h('button', { class: 'mbtn', id: 'gl-sync-go', text: 'Save and sync now', onclick: function () {
+      b.disabled = true; L.sync.run().then(function (r) { toast(r.pulled ? 'Loaded ' + r.pulled + ' item(s) from your account.' : 'Everything is saved.'); }, function (e) { toast(e.message || 'Could not sync.', true); }).then(function () { b.disabled = false; render(); });
+    } });
+    box.appendChild(h('div', { style: 'margin-top:12px' }, b));
+    return box;
+  }
+
   function connView() {
     var box = h('div');
     box.appendChild(h('div', { class: 'sect', text: 'connection' }));
-    box.appendChild(h('p', { class: 'sub', text: 'Grapevine Lite reaches the server through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
+    box.appendChild(h('p', { class: 'sub', text: 'Grapevine reaches the server through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
     var out = h('div', { class: 'diag', id: 'gl-diag' });
     if (diagHtml) out.appendChild(diagHtml);
     var b = h('button', { class: 'mbtn', id: 'gl-test', text: 'Test my connection', onclick: function () {
@@ -245,26 +272,34 @@
   }
 
   function render() {
+    var saved = root;
+    mounts.forEach(function (m) { root = m.el; gate = m.gate; renderOne(); });
+    root = saved;
+  }
+  function renderOne() {
     if (!root) return;
     var scroll = root.scrollTop;
     var focus = document.activeElement && document.activeElement.id;
     var val = focus && document.activeElement.value;
     root.textContent = '';
-    var body = L.me() ? signedIn() : signedOut();
+    var body = gate ? (L.me() ? h('div') : signedOut()) : (L.me() ? signedIn() : signedOut());
     root.appendChild(body);
     if (focus) { var el = root.querySelector('#' + focus); if (el) { if (val != null && 'value' in el && el.type !== 'checkbox') el.value = val; try { el.focus(); } catch (e) {} } }
     root.scrollTop = scroll;
   }
 
   var style;
-  function mount(el) {
-    if (!style) { style = document.createElement('style'); style.textContent = css; document.head.appendChild(style); }
-    root = h('div', { class: 'gl' });
-    el.textContent = ''; el.appendChild(root);
-    ['change', 'friends', 'met'].forEach(function (ev) { L.on(ev, function () { if (root && root.isConnected && !busy) render(); }); });
+  function mount(el, opts) {
+    if (!style) {
+      style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
+      ['change', 'friends', 'met', 'sync'].forEach(function (ev) { L.on(ev, function () { if (!busy) render(); }); });
+    }
+    var r = h('div', { class: 'gl' });
+    el.textContent = ''; el.appendChild(r);
+    mounts.push({ el: r, gate: !!(opts && opts.gate) });
     render();
-    return root;
+    return r;
   }
 
-  window.HGLiteUI = { mount: mount, render: render };
+  window.HGGrapevineUI = { mount: mount, render: render };
 })();

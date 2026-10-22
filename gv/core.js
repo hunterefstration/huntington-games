@@ -1,19 +1,20 @@
-// Grapevine Lite - core. Your normal Grapevine account inside the launcher.
+// Grapevine - core. Your normal Grapevine account inside the launcher.
 //
 // It signs in to the real Grapevine server with the same recovery key, over the same encrypted relay
 // link the full app uses on school networks (GVLink, see vendor/gvlink.js), and exposes a small API,
-// window.HGLite, that the launcher UI and every game with multiplayer can use:
-//   HGLite.me()                      -> { name, userId, pub, status } or null when nobody is signed in
-//   HGLite.on('change'|'friends'|'status', fn)
-//   HGLite.friendState(name)         -> 'self' | 'friend' | 'incoming' | 'outgoing' | 'none'
-//   HGLite.addFriend(name)           -> Promise (a friend request in main Grapevine, or an accept)
-//   HGLite.newChallenge()            -> random string a host gives to a joining player
-//   HGLite.prove(challenge, context) -> Promise<{ n, k, t, s }|null>  "I am <name>", signed with the account key
-//   HGLite.check(proof, challenge, context) -> Promise<{ ok, name, reason }>  verified against the server
+// window.HGGrapevine, that the launcher UI and every game with multiplayer can use:
+//   HGGrapevine.me()                      -> { name, userId, pub, status } or null when nobody is signed in
+//   HGGrapevine.on('change'|'friends'|'status', fn)
+//   HGGrapevine.friendState(name)         -> 'self' | 'friend' | 'incoming' | 'outgoing' | 'none'
+//   HGGrapevine.addFriend(name)           -> Promise (a friend request in main Grapevine, or an accept)
+//   HGGrapevine.newChallenge()            -> random string a host gives to a joining player
+//   HGGrapevine.prove(challenge, context) -> Promise<{ n, k, t, s }|null>  "I am <name>", signed with the account key
+//   HGGrapevine.check(proof, challenge, context) -> Promise<{ ok, name, reason }>  verified against the server
+//   HGGrapevine.sync                 cloud saves: every game's saved data follows the account to other devices
 // Everything here only ever talks to Grapevine's server; nothing is sent to a game.
 (function () {
   'use strict';
-  if (window.HGLite) return;
+  if (window.HGGrapevine) return;
 
   var CFG = Object.assign({
     // Must match client.html's CONFIG in the Grapevine repo (archiveIds and serverPubs).
@@ -22,14 +23,14 @@
     shards: 2,
     relays: undefined,          // tests point this at a local broker
     clientVersion: 'v12'
-  }, window.HG_LITE_CONFIG || {});
+  }, window.HG_GV_CONFIG || {});
 
   // ---- storage that never throws ----
   var mem = {};
   var store = {
-    get: function (k) { try { var v = localStorage.getItem('hglite:' + k); return v === null ? (mem[k] === undefined ? null : mem[k]) : v; } catch (e) { return mem[k] === undefined ? null : mem[k]; } },
-    set: function (k, v) { mem[k] = String(v); try { localStorage.setItem('hglite:' + k, String(v)); } catch (e) {} },
-    del: function (k) { delete mem[k]; try { localStorage.removeItem('hglite:' + k); } catch (e) {} }
+    get: function (k) { try { var v = localStorage.getItem('hgv:' + k); return v === null ? (mem[k] === undefined ? null : mem[k]) : v; } catch (e) { return mem[k] === undefined ? null : mem[k]; } },
+    set: function (k, v) { mem[k] = String(v); try { localStorage.setItem('hgv:' + k, String(v)); } catch (e) {} },
+    del: function (k) { delete mem[k]; try { localStorage.removeItem('hgv:' + k); } catch (e) {} }
   };
   var te = new TextEncoder();
   var randHex = function (n) { return ED.hex(crypto.getRandomValues(new Uint8Array(n))); };
@@ -91,7 +92,7 @@
 
   function drop() {            // sign out / switch account: nothing may linger
     st.gen++;
-    clearTimeout(st.timer); st.timer = null; clearInterval(st.ping);
+    clearTimeout(st.timer); st.timer = null; clearInterval(st.ping); clearInterval(sy.timer);
     var c = st.conn; st.conn = null; st.ready = false;
     try { c && c.close(); } catch (e) {}
   }
@@ -151,6 +152,7 @@
           send({ type: 'ping' });
         }, 8000);
         send({ type: 'friendsList' });
+        startSync();
         var a = st.auth; st.auth = null; if (a) a.resolve({ name: st.name, userId: st.userId });
         return;
       }
@@ -168,6 +170,9 @@
         if (cb) { delete st.lookups[m.name]; cb.forEach(function (f) { f(m); }); }
         return;
       }
+      case 'saves': return rpcDone('saves', m);
+      case 'savesData': return rpcDone('savesData', m);
+      case 'ok': if (m.op === 'savesPut') return rpcDone('savesPut', m); return;
       case 'error': return onError(c, m);
       case 'pong': return;
     }
@@ -175,7 +180,7 @@
 
   function onError(c, m) {
     var code = m.code || '';
-    if (code === 'rate') { settlePending(new Error('Slow down a little.')); return; }
+    if (code === 'rate') { rpcFail(new Error('Slow down a little.')); settlePending(new Error('Slow down a little.')); return; }
     if (code === 'rebind' && !st.sendKey && st.auth) { st.sendKey = true; try { c.close(); } catch (e) {} return; }   // retry once, sending the key to bind it
     if (code === 'full') { st.idx++; try { c.close(); } catch (e) {} return; }
     if (code === 'no-such-name') {
@@ -188,6 +193,7 @@
       if (FATAL[code]) { drop(); setStatus('error', err.message); }
       return;
     }
+    rpcFail(new Error(m.text || code));
     settlePending(new Error(m.text || code));
   }
 
@@ -219,6 +225,8 @@
     st.key = key; st.signup = !!signup; st.wanted = String(name || '').trim().slice(0, 24); st.invite = String(invite || '').trim();
     st.sendKey = false; st.friends = []; st.incoming = []; st.outgoing = []; st.haveFriends = false;
     st.userId = await sha256hex(key);
+    if (store.get('uid') && store.get('uid') !== st.userId) wipeDevice();   // somebody else's leftovers never join this account
+    store.set('uid', st.userId);
     var seed = new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode('gv-seed|' + key)));
     st.kp = await ED.keypair(seed); st.pub = ED.hex(st.kp.pub);
     st.fails = 0; st.idx = Math.floor(Math.random() * CFG.archives.length);
@@ -237,10 +245,17 @@
   }
   function signIn(key) { return begin(key, false); }
   function signUp(key, name, invite) { return begin(key, true, name, invite); }
-  function signOut() {
+  // Signing out saves everything to the account first, then clears this device, so the next person at a shared
+  // Chromebook starts clean and nobody's progress leaks into somebody else's account. Returns { saved: bool }.
+  async function signOut(opts) {
+    var saved = false;
+    if (st.ready) { try { await syncRun({ noApply: true }); saved = true; } catch (e) {} }
+    if (!saved && !(opts && opts.force)) return { saved: false };
     drop(); st.key = ''; st.userId = ''; st.name = ''; st.pub = ''; st.kp = null; st.friends = []; st.incoming = []; st.outgoing = []; st.haveFriends = false;
-    ['key', 'name', 'friends'].forEach(store.del);
+    wipeDevice();
+    ['key', 'name', 'friends', 'uid', 'met'].forEach(store.del);
     setStatus('signed-out', ''); emit('friends');
+    return { saved: saved };
   }
   // a saved session comes back by itself
   function resume() {
@@ -285,6 +300,99 @@
       if (zeros >= bits) return nonce;
       if ((n & 2047) === 0) await wait(0);
     }
+  }
+
+  // ---- cloud saves ----
+  // Every game keeps its progress in localStorage, and the games all run on the launcher's page, so the launcher can
+  // carry the lot. Per key: a hash and a "changed at" time, newest wins; the server keeps one row per key.
+  // Rules that keep it safe:
+  //  * a device meeting an account for the first time lets the cloud win conflicts (and keeps the overwritten value
+  //    under hgv:bak:<key>), so a fresh Chromebook never wipes real progress;
+  //  * nothing is written into localStorage while a game is open (the game would overwrite it from memory anyway);
+  //    it waits until the game closes;
+  //  * signing out saves first and then clears the device.
+  // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
+  // must be added here: it is the list of prefixes the games write.
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-)/;
+  var SAVE_MAX = 400000;
+  var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {} };
+  function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
+  function setSync(state, text) { sy.state = state; sy.text = text || ''; emit('sync', { state: state, text: sy.text, at: sy.at }); }
+  function eligible() {
+    var out = [];
+    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && GAME_KEYS.test(k)) out.push(k); } } catch (e) {}
+    return out;
+  }
+  function wipeDevice() { try { eligible().forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {} store.del('sync'); store.del('syncat'); sy.at = 0; }
+  function rpc(frame, reply) {
+    return new Promise(function (resolve, reject) {
+      var w = { resolve: resolve, reject: reject, t: setTimeout(function () { var l = sy.waiters[reply] || []; var i = l.indexOf(w); if (i >= 0) l.splice(i, 1); reject(new Error('Grapevine did not answer.')); }, 20000) };
+      (sy.waiters[reply] = sy.waiters[reply] || []).push(w);
+      if (!send(frame)) { clearTimeout(w.t); sy.waiters[reply].pop(); reject(new Error('Not connected.')); }
+    });
+  }
+  function rpcDone(reply, m) { var w = (sy.waiters[reply] || []).shift(); if (w) { clearTimeout(w.t); w.resolve(m); } }
+  function rpcFail(err) { Object.keys(sy.waiters).forEach(function (k) { var l = sy.waiters[k]; sy.waiters[k] = []; l.forEach(function (w) { clearTimeout(w.t); w.reject(err); }); }); }
+
+  function syncRun(opts) {
+    if (sy.running) return sy.running;
+    if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
+    opts = opts || {};
+    var p = (async function () {
+      setSync('syncing', 'Syncing your saves...');
+      var meta = syncMeta(), now = Date.now(), local = {}, firstOnDevice = !store.get('syncat');
+      var keys = eligible(), seen = {};
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i], v = localStorage.getItem(k);
+        if (v == null || v.length > SAVE_MAX) continue;
+        var h = await sha256hex(v);
+        if (!meta[k] || meta[k].h !== h) meta[k] = { h: h, t: now };
+        local[k] = { v: v, h: h, t: meta[k].t }; seen[k] = 1;
+      }
+      Object.keys(meta).forEach(function (k) { if (!seen[k]) delete meta[k]; });
+      var list = (await rpc({ type: 'savesList' }, 'saves')).items || [];
+      var srv = {}; list.forEach(function (it) { srv[it.k] = it; });
+      var need = [], put = [];
+      Object.keys(srv).forEach(function (k) {
+        var l = local[k];
+        if (!l) need.push(k);
+        else if (l.h !== srv[k].h) { if (firstOnDevice || srv[k].at > l.t) need.push(k); else put.push(k); }
+      });
+      Object.keys(local).forEach(function (k) { if (!srv[k]) put.push(k); });
+      var pulled = 0, deferred = 0;
+      if (need.length && (sy.open || opts.noApply)) { deferred = need.length; need = []; }
+      for (var j = 0; j < need.length; j += 10) {
+        var got = await rpc({ type: 'savesGet', keys: need.slice(j, j + 10) }, 'savesData');
+        for (var g = 0; g < (got.items || []).length; g++) {
+          var it = got.items[g], old = localStorage.getItem(it.k);
+          if (old != null && old !== it.v) { try { localStorage.setItem('hgv:bak:' + it.k, old); } catch (e) {} }
+          try { localStorage.setItem(it.k, it.v); } catch (e) { continue; }
+          meta[it.k] = { h: srv[it.k] ? srv[it.k].h : await sha256hex(it.v), t: it.at };
+          pulled++;
+        }
+      }
+      var pushed = 0, batch = [], size = 0;
+      async function flush() { if (!batch.length) return; var r = await rpc({ type: 'savesPut', items: batch }, 'savesPut'); pushed += r.stored || 0; batch = []; size = 0; }
+      for (var q = 0; q < put.length; q++) {
+        var pk = put[q], pv = local[pk];
+        if (batch.length >= 20 || size + pv.v.length > 900000) await flush();
+        batch.push({ k: pk, v: pv.v, at: pv.t }); size += pv.v.length;
+      }
+      await flush();
+      store.set('sync', JSON.stringify(meta));
+      sy.at = Date.now(); store.set('syncat', String(sy.at)); sy.n = Object.keys(local).length + pulled;
+      setSync('ok', deferred ? 'Saved. Newer saves from another device load when you close the game.' : 'All saves are in your account.');
+      return { pulled: pulled, pushed: pushed, deferred: deferred };
+    })();
+    sy.running = p;
+    var done = function () { sy.running = null; };
+    p.then(done, function (e) { done(); setSync('error', 'Could not sync: ' + (e && e.message)); });
+    return p;
+  }
+  function startSync() {
+    clearInterval(sy.timer);
+    sy.first = syncRun().then(function () {}, function () {});
+    sy.timer = setInterval(function () { if (st.ready) syncRun().catch(function () {}); }, 45000);
   }
 
   // ---- who is this person? (for games) ----
@@ -342,7 +450,7 @@
     return 'none';
   }
 
-  window.HGLite = {
+  window.HGGrapevine = {
     version: 1,
     config: CFG,
     me: function () { return st.name ? { name: st.name, userId: st.userId, pub: st.pub, status: st.status } : null; },
@@ -362,6 +470,13 @@
     recent: recent, noteMet: noteMet,
     on: on, off: off,
     ready: function () { return readyP; },
+    sync: {
+      run: function () { return syncRun(); },
+      status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n }; },
+      // resolves when the first sync after sign-in is done, or after `ms`, so a game is not launched before it
+      first: function (ms) { return Promise.race([sy.first || Promise.resolve(), new Promise(function (r) { setTimeout(r, ms || 2500); })]); },
+      setGameOpen: function (open) { sy.open = !!open; if (!open && st.ready) syncRun().catch(function () {}); }
+    },
     diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); }
   };
   var readyP = Promise.resolve();

@@ -92,16 +92,25 @@ h1 { font-family: var(--mono); font-weight: 600; font-size: clamp(13px, 2.6vw, 1
 .tag.new { background: color-mix(in srgb, var(--signal) 18%, transparent); color: var(--signal); }
 #offdl, #offdlg .btns button, .close, #ptop button, #ptop a, #exp .box, #offdlg .box { border-radius: 3px; }
 #ptop button, #ptop a, .close, #offdlg .btns button, #offdl { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
-#view-lite { padding-bottom: 40px; }
-#view-lite[hidden], #view-games[hidden] { display: none; }
+#view-acct { padding-bottom: 40px; }
+#view-acct[hidden], #view-games[hidden], #view-chat[hidden], #gate[hidden] { display: none; }
+/* the Grapevine tab is the whole app, edge to edge under the top bar */
+#view-chat { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 4; padding-top: var(--topbar, 49px); background: var(--ground); }
+#gvapp { width: 100%; height: 100%; border: 0; display: block; background: var(--ground); }
+body.chat #hub { position: relative; z-index: 6; }
+body.chat #hub > #view-games, body.chat #hub > #view-acct { display: none; }
+body.chat { overflow: hidden; }
+#gate { position: fixed; inset: 0; z-index: 40; background: var(--ground); overflow-y: auto; display: flex; padding: 20px 16px; }
+#gate-box { margin: auto; width: 100%; max-width: 640px; }
+.credit { margin-top: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--signal); }
 </style>
 </head>
 <body>
 <div id="hub">
   <div id="topbar">
     <h1>HUNTINGTON GAMES LAUNCHER</h1>
-    <nav id="tabs"><button class="tab on" id="tab-games" data-tab="games">Games</button><button class="tab" id="tab-lite" data-tab="lite">Grapevine Lite</button></nav>
-    <button id="chip" title="Grapevine Lite"><span class="cdot" id="chip-dot"></span><span class="nm" id="chip-nm"></span></button>
+    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
+    <button id="chip" title="Grapevine"><span class="cdot" id="chip-dot"></span><span class="nm" id="chip-nm"></span></button>
   </div>
   <div id="view-games">
   <div class="sub">Pick a game.</div>
@@ -109,8 +118,10 @@ h1 { font-family: var(--mono); font-weight: 600; font-size: clamp(13px, 2.6vw, 1
   <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
   </div>
-  <div id="view-lite" hidden></div>
+  <div id="view-acct" hidden></div>
 </div>
+<div id="view-chat" hidden><iframe id="gvapp" title="Grapevine" allow="clipboard-write"></iframe></div>
+<div id="gate" hidden><div id="gate-box"></div></div>
 <div id="offdlg"><div class="box"><h2 id="offdlg-title">Offline copy</h2><div id="offdlg-text"></div><div class="btns"><button id="offdlg-again">Download again</button><button id="offdlg-tab">Open in a new tab</button><button id="offdlg-close">Close</button></div></div></div>
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
@@ -161,16 +172,16 @@ var GAMES = [
   { dir: 'Tower Defense 2.0', name: 'Tower Defense 3.0', img: 'td', tags: ['New', 'Strategy'], desc: 'NEW 3.0: pick one of 6 heroes with 2 abilities each, 18 new towers including a whole Alien tab, 7 alien enemies and the Mothership boss. 12 new maps with terrain and stars, boss waves every 10, a Daily Challenge, and a Map Editor with share codes. Still two modes: Tower Mode or Troop Mode, 1900 to the future.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon 2.0', img: 'coffee', tags: ['New', 'Tycoon'], desc: 'NEW 2.0: open shops in 5 new cities, invent drinks in the Recipe Lab, train staff with skill trees, and run a franchise chain with managers. Random events with choices, decorations, seasons and holidays, an 8-chapter career story and a latte art mini-game. Build, staff and grow a chain of coffee shops.' },
   { dir: 'Tetris', name: 'Tetris Surge 2.0', img: 'tetris', tags: ['New', 'Puzzle'], desc: 'NEW 2.0: climb the rank ladder in Surge, Sprint, Ultra and Marathon. 14 new perks, 5 new bosses, a Daily Challenge with streaks, 55 achievements, and a 70-puzzle Puzzle mode with stars, undo and hints. Plus 12 block skins, 8 backgrounds and Hold and T-Spin tutorials. Still a rogue-lite run with power blocks, plus Marathon, Sprint, Ultra and Zen.' },
-  { dir: 'Market Life 1.9', name: 'Market & Life 2.0', img: 'market', tags: ['New', 'Sim'], desc: 'NEW 2.0: live a whole life, from school and 22 degree programs to careers, homes, cars, family and retirement, then see your Life Score in the Hall of Lives. Trade 42 stocks and cryptos with charts, news, dividends and limit orders, save in bonds, and run 10 kinds of business. Plus 33 achievements and a Stats page.' },
+  { dir: 'Market Life 1.9', name: 'Market & Life 2.0', img: 'market', tags: ['New', 'Sim'], desc: 'NEW 2.0: live a whole life, from school and 22 degree programs to careers, homes, cars, family and retirement, then see your Life Score in the Hall of Lives. Trade 42 stocks and cryptos with charts, news, dividends and limit orders, save in bonds, and run 10 kinds of business. Plus 33 achievements and a Stats page.', credit: 'Original game by Robbie' },
   { dir: '50 Levels Of Spikes 1.2', name: '100 Levels of Spikes 2.0', img: 'spikes', tags: ['New', 'Platformer'], desc: 'NEW 2.0: 50 new levels (51-100) with moving platforms, bounce pads, saws, keys and doors, conveyors and gravity flips, plus a Level Editor with share codes, saved progress and level select.' },
   { dir: 'Brown E Clicker', name: 'Brown E Clicker 2.0', img: 'clicker', tags: ['New', 'Clicker'], desc: 'NEW 2.0: 24 new buildings, 287 upgrades, Golden E bonuses and seasonal events, 158 achievements and offline earnings. Ascend for Heavenly Chips and spend them in a 45-node Prestige Tree, take on Challenge Runs, and play the E Garden and E-Goods Market minigames. Plus 28 skins and backgrounds and a news ticker. Click the E. Buy upgrades. Ascend.' },
-  { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.' }
+  { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.', credit: 'Made by Robbie' },
+  { dir: 'Levi Dash By Levi 2.0', name: 'Neon Dash 2.0', img: 'neondash', tags: ['Platformer'], desc: 'Neon Dash: Ultimate Edition. Jump the neon spikes, keep your streak going, beat your score and sign the Hall of Fame.', credit: 'Made by Levi' }
 ];
 var EXPERIMENTAL = [
   { dir: 'Divergent Project', file: 'jsbin.html', name: 'Divergent: Fear Landscape', desc: '3D. Face your fears in Tris\'s simulation.' },
   { dir: 'Tower Jumper', name: 'Tower Jumper', desc: 'Endless, level, flight and boss modes.' },
-  { dir: 'Neon Drift By Levi Beta 1.9', name: 'Neon Drift: Shadow Reign', desc: 'By Levi.' },
-  { dir: 'Levi Dash By Levi 2.0', name: 'Neon Dash 2.0', desc: 'By Levi.' },
+  { dir: 'Neon Drift By Levi Beta 1.9', name: 'Neon Drift: Shadow Reign', desc: '', credit: 'Made by Levi' },
   { dir: 'Hunters Fork', name: 'Neon Dash: Hunter\'s Fork', desc: 'A remix of Neon Dash.' },
   { dir: 'Cursed Dash', name: 'Cursed Dash', desc: 'Neon Dash, but cursed.' },
   { dir: 'Cursed Tetris', name: 'Cursed Tetris', desc: 'Run, for your brain\'s sake.' },
@@ -200,13 +211,13 @@ function render() {
       fallback();
     };
     shot.appendChild(img); b.appendChild(shot);
-    b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div><div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
+    b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { play(g); };
     grid.appendChild(b);
   });
   var list = document.getElementById('exp-list');
   EXPERIMENTAL.forEach(function (g) {
-    var r = el('button', 'row', '<span><span class="rname">' + g.name + '</span><br><span class="rdesc">' + g.desc + '</span></span><span class="rdesc">Play &#8250;</span>');
+    var r = el('button', 'row', '<span><span class="rname">' + g.name + '</span><br><span class="rdesc">' + g.desc + (g.credit ? ' ' + g.credit + '.' : '') + '</span></span><span class="rdesc">Play &#8250;</span>');
     r.onclick = function () { document.getElementById('exp').classList.remove('open'); play(g); };
     list.appendChild(r);
   });
@@ -565,7 +576,8 @@ async function downloadOffline() {
   }
   btn.disabled = false; btn.textContent = old;
 }
-function play(g) {
+function play(g) { if (document.getElementById('gate').hidden === false) return; gvBeforePlay(g, function () { playNow(g); }); }
+function playNow(g) {
   var id = ++loadId;
   current = { game: g, html: null };
   document.getElementById('ptitle').textContent = g.name;
@@ -586,17 +598,24 @@ function play(g) {
   });
 }
 function closePlayer() {
+  var wasOpen = !!current;
   loadId++; current = null;
   document.getElementById('player').classList.remove('open');
   frame.removeAttribute('srcdoc'); frame.src = 'about:blank';
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  if (wasOpen) gvAfterPlay();
 }
-// New tab: a direct link when local, otherwise a copy of the downloaded game.
+// New tab: opens a blank page (about:blank, so the address bar shows nothing) and writes the game into it. It shares this
+// page's storage, so saves and the Grapevine account work there too (the game finds this launcher as window.opener).
 document.getElementById('newtab').onclick = function () {
   if (!current) return;
-  if (local) { HG_set(current.game); window.open(path(current.game), '_blank'); return; }
-  if (!current.html) return;
-  try { window.open(URL.createObjectURL(new Blob([current.html], { type: 'text/html' })), '_blank'); } catch (e) {}
+  var g = current.game, w = window.open('about:blank', '_blank');
+  if (!w) { alert('The browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
+  function write(html) { try { w.document.open(); w.document.write(html); w.document.close(); } catch (e) { w.close(); } }
+  w.document.title = g.name;
+  if (current.html) return write(current.html);
+  if (local) { HG_set(g); var u = new URL(path(g), location.href).href; fetch(u).then(function (r) { return r.text(); }).then(function (t) { write(withBase(t, u.replace(/[^\/]*$/, ''))); }, function () { w.close(); }); return; }
+  w.close();
 };
 document.getElementById('back').onclick = closePlayer;
 document.getElementById('full').onclick = function () { var p = document.getElementById('player'); if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(function () {}); };
@@ -632,27 +651,30 @@ if (!local && !BUNDLE) startCache(); // download every game and library right aw
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
 
-// ===== Grapevine Lite: your Grapevine account in the launcher (lite/lite.js, loaded on demand) =====
-// Games read it as window.parent.HGLite (their name, verified players, +Friend). It is only downloaded when
-// someone opens the tab or has signed in before, so the launcher itself stays small.
-var liteP = null, liteMounted = false;
-function loadLite() {
-  if (liteP) return liteP;
-  liteP = new Promise(function (resolve, reject) {
-    if (window.HGLite) return resolve(window.HGLite);
-    if (BUNDLE) return reject(new Error('Grapevine Lite needs the internet, so it is not in the offline copy.'));
-    function run(code) {
-      try { var sc = document.createElement('script'); sc.textContent = code; document.head.appendChild(sc); resolve(window.HGLite); }
-      catch (e) { reject(e); }
-    }
-    if (local) { var sc = document.createElement('script'); sc.src = 'lite/lite.js'; sc.onload = function () { resolve(window.HGLite); }; sc.onerror = function () { reject(new Error('Could not load Grapevine Lite.')); }; document.head.appendChild(sc); return; }
-    fetchRepo('lite/lite.js').then(function (r) { run(r.html); }, function () { reject(new Error('Could not load Grapevine Lite. The game CDN (cdn.jsdelivr.net) may be blocked on this network.')); });
-  }).then(function (L) { L.on('change', paintChip); paintChip(); return L; }, function (e) { liteP = null; throw e; });
-  return liteP;
+// ===== Grapevine: the account behind the whole launcher (gv/account.js, gv/app.html) =====
+// One account for everything: it gates the launcher, puts your name and friends in the games (they read it as
+// window.parent.HGGrapevine), saves every game to the account so another device can load it, and the Grapevine tab runs
+// the full Grapevine app signed in as the same person. The code is downloaded on demand to keep the launcher small.
+var gvP = null, acctMounted = false, gateMounted = false, chatLoaded = false;
+function fetchGV(file, viaScript) {
+  if (BUNDLE) return Promise.reject(new Error('Grapevine needs the internet, so it is not in the offline copy.'));
+  if (local) return fetch(file, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+  return fetchRepo(file).then(function (r) { return r.html; });
 }
-function savedName() { try { return localStorage.getItem('hglite:name') || ''; } catch (e) { return ''; } }
+function loadGV() {
+  if (gvP) return gvP;
+  gvP = new Promise(function (resolve, reject) {
+    if (window.HGGrapevine) return resolve(window.HGGrapevine);
+    fetchGV('gv/account.js').then(function (code) {
+      try { var sc = document.createElement('script'); sc.textContent = code; document.head.appendChild(sc); resolve(window.HGGrapevine); } catch (e) { reject(e); }
+    }, function () { reject(new Error('Could not load Grapevine. The game CDN (cdn.jsdelivr.net) may be blocked on this network.')); });
+  }).then(function (L) { L.on('change', onGvChange); onGvChange(); return L; }, function (e) { gvP = null; throw e; });
+  return gvP;
+}
+function savedName() { try { return localStorage.getItem('hgv:name') || ''; } catch (e) { return ''; } }
+function hasSavedKey() { try { return !!localStorage.getItem('hgv:key'); } catch (e) { return false; } }
 function paintChip() {
-  var L = window.HGLite, me = L && L.me(), name = me ? me.name : (savedName() && hasSavedKey() ? savedName() : '');
+  var L = window.HGGrapevine, me = L && L.me(), name = me ? me.name : (hasSavedKey() ? savedName() : '');
   var chip = document.getElementById('chip');
   chip.className = name ? 'on' : '';
   if (!name) return;
@@ -660,28 +682,79 @@ function paintChip() {
   var s = L ? L.status().status : 'connecting';
   document.getElementById('chip-dot').className = 'cdot' + (s === 'online' ? ' on' : s === 'signed-out' || s === 'error' ? '' : ' wait');
 }
-function hasSavedKey() { try { return !!localStorage.getItem('hglite:key'); } catch (e) { return false; } }
-function showTab(which) {
-  document.getElementById('view-games').hidden = which !== 'games';
-  document.getElementById('view-lite').hidden = which !== 'lite';
-  document.getElementById('tab-games').className = 'tab' + (which === 'games' ? ' on' : '');
-  document.getElementById('tab-lite').className = 'tab' + (which === 'lite' ? ' on' : '');
-  if (which !== 'lite' || liteMounted) return;
-  var box = document.getElementById('view-lite');
-  box.innerHTML = '<div class="sub" style="text-align:center;padding:30px 0">Loading Grapevine Lite...</div>';
-  loadLite().then(function (L) {
-    liteMounted = true; window.HGLiteUI.mount(box);
-    if (!L.me() && hasSavedKey()) L.resume();
+function onGvChange() {
+  paintChip();
+  var L = window.HGGrapevine, signedIn = !!(L && L.me());
+  document.getElementById('gate').hidden = signedIn || BUNDLE;
+  if (!signedIn && chatLoaded) { chatLoaded = false; document.getElementById('gvapp').removeAttribute('srcdoc'); showTab('games'); closePlayer(); }
+  if (signedIn && chatLoaded === 'pending') startChat();
+}
+// The gate: nothing in the launcher works without an account. A device that signed in before opens straight away
+// (offline too); the account reconnects quietly in the background.
+function showGate() {
+  var gate = document.getElementById('gate'), box = document.getElementById('gate-box');
+  gate.hidden = false;
+  box.innerHTML = '<div class="sub" style="text-align:center">Loading Grapevine...</div>';
+  loadGV().then(function (L) {
+    if (!gateMounted) { gateMounted = true; window.HGGrapevineUI.mount(box, { gate: true }); }
+    onGvChange();
   }, function (e) {
-    box.innerHTML = ''; var d = document.createElement('div'); d.className = 'sub'; d.style.cssText = 'text-align:center;padding:30px 0'; d.textContent = e.message;
-    var b = document.createElement('button'); b.className = 'tab'; b.textContent = 'Try again'; b.onclick = function () { showTab('lite'); }; d.appendChild(document.createElement('br')); d.appendChild(b); box.appendChild(d);
+    box.innerHTML = ''; var d = document.createElement('div'); d.className = 'sub'; d.style.textAlign = 'center'; d.textContent = e.message;
+    var b = document.createElement('button'); b.className = 'tab'; b.textContent = 'Try again'; b.onclick = showGate; d.appendChild(document.createElement('br')); d.appendChild(b); box.appendChild(d);
   });
 }
+// The Grapevine tab runs the real Grapevine app in a frame, already signed in as this account. It shares this page's
+// storage, so the key is handed over the same way Grapevine's own sign-in keeps it; its own sign-out is hidden because
+// signing out belongs to the launcher.
+function startChat() {
+  var L = window.HGGrapevine, me = L && L.me(), frm = document.getElementById('gvapp');
+  if (!me) { chatLoaded = 'pending'; return; }
+  chatLoaded = true;
+  frm.srcdoc = '<!DOCTYPE html><html><body style="margin:0;background:#0b0b0d;color:#8a8a96;font:14px sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">Loading Grapevine...</body></html>';
+  fetchGV('gv/app.html').then(function (html) {
+    try {
+      localStorage.setItem('gv:key', L.key()); localStorage.setItem('gv:name', me.name); localStorage.setItem('gv:bound:' + me.userId, '1');
+    } catch (e) {}
+    html = html.replace('</head>', '<style>#signOut,#srvOut{display:none!important}</style></head>')
+      .replace(/<\/body>\s*<\/html>\s*$/i, '<script>try{if(document.querySelector("#userid").value)document.querySelector("#goIn").click()}catch(e){}<\/script></body></html>');
+    frm.srcdoc = html;
+  }, function (e) { chatLoaded = false; frm.srcdoc = '<body style="font:14px sans-serif;background:#0b0b0d;color:#e5484d;padding:30px">' + String(e.message).replace(/</g, '&lt;') + '</body>'; });
+}
+function showTab(which) {
+  var chat = which === 'chat';
+  document.getElementById('view-games').hidden = which !== 'games';
+  document.getElementById('view-acct').hidden = which !== 'acct';
+  document.getElementById('view-chat').hidden = !chat;
+  document.body.className = chat ? 'chat' : '';
+  ['games', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  if (chat) {
+    document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
+    if (!chatLoaded) loadGV().then(startChat, function () {});
+  }
+  if (which === 'acct' && !acctMounted) {
+    var box = document.getElementById('view-acct');
+    box.innerHTML = '<div class="sub" style="text-align:center;padding:30px 0">Loading...</div>';
+    loadGV().then(function () { acctMounted = true; window.HGGrapevineUI.mount(box); });
+  }
+}
 document.getElementById('tab-games').onclick = function () { showTab('games'); };
-document.getElementById('tab-lite').onclick = function () { showTab('lite'); };
-document.getElementById('chip').onclick = function () { showTab('lite'); };
-if (!BUNDLE && hasSavedKey()) { paintChip(); loadLite().then(function (L) { L.resume(); }, function () {}); }   // signed in before: bring the account up quietly
-if (start === 'lite') showTab('lite');
+document.getElementById('tab-chat').onclick = function () { showTab('chat'); };
+document.getElementById('tab-acct').onclick = function () { showTab('acct'); };
+document.getElementById('chip').onclick = function () { showTab('acct'); };
+window.addEventListener('resize', function () { if (document.body.className === 'chat') document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px'); });
+// Saves follow the account: before a game opens (so it starts from the newest save), and again after it closes.
+function gvBeforePlay(g, go) {
+  var L = window.HGGrapevine;
+  if (!(L && L.me() && L.online())) { if (L && L.me()) L.sync.setGameOpen(true); return go(); }
+  Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { L.sync.setGameOpen(true); go(); });
+}
+function gvAfterPlay() { var L = window.HGGrapevine; if (L && L.me()) setTimeout(function () { L.sync.setGameOpen(false); }, 500); }
+document.addEventListener('visibilitychange', function () { var L = window.HGGrapevine; if (document.hidden && L && L.me() && L.online()) L.sync.run().catch(function () {}); });
+if (!BUNDLE) {
+  if (hasSavedKey()) { paintChip(); loadGV().then(function (L) { L.resume(); }, function () {}); }   // signed in before: bring the account up quietly
+  else { closePlayer(); showGate(); }
+}
+if (start === 'chat') showTab('chat'); else if (start === 'account') showTab('acct');
 </script>
 </body>
 </html>

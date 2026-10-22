@@ -1,6 +1,6 @@
-// Grapevine Lite inside the games: Blocky Shooter and Frontline multiplayer lobbies with real Lite accounts.
-// Two launcher-like pages (each loads the real lite/lite.js and signs in to the Grapevine test rig), each with the
-// game in an iframe, so the games read window.parent.HGLite exactly as they do in the launcher.
+// Grapevine inside the games: Blocky Shooter and Frontline multiplayer lobbies with real Lite accounts.
+// Two launcher-like pages (each loads the real gv/account.js and signs in to the Grapevine test rig), each with the
+// game in an iframe, so the games read window.parent.HGGrapevine exactly as they do in the launcher.
 // Needs: the Grapevine rig (mqtt broker :9001, archive rig-archive-a with RELAY_URLS), this repo served on :8090,
 // a local PeerJS server on :9010 path / (for Frontline), tools/setup-tools.sh run once.
 //   NODE_PATH=/opt/node22/lib/node_modules node tools/tests/lite-games.mjs [blocky|frontline|both]
@@ -38,11 +38,11 @@ async function player(name, gameUrl) {
   await page.route(/cdn\.tailwindcss\.com/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(TOOLS + '/node_modules/tailwindcss-cdn/tailwindcss.js') }));
   await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
   await page.route('**/__harness.html', r => r.fulfill({ contentType: 'text/html', body:
-    `<!doctype html><meta charset=utf-8><body style="margin:0"><script>window.HG_LITE_CONFIG=${JSON.stringify({ archives: [ARCHIVE], pinned: {}, shards: 2, relays: ['ws://127.0.0.1:9001'] })}</script>` +
-    `<script src="/lite/lite.js"></script><iframe id="g" name="g" style="border:0;width:1200px;height:780px" src="${gameUrl}"></iframe>` }));
+    `<!doctype html><meta charset=utf-8><body style="margin:0"><script>window.HG_GV_CONFIG=${JSON.stringify({ archives: [ARCHIVE], pinned: {}, shards: 2, relays: ['ws://127.0.0.1:9001'] })}</script>` +
+    `<script src="/gv/account.js"></script><iframe id="g" name="g" style="border:0;width:1200px;height:780px" src="${gameUrl}"></iframe>` }));
   await page.goto(BASE + '/__harness.html');
-  await page.evaluate(n => HGLite.signUp(HGLite.newKey(), n, ''), name);
-  const ok = await until(() => page.evaluate(() => HGLite.online()), 60000);
+  await page.evaluate(n => HGGrapevine.signUp(HGGrapevine.newKey(), n, ''), name);
+  const ok = await until(() => page.evaluate(() => HGGrapevine.online()), 60000);
   if (!ok) throw new Error(name + ' could not sign in to Lite');
   const frame = page.frame({ name: 'g' });
   return { name, ctx, page, frame };
@@ -75,9 +75,9 @@ async function blocky() {
   check('guest has a + FRIEND button for the host', !!(await until(() => gf.$('#mp-players [data-gvfriend=BlockyHost]'), 10000)));
   check('host has a + FRIEND button for the guest', !!(await until(() => hf.$('#mp-players [data-gvfriend=BlockyGuest]'), 10000)));
   await gf.click('#mp-players [data-gvfriend=BlockyHost]');
-  check('guest sent a Grapevine friend request', !!(await until(() => L(G, () => HGLite.friendState('BlockyHost') === 'outgoing'), 15000)));
-  check('host has the request in Lite', !!(await until(() => L(H, () => HGLite.friendState('BlockyGuest') === 'incoming'), 15000)));
-  check('both were noted under "met in games"', (await L(H, () => HGLite.recent().some(r => r.name === 'BlockyGuest'))) && (await L(G, () => HGLite.recent().some(r => r.name === 'BlockyHost'))));
+  check('guest sent a Grapevine friend request', !!(await until(() => L(G, () => HGGrapevine.friendState('BlockyHost') === 'outgoing'), 15000)));
+  check('host has the request in Lite', !!(await until(() => L(H, () => HGGrapevine.friendState('BlockyGuest') === 'incoming'), 15000)));
+  check('both were noted under "met in games"', (await L(H, () => HGGrapevine.recent().some(r => r.name === 'BlockyGuest'))) && (await L(G, () => HGGrapevine.recent().some(r => r.name === 'BlockyHost'))));
   await H.ctx.close(); await G.ctx.close();
 }
 
@@ -86,7 +86,7 @@ async function impostor() {
   const url = '/Blocky%20Shooter%20V2/index.html';
   const H = await player('RealHost', url), G = await player('RealGuest', url);
   await G.page.evaluate(() => {   // the guest's Lite lies: every proof it gives names somebody else
-    const real = HGLite.prove; HGLite.prove = async (c, x) => { const p = await real(c, x); p.n = 'RealHost'; return p; };
+    const real = HGGrapevine.prove; HGGrapevine.prove = async (c, x) => { const p = await real(c, x); p.n = 'RealHost'; return p; };
   });
   const hf = H.frame, gf = G.frame;
   await hf.waitForSelector('#btn-mp', { timeout: 60000 }); await gf.waitForSelector('#btn-mp', { timeout: 60000 });
@@ -118,8 +118,8 @@ async function frontline() {
   check('guest sees the host verified', !!(await until(() => gf.evaluate(() => !!(__fl.NET || {}).hostGv), 20000)));
   check('guest has a Friend button', !!(await until(() => gf.$('[data-act=gvfriend]'), 10000)));
   await gf.click('[data-act=gvfriend]');
-  check('guest sent a Grapevine friend request', !!(await until(() => L(G, () => HGLite.friendState('FrontHost') === 'outgoing'), 15000)));
-  check('host has the request in Lite', !!(await until(() => L(H, () => HGLite.friendState('FrontGuest') === 'incoming'), 15000)));
+  check('guest sent a Grapevine friend request', !!(await until(() => L(G, () => HGGrapevine.friendState('FrontHost') === 'outgoing'), 15000)));
+  check('host has the request in Lite', !!(await until(() => L(H, () => HGGrapevine.friendState('FrontGuest') === 'incoming'), 15000)));
   await H.ctx.close(); await G.ctx.close();
 }
 

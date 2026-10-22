@@ -10303,15 +10303,15 @@
         const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
         const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp ? ' TEAM DEATHMATCH' : '');
         const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        // Grapevine Lite (the launcher's account): one name in every game, players proven by their account key, and a
-        // + FRIEND button that sends a real Grapevine friend request. The launcher page owns the account (window.parent.HGLite);
+        // Grapevine (the launcher's account): one name in every game, players proven by their account key, and a
+        // + FRIEND button that sends a real Grapevine friend request. The launcher page owns the account (window.parent.HGGrapevine);
         // opened on its own, or while signed out, none of this shows and the game behaves exactly as before.
         const GVL = {
-            get L() { try { return window.parent && window.parent !== window ? (window.parent.HGLite || null) : null; } catch (e) { return null; } },
+            get L() { try { const w = window.parent !== window ? window.parent : window.opener; return (w && w.HGGrapevine) || null; } catch (e) { return null; } },   // in the launcher's frame, or in a new tab it opened
             name() {
                 const L = this.L, me = L && L.me();
                 if (me) return me.name;
-                try { return (localStorage.getItem('hglite:key') && localStorage.getItem('hglite:name')) || ''; } catch (e) { return ''; }   // new-tab copy: the name only
+                try { return (localStorage.getItem('hgv:key') && localStorage.getItem('hgv:name')) || ''; } catch (e) { return ''; }   // new-tab copy: the name only
             },
             on() { const L = this.L; return !!(L && L.online()); },
             friendBtn(name) {
@@ -11591,7 +11591,7 @@
                 const lname = GVL.name(); if (lname && NET.name !== lname) NET.name = lname;
                 h += `<div class="mdesc text-sm mb-4">Play with friends straight from your browsers - no accounts. One person <b class="text-white">hosts</b> (their computer runs the game) and gets a <b class="text-white">6-digit party code</b>. Everyone else clicks <b class="text-white">JOIN</b> and types it in.</div>`;
                 if (NET.homeMsg) h += `<div class="bg-red-900/50 border border-red-500/50 rounded-lg px-4 py-2 font-bold text-red-200 mb-4">${escHtml(NET.homeMsg)}</div>`;
-                h += `<div class="mlabel">YOUR NAME</div><input id="mp-name" maxlength="16" value="${escHtml(NET.name)}"${GVL.name() ? ' readonly title="Your Grapevine Lite name"' : ''} class="bg-gray-900 border-2 border-gray-700 rounded-lg px-3 py-2 font-black text-lg w-72 text-white focus:outline-none focus:border-purple-400">${GVL.name() ? '<div class="text-xs text-gray-400 mt-1">Playing as your Grapevine account.</div>' : (GVL.L ? '<div class="text-xs text-gray-400 mt-1">Tip: sign in to Grapevine Lite in the launcher to keep one name and make friends from here.</div>' : '')}`;
+                h += `<div class="mlabel">YOUR NAME</div><input id="mp-name" maxlength="16" value="${escHtml(NET.name)}"${GVL.name() ? ' readonly title="Your Grapevine name"' : ''} class="bg-gray-900 border-2 border-gray-700 rounded-lg px-3 py-2 font-black text-lg w-72 text-white focus:outline-none focus:border-purple-400">${GVL.name() ? '<div class="text-xs text-gray-400 mt-1">Playing as your Grapevine account.</div>' : (GVL.L ? '<div class="text-xs text-gray-400 mt-1">Tip: sign in to Grapevine in the launcher to keep one name and make friends from here.</div>' : '')}`;
                 h += mpClassRow();
                 h += `<label class="flex items-center gap-3 text-sm font-bold text-gray-300 mt-4"><input type="checkbox" id="mp-lan" class="w-4 h-4 accent-purple-500"${NET.lanOnly ? ' checked' : ''}> Same Wi-Fi only (skips the one-time "what's my address?" lookup - only works on the same network)</label>`;
                 h += `<div class="grid grid-cols-2 gap-4 mt-6">

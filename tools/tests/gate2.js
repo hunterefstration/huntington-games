@@ -16,6 +16,8 @@ if(!B) throw new Error('set HG_BUILD (and HG_SECRET for gate.js)');
       if(u.includes('gate.json'))return r.fulfill({contentType:'application/json',body:'{"min":1}'});
       if(u.includes('data.jsdelivr.com'))return r.fulfill({contentType:'application/json',body:'{"files":[]}'});
       return r.abort();});
+    // the launcher needs an account; this player has signed in on this device before, so it opens straight away
+    await page.addInitScript(()=>{ try{ localStorage.setItem('hgv:key','x'.repeat(43)); localStorage.setItem('hgv:name','Tester'); }catch(e){} });
     await page.goto('https://fiddle.jshell.net/',{waitUntil:'load',timeout:20000});
     await page.waitForTimeout(1500);
     const grid=await page.evaluate(()=>document.querySelectorAll('.game').length);

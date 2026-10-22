@@ -55,17 +55,18 @@ Built, 324 local checks pass. Stress test found, still to fix:
 - minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
 Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
 
-## Grapevine Lite + Grapevine relay (branch claude/intelligent-goodall-akekpu, NOT released)
-- Why Grapevine failed at school: its server is a home Mac reached over WebRTC; school networks block that. Blocky works because two
-  browsers just need to find each other. Fix lives in the **grapevine** repo (same branch name): `relay/` (HGNet over public MQTT relays on 443,
-  end-to-end encrypted, raced against PeerJS) + the same PeerJS TURN servers Blocky uses. The owner must restart `archive.js` and paste the new client.html.
-- **Grapevine Lite** = the launcher's second tab (`lite/` here; `tools/build-lite.sh` builds `lite/lite.js`). Same account/recovery key, relay link to the
-  real server. `window.HGLite` is what games read as `window.parent.HGLite`: `me()`, `friendState()`, `addFriend()`, `prove()`/`check()`.
-  The hub (index.html) was restyled to Grapevine's amber/dark theme (CSS variables at the top); the licence block is untouched.
-- Games with multiplayer (Blocky Shooter, Frontline): name locked to the Lite name, host and guest prove their account to each other
-  (challenge -> signed proof, checked against the server's public key for that name), verified players get a check mark and a +Friend button.
-  Their transports are unchanged. Other games have no multiplayer.
-- Release: `tools/release.sh prepare` copies only the named game folders from the checkout; the hub (index.html) and `lite/` must be copied into
-  the worktree by hand before `finish` (they are not game folders), and the release must also add `Blocky Shooter V2` and `Frontline`.
-- Tests: `tools/tests/lite.mjs` (tab, accounts, friends, proofs) and `tools/tests/lite-games.mjs` need the Grapevine rig (see its test/README.md and relay notes).
-- Lite config (archive ids, pinned server key) is copied in `lite/core.js`; keep in step with Grapevine's `client.html` CONFIG.
+## Grapevine in the launcher + relay (branch claude/intelligent-goodall-akekpu, NOT released)
+- Grapevine's server used to be reachable only over WebRTC, which school networks block. Fix lives in the **grapevine** repo (same branch name):
+  `relay/` (HGNet over public MQTT relays on 443, end-to-end encrypted, raced against PeerJS) plus the PeerJS TURN servers Blocky uses.
+  Server hosting guide for an always-on machine: grapevine `deploy/DEPLOY.md`. The database needs `migrate-v13.sql` (cloud saves).
+- The launcher IS Grapevine now (`gv/`, see gv/README.md): an account gates the launcher, the Grapevine tab runs the full app signed in as the
+  same account (`gv/app.html`, copied from grapevine `client.html` with `tools/sync-grapevine.sh`; rebuild `gv/account.js` with `tools/build-gv.sh`),
+  game saves sync to the account (`HGGrapevine.sync`), games read the account as `parent.HGGrapevine`. Blocky Shooter and Frontline lock the name to
+  the account and show verified players with a +Friend button. "New tab" opens about:blank and writes the game into it.
+- Cards: Neon Dash 2.0 (folder "Levi Dash By Levi 2.0") is the last main game and is now in build-release.py's GAMES (licence-gated); credits: Levi
+  (Neon Dash, Neon Drift), Robbie (Bean & Brew Classic, original Market & Life). Sovereign is NOT added (only a plan exists on branch wizardly-hawking).
+- Release: `tools/release.sh prepare` copies only the named game folders; the hub (index.html), `gv/`, `hub/neondash.jpg` and `tools/` changes must be copied into
+  the worktree by hand before `finish`; the game folders to pass are `"Blocky Shooter V2" Frontline "Levi Dash By Levi 2.0"`. Run
+  `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
+- Tests (need the Grapevine rig, see grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves, Grapevine tab, cards, new tab) and
+  `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).

@@ -489,15 +489,15 @@ const rr = (a, b) => a + Math.random() * (b - a);
 const PI = Math.PI, TAU = PI * 2;
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > PI) d -= TAU; if (d < -PI) d += TAU; return d; };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-// Grapevine Lite (the launcher's account): one commander name everywhere, players proven by their account key, and a
-// Friend button that sends a real Grapevine friend request. The launcher owns the account (window.parent.HGLite); opened on
+// Grapevine (the launcher's account): one commander name everywhere, players proven by their account key, and a
+// Friend button that sends a real Grapevine friend request. The launcher owns the account (window.parent.HGGrapevine); opened on
 // its own, or while signed out, none of this shows and the game behaves exactly as before.
 const GVL = {
-  get L() { try { return window.parent && window.parent !== window ? (window.parent.HGLite || null) : null; } catch (e) { return null; } },
+  get L() { try { const w = window.parent !== window ? window.parent : window.opener; return (w && w.HGGrapevine) || null; } catch (e) { return null; } },   // in the launcher's frame, or in a new tab it opened
   name() {
     const L = this.L, me = L && L.me();
     if (me) return me.name;
-    try { return (localStorage.getItem('hglite:key') && localStorage.getItem('hglite:name')) || ''; } catch (e) { return ''; }   // new-tab copy: the name only
+    try { return (localStorage.getItem('hgv:key') && localStorage.getItem('hgv:name')) || ''; } catch (e) { return ''; }   // new-tab copy: the name only
   },
   on() { const L = this.L; return !!(L && L.online()); },
   tag(name) {   // a verified mark, plus a Friend button when it is somebody else
@@ -5659,7 +5659,7 @@ function mapPreview(id) {
 function seg(k, opts, cur, act) { return '<div class="seg">' + opts.map(o => '<button class="' + (String(o[0]) === String(cur) ? 'on' : '') + '" data-act="' + (act || 'opt') + '" data-k="' + k + '" data-v="' + o[0] + '">' + o[1] + '</button>').join('') + '</div>'; }
 function sel(k, opts, cur, act, extra) { return '<select data-act="' + (act || 'optsel') + '" data-k="' + k + '" ' + (extra || '') + '>' + opts.map(o => '<option value="' + o[0] + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>'; }
 function showScreen(name, arg) {
-  { const ln = GVL.name(); if (ln && SET.name !== ln.slice(0, 14)) SET.name = ln.slice(0, 14); }   // the Grapevine Lite name wins
+  { const ln = GVL.name(); if (ln && SET.name !== ln.slice(0, 14)) SET.name = ln.slice(0, 14); }   // the Grapevine name wins
   SCREEN = name; const m = MENU(); closeTech(); $('#tip').classList.add('hidden');
   const fn = SCREENS[name]; if (!fn) { m.innerHTML = ''; return; }
   const html = fn(arg); m.innerHTML = html; const ao = m.querySelector('[data-autofocus]'); if (ao) setTimeout(() => ao.focus(), 30); if (SCREENS_AFTER[name]) SCREENS_AFTER[name](arg);
@@ -5762,7 +5762,7 @@ SCREENS.settings = () => {
   <div class="row" style="gap:18px"><div><div class="lbl">Scroll with mouse edges</div>${o('edge', [[1, 'On'], [0, 'Off']])}</div><div><div class="lbl">Mouse wheel</div>${seg('scroll', [['pan', 'Moves the map'], ['zoom', 'Zooms']], SET.scroll === 'zoom' ? 'zoom' : 'pan', 'setv')}</div></div>
   <div class="lbl">Screen buttons size</div>${seg('uiSize', [['s', 'Small'], ['m', 'Normal'], ['l', 'Large']], SET.uiSize || 'm', 'setv')}
   <div class="row" style="gap:18px"><div><div class="lbl">Health bars</div>${seg('hpAlways', [[0, 'When hurt'], [1, 'Always']], SET.hpAlways ? 1 : 0, 'setb')}</div><div><div class="lbl">Show FPS</div>${o('fps', [[1, 'On'], [0, 'Off']])}</div></div>
-  <div class="lbl">Commander name</div><input type="text" maxlength="14" value="${esc(SET.name)}" data-act="name"${GVL.name() ? ' readonly' : ''}>${GVL.name() ? '<div class="note">Your Grapevine Lite name.</div>' : ''}
+  <div class="lbl">Commander name</div><input type="text" maxlength="14" value="${esc(SET.name)}" data-act="name"${GVL.name() ? ' readonly' : ''}>${GVL.name() ? '<div class="note">Your Grapevine name.</div>' : ''}
   <div style="margin-top:14px"><button class="tbtn" data-act="adv">${SET.adv ? 'Hide' : 'Show'} advanced graphics</button></div>${adv}</div></div>`;
 };
 SCREENS.profile = () => {
@@ -6610,7 +6610,7 @@ function lobbyMainHtml() {
     if (NET.codeState === 'error') return '<div class="note" style="padding:20px;color:#ff9a8a;text-align:center">' + esc(NET.codeErr) + '</div><button class="mbtn" data-act="mphost">Try again</button>';
     for (let i = 0; i < n; i++) {
       const s = SK.slots[i]; rows += `<div class="slot"><span class="cdot" style="background:${hex3(PCOL[colors[i]].c)}"></span>`;
-      if (i === 0) rows += `<b style="min-width:130px">${esc(SET.name)} (Host)${GVL.on() ? ' <span style="color:#7be08a" data-tip="Verified|You are signed in to Grapevine Lite.">&#10003;</span>' : ''}</b>` + sel('hfac', FACS.map(f => [f.id, f.n]), SK.fac | 0, 'hostfac', 'data-tip="Your army|Pick the army you lead."');
+      if (i === 0) rows += `<b style="min-width:130px">${esc(SET.name)} (Host)${GVL.on() ? ' <span style="color:#7be08a" data-tip="Verified|You are signed in to Grapevine.">&#10003;</span>' : ''}</b>` + sel('hfac', FACS.map(f => [f.id, f.n]), SK.fac | 0, 'hostfac', 'data-tip="Your army|Pick the army you lead."');
       else if (i === 1) rows += `<b style="min-width:130px">${NET.peer ? esc(NET.guestName) + GVL.tag(NET.guestGv) : '<span style="color:#8c9db1">Waiting for friend...</span>'}</b><span style="color:${NET.guestReady ? '#7be08a' : '#8c9db1'}">${NET.peer ? (NET.guestReady ? 'Ready' : 'Not ready') : ''}</span>${NET.peer ? '<span class="note" style="margin-left:8px">' + FACS[NET.guestFac | 0].n + '</span>' : ''}${viaTag()}`;
       else rows += sel('kind' + i, [['ai', 'AI Commander'], ['closed', 'Closed']], s.kind, 'slotkind', 'data-i="' + i + '"');
       if (s.kind === 'ai') rows += sel('pers' + i, Object.values(AIP).map(p => [p.id, p.name]), s.pers, 'slotpers', 'data-i="' + i + '"') + sel('diff' + i, Object.entries(AID).map(([k, v]) => [k, v.n]), s.diff, 'slotdiff', 'data-i="' + i + '"') + slotFacSel(s, i);
