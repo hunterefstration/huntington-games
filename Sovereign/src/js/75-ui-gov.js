@@ -75,10 +75,11 @@ Object.assign(Panels, {
     el.innerHTML = this.head('People', `Polarisation ${n.polar.toFixed(0)}/100 · Stock market ${(n.stocks || 100).toFixed(0)} · Freedom ${n.freedom.toFixed(0)}`) +
       `<div class="sub" style="margin:6px 0">Approval is the average of these groups, weighted by how many people are in each. Power is how much they matter for your survival. Click a group to see why.</div>` +
       GROUPS.map(g => { const v = n.groups[g.id];
-        return `<div class="sl" data-gwhy="${g.id}" style="cursor:pointer;grid-template-columns:150px 1fr 70px"><span>${g.icon} ${g.name}</span>
+        return `<div class="sl" data-gwhy="${g.id}" style="cursor:pointer;grid-template-columns:150px 1fr 120px"><span>${g.icon} ${g.name}</span>
           <div style="height:10px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden"><div style="height:100%;width:${v}%;background:${v > 55 ? 'var(--green)' : v < 35 ? 'var(--red)' : 'var(--gold)'}"></div></div>
           <span class="val">${v.toFixed(0)}%<small>${(g.share(n) * 100).toFixed(0)}% of people · power ${cloutOf(n, g.id).toFixed(1)}</small></span></div>`; }).join('') +
-      `<h3>Spin doctors</h3><div class="btnrow"><button class="btn small" data-spin="press">Press conference (4)</button><button class="btn small" data-spin="blame">Blame the opposition (3)</button><button class="btn small" data-spin="bury">Bury bad news (2)</button></div>
+      `<h3>Who's who</h3>${(G.people || []).map(p => `<div class="sumrow"><span><b>${esc(p.name)}</b> <span class="sub">${esc(p.role)}</span></span><span class="sub">${esc(p.note)}</span></div>`).join('')}
+      <h3>Spin doctors</h3><div class="btnrow"><button class="btn small" data-spin="press">Press conference (4)</button><button class="btn small" data-spin="blame">Blame the opposition (3)</button><button class="btn small" data-spin="bury">Bury bad news (2)</button></div>
       <div class="sub" style="margin-top:6px">Spin softens the next reaction, but can backfire.</div>` +
       ((n.crowds || []).length ? '<h3>In the streets</h3>' + n.crowds.map(c => `<div class="sumrow"><span>${c.kind === 'protest' ? '✊ Protest' : '🎉 Rally'} by ${esc(c.group.toLowerCase())} in ${esc(World.cities[c.city].name)}</span><button class="btn small" data-goto="${c.city}">Look</button></div>`).join('') : '');
     $$('[data-gwhy]', el).forEach(r => r.onclick = () => { const id = r.dataset.gwhy, gr = GROUPS[G_IDX[id]]; n.why['g_' + id] = n.gwhy && n.gwhy[id]; WHY_TITLES['g_' + id] = gr.name + ': what they think of you'; Game.why('g_' + id, r); });

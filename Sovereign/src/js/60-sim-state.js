@@ -139,6 +139,9 @@ function newGame(opt) {
   n.honeymoon = opt.real ? 0 : 1;
   applyTraits(n, G.player.traits);
   ensureSystems(G);
+  const c = World.countries[opt.idx];
+  G.feed = [{ type: 'news', day: 0, outlet: 'World Wire', text: (opt.real ? opt.name + ' faces a new chapter in ' : opt.name + ' takes office in ') + c.name, mood: 0 },
+    { type: 'news', day: 0, outlet: 'World Wire', text: 'War in Ukraine grinds on into its fifth year', mood: -1 }].concat(G.feed || []);
   recordHistory(true);
   return G;
 }
