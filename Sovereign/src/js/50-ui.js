@@ -150,7 +150,7 @@ const UI = {
       <div class="big-flag">${c.flag}</div><h3>${esc(c.name)}</h3><div class="off">${esc(c.official)}</div>
       <div class="facts">${facts.map(([k, v]) => `<b>${k}</b><span>${esc(v)}</span>`).join('')}</div>
       ${isSel ? `<button class="btn gold" data-act="lead" data-idx="${c.idx}">Lead ${esc(c.name)}</button>`
-        : `<button class="btn small" data-act="fly" data-idx="${c.idx}">Fly here</button>`}`;
+        : `<div class="btnrow"><button class="btn small" data-act="fly" data-idx="${c.idx}">Fly here</button>${G && c.idx !== G.player.idx ? `<button class="btn small gold" data-act="diplo" data-idx="${c.idx}">Diplomacy</button>` : ''}</div>`}`;
   },
 
   titleButtons() {
