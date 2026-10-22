@@ -79,18 +79,34 @@ try {
   check('the gate is gone and the games show', await A.evaluate(() => document.getElementById('gate').hidden && !document.getElementById('view-games').hidden));
   check('the header chip shows the name', await A.$eval('#chip-nm', e => e.textContent) === 'GvAlice');
 
-  console.log('\n=== 3. friends, from the Account tab ===');
+  console.log('\n=== 3. the full app inside the launcher: chat and friends ===');
   const B = await device(await browser.newContext());
   await createAccount(B, 'GvBob');
   check('bob signs in', !!(await until(async () => (await status(B)) === 'online', 60000)));
-  await A.click('#tab-acct'); await A.waitForSelector('#view-acct .gl #gl-add');
-  await A.fill('#gl-add', 'GvBob'); await A.click('#gl-add-go');
-  check('alice sent the request', !!(await until(() => A.evaluate(() => HGGrapevine.friendState('GvBob') === 'outgoing'))));
-  check('bob has it', !!(await until(() => B.evaluate(() => HGGrapevine.friendState('GvAlice') === 'incoming'))));
-  await B.click('#tab-acct'); await B.waitForSelector('#view-acct .gl .seg');
-  await B.click('#view-acct .gl .seg button[data-view=requests]'); await B.waitForSelector('[data-incoming=GvAlice]');
-  await B.click('[data-incoming=GvAlice] .mbtn');
+  const appOf = async page => until(async () => {
+    const f = page.frames().find(x => x !== page.mainFrame() && x.url().startsWith('about:srcdoc'));
+    return f && (await f.evaluate(() => !!(window.S && S.joined && S.ready)).catch(() => false)) ? f : null; }, 90000);
+  // the app starts by itself in the background after sign-in, before anybody opens the tab
+  const appA = await appOf(A), appB = await appOf(B);
+  check('the full Grapevine app is already running for both, signed in as their accounts', !!appA && !!appB && await appA.evaluate(() => S.name) === 'GvAlice' && await appB.evaluate(() => S.name) === 'GvBob');
+  await A.click('#tab-chat'); await B.click('#tab-chat');
+  check('the tab shows the real app (sidebar, rooms, composer)', await appA.evaluate(() => !!document.querySelector('#side') && !!document.querySelector('#text') && !!document.querySelector('#send') && getComputedStyle(document.querySelector('#app')).display !== 'none'));
+  for (const f of [appA, appB]) { await f.click('#goNo', { timeout: 3000 }).catch(() => {}); await f.evaluate(() => GV.openConv('main')); }
+  await appA.fill('#text', 'hello from inside the launcher'); await appA.click('#send');
+  check('a message typed in the launcher\'s Grapevine reaches the other launcher', !!(await until(() => appB.$eval('#log', e => e.innerText.includes('hello from inside the launcher')), 30000)));
+  await appB.fill('#text', '/dm GvAlice'); await appB.press('#text', 'Enter');
+  await appB.fill('#text', 'a private hello'); await appB.click('#send');
+  check('direct messages work', !!(await until(() => appA.evaluate(() => [...S.convs.values()].some(c => c.kind === 'dm')), 30000)));
+  // friend request through the in-game API path, accepted in the full app's own friends window
+  await A.evaluate(() => HGGrapevine.addFriend('GvBob'));
+  check('the request shows up in the other person\'s full Grapevine', !!(await until(() => appB.evaluate(() => S.friendsIn.some(r => r.name === 'GvAlice')), 20000)));
+  await B.evaluate(() => window.HG_openGrapevine('requests'));
+  await appB.waitForSelector('#friendsModal.on, .modal.on', { timeout: 10000 }).catch(() => {});
+  check('the launcher can open the full app\'s friends window', await appB.evaluate(() => !!document.querySelector('.modal.on, #friendsModal.on, [id*=riend].on')).catch(() => false));
+  await appB.evaluate(() => tell({ type: 'friendAccept', name: 'GvAlice' }));
   check('they are friends', !!(await until(() => A.evaluate(() => HGGrapevine.friendState('GvBob') === 'friend'))));
+  check('the Account tab points at it instead of duplicating it', await (async () => { await A.click('#tab-acct'); return !!(await A.waitForSelector('#gl-open-chat', { timeout: 10000 }).catch(() => null)); })());
+  await A.click('#tab-games');
 
   console.log('\n=== 4. proofs, as games use them ===');
   const ch = await A.evaluate(() => HGGrapevine.newChallenge());
@@ -116,15 +132,8 @@ try {
   check('a save made on device 2 reaches device 1', await A.evaluate(() => (localStorage.getItem('beanBrewSaveV2') || '').includes('123')));
   check('other sites\' keys never travel', !(await D2.evaluate(() => { localStorage.setItem('someOtherAppKey', 'private'); return HGGrapevine.sync.run().then(() => 0); }).then(async () => (await A.evaluate(() => HGGrapevine.sync.run()), A.evaluate(() => localStorage.getItem('someOtherAppKey') !== null)))));
 
-  console.log('\n=== 6. the Grapevine tab is the full app, already signed in ===');
-  await A.click('#tab-chat');
-  const app = await until(async () => { const f = A.frames().find(x => x !== A.mainFrame() && x.url().startsWith('about:srcdoc')); return f && (await f.evaluate(() => !!(window.S && S.joined && S.ready)).catch(() => false)) ? f : null; }, 90000);
-  check('the embedded Grapevine is signed in as the same account', !!app);
-  if (app) {
-    check('...with the account\'s name', await app.evaluate(() => S.name === 'GvAlice'));
-    check('...and no separate sign-out button', await app.evaluate(() => getComputedStyle(document.querySelector('#signOut')).display === 'none'));
-  }
-  await A.click('#tab-games');
+  console.log('\n=== 6. the app keeps its own sign-out hidden ===');
+  check('no separate sign-out inside the embedded app', await appA.evaluate(() => getComputedStyle(document.querySelector('#signOut')).display === 'none'));
 
   console.log('\n=== 7. the game cards ===');
   const names = await A.$$eval('.game .name', es => es.map(e => e.textContent));

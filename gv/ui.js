@@ -69,7 +69,7 @@
     return e;
   }
 
-  var root, gate = false, mounts = [], view = 'friends', mode = 'in', pendingKey = null, toastT = null, busy = false, diagHtml = null;
+  var root, gate = false, mounts = [], view = 'saves', mode = 'in', pendingKey = null, toastT = null, busy = false, diagHtml = null;
 
   function toast(msg, bad) {
     var old = document.getElementById('gl-toast'); if (old) old.remove();
@@ -164,61 +164,29 @@
       h('button', { class: 'mbtn warn', id: 'gl-out', text: 'Sign out', onclick: function () {
         var b = this; b.disabled = true;
         L.signOut().then(function (r) {
-          if (r.saved) { view = 'friends'; render(); return; }
-          if (confirm('Grapevine could not save your games to your account right now (no connection). Signing out would clear them from this device. Sign out anyway?')) { L.signOut({ force: true }).then(function () { view = 'friends'; render(); }); }
+          if (r.saved) { view = 'saves'; render(); return; }
+          if (confirm('Grapevine could not save your games to your account right now (no connection). Signing out would clear them from this device. Sign out anyway?')) { L.signOut({ force: true }).then(function () { view = 'saves'; render(); }); }
           else b.disabled = false;
         });
       } })));
     var nIn = f.incoming.length;
-    var tabs = [['friends', 'Friends'], ['requests', 'Requests' + (nIn ? ' (' + nIn + ')' : '')], ['met', 'Met in games'], ['saves', 'Saves'], ['conn', 'Connection']];
+    wrap.appendChild(h('div', { class: 'card', style: 'margin-bottom:16px' },
+      h('div', { class: 'k', text: 'chat, friends, rooms and messages' }),
+      h('p', { class: 'sub', style: 'margin:6px 0 12px', text: 'They all live in the Grapevine tab, signed in as you.' + (nIn ? ' ' + nIn + ' friend request' + (nIn > 1 ? 's are' : ' is') + ' waiting.' : '') }),
+      h('div', { class: 'add' },
+        h('button', { class: 'mbtn', id: 'gl-open-chat', text: 'Open Grapevine', onclick: function () { window.HG_openGrapevine && window.HG_openGrapevine(); } }),
+        h('button', { class: 'mbtn', id: 'gl-open-friends', text: nIn ? 'Friend requests (' + nIn + ')' : 'Friends', onclick: function () { window.HG_openGrapevine && window.HG_openGrapevine(nIn ? 'requests' : 'friends'); } }))));
+    var tabs = [['saves', 'Saves'], ['met', 'Met in games'], ['conn', 'Connection']];
     wrap.appendChild(h('div', { class: 'seg' }, tabs.map(function (t) {
       return h('button', { class: view === t[0] ? 'on' : '', 'data-view': t[0], text: t[1], onclick: function () { view = t[0]; render(); } });
     })));
-    wrap.appendChild(view === 'friends' ? friendsView(f) : view === 'requests' ? requestsView(f) : view === 'met' ? metView() : view === 'saves' ? savesView() : connView());
+    wrap.appendChild(view === 'met' ? metView() : view === 'conn' ? connView() : savesView());
     return wrap;
   }
 
   function act(btn, p, okMsg) {
     btn.disabled = true;
     p.then(function () { if (okMsg) toast(okMsg); }, function (e) { toast(e.message || 'That did not work.', true); }).then(function () { btn.disabled = false; });
-  }
-
-  function friendsView(f) {
-    var box = h('div');
-    var inp = h('input', { type: 'text', id: 'gl-add', maxlength: '24', autocomplete: 'off', placeholder: 'add a friend by exact name' });
-    var btn = h('button', { class: 'mbtn', id: 'gl-add-go', text: 'Add', onclick: function () {
-      var n = inp.value.trim(); if (!n) return;
-      act(btn, L.addFriend(n).then(function () { inp.value = ''; }), L.friendState(n) === 'incoming' ? 'You are now friends with ' + n : 'Friend request sent to ' + n);
-    } });
-    inp.onkeydown = function (e) { if (e.key === 'Enter') btn.click(); };
-    box.appendChild(h('div', { class: 'add' }, inp, btn));
-    box.appendChild(h('div', { class: 'hint', text: 'Names are case-sensitive. Friends you make here are your friends in Grapevine too.' }));
-    var online = f.friends.filter(function (x) { return x.online; }).length;
-    box.appendChild(h('div', { class: 'sect', text: 'friends - ' + online + ' online of ' + f.friends.length }));
-    if (!f.friends.length) box.appendChild(h('div', { class: 'empty', text: f.loaded ? 'No friends yet. Add someone above, or play multiplayer and tap + Friend next to a player.' : 'Loading your friends...' }));
-    f.friends.forEach(function (x) {
-      var rm = h('button', { class: 'mbtn warn', text: 'Remove', onclick: function () { if (confirm('Remove ' + x.name + ' from your friends?')) act(rm, L.removeFriend(x.name), x.name + ' removed'); } });
-      box.appendChild(h('div', { class: 'row', 'data-friend': x.name }, h('span', { class: 'dot ' + (x.online ? 'on' : '') }), h('span', { class: 'nm', text: x.name }), h('span', { class: 'sm', text: x.online ? 'online' : 'offline' }), h('span', { class: 'btns' }, rm)));
-    });
-    return box;
-  }
-
-  function requestsView(f) {
-    var box = h('div');
-    box.appendChild(h('div', { class: 'sect', text: 'asked to be your friend' }));
-    if (!f.incoming.length) box.appendChild(h('div', { class: 'empty', text: 'No one is waiting on you.' }));
-    f.incoming.forEach(function (x) {
-      var ok = h('button', { class: 'mbtn', text: 'Accept', onclick: function () { act(ok, L.acceptFriend(x.name), 'You are now friends with ' + x.name); } });
-      var no = h('button', { class: 'mbtn warn', text: 'Decline', onclick: function () { act(no, L.declineFriend(x.name)); } });
-      box.appendChild(h('div', { class: 'row', 'data-incoming': x.name }, h('span', { class: 'nm', text: x.name }), h('span', { class: 'btns' }, ok, no)));
-    });
-    box.appendChild(h('div', { class: 'sect', text: 'you asked' }));
-    if (!f.outgoing.length) box.appendChild(h('div', { class: 'empty', text: 'No requests sent.' }));
-    f.outgoing.forEach(function (x) {
-      var no = h('button', { class: 'mbtn warn', text: 'Cancel', onclick: function () { act(no, L.declineFriend(x.name)); } });
-      box.appendChild(h('div', { class: 'row', 'data-outgoing': x.name }, h('span', { class: 'nm', text: x.name }), h('span', { class: 'sm', text: 'waiting' }), h('span', { class: 'btns' }, no)));
-    });
-    return box;
   }
 
   function metView() {
