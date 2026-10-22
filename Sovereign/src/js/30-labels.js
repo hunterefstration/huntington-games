@@ -83,6 +83,7 @@ const Overlay = {
       c.beginPath(); c.arc(p.x, p.y, 10, 0, 7); c.fillStyle = m.color; c.globalAlpha = 0.85; c.fill(); c.globalAlpha = 1;
       c.lineWidth = 2; c.strokeStyle = '#0b1424'; c.stroke(); this.text(m.label, p.x, p.y - 18, 12, '#fff', 700);
     }
+    if (typeof drawFronts === 'function') drawFronts(c);
     const icons = typeof mapIcons === 'function' && G ? mapIcons() : [];
     c.font = '18px system-ui'; this.iconHits = [];
     for (const ic of icons) {

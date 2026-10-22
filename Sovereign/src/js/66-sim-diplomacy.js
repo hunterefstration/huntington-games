@@ -8,7 +8,7 @@ const RIVALS = [['USA', 'CHN', -35], ['USA', 'RUS', -55], ['USA', 'IRN', -80], [
   ['CHN', 'PHL', -40], ['CHN', 'VNM', -20], ['CHN', 'AUS', -15], ['RUS', 'GEO', -50], ['RUS', 'MDA', -40], ['COD', 'RWA', -55], ['EGY', 'ETH', -30], ['KHM', 'THA', -30], ['IRN', 'ARE', -15]];
 const FRIENDS = [['USA', 'ISR', 50], ['USA', 'GBR', 45], ['USA', 'JPN', 40], ['USA', 'KOR', 40], ['USA', 'CAN', 30], ['USA', 'AUS', 40], ['RUS', 'BLR', 55], ['CHN', 'PAK', 50], ['CHN', 'RUS', 40],
   ['IND', 'RUS', 25], ['FRA', 'DEU', 40], ['AUS', 'NZL', 50], ['CHN', 'PRK', 30], ['RUS', 'IRN', 35], ['SAU', 'ARE', 40], ['TUR', 'AZE', 55], ['GRC', 'CYP', 50], ['USA', 'TWN', 35],
-  ['UKR', 'POL', 35], ['UKR', 'GBR', 40], ['RUS', 'PRK', 35], ['SRB', 'RUS', 30], ['ARG', 'USA', 20], ['IND', 'USA', 20], ['EGY', 'SAU', 30], ['QAT', 'TUR', 35]];
+  ['UKR', 'POL', 40], ['UKR', 'GBR', 45], ['UKR', 'USA', 30], ['UKR', 'DEU', 40], ['UKR', 'FRA', 40], ['UKR', 'CAN', 40], ['UKR', 'NLD', 40], ['UKR', 'SWE', 45], ['UKR', 'FIN', 45], ['UKR', 'DNK', 45], ['UKR', 'NOR', 40], ['UKR', 'EST', 45], ['UKR', 'LVA', 45], ['UKR', 'LTU', 45], ['UKR', 'CZE', 35], ['UKR', 'ITA', 30], ['UKR', 'JPN', 30], ['UKR', 'AUS', 30], ['RUS', 'PRK', 35], ['SRB', 'RUS', 30], ['ARG', 'USA', 20], ['IND', 'USA', 20], ['EGY', 'SAU', 30], ['QAT', 'TUR', 35]];
 const PAIR = (a, b) => a < b ? a + ',' + b : b + ',' + a;
 const Diplo = { base: null, pairMap: {} };
 function buildBaseRelations() {
@@ -242,6 +242,12 @@ const DiploAct = {
     const r = G.requests[i], me = G.player.idx; if (!r) return;
     G.requests.splice(i, 1);
     const c = World.countries[r.from], n = G.nations[me];
+    if (r.type === 'joinwar' || r.type === 'peace') {
+      const w = G.wars.find(x => x.id === r.war); if (!w) return;
+      if (r.type === 'joinwar') { if (yes) { joinWar(w, me, r.side); react(n, { title: 'We join the war to defend ' + c.name, stance: { military: 5, students: -5, business: -3 }, size: 1.5, topic: 'War' }); } else { addRel(me, r.from, -25); G.trust[PAIR(r.from, me)] = (G.trust[PAIR(r.from, me)] || 50) - 20; } }
+      else if (yes) { const mine = w.a.includes(me) ? w.score : -w.score; endWar(w, mine > 35 ? (w.a.includes(me) ? 'a' : 'd') : 'white', 'talks'); }
+      syncWarVisuals(); return;
+    }
     if (!yes) { addRel(me, r.from, r.type === 'threat' ? 5 : -6); if (r.type === 'threat') { addRel(me, r.from, -15); react(n, { title: 'We refuse to bow to ' + c.name, stance: { military: 3 }, size: 0.6 }); } return; }
     if (r.type === 'trade' || r.type === 'defence') { G.treaties.push({ type: r.type, a: me, b: r.from, since: G.day }); react(n, { title: TREATIES[r.type].name + ' with ' + c.name, stance: r.type === 'trade' ? { business: 4, farmers: -2 } : { military: 3 }, size: 0.8 }); }
     if (r.type === 'aid') { const amt = gdpL(n) * 0.0005; n.debt += amt; addRel(me, r.from, 12); G.nations[r.from].evStab += 2; }

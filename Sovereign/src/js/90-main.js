@@ -66,7 +66,7 @@ function loop(now) {
 window.__sov = {
   ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
   get G() { return G; }, newGame, worldMonth, nextMonth, nextDay, Overlay, endGame, crisis, react, Politics, Life, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
-  flyTo, flyToCountry, screenToLL, llToScreen, pickLL,
+  flyTo, flyToCountry, screenToLL, llToScreen, pickLL, landPower: n => landPower(n), relation: (a, b) => relation(a, b),
   pick: (lon, lat) => { const h = pickLL(lon, lat); return h && h.c ? World.countries[h.c].id : null; },
   select: id => UI.select(id == null ? null : World.byId[id].idx, true),
   country: id => World.byId[id],
