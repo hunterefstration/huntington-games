@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sovereign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap">
+<!--@css-->
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<canvas id="globe"></canvas>
+<canvas id="overlay"></canvas>
+
+<div id="loading" class="screen on">
+  <div class="presents">HUNTINGTON GAMES <span>presents</span></div>
+  <div class="logo">SOVEREIGN</div>
+  <div class="bar"><div id="load-fill"></div></div>
+  <div id="load-text">Loading the world...</div>
+</div>
+
+<div id="title" class="screen">
+  <div class="title-box">
+    <div class="logo big">SOVEREIGN</div>
+    <div class="tagline">Lead any nation on Earth</div>
+    <div class="menu">
+      <button class="btn gold" data-act="new">New Game</button>
+      <button class="btn" data-act="explore">Explore the World</button>
+      <button class="btn" data-act="settings">Settings</button>
+      <button class="btn" data-act="credits">Credits</button>
+    </div>
+  </div>
+  <div class="foot">A Huntington Games production &middot; <span class="ver"></span></div>
+</div>
+
+<div id="select" class="screen">
+  <div class="panel side">
+    <div class="ph">
+      <button class="icon" data-act="back" title="Back">&larr;</button>
+      <h2>Choose your nation</h2>
+    </div>
+    <input id="sel-search" type="search" placeholder="Search 197 countries..." autocomplete="off">
+    <div class="chips" id="sel-regions"></div>
+    <div id="sel-list" class="list"></div>
+  </div>
+  <div id="sel-card" class="panel card hidden"></div>
+</div>
+
+<div id="setup" class="screen">
+  <div class="panel setup-box">
+    <div class="ph"><button class="icon" data-act="setup-back" title="Back">&larr;</button><h2>Take office</h2></div>
+    <div id="setup-body"></div>
+  </div>
+</div>
+
+<div id="hud" class="screen">
+  <div class="topbar panel">
+    <button class="icon" data-act="menu" title="Menu (Esc)">&#9776;</button>
+    <div id="hud-nation" class="nation"></div>
+    <div class="game-only clock">
+      <button class="icon" data-act="pause" id="btn-pause" title="Pause (Space)">&#10074;&#10074;</button>
+      <div class="speeds" id="speeds"></div>
+      <div id="date" class="date"></div>
+    </div>
+    <div class="game-only chips-stats" id="stats"></div>
+    <div class="grow"></div>
+    <button class="icon game-only bell" data-act="inbox" title="Inbox"><span>&#9993;</span><b id="unread"></b></button>
+    <div id="hud-note" class="note"></div>
+  </div>
+  <nav class="side panel game-only" id="nav"></nav>
+  <div id="panel" class="panel bigpanel hidden"></div>
+  <div id="why" class="panel why hidden"></div>
+  <div id="legend" class="panel legend hidden"></div>
+  <div class="modes panel" id="hud-modes"></div>
+  <div class="zoom panel">
+    <button class="icon" data-act="zin" title="Zoom in (+)">+</button>
+    <button class="icon" data-act="zout" title="Zoom out (-)">&minus;</button>
+    <button class="icon" data-act="home" title="Back to your nation (Home)">&#8962;</button>
+    <button class="icon" data-act="night" title="Night view (N)">&#9790;</button>
+  </div>
+  <div id="info" class="panel card hidden"></div>
+</div>
+
+<div id="modal" class="modal hidden"><div class="panel box" id="modal-box"></div></div>
+<div id="toast"></div>
+<div id="fps" class="hidden"></div>
+<!--@data-->
+<!--@js-->
+</body>
+</html>
