@@ -1,0 +1,198 @@
+id	pop	gdp	gr	inf	un	debt	gov	dem	leader	title	mil	milx	nuke	cr	blocs	res
+AFG	42.6	17	2.5	2	14	7	THEO	0.3	Hibatullah Akhundzada	Supreme Leader	150	1	0	NR	-	food,metal,rare
+ARM	3.0	26	5.5	3	13	50	PARL	5.4	Nikol Pashinyan	Prime Minister	45	1.7	0	BB-	CSTO,EEU	metal,food
+AZE	10.2	74	2.5	5	6	22	AUTH	2.7	Ilham Aliyev	President	65	3.8	0	BBB-	-	oil,gas
+BHR	1.6	47	3	1	6	130	AMON	2.3	Hamad bin Isa Al Khalifa	King	8	1.4	0	B+	AL,GCC	oil,fin
+BGD	175.7	475	4	9	4.5	40	PARL	4.6	Tarique Rahman	Prime Minister	165	4.2	0	BB-	CW	manu,food
+BTN	0.8	3.3	6	3	3	115	CMON	5.6	Tshering Tobgay	Prime Minister	8	0.1	0	NR	-	tour,food
+BRN	0.5	15	2.5	0	5	3	AMON	2.5	Hassanal Bolkiah	Sultan	7	0.5	0	NR	ASEAN,CW	oil,gas
+KHM	17.8	50	5	2	1	27	AUTH	2.6	Hun Manet	Prime Minister	125	1.4	0	NR	ASEAN	manu,tour,food
+CHN	1408	19400	4.8	0	5.2	96	ONEP	2.1	Xi Jinping	President	2035	314	600	A+	BRICS,SCO,G20,UNSC	manu,chips,rare,metal,coal,food
+GEO	3.7	34	7.5	3	14	38	PARL	4.7	Irakli Kobakhidze	Prime Minister	21	0.6	0	BB	-	tour,food,metal
+IND	1464	4190	6.5	3	5	82	PARL	7.2	Narendra Modi	Prime Minister	1475	86	180	BBB	BRICS,SCO,G20,CW	manu,fin,food,coal,tech
+IDN	284	1430	5	2	4.8	40	PRES	6.4	Prabowo Subianto	President	400	13	0	BBB	ASEAN,G20,BRICS	coal,metal,gas,food,oil
+IRN	92	340	0.5	40	9	35	THEO	1.9	Ali Khamenei	Supreme Leader	610	8	0	NR	BRICS,SCO,OPEC	oil,gas,metal
+IRQ	46.5	265	1	3	15	45	PARL	3.0	Mohammed Shia al-Sudani	Prime Minister	195	7	0	B-	AL,OPEC	oil
+ISR	10.1	580	3	3	3	68	PARL	7.8	Benjamin Netanyahu	Prime Minister	170	46	90	A	OECD	tech,chips,fin
+JPN	123.5	4190	0.7	3	2.5	235	CMON	8.4	Sanae Takaichi	Prime Minister	247	55	0	A+	G7,G20,OECD	manu,chips,tech,fin
+JOR	11.5	55	2.5	2	21	90	CMON	3.3	Abdullah II	King	100	2.4	0	BB-	AL	metal,tour
+KAZ	20.6	300	5.5	11	4.7	25	AUTH	3.1	Kassym-Jomart Tokayev	President	40	2.1	0	BBB	SCO,CSTO,EEU	oil,metal,rare,coal,food
+KWT	5.0	155	2	3	2	8	AMON	3.5	Mishal Al-Ahmad Al-Jaber Al-Sabah	Emir	17	8	0	A+	AL,GCC,OPEC	oil,fin
+KGZ	7.3	17	9	7	5	40	AUTH	3.0	Sadyr Japarov	President	11	0.2	0	B	SCO,CSTO,EEU	metal,food
+LAO	7.8	16	4	8	2	110	ONEP	1.7	Thongloun Sisoulith	President	29	0.1	0	NR	ASEAN	metal,food
+LBN	5.8	28	3	15	12	150	PARL	3.6	Joseph Aoun	President	60	0.5	0	SD	AL	fin,tour
+MYS	35.9	470	4.5	1.5	3	64	CMON	7.1	Anwar Ibrahim	Prime Minister	113	4.3	0	A-	ASEAN,CW	chips,manu,oil,gas
+MDV	0.5	7.5	5	2	5	120	PRES	5.5	Mohamed Muizzu	President	4	0.1	0	CCC	CW	tour
+MNG	3.5	24	6	8	5	45	SEMI	6.1	Gombojav Zandanshatar	Prime Minister	10	0.2	0	B+	-	coal,metal,rare
+MMR	54.9	65	-2	25	3	65	JUNTA	0.9	Min Aung Hlaing	Chairman	150	2.7	0	NR	ASEAN	gas,metal,rare,food
+NPL	29.6	44	4.5	4	11	45	PARL	4.6	Sushila Karki	Prime Minister	96	0.4	0	NR	-	tour,food
+PRK	26.5	28	2	5	3	0	ONEP	0.1	Kim Jong Un	General Secretary	1320	4	50	NR	-	metal,coal
+OMN	5.3	108	2.5	1	3	35	AMON	3.0	Haitham bin Tariq	Sultan	43	6.5	0	BBB-	AL,GCC	oil,gas
+PAK	255	410	3	5	7	70	PARL	3.3	Shehbaz Sharif	Prime Minister	660	10	170	B-	SCO,CW	food,manu
+PSE	5.5	13	-20	30	35	50	TRANS	3.4	Mahmoud Abbas	President	0	0	0	NR	AL	food
+PHL	116	500	5.5	1.8	4	60	PRES	6.6	Ferdinand Marcos Jr.	President	150	6	0	BBB+	ASEAN	manu,fin,metal,food
+QAT	3.1	225	2.5	1	0.1	40	AMON	3.2	Tamim bin Hamad Al Thani	Emir	17	15	0	AA	AL,GCC	gas,oil,fin
+SAU	35.3	1270	3.5	2	3.5	30	AMON	2.1	Mohammed bin Salman	Crown Prince	257	80	0	A+	AL,GCC,OPEC,G20	oil,gas,fin
+SGP	6.1	565	2.5	1	2	175	PARL	6.2	Lawrence Wong	Prime Minister	51	14	0	AAA	ASEAN,CW	fin,chips,tech,manu
+KOR	51.7	1860	1	2	2.8	52	PRES	8.1	Lee Jae-myung	President	500	48	0	AA	G20,OECD	chips,manu,tech
+LKA	22.0	99	4.5	1	4	100	PRES	6.5	Anura Kumara Dissanayake	President	255	1.4	0	CCC+	CW	food,tour
+SYR	24.7	22	1	20	20	60	TRANS	1.0	Ahmed al-Sharaa	President	100	0.5	0	NR	AL	oil,food
+TWN	23.3	850	4.5	2	3.4	27	SEMI	8.8	Lai Ching-te	President	215	22	0	AA+	-	chips,tech,manu
+TJK	10.6	15	8	4	7	30	AUTH	1.9	Emomali Rahmon	President	9	0.1	0	B	SCO,CSTO	metal,food
+THA	71.6	550	2	0	1	64	CMON	6.3	Anutin Charnvirakul	Prime Minister	360	5.8	0	BBB+	ASEAN	manu,tour,food
+TLS	1.4	2.2	3.5	1	5	12	SEMI	7.0	Xanana Gusmao	Prime Minister	2	0.05	0	NR	ASEAN	oil,gas
+TUR	87.7	1440	3	35	8.5	25	AUTH	4.3	Recep Tayyip Erdogan	President	355	25	0	BB-	NATO,G20,OECD	manu,food,tour
+TKM	7.5	85	6	5	4	5	AUTH	1.7	Serdar Berdimuhamedov	President	37	0.4	0	NR	-	gas,oil
+ARE	11.0	550	4.5	2	2.5	30	AMON	2.9	Mohamed bin Zayed Al Nahyan	President	63	23	0	AA	AL,GCC,OPEC,BRICS	oil,gas,fin,tour
+UZB	37.0	115	6.5	9	5	33	AUTH	2.1	Shavkat Mirziyoyev	President	48	1.6	0	BB	SCO	gas,metal,food
+VNM	101.3	490	7	3.5	2.2	34	ONEP	2.6	To Lam	General Secretary	450	7	0	BB+	ASEAN	manu,chips,food
+YEM	40.6	19	-1	25	18	70	TRANS	1.9	Rashad al-Alimi	Chairman	40	0.5	0	NR	AL	oil
+ALB	2.7	30	3.5	2	9	56	PARL	6.3	Edi Rama	Prime Minister	7	0.6	0	BB	NATO	tour,metal,food
+AND	0.08	4.5	2	2.5	2	36	CMON	8.0	Xavier Espot Zamora	Head of Government	0	0	0	A	-	tour,fin
+AUT	9.2	535	0.5	3.5	5.5	82	PARL	8.3	Christian Stocker	Chancellor	23	5	0	AA+	EU,OECD	manu,tour,fin
+BLR	9.1	76	2.5	6	3	40	AUTH	2.0	Alexander Lukashenko	President	48	1.5	0	NR	CSTO,EEU,SCO	manu,food
+BEL	11.9	680	1	2.5	5.8	105	CMON	7.6	Bart De Wever	Prime Minister	23	9	0	AA	NATO,EU,OECD	manu,fin,chips
+BIH	3.2	30	2.5	3	12	28	PARL	5.0	Borjana Kristo	Chair of Council of Ministers	10	0.3	0	B+	-	metal,food
+BGR	6.4	115	3	4	3.8	25	PARL	6.4	Rosen Zhelyazkov	Prime Minister	37	2.5	0	BBB+	NATO,EU	food,manu,tour
+HRV	3.9	100	3	4	5	57	PARL	6.5	Andrej Plenkovic	Prime Minister	15	1.8	0	A-	NATO,EU	tour,food
+CYP	1.0	38	3	2	4.5	64	PRES	7.4	Nikos Christodoulides	President	12	0.6	0	A-	EU,CW	tour,fin
+CZE	10.9	360	2	2.5	2.8	44	PARL	7.9	Andrej Babis	Prime Minister	27	7	0	AA-	NATO,EU,OECD	manu,food
+DNK	6.0	430	2.5	2	2.9	30	CMON	9.3	Mette Frederiksen	Prime Minister	15	10	0	AAA	NATO,EU,OECD	manu,fin,food,tech
+EST	1.4	45	0.5	5	7	24	PARL	7.9	Kristen Michal	Prime Minister	7	1.6	0	A+	NATO,EU,OECD	tech,fin
+FIN	5.6	310	0.5	2	9.5	82	PARL	9.3	Petteri Orpo	Prime Minister	24	7	0	AA	NATO,EU,OECD	manu,metal,tech
+FRA	68.6	3300	0.8	1	7.5	115	SEMI	8.0	Emmanuel Macron	President	200	64	290	A+	NATO,EU,G7,G20,UNSC,OECD	manu,tour,fin,food,tech
+DEU	83.5	5000	0.2	2.2	3.6	63	PARL	8.7	Friedrich Merz	Chancellor	182	95	0	AAA	NATO,EU,G7,G20,OECD	manu,chips,tech,fin
+GRC	10.4	260	2	3	9	150	PARL	7.9	Kyriakos Mitsotakis	Prime Minister	142	8	0	BBB+	NATO,EU,OECD	tour,food
+HUN	9.6	230	0.5	4.5	4.5	74	PARL	6.1	Viktor Orban	Prime Minister	32	4	0	BBB-	NATO,EU,OECD	manu,food
+ISL	0.4	35	1	4	3.5	42	PARL	9.5	Kristrun Frostadottir	Prime Minister	0	0.05	0	A+	NATO,OECD	food,tour
+IRL	5.4	610	3	2	4.3	38	PARL	9.2	Micheal Martin	Taoiseach	8	1.5	0	AA	EU,OECD	fin,tech,chips
+ITA	59.0	2430	0.5	1.5	6	137	PARL	7.6	Giorgia Meloni	Prime Minister	165	35	0	BBB+	NATO,EU,G7,G20,OECD	manu,tour,food,fin
+UNK	1.6	12	4	2	11	17	PARL	6.0	Albin Kurti	Prime Minister	3	0.2	0	NR	-	metal,food
+LVA	1.9	45	1	3	6.9	47	PARL	7.4	Evika Silina	Prime Minister	8	1.5	0	A	NATO,EU,OECD	food,tech
+LIE	0.04	8	1	1	1.5	0	CMON	8.5	Brigitte Haas	Prime Minister	0	0	0	AAA	-	fin,manu
+LTU	2.9	85	2.7	3.5	7	38	SEMI	7.6	Inga Ruginiene	Prime Minister	23	3	0	A	NATO,EU,OECD	manu,tech,food
+LUX	0.7	95	1	2.2	6.4	27	CMON	8.8	Luc Frieden	Prime Minister	1	0.8	0	AAA	NATO,EU,OECD	fin,tech
+MLT	0.6	25	4	2.5	3	47	PARL	7.5	Robert Abela	Prime Minister	2	0.1	0	A-	EU,CW	fin,tour
+MDA	2.4	19	1.5	7	4	38	PARL	6.0	Maia Sandu	President	5	0.1	0	NR	-	food
+MCO	0.04	10	2	2	2	0	CMON	7.0	Albert II	Prince	0	0	0	NR	-	fin,tour
+MNE	0.6	8.5	3	3.5	12	60	PARL	6.7	Milojko Spajic	Prime Minister	2	0.1	0	B+	NATO	tour
+NLD	18.0	1270	1.5	3	3.8	44	CMON	9.0	Rob Jetten	Prime Minister	42	24	0	AAA	NATO,EU,OECD	chips,fin,manu,food,gas
+MKD	1.8	17	3	3.5	12	57	PARL	6.0	Hristijan Mickoski	Prime Minister	8	0.4	0	BB+	NATO	metal,food
+NOR	5.6	500	1.5	3	4.4	44	CMON	9.8	Jonas Gahr Store	Prime Minister	23	10	0	AAA	NATO,OECD	oil,gas,fin,food
+POL	37.4	980	3.3	4	3	57	PARL	7.3	Donald Tusk	Prime Minister	215	45	0	A-	NATO,EU,OECD	manu,coal,food
+PRT	10.7	320	2	2.3	6.4	94	PARL	8.1	Luis Montenegro	Prime Minister	26	4.5	0	A+	NATO,EU,OECD	tour,food
+ROU	19.0	400	1	7	6	58	SEMI	6.5	Nicusor Dan	President	70	9	0	BBB-	NATO,EU	food,manu,gas
+RUS	143.5	2100	1	8	2.3	20	AUTH	2.0	Vladimir Putin	President	1320	150	5500	NR	BRICS,SCO,CSTO,EEU,G20,UNSC	oil,gas,metal,coal,food,rare
+SMR	0.03	2.2	1	2	4	68	PARL	8.0	Captains Regent	Captains Regent	0	0	0	BBB	-	tour,fin
+SRB	6.6	92	2.5	4	8.5	45	AUTH	5.8	Aleksandar Vucic	President	28	2.5	0	BBB-	-	food,metal,manu
+SVK	5.4	145	1	4	5.5	59	PARL	6.8	Robert Fico	Prime Minister	14	3	0	A+	NATO,EU,OECD	manu
+SVN	2.1	75	1	2.5	3.5	67	PARL	7.8	Robert Golob	Prime Minister	7	1	0	AA-	NATO,EU,OECD	manu,tour
+ESP	48.8	1890	2.8	2.5	10.5	101	CMON	8.1	Pedro Sanchez	Prime Minister	122	22	0	A+	NATO,EU,OECD	tour,food,manu,fin
+SWE	10.6	660	1.5	1	8.7	34	CMON	9.4	Ulf Kristersson	Prime Minister	15	13	0	AAA	NATO,EU,OECD	manu,tech,metal
+CHE	9.0	950	1.2	0.2	2.8	38	PARL	9.3	Guy Parmelin	President of the Confederation	20	6	0	AAA	OECD	fin,manu,chips,tour
+UKR	33	190	2	12	11	95	SEMI	5.0	Volodymyr Zelenskyy	President	900	65	0	CCC	-	food,metal,rare
+GBR	69.4	3960	1.3	3.5	4.8	101	CMON	8.3	Keir Starmer	Prime Minister	140	82	225	AA	NATO,G7,G20,UNSC,OECD,CW,AUKUS	fin,tech,manu,oil
+VAT	0.0008	0	0	0	0	0	THEO	-	Leo XIV	Pope	0	0	0	NR	-	tour
+DZA	47.4	270	3.5	4	11	47	AUTH	3.6	Abdelmadjid Tebboune	President	140	25	0	NR	AU,AL,OPEC	gas,oil
+AGO	39	115	2.5	22	30	60	AUTH	3.9	Joao Lourenco	President	107	1.5	0	B-	AU,SADC	oil,metal
+BEN	14.8	22	6.5	1.5	2	53	PRES	4.6	Romuald Wadagni	President	12	0.1	0	BB-	AU,ECOWAS	food
+BWA	2.6	20	-1	3	27	35	PARL	7.8	Duma Boko	President	9	0.6	0	BBB+	AU,SADC,CW	metal
+BFA	24.1	23	4.5	2	5	55	JUNTA	2.7	Ibrahim Traore	President	11	0.9	0	CCC+	AES	metal,food
+BDI	14.4	3	3	30	1	68	AUTH	2.1	Evariste Ndayishimiye	President	30	0.07	0	NR	AU,EAC	food,metal
+CMR	29.9	55	3.5	4	4	43	AUTH	2.6	Paul Biya	President	34	0.5	0	B-	AU,CW	oil,food
+CPV	0.5	3	5.5	2	8	110	PARL	7.6	Ulisses Correia e Silva	Prime Minister	1	0.02	0	B	AU,ECOWAS	tour
+CAF	5.5	3	2	3	6	55	AUTH	1.7	Faustin-Archange Touadera	President	9	0.04	0	NR	AU	metal
+TCD	19.3	18	3	7	2	33	JUNTA	1.6	Mahamat Deby	President	33	0.5	0	NR	AU	oil
+COM	0.9	1.6	3	2	6	33	AUTH	3.1	Azali Assoumani	President	1	0.01	0	NR	AU,AL	food
+DJI	1.2	4.5	6	2	26	40	AUTH	2.7	Ismail Omar Guelleh	President	11	0.2	0	NR	AU,AL	fin
+COD	112	75	5	9	5	17	PRES	1.5	Felix Tshisekedi	President	135	0.8	0	B-	AU,SADC,EAC	metal,rare
+EGY	118	350	4	13	6.5	90	AUTH	2.8	Abdel Fattah el-Sisi	President	440	5	0	B	AU,AL,BRICS	gas,tour,food
+GNQ	1.9	13	-3	3	8	40	AUTH	1.9	Teodoro Obiang	President	1	0.1	0	NR	AU,OPEC	oil,gas
+ERI	3.6	2.3	3	5	6	160	ONEP	1.1	Isaias Afwerki	President	200	0.1	0	NR	AU	metal
+SWZ	1.2	5	4.5	3	33	45	AMON	3.0	Mswati III	King	3	0.1	0	NR	AU,SADC,CW	food
+ETH	132	125	7	15	3.5	40	PARL	3.2	Abiy Ahmed	Prime Minister	160	1	0	SD	AU,BRICS	food
+GAB	2.5	21	2.5	2	20	73	PRES	3.0	Brice Oligui Nguema	President	5	0.3	0	CCC	AU,OPEC,CW	oil,metal
+GMB	2.8	2.7	5.5	9	6	75	PRES	4.5	Adama Barrow	President	1	0.02	0	NR	AU,ECOWAS,CW	tour,food
+GHA	35	85	5	9	14	60	PRES	6.3	John Mahama	President	16	0.3	0	B-	AU,ECOWAS,CW	metal,oil,food
+GIN	14.9	27	6	5	6	40	AUTH	2.3	Mamadi Doumbouya	President	12	0.3	0	NR	-	metal
+GNB	2.2	2.2	5	2	3	75	JUNTA	2.0	Horta N'Tam	President	4	0.02	0	NR	ECOWAS	food
+CIV	32.7	95	6.3	1	2.5	58	PRES	4.2	Alassane Ouattara	President	27	0.7	0	BB	AU,ECOWAS	food,oil,metal
+KEN	57.5	130	5	4	5.5	70	PRES	5.0	William Ruto	President	24	1.2	0	B-	AU,EAC,CW	food,tour,tech
+LSO	2.3	2.5	1.5	4	16	60	CMON	6.1	Sam Matekane	Prime Minister	2	0.04	0	NR	AU,SADC,CW	metal
+LBR	5.7	5	5	7	3	55	PRES	5.5	Joseph Boakai	President	2	0.02	0	NR	AU,ECOWAS	metal
+LBY	7.5	50	12	2.5	19	0	TRANS	2.0	Abdul Hamid Dbeibah	Prime Minister	30	3	0	NR	AU,AL,OPEC	oil,gas
+MDG	32.7	18	3.5	8	2	55	JUNTA	3.5	Michael Randrianirina	President	14	0.1	0	NR	SADC	metal,food,rare
+MWI	22.2	11	2	30	5	85	PRES	5.6	Peter Mutharika	President	11	0.05	0	NR	AU,SADC,CW	food
+MLI	25.2	27	4	3	3	55	JUNTA	2.0	Assimi Goita	President	40	0.9	0	NR	AES	metal,food
+MRT	5.3	11	4.5	2.5	11	47	AUTH	4.0	Mohamed Ould Ghazouani	President	16	0.3	0	NR	AU,AL	metal
+MUS	1.3	16	3	3.5	6	80	PARL	8.0	Navin Ramgoolam	Prime Minister	0	0.03	0	BBB-	AU,SADC,CW	tour,fin
+MAR	38.4	165	4	1.5	13	68	CMON	4.9	Mohammed VI	King	195	7	0	BBB-	AU,AL	food,metal,tour
+MOZ	35.6	24	2	4	4	95	AUTH	3.5	Daniel Chapo	President	11	0.2	0	CCC+	AU,SADC,CW	gas,coal,metal
+NAM	3.1	14	3.5	4	33	67	PARL	6.4	Netumbo Nandi-Ndaitwah	President	10	0.4	0	BB	AU,SADC,CW	metal
+NER	27.9	22	6	3	1	50	JUNTA	1.7	Abdourahamane Tchiani	President	33	0.3	0	NR	AES	metal,oil
+NGA	237	250	3.5	20	5	48	PRES	4.2	Bola Tinubu	President	230	2.5	0	B	AU,ECOWAS,OPEC,CW	oil,gas,food,tech
+COG	6.5	15	3	3	20	95	AUTH	2.8	Denis Sassou Nguesso	President	10	0.3	0	CCC+	AU,OPEC	oil
+RWA	14.6	15	7	6	15	73	AUTH	3.1	Paul Kagame	President	33	0.2	0	B+	AU,EAC,CW	tour,metal,food
+STP	0.2	0.8	3	10	15	55	SEMI	6.5	Americo Ramos	Prime Minister	0	0.01	0	NR	AU	food
+SEN	18.9	34	8	1	19	105	PRES	6.0	Bassirou Diomaye Faye	President	14	0.4	0	B	AU,ECOWAS	oil,gas,food
+SYC	0.1	2.3	3	1	3	60	PRES	7.0	Patrick Herminie	President	1	0.03	0	NR	AU,SADC,CW	tour
+SLE	8.8	8	4	8	4	45	PRES	5.0	Julius Maada Bio	President	9	0.04	0	NR	AU,ECOWAS,CW	metal
+SOM	19.7	12	4	4	19	40	TRANS	1.1	Hassan Sheikh Mohamud	President	25	0.2	0	NR	AU,AL,EAC	food
+ZAF	64	410	1	3.3	32	77	PARL	7.0	Cyril Ramaphosa	President	74	3	0	BB	AU,SADC,BRICS,G20,CW	metal,rare,coal,fin,manu
+SSD	12.2	5	-20	90	12	60	TRANS	1.0	Salva Kiir	President	185	0.1	0	NR	AU,EAC	oil
+SDN	51.7	30	-5	80	45	180	JUNTA	1.5	Abdel Fattah al-Burhan	Chairman	100	2	0	NR	AL	metal,food,oil
+TZA	70.5	85	6	3	2.5	47	AUTH	4.3	Samia Suluhu Hassan	President	27	0.6	0	NR	AU,SADC,EAC,CW	metal,food,tour,gas
+TGO	9.7	11	5.5	3	2	68	AUTH	2.8	Faure Gnassingbe	President of the Council	15	0.3	0	B	AU,ECOWAS,CW	metal,food
+TUN	12.3	55	1.5	5.5	15	82	AUTH	4.7	Kais Saied	President	36	1.3	0	NR	AU,AL	food,tour
+UGA	51.4	60	6	3.5	3	50	AUTH	4.5	Yoweri Museveni	President	45	1.1	0	B	AU,EAC,CW	food,oil,metal
+ZMB	21.9	27	5.5	12	6	95	PRES	5.6	Hakainde Hichilema	President	16	0.3	0	SD	AU,SADC,CW	metal
+ZWE	17	45	5	30	9	60	AUTH	2.9	Emmerson Mnangagwa	President	30	0.4	0	NR	AU,SADC	metal,food
+ATG	0.1	2.2	4	3	7	70	CMON	7.0	Gaston Browne	Prime Minister	0.2	0.01	0	NR	CW,CARICOM	tour
+ARG	46.6	630	4	40	7.5	83	PRES	6.5	Javier Milei	President	72	4	0	CCC	MERC,G20	food,oil,gas,metal
+BHS	0.4	16	1.8	2	9	80	CMON	7.5	Philip Davis	Prime Minister	1.5	0.1	0	BB-	CW,CARICOM	tour,fin
+BRB	0.3	7	2.7	2	7	105	PARL	8.0	Mia Mottley	Prime Minister	0.6	0.05	0	B	CW,CARICOM	tour
+BLZ	0.4	3.4	3	2	4	60	CMON	6.8	Johnny Briceno	Prime Minister	1.5	0.03	0	B-	CW,CARICOM	tour,food
+BOL	12.6	52	1	18	4	90	PRES	4.3	Rodrigo Paz	President	34	0.6	0	CCC-	MERC	gas,metal,rare
+BRA	212.8	2260	2.2	5	6	88	PRES	6.5	Luiz Inacio Lula da Silva	President	370	22	0	BB	BRICS,MERC,G20	food,oil,metal,manu
+CAN	40.1	2240	1.2	2	6.9	110	CMON	8.7	Mark Carney	Prime Minister	68	41	0	AAA	NATO,G7,G20,USMCA,OECD,CW	oil,gas,metal,food,tech
+CHL	19.9	345	2.3	4	8.5	42	PRES	7.8	Jose Antonio Kast	President	77	5.5	0	A	OECD	metal,rare,food
+COL	53.4	430	2.5	5	9	62	PRES	6.4	Gustavo Petro	President	260	11	0	BB	OECD	oil,coal,food
+CRI	5.1	100	4	0	7	60	PRES	8.2	Laura Fernandez	President	0	0.6	0	BB	OECD	tour,manu,food,chips
+CUB	10.9	107	-1	20	3	90	ONEP	2.6	Miguel Diaz-Canel	President	49	1	0	NR	-	tour,food
+DMA	0.07	0.7	3.5	2	8	90	PARL	7.0	Roosevelt Skerrit	Prime Minister	0	0	0	NR	CW,CARICOM	tour
+DOM	11.4	125	3	3.5	5	47	PRES	6.5	Luis Abinader	President	56	0.8	0	BB	-	tour,manu,metal
+ECU	18.3	125	2	1	4	54	PRES	5.2	Daniel Noboa	President	41	2.5	0	B-	-	oil,food
+SLV	6.4	37	2.6	1	5	85	AUTH	4.0	Nayib Bukele	President	25	0.5	0	B-	-	manu,tour
+GRD	0.1	1.4	3.5	2	12	75	CMON	7.0	Dickon Mitchell	Prime Minister	0	0	0	NR	CW,CARICOM	tour,food
+GTM	18.7	115	3.7	2	3	26	PRES	4.7	Bernardo Arevalo	President	18	0.5	0	BB	-	food,manu
+GUY	0.8	27	10	3	12	25	PRES	6.3	Irfaan Ali	President	3	0.1	0	NR	CW,CARICOM	oil,food,metal
+HTI	11.9	25	-3	27	15	22	TRANS	2.8	Alix Didier Fils-Aime	Prime Minister	1	0.05	0	NR	CARICOM	food
+HND	11.0	38	3.5	4.5	6	43	PRES	5.2	Nasry Asfura	President	15	0.4	0	BB-	-	food,manu
+JAM	2.8	22	-1	4	3.5	70	CMON	7.0	Andrew Holness	Prime Minister	6	0.3	0	BB	CW,CARICOM	tour,metal
+MEX	132	1860	0.5	3.8	2.7	58	PRES	5.3	Claudia Sheinbaum	President	412	17	0	BBB	USMCA,G20,OECD	manu,oil,food,metal
+NIC	7.0	20	3.5	3	3	40	AUTH	2.1	Daniel Ortega	Co-President	15	0.1	0	B	-	food,metal
+PAN	4.6	90	3.5	0	9	62	PRES	6.8	Jose Raul Mulino	President	0	0.9	0	BBB-	-	fin,tour
+PRY	7.0	47	4.5	4	5.5	40	PRES	5.8	Santiago Pena	President	14	0.4	0	BBB-	MERC	food
+PER	34.6	295	3	1.8	6	33	PRES	5.6	Jose Jeri	President	81	2.5	0	BBB-	-	metal,food,gas
+KNA	0.05	1.2	2	2	5	55	CMON	7.5	Terrance Drew	Prime Minister	0	0	0	NR	CW,CARICOM	tour
+LCA	0.18	2.7	2.5	1	12	74	CMON	7.5	Philip J. Pierre	Prime Minister	0	0	0	NR	CW,CARICOM	tour
+VCT	0.1	1.2	3.5	2	17	88	CMON	7.5	Godwin Friday	Prime Minister	0	0	0	NR	CW,CARICOM	tour,food
+SUR	0.6	4.5	3	10	8	85	PRES	6.8	Jennifer Geerlings-Simons	President	2	0.05	0	CCC+	CARICOM	oil,metal
+TTO	1.4	28	2	1	5	62	PARL	7.2	Kamla Persad-Bissessar	Prime Minister	5	0.3	0	BBB-	CW,CARICOM	gas,oil
+USA	342	30500	1.8	2.8	4.3	122	PRES	7.8	Donald Trump	President	1330	950	3700	AA+	NATO,G7,G20,UNSC,USMCA,OECD,AUKUS	tech,chips,fin,oil,gas,food,manu
+URY	3.4	85	2	4.5	7	62	PRES	8.7	Yamandu Orsi	President	22	1.2	0	BBB+	MERC	food,tour
+VEN	28.5	80	1	180	10	150	AUTH	2.3	Delcy Rodriguez	Acting President	123	1	0	SD	OPEC	oil,gas,metal
+AUS	27.4	1770	1.8	2.5	4.2	50	CMON	8.9	Anthony Albanese	Prime Minister	60	38	0	AAA	G20,OECD,CW,AUKUS	metal,rare,coal,gas,food,fin
+FJI	0.9	6	3	2	4	80	PARL	6.0	Sitiveni Rabuka	Prime Minister	4	0.06	0	B+	PIF,CW	tour,food
+KIR	0.13	0.3	3	3	10	15	PRES	6.5	Taneti Maamau	President	0	0	0	NR	PIF,CW	food
+MHL	0.04	0.3	2	3	5	20	PARL	7.0	Hilda Heine	President	0	0	0	NR	PIF	food
+FSM	0.1	0.5	1	3	10	15	PRES	7.0	Wesley Simina	President	0	0	0	NR	PIF	food
+NRU	0.01	0.2	1.5	3	10	25	PARL	6.5	David Adeang	President	0	0	0	NR	PIF,CW	metal
+NZL	5.3	260	0.5	3	5.3	45	CMON	9.6	Christopher Luxon	Prime Minister	9	3.5	0	AA+	OECD,CW,PIF	food,tour
+PLW	0.02	0.3	5	3	2	80	PRES	7.5	Surangel Whipps Jr.	President	0	0	0	NR	PIF	tour
+PNG	10.6	33	4.5	3	3	50	PARL	5.1	James Marape	Prime Minister	4	0.1	0	B	PIF,CW	gas,metal,oil
+WSM	0.2	1.2	3	3	9	40	PARL	6.5	La'auli Leuatea Schmidt	Prime Minister	0	0	0	NR	PIF,CW	tour,food
+SLB	0.8	1.8	2.5	3	2	18	PARL	5.5	Jeremiah Manele	Prime Minister	0	0	0	NR	PIF,CW	food,metal
+TON	0.1	0.6	2	3	5	40	CMON	6.0	Lord Fakafanua	Prime Minister	0	0	0	NR	PIF,CW	food,tour
+TUV	0.01	0.07	2.5	3	10	10	CMON	7.0	Feleti Teo	Prime Minister	0	0	0	NR	PIF,CW	food
+VUT	0.3	1.2	2	3	5	45	PARL	6.0	Jotham Napat	Prime Minister	0	0	0	NR	PIF,CW	tour,food
