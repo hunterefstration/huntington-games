@@ -179,6 +179,18 @@ try {
   check('a short key is refused', !!(await until(() => C.$eval('#gate .gl .hint.bad', e => e.textContent))));
   await C.fill('#gate #gl-key', 'A'.repeat(43)); await C.click('#gate #gl-go');
   check('a key with no account is refused', !!(await until(() => C.$eval('#gate .gl .hint.bad', e => /no account/i.test(e.textContent)), 30000)));
+
+  console.log('\n=== 11. Grapevine unreachable: nobody is locked out of the games ===');
+  const U = await browser.newContext(); const up = await U.newPage();
+  await up.route(/cdn\.jsdelivr\.net\/npm\/mqtt/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(MQTT) }));
+  await up.route(/fonts\./, r => r.abort());
+  await up.addInitScript(a => { window.HG_GV_CONFIG = a; }, { archives: ['no-such-server'], pinned: {}, shards: 1, relays: ['ws://127.0.0.1:9001'] });
+  await up.goto(HUB);
+  check('the sign-in screen offers "play without an account" when the server cannot be reached', !!(await up.waitForSelector('#gate-guest', { timeout: 60000 }).catch(() => null)));
+  await up.click('#gate-guest');
+  check('...and then the games are playable', await up.evaluate(() => document.getElementById('gate').hidden && !document.getElementById('view-games').hidden));
+  await up.click('#tab-chat');
+  check('...but the Grapevine tab asks for an account again', await up.evaluate(() => !document.getElementById('gate').hidden));
 } catch (e) {
   console.log('FAIL  crashed — ' + (e && e.stack || e)); failures++;
 } finally {

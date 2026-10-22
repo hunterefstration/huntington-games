@@ -554,7 +554,7 @@ const GVLink = (() => {
   //  * signing out saves first and then clears the device.
   // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
   // must be added here: it is the list of prefixes the games write.
-  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-)/;
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.)/;
   var SAVE_MAX = 400000;
   var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {} };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
@@ -691,7 +691,27 @@ const GVLink = (() => {
     return 'none';
   }
 
+  // Can this browser reach a Grapevine server at all? (The launcher offers "play without an account" when it cannot,
+  // so a server that is down never locks everybody out of the games.)
+  function probe() {
+    return new Promise(function (resolve) {
+      var i = 0, done = false;
+      function next() {
+        if (done) return;
+        if (i >= CFG.archives.length) { done = true; return resolve(false); }
+        var id = CFG.archives[i++], c, t;
+        try { c = GVLink.connect(id, { shards: CFG.shards, relays: CFG.relays, pinned: CFG.pinned[id] || '', verify: function (p, m, g) { return ED.verify(p, m, g); } }); }
+        catch (e) { return next(); }
+        t = setTimeout(function () { try { c.close(); } catch (e) {} next(); }, 15000);
+        c.on('open', function () { clearTimeout(t); if (!done) { done = true; try { c.close(); } catch (e) {} resolve(true); } });
+        c.on('close', function () { clearTimeout(t); next(); });
+      }
+      next();
+    });
+  }
+
   window.HGGrapevine = {
+    probe: probe,
     version: 1,
     config: CFG,
     me: function () { return st.name ? { name: st.name, userId: st.userId, pub: st.pub, status: st.status } : null; },

@@ -656,7 +656,7 @@ GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); 
 // One account for everything: it gates the launcher, puts your name and friends in the games (they read it as
 // window.parent.HGGrapevine), saves every game to the account so another device can load it, and the Grapevine tab runs
 // the full Grapevine app signed in as the same person. The code is downloaded on demand to keep the launcher small.
-var gvP = null, acctMounted = false, gateMounted = false, chatLoaded = false;
+var guestMode = false, gvP = null, acctMounted = false, gateMounted = false, chatLoaded = false;
 function fetchGV(file, viaScript) {
   if (BUNDLE) return Promise.reject(new Error('Grapevine needs the internet, so it is not in the offline copy.'));
   if (local) return fetch(file, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
@@ -686,7 +686,7 @@ function paintChip() {
 function onGvChange() {
   paintChip();
   var L = window.HGGrapevine, signedIn = !!(L && L.me());
-  document.getElementById('gate').hidden = signedIn || BUNDLE;
+  document.getElementById('gate').hidden = signedIn || guestMode || BUNDLE;
   if (!signedIn && chatLoaded) { chatLoaded = false; document.getElementById('gvapp').removeAttribute('srcdoc'); showTab('games'); closePlayer(); }
   if (signedIn && (!chatLoaded || chatLoaded === 'pending') && !BUNDLE) { chatLoaded = 'pending'; setTimeout(function () { if (chatLoaded === 'pending') startChat(); }, 1500); }   // the full app starts in the background so messages arrive while you play
 }
@@ -698,6 +698,16 @@ function showGate() {
   box.innerHTML = '<div class="sub" style="text-align:center">Loading Grapevine...</div>';
   loadGV().then(function (L) {
     if (!gateMounted) { gateMounted = true; window.HGGrapevineUI.mount(box, { gate: true }); }
+    var oldNote = document.getElementById('gate-note'); if (oldNote) oldNote.remove();
+    var note = document.createElement('div'); note.id = 'gate-note'; note.className = 'sub'; note.style.cssText = 'text-align:center;margin-top:14px'; box.parentNode.appendChild(note);
+    // If Grapevine cannot be reached from this network at all, do not lock anybody out of the games.
+    L.probe().then(function (ok) {
+      if (ok || !document.getElementById('gate-note')) return;
+      note.innerHTML = 'Grapevine cannot be reached from here right now (the server may be down, or this network blocks it). ';
+      var b = document.createElement('button'); b.className = 'tab'; b.id = 'gate-guest'; b.textContent = 'Play without an account for now';
+      b.onclick = function () { guestMode = true; note.remove(); onGvChange(); };
+      note.appendChild(document.createElement('br')); note.appendChild(b);
+    });
     onGvChange();
   }, function (e) {
     box.innerHTML = ''; var d = document.createElement('div'); d.className = 'sub'; d.style.textAlign = 'center'; d.textContent = e.message;
@@ -723,6 +733,7 @@ function startChat() {
   }, function (e) { chatLoaded = false; frm.srcdoc = '<body style="font:14px sans-serif;background:#0b0b0d;color:#e5484d;padding:30px">' + String(e.message).replace(/</g, '&lt;') + '</body>'; });
 }
 function showTab(which) {
+  if (guestMode && which !== 'games') { guestMode = false; onGvChange(); return; }   // those need an account: show the sign-in screen again
   var chat = which === 'chat';
   document.getElementById('view-games').hidden = which !== 'games';
   document.getElementById('view-acct').hidden = which !== 'acct';
