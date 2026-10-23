@@ -55,6 +55,21 @@ Built, 324 local checks pass. Stress test found, still to fix:
 - minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
 Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
 
+## Grapevine in the launcher + relay (branch claude/intelligent-goodall-akekpu, NOT released)
+- Grapevine's server used to be reachable only over WebRTC, which school networks block. Fix lives in the **grapevine** repo (same branch name):
+  `relay/` (HGNet over public MQTT relays on 443, end-to-end encrypted, raced against PeerJS) plus the PeerJS TURN servers Blocky uses.
+  Server hosting guide for an always-on machine: grapevine `deploy/DEPLOY.md`. The database needs `migrate-v13.sql` (cloud saves).
+- The launcher IS Grapevine now (`gv/`, see gv/README.md): an account gates the launcher, the Grapevine tab runs the full app signed in as the
+  same account (`gv/app.html`, copied from grapevine `client.html` with `tools/sync-grapevine.sh`; rebuild `gv/account.js` with `tools/build-gv.sh`),
+  game saves sync to the account (`HGGrapevine.sync`), games read the account as `parent.HGGrapevine`. Blocky Shooter and Frontline lock the name to
+  the account and show verified players with a +Friend button. "New tab" opens about:blank and writes the game into it.
+- Cards: Neon Dash 2.0 (folder "Levi Dash By Levi 2.0") is the last main game and is now in build-release.py's GAMES (licence-gated); credits: Levi
+  (Neon Dash, Neon Drift), Robbie (Bean & Brew Classic, original Market & Life). Sovereign is NOT added (only a plan exists on branch wizardly-hawking).
+- Release: `tools/release.sh prepare` copies only the named game folders; the hub (index.html), `gv/`, `hub/neondash.jpg` and `tools/` changes must be copied into
+  the worktree by hand before `finish`; the game folders to pass are `"Blocky Shooter V2" Frontline "Levi Dash By Levi 2.0"`. Run
+  `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
+- Tests (need the Grapevine rig, see grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves, Grapevine tab, cards, new tab) and
+  `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE

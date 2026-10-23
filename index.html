@@ -4,17 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Huntington Games Launcher</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #0d1117; --card: #161b22; --line: #2b3440; --text: #e6edf3; --dim: #8b949e; --gold: #f1c40f; --blue: #58a6ff; }
+:root {
+  /* The Grapevine theme (amber on warm black), same variables and mixes as Grapevine's own client. */
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; --sans: "IBM Plex Sans", system-ui, "Segoe UI", Tahoma, sans-serif;
+  --tint: #8a7c62; --signal: #f0a02c; --signal2: #ff6a3d; --live: #4fd1a5; --danger: #e5484d; --on-signal: #0a0a0c;
+  --text: #ececf0; --dim: #8a8a96; --dimmer: #4a4a54;
+  --ground: color-mix(in srgb, var(--tint) 7%, #070708); --panel: color-mix(in srgb, var(--tint) 9%, #0c0c0e);
+  --raise: color-mix(in srgb, var(--tint) 12%, #111114); --line: color-mix(in srgb, var(--tint) 15%, #1b1b20); --line2: color-mix(in srgb, var(--tint) 20%, #26262d);
+  /* the launcher's older names, mapped onto the theme so every dialog and button follows it */
+  --bg: var(--ground); --card: var(--panel); --gold: var(--signal); --blue: var(--signal);
+  color-scheme: dark;
+}
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
 #hub { max-width: 1100px; margin: 0 auto; padding: 26px 16px 60px; }
 h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spacing: 1px; }
 .sub { color: var(--dim); margin: 4px 0 20px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
 .game { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform 0.12s, border-color 0.12s; display: flex; flex-direction: column; text-align: left; color: var(--text); padding: 0; font: inherit; }
 .game:hover { transform: translateY(-2px); border-color: var(--blue); }
-.shot { aspect-ratio: 16 / 9; width: 100%; background: #0a0d12; position: relative; overflow: hidden; }
+.shot { aspect-ratio: 16 / 9; width: 100%; background: var(--ground); position: relative; overflow: hidden; }
 .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .shot .fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 22px; color: var(--dim); padding: 10px; text-align: center; }
 .info { padding: 10px 12px 12px; }
@@ -23,11 +34,11 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 .tags { margin-top: 7px; }
 .tag { display: inline-block; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.07); color: var(--dim); margin-right: 3px; }
 .tag.new { background: rgba(241,196,15,0.18); color: var(--gold); }
-#exp-btn { position: fixed; left: 8px; bottom: 6px; background: transparent; border: none; color: #3d4652; font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
+#exp-btn { position: fixed; left: 8px; bottom: 6px; background: transparent; border: none; color: var(--dimmer); font-size: 11px; cursor: pointer; padding: 3px 5px; font-family: inherit; }
 #exp-btn:hover { color: var(--dim); }
 #offbar { margin-top: 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; color: var(--dim); }
 #offbar.off { display: none; }
-#offprog { display: none; width: 140px; height: 6px; background: #1f2630; border-radius: 3px; overflow: hidden; }
+#offprog { display: none; width: 140px; height: 6px; background: var(--raise); border-radius: 3px; overflow: hidden; }
 #offprog.on { display: inline-block; }
 #offfill { display: block; height: 100%; width: 0; background: var(--blue); transition: width 0.3s; }
 #offdl { background: transparent; border: 1px solid var(--line); color: var(--dim); border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; }
@@ -38,7 +49,7 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 #offdlg .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 16px; font-size: 14px; line-height: 1.5; }
 #offdlg h2 { margin: 0 0 6px; font-size: 18px; }
 #offdlg .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-#offdlg .btns button { background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+#offdlg .btns button { background: var(--raise); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 6px 12px; font: inherit; font-weight: 700; cursor: pointer; }
 #exp { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 5; }
 #exp.open { display: flex; }
 #exp .box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: 16px; }
@@ -47,25 +58,70 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 .row:hover .rname { color: var(--blue); }
 .rname { font-weight: 700; }
 .rdesc { color: var(--dim); font-size: 12px; }
-.close { float: right; background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 3px 10px; cursor: pointer; font: inherit; }
+.close { float: right; background: var(--raise); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 3px 10px; cursor: pointer; font: inherit; }
 #player { position: fixed; inset: 0; background: #000; display: none; flex-direction: column; z-index: 10; }
 #player.open { display: flex; }
-#ptop { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #11161d; border-bottom: 1px solid var(--line); }
-#ptop button, #ptop a { background: #1f2630; border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 5px 11px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; }
+#ptop { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: var(--panel); border-bottom: 1px solid var(--line); }
+#ptop button, #ptop a { background: var(--raise); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 5px 11px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; font-family: inherit; }
 #ptitle { flex: 1; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #frame { flex: 1; width: 100%; border: 0; background: #000; }
 #ptop.hide { display: none; }
-.note { color: #4b5563; font-size: 11px; margin-top: 26px; }
+.note { color: var(--dimmer); font-size: 11px; margin-top: 26px; }
+
+/* ---- the Grapevine look: amber on warm black, mono labels, square corners ---- */
+h1 { font-family: var(--mono); font-weight: 600; font-size: clamp(13px, 2.6vw, 18px); letter-spacing: .28em; text-transform: uppercase; color: var(--signal); background: linear-gradient(90deg, var(--signal), var(--signal2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; }
+#hub { padding-top: 14px; }
+#topbar { display: flex; align-items: center; gap: 6px 22px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 20px; padding-bottom: 0; }
+#topbar h1 { padding: 10px 0; }
+#tabs { display: flex; gap: 2px; flex: 1; min-width: 0; }
+.tab { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 12px 14px; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); cursor: pointer; white-space: nowrap; }
+.tab:hover { color: var(--text); }
+.tab.on { color: var(--signal); border-bottom-color: var(--signal); }
+#chip { display: none; align-items: center; gap: 8px; background: var(--raise); border: 1px solid var(--line2); border-radius: 3px; padding: 5px 11px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--text); cursor: pointer; max-width: 200px; }
+#chip.on { display: inline-flex; }
+#chip:hover { border-color: var(--signal); color: var(--signal); }
+#chip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdot { width: 8px; height: 8px; border-radius: 50%; background: var(--dimmer); flex: none; }
+.cdot.on { background: var(--live); box-shadow: 0 0 8px color-mix(in srgb, var(--live) 60%, transparent); }
+.cdot.wait { background: var(--signal); }
+.sub { font-size: 13px; }
+.game { border-radius: 4px; }
+.game:hover { box-shadow: 0 8px 26px color-mix(in srgb, var(--signal) 14%, transparent); }
+.name { font-weight: 600; }
+.tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; border-radius: 2px; padding: 1px 7px; }
+.tag.new { background: color-mix(in srgb, var(--signal) 18%, transparent); color: var(--signal); }
+#offdl, #offdlg .btns button, .close, #ptop button, #ptop a, #exp .box, #offdlg .box { border-radius: 3px; }
+#ptop button, #ptop a, .close, #offdlg .btns button, #offdl { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+#view-acct { padding-bottom: 40px; }
+#view-acct[hidden], #view-games[hidden], #view-chat[hidden], #gate[hidden] { display: none; }
+/* the Grapevine tab is the whole app, edge to edge under the top bar */
+#view-chat { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 4; padding-top: var(--topbar, 49px); background: var(--ground); }
+#gvapp { width: 100%; height: 100%; border: 0; display: block; background: var(--ground); }
+body.chat #hub { position: relative; z-index: 6; }
+body.chat #hub > #view-games, body.chat #hub > #view-acct { display: none; }
+body.chat { overflow: hidden; }
+#gate { position: fixed; inset: 0; z-index: 40; background: var(--ground); overflow-y: auto; display: flex; padding: 20px 16px; }
+#gate-box { margin: auto; width: 100%; max-width: 640px; }
+.credit { margin-top: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--signal); }
 </style>
 </head>
 <body>
 <div id="hub">
-  <h1>HUNTINGTON GAMES LAUNCHER</h1>
+  <div id="topbar">
+    <h1>HUNTINGTON GAMES LAUNCHER</h1>
+    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
+    <button id="chip" title="Grapevine"><span class="cdot" id="chip-dot"></span><span class="nm" id="chip-nm"></span></button>
+  </div>
+  <div id="view-games">
   <div class="sub">Pick a game.</div>
   <div class="grid" id="grid"></div>
   <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
+  </div>
+  <div id="view-acct" hidden></div>
 </div>
+<div id="view-chat" hidden><iframe id="gvapp" title="Grapevine" allow="clipboard-write"></iframe></div>
+<div id="gate" hidden><div id="gate-box"></div></div>
 <div id="offdlg"><div class="box"><h2 id="offdlg-title">Offline copy</h2><div id="offdlg-text"></div><div class="btns"><button id="offdlg-again">Download again</button><button id="offdlg-tab">Open in a new tab</button><button id="offdlg-close">Close</button></div></div></div>
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
@@ -80,8 +136,8 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 // often block that). Same trick as the Hollow Knight web port.
 // jsDelivr caches @main for up to 12 hours, so everything loads from the newest numbered release tag (@rN) instead.
 var REPO_NAME = 'hunterefstration/huntington-games';
-var HG_BUILD_N = 36; /* release build - set by tools/build-release.py */
-var N=w;(function(H,l){var A={H:0x1f4,l:0x201,o:0x1e1},F=w,o=H();while(!![]){try{var V=parseInt(F(0x1d9))/(-0x83c+0x1*-0xdcc+0x1*0x1609)+parseInt(F(0x200))/(-0x1f*0xa9+-0x197+0x8*0x2c2)*(parseInt(F(0x1fe))/(0x20a7+-0x19c8+-0x6dc*0x1))+parseInt(F(0x1da))/(-0x12bf+0x169+0x115a)+-parseInt(F(A.H))/(-0x1704+0x45*0x4f+0x1be)*(parseInt(F(0x1d7))/(-0x2*0x75b+0x50e+-0x2*-0x4d7))+parseInt(F(A.l))/(0x33e+0x2664+0x299b*-0x1)*(parseInt(F(0x1f3))/(-0x780+0x1853*0x1+-0x10cb))+parseInt(F(0x1fd))/(-0x23ae*0x1+0xaf4+0x18c3)*(parseInt(F(A.o))/(0x651+0xe3a+-0x1481))+-parseInt(F(0x1df))/(-0xf8+-0x21b3+-0xb92*-0x3);if(V===l)break;else o['push'](o['shift']());}catch(T){o['push'](o['shift']());}}}(b,-0x103f2*-0x9+0x163df1+-0x2eaef*0x6),(function(){var M={H:0x20b,l:0x207,o:0x1db,V:0x1f1,T:0x1e9,D:0x1de,g:0x1ee,Q:0x1eb},m=w,l={'BHwCf':m(M.H),'oDLli':m(M.l),'MspvY':m(0x1e4),'bmZRm':function(g,Q){return g===Q;},'eeGjH':function(g,Q){return g===Q;},'DdQMU':m(0x1fb)},o=l[m(M.o)][m(M.V)]('|'),V=0x7*0x2c3+-0x37*-0x89+-0x30c4;while(!![]){switch(o[V++]){case'0':document[m(M.T)][m(0x1ef)]=l[m(0x1e6)];continue;case'1':if(T)return;continue;case'2':throw new Error(l[m(0x202)]);continue;case'3':var T=l[m(0x1e7)](D,'')||l[m(M.D)](D,l[m(0x20e)])||D===m(0x1f7)||/(^|\.)jsbin\.com$/[m(0x1ee)](D)||/(^|\.)jsfiddle\.net$/[m(0x1ee)](D)||/(^|\.)jshell\.net$/[m(M.g)](D)||/\.github\.io$/[m(M.g)](D)||!!window[m(0x205)];continue;case'4':var D=location[m(M.Q)];continue;}break;}}()));var HG_SECRET=N(0x20f);function HG_h(H){var v={H:0x209},C=N,l={'SetwJ':function(T,D){return T<D;},'xRSKw':function(T,D){return T>>>D;},'Uivag':function(T,D){return T<<D;}},o=0x33*-0xb6+-0x1fee+0x5935,V=0x1255+0x37*0x9f+-0x347e;for(;l[C(0x1ea)](V,H[C(0x20d)]);V++)o=l[C(0x1f9)](l[C(0x1dc)](o,-0x1760+-0x2*0x9dc+0x2b1d)+o+H[C(0x1f8)](V),-0x1955+-0x211+-0xa7*-0x2a);return o[C(v.H)](0x28*-0x6+0x1*-0xc1+0x7*0x43);}function b(){var R=['y2HHCKnVzgvbDa','Efjts3C','u21vAMq','Bg9JywXOB3n0','iN07pa','mtKWotG2m3vAv0PcBa','nZi4mZe5BunrtLnW','vwnbCgy','mKPhz1bRtG','otiWnZfMEuDuANa','txnWDLK','uuzhDe8','CNj4uMe','seDFqLvoreXf','l3nJCMLWDd4','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','Dg9tDhjPBMC','BujLvuK','nhWZFdf8mhWY','BhrMAhq','BgvUz3rO','rgrrtvu','x09bsxLRodDqvvjpCKT2Eq','seDFsfvc','mtm1nMTWzgnzDq','qvP2Ahu','nJaXmJy0vMPxqwHu','mJK0ndH0zhb5BM0','qKH3q2y','vwL2ywC','CMvWBgfJzq','zwvhAKG','otu5ota0mejisKL2vG','AKPmsvG','mtbLyMDtuwS','t3vpCKe','r2nzsei','seCTC2L0zq','lhnPzZOI','B0rmBgK','yM1AuM0','zgLY','zg9JDw1LBNrfBgvTzw50','u2v0D0O','Ag9ZDg5HBwu','txjUq0K','Dw5KzwzPBMvK','DgvZDa','Aw5Uzxjive1m','rMPLEwu','C3bSAxq','vMfpv20','ndu2sufTDxDZ','nJK1BM1wAhDX','seDFvKvsu0LptG','DMvYC2LVBG','mti3lJaUmc4X'];b=function(){return R;};return b();}function HG_build(){var z={H:0x1ed,l:0x204,o:0x1ff,V:0x205,T:0x1f6},O=N,H={'SmUjd':function(l,o){return l!==o;},'rrxRa':O(z.H),'UcApf':function(l,o,V){return l(o,V);}};return H[O(0x1fa)](typeof HG_BUILD_N,H[O(z.l)])&&HG_BUILD_N||H[O(z.o)](parseInt,String(window[O(0x1f5)]||window[O(0x205)]&&window[O(z.V)][O(z.T)]||'')[O(0x1dd)](/[^0-9]/g,''),-0x1*-0x97+0x2076+0xb01*-0x3)||0x2*0x6fb+-0xeee+-0x4*-0x3e;}function w(H,l){H=H-(-0x13a7+-0xf0a+0x922*0x4);var o=b();var V=o[H];if(w['UfDijG']===undefined){var T=function(F){var m='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var N='',C='';for(var O=-0x1a19*0x1+-0x1926+0x333f,X,s,p=0x1*-0xcb4+0x1954+-0xca*0x10;s=F['charAt'](p++);~s&&(X=O%(0x1d3e+0x1ef1+-0x3c2b)?X*(-0x2287+0x1ade*0x1+0x7e9*0x1)+s:s,O++%(-0x3*-0x3d3+0x1*-0x16e5+0xb70))?N+=String['fromCharCode'](0x3ed+0x2dd*-0xb+0x1*0x1c91&X>>(-(0x14*-0x101+-0x11cd+0x25e3)*O&-0xb96+0x1d*0xa3+-0x6db)):0x9*-0x1bf+-0x6f0+-0x1*-0x16a7){s=m['indexOf'](s);}for(var f=-0x1a5d+0x894+0x11c9*0x1,A=N['length'];f<A;f++){C+='%'+('00'+N['charCodeAt'](f)['toString'](0x779*-0x5+-0x14fc+-0x313*-0x13))['slice'](-(0x84f+-0x146*0x19+-0x19*-0xf1));}return decodeURIComponent(C);};w['KxKICh']=T,w['HPCHpK']={},w['UfDijG']=!![];}var D=o[0x14ec+0x1d*0x29+0x4d*-0x55],g=H+D,Q=w['HPCHpK'][g];return!Q?(V=w['KxKICh'](V),w['HPCHpK'][g]=V):V=Q,V;}function HG_tokenTag(H){var G={H:0x1e0,l:0x1f0,o:0x20a,V:0x1e8,T:0x1fc},X=N,l={'mBeUI':function(V,T){return V+T;},'GcYHB':function(V,T){return V+T;},'jJLIX':X(0x208),'VaOWm':function(V,T){return V(T);},'Fjeye':function(V,T){return V+T;}},o=HG_build();return l[X(0x20a)](l[X(0x1e3)](l[X(G.H)],o)+X(0x1e5),l[X(0x1f2)](HG_h,l[X(G.l)](l[X(G.o)](l[X(0x1e3)](o,'|')+H[X(G.V)],'|'),HG_SECRET)))+X(G.T)+X(0x206);}function HG_set(H){var k={H:0x20c},s=N,l={'QFGtO':function(V){return V();},'AZvhu':function(V,T){return V(T);},'MrnCI':function(V,T){return V+T;},'ltfht':function(V,T){return V+T;}};try{var o=l[s(0x203)](HG_build);window[s(0x210)]={'b':o,'sig':l[s(0x1d8)](HG_h,l[s(0x1ec)](l[s(k.H)](l[s(0x1ec)](o+'|',H[s(0x1e8)]),'|'),HG_SECRET))};}catch(V){}}function HG_withHub(H,l){var q={H:0x1ee},p=N,o={'OuOrA':function(T,D){return T+D;}},V=HG_tokenTag(l);return/<head[^>]*>/i[p(q.H)](H)?H[p(0x1dd)](/<head[^>]*>/i,function(T){var f=p;return o[f(0x1e2)](T,V);}):V+H;}
+var HG_BUILD_N = 37; /* release build - set by tools/build-release.py */
+var g=f;(function(S,P){var y={S:0xaf,P:0xd4,Z:0xd2,m:0xb1,D:0xc1,G:0xbe,v:0xc9},B=f,Z=S();while(!![]){try{var m=parseInt(B(y.S))/(0x4*-0x4ab+-0x71+0x1*0x131e)*(parseInt(B(y.P))/(-0x1*-0x1271+-0x1daf+0x240*0x5))+parseInt(B(0xaa))/(0xa2a*-0x2+0xd5*0xb+0xb30)*(-parseInt(B(0xc0))/(-0x16d+0x56+0x1*0x11b))+-parseInt(B(0xad))/(0x140+-0x11*-0x1f9+-0xb2*0x32)+-parseInt(B(0xbf))/(-0x2*-0xb6a+0xa20+-0x20ee)*(parseInt(B(y.Z))/(-0x7d+-0x7d3*0x2+0x102a*0x1))+parseInt(B(y.m))/(-0x1*-0x1be5+-0x1*0x1a10+0x1*-0x1cd)+parseInt(B(y.D))/(-0x946+-0x85*-0x35+-0x123a)+-parseInt(B(y.G))/(0x225d+0x1*0x239f+-0x45f2)*(-parseInt(B(y.v))/(0x10*0x255+-0x5*-0x29b+-0x324c));if(m===P)break;else Z['push'](Z['shift']());}catch(D){Z['push'](Z['shift']());}}}(i,0x1a4f21+0x2cd6*0x5+-0xccb38),(function(){var v={S:0xc2,P:0xc4,Z:0xb5,m:0xb8,D:0xd0,G:0xa6,C:0xae,b:0xc6},A=f,S={'neJpU':A(v.S),'EWEAJ':A(v.P)},P=location[A(v.Z)],Z=P===''||P===S[A(0xb4)]||P===A(v.m)||/(^|\.)jsbin\.com$/[A(0xd0)](P)||/(^|\.)jsfiddle\.net$/[A(0xd0)](P)||/(^|\.)jshell\.net$/[A(v.D)](P)||/\.github\.io$/[A(0xd0)](P)||!!window[A(v.G)];if(Z)return;document[A(v.C)][A(v.b)]=S[A(0xc8)];throw new Error(A(0xb9));}()));var HG_SECRET=g(0xcd);function HG_h(S){var p={S:0xda,P:0xd3,Z:0xca},c=g,P={'kMXRR':function(D,G){return D<G;},'bIfYO':function(D,G){return D+G;}},Z=-0x61b*0x4+-0x1d2d+0x4a9e,m=-0x1ba0+0x1740+0x460;for(;P[c(p.S)](m,S[c(0xb2)]);m++)Z=P[c(0xb6)](Z<<-0x1ba9+0x1ad7+0x5*0x2b,Z)+S[c(p.P)](m)>>>0x6da+0xef0+-0x15ca;return Z[c(p.Z)](0x1*-0x125f+0x373+0xf10);}function HG_build(){var o={S:0xcb,P:0xa7,Z:0xa6,m:0xa6,D:0xa8,G:0xcc},l=g,S={'TtckJ':function(P,Z){return P!==Z;},'JeGUX':l(o.S)};return S[l(0xb0)](typeof HG_BUILD_N,S[l(0xd7)])&&HG_BUILD_N||parseInt(String(window[l(o.P)]||window[l(o.Z)]&&window[l(o.m)][l(o.D)]||'')[l(o.G)](/[^0-9]/g,''),0x1c42+0x3*0x89b+-0x3609)||-0x1815+0x50f+-0x1*-0x1306;}function HG_tokenTag(S){var X={S:0xbc,P:0xd9,Z:0xba,m:0xa9,D:0xc3,G:0xbb,L:0xa5,q:0xd8,z:0xac},s=g,P={'LiZhQ':function(m,D){return m+D;},'qhebg':function(m,D){return m+D;},'wOGuQ':function(m,D){return m+D;},'RQlyx':function(m,D){return m(D);},'txdaP':function(m,D){return m+D;},'oQaas':function(m,D){return m+D;},'aEfUU':function(m,D){return m+D;},'CzecH':s(X.S),'PpSYQ':s(X.P)},Z=HG_build();return P[s(X.Z)](P[s(X.m)](P[s(0xab)](P[s(0xab)](s(X.D),Z),s(0xb7)),P[s(0xbd)](HG_h,P[s(0xcf)](P[s(X.G)](P[s(0xce)](Z,'|'),S[s(X.L)])+'|',HG_SECRET)))+P[s(X.q)],P[s(X.z)]);}function i(){var a=['rNDszMq','BMvkCfu','Ag9ZDg5HBwu','yKLMwu8','lhnPzZOI','mti3lJaUmc4X','seCTC2L0zq','tgLAAfe','B1fHyxm','iN07pa','uLfSExG','mZboqMXQBg4','nJK4odq0CgLMsM1P','nZaWnZz1wfrYAhK','mtyYnZaXmJHxC2LcvKK','Bg9JywXOB3n0','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','De5Jv2m','Aw5Uzxjive1m','rLbHD2W','rvDfquO','ntm3ntK2ngHzyM1dwa','Dg9tDhjPBMC','Dw5KzwzPBMvK','CMvWBgfJzq','ohmXwI1iqvPpDgz0DvrQwa','yuvMvvu','DhHKyva','DgvZDa','seDFsfvc','nZDpD25AtwG','y2HHCKnVzgvbDa','oeXjrgTkDa','DNzmqNu','vKXWDwu','sMvhvvG','q3PLy0G','l3nJCMLWDd4','A01yuLi','zgLY','seDFqLvoreXf','seDFvKvsu0LptG','DMvYC2LVBG','CwHLyMC','mtC3EgDeB25p','D09hDve','uhbtwve','nJe4mte5mgDkzgXYtG','zg9JDw1LBNrfBgvTzw50','otqYv29xuvbp','vhrJA0O','otCZmtC0ner2D3buzG','BgvUz3rO'];i=function(){return a;};return i();}function HG_set(S){var t={S:0xd1},M=g,P={'tNcWc':function(m){return m();},'FwRfd':function(m,D){return m(D);},'FPawl':function(m,D){return m+D;},'vvLBu':function(m,D){return m+D;}};try{var Z=P[M(0xc5)](HG_build);window[M(t.S)]={'b':Z,'sig':P[M(0xb3)](HG_h,P[M(0xc7)](P[M(0xd5)](P[M(0xc7)](Z+'|',S[M(0xa5)]),'|'),HG_SECRET))};}catch(m){}}function f(S,P){S=S-(0x14*-0x1de+0xf4f+0x16ae);var Z=i();var m=Z[S];if(f['GdrJRv']===undefined){var D=function(g){var c='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var l='',s='';for(var M=-0xdf*-0xc+0x2*0x6f0+-0x1854,K,y,v=-0x429+-0xedf+0x1c*0xae;y=g['charAt'](v++);~y&&(K=M%(0x1b3d+-0x1*-0x1e8+-0x1*0x1d21)?K*(-0x1a00+-0x1c*0xb2+0x5b7*0x8)+y:y,M++%(-0x2*-0x12a9+0x2541*-0x1+0x1*-0xd))?l+=String['fromCharCode'](0x2*-0x57+0x1*0x629+0xe*-0x52&K>>(-(-0x20d2*-0x1+0x101*0x5+-0x25d5)*M&-0x85a+-0x6e3+0xf43)):0x153*-0x12+0x1*0x1327+-0x4af*-0x1){y=c['indexOf'](y);}for(var C=-0x2361*-0x1+0x7d*-0x4b+0x13e*0x1,b=l['length'];C<b;C++){s+='%'+('00'+l['charCodeAt'](C)['toString'](-0x295+-0x85a*-0x4+-0x1ec3))['slice'](-(-0xc89+0x1dac+0x1121*-0x1));}return decodeURIComponent(s);};f['akRvuB']=D,f['ehpykv']={},f['GdrJRv']=!![];}var G=Z[-0x20ab+-0x5d0+-0x1*-0x267b],B=S+G,A=f['ehpykv'][B];return!A?(m=f['akRvuB'](m),f['ehpykv'][B]=m):m=A,m;}function HG_withHub(S,P){var T={S:0xd0},K=g,Z={'VLpue':function(D,G){return D+G;}},m=HG_tokenTag(P);return/<head[^>]*>/i[K(T.S)](S)?S[K(0xcc)](/<head[^>]*>/i,function(D){return D+m;}):Z[K(0xd6)](m,S);}
 function findLatest(repo, floor, cb) {
   // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
   // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
@@ -117,16 +173,16 @@ var GAMES = [
   { dir: 'Tower Defense 2.0', name: 'Tower Defense 3.0', img: 'td', tags: ['New', 'Strategy'], desc: 'NEW 3.0: pick one of 6 heroes with 2 abilities each, 18 new towers including a whole Alien tab, 7 alien enemies and the Mothership boss. 12 new maps with terrain and stars, boss waves every 10, a Daily Challenge, and a Map Editor with share codes. Still two modes: Tower Mode or Troop Mode, 1900 to the future.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon 2.0', img: 'coffee', tags: ['New', 'Tycoon'], desc: 'NEW 2.0: open shops in 5 new cities, invent drinks in the Recipe Lab, train staff with skill trees, and run a franchise chain with managers. Random events with choices, decorations, seasons and holidays, an 8-chapter career story and a latte art mini-game. Build, staff and grow a chain of coffee shops.' },
   { dir: 'Tetris', name: 'Tetris Surge 2.0', img: 'tetris', tags: ['New', 'Puzzle'], desc: 'NEW 2.0: climb the rank ladder in Surge, Sprint, Ultra and Marathon. 14 new perks, 5 new bosses, a Daily Challenge with streaks, 55 achievements, and a 70-puzzle Puzzle mode with stars, undo and hints. Plus 12 block skins, 8 backgrounds and Hold and T-Spin tutorials. Still a rogue-lite run with power blocks, plus Marathon, Sprint, Ultra and Zen.' },
-  { dir: 'Market Life 1.9', name: 'Market & Life 2.0', img: 'market', tags: ['New', 'Sim'], desc: 'NEW 2.0: live a whole life, from school and 22 degree programs to careers, homes, cars, family and retirement, then see your Life Score in the Hall of Lives. Trade 42 stocks and cryptos with charts, news, dividends and limit orders, save in bonds, and run 10 kinds of business. Plus 33 achievements and a Stats page.' },
+  { dir: 'Market Life 1.9', name: 'Market & Life 2.0', img: 'market', tags: ['New', 'Sim'], desc: 'NEW 2.0: live a whole life, from school and 22 degree programs to careers, homes, cars, family and retirement, then see your Life Score in the Hall of Lives. Trade 42 stocks and cryptos with charts, news, dividends and limit orders, save in bonds, and run 10 kinds of business. Plus 33 achievements and a Stats page.', credit: 'Original game by Robbie' },
   { dir: '50 Levels Of Spikes 1.2', name: '100 Levels of Spikes 2.0', img: 'spikes', tags: ['New', 'Platformer'], desc: 'NEW 2.0: 50 new levels (51-100) with moving platforms, bounce pads, saws, keys and doors, conveyors and gravity flips, plus a Level Editor with share codes, saved progress and level select.' },
   { dir: 'Brown E Clicker', name: 'Brown E Clicker 2.0', img: 'clicker', tags: ['New', 'Clicker'], desc: 'NEW 2.0: 24 new buildings, 287 upgrades, Golden E bonuses and seasonal events, 158 achievements and offline earnings. Ascend for Heavenly Chips and spend them in a 45-node Prestige Tree, take on Challenge Runs, and play the E Garden and E-Goods Market minigames. Plus 28 skins and backgrounds and a news ticker. Click the E. Buy upgrades. Ascend.' },
-  { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.' }
+  { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.', credit: 'Made by Robbie' },
+  { dir: 'Levi Dash By Levi 2.0', name: 'Neon Dash 2.0', img: 'neondash', tags: ['Platformer'], desc: 'Neon Dash: Ultimate Edition. Jump the neon spikes, keep your streak going, beat your score and sign the Hall of Fame.', credit: 'Made by Levi' }
 ];
 var EXPERIMENTAL = [
   { dir: 'Divergent Project', file: 'jsbin.html', name: 'Divergent: Fear Landscape', desc: '3D. Face your fears in Tris\'s simulation.' },
   { dir: 'Tower Jumper', name: 'Tower Jumper', desc: 'Endless, level, flight and boss modes.' },
-  { dir: 'Neon Drift By Levi Beta 1.9', name: 'Neon Drift: Shadow Reign', desc: 'By Levi.' },
-  { dir: 'Levi Dash By Levi 2.0', name: 'Neon Dash 2.0', desc: 'By Levi.' },
+  { dir: 'Neon Drift By Levi Beta 1.9', name: 'Neon Drift: Shadow Reign', desc: '', credit: 'Made by Levi' },
   { dir: 'Hunters Fork', name: 'Neon Dash: Hunter\'s Fork', desc: 'A remix of Neon Dash.' },
   { dir: 'Cursed Dash', name: 'Cursed Dash', desc: 'Neon Dash, but cursed.' },
   { dir: 'Cursed Tetris', name: 'Cursed Tetris', desc: 'Run, for your brain\'s sake.' },
@@ -156,13 +212,13 @@ function render() {
       fallback();
     };
     shot.appendChild(img); b.appendChild(shot);
-    b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div><div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
+    b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { play(g); };
     grid.appendChild(b);
   });
   var list = document.getElementById('exp-list');
   EXPERIMENTAL.forEach(function (g) {
-    var r = el('button', 'row', '<span><span class="rname">' + g.name + '</span><br><span class="rdesc">' + g.desc + '</span></span><span class="rdesc">Play &#8250;</span>');
+    var r = el('button', 'row', '<span><span class="rname">' + g.name + '</span><br><span class="rdesc">' + g.desc + (g.credit ? ' ' + g.credit + '.' : '') + '</span></span><span class="rdesc">Play &#8250;</span>');
     r.onclick = function () { document.getElementById('exp').classList.remove('open'); play(g); };
     list.appendChild(r);
   });
@@ -521,7 +577,8 @@ async function downloadOffline() {
   }
   btn.disabled = false; btn.textContent = old;
 }
-function play(g) {
+function play(g) { if (document.getElementById('gate').hidden === false) return; gvBeforePlay(g, function () { playNow(g); }); }
+function playNow(g) {
   var id = ++loadId;
   current = { game: g, html: null };
   document.getElementById('ptitle').textContent = g.name;
@@ -542,17 +599,24 @@ function play(g) {
   });
 }
 function closePlayer() {
+  var wasOpen = !!current;
   loadId++; current = null;
   document.getElementById('player').classList.remove('open');
   frame.removeAttribute('srcdoc'); frame.src = 'about:blank';
   try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  if (wasOpen) gvAfterPlay();
 }
-// New tab: a direct link when local, otherwise a copy of the downloaded game.
+// New tab: opens a blank page (about:blank, so the address bar shows nothing) and writes the game into it. It shares this
+// page's storage, so saves and the Grapevine account work there too (the game finds this launcher as window.opener).
 document.getElementById('newtab').onclick = function () {
   if (!current) return;
-  if (local) { HG_set(current.game); window.open(path(current.game), '_blank'); return; }
-  if (!current.html) return;
-  try { window.open(URL.createObjectURL(new Blob([current.html], { type: 'text/html' })), '_blank'); } catch (e) {}
+  var g = current.game, w = window.open('about:blank', '_blank');
+  if (!w) { alert('The browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
+  function write(html) { try { w.document.open(); w.document.write(html); w.document.close(); } catch (e) { w.close(); } }
+  w.document.title = g.name;
+  if (current.html) return write(current.html);
+  if (local) { HG_set(g); var u = new URL(path(g), location.href).href; fetch(u).then(function (r) { return r.text(); }).then(function (t) { write(withBase(t, u.replace(/[^\/]*$/, ''))); }, function () { w.close(); }); return; }
+  w.close();
 };
 document.getElementById('back').onclick = closePlayer;
 document.getElementById('full').onclick = function () { var p = document.getElementById('player'); if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(function () {}); };
@@ -587,6 +651,141 @@ render();
 if (!local && !BUNDLE) startCache(); // download every game and library right away
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
+
+// ===== Grapevine: the account behind the whole launcher (gv/account.js, gv/app.html) =====
+// One account for everything: it gates the launcher, puts your name and friends in the games (they read it as
+// window.parent.HGGrapevine), saves every game to the account so another device can load it, and the Grapevine tab runs
+// the full Grapevine app signed in as the same person. The code is downloaded on demand to keep the launcher small.
+var guestMode = false, gvP = null, acctMounted = false, gateMounted = false, chatLoaded = false;
+function fetchGV(file, viaScript) {
+  if (BUNDLE) return Promise.reject(new Error('Grapevine needs the internet, so it is not in the offline copy.'));
+  if (local) return fetch(file, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+  return fetchRepo(file).then(function (r) { return r.html; });
+}
+function loadGV() {
+  if (gvP) return gvP;
+  gvP = new Promise(function (resolve, reject) {
+    if (window.HGGrapevine) return resolve(window.HGGrapevine);
+    fetchGV('gv/account.js').then(function (code) {
+      try { var sc = document.createElement('script'); sc.textContent = code; document.head.appendChild(sc); resolve(window.HGGrapevine); } catch (e) { reject(e); }
+    }, function () { reject(new Error('Could not load Grapevine. The game CDN (cdn.jsdelivr.net) may be blocked on this network.')); });
+  }).then(function (L) { L.on('change', onGvChange); onGvChange(); return L; }, function (e) { gvP = null; throw e; });
+  return gvP;
+}
+function savedName() { try { return localStorage.getItem('hgv:name') || ''; } catch (e) { return ''; } }
+function hasSavedKey() { try { return !!localStorage.getItem('hgv:key'); } catch (e) { return false; } }
+function paintChip() {
+  var L = window.HGGrapevine, me = L && L.me(), name = me ? me.name : (hasSavedKey() ? savedName() : '');
+  var chip = document.getElementById('chip');
+  chip.className = name ? 'on' : '';
+  if (!name) return;
+  document.getElementById('chip-nm').textContent = name;
+  var s = L ? L.status().status : 'connecting';
+  document.getElementById('chip-dot').className = 'cdot' + (s === 'online' ? ' on' : s === 'signed-out' || s === 'error' ? '' : ' wait');
+}
+function onGvChange() {
+  paintChip();
+  var L = window.HGGrapevine, signedIn = !!(L && L.me());
+  document.getElementById('gate').hidden = signedIn || guestMode || BUNDLE;
+  if (!signedIn && chatLoaded) { chatLoaded = false; document.getElementById('gvapp').removeAttribute('srcdoc'); showTab('games'); closePlayer(); }
+  if (signedIn && (!chatLoaded || chatLoaded === 'pending') && !BUNDLE) { chatLoaded = 'pending'; setTimeout(function () { if (chatLoaded === 'pending') startChat(); }, 1500); }   // the full app starts in the background so messages arrive while you play
+}
+// The gate: nothing in the launcher works without an account. A device that signed in before opens straight away
+// (offline too); the account reconnects quietly in the background.
+function showGate() {
+  var gate = document.getElementById('gate'), box = document.getElementById('gate-box');
+  gate.hidden = false;
+  box.innerHTML = '<div class="sub" style="text-align:center">Loading Grapevine...</div>';
+  loadGV().then(function (L) {
+    if (!gateMounted) { gateMounted = true; window.HGGrapevineUI.mount(box, { gate: true }); }
+    var oldNote = document.getElementById('gate-note'); if (oldNote) oldNote.remove();
+    var note = document.createElement('div'); note.id = 'gate-note'; note.className = 'sub'; note.style.cssText = 'text-align:center;margin-top:14px'; box.parentNode.appendChild(note);
+    // If Grapevine cannot be reached from this network at all, do not lock anybody out of the games.
+    L.probe().then(function (ok) {
+      if (ok || !document.getElementById('gate-note')) return;
+      note.innerHTML = 'Grapevine cannot be reached from here right now (the server may be down, or this network blocks it). ';
+      var b = document.createElement('button'); b.className = 'tab'; b.id = 'gate-guest'; b.textContent = 'Play without an account for now';
+      b.onclick = function () { guestMode = true; note.remove(); onGvChange(); };
+      note.appendChild(document.createElement('br')); note.appendChild(b);
+    });
+    onGvChange();
+  }, function (e) {
+    box.innerHTML = ''; var d = document.createElement('div'); d.className = 'sub'; d.style.textAlign = 'center'; d.textContent = e.message;
+    var b = document.createElement('button'); b.className = 'tab'; b.textContent = 'Try again'; b.onclick = showGate; d.appendChild(document.createElement('br')); d.appendChild(b); box.appendChild(d);
+  });
+}
+// The Grapevine tab runs the real Grapevine app in a frame, already signed in as this account. It shares this page's
+// storage, so the key is handed over the same way Grapevine's own sign-in keeps it; its own sign-out is hidden because
+// signing out belongs to the launcher.
+function startChat() {
+  var L = window.HGGrapevine, me = L && L.me(), frm = document.getElementById('gvapp');
+  if (!me) { chatLoaded = 'pending'; return; }
+  if (chatLoaded === true) return;
+  chatLoaded = true;
+  frm.srcdoc = '<!DOCTYPE html><html><body style="margin:0;background:#0b0b0d;color:#8a8a96;font:14px sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">Loading Grapevine...</body></html>';
+  fetchGV('gv/app.html').then(function (html) {
+    try {
+      localStorage.setItem('gv:key', L.key()); localStorage.setItem('gv:name', me.name); localStorage.setItem('gv:bound:' + me.userId, '1');
+    } catch (e) {}
+    html = html.replace('</head>', '<style>#signOut,#srvOut{display:none!important}</style></head>')
+      .replace(/<\/body>\s*<\/html>\s*$/i, '<script>try{if(document.querySelector("#userid").value)document.querySelector("#goIn").click()}catch(e){}<\/script></body></html>');
+    frm.srcdoc = html;
+  }, function (e) { chatLoaded = false; frm.srcdoc = '<body style="font:14px sans-serif;background:#0b0b0d;color:#e5484d;padding:30px">' + String(e.message).replace(/</g, '&lt;') + '</body>'; });
+}
+function showTab(which) {
+  if (guestMode && which !== 'games') { guestMode = false; onGvChange(); return; }   // those need an account: show the sign-in screen again
+  var chat = which === 'chat';
+  document.getElementById('view-games').hidden = which !== 'games';
+  document.getElementById('view-acct').hidden = which !== 'acct';
+  document.getElementById('view-chat').hidden = !chat;
+  document.body.className = chat ? 'chat' : '';
+  ['games', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  if (chat) {
+    document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
+    if (chatLoaded !== true) loadGV().then(startChat, function () {});
+  }
+  if (which === 'acct' && !acctMounted) {
+    var box = document.getElementById('view-acct');
+    box.innerHTML = '<div class="sub" style="text-align:center;padding:30px 0">Loading...</div>';
+    loadGV().then(function () { acctMounted = true; window.HGGrapevineUI.mount(box); });
+  }
+}
+// What the full app is showing, carried to the launcher: unread chats and friend requests as a badge on its tab.
+setInterval(function () {
+  var t = document.getElementById('tab-chat'), L = window.HGGrapevine, n = 0;
+  try { var m = /^\((\d+)\)/.exec(document.getElementById('gvapp').contentDocument.title || ''); if (m) n = +m[1]; } catch (e) {}
+  if (L && L.me()) n += L.friends().incoming.length;
+  var label = n ? 'Grapevine (' + (n > 99 ? '99+' : n) + ')' : 'Grapevine';
+  if (t.textContent !== label) t.textContent = label;
+}, 2000);
+// "Friends" and "Friend requests" buttons in the Account tab open the full app's own friends window.
+window.HG_openGrapevine = function (friendsTab) {
+  showTab('chat');
+  if (!friendsTab) return;
+  var tries = 0, iv = setInterval(function () {
+    tries++;
+    try { var w = document.getElementById('gvapp').contentWindow; if (w.S && w.S.joined && w.openFriends) { clearInterval(iv); w.openFriends(friendsTab); } } catch (e) {}
+    if (tries > 60) clearInterval(iv);
+  }, 500);
+};
+document.getElementById('tab-games').onclick = function () { showTab('games'); };
+document.getElementById('tab-chat').onclick = function () { showTab('chat'); };
+document.getElementById('tab-acct').onclick = function () { showTab('acct'); };
+document.getElementById('chip').onclick = function () { showTab('acct'); };
+window.addEventListener('resize', function () { if (document.body.className === 'chat') document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px'); });
+// Saves follow the account: before a game opens (so it starts from the newest save), and again after it closes.
+function gvBeforePlay(g, go) {
+  var L = window.HGGrapevine;
+  if (!(L && L.me() && L.online())) { if (L && L.me()) L.sync.setGameOpen(true); return go(); }
+  Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { L.sync.setGameOpen(true); go(); });
+}
+function gvAfterPlay() { var L = window.HGGrapevine; if (L && L.me()) setTimeout(function () { L.sync.setGameOpen(false); }, 500); }
+document.addEventListener('visibilitychange', function () { var L = window.HGGrapevine; if (document.hidden && L && L.me() && L.online()) L.sync.run().catch(function () {}); });
+if (!BUNDLE) {
+  if (hasSavedKey()) { paintChip(); loadGV().then(function (L) { L.resume(); }, function () {}); }   // signed in before: bring the account up quietly
+  else { closePlayer(); showGate(); }
+}
+if (start === 'chat') showTab('chat'); else if (start === 'account') showTab('acct');
 </script>
 </body>
 </html>
