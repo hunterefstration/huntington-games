@@ -1,7 +1,7 @@
 # Handoff (updated 2026-10-15)
 
 ## Where things stand
-- Live: release **r36** (Sovereign 1.0, new game), released Oct 21 2026, 8:32 PM EDT. r34/r35 shipped Frontline 3.0 and the content wave. Launcher code in `loader.html`.
+- Live: release **r38** (Sovereign 1.1: will to fight, surrender terms, ~100 new events), released Oct 23 2026, 4:04 AM EDT. r37 made Grapevine the launcher; r36 shipped Sovereign 1.0. Launcher code in `loader.html`.
 - Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
   `git fetch origin wip/content-wave && git checkout origin/wip/content-wave -- "Blocky Shooter V2" "Tower Defense 2.0" Frontline Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9" "50 Levels Of Spikes 1.2" src/hgnet.js src/hgnet-test.html src/hgnet-README.md`
   then `git reset -q` so nothing is staged. Do not commit these to `main` until each game passes its play-test.
