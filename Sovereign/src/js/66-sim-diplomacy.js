@@ -117,9 +117,9 @@ function diploMonth() {
   // a reserve currency that is used as a weapon slowly loses trust
   for (const code in G.cur) {
     const c = G.cur[code], issuers = G.nations.filter(m => m && m.mon.cur === code && m.mon.type !== 'adopted');
-    const v = issuers.reduce((a, m) => a + G.sanctions.filter(s => s.by === m.idx).reduce((x, s) => x + s.level * gdpUsd(G.nations[s.on]) / W.worldGdp * 40, 0), 0);
+    const v = issuers.reduce((a, m) => a + G.sanctions.filter(s => s.by === m.idx).reduce((x, s) => x + s.level * gdpUsd(G.nations[s.on]) / W.worldGdp * 15, 0), 0);
     if (c.sanc0 == null) c.sanc0 = v; // sanctions that already existed in 2026 are part of the starting trust
-    c.sanctions = Math.max(0, v - c.sanc0);
+    c.sanctions = clamp(v - c.sanc0, 0, 3); // overusing sanctions erodes trust, slowly
   }
   goodsMonth();
   aiDiplomacy();
@@ -138,6 +138,8 @@ function aiDiplomacy() {
     else if (rel < -60 && G.rng() < 0.15) { addRel(a, b, -5); newsWorld(ca.name + ' denounces ' + cb.name); }
     else if (rel > 20) addRel(a, b, 2);
   }
+  // old AI sanctions are sometimes lifted, so they do not pile up forever
+  if (G.rng() < 0.25) { const old = G.sanctions.filter(s => s.since > 0 && s.by !== me && s.on !== me && G.day - s.since > 720); if (old.length) { const s = old[Math.floor(G.rng() * old.length)]; G.sanctions.splice(G.sanctions.indexOf(s), 1); addRel(s.by, s.on, 10); newsWorld(World.countries[s.by].name + ' lifts sanctions on ' + World.countries[s.on].name); } }
   // someone asks the player for something
   if (G.rng() < 0.35) {
     const cands = G.nations.filter(m => m && m.idx !== me), m = cands[Math.floor(G.rng() * cands.length)], rel = relation(m.idx, me), c = World.countries[m.idx];
@@ -214,7 +216,7 @@ const DiploAct = {
     const say = (title, stance, size, abroad) => react(n, { title, stance, size, abroad, topic: c.name.replace(/ /g, '') });
     if (A.ask) {
       const ch = this.chance(a, t);
-      if (G.rng() > ch.p) { addRel(me, t, -3); return c.name + ' said no.'; }
+      if (G.rng() > ch.p) { addRel(me, t, -3); return c.name + ' said no. ' + pickLine(DIP_NO, c.name, m); }
     }
     switch (a) {
       case 'call': addRel(me, t, 4); return 'A warm call with ' + m.leader + '.';
@@ -226,7 +228,7 @@ const DiploAct = {
         if (a === 'defence') say('Defence pact with ' + c.name, { military: 4, students: -2 }, 0.8);
         if (a === 'base') { say('New military base in ' + c.name, { military: 4 }, 0.6); for (const o of G.nations) if (o && relation(o.idx, t) < -30) addRel(me, o.idx, -6); }
         if (a === 'tech') setMod(n, 'growth', 'Technology sharing', 0.05 * G.treaties.filter(x => x.type === 'tech' && (x.a === me || x.b === me)).length);
-        newsWorld(mine.name + ' and ' + c.name + ': ' + TREATIES[a].name); return TREATIES[a].name + ' signed!';
+        newsWorld(mine.name + ' and ' + c.name + ': ' + TREATIES[a].name); return TREATIES[a].name + ' signed! ' + pickLine(DIP_YES, c.name, m);
       case 'arms': { const amt = Math.min(gdpUsd(m) * 0.003, gdpUsd(n) * 0.002); n.income = n.income || {}; n.income['Arms sales'] = (n.income['Arms sales'] || 0) + amt / gdpUsd(n) * 100 / 3; m.milx *= 1.05; addRel(me, t, 8); for (const o of G.nations) if (o && relation(o.idx, t) < -40) addRel(me, o.idx, -8); say('Arms deal with ' + c.name, { business: 3, military: 2, students: -3 }, 0.7, -1); return 'Weapons sold for ' + usd(amt) + '.'; }
       case 'tariff': G.tariffs.push({ by: me, on: t, pct: 25, since: G.day }); addRel(me, t, -15); setMod(n, 'infl', 'Our tariffs', 0.3 * G.tariffs.filter(x => x.by === me).reduce((s, x) => s + gdpUsd(G.nations[x.on]) / G.world.worldGdp * 10, 0)); say('25% tariffs on ' + c.name, { workers: 3, farmers: 3, business: -4 }, 0.8); return 'Tariffs announced.';
       case 'sanction': G.sanctions.push({ by: me, on: t, level: 1, since: G.day }); addRel(me, t, -10); say('Sanctions on ' + c.name, pubView < -20 ? { military: 2, media: 1 } : { business: -3 }, 0.8, -1); return 'Sanctions in place.';

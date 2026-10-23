@@ -220,13 +220,16 @@ function eventContext(n) {
   const mins = n.cabinet ? Object.entries(n.cabinet) : [];
   const dishonest = mins.slice().sort((a, b) => a[1].honesty - b[1].honesty)[0];
   const cityI = World.cities.indexOf(cities[Math.floor(Math.pow(r(), 2) * Math.min(cities.length, 10))] || cities[0]);
+  const P = G.player;
   return {
+    v: Math.floor(r() * 1000), country: c.name, capital: c.capital, leader: P.title + ' ' + P.name, opp: (G.people && G.people[0] ? G.people[0].name : personName(c, r)), food: FOODS[c.region] || 'bread',
     city: cityI, rival: byRel[0] && byRel[0][1] < -15 ? byRel[0][0] : null, friend: byRel[byRel.length - 1] && byRel[byRel.length - 1][1] > 20 ? byRel[byRel.length - 1][0] : null,
     poor: poor.length ? poor[Math.floor(r() * poor.length)].idx : null, minister: dishonest ? dishonest[1].name : 'a minister', ministerPost: dishonest ? dishonest[0] : null,
     person: personName(c, r), celeb: personName(c, r), company: ['Apex', 'Nova', 'Titan', 'Orion', 'Zenith', 'Pioneer', 'Summit', 'Atlas'][Math.floor(r() * 8)] + ' ' + ['Motors', 'Steel', 'Tech', 'Foods', 'Energy', 'Bank', 'Pharma', 'Mining'][Math.floor(r() * 8)]
   };
 }
 function fillText(s, ctx) {
+  if (Array.isArray(s)) s = s[(ctx.v || 0) % s.length]; // events can have several wordings
   return s.replace(/\{(\w+)\}/g, (m, k) => k === 'city' ? World.cities[ctx.city].name : ['rival', 'friend', 'poor'].includes(k) ? (ctx[k] != null ? World.countries[ctx[k]].name : 'a neighbour') : ctx[k] || m);
 }
 function fxSummary(fx, n) {
@@ -250,6 +253,7 @@ function applyEventFx(n, fx, ev, ctx, label) {
   if (fx.t) n.techLv = (n.techLv || 0) + fx.t;
   if (fx.mil) n.army.E *= 1 + fx.mil;
   if (fx.rent) n.rent += fx.rent;
+  if (fx.c) { n.base.corruption = clamp(n.base.corruption + fx.c, 0.02, 0.9); applyLaws(n); }
   if (fx.y) n.ratingOff += fx.y < 0 ? 0.7 : -0.7;
   if (fx.infra) n.base.k.infra -= fx.infra * 10;
   if (fx.pop) n.popGrowth0 += fx.pop, n.popGrowth += fx.pop;

@@ -1,7 +1,7 @@
 # Handoff (updated 2026-10-15)
 
 ## Where things stand
-- Live: release **r33** (100 Levels of Spikes 2.0), released Oct 14 2026, 6:16 AM EDT. Launcher code in `loader.html`.
+- Live: release **r38** (Sovereign 1.1: will to fight, surrender terms, ~100 new events), released Oct 23 2026, ~4 AM EDT. r37 made Grapevine the launcher; r36 shipped Sovereign 1.0. Launcher code in `loader.html`.
 - Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
   `git fetch origin wip/content-wave && git checkout origin/wip/content-wave -- "Blocky Shooter V2" "Tower Defense 2.0" Frontline Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9" "50 Levels Of Spikes 1.2" src/hgnet.js src/hgnet-test.html src/hgnet-README.md`
   then `git reset -q` so nothing is staged. Do not commit these to `main` until each game passes its play-test.
@@ -70,7 +70,7 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
 - Tests (need the Grapevine rig, see grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves, Grapevine tab, cards, new tab) and
   `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
-## New game: Sovereign (grand strategy, branch `claude/wizardly-hawking-27f3jp`, not on `main`)
+## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE
   ES module, so top-level names are shared), data in `Sovereign/data/*.json` (embedded as JSON script tags, read with
@@ -90,5 +90,4 @@ Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: n
   missing state so old saves keep working. Top-level code in a file may only use names from files that sort before it.
   Full-game check: start a game, call __sov.nextDay() in a loop and answer any #modal (see the play-through test idea in
   the plan). Release: `tools/release.sh prepare N Sovereign` now also copies Sovereign/src, data, tools and hub/sovereign.jpg.
-- Not yet in the Launcher (another agent is editing it): at release add the card + `hub/sovereign.jpg`, and add
-  'Sovereign' to GAMES in `tools/build-release.py`.
+- In the Launcher since r36 (card + `hub/sovereign.jpg`, 'Sovereign' in `tools/build-release.py` GAMES).
