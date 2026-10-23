@@ -63,7 +63,10 @@ const GVLink = (() => {
   //         relays (override), urlParams (false), onStatus(text) }
   function connect(archiveId, opts) {
     opts = opts || {};
-    const conn = emitter({ peer: archiveId, open: false, relay: true, pid: '', serverPub: '', metadata: { role: 'client' }, status: '' });
+    const conn = emitter({ peer: archiveId, open: false, relay: true, pid: '', serverPub: '', metadata: { role: 'client' }, status: '', marks: [] });
+    // Where the time goes, step by step (milliseconds since the connection was asked for). Shown in the launcher's Connection tab.
+    const t0 = Date.now(), mark = name => conn.marks.push([name, Date.now() - t0]);
+    mark('start');
     const early = [];
     let net = null, key = null, tx = 0, rx = 0, dead = false, sendQ = Promise.resolve(), rxQ = Promise.resolve();
     const say = t => { conn.status = t; try { opts.onStatus && opts.onStatus(t); } catch (e) {} conn.emit('status', t); };
@@ -87,17 +90,19 @@ const GVLink = (() => {
 
     (async () => {
       say('loading relay library…');
-      await loadMqtt();
+      await loadMqtt(); mark('relay library ready');
       if (!window.HGNet) throw new Error('relay code missing');
       const nshards = Math.max(1, Math.min(Number(opts.shards) || 2, 8));
       let joined = null, lastErr = null;
-      for (const i of shuffled(nshards)) {
+      // Shard 0 first, always: it is the one the server fills first, and a shard that is not there costs a full wait
+      // before the next one is tried. Later shards are only for when shard 0 is full.
+      for (let i = 0; i < nshards; i++) {
         if (dead) return;
         const { game, code } = await address(archiveId, i);
-        const n = window.HGNet.create({ game, forceRelay: true, peer: false, resume: false,
+        const n = window.HGNet.create({ game, forceRelay: true, peer: false, resume: false, notFoundMs: 3500,
           urlParams: opts.urlParams === true, relays: opts.relays || undefined });
         n.on('status', t => say(t));
-        try { await n.join(code, { name: 'gv' }); joined = n; break; }
+        try { await n.join(code, { name: 'gv' }); joined = n; mark('joined room ' + i); break; }
         catch (e) { lastErr = e; try { n.close(); } catch (x) {} if (e && (e.code === 'blocked' || e.code === 'closed')) break; }
       }
       if (dead) { try { joined && joined.close(); } catch (e) {} return; }
@@ -109,7 +114,7 @@ const GVLink = (() => {
       net.on('closed', (reason) => finish(reason || 'closed'));
 
       // ---- key exchange ----
-      say('securing the link…');
+      say('securing the link…'); mark('key exchange');
       const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
       const cpub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
       const cpubB64 = b64(cpub);
@@ -134,7 +139,7 @@ const GVLink = (() => {
       key = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: te.encode(`gv-link|${cpubB64}|${spubB64}|${pid}`) },
         hk, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
       conn.pid = pid; conn.serverPub = spub;
-      conn.open = true;
+      conn.open = true; mark('link secured');
       say('connected through relay');
       early.splice(0).forEach(onData);
       conn.emit('open');

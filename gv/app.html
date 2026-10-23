@@ -1929,7 +1929,10 @@ const GVLink = (() => {
   //         relays (override), urlParams (false), onStatus(text) }
   function connect(archiveId, opts) {
     opts = opts || {};
-    const conn = emitter({ peer: archiveId, open: false, relay: true, pid: '', serverPub: '', metadata: { role: 'client' }, status: '' });
+    const conn = emitter({ peer: archiveId, open: false, relay: true, pid: '', serverPub: '', metadata: { role: 'client' }, status: '', marks: [] });
+    // Where the time goes, step by step (milliseconds since the connection was asked for). Shown in the launcher's Connection tab.
+    const t0 = Date.now(), mark = name => conn.marks.push([name, Date.now() - t0]);
+    mark('start');
     const early = [];
     let net = null, key = null, tx = 0, rx = 0, dead = false, sendQ = Promise.resolve(), rxQ = Promise.resolve();
     const say = t => { conn.status = t; try { opts.onStatus && opts.onStatus(t); } catch (e) {} conn.emit('status', t); };
@@ -1953,17 +1956,19 @@ const GVLink = (() => {
 
     (async () => {
       say('loading relay library…');
-      await loadMqtt();
+      await loadMqtt(); mark('relay library ready');
       if (!window.HGNet) throw new Error('relay code missing');
       const nshards = Math.max(1, Math.min(Number(opts.shards) || 2, 8));
       let joined = null, lastErr = null;
-      for (const i of shuffled(nshards)) {
+      // Shard 0 first, always: it is the one the server fills first, and a shard that is not there costs a full wait
+      // before the next one is tried. Later shards are only for when shard 0 is full.
+      for (let i = 0; i < nshards; i++) {
         if (dead) return;
         const { game, code } = await address(archiveId, i);
-        const n = window.HGNet.create({ game, forceRelay: true, peer: false, resume: false,
+        const n = window.HGNet.create({ game, forceRelay: true, peer: false, resume: false, notFoundMs: 3500,
           urlParams: opts.urlParams === true, relays: opts.relays || undefined });
         n.on('status', t => say(t));
-        try { await n.join(code, { name: 'gv' }); joined = n; break; }
+        try { await n.join(code, { name: 'gv' }); joined = n; mark('joined room ' + i); break; }
         catch (e) { lastErr = e; try { n.close(); } catch (x) {} if (e && (e.code === 'blocked' || e.code === 'closed')) break; }
       }
       if (dead) { try { joined && joined.close(); } catch (e) {} return; }
@@ -1975,7 +1980,7 @@ const GVLink = (() => {
       net.on('closed', (reason) => finish(reason || 'closed'));
 
       // ---- key exchange ----
-      say('securing the link…');
+      say('securing the link…'); mark('key exchange');
       const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
       const cpub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
       const cpubB64 = b64(cpub);
@@ -2000,7 +2005,7 @@ const GVLink = (() => {
       key = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: te.encode(`gv-link|${cpubB64}|${spubB64}|${pid}`) },
         hk, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
       conn.pid = pid; conn.serverPub = spub;
-      conn.open = true;
+      conn.open = true; mark('link secured');
       say('connected through relay');
       early.splice(0).forEach(onData);
       conn.emit('open');
@@ -3900,6 +3905,7 @@ function deliver(m){
   box.set(m.msgId, m);
   trimBox(m.convId); trimSeen();
   cacheConv(m.convId);
+  for (const fn of EMBED_FN) { try { fn(c, m); } catch (e) {} }
 
   if (m.convId === S.active) {
     queueRender(m);
@@ -3933,6 +3939,18 @@ function maybeNotify(c, m){
   if (level === 'silent') return;
   if (level === 'mentions' && !mention) return;
   if (SET.mentionsOnly && !mention) return;
+  // Inside the Huntington Games launcher: hand it the message, so it can show a notification over a game that is being
+  // played (the launcher decides whether to show it; it knows what is on screen).
+  if (window.parent !== window) {
+    try {
+      const hubHidden = !!(window.parent.HG_chatHidden && window.parent.HG_chatHidden());
+      if (window.parent.HG_notify && (hubHidden || m.convId !== S.active)) {
+        lastNotify.set(m.convId, now);
+        window.parent.HG_notify({ kind: c.kind === 'dm' ? 'dm' : (namesMe(m) ? 'mention' : 'msg'), title: convTitle(c), from: m.displayName,
+          text: m.kind === 'image' ? 'sent an image' : (m.text || '').slice(0, 140), convId: m.convId });
+      }
+    } catch (e) {}
+  }
   const away = document.hidden || m.convId !== S.active;
   if (!away) return;
   blip();
@@ -8005,6 +8023,30 @@ if (keyLocked) $('#unlockHint').textContent = 'Locked here as ' + (store.getItem
 loadSettings();
 paintLinks();
 
+// For the Huntington Games launcher, which shows a small chat window over a running game (press T). It reads and writes through the
+// same paths as the screen above, so what is said there lands in the same conversations.
+const EMBED_FN = [];
+window.GVEmbed = {
+  ready(){ return !!(S.joined && !S.guest); },
+  convs(){
+    const last = c => { let t = 0; for (const m of msgsOf(c.id).values()) if (m.ts > t) t = m.ts; return t; };
+    return [...S.convs.values()].filter(c => !c.local && !c.frozen).map(c => ({ id:c.id, title:convTitle(c), kind:c.kind, unread:c.unread || 0, t:last(c) }))
+      .sort((a, b) => (b.t - a.t) || a.title.localeCompare(b.title));
+  },
+  msgs(id, n){
+    return [...msgsOf(id).values()].filter(m => m.kind !== 'system').sort((a, b) => a.ts - b.ts).slice(-(n || 30))
+      .map(m => ({ id:m.msgId, from:m.displayName, mine:m.userId === S.userId, ts:m.ts, text:m.kind === 'image' ? '[image]' : (m.text || '') }));
+  },
+  read(id){ const c = conv(id); if (c && c.unread) { c.unread = 0; paintSidebar(); } },
+  send(id, text){
+    text = String(text || '').trim().slice(0, 2000);
+    if (!text || !conv(id) || S.guest || !rateOk()) return false;
+    const m = { type:'chat', convId:id, msgId:uid(), userId:S.userId, displayName:S.name, text, ts:Date.now(), kind:'text', replyTo:null };
+    S.pending.set(m.msgId, m); savePending(); deliver(m); directSend(m); flushPending();
+    return true;
+  },
+  on(fn){ EMBED_FN.push(fn); }
+};
 // exposed for the test rig; everything here is what the UI buttons call anyway
 window.S = S; window.CONFIG = CONFIG;
 window.GV = { send, openConv, deliver, sendImage, join, signIn, signUp, showStart, route, routeOptions,

@@ -126,6 +126,7 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 #ptitle { flex: 1; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #frame { flex: 1; width: 100%; border: 0; background: #000; }
 #ptop.hide { display: none; }
+#chathint { margin-left: auto; color: var(--dim); font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
 .note { color: var(--dimmer); font-size: 11px; margin-top: 26px; }
 
 /* ---- the Grapevine look: amber on warm black, mono labels, square corners ---- */
@@ -171,7 +172,9 @@ html[data-base] { --dim: color-mix(in srgb, var(--text) 62%, var(--ground)); }
 /* the Grapevine tab is the whole app, edge to edge under the top bar */
 #view-chat { position: fixed; left: 0; right: 0; bottom: 0; top: 0; z-index: 4; padding-top: var(--topbar, 49px); background: var(--ground); }
 #gvapp { width: 100%; height: 100%; border: 0; display: block; background: var(--ground); }
-body.chat #hub { position: relative; z-index: 6; }
+body.chat #hub { position: relative; z-index: 6; pointer-events: none; padding-bottom: 0; }
+body.chat #topbar { pointer-events: auto; }
+@media (max-width: 760px) { #topbar { gap: 0 12px; } #tabs { order: 3; flex: 1 1 100%; overflow-x: auto; } .tab { padding: 10px 10px; letter-spacing: .1em; } #chip { margin-left: auto; } }
 body.chat #hub > #view-games, body.chat #hub > #view-acct { display: none; }
 body.chat { overflow: hidden; }
 #gate { position: fixed; inset: 0; z-index: 40; background: var(--ground); overflow-y: auto; display: flex; padding: 20px 16px; }
@@ -201,7 +204,7 @@ body.chat { overflow: hidden; }
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
 <div id="player">
-  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
+  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><span id="chathint"></span><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
   <iframe id="frame" allow="fullscreen; pointer-lock; autoplay; gamepad" allowfullscreen></iframe>
 </div>
 <script>
@@ -243,7 +246,7 @@ var local = !BUNDLE && (location.protocol === 'file:' || /github\.io$/.test(loca
 
 var GAMES = [
   { dir: 'Sovereign', name: 'Sovereign 1.1', img: 'sovereign', tags: ['New', '3D', 'Strategy'], desc: 'NEW 1.1: wars now end when a country loses its will to fight, and you choose the surrender terms. About 100 new events and much more news and flavour text. Lead any of 197 real countries on a living 3D globe: run the economy, pass laws, win elections, deal with real world leaders.' },
-  { dir: 'Frontline', name: 'Frontline: Command 3.0', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: 'NEW 3.0: a second faction, the Iron Legion - 24 units with shields, their own upgrades and AI commander Kael (pick your side online too). 5 new maps, including 2 coastal ones with a Shipyard, Gunboats, Landing Craft and Destroyers. Night battles with rain, fog or snow, and a General perk tree with 18 perks. Plus new achievements and a Field Guide. Still here: Endless War, the 7-battle Campaign and online battles with a 6-digit code.' },
+  { dir: 'Frontline', chatShift: true, name: 'Frontline: Command 3.0', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: 'NEW 3.0: a second faction, the Iron Legion - 24 units with shields, their own upgrades and AI commander Kael (pick your side online too). 5 new maps, including 2 coastal ones with a Shipyard, Gunboats, Landing Craft and Destroyers. Night battles with rain, fog or snow, and a General perk tree with 18 perks. Plus new achievements and a Field Guide. Still here: Endless War, the 7-battle Campaign and online battles with a 6-digit code.' },
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter 4.0', img: 'blocky', tags: ['New', '3D', 'Multiplayer'], desc: 'NEW 4.0: pick one of 4 classes, each with its own ability and upgrade tree. 5 new weapons: Dual Pistols, Katana, Grenade Launcher, Tesla Gun and Railgun. 2 new maps, a two-floor Mall and a Military Base. Daily and weekly challenges, and Prestige once you hit max rank. Still here: 8 bosses, Boss Rush, an armory, and online co-op or PvP with 6-digit party codes.' },
   { dir: 'Tower Defense 2.0', name: 'Tower Defense 3.0', img: 'td', tags: ['New', 'Strategy'], desc: 'NEW 3.0: pick one of 6 heroes with 2 abilities each, 18 new towers including a whole Alien tab, 7 alien enemies and the Mothership boss. 12 new maps with terrain and stars, boss waves every 10, a Daily Challenge, and a Map Editor with share codes. Still two modes: Tower Mode or Troop Mode, 1900 to the future.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon 2.0', img: 'coffee', tags: ['New', 'Tycoon'], desc: 'NEW 2.0: open shops in 5 new cities, invent drinks in the Recipe Lab, train staff with skill trees, and run a franchise chain with managers. Random events with choices, decorations, seasons and holidays, an 8-chapter career story and a latte art mini-game. Build, staff and grow a chain of coffee shops.' },
@@ -252,14 +255,14 @@ var GAMES = [
   { dir: '50 Levels Of Spikes 1.2', name: '100 Levels of Spikes 2.0', img: 'spikes', tags: ['New', 'Platformer'], desc: 'NEW 2.0: 50 new levels (51-100) with moving platforms, bounce pads, saws, keys and doors, conveyors and gravity flips, plus a Level Editor with share codes, saved progress and level select.' },
   { dir: 'Brown E Clicker', name: 'Brown E Clicker 2.0', img: 'clicker', tags: ['New', 'Clicker'], desc: 'NEW 2.0: 24 new buildings, 287 upgrades, Golden E bonuses and seasonal events, 158 achievements and offline earnings. Ascend for Heavenly Chips and spend them in a 45-node Prestige Tree, take on Challenge Runs, and play the E Garden and E-Goods Market minigames. Plus 28 skins and backgrounds and a news ticker. Click the E. Buy upgrades. Ascend.' },
   { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.', credit: 'Made by Robbie' },
-  { dir: 'Levi Dash By Levi 2.0', name: 'Neon Dash 2.0', img: 'neondash', tags: ['Platformer'], desc: 'Neon Dash: Ultimate Edition. Jump the neon spikes, keep your streak going, beat your score and sign the Hall of Fame.', credit: 'Made by Levi' }
+  { dir: 'Levi Dash By Levi 2.0', noChat: true, name: 'Neon Dash 2.0', img: 'neondash', tags: ['Platformer'], desc: 'Neon Dash: Ultimate Edition. Jump the neon spikes, keep your streak going, beat your score and sign the Hall of Fame.', credit: 'Made by Levi' }
 ];
 var EXPERIMENTAL = [
   { dir: 'Divergent Project', file: 'jsbin.html', name: 'Divergent: Fear Landscape', desc: '3D. Face your fears in Tris\'s simulation.' },
   { dir: 'Tower Jumper', name: 'Tower Jumper', desc: 'Endless, level, flight and boss modes.' },
-  { dir: 'Neon Drift By Levi Beta 1.9', name: 'Neon Drift: Shadow Reign', desc: '', credit: 'Made by Levi' },
-  { dir: 'Hunters Fork', name: 'Neon Dash: Hunter\'s Fork', desc: 'A remix of Neon Dash.' },
-  { dir: 'Cursed Dash', name: 'Cursed Dash', desc: 'Neon Dash, but cursed.' },
+  { dir: 'Neon Drift By Levi Beta 1.9', noChat: true, name: 'Neon Drift: Shadow Reign', desc: '', credit: 'Made by Levi' },
+  { dir: 'Hunters Fork', noChat: true, name: 'Neon Dash: Hunter\'s Fork', desc: 'A remix of Neon Dash.' },
+  { dir: 'Cursed Dash', noChat: true, name: 'Cursed Dash', desc: 'Neon Dash, but cursed.' },
   { dir: 'Cursed Tetris', name: 'Cursed Tetris', desc: 'Run, for your brain\'s sake.' },
   { dir: 'Battle Mechanic', name: 'Undertale Battle Prototype', desc: 'An Undertale-style battle test.' },
   { dir: 'Battle Mechanic 2', name: 'The Dummy\'s Patience', desc: 'Undertale-style battle against a very patient dummy.' }
@@ -298,7 +301,7 @@ function render() {
     list.appendChild(r);
   });
 }
-var frame = document.getElementById('frame'), current = null, loadId = 0;
+var frame = document.getElementById('frame'), current = null, loadId = 0, popup = null, popupGame = null;
 function message(text) {
   return '<!DOCTYPE html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#8b949e;font:16px Segoe UI,sans-serif;text-align:center;padding:20px;box-sizing:border-box">' + text + '</body></html>';
 }
@@ -657,6 +660,8 @@ function playNow(g) {
   var id = ++loadId;
   current = { game: g, html: null };
   document.getElementById('ptitle').textContent = g.name;
+  var hint = document.getElementById('chathint'), Lg = window.HGGrapevine;
+  hint.textContent = g.noChat || !(Lg && Lg.me()) ? '' : (g.chatShift ? 'Shift+T to chat' : 'T to chat');
   document.getElementById('player').classList.add('open');
   try { history.replaceState(null, '', '#' + encodeURIComponent(g.dir)); } catch (e) {}
   if (local) { HG_set(g); frame.removeAttribute('srcdoc'); frame.src = path(g); return; }
@@ -667,6 +672,7 @@ function playNow(g) {
       if (id !== loadId) return;
       current.html = h;
       frame.srcdoc = h;
+      gvStartApp();
     });
   }).catch(function () {
     if (id !== loadId) return;
@@ -686,8 +692,9 @@ function closePlayer() {
 document.getElementById('newtab').onclick = function () {
   if (!current) return;
   var g = current.game, w = window.open('about:blank', '_blank');
+  popup = w; popupGame = g;
   if (!w) { alert('The browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
-  function write(html) { try { w.document.open(); w.document.write(html); w.document.close(); } catch (e) { w.close(); } }
+  function write(html) { try { w.document.open(); w.document.write(html); w.document.close(); attachChat(w.document, g); gvStartApp(); } catch (e) { w.close(); } }
   w.document.title = g.name;
   if (current.html) return write(current.html);
   if (local) { HG_set(g); var u = new URL(path(g), location.href).href; fetch(u).then(function (r) { return r.text(); }).then(function (t) { write(withBase(t, u.replace(/[^\/]*$/, ''))); }, function () { w.close(); }); return; }
@@ -723,7 +730,12 @@ function HG_guard() {
 }
 if (!HG_guard()) throw new Error('HG-expired');
 render();
-if (!local && !BUNDLE) startCache(); // download every game and library right away
+// Saving every game for offline play is a big download. It used to start the moment the page opened, in competition with the
+// Grapevine connection (on a busy school network that alone could add many seconds to signing in). It now waits until the account
+// is connected, with a limit of 30 seconds either way.
+var cacheTimer = 0;
+function startCacheLater(ms) { if (cacheTimer < 0) return; clearTimeout(cacheTimer); cacheTimer = setTimeout(function () { cacheTimer = -1; startCache(); }, ms); }
+if (!local && !BUNDLE) startCacheLater(30000);
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
 
@@ -763,7 +775,7 @@ function loadGV() {
     fetchGV('gv/account.js').then(function (code) {
       try { var sc = document.createElement('script'); sc.textContent = code; document.head.appendChild(sc); resolve(window.HGGrapevine); } catch (e) { reject(e); }
     }, function () { reject(new Error('Could not load Grapevine. The game CDN (cdn.jsdelivr.net) may be blocked on this network.')); });
-  }).then(function (L) { L.on('change', onGvChange); onGvChange(); return L; }, function (e) { gvP = null; throw e; });
+  }).then(function (L) { L.on('change', onGvChange); L.on('notify', function (n) { window.HG_notify(n); }); onGvChange(); return L; }, function (e) { gvP = null; throw e; });
   return gvP;
 }
 function savedName() { try { return localStorage.getItem('hgv:name') || ''; } catch (e) { return ''; } }
@@ -821,6 +833,7 @@ function onGvChange() {
   paintChip(); applyGvTheme();
   var L = window.HGGrapevine, signedIn = !!(L && L.me());
   if (signedIn && !guestMode) maybeTour();
+  if (signedIn && L.online() && !window.__cacheKicked) { window.__cacheKicked = 1; startCacheLater(5000); }
   document.getElementById('gate').hidden = signedIn || guestMode || BUNDLE;
   if (!signedIn && chatLoaded) { chatLoaded = false; document.getElementById('gvapp').removeAttribute('srcdoc'); showTab('games'); closePlayer(); }
   // The full app starts in the background once the account is connected (so it never competes with it for the network),
@@ -905,6 +918,135 @@ window.HG_openGrapevine = function (friendsTab) {
     if (tries > 60) clearInterval(iv);
   }, 500);
 };
+
+// ---- Notifications over games, and chat on T --------------------------------------------------------------------
+// The full Grapevine app runs in the (hidden) Grapevine tab frame. While a game is open the launcher starts it in the
+// background and: shows its notifications as small pop-ups over the game (HG_notify), and opens a small chat window on T
+// (attachChat), both in the launcher's own page and in an about:blank "New tab" copy of the game.
+var HGX_CSS = '.hgx{--panel:#16161a;--raise:#1f1f25;--line2:#34343c;--text:#e9e9ee;--dim:#9a9aa6;--signal:#7c5cff;--signal2:#a78bfa;--on-signal:#fff;--mono:ui-monospace,Menlo,Consolas,monospace;font-family:system-ui,"Segoe UI",sans-serif;color:var(--text);box-sizing:border-box}.hgx *{box-sizing:border-box}'
+  + '.hgt-host{position:fixed;top:12px;right:12px;z-index:2147483000;display:flex;flex-direction:column;gap:8px;width:min(340px,calc(100vw - 24px));pointer-events:none}'
+  + '.hgt{pointer-events:auto;background:var(--panel);border:1px solid var(--line2);border-left:3px solid var(--signal);border-radius:4px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer;animation:hgtin .18s ease-out}'
+  + '.hgt .tk{font:600 9.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--signal)}.hgt .tt{font-weight:600;font-size:14px;margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+  + '.hgt .tx{font-size:12.5px;color:var(--dim);line-height:1.45;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.hgt .tb{display:flex;gap:8px;margin-top:8px}'
+  + '.hgt .tb button,.hgc button{background:var(--raise);border:1px solid var(--line2);color:var(--text);border-radius:3px;padding:4px 10px;font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}'
+  + '.hgt .tb button.go,.hgc button.go{background:linear-gradient(100deg,var(--signal),var(--signal2));color:var(--on-signal);border:0;font-weight:600}@keyframes hgtin{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}'
+  + '.hgc{position:fixed;left:12px;bottom:12px;z-index:2147483001;width:min(360px,calc(100vw - 24px));height:min(330px,calc(100vh - 24px));display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:5px;box-shadow:0 14px 40px rgba(0,0,0,.55)}'
+  + '.hgc .hd{display:flex;gap:6px;align-items:center;padding:7px 8px;border-bottom:1px solid var(--line2)}.hgc select{flex:1;min-width:0;background:var(--raise);color:var(--text);border:1px solid var(--line2);border-radius:3px;padding:5px;font:13px system-ui}'
+  + '.hgc .ls{flex:1;overflow-y:auto;padding:8px 10px;font-size:13px;line-height:1.4;word-break:break-word}.hgc .ls div{margin:0 0 5px}.hgc .ls b{color:var(--signal2)}.hgc .ls .me b{color:var(--dim)}.hgc .ls .none{color:var(--dim);text-align:center;margin-top:30px}'
+  + '.hgc .ft{display:flex;gap:6px;padding:7px 8px;border-top:1px solid var(--line2)}.hgc input{flex:1;min-width:0;background:var(--raise);color:var(--text);border:1px solid var(--line2);border-radius:3px;padding:7px 8px;font:14px system-ui;outline:0}.hgc input:focus{border-color:var(--signal)}'
+  + '.hgc .tip{padding:0 10px 6px;color:var(--dim);font:10.5px var(--mono)}';
+function hgEl(doc, tag, cls, text) { var e = doc.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function hgSkin(doc, e) {
+  e.className += ' hgx';
+  if (!doc.getElementById('hgx-css')) { var st = hgEl(doc, 'style'); st.id = 'hgx-css'; st.textContent = HGX_CSS; (doc.head || doc.documentElement).appendChild(st); }
+  var cs = getComputedStyle(document.documentElement);
+  ['--panel', '--raise', '--line2', '--text', '--dim', '--signal', '--signal2', '--on-signal'].forEach(function (v) { var x = cs.getPropertyValue(v).trim(); if (x) e.style.setProperty(v, x); });
+  return e;
+}
+function hgDocs() { var a = [document]; if (popup && !popup.closed) { try { if (popup.document && popup.document.body) a.push(popup.document); } catch (e) {} } return a; }
+function chatApi() { try { var w = document.getElementById('gvapp').contentWindow; return w && w.GVEmbed && w.GVEmbed.ready() ? w.GVEmbed : null; } catch (e) { return null; } }
+function gvStartApp() { var L = window.HGGrapevine; if (L && L.me() && chatLoaded !== true) loadGV().then(startChat, function () {}); }
+window.HG_chatHidden = function () { return document.body.className !== 'chat' || !!current; };
+
+function toastHost(doc) {
+  var h = doc.getElementById('hgt-host');
+  if (!h) { h = hgSkin(doc, hgEl(doc, 'div', 'hgt-host')); h.id = 'hgt-host'; doc.body.appendChild(h); }
+  if (doc === document) { var want = document.fullscreenElement || document.body; if (h.parentNode !== want) want.appendChild(h); }
+  return h;
+}
+function toastIn(doc, n) {
+  if (doc.__hgchatOpen && doc.__hgchatConv === n.convId && n.convId) return;
+  var host = toastHost(doc), key = [n.kind, n.from, n.convId].join('|'), old = host.querySelector('[data-k="' + key.replace(/"/g, '') + '"]');
+  if (old) old.remove();
+  var t = hgEl(doc, 'div', 'hgt'), tm;
+  t.setAttribute('data-k', key.replace(/"/g, ''));
+  var label = { dm: 'Message', mention: 'Mention', msg: 'Grapevine', friendreq: 'Friend request', friendok: 'Friends' }[n.kind] || 'Grapevine';
+  t.appendChild(hgEl(doc, 'div', 'tk', label));
+  t.appendChild(hgEl(doc, 'div', 'tt', n.kind === 'dm' || n.kind === 'mention' ? (n.from || n.title) : (n.title || '')));
+  var tx = n.kind === 'msg' || n.kind === 'mention' || n.kind === 'dm' ? ((n.kind !== 'dm' && n.title ? n.title + ' - ' : '') + (n.from && n.kind === 'msg' ? n.from + ': ' : '') + (n.text || '')) : (n.text || '');
+  t.appendChild(hgEl(doc, 'div', 'tx', tx));
+  function gone() { clearTimeout(tm); t.remove(); }
+  if (n.kind === 'friendreq') {
+    var b = hgEl(doc, 'div', 'tb'), ok = hgEl(doc, 'button', 'go', 'Accept'), no = hgEl(doc, 'button', '', 'Decline');
+    ok.onclick = function (e) { e.stopPropagation(); var L = window.HGGrapevine; if (L) L.acceptFriend(n.from); gone(); };
+    no.onclick = function (e) { e.stopPropagation(); var L = window.HGGrapevine; if (L) L.declineFriend(n.from); gone(); };
+    b.appendChild(ok); b.appendChild(no); t.appendChild(b);
+  }
+  t.onclick = function () {
+    gone();
+    if (n.kind === 'friendreq' || n.kind === 'friendok') { if (!current && doc === document) HG_openGrapevine('friends'); return; }
+    if (doc !== document || current) { var tg = doc === document ? frame.contentDocument : doc; if (tg) openChatBox(tg, n.convId); }
+    else { showTab('chat'); try { document.getElementById('gvapp').contentWindow.GV.openConv(n.convId); } catch (e) {} }
+  };
+  host.appendChild(t);
+  while (host.children.length > 4) host.firstChild.remove();
+  tm = setTimeout(gone, n.kind === 'friendreq' ? 20000 : 7000);
+}
+window.HG_notify = function (n) { hgDocs().forEach(function (d) { try { toastIn(d, n); } catch (e) {} }); };
+document.addEventListener('fullscreenchange', function () { var h = document.getElementById('hgt-host'); if (h) toastHost(document); });
+
+// The chat window. `gdoc` is the page the game is in (the launcher's game frame, or the New-tab copy). The window is a small frame of
+// its own, so keys typed in it never reach the game (a game that listens to every key would otherwise react to what is being typed).
+function openChatBox(gdoc, convId) {
+  var fr = gdoc.getElementById('hgc-box');
+  if (fr) { if (convId && fr.__pick) fr.__pick(convId); try { fr.contentWindow.focus(); fr.contentDocument.querySelector('input').focus(); } catch (e) {} return; }
+  try { gdoc.exitPointerLock && gdoc.exitPointerLock(); } catch (e) {}
+  fr = hgEl(gdoc, 'iframe'); fr.id = 'hgc-box';
+  fr.style.cssText = 'position:fixed;left:12px;bottom:12px;width:min(360px,calc(100vw - 24px));height:min(330px,calc(100vh - 24px));border:0;z-index:2147483001;background:transparent';
+  gdoc.body.appendChild(fr);
+  var doc = fr.contentDocument; doc.open(); doc.write('<!DOCTYPE html><html><body style="margin:0;background:transparent"></body></html>'); doc.close();
+  var box = hgSkin(doc, hgEl(doc, 'div', 'hgc')), hd = hgEl(doc, 'div', 'hd'), sel = hgEl(doc, 'select'), x = hgEl(doc, 'button', '', 'Close'),
+      ls = hgEl(doc, 'div', 'ls'), ft = hgEl(doc, 'div', 'ft'), inp = hgEl(doc, 'input'), go = hgEl(doc, 'button', 'go', 'Send'), cur = convId || '';
+  box.style.cssText += ';position:static;width:100%;height:100%;left:auto;bottom:auto';
+  inp.placeholder = 'Say something'; inp.maxLength = 500; inp.setAttribute('autocomplete', 'off');
+  hd.appendChild(sel); hd.appendChild(x); ft.appendChild(inp); ft.appendChild(go);
+  box.appendChild(hd); box.appendChild(ls); box.appendChild(ft); box.appendChild(hgEl(doc, 'div', 'tip', 'Esc closes. Messages go to the same chats as the Grapevine tab.'));
+  doc.body.appendChild(box);
+  function close() { try { fr.remove(); } catch (e) {} gdoc.__hgchatOpen = false; try { gdoc.defaultView.focus(); } catch (e) {} }
+  function paint() {
+    var api = chatApi();
+    if (!api) { ls.textContent = ''; ls.appendChild(hgEl(doc, 'div', 'none', 'Connecting to Grapevine...')); return; }
+    var cs = api.convs();
+    if (!sel.options.length || sel.__n !== cs.length) {
+      sel.textContent = ''; sel.__n = cs.length;
+      cs.forEach(function (c) { var o = hgEl(doc, 'option', '', (c.kind === 'dm' ? '@ ' : '') + c.title + (c.unread ? ' (' + c.unread + ')' : '')); o.value = c.id; sel.appendChild(o); });
+      if (!cur || !cs.some(function (c) { return c.id === cur; })) cur = cs.length ? cs[0].id : '';
+      sel.value = cur;
+    }
+    ls.textContent = '';
+    var ms = cur ? api.msgs(cur, 40) : [];
+    if (!ms.length) ls.appendChild(hgEl(doc, 'div', 'none', cur ? 'No messages yet.' : 'You are not in any chats yet.'));
+    ms.forEach(function (m) { var d = hgEl(doc, 'div', m.mine ? 'me' : ''); d.appendChild(hgEl(doc, 'b', '', m.from + ': ')); d.appendChild(doc.createTextNode(m.text)); ls.appendChild(d); });
+    ls.scrollTop = ls.scrollHeight;
+    gdoc.__hgchatConv = cur;
+    if (cur) api.read(cur);
+  }
+  fr.__pick = function (id) { cur = id; sel.value = id; paint(); };
+  function send() { var api = chatApi(); if (!api || !cur) return; if (api.send(cur, inp.value)) { inp.value = ''; setTimeout(paint, 50); } }
+  sel.onchange = function () { cur = sel.value; paint(); inp.focus(); };
+  x.onclick = close; go.onclick = send;
+  doc.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); close(); } else if (e.key === 'Enter' && e.target === inp) { e.preventDefault(); send(); } });
+  gdoc.__hgchatOpen = true;
+  if (!chatApi()) gvStartApp();
+  // live: refresh when a message arrives; while the app is still connecting, look again every second
+  var iv = setInterval(function () { if (!fr.isConnected) { clearInterval(iv); return; } var api = chatApi(); if (!api) { paint(); return; } if (!fr.__live) { fr.__live = 1; api.on(function (c, m) { if (fr.isConnected && m.convId === cur) paint(); }); paint(); } }, 1000);
+  paint(); try { fr.contentWindow.focus(); } catch (e) {} inp.focus();
+}
+// T opens the chat while a game is running. Games that need every key, and Frontline (which uses plain T for its tech tree), are handled by flags.
+function attachChat(doc, g) {
+  if (!doc || doc.__hgchat || !g || g.noChat) return;
+  var L = window.HGGrapevine; if (!(L && L.me())) return;
+  doc.__hgchat = 1;
+  doc.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || String(e.key).toLowerCase() !== 't' || !!g.chatShift !== !!e.shiftKey) return;
+    var t = e.target; if (t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName))) return;
+    e.preventDefault(); e.stopPropagation();
+    openChatBox(doc, '');
+  }, true);
+}
+frame.addEventListener('load', function () {
+  try { if (current && current.html) attachChat(frame.contentDocument, current.game); else if (current && local) attachChat(frame.contentDocument, current.game); } catch (e) {}
+});
 document.getElementById('tab-games').onclick = function () { showTab('games'); };
 document.getElementById('tab-chat').onclick = function () { showTab('chat'); };
 document.getElementById('tab-acct').onclick = function () { showTab('acct'); };

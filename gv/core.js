@@ -55,9 +55,13 @@
 
   function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+  // Where the time went on the last connection, step by step. Shown in the Account tab so a slow sign-in can be explained.
+  var tl = { at: 0, t0: 0, steps: [] };
+  function mark(name) { tl.steps.push([name, Date.now() - tl.t0]); }
   function connect() {
     if (!st.key || st.conn || st.timer) return;
     var gen = st.gen;
+    tl = { at: Date.now(), t0: Date.now(), steps: [], archive: '' }; mark('start');
     var id = CFG.archives[st.idx % CFG.archives.length];
     setStatus('connecting', 'Connecting to Grapevine...');
     var c;
@@ -69,8 +73,8 @@
       });
     } catch (e) { console.error(e); return retrySoon(); }
     st.conn = c; st.ready = false; st.welcomeOk = false; st.lastHeard = Date.now();
-    var opened = false;
-    c.on('open', function () { opened = true; st.fails = 0; });
+    var opened = false; tl.archive = id;
+    c.on('open', function () { opened = true; st.fails = 0; (c.marks || []).forEach(function (m) { if (m[0] !== 'start') tl.steps.push([m[0], m[1]]); }); mark('link open'); });
     c.on('data', function (m) { if (st.conn === c && gen === st.gen) onFrame(c, m); });
     c.on('error', function (e) { console.warn('grapevine link:', e && e.type, e && e.message); });
     c.on('close', function (why) {
@@ -114,7 +118,7 @@
     var pinned = CFG.pinned[archiveId], known = store.get('srv:' + archiveId);
     var why = !chalOk ? 'did not prove who it is' : (pinned && pinned !== m.serverPub) ? 'is not the server this launcher was built for' : (known && known !== m.serverPub) ? 'is not the server you signed in to before' : '';
     if (why) { var e = new Error('The Grapevine server ' + why + '. Nothing was sent to it.'); e.fatal = true; failAuth(e); drop(); setStatus('error', e.message); return; }
-    st.cnonce = randHex(16);
+    mark('server challenge'); st.cnonce = randHex(16);
     await st.kpP;                                   // derived while the network was connecting
     var sig = ED.hex(await ED.sign(st.kp, 'gv-login|' + archiveId + '|' + m.nonce + '|' + c.pid + '|' + st.cnonce));
     var hello = { type: 'hello', v: 12, userId: st.userId, pub: st.pub, sig: sig, cnonce: st.cnonce, signup: st.signup,
@@ -141,7 +145,7 @@
         }
         if (!known) store.set('srv:' + c.peer, m.serverPub);
         if (st.conn !== c) return;
-        st.welcomeOk = true; st.ready = true; st.sendKey = false;
+        mark('signed in'); st.welcomeOk = true; st.ready = true; st.sendKey = false;
         st.userId = m.userId; st.name = m.displayName || st.name;
         store.set('name', st.name);
         st.signup = false;
@@ -157,15 +161,22 @@
         var a = st.auth; st.auth = null; if (a) a.resolve({ name: st.name, userId: st.userId });
         return;
       }
-      case 'friends':
+      case 'friends': {
+        var before = { inc: st.incoming.map(function (x) { return x.name; }), fr: st.friends.map(function (x) { return x.name; }), out: st.outgoing.map(function (x) { return x.name; }), had: st.haveFriends };
         st.friends = (m.friends || []).map(function (f) { return { name: f.name, userId: f.userId, online: !!f.online }; });
         st.incoming = (m.incoming || []).map(function (f) { return { name: f.name, userId: f.userId, at: f.at }; });
         st.outgoing = (m.outgoing || []).map(function (f) { return { name: f.name, userId: f.userId, at: f.at }; });
         st.haveFriends = true;
         store.set('friends', JSON.stringify({ f: st.friends, i: st.incoming, o: st.outgoing }));
+        // Tell whoever is showing notifications (the launcher puts them over the game): somebody asked, or somebody said yes.
+        if (before.had) {
+          st.incoming.forEach(function (x) { if (before.inc.indexOf(x.name) < 0) emit('notify', { kind: 'friendreq', title: 'Friend request', from: x.name, text: x.name + ' wants to be your friend.' }); });
+          st.friends.forEach(function (x) { if (before.fr.indexOf(x.name) < 0 && before.out.indexOf(x.name) >= 0) emit('notify', { kind: 'friendok', title: 'New friend', from: x.name, text: x.name + ' accepted your friend request.' }); });
+        }
         settlePending(null);
         emit('friends'); emit('change');
         return;
+      }
       case 'profile': {
         var cb = st.lookups[m.name];
         if (cb) { delete st.lookups[m.name]; cb.forEach(function (f) { f(m); }); }
@@ -397,7 +408,7 @@
   }
   function startSync() {
     clearInterval(sy.timer);
-    sy.first = syncRun().then(function () {}, function () {});
+    sy.first = syncRun().then(function () { mark('saves synced'); }, function () {});
     sy.timer = setInterval(function () { if (st.ready) syncRun().catch(function () {}); }, 45000);
   }
 
@@ -503,6 +514,7 @@
       first: function (ms) { return Promise.race([sy.first || Promise.resolve(), new Promise(function (r) { setTimeout(r, ms || 2500); })]); },
       setGameOpen: function (open) { sy.open = !!open; if (!open && st.ready) syncRun().catch(function () {}); }
     },
+    timeline: function () { return { at: tl.at, archive: tl.archive, steps: tl.steps.slice(), total: tl.steps.length ? tl.steps[tl.steps.length - 1][1] : 0 }; },
     diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); }
   };
   var readyP = Promise.resolve();

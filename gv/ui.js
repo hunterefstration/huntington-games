@@ -273,6 +273,14 @@
     var box = h('div');
     box.appendChild(h('div', { class: 'sect', text: 'connection' }));
     box.appendChild(h('p', { class: 'sub', text: 'Grapevine reaches the server through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
+    var tlv = L.timeline();
+    if (tlv.steps.length > 1) {
+      box.appendChild(h('div', { class: 'sect', text: 'last connection - ' + (tlv.total / 1000).toFixed(1) + ' s in all' }));
+      var tb = h('div', { class: 'diag', id: 'gl-timeline' }), prev = 0;
+      tlv.steps.forEach(function (st) { tb.appendChild(h('div', null, h('span', { class: st[1] - prev > 3000 ? 'no' : '', text: '+' + ((st[1] - prev) / 1000).toFixed(1) + ' s  ' }), st[0])); prev = st[1]; });
+      box.appendChild(tb);
+      box.appendChild(h('p', { class: 'hint', text: 'If sign-in feels slow, this shows which step took the time (anything over 3 s is marked). It helps to tell whoever looks after Grapevine.' }));
+    }
     var out = h('div', { class: 'diag', id: 'gl-diag' });
     if (diagHtml) out.appendChild(diagHtml);
     var b = h('button', { class: 'mbtn', id: 'gl-test', text: 'Test my connection', onclick: function () {
