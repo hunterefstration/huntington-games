@@ -27,7 +27,7 @@ function nextMonth() {
   recordHistory(false);
   const d = (a, b, f) => (b - a >= 0 ? '+' : '') + f(b - a);
   inbox('report', 'Monthly report: ' + fmtMonth(G.day - 1),
-    `Approval ${p.approval.toFixed(0)}% (${d(before.approval, p.approval, x => x.toFixed(1))}), growth ${p.growth.toFixed(1)}%, inflation ${p.infl.toFixed(1)}%, unemployment ${p.unemp.toFixed(1)}%, debt ${debtPct(p).toFixed(0)}% of GDP.`);
+    `Approval ${p.approval.toFixed(0)}% (${d(before.approval, p.approval, x => x.toFixed(1))}), growth ${p.growth.toFixed(1)}%, inflation ${p.infl.toFixed(1)}%, unemployment ${p.unemp.toFixed(1)}%, debt ${debtPct(p).toFixed(0)}% of GDP. ${typeof monthFlavor === 'function' ? monthFlavor(p) : ''}`);
   if (p.imf > 0 && --p.imf === 0) inbox('good', 'IMF programme finished', 'We can set our own budget freely again.');
   if (p.approval < 20 && GOV[p.gov].free && G.rng() < 0.05) inbox('bad', 'Calls to resign', 'With approval at ' + p.approval.toFixed(0) + '%, newspapers say you should step down. (Elections and no-confidence votes arrive in a later update.)');
   if (dateOf(G.day).getUTCMonth() % 3 === 0) autosave();

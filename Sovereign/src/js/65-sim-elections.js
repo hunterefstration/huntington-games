@@ -27,7 +27,7 @@ SYSTEM_INITS.push(g => {
   }
   if (n.lowStab == null) n.lowStab = 0;
   if (!n.promises) n.promises = [];
-  for (const m of g.nations) if (m && m.idx !== n.idx && m.aiElection == null && GOV[m.gov].free) m.aiElection = 30 + Math.floor(makeRng(m.idx)() * 4 * 365);
+  for (const m of g.nations) if (m && m.idx !== n.idx && m.aiElection == null && GOV[m.gov].free) m.aiElection = NEXT_ELECTION[m.id] ? dayOf(NEXT_ELECTION[m.id]) : 30 + Math.floor(makeRng(m.idx)() * 4 * 365);
 });
 
 // ---- the player's elections
@@ -128,8 +128,12 @@ function aiLeadersMonth() {
     const c = World.countries[m.idx];
     if (m.aiElection != null && G.day >= m.aiElection) {
       m.aiElection = G.day + (TERM_YEARS[m.id] || 4) * 365;
-      if (G.rng() > 1 / (1 + Math.exp(-(m.approval - 42) / 7))) newLeader(m, 'won the election in ' + c.name);
-      else newsWorld(m.title + ' ' + m.leader + ' re-elected in ' + c.name);
+      // presidents with term limits must step down; others face the voters
+      const limit = ONE_TERM.includes(m.id) ? 1 : ['PRES', 'SEMI'].includes(m.gov) ? 2 : 0;
+      if (m.aiTerms == null) m.aiTerms = REAL_TERMS[m.id] || 1;
+      if (limit && m.aiTerms >= limit) { newLeader(m, 'succeeds ' + m.leader + ' as president of ' + c.name + ' after the term limit'); m.aiTerms = 1; }
+      else if (G.rng() > 1 / (1 + Math.exp(-(m.approval - 42) / 7))) { newLeader(m, 'won the election in ' + c.name); m.aiTerms = 1; }
+      else { newsWorld(m.title + ' ' + m.leader + ' re-elected in ' + c.name); m.aiTerms++; }
     } else if (!GOV[m.gov].free && m.stability < 22 && G.rng() < (22 - m.stability) / 1500) {
       m.gov = 'JUNTA'; newLeader(m, 'seized power in a coup in ' + c.name, 'General');
     } else if (m.stability < 8 && G.rng() < 0.01) { m.gov = 'TRANS'; newLeader(m, 'leads a new government after a revolution in ' + c.name); }

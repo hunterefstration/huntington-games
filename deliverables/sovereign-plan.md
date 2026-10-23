@@ -453,3 +453,9 @@ All 10 chunks are built (version 1.0). What is in the game, honestly counted:
 - 133 events (fewer than the 400 first planned, each with 2-3 choices), 9 key people, 36 technologies, 97 achievements,
   7 victories, Legacy Score, endings with a newspaper front page, Hall of Leaders, tutorial, help and encyclopedia.
 - Not built: scenario packs (Cold War 1962...), Opposition Leader mode, multiplayer.
+- Version 1.1 (Oct 23 2026): about 230 events (96 new, many with several wordings), much more flavour text (headlines,
+  posts, chatter, world news, monthly reports, leaders' replies, war reports). Wars now end through each side's
+  will to fight (losses, bombing, blockades, nuclear strikes, allies, pride, luck), with surrender terms the winner
+  chooses (land, new government, reparations, generous peace) and visible peace chances. AI leaders obey term limits
+  and real election dates; sanctions no longer sink the dollar.
+
