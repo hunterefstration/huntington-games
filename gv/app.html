@@ -5635,7 +5635,7 @@ function startPeer(){
   // Start the relay door now, not when PeerJS fails: on a network that blocks PeerJS the broker never opens, nothing
   // else would ever ask, and the sign-in used to sit idle until the 8-second watchdog noticed. PeerJS keeps a short
   // head start; whichever attaches first is used.
-  relayTry(500);
+  relayTry(500, true);
   try { S.peer?.destroy(); } catch (e) {}
   let peer;
   try { peer = new Peer(undefined, peerOpts()); }
@@ -5749,12 +5749,15 @@ function connectArchive(){
 // ---- the relay door -------------------------------------------------------
 // One attempt at a time. Each failure backs off, each success replaces any
 // PeerJS dial that had not finished yet.
-function relayTry(delay){
+// `patient`: PeerJS is preferred when it works, so the relay only starts early if PeerJS's broker has not even opened
+// by then (a blocked network); when the broker is up, PeerJS gets two more seconds to attach first.
+function relayTry(delay, patient){
   if (S.halt || S.relayBusy || !CONFIG.relay || typeof GVLink === 'undefined' || !S.key) return;
   if (S.archive && S.archive.open) return;
   S.relayBusy = true;
-  setTimeout(() => {
+  const fire = () => {
     if (S.halt || (S.archive && S.archive.open)) { S.relayBusy = false; return; }
+    if (patient && S.peer && S.peer.id) { patient = false; setTimeout(fire, 2000); return; }
     const ids = S.order && S.order.length ? S.order : CONFIG.archiveIds;
     const id = ids[(S.rIdx = (S.rIdx || 0) + 1) % ids.length];
     let opened = false, rc;
@@ -5790,7 +5793,8 @@ function relayTry(delay){
         relayTry(Math.min(2000 * S.relayFails, 20000));
       }
     });
-  }, delay);
+  };
+  setTimeout(fire, delay);
 }
 function nextArchive(){
   if (S.halt) return;
