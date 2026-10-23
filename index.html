@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-base="dark" data-flavor="amber">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,16 +7,76 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* The Grapevine theme (amber on warm black), same variables and mixes as Grapevine's own client. */
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; --sans: "IBM Plex Sans", system-ui, "Segoe UI", Tahoma, sans-serif;
-  --tint: #8a7c62; --signal: #f0a02c; --signal2: #ff6a3d; --live: #4fd1a5; --danger: #e5484d; --on-signal: #0a0a0c;
-  --text: #ececf0; --dim: #8a8a96; --dimmer: #4a4a54;
-  --ground: color-mix(in srgb, var(--tint) 7%, #070708); --panel: color-mix(in srgb, var(--tint) 9%, #0c0c0e);
-  --raise: color-mix(in srgb, var(--tint) 12%, #111114); --line: color-mix(in srgb, var(--tint) 15%, #1b1b20); --line2: color-mix(in srgb, var(--tint) 20%, #26262d);
   /* the launcher's older names, mapped onto the theme so every dialog and button follows it */
   --bg: var(--ground); --card: var(--panel); --gold: var(--signal); --blue: var(--signal);
-  color-scheme: dark;
 }
+/* ---- Grapevine's themes, copied from the app: 18 flavors x dark / light / oled. The launcher wears whatever you chose
+   in Grapevine's settings (see applyGvTheme in the script). ---- */
+:root, html[data-flavor="amber"]{
+  --tint:#8a7c62; --sig-d:#f0a02c; --sig-l:#b96b00; --sig2-d:#ff6a3d; --sig2-l:#c2410c;
+  --live-d:#4fd1a5; --live-l:#0f8a63; --dng-d:#e5484d; --dng-l:#c8232a;
+  --text-d:#ececf0; --dim-d:#63636e; --dimmer-d:#3a3a42; --text-l:#17171c; --dim-l:#6a6a76; --dimmer-l:#a2a2ae;
+}
+html[data-flavor="midnight"]{ --tint:#3556ff; --sig-d:#7aa2f7; --sig-l:#1d4ed8; --sig2-d:#c4b5fd; --sig2-l:#6d28d9; --live-d:#4fd1a5; --live-l:#0f8a63; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="slate"]{    --tint:#7c8aa5; --sig-d:#c9d1d9; --sig-l:#334155; --sig2-d:#7aa2f7; --sig2-l:#1d4ed8; --live-d:#4fd1a5; --live-l:#0f8a63; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="forest"]{   --tint:#1f8a3f; --sig-d:#7bc47f; --sig-l:#1f7a2e; --sig2-d:#e0b44a; --sig2-l:#8a6d00; --live-d:#4fd1a5; --live-l:#0f8a63; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="plum"]{     --tint:#8a2be2; --sig-d:#c98bff; --sig-l:#6f3ccf; --sig2-d:#ff6b9d; --sig2-l:#be185d; --live-d:#5ad1c0; --live-l:#0e8a7a; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="ember"]{    --tint:#ff3d1a; --sig-d:#ff8f5e; --sig-l:#c2410c; --sig2-d:#ffd166; --sig2-l:#a16207; --live-d:#e0b44a; --live-l:#8a6d00; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="ocean"]{    --tint:#0077cc; --sig-d:#4fc3f7; --sig-l:#0b6fb5; --sig2-d:#39d1a0; --sig2-l:#0f8a63; --live-d:#39d1a0; --live-l:#0f8a63; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="velvet"]{   --tint:#d1176a; --sig-d:#ff5fa8; --sig-l:#ad1457; --sig2-d:#c98bff; --sig2-l:#6f3ccf; --live-d:#c98bff; --live-l:#6f3ccf; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="paper"]{    --tint:#c9a46a; --sig-d:#e0b44a; --sig-l:#a2560d; --sig2-d:#7bc47f; --sig2-l:#3f7a4a; --live-d:#7bc47f; --live-l:#3f7a4a; --dng-d:#ff5c52; --dng-l:#b3302c;
+  --text-l:#241f18; --dim-l:#6f675b; --dimmer-l:#a79d8c }
+html[data-flavor="glacier"]{  --tint:#38a3e8; --sig-d:#7cc4ff; --sig-l:#1272b8; --sig2-d:#b8f5ff; --sig2-l:#0e7490; --live-d:#4fd1a5; --live-l:#0f8a63; --dng-d:#ff5c52; --dng-l:#c8232a;
+  --text-l:#15202a; --dim-l:#5e7284; --dimmer-l:#9db0c0 }
+html[data-flavor="terminal"]{ --tint:#22ff55; --sig-d:#33ff66; --sig-l:#1b7a2f; --sig2-d:#b8f5c4; --sig2-l:#0f5132; --live-d:#33ff66; --live-l:#1b7a2f; --dng-d:#ff4444; --dng-l:#c8232a;
+  --text-d:#b8f5c4; --dim-d:#4d8a58; --dimmer-d:#26502e; --text-l:#0f2e17; --dim-l:#3e6b49; --dimmer-l:#8fb79a }
+html[data-flavor="mono"]{     --tint:#808080; --sig-d:#ffffff; --sig-l:#111111; --sig2-d:#8a8a8a; --sig2-l:#555555; --live-d:#ffffff; --live-l:#111111; --dng-d:#ffffff; --dng-l:#111111;
+  --text-d:#ffffff; --dim-d:#8a8a8a; --dimmer-d:#4d4d4d; --text-l:#000000; --dim-l:#666666; --dimmer-l:#a8a8a8 }
+html[data-flavor="neon"]{     --tint:#00d5ff; --sig-d:#00e5ff; --sig-l:#0891b2; --sig2-d:#ff2bd6; --sig2-l:#be185d; --live-d:#39ff88; --live-l:#0f8a63; --dng-d:#ff2b5c; --dng-l:#c8232a;
+  --text-d:#e8fbff; --dim-d:#5c8a96; --dimmer-d:#2f4d55 }
+html[data-flavor="sunset"]{   --tint:#ff5e3a; --sig-d:#ff7a45; --sig-l:#c2410c; --sig2-d:#ff3d8f; --sig2-l:#be185d; --live-d:#ffd166; --live-l:#8a6d00; --dng-d:#ff2b5c; --dng-l:#c8232a }
+html[data-flavor="aurora"]{   --tint:#20c997; --sig-d:#4ef0b0; --sig-l:#0f8a63; --sig2-d:#9b6bff; --sig2-l:#6d28d9; --live-d:#4ef0b0; --live-l:#0f8a63; --dng-d:#ff5c52; --dng-l:#c8232a }
+html[data-flavor="cherry"]{   --tint:#c8102e; --sig-d:#ff3355; --sig-l:#b3122e; --sig2-d:#ff9fb0; --sig2-l:#7f1d1d; --live-d:#ff9fb0; --live-l:#7f1d1d; --dng-d:#ff3355; --dng-l:#b3122e }
+html[data-flavor="gold"]{     --tint:#8a6d1a; --sig-d:#f5c542; --sig-l:#8a6d00; --sig2-d:#fff1b8; --sig2-l:#a16207; --live-d:#f5c542; --live-l:#8a6d00; --dng-d:#ff5c52; --dng-l:#c8232a;
+  --text-d:#f7f1de; --dim-d:#8a7d55; --dimmer-d:#4d4630 }
+html[data-flavor="cyber"]{    --tint:#6a00ff; --sig-d:#f5f31a; --sig-l:#7c6f00; --sig2-d:#b34dff; --sig2-l:#6d28d9; --live-d:#39ff88; --live-l:#0f8a63; --dng-d:#ff2b5c; --dng-l:#c8232a }
+
+/* the bases */
+:root, html[data-base="dark"]{
+  --ground:color-mix(in srgb, var(--tint) 7%, #070708);
+  --panel:color-mix(in srgb, var(--tint) 9%, #0c0c0e);
+  --raise:color-mix(in srgb, var(--tint) 12%, #111114);
+  --line:color-mix(in srgb, var(--tint) 15%, #1b1b20);
+  --line2:color-mix(in srgb, var(--tint) 20%, #26262d);
+  --text:var(--text-d); --dim:var(--dim-d); --dimmer:var(--dimmer-d);
+  --signal:var(--sig-d); --signal2:var(--sig2-d); --live:var(--live-d); --danger:var(--dng-d);
+  --on-signal:#0a0a0c;
+  color-scheme:dark;
+}
+html[data-base="oled"]{
+  --ground:#000000; --panel:#000000;
+  --raise:color-mix(in srgb, var(--tint) 12%, #0e0e10);
+  --line:color-mix(in srgb, var(--tint) 16%, #1a1a1e);
+  --line2:color-mix(in srgb, var(--tint) 22%, #2a2a30);
+  --text:var(--text-d); --dim:var(--dim-d); --dimmer:var(--dimmer-d);
+  --signal:var(--sig-d); --signal2:var(--sig2-d); --live:var(--live-d); --danger:var(--dng-d);
+  --on-signal:#0a0a0c;
+  color-scheme:dark;
+}
+html[data-base="light"]{
+  --ground:color-mix(in srgb, var(--tint) 4%, #fbfbfc);
+  --panel:color-mix(in srgb, var(--tint) 2%, #ffffff);
+  --raise:color-mix(in srgb, var(--tint) 6%, #f2f2f5);
+  --line:color-mix(in srgb, var(--tint) 8%, #e3e3e9);
+  --line2:color-mix(in srgb, var(--tint) 12%, #d0d0da);
+  --text:var(--text-l); --dim:var(--dim-l); --dimmer:var(--dimmer-l);
+  --signal:var(--sig-l); --signal2:var(--sig2-l); --live:var(--live-l); --danger:var(--dng-l);
+  --on-signal:#ffffff;
+  color-scheme:light;
+}
+/* mono on oled is the one place a tint would be a lie */
+html[data-base="oled"][data-flavor="mono"]{ --raise:#121212; --line:#1f1f1f; --line2:#2e2e2e }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
 #hub { max-width: 1100px; margin: 0 auto; padding: 26px 16px 60px; }
@@ -70,7 +130,21 @@ h1 { margin: 0; font-size: clamp(28px, 5vw, 44px); font-weight: 900; letter-spac
 
 /* ---- the Grapevine look: amber on warm black, mono labels, square corners ---- */
 h1 { font-family: var(--mono); font-weight: 600; font-size: clamp(13px, 2.6vw, 18px); letter-spacing: .28em; text-transform: uppercase; color: var(--signal); background: linear-gradient(90deg, var(--signal), var(--signal2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; }
+html[data-base] { --dim: color-mix(in srgb, var(--text) 62%, var(--ground)); }
 #hub { padding-top: 14px; }
+#tour { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#tour[hidden] { display: none; }
+#tour .box { background: var(--panel); border: 1px solid var(--line2); border-radius: 6px; width: min(460px, 100%); padding: 22px 22px 18px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+#tour .k { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--signal); }
+#tour h2 { margin: 6px 0 8px; font-size: 20px; }
+#tour p { margin: 0; color: var(--dim); font-size: 14px; line-height: 1.6; }
+#tour .dots { display: flex; gap: 6px; margin: 16px 0 14px; }
+#tour .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line2); }
+#tour .dots i.on { background: var(--signal); }
+#tour .btns { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+#tour button { background: var(--raise); border: 1px solid var(--line2); color: var(--text); border-radius: 3px; padding: 8px 16px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+#tour button.go { background: linear-gradient(100deg, var(--signal), var(--signal2)); color: var(--on-signal); border: 0; font-weight: 600; }
+#tour button.skip { background: none; border: 0; color: var(--dim); }
 #topbar { display: flex; align-items: center; gap: 6px 22px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 20px; padding-bottom: 0; }
 #topbar h1 { padding: 10px 0; }
 #tabs { display: flex; gap: 2px; flex: 1; min-width: 0; }
@@ -122,6 +196,7 @@ body.chat { overflow: hidden; }
 </div>
 <div id="view-chat" hidden><iframe id="gvapp" title="Grapevine" allow="clipboard-write"></iframe></div>
 <div id="gate" hidden><div id="gate-box"></div></div>
+<div id="tour" hidden><div class="box"></div></div>
 <div id="offdlg"><div class="box"><h2 id="offdlg-title">Offline copy</h2><div id="offdlg-text"></div><div class="btns"><button id="offdlg-again">Download again</button><button id="offdlg-tab">Open in a new tab</button><button id="offdlg-close">Close</button></div></div></div>
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
@@ -656,14 +731,33 @@ GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); 
 // One account for everything: it gates the launcher, puts your name and friends in the games (they read it as
 // window.parent.HGGrapevine), saves every game to the account so another device can load it, and the Grapevine tab runs
 // the full Grapevine app signed in as the same person. The code is downloaded on demand to keep the launcher small.
-var guestMode = false, gvP = null, acctMounted = false, gateMounted = false, chatLoaded = false;
-function fetchGV(file, viaScript) {
+// Start the relay library downloading now, alongside gv/account.js, instead of after it (the account needs both).
+var MQTT_URL = 'https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js', MQTT_SRI = 'sha384-u4uqeACkFcoKl57rBQJHVGDd1pqhW4w8X3WjTu1ZksPdxoLqdt34jpoNkJisE25W';
+function preloadMqtt() {
+  if (BUNDLE || window.mqtt || window.__gvMqtt) return;
+  window.__gvMqtt = new Promise(function (resolve) {
+    var sc = document.createElement('script');
+    sc.src = MQTT_URL; sc.integrity = MQTT_SRI; sc.crossOrigin = 'anonymous';
+    sc.onload = sc.onerror = function () { resolve(); };
+    document.head.appendChild(sc);
+  });
+}
+// Downloads of the account code and the Grapevine app are kept per release, so a repeat visit starts instantly.
+function fetchGV(file) {
   if (BUNDLE) return Promise.reject(new Error('Grapevine needs the internet, so it is not in the offline copy.'));
   if (local) return fetch(file, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
-  return fetchRepo(file).then(function (r) { return r.html; });
+  return versionReady.then(function (v) {
+    return idbGet('gv:' + file).then(function (rec) {
+      if (rec && rec.rel === v && typeof rec.text === 'string') return rec.text;
+      return fetchRepo(file).then(function (r) { idbPut('gv:' + file, { text: r.html, rel: v }); return r.html; },
+        function (e) { if (rec && typeof rec.text === 'string') return rec.text; throw e; });   // offline: last copy
+    });
+  });
 }
+var guestMode = false, gvP = null, acctMounted = false, gateMounted = false, chatLoaded = false;
 function loadGV() {
   if (gvP) return gvP;
+  preloadMqtt();
   gvP = new Promise(function (resolve, reject) {
     if (window.HGGrapevine) return resolve(window.HGGrapevine);
     fetchGV('gv/account.js').then(function (code) {
@@ -674,6 +768,46 @@ function loadGV() {
 }
 function savedName() { try { return localStorage.getItem('hgv:name') || ''; } catch (e) { return ''; } }
 function hasSavedKey() { try { return !!localStorage.getItem('hgv:key'); } catch (e) { return false; } }
+// The launcher wears the theme chosen in Grapevine's settings (dark / light / oled, one of 18 flavors, an accent colour).
+// The Grapevine app keeps it with its other settings in this page's storage, so the launcher just reads it.
+var GV_FLAVORS = 'amber midnight slate forest plum ember ocean velvet paper glacier terminal mono neon sunset aurora cherry gold cyber'.split(' ');
+function applyGvTheme() {
+  var r = document.documentElement, set = {}, uid = '';
+  try { var L = window.HGGrapevine; uid = (L && L.me() && L.me().userId) || localStorage.getItem('hgv:uid') || ''; set = JSON.parse(localStorage.getItem('gv:set:' + uid) || '{}') || {}; } catch (e) {}
+  var base = set.base === 'system' ? (window.matchMedia && !matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'dark') : (['dark', 'light', 'oled'].indexOf(set.base) >= 0 ? set.base : 'dark');
+  var flavor = GV_FLAVORS.indexOf(set.flavor) >= 0 ? set.flavor : 'amber';
+  if (r.dataset.base !== base) r.dataset.base = base;
+  if (r.dataset.flavor !== flavor) r.dataset.flavor = flavor;
+  var accent = /^#[0-9a-fA-F]{6}$/.test(set.accent || '') ? set.accent : '';
+  if (accent) r.style.setProperty('--signal', accent); else r.style.removeProperty('--signal');
+}
+window.addEventListener('storage', function (e) { if (!e.key || e.key.indexOf('gv:set:') === 0) applyGvTheme(); });
+setInterval(applyGvTheme, 2500);   // the Grapevine frame is a different document in this page: a safety net for the event above
+applyGvTheme();
+// A first look around, once, after the first sign-in.
+var TOUR = [
+  ['Welcome', 'You are in.', 'This launcher has free games and one account that goes with you. Here is a 30-second look around.'],
+  ['Games', 'Pick a game and play.', 'The Games tab has everything. Blocky Shooter and Frontline have online multiplayer: host a game, share the 6-digit code, and your friend joins. The New tab button in a game opens it in its own blank page.'],
+  ['Saves', 'Your progress is saved to your account.', 'Every game saves to it automatically. On another computer, sign in with your recovery key and everything is there. You can check on it in the Account tab, under Saves.'],
+  ['Grapevine', 'Chat and friends.', 'The Grapevine tab is a full chat app with rooms and direct messages. Meet someone in a game and tap + Friend, and you will find them there. Change its look in its settings, and the whole launcher follows.'],
+  ['Keep your key', 'Your recovery key is your account.', 'Nobody can reset it. If you have not saved it, open the Account tab and use Copy or Download now.']
+];
+function maybeTour() {
+  var seen = false; try { seen = !!localStorage.getItem('hgv:tour'); } catch (e) {}
+  if (seen || window.__tourOpen || BUNDLE) return;
+  window.__tourOpen = true; var step = 0, root = document.getElementById('tour'), box = root.querySelector('.box');
+  function done() { try { localStorage.setItem('hgv:tour', '1'); } catch (e) {} root.hidden = true; }
+  function draw() {
+    var t = TOUR[step], last = step === TOUR.length - 1;
+    box.innerHTML = '<div class="k"></div><h2></h2><p></p><div class="dots"></div><div class="btns"><button class="skip">Skip</button><button class="go"></button></div>';
+    box.querySelector('.k').textContent = t[0]; box.querySelector('h2').textContent = t[1]; box.querySelector('p').textContent = t[2];
+    TOUR.forEach(function (x, i) { var d = document.createElement('i'); if (i === step) d.className = 'on'; box.querySelector('.dots').appendChild(d); });
+    var go = box.querySelector('.go'); go.textContent = last ? 'Start playing' : 'Next';
+    go.onclick = function () { if (last) done(); else { step++; draw(); } };
+    box.querySelector('.skip').onclick = done;
+  }
+  draw(); root.hidden = false;
+}
 function paintChip() {
   var L = window.HGGrapevine, me = L && L.me(), name = me ? me.name : (hasSavedKey() ? savedName() : '');
   var chip = document.getElementById('chip');
@@ -684,11 +818,14 @@ function paintChip() {
   document.getElementById('chip-dot').className = 'cdot' + (s === 'online' ? ' on' : s === 'signed-out' || s === 'error' ? '' : ' wait');
 }
 function onGvChange() {
-  paintChip();
+  paintChip(); applyGvTheme();
   var L = window.HGGrapevine, signedIn = !!(L && L.me());
+  if (signedIn && !guestMode) maybeTour();
   document.getElementById('gate').hidden = signedIn || guestMode || BUNDLE;
   if (!signedIn && chatLoaded) { chatLoaded = false; document.getElementById('gvapp').removeAttribute('srcdoc'); showTab('games'); closePlayer(); }
-  if (signedIn && (!chatLoaded || chatLoaded === 'pending') && !BUNDLE) { chatLoaded = 'pending'; setTimeout(function () { if (chatLoaded === 'pending') startChat(); }, 1500); }   // the full app starts in the background so messages arrive while you play
+  // The full app starts in the background once the account is connected (so it never competes with it for the network),
+  // and messages arrive while you play.
+  if (signedIn && L.online() && (!chatLoaded || chatLoaded === 'pending') && !BUNDLE) { chatLoaded = 'pending'; setTimeout(function () { if (chatLoaded === 'pending') startChat(); }, 600); }
 }
 // The gate: nothing in the launcher works without an account. A device that signed in before opens straight away
 // (offline too); the account reconnects quietly in the background.
@@ -777,7 +914,8 @@ window.addEventListener('resize', function () { if (document.body.className === 
 function gvBeforePlay(g, go) {
   var L = window.HGGrapevine;
   if (!(L && L.me() && L.online())) { if (L && L.me()) L.sync.setGameOpen(true); return go(); }
-  Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { L.sync.setGameOpen(true); go(); });
+  if (Date.now() - (L.sync.status().at || 0) < 60000) { L.sync.setGameOpen(true); return go(); }   // synced a moment ago (it also runs every 45 s): no waiting
+  Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 2000); })]).then(function () { L.sync.setGameOpen(true); go(); });
 }
 function gvAfterPlay() { var L = window.HGGrapevine; if (L && L.me()) setTimeout(function () { L.sync.setGameOpen(false); }, 500); }
 document.addEventListener('visibilitychange', function () { var L = window.HGGrapevine; if (document.hidden && L && L.me() && L.online()) L.sync.run().catch(function () {}); });

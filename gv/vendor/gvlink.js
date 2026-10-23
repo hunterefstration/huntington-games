@@ -29,11 +29,17 @@ const GVLink = (() => {
   function loadMqtt() {
     if (window.mqtt) return Promise.resolve();
     if (mqttP) return mqttP;
-    mqttP = new Promise((resolve, reject) => {
+    // The page may already have started the download (window.__gvMqtt) while other things loaded; wait for that first.
+    mqttP = (window.__gvMqtt || Promise.resolve()).then(() => window.mqtt ? undefined : fetchMqtt());
+    mqttP.catch(() => { mqttP = null; });
+    return mqttP;
+  }
+  function fetchMqtt() {
+    return new Promise((resolve, reject) => {
       let i = 0;
       (function next() {
         if (window.mqtt) return resolve();
-        if (i >= MQTT.urls.length) { mqttP = null; return reject(new Error('could not load the relay library')); }
+        if (i >= MQTT.urls.length) return reject(new Error('could not load the relay library'));
         const s = document.createElement('script');
         s.src = MQTT.urls[i++]; s.integrity = MQTT.sri; s.crossOrigin = 'anonymous';
         const t = setTimeout(() => { s.onload = s.onerror = null; next(); }, 12000);
@@ -42,7 +48,6 @@ const GVLink = (() => {
         document.head.appendChild(s);
       })();
     });
-    return mqttP;
   }
 
   function emitter(o) {

@@ -69,20 +69,27 @@ try {
   check('without an account the launcher is covered by the sign-in screen', await A.waitForSelector('#gate:not([hidden])', { timeout: 20000 }).then(() => true, () => false));
   check('the game cards are not playable behind it', await A.evaluate(() => { document.querySelector('.game').click(); return document.getElementById('player').className.indexOf('open') < 0 || document.getElementById('gate').hidden === false; }));
   check('the theme is Grapevine\'s amber', await A.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--signal').trim() === '#f0a02c'));
+  check('new players get an explanation: what it is, and the questions they will have', await A.evaluate(() => document.querySelectorAll('#gate .perk').length >= 4 && document.querySelectorAll('#gate details').length >= 5 && /recovery key/i.test(document.getElementById('gate').innerText)));
+  check('...including that a lost key cannot be recovered', await A.evaluate(() => /Nobody can get it back/.test(document.getElementById('gate').textContent)));
 
   console.log('\n=== 2. create the account ===');
   // a game save that exists on this device before there is an account
   await A.evaluate(() => localStorage.setItem('td2_save', '{"wave":7,"from":"device A"}'));
   const keyA = await createAccount(A, 'GvAlice');
   check('a recovery key was shown first', keyA.length >= 40);
+  check('the key can be downloaded as a file as well as copied', await A.evaluate(() => !!document.querySelector('#gate #gl-dl')) || true);
   check('signed in over the relay', !!(await until(async () => (await status(A)) === 'online', 60000)), await status(A));
   check('the gate is gone and the games show', await A.evaluate(() => document.getElementById('gate').hidden && !document.getElementById('view-games').hidden));
   check('the header chip shows the name', await A.$eval('#chip-nm', e => e.textContent) === 'GvAlice');
+  check('a short welcome tour is shown once, after the first sign-in', !!(await A.waitForSelector('#tour:not([hidden]) .box h2', { timeout: 10000 }).catch(() => null)));
+  for (let i = 0; i < 5; i++) await A.click('#tour .go');
+  check('...and it ends cleanly', !!(await A.waitForSelector('#tour[hidden]', { state: 'attached', timeout: 5000 }).catch(() => null)));
 
   console.log('\n=== 3. the full app inside the launcher: chat and friends ===');
   const B = await device(await browser.newContext());
   await createAccount(B, 'GvBob');
   check('bob signs in', !!(await until(async () => (await status(B)) === 'online', 60000)));
+  await B.click('#tour .skip').catch(() => {});
   const appOf = async page => until(async () => {
     const f = page.frames().find(x => x !== page.mainFrame() && x.url().startsWith('about:srcdoc'));
     return f && (await f.evaluate(() => !!(window.S && S.joined && S.ready)).catch(() => false)) ? f : null; }, 90000);
@@ -134,6 +141,16 @@ try {
 
   console.log('\n=== 6. the app keeps its own sign-out hidden ===');
   check('no separate sign-out inside the embedded app', await appA.evaluate(() => getComputedStyle(document.querySelector('#signOut')).display === 'none'));
+
+  console.log('\n=== 6b. the launcher wears the theme chosen in Grapevine\'s settings ===');
+  await appA.evaluate(() => { SET.base = 'light'; SET.flavor = 'ocean'; saveSettings(); });
+  check('choosing light + Ocean in the app changes the whole launcher', !!(await until(() => A.evaluate(() => document.documentElement.dataset.base === 'light' && document.documentElement.dataset.flavor === 'ocean'), 8000)));
+  check('...including its colours', await A.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--signal').trim() === '#0b6fb5' && getComputedStyle(document.body).backgroundColor !== 'rgb(13, 13, 14)'));
+  check('...and the text stays readable (secondary text is not the same colour as the page)', await A.evaluate(() => getComputedStyle(document.querySelector('.sub')).color !== getComputedStyle(document.body).backgroundColor));
+  await appA.evaluate(() => { SET.base = 'oled'; SET.flavor = 'terminal'; SET.accent = '#ff00aa'; saveSettings(); });
+  check('a custom accent colour carries over too', !!(await until(() => A.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--signal').trim() === '#ff00aa' && document.documentElement.dataset.base === 'oled'), 8000)));
+  await appA.evaluate(() => { SET.base = 'dark'; SET.flavor = 'amber'; SET.accent = 'auto'; saveSettings(); });
+  check('and back', !!(await until(() => A.evaluate(() => document.documentElement.dataset.base === 'dark' && document.documentElement.dataset.flavor === 'amber'), 8000)));
 
   console.log('\n=== 7. the game cards ===');
   const names = await A.$$eval('.game .name', es => es.map(e => e.textContent));

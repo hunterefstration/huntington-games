@@ -48,6 +48,21 @@
     '.gl .chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--dim);margin:10px 0}',
     '.gl .diag{font-family:var(--mono);font-size:12px;line-height:1.7;margin-top:10px}',
     '.gl .diag .ok{color:var(--live)}.gl .diag .no{color:var(--danger)}',
+    '.gl .hero{text-align:center;margin:6px 0 22px}',
+    '.gl .hero h1{margin:0 0 6px;font-family:var(--mono);font-weight:600;font-size:clamp(15px,3.4vw,20px);letter-spacing:.24em;text-transform:uppercase;color:var(--signal);-webkit-text-fill-color:initial;background:none;white-space:normal}',
+    '.gl .hero p{margin:0;color:var(--dim);font-size:14px;line-height:1.55}',
+    '.gl .perks{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px;margin:0 0 18px}',
+    '.gl .perk{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px 13px}',
+    '.gl .perk b{display:block;font-size:13.5px;margin-bottom:3px}',
+    '.gl .perk span{font-size:12.5px;color:var(--dim);line-height:1.5}',
+    '.gl .perk i{font-style:normal;font-family:var(--mono);color:var(--signal);font-size:10px;letter-spacing:.16em;text-transform:uppercase;display:block;margin-bottom:4px}',
+    '.gl details{border-top:1px solid var(--line);padding:10px 2px}',
+    '.gl details:last-child{border-bottom:1px solid var(--line)}',
+    '.gl summary{cursor:pointer;font-size:13.5px;font-weight:600;list-style:none}',
+    '.gl summary::before{content:"+";display:inline-block;width:1.2em;color:var(--signal);font-family:var(--mono)}',
+    '.gl details[open] summary::before{content:"-"}',
+    '.gl details p{margin:8px 0 2px 1.2em;font-size:13px;color:var(--dim);line-height:1.6}',
+    '.gl .note{background:color-mix(in srgb,var(--signal) 9%,transparent);border:1px solid color-mix(in srgb,var(--signal) 35%,transparent);border-radius:4px;padding:10px 12px;font-size:12.5px;line-height:1.55;margin:10px 0}',
     '.gl .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--raise);border:1px solid var(--line2);border-radius:3px;padding:9px 14px;font-size:13px;z-index:30;max-width:90vw}',
     '.gl .toast.bad{border-color:var(--danger);color:var(--danger)}'
   ].join('\n');
@@ -90,8 +105,38 @@
   }
 
   // ---------------- signed out ----------------
+  // What a brand-new player needs to know, in the order they will wonder about it.
+  function explainer() {
+    var box = h('div');
+    box.appendChild(h('div', { class: 'hero' }, h('h1', { text: 'Welcome to Huntington Games' }),
+      h('p', { text: 'Free games that run right in your browser, now with one account for everything.' })));
+    box.appendChild(h('div', { class: 'perks' },
+      h('div', { class: 'perk' }, h('i', { text: 'Saves' }), h('b', { text: 'Your progress follows you' }), h('span', { text: 'Every game saves to your account. Sign in on another computer and it is all there.' })),
+      h('div', { class: 'perk' }, h('i', { text: 'Friends' }), h('b', { text: 'One name in every game' }), h('span', { text: 'Play Blocky Shooter or Frontline with someone and tap + Friend. They show up in Grapevine.' })),
+      h('div', { class: 'perk' }, h('i', { text: 'Grapevine' }), h('b', { text: 'Chat is built in' }), h('span', { text: 'Rooms, direct messages and friends, without leaving the launcher.' })),
+      h('div', { class: 'perk' }, h('i', { text: 'No password' }), h('b', { text: 'Just a recovery key' }), h('span', { text: 'No email and no password. You get a long code that is your account. Keep it safe.' }))));
+    return box;
+  }
+  function faq() {
+    var box = h('div', { style: 'margin-top:20px' });
+    box.appendChild(h('div', { class: 'sect', text: 'questions' }));
+    [['What is a recovery key?', 'A long random code that works like a password you never have to think up. When you create an account it is shown once. Save it in a notes app, a password manager, or download it as a file here. To use your account on a new device, sign in with it.'],
+     ['What if I lose it?', 'Nobody can get it back, not even us, because we never see it. Without it that account and its saves are gone and you would have to start a new one. Save it before you click Continue.'],
+     ['Is it private and safe?', 'Your key stays on your device and is never shown to games. What you send to Grapevine is encrypted on the way. Do not share your key with anyone, and do not use your full real name or personal details.'],
+     ['Does it work on school Wi-Fi?', 'Yes. It connects the same way a normal website does, so most school networks allow it. The Connection tab in your account can test it.'],
+     ['Do I have to make an account?', 'To play, yes: it keeps your saves and your name. If Grapevine cannot be reached from your network at all, you will be offered a way to play without one.'],
+     ['What name should I pick?', 'Anything you like that is not your full real name. Names are first come, first served, and capital letters count: Alex and alex are different.']]
+      .forEach(function (q) { box.appendChild(h('details', null, h('summary', { text: q[0] }), h('p', { text: q[1] }))); });
+    return box;
+  }
+  function download(name, text) {
+    try { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); } catch (e) { toast('Could not make the file. Copy the key instead.', true); }
+  }
+  function keyFile(key, name) { return 'Huntington Games / Grapevine recovery key\n' + (name ? 'Account name: ' + name + '\n' : '') + '\n' + key + '\n\nThis key IS your account. Anyone who has it can sign in as you, and nobody can reset it. Keep it private and safe.\n'; }
+
   function signedOut() {
-    var wrap = h('div', { class: 'card' });
+    var wrap = h('div', null, gate ? explainer() : null);
+    var card = wrap; wrap = h('div', { class: 'card' }); card.appendChild(wrap); var outer = card;
     wrap.appendChild(h('h2', { text: 'Grapevine' }));
     wrap.appendChild(h('p', { class: 'sub', text: gate
       ? 'One account for everything here. Your name in every game, your saves on every device, and friends, chat and rooms in Grapevine. Sign in with your recovery key, or create an account to get started.'
@@ -137,13 +182,16 @@
       } });
       wrap.appendChild(h('div', { class: 'k', text: 'Your recovery key' }));
       wrap.appendChild(h('div', { class: 'keybox', id: 'gl-newkey', text: pendingKey.key }));
-      wrap.appendChild(h('button', { class: 'mbtn', text: 'Copy', onclick: function () { copy(pendingKey.key, 'Key copied - now paste it somewhere safe.'); } }));
+      wrap.appendChild(h('div', { class: 'add' },
+        h('button', { class: 'mbtn', text: 'Copy', onclick: function () { copy(pendingKey.key, 'Key copied - now paste it somewhere safe.'); } }),
+        h('button', { class: 'mbtn', id: 'gl-dl', text: 'Download as a file', onclick: function () { download('grapevine-recovery-key.txt', keyFile(pendingKey.key, pendingKey.name)); } })));
       wrap.appendChild(h('p', { class: 'hint', text: 'This key IS your account. Nobody can reset it - not even us. Save it in a password manager or a note before you go on.' }));
       wrap.appendChild(h('label', { class: 'chk' }, saved, 'I saved my key somewhere safe'));
       wrap.appendChild(hint);
       wrap.appendChild(fin);
     }
-    return wrap;
+    if (gate) outer.appendChild(faq());
+    return outer;
   }
 
   function copy(text, msg) {
@@ -161,6 +209,7 @@
       h('div', null, h('div', { class: 'nm', id: 'gl-me', text: me.name }), h('div', { class: 'st' }, h('span', { class: 'dot ' + statusDot() }), h('span', { id: 'gl-status', text: statusLine() }))),
       h('div', { class: 'sp' }),
       h('button', { class: 'mbtn', text: 'My key', title: 'Copy your recovery key', onclick: function () { copy(L.key(), 'Key copied. Keep it private.'); } }),
+      h('button', { class: 'mbtn', text: 'Download key', title: 'Save your recovery key as a file', onclick: function () { download('grapevine-recovery-key.txt', keyFile(L.key(), me.name)); } }),
       h('button', { class: 'mbtn warn', id: 'gl-out', text: 'Sign out', onclick: function () {
         var b = this; b.disabled = true;
         L.signOut().then(function (r) {

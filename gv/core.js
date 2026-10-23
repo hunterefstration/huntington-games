@@ -115,6 +115,7 @@
     var why = !chalOk ? 'did not prove who it is' : (pinned && pinned !== m.serverPub) ? 'is not the server this launcher was built for' : (known && known !== m.serverPub) ? 'is not the server you signed in to before' : '';
     if (why) { var e = new Error('The Grapevine server ' + why + '. Nothing was sent to it.'); e.fatal = true; failAuth(e); drop(); setStatus('error', e.message); return; }
     st.cnonce = randHex(16);
+    await st.kpP;                                   // derived while the network was connecting
     var sig = ED.hex(await ED.sign(st.kp, 'gv-login|' + archiveId + '|' + m.nonce + '|' + c.pid + '|' + st.cnonce));
     var hello = { type: 'hello', v: 12, userId: st.userId, pub: st.pub, sig: sig, cnonce: st.cnonce, signup: st.signup,
       client: CFG.clientVersion, rl: 1, lite: 1 };
@@ -227,8 +228,13 @@
     st.userId = await sha256hex(key);
     if (store.get('uid') && store.get('uid') !== st.userId) wipeDevice();   // somebody else's leftovers never join this account
     store.set('uid', st.userId);
-    var seed = new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode('gv-seed|' + key)));
-    st.kp = await ED.keypair(seed); st.pub = ED.hex(st.kp.pub);
+    // The keypair (some heavy arithmetic) is worked out while the connection is being made, not before it: the
+    // server's challenge is a second or more away, and the key is only needed to answer it.
+    st.pub = ''; st.kp = null;
+    st.kpP = (async function () {
+      var seed = new Uint8Array(await crypto.subtle.digest('SHA-256', te.encode('gv-seed|' + key)));
+      st.kp = await ED.keypair(seed); st.pub = ED.hex(st.kp.pub);
+    })();
     st.fails = 0; st.idx = Math.floor(Math.random() * CFG.archives.length);
     var done = new Promise(function (resolve, reject) { st.auth = { resolve: resolve, reject: reject }; });
     connect();
@@ -313,7 +319,7 @@
   //  * signing out saves first and then clears the device.
   // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
   // must be added here: it is the list of prefixes the games write.
-  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.)/;
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|gv:set:)/;
   var SAVE_MAX = 400000;
   var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {} };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
