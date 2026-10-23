@@ -39,6 +39,7 @@ function startWar(att, def, goal, silent) {
   if (G.wars.some(w => w.a.includes(att) && w.d.includes(def) || w.a.includes(def) && w.d.includes(att))) return null;
   const w = { id: (G.warN = (G.warN || 0) + 1), a: [att], d: [def], goal, start: G.day, score: 0, fronts: [{ a: att, b: def, prog: 0 }], dead: {}, weary: {}, taken: {} };
   w.dead[att] = w.dead[def] = 0; w.weary[att] = w.weary[def] = 0;
+  w.will = { [att]: will0(G.nations[att], false), [def]: will0(G.nations[def], true) }; w.lost = {};
   G.wars.push(w);
   const A = World.countries[att], D = World.countries[def];
   addRel(att, def, -60);
@@ -62,6 +63,8 @@ function startWar(att, def, goal, silent) {
 }
 function joinWar(w, idx, side) {
   (side === 'a' ? w.a : w.d).push(idx); w.dead[idx] = 0; w.weary[idx] = 0; G.nations[idx].atWar = true;
+  w.will = w.will || {}; w.will[idx] = will0(G.nations[idx], side === 'd');
+  for (const lead of [w.a[0], w.d[0]]) if ((side === 'a' ? w.a : w.d).includes(lead)) w.will[lead] = Math.min(100, (w.will[lead] || 60) + 8); // a new ally lifts spirits
   const enemies = side === 'a' ? w.d : w.a;
   for (const e of enemies) { addRel(idx, e, -40); if (borderBetween(idx, e).length) w.fronts.push(side === 'a' ? { a: idx, b: e, prog: 0 } : { a: e, b: idx, prog: 0 }); }
   newsWorld(World.countries[idx].name + ' joins the war ' + (side === 'a' ? 'against ' : 'to defend ') + World.countries[side === 'a' ? w.d[0] : w.d[0]].name);
@@ -111,16 +114,21 @@ function warMonth() {
       n.cost = n.cost || {}; n.cost.War = 1 + (n.army.mobilized ? 1 : 0);
     }
     w.score = clamp(Math.round(w.fronts.reduce((s, f) => s + f.prog * 70, 0) / w.fronts.length + (w.dead[w.d[0]] - w.dead[w.a[0]]) / (w.dead[w.a[0]] + w.dead[w.d[0]] + 1) * 20), -100, 100);
-    // AI sides look for peace when losing or tired
+    // will to fight: losses, bombing and hardship wear it down; allies, aid and pride hold it up; luck swings it
     for (const lead of [w.a[0], w.d[0]]) {
-      if (lead === G.player.idx) continue;
-      const mine = lead === w.a[0] ? w.score : -w.score;
-      if ((mine < -35 || w.weary[lead] > 80) && G.rng() < 0.2) {
-        const other = lead === w.a[0] ? w.d[0] : w.a[0];
-        if (other === G.player.idx) { if (!G.requests.some(r => r.type === 'peace' && r.war === w.id)) { G.requests.push({ type: 'peace', war: w.id, from: lead, text: World.countries[lead].name + ' offers peace' + (mine < -35 ? ' and gives up the land we hold.' : ' on the current lines.'), day: G.day, until: G.day + 45 }); inbox('good', 'Peace offer', World.countries[lead].name + ' wants to end the war. Answer in Diplomacy.'); } }
-        else endWar(w, mine < -35 ? (lead === w.a[0] ? 'd' : 'a') : 'white', 'talks');
-      }
+      const n = G.nations[lead], side = lead === w.a[0] ? 'a' : 'd', mine = side === 'a' ? w.score : -w.score;
+      const cities = World.cities.filter(c => c.c === lead).length || 1, lostNow = (w.taken[lead] || []).length / cities, lostNew = Math.max(0, lostNow - (w.lost[lead] || 0)); w.lost[lead] = lostNow;
+      const allies = (side === 'a' ? w.a : w.d).length - 1, aidIn = side === 'a' ? w.aidA : w.aidD;
+      const p = n.persona || (n.persona = makePersona(n));
+      const blockaded = w.blockade && w.blockade[lead] > G.day ? 2 : 0;
+      const dWill = -blockaded - lostNew * 140 - Math.max(0, -mine) / 25 - (w.weary[lead] > 60 ? 1.5 : 0) - (n.growth < -3 ? 1 : 0) - (n.stability < 30 ? 1.5 : 0)
+        + allies * 0.6 + Math.min(2, aidIn / Math.max(1, landPower(n)) * 4) + (p.pride - 50) / 60 + (G.rng() - 0.5) * 7;
+      w.will[lead] = clamp((w.will[lead] == null ? 60 : w.will[lead]) + dWill, 0, 100);
     }
+    w.hits = {};
+    warFlavor(w);
+    if (!G.wars.includes(w)) continue;
+    for (const lead of [w.a[0], w.d[0]]) if (lead !== G.player.idx && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
   }
   for (const n of G.nations) if (n && !G.wars.some(w => w.a.includes(n.idx) || w.d.includes(n.idx)) && n.atWar) { n.atWar = false; setMod(n, 'growth', 'War', 0); setMod(n, 'infl', 'War', 0); setMod(n, 'stability', 'War', 0); setMod(n, 'approval', 'War', 0); if (n.cost) n.cost.War = 0; }
   // armies rebuild from defence spending
@@ -205,15 +213,28 @@ const War = {
     m.evGrowth = (m.evGrowth || 0) - hit; m.army.E *= 1 - hit * 0.03; m.evStab -= hit * 2;
     for (let i = 0; i < 8; i++) Life.flash(c.lon + (G.rng() - 0.5) * 3, c.lat + (G.rng() - 0.5) * 2, 1.2, [1, 0.6, 0.2], 2);
     addRel(me, t, -10);
+    // each strike hurts their will less if they have already been hit a lot this month
+    const wk = warOf(me, t), hits = wk ? (wk.hits = wk.hits || {})[t] = ((wk.hits[t] || 0) + 1) : 0;
+    const ww = hurtWill(t, ({ air: 1.6, missile: 2.6, cyber: 1, blockade: 2.2 }[kind] + G.rng() * 1.6) / (1 + hits * 0.35));
+    if (ww && kind === 'blockade') (ww.blockade = ww.blockade || {})[t] = G.day + 90;
     react(n, { title: { air: 'Air strikes on ', missile: 'Missile strikes on ', cyber: 'Cyber attack on ', blockade: 'Naval blockade of ' }[kind] + World.countries[t].name, stance: { military: 3, students: -3 }, size: 0.8, abroad: -2, topic: 'War' });
     return { air: 'Our jets hit military targets.', missile: 'Missiles struck bases and power plants.', cyber: 'Their banks and power grid went dark.', blockade: 'Our navy is blocking their ports.' }[kind];
   },
   peace(w, terms) {
-    const me = G.player.idx, mine = w.a.includes(me) ? w.score : -w.score, enemy = w.a.includes(me) ? w.d[0] : w.a[0];
-    const need = { white: -10, land: 35, regime: 70 }[terms], ok = mine + (G.rng() - 0.5) * 20 + w.weary[enemy] / 3 > need;
-    if (!ok) return World.countries[enemy].name + ' refused.';
-    if (terms === 'white') endWar(w, 'white', 'talks'); else { if (!w.a.includes(me)) { w.goal = terms; [w.a, w.d] = [w.d, w.a]; w.fronts.forEach(f => { [f.a, f.b] = [f.b, f.a]; f.prog = -f.prog; }); } w.goal = terms; endWar(w, 'a', 'talks'); }
-    return 'Peace signed.';
+    const me = G.player.idx, enemy = w.a.includes(me) ? w.d[0] : w.a[0], c = World.countries[enemy], m = G.nations[enemy];
+    if (G.rng() > peaceChance(w, terms)) {
+      w.will[enemy] = clamp((w.will[enemy] || 50) + 2, 0, 100); // being asked to give in makes the proud dig in
+      if (terms !== 'white' && G.rng() < 0.45 && peaceChance(w, 'white') > 0.35 && !G.requests.some(q => q.type === 'peace' && q.war === w.id)) {
+        G.requests.push({ type: 'peace', war: w.id, from: enemy, text: c.name + ' rejects your terms but offers a ceasefire on the current lines.', day: G.day, until: G.day + 30 });
+        return pickLine(REFUSE_LINES, c.name, m) + ' They offer a ceasefire instead (see Diplomacy requests).';
+      }
+      return pickLine(REFUSE_LINES, c.name, m);
+    }
+    if (terms === 'white') { endWar(w, 'white', 'talks'); return 'Ceasefire signed. ' + pickLine(PEACE_SIGNED, c.name, m); }
+    if (!w.a.includes(me)) { [w.a, w.d] = [w.d, w.a]; w.fronts.forEach(f => { [f.a, f.b] = [f.b, f.a]; f.prog = -f.prog; }); }
+    if (terms === 'pay') { w.goal = 'punish'; endWar(w, 'a', 'talks'); G.reparations = (G.reparations || []).concat([{ from: enemy, to: me, until: G.day + 1825 }]); }
+    else { w.goal = terms; endWar(w, 'a', 'talks'); }
+    return 'They accept. ' + pickLine(PEACE_SIGNED, c.name, m);
   },
   nuke(t) {
     const me = G.player.idx, n = G.nations[me], m = G.nations[t], c = capitalOf(t), C = World.countries[t];
@@ -225,7 +246,13 @@ const War = {
     G.nuked = (G.nuked || 0) + 1;
     // retaliation: if they (or a nuclear ally) can strike back, it may become a full exchange
     const avenger = m.nukes ? m : G.nations.find(o => o && o.nukes && o.idx !== me && (hasTreaty(o.idx, t, 'defence') || (o.blocs.includes('NATO') && m.blocs.includes('NATO'))));
+    // a nuclear strike usually breaks a country, but the proud sometimes rally in fury first
+    const fury = G.rng() < ((m.persona || {}).pride || 50) / 260;
+    const ww = hurtWill(t, fury ? 6 : 22 + G.rng() * 40);
+    if (fury && ww) newsWorld('Defiance in ' + C.name + ': crowds swear revenge after the nuclear strike.');
+    if (ww) for (const f of ww.fronts) { if (f.b === t) f.prog = Math.min(1, f.prog + 0.08); else if (f.a === t) f.prog = Math.max(-0.6, f.prog - 0.08); }
     if (avenger && G.rng() < 0.75) setTimeout(() => nuclearWar(avenger), 2500);
+    else if (ww && (ww.a[0] === t || ww.d[0] === t)) setTimeout(() => { if (G && !G.over && G.wars.includes(ww)) aiWarChoice(ww, t, 'nuke'); }, 3200);
     Bus.emit('changed');
   }
 };
@@ -244,7 +271,8 @@ function warActionsHtml(t) {
   let h = '<h3>Military</h3>';
   if (w) h += `<div class="note-box">We are at war with them. War score ${w.score > 0 === w.a.includes(me) ? '+' : ''}${(w.a.includes(me) ? w.score : -w.score)}.</div>
     <div class="btnrow"><button class="btn small" data-war="air">Air strikes (3)</button><button class="btn small" data-war="missile">Missile strikes (4)</button><button class="btn small" data-war="cyber">Cyber attack (3)</button><button class="btn small" data-war="blockade">Naval blockade (4)</button>${G.nations[me].nukes ? '<button class="btn small" data-war="nuke" style="border-color:#ef6b5b;color:#ef6b5b">☢ Nuclear strike</button>' : ''}</div>
-    <div class="btnrow"><button class="btn small" data-peace="white">Offer peace on current lines</button><button class="btn small" data-peace="land">Demand the land we hold</button><button class="btn small" data-peace="regime">Demand surrender</button></div>`;
+    <div class="sub" style="margin:6px 0">Their will to fight: <b>${willWord(w.will[t] == null ? 60 : w.will[t])}</b>${(G.spy[t] || 0) > 30 ? ' (' + Math.round(w.will[t]) + '/100, from our spies)' : ''}. Losses, bombing, blockades and nuclear strikes wear it down.</div>
+    <div class="btnrow"><button class="btn small" data-peace="white">Ceasefire on current lines (${Math.round(peaceChance(w, 'white') * 100)}%)</button><button class="btn small" data-peace="land">Demand the land we hold (${Math.round(peaceChance(w, 'land') * 100)}%)</button><button class="btn small" data-peace="pay">Demand reparations (${Math.round(peaceChance(w, 'pay') * 100)}%)</button><button class="btn small" data-peace="regime">Demand surrender (${Math.round(peaceChance(w, 'regime') * 100)}%)</button></div>`;
   else h += `<div class="sub">Our army ${fmtBig(G.nations[me].army.troops)} troops, power ${landPower(G.nations[me]).toFixed(0)}. Theirs: ${spy > 40 ? fmtBig(G.nations[t].army.troops) + ' troops, power ' + landPower(G.nations[t]).toFixed(0) : 'unknown (build a spy network to find out)'}.</div>
     <div class="btnrow"><select id="wgoal" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px"><option value="land">Take territory</option><option value="regime">Regime change</option><option value="punish">Punish them</option></select><button class="btn small" data-war="declare" style="border-color:#ef6b5b">Declare war (10)</button></div>`;
   h += `<h3>Intelligence</h3><div class="sub">Spy network in ${esc(World.countries[t].name)}: ${spy.toFixed(0)}/100. Grows each month while it is our focus (needs intelligence spending).</div>
@@ -353,3 +381,95 @@ SYSTEM_INITS.push(g => {
     G = G0 || g;
   }
 });
+
+// ---- will to fight and how wars end
+function will0(n, defending) {
+  const p = n.persona || (n.persona = makePersona(n)), r = G.rng();
+  return clamp(45 + (defending ? 18 : 0) + (p.pride - 50) / 3 + (n.stability - 50) / 5 + (n.nukes ? 8 : 0) + (r - 0.5) * 24, 25, 95);
+}
+const willWord = v => v > 75 ? 'fierce' : v > 55 ? 'determined' : v > 38 ? 'wavering' : v > 20 ? 'breaking' : 'broken';
+function warOf(a, b) { return G.wars.find(x => (x.a.includes(a) && x.d.includes(b)) || (x.d.includes(a) && x.a.includes(b))); }
+// what an AI side at war decides now (each month, or right after a shock like a nuclear strike)
+function aiWarChoice(w, lead, why) {
+  const side = lead === w.a[0] ? 'a' : 'd', enemy = side === 'a' ? w.d[0] : w.a[0], will = w.will[lead], n = G.nations[lead], c = World.countries[lead];
+  const p = n.persona || makePersona(n), stubborn = (p.pride - 50) / 5 + (p.aggr - 50) / 8, r = G.rng();
+  const shock = why === 'nuke' ? 0.25 + G.rng() * 0.3 : 0;
+  // a broken country gives up; how soon depends on pride and on luck
+  const giveUp = clamp((22 + stubborn * -0.6 - will) / 25 + shock, 0, 0.97);
+  if (r < giveUp) {
+    if (!GOV[n.gov].free && r < giveUp * 0.25) { newLeader(n, 'takes power in ' + c.name + ' and asks for peace', 'General'); newsWorld('Generals topple the government of ' + c.name + ' in the middle of the war'); }
+    return capitulate(w, side, why);
+  }
+  // tired but not beaten: ask for a ceasefire on current lines
+  if (will < 45 && G.rng() < (45 - will) / 90) {
+    if (enemy === G.player.idx) { if (!G.requests.some(q => q.type === 'peace' && q.war === w.id)) { G.requests.push({ type: 'peace', war: w.id, from: lead, text: pickLine(PEACE_LINES, c.name, n), day: G.day, until: G.day + 45 }); inbox('good', 'Peace offer from ' + c.name, 'They want a ceasefire on the current lines. Answer in Diplomacy.'); } }
+    else if (G.rng() < 0.5 + (w.will[enemy] < 50 ? 0.3 : 0)) endWar(w, 'white', 'talks');
+  }
+}
+function capitulate(w, loserSide, why) {
+  const loser = loserSide === 'a' ? w.a[0] : w.d[0], winSide = loserSide === 'a' ? 'd' : 'a', winners = winSide === 'a' ? w.a : w.d, c = World.countries[loser];
+  newsWorld(pickLine(SURRENDER_NEWS, c.name, G.nations[loser]));
+  if (winners.includes(G.player.idx)) return surrenderTerms(w, winSide, loser, why);
+  if (winSide === 'a' && !w.goal) w.goal = 'land';
+  endWar(w, winSide, 'surrender');
+}
+// the enemy gives up: the player chooses the terms
+function surrenderTerms(w, winSide, loser, why) {
+  Clock.pause();
+  const c = World.countries[loser], n = G.nations[loser], held = (w.taken[loser] || []).length, me = G.player.idx;
+  const intro = why === 'nuke' ? `After the nuclear strike, ${n.title} ${n.leader} went on television, pale and shaking: ${c.name} will stop fighting.` : pickLine(SURRENDER_LINES, c.name, n);
+  UI.modal(`<h2>🏳 ${esc(c.name)} surrenders</h2><p style="font-size:15px">${esc(intro)}</p><p class="sub">Choose the peace terms.</p>
+    <div class="menu" style="width:auto">
+      ${held ? `<button class="btn" data-terms="land">Annex the ${held} cities we hold</button>` : ''}
+      <button class="btn" data-terms="regime">Install a friendly government</button>
+      <button class="btn" data-terms="pay">Make them pay reparations (2% of their GDP a year for 5 years)</button>
+      <button class="btn" data-terms="white">Generous peace: nothing changes hands</button></div>`);
+  $$('[data-terms]').forEach(b => b.onclick = () => {
+    const t = b.dataset.terms; UI.closeModal();
+    if (winSide === 'd') { [w.a, w.d] = [w.d, w.a]; w.fronts.forEach(f => { [f.a, f.b] = [f.b, f.a]; f.prog = -f.prog; }); }
+    if (t === 'white') { endWar(w, 'white', 'talks'); react(G.nations[me], { title: 'Generous peace with ' + c.name, stance: { media: 3, military: -3 }, size: 1, abroad: 6, mood: 0.4 }); addRel(me, loser, 20); return; }
+    if (t === 'pay') { w.goal = 'punish'; endWar(w, 'a', 'surrender'); G.reparations = (G.reparations || []).concat([{ from: loser, to: me, until: G.day + 1825 }]); }
+    else { w.goal = t; endWar(w, 'a', 'surrender'); if (t === 'regime') { addRel(me, loser, 60); n.title = 'Interim President'; } }
+    react(G.nations[me], { title: 'Victory over ' + c.name, stance: { military: 8, retirees: 2, students: -2 }, size: 2, mood: 0.6, abroad: t === 'land' ? -8 : -2 });
+  });
+}
+// the player asks for peace: the answer depends on their will to fight, how the war is going, and luck
+function peaceChance(w, terms) {
+  const me = G.player.idx, enemy = w.a.includes(me) ? w.d[0] : w.a[0], mine = w.a.includes(me) ? w.score : -w.score;
+  const will = w.will[enemy] == null ? 60 : w.will[enemy], p = (G.nations[enemy].persona || {}).pride || 50;
+  const need = { white: 75, land: 36, pay: 42, regime: 20 }[terms] + mine * 0.12 - (p - 50) / 6;
+  return clamp(1 / (1 + Math.exp((will - need) / 7)), 0.02, 0.98);
+}
+function hurtWill(t, amount) { const w = warOf(G.player.idx, t); if (w && w.will[t] != null) w.will[t] = clamp(w.will[t] - amount, 0, 100); return w; }
+// things that happen in a war, so no two wars play out the same
+const WAR_FLAVOR = [
+  { w: 0.1, f: (w, A, D) => { const f = w.fronts[0]; f.prog = clamp(f.prog - 0.05, -0.6, 1); w.will[D] += 5; return 'Surprise counter-offensive! ' + nm(D) + ' pushes ' + nm(A) + ' back near ' + frontCity(w) + '.'; } },
+  { w: 0.08, f: (w, A, D) => { const f = w.fronts[0]; f.prog = clamp(f.prog + 0.06, -0.6, 1); w.will[A] += 4; return nm(A) + ' tanks break through the lines near ' + frontCity(w) + '.'; } },
+  { w: 0.07, f: (w, A, D) => { w.fronts.forEach(f => f.prog -= 0.01); return 'Mud and rain bog down the front. Neither army can move.'; } },
+  { w: 0.05, f: (w, A, D) => { const x = G.rng() < 0.5 ? A : D; w.will[x] -= 9; return 'Mutiny! Soldiers of ' + nm(x) + ' refuse to advance.'; } },
+  { w: 0.06, f: (w, A, D) => { const x = G.rng() < 0.5 ? A : D; w.will[x] += 6; return 'Volunteers from abroad arrive to fight for ' + nm(x) + '.'; } },
+  { w: 0.06, f: (w, A, D) => { w.will[A] -= 4; return 'Partisans blow up a bridge behind the ' + nm(A) + ' lines.'; } },
+  { w: 0.07, f: (w, A, D) => { const x = G.rng() < 0.5 ? A : D; w.will[x] += 7; return G.nations[x].title + ' ' + G.nations[x].leader + ' gives a defiant speech: "We will never give up."'; } },
+  { w: 0.07, f: (w, A, D) => { const x = G.rng() < 0.6 ? A : D; w.will[x] -= 7; return 'Huge peace protests in ' + capitalOf(x).name + '. Crowds chant "Bring them home!"'; } },
+  { w: 0.04, f: (w, A, D) => { const x = G.rng() < 0.5 ? A : D; w.will[x] -= 5; return 'Generals of ' + nm(x) + ' quarrel in public about the war plan.'; } },
+  { w: 0.05, f: (w, A, D) => { w.will[A] -= 3; w.will[D] -= 3; return 'Peace talks in Geneva collapse after six hours.'; } },
+  { w: 0.04, f: (w, A, D) => { const x = G.rng() < 0.5 ? A : D; G.nations[x].army.E *= 0.95; return 'A huge ammunition depot of ' + nm(x) + ' explodes.'; } },
+  { w: 0.04, f: (w, A, D) => { w.will[D] += 4; return 'Famous athletes of ' + nm(D) + ' join the army.'; } },
+  { w: 0.04, f: (w, A, D) => { const x = G.rng() < 0.5 ? A : D; w.will[x] -= 4; return 'Fuel shortages hit the army of ' + nm(x) + '. Tanks sit empty.'; } },
+  { w: 0.03, f: (w, A, D) => 'A soldier\'s letter home goes viral in both countries: "I just want to see my kids."' },
+  { w: 0.03, f: (w, A, D) => { w.will[A] += 3; w.will[D] += 3; return 'A war hero is buried with full honours. Both nations mourn their dead.'; } }
+];
+const nm = i => World.countries[i].name;
+function frontCity(w) { const t = w.taken[w.d[0]] || [], cs = World.cities.filter(c => c.c === w.d[0]); return t.length ? World.cities[t[t.length - 1]].name : (cs[Math.min(cs.length - 1, 3)] || capitalOf(w.d[0])).name; }
+function warFlavor(w) {
+  const A = w.a[0], D = w.d[0], me = G.player.idx;
+  for (const lead of [A, D]) { const prev = w.lastTaken && w.lastTaken[lead] || 0, now = (w.taken[lead] || []).length; if (now > prev) { const city = World.cities[w.taken[lead][now - 1]]; newsWorld(pickLine(CITY_FALLS, nm(lead), G.nations[lead]).replace('{city}', city.name)); } (w.lastTaken = w.lastTaken || {})[lead] = now; }
+  if (G.rng() > 0.45) return;
+  let x = G.rng() * WAR_FLAVOR.reduce((s, e) => s + e.w, 0);
+  for (const e of WAR_FLAVOR) { x -= e.w; if (x <= 0) { const text = e.f(w, A, D); for (const k in w.will) w.will[k] = clamp(w.will[k], 0, 100); newsWorld(text); if (w.a.includes(me) || w.d.includes(me)) inbox('info', 'From the front', text); break; } }
+}
+MONTHLY.push(() => { // reparations arrive every month
+  for (const r of (G.reparations || []).filter(r => r.until > G.day)) { const L = G.nations[r.from], W0 = G.nations[r.to], amt = gdpUsd(L) * 0.02 / 12; L.debt += amt * 100 / L.fx; W0.debt -= amt * 100 / W0.fx; }
+  G.reparations = (G.reparations || []).filter(r => r.until > G.day);
+});
+SYSTEM_INITS.push(g => { for (const w of g.wars || []) { if (!w.will) { const G0 = G; G = g; w.will = {}; for (const i of w.a.concat(w.d)) w.will[i] = will0(g.nations[i], w.d.includes(i)); G = G0 || g; } w.lost = w.lost || {}; } });

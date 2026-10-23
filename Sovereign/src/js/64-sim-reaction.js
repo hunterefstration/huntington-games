@@ -58,7 +58,7 @@ function react(n, a) {
   const loud = GROUPS.slice().sort((x, y) => Math.abs(by[y.id]) - Math.abs(by[x.id])).slice(0, 4).filter(g => Math.abs(by[g.id]) > 1.2);
   for (const g of loud) {
     const v = by[g.id], who = FIRST[Math.floor(G.rng() * FIRST.length)] + ' ' + g.icon;
-    said.push({ type: 'post', day: G.day, author: who, group: g.name, text: POST_TEXT[g.id][v > 0 ? 0 : 1].replace('{h}', tag(a.topic || title)), likes: Math.round(Math.abs(v) * g.share(n) * 4e4 * (0.5 + G.rng())), mood: Math.sign(v) });
+    said.push({ type: 'post', day: G.day, author: who, group: g.name, text: [].concat(POST_TEXT[g.id][v > 0 ? 0 : 1]).sort(() => G.rng() - 0.5)[0].replace('{h}', tag(a.topic || title)), likes: Math.round(Math.abs(v) * g.share(n) * 4e4 * (0.5 + G.rng())), mood: Math.sign(v) });
   }
   G.feed = (said.concat(G.feed || [])).slice(0, 120);
   // streets: angry or delighted groups gather
@@ -104,7 +104,7 @@ function reactionDay(n) {
     const issues = [[n.infl - 4, 'prices', 'Everything costs so much now. #Prices'], [n.unemp - 6, 'jobs', 'Still looking for work. Anyone hiring? #Jobs'],
       [40 - n.stability, 'crime', 'Not safe out there anymore. #Safety'], [n.approval - 55, 'love', 'Say what you want, this government gets things done. #Proud'],
       [n.growth - 3, 'boom', 'Business is booming in my town! #Growth']].sort((a, b) => b[0] - a[0]);
-    const [v, , text] = issues[0];
+    const [v, key, line] = issues[0], more = typeof CHATTER !== 'undefined' && CHATTER[key], text = more ? more[Math.floor(G.rng() * more.length)] : line;
     G.feed = [{ type: 'post', day: G.day, author: FIRST[Math.floor(G.rng() * FIRST.length)], group: 'Citizen', text, likes: Math.round(200 + G.rng() * 5000), mood: v > 0 && issues[0][1] !== 'love' && issues[0][1] !== 'boom' ? -1 : 1 }].concat(G.feed || []).slice(0, 120);
   }
 }
