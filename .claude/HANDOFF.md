@@ -16,7 +16,7 @@
 | Tetris | 2.0 | ranks, perks, bosses, daily, achievements, 70 puzzles, themes, tutorial | play-test + fix |
 | Coffee Shop NEW (Bean & Brew) | 2.0 | cities, recipes, staff skills, events, franchises, seasons, story, latte art | play-test + fix |
 | Tower Defense 2.0 | 3.0 | heroes, 18 towers, alien era, 12 maps, stars, bosses, daily, map editor | play-test found issues; fix + re-test |
-| Blocky Shooter V2 | 4.0 | 4 classes, 5 weapons (+ attachments?) | chunk "Maps and progression", then play-test |
+| Blocky Shooter V2 | 4.0 | released in r35 (classes, new weapons, Mall + Military Base, challenges, prestige) plus Grapevine names/friends on `main`; the wip copy is OLDER, do not restore it | source split into `Blocky Shooter V2/src/` (see below); next: the big update |
 | Brown E Clicker | 2.0 | 24 buildings, 287 upgrades, golden E, 126 achievements, offline earnings | chunk "Ascension 2.0...", then play-test |
 | Market Life 1.9 (Market & Life) | 2.0 | life sim: education, careers, housing, cars, health, family, retirement | chunk "Market and business depth", then play-test |
 | 50 Levels Of Spikes 1.2 | 2.0 | released in r33 (the wip copy matches) | nothing |
@@ -80,11 +80,20 @@ Real cross-network test (two Chromebooks, different states) still needed before 
 - Tests (need the Grapevine rig, grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves incl. the game-waits-for-saves check, Grapevine tab,
   cards, new tab), `tools/tests/gv-notify.mjs` (menu buttons, pop-ups, chat on T), `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
 - Connection speed: Account > Connection shows a step-by-step timeline of the last connection (milliseconds per step); ask a slow user for it.
+## Blocky Shooter V2 source (split 2026-10-24)
+- `Blocky Shooter V2/src/shell.html` (page HTML), `src/css/00-tailwind.css` + `10-game.css`, `src/js/00-imports.js` ... `28-mp-ui.js`
+  (one ES module, joined in name order; files are unindented, `<!--@js indent=8-->` re-indents). Files follow the old section
+  headers: state, ranks/classes/prestige, audio, engine, world, maps, Mall/Base, nav/collision, effects, view models, state machine,
+  input/combat, 4.0 weapons, secondaries/gadgets, class abilities, enemies, waves/damage/XP, challenges, saved run, enemy AI,
+  bosses, pickups/power-ups, physics/render, UI/shop, settings/menu (debug hook `window.__blocky`), multiplayer net/game/UI.
+- `node tools/build-game.js "Blocky Shooter V2" --check` writes `index.html` (keeps the HG block). `release.sh prepare` rebuilds and
+  ships the sources of any game that has `src/shell.html`.
+
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE
   ES module, so top-level names are shared), data in `Sovereign/data/*.json` (embedded as JSON script tags, read with
-  `readData(id)`). `node tools/build-sovereign.js --check` writes `Sovereign/index.html` (the only file the Launcher
+  `readData(id)`). `node tools/build-game.js Sovereign --check` writes `Sovereign/index.html` (the only file the Launcher
   loads; keeps the HG licence block). Always rebuild and commit index.html with source changes.
 - Data: `node tools/sovereign-data.js` (npm packs world-atlas, world-countries, all-the-cities into $HG_TOOLS/sov-src;
   needs `npm i pbf@3` in $HG_TOOLS).

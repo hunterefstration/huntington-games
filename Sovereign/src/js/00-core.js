@@ -1,5 +1,5 @@
 // Sovereign - a Huntington Games production.
-// Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-sovereign.js.
+// Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-game.js.
 import * as THREE from 'three';
 
 const VERSION = '1.1';
