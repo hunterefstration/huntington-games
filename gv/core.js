@@ -514,6 +514,12 @@
       run: function () { return syncRun(); },
       status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n, synced: sy.synced }; },
       // resolves true once this visit has loaded the account's saves, false after `ms` (or at once when there is no connection to wait for)
+      // what this device holds and what the account holds, key by key (the Saves tab shows it, so a problem can be seen)
+      inspect: function () {
+        var local = eligible().map(function (k) { var v = localStorage.getItem(k) || ''; return { k: k, bytes: v.length, big: v.length > SAVE_MAX }; });
+        if (!st.ready) return Promise.resolve({ local: local, cloud: null });
+        return rpc({ type: 'savesList' }, 'saves').then(function (m) { return { local: local, cloud: (m.items || []).map(function (it) { return { k: it.k, bytes: it.bytes, at: it.at }; }) }; });
+      },
       whenSynced: function (ms) {
         return new Promise(function (res) {
           if (sy.synced) return res(true);

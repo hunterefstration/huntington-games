@@ -765,6 +765,12 @@ const GVLink = (() => {
       run: function () { return syncRun(); },
       status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n, synced: sy.synced }; },
       // resolves true once this visit has loaded the account's saves, false after `ms` (or at once when there is no connection to wait for)
+      // what this device holds and what the account holds, key by key (the Saves tab shows it, so a problem can be seen)
+      inspect: function () {
+        var local = eligible().map(function (k) { var v = localStorage.getItem(k) || ''; return { k: k, bytes: v.length, big: v.length > SAVE_MAX }; });
+        if (!st.ready) return Promise.resolve({ local: local, cloud: null });
+        return rpc({ type: 'savesList' }, 'saves').then(function (m) { return { local: local, cloud: (m.items || []).map(function (it) { return { k: it.k, bytes: it.bytes, at: it.at }; }) }; });
+      },
       whenSynced: function (ms) {
         return new Promise(function (res) {
           if (sy.synced) return res(true);
@@ -1050,7 +1056,20 @@ const GVLink = (() => {
     var b = h('button', { class: 'mbtn', id: 'gl-sync-go', text: 'Save and sync now', onclick: function () {
       b.disabled = true; L.sync.run().then(function (r) { toast(r.pulled ? 'Loaded ' + r.pulled + ' item(s) from your account.' : 'Everything is saved.'); }, function (e) { toast(e.message || 'Could not sync.', true); }).then(function () { b.disabled = false; render(); });
     } });
-    box.appendChild(h('div', { style: 'margin-top:12px' }, b));
+    var det = h('div', { class: 'diag', id: 'gl-saves-detail', style: 'margin-top:10px' });
+    var d = h('button', { class: 'mbtn', id: 'gl-saves-show', style: 'margin-left:8px', text: 'Show what is saved', onclick: function () {
+      d.disabled = true; det.textContent = 'Checking...';
+      L.sync.inspect().then(function (r) {
+        det.textContent = '';
+        var cloud = {}; (r.cloud || []).forEach(function (c) { cloud[c.k] = c; });
+        det.appendChild(h('div', { class: 'sect', text: 'on this device: ' + r.local.length + ' item(s)' + (r.cloud ? ', in your account: ' + r.cloud.length : ', account not reachable right now') }));
+        r.local.forEach(function (x) { det.appendChild(h('div', null, h('span', { class: x.big ? 'no' : (r.cloud && !cloud[x.k] ? 'no' : 'ok'), text: (x.big ? 'too big to sync ' : !r.cloud ? '' : cloud[x.k] ? 'in account ' : 'not in account yet ') }), x.k + ' (' + x.bytes + ' chars)')); });
+        (r.cloud || []).forEach(function (c) { if (!r.local.some(function (x) { return x.k === c.k; })) det.appendChild(h('div', null, h('span', { class: 'ok', text: 'in account only ' }), c.k + ' (' + c.bytes + ' bytes) - loads on this device at the next sync')); });
+        if (!r.local.length && !(r.cloud || []).length) det.appendChild(h('div', { text: 'Nothing yet. Play a game for a minute first; it saves when the game saves.' }));
+      }, function (e) { det.textContent = 'Could not check: ' + (e && e.message || e); }).then(function () { d.disabled = false; });
+    } });
+    box.appendChild(h('div', { style: 'margin-top:12px' }, b, d));
+    box.appendChild(det);
     return box;
   }
 
