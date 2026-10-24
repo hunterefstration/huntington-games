@@ -1,7 +1,9 @@
-# Handoff (updated 2026-10-15)
+# Handoff (updated 2026-10-24)
 
 ## Where things stand
-- Live: release **r38** (Sovereign 1.1: will to fight, surrender terms, ~100 new events), released Oct 23 2026, ~4 AM EDT. r37 made Grapevine the launcher; r36 shipped Sovereign 1.0. Launcher code in `loader.html`.
+- Live: **r41** or newer (check `latest.json` on `main`). r40 added in-game pop-ups and chat on T; r41 fixed game-save sync. r39 made the whole launcher wear
+  Grapevine's theme; r37 made Grapevine the launcher; r36/r38 shipped Sovereign. Everything above is on **`main`** in both repos (huntington-games and grapevine).
+  Anyone (including other bots) can branch from `main`, change things and release; there are no private branches holding released work any more.
 - Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
   `git fetch origin wip/content-wave && git checkout origin/wip/content-wave -- "Blocky Shooter V2" "Tower Defense 2.0" Frontline Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9" "50 Levels Of Spikes 1.2" src/hgnet.js src/hgnet-test.html src/hgnet-README.md`
   then `git reset -q` so nothing is staged. Do not commit these to `main` until each game passes its play-test.
@@ -55,21 +57,29 @@ Built, 324 local checks pass. Stress test found, still to fix:
 - minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
 Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
 
-## Grapevine in the launcher + relay (branch claude/intelligent-goodall-akekpu, NOT released)
-- Grapevine's server used to be reachable only over WebRTC, which school networks block. Fix lives in the **grapevine** repo (same branch name):
-  `relay/` (HGNet over public MQTT relays on 443, end-to-end encrypted, raced against PeerJS) plus the PeerJS TURN servers Blocky uses.
-  Server hosting guide for an always-on machine: grapevine `deploy/DEPLOY.md`. The database needs `migrate-v13.sql` (cloud saves).
-- The launcher IS Grapevine now (`gv/`, see gv/README.md): an account gates the launcher, the Grapevine tab runs the full app signed in as the
-  same account (`gv/app.html`, copied from grapevine `client.html` with `tools/sync-grapevine.sh`; rebuild `gv/account.js` with `tools/build-gv.sh`),
-  game saves sync to the account (`HGGrapevine.sync`), games read the account as `parent.HGGrapevine`. Blocky Shooter and Frontline lock the name to
-  the account and show verified players with a +Friend button. "New tab" opens about:blank and writes the game into it.
-- Cards: Neon Dash 2.0 (folder "Levi Dash By Levi 2.0") is the last main game and is now in build-release.py's GAMES (licence-gated); credits: Levi
-  (Neon Dash, Neon Drift), Robbie (Bean & Brew Classic, original Market & Life). Sovereign is NOT added (only a plan exists on branch wizardly-hawking).
-- Release: `tools/release.sh prepare` copies only the named game folders; the hub (index.html), `gv/`, `hub/neondash.jpg` and `tools/` changes must be copied into
-  the worktree by hand before `finish`; the game folders to pass are `"Blocky Shooter V2" Frontline "Levi Dash By Levi 2.0"`. Run
-  `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
-- Tests (need the Grapevine rig, see grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves, Grapevine tab, cards, new tab) and
-  `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
+## Grapevine in the launcher + relay (on `main` in both repos; server runs the grapevine repo's `main`)
+- Grapevine's server was reachable only over WebRTC, which school networks block. The fix is in the **grapevine** repo: `relay/` (HGNet over public MQTT relays
+  on 443, end-to-end encrypted, raced against PeerJS) plus PeerJS TURN servers. The server is a $5 Vultr box (Atlanta); hosting guide: grapevine `deploy/DEPLOY.md`;
+  database (Supabase) needs the migrations up to `migrate-v13.sql`. Update the server with (owner runs it in the console):
+  `cd ~/grapevine && git fetch && git checkout main && git pull && systemctl restart grapevine`.
+- The launcher IS Grapevine (`gv/`, see gv/README.md): an account gates the launcher, the Grapevine tab runs the full app signed in as the same account
+  (`gv/app.html`, copied from grapevine `client.html` with `tools/sync-grapevine.sh`; rebuild `gv/account.js` with `tools/build-gv.sh`; the vendor copies in
+  `gv/vendor/` come from grapevine `relay/`). Games read the account as `parent.HGGrapevine` (or `opener` in the New-tab copy).
+- Game saves sync to the account (`HGGrapevine.sync`, core.js). Rules that matter: only keys matching `GAME_KEYS` travel (add a new game's key prefix there);
+  a device meeting the account for the first time lets the cloud win (old value kept as `hgv:bak:<key>`); nothing is written into localStorage while a game is open;
+  and `index.html` `gvBeforePlay` holds a game back (up to 25 s, with a skip button) until this visit's first sync has finished, because a game reads its save
+  the moment it starts. Do not start a game before that: it would write a fresh save over the account's.
+- In-game pop-ups and chat: `HG_notify` (called by the embedded app's `maybeNotify` and by core 'notify' events for friend requests) draws cards over the game;
+  T opens a chat window (its own small iframe so the game never sees the keys) using `GVEmbed` from grapevine `client.html`. Per-game flags in the GAMES list:
+  `chatShift` (Frontline: Shift+T because T is its tech tree) and `noChat` (the four Neon Dash games).
+- Cards: Neon Dash 2.0 (folder "Levi Dash By Levi 2.0") is the last main game; credits: Levi (Neon Dash, Neon Drift), Robbie (Bean & Brew Classic, original Market & Life).
+- Release: `tools/release.sh prepare` copies only named game folders, so for launcher-only changes do it by hand: `git worktree add --detach /home/user/hg-release origin/main`,
+  merge/copy your work in, `HG_ROOT=/home/user/hg-release HG_TOOLS=/tmp/hg-tools python3 tools/build-release.py N`, write `latest.json` (`{"release":N}`), run
+  `tools/tests/gate.js` and `gate2.js` (env `HG_BUILD=N HG_SECRET=$(cat /tmp/hg-tools/hg_secret.txt) HG_ROOT=... HG_TOOLS=... NODE_PATH=/opt/node22/lib/node_modules`),
+  commit and `git push origin HEAD:main` (an Action tags rN). Run `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
+- Tests (need the Grapevine rig, grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves incl. the game-waits-for-saves check, Grapevine tab,
+  cards, new tab), `tools/tests/gv-notify.mjs` (menu buttons, pop-ups, chat on T), `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
+- Connection speed: Account > Connection shows a step-by-step timeline of the last connection (milliseconds per step); ask a slow user for it.
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE

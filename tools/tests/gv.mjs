@@ -139,6 +139,23 @@ try {
   check('a save made on device 2 reaches device 1', await A.evaluate(() => (localStorage.getItem('beanBrewSaveV2') || '').includes('123')));
   check('other sites\' keys never travel', !(await D2.evaluate(() => { localStorage.setItem('someOtherAppKey', 'private'); return HGGrapevine.sync.run().then(() => 0); }).then(async () => (await A.evaluate(() => HGGrapevine.sync.run()), A.evaluate(() => localStorage.getItem('someOtherAppKey') !== null)))));
 
+  // The bug this guards against: a game read its save before the first sync had brought the account's saves in, then wrote a fresh
+  // save over them. The launcher must hold the game back until the saves have arrived.
+  const DX = await device(await browser.newContext());
+  await DX.evaluate(() => {
+    localStorage.setItem('td2_save', '{"wave":1,"from":"a stale third device"}'); window.__atLoad = [];
+    document.getElementById('frame').addEventListener('load', e => window.__atLoad.push({ src: e.target.getAttribute('src') || '', save: localStorage.getItem('td2_save') }));
+  });
+  await DX.waitForSelector('#gate .gl .seg');
+  await DX.fill('#gate #gl-key', keyA); await DX.click('#gate #gl-go');
+  await DX.waitForSelector('#gate[hidden]', { state: 'attached', timeout: 60000 });
+  await DX.evaluate(() => { [...document.querySelectorAll('.game')].find(g => /Tower Defense/.test(g.textContent)).click(); });   // straight away: signed in, probably not synced yet
+  const atLoad = await until(() => DX.evaluate(() => window.__atLoad.find(x => /Tower/.test(x.src))), 60000);
+  check('a game opened right after signing in on a new device waits for the account\'s saves', !!atLoad && /device A/.test(atLoad.save || ''), atLoad ? atLoad.save : 'game never loaded');
+  check('...and the stale local value was kept as a backup', await DX.evaluate(() => /stale third/.test(localStorage.getItem('hgv:bak:td2_save') || '')));
+  await DX.evaluate(() => document.getElementById('back').click());
+  check('a Skip button exists for a slow connection', await DX.evaluate(() => typeof window.HG_skipWait === 'function'));
+
   console.log('\n=== 6. the app keeps its own sign-out hidden ===');
   check('no separate sign-out inside the embedded app', await appA.evaluate(() => getComputedStyle(document.querySelector('#signOut')).display === 'none'));
 

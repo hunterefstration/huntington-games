@@ -583,7 +583,7 @@ const GVLink = (() => {
   // must be added here: it is the list of prefixes the games write.
   var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|gv:set:)/;
   var SAVE_MAX = 400000;
-  var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {} };
+  var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {}, synced: false };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
   function setSync(state, text) { sy.state = state; sy.text = text || ''; emit('sync', { state: state, text: sy.text, at: sy.at }); }
   function eligible() {
@@ -591,7 +591,7 @@ const GVLink = (() => {
     try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && GAME_KEYS.test(k)) out.push(k); } } catch (e) {}
     return out;
   }
-  function wipeDevice() { try { eligible().forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {} store.del('sync'); store.del('syncat'); sy.at = 0; }
+  function wipeDevice() { try { eligible().forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {} store.del('sync'); store.del('syncat'); sy.at = 0; sy.synced = false; }
   function rpc(frame, reply) {
     return new Promise(function (resolve, reject) {
       var w = { resolve: resolve, reject: reject, t: setTimeout(function () { var l = sy.waiters[reply] || []; var i = l.indexOf(w); if (i >= 0) l.splice(i, 1); reject(new Error('Grapevine did not answer.')); }, 20000) };
@@ -648,7 +648,10 @@ const GVLink = (() => {
       }
       await flush();
       store.set('sync', JSON.stringify(meta));
-      sy.at = Date.now(); store.set('syncat', String(sy.at)); sy.n = Object.keys(local).length + pulled;
+      // A sync that had to hold newer saves back (a game was open) is not a finished first sync: the device must still
+      // let the cloud win next time, or the game's own fresh save would be pushed over the account's real progress.
+      sy.at = Date.now(); sy.n = Object.keys(local).length + pulled;
+      if (!deferred) { store.set('syncat', String(sy.at)); sy.synced = true; }
       setSync('ok', deferred ? 'Saved. Newer saves from another device load when you close the game.' : 'All saves are in your account.');
       return { pulled: pulled, pushed: pushed, deferred: deferred };
     })();
@@ -760,7 +763,17 @@ const GVLink = (() => {
     ready: function () { return readyP; },
     sync: {
       run: function () { return syncRun(); },
-      status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n }; },
+      status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n, synced: sy.synced }; },
+      // resolves true once this visit has loaded the account's saves, false after `ms` (or at once when there is no connection to wait for)
+      whenSynced: function (ms) {
+        return new Promise(function (res) {
+          if (sy.synced) return res(true);
+          if (st.status !== 'connecting' && st.status !== 'online') return res(false);
+          var off = function () {}, t = setTimeout(function () { off(); res(false); }, ms || 25000);
+          off = on('sync', function () { if (sy.synced) { clearTimeout(t); off(); res(true); } });
+          if (st.status === 'online' && st.ready && !sy.running) syncRun().catch(function () {});
+        });
+      },
       // resolves when the first sync after sign-in is done, or after `ms`, so a game is not launched before it
       first: function (ms) { return Promise.race([sy.first || Promise.resolve(), new Promise(function (r) { setTimeout(r, ms || 2500); })]); },
       setGameOpen: function (open) { sy.open = !!open; if (!open && st.ready) syncRun().catch(function () {}); }

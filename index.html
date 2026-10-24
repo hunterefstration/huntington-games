@@ -303,7 +303,7 @@ function render() {
 }
 var frame = document.getElementById('frame'), current = null, loadId = 0, popup = null, popupGame = null;
 function message(text) {
-  return '<!DOCTYPE html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#8b949e;font:16px Segoe UI,sans-serif;text-align:center;padding:20px;box-sizing:border-box">' + text + '</body></html>';
+  return '<!DOCTYPE html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#000;color:#8b949e;font:16px Segoe UI,sans-serif;text-align:center;padding:20px;box-sizing:border-box"><div>' + text + '</div></body></html>';
 }
 // Try each CDN mirror until one answers. Resolves to { html, base } (html is a Blob when asBlob).
 function timedFetch(url, ms, opts) {
@@ -656,6 +656,8 @@ async function downloadOffline() {
   btn.disabled = false; btn.textContent = old;
 }
 function play(g) { if (document.getElementById('gate').hidden === false) return; gvBeforePlay(g, function () { playNow(g); }); }
+var skipWait = null;
+window.HG_skipWait = function () { if (skipWait) skipWait(); };
 function playNow(g) {
   var id = ++loadId;
   current = { game: g, html: null };
@@ -1053,11 +1055,26 @@ document.getElementById('tab-acct').onclick = function () { showTab('acct'); };
 document.getElementById('chip').onclick = function () { showTab('acct'); };
 window.addEventListener('resize', function () { if (document.body.className === 'chat') document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px'); });
 // Saves follow the account: before a game opens (so it starts from the newest save), and again after it closes.
+// A game reads its save the moment it starts, so the account's saves have to be on this device BEFORE that. The first time in a
+// visit this waits (up to 25 s, with a button to skip) for the sign-in and the first sync; afterwards it only refreshes if the last
+// sync is more than a minute old. Anything newer that arrives while a game is open waits until it closes.
 function gvBeforePlay(g, go) {
   var L = window.HGGrapevine;
-  if (!(L && L.me() && L.online())) { if (L && L.me()) L.sync.setGameOpen(true); return go(); }
-  if (Date.now() - (L.sync.status().at || 0) < 60000) { L.sync.setGameOpen(true); return go(); }   // synced a moment ago (it also runs every 45 s): no waiting
-  Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 2000); })]).then(function () { L.sync.setGameOpen(true); go(); });
+  if (!(L && L.me())) return go();
+  var s0 = L.sync.status(), recent = L.online() && s0.synced && Date.now() - (s0.at || 0) < 60000;
+  if (recent) { L.sync.setGameOpen(true); return go(); }
+  var id = ++loadId, done = false;
+  function start() { if (done) return; done = true; skipWait = null; if (id !== loadId) return; L.sync.setGameOpen(true); go(); }
+  document.getElementById('ptitle').textContent = g.name;
+  document.getElementById('chathint').textContent = '';
+  document.getElementById('player').classList.add('open');
+  current = { game: g, html: null };
+  var first = !s0.synced;
+  frame.srcdoc = message(first ? 'Getting your saved progress...' : 'Checking for newer saves...');
+  var late = setTimeout(function () { if (!done && id === loadId) frame.srcdoc = message('Still getting your saved progress...<br><br><button onclick="parent.HG_skipWait()" style="font:inherit;padding:8px 16px;cursor:pointer">Play without waiting</button><br><br><small>(Your account\'s saves load when you leave the game.)</small>'); }, 5000);
+  skipWait = start;
+  var p = first ? L.sync.whenSynced(25000) : Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 3000); })]);
+  p.then(function () { clearTimeout(late); start(); });
 }
 function gvAfterPlay() { var L = window.HGGrapevine; if (L && L.me()) setTimeout(function () { L.sync.setGameOpen(false); }, 500); }
 document.addEventListener('visibilitychange', function () { var L = window.HGGrapevine; if (document.hidden && L && L.me() && L.online()) L.sync.run().catch(function () {}); });
