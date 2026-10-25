@@ -222,6 +222,9 @@ function autoApplyPending() {
     toast('Auto graphics: lowered a notch for smoother play', '#9ca3af', 2);
 }
 let frameNo = 0;
+// tiny frame profiler (off unless a test turns it on): ms spent per system, summed between marks
+const PROF = { on: false, last: 0, t: {} };
+function pfMark(k) { if (!PROF.on) return; const n = performance.now(); PROF.t[k] = (PROF.t[k] || 0) + (n - PROF.last); PROF.last = n; }
 
 
 function animate(ts) {
@@ -234,6 +237,7 @@ function frame(ts) {
     const raw = Math.max((time - prevTime) / 1000, 0);
     const delta = Math.min(raw, 0.05);
     prevTime = time;
+    if (PROF.on) PROF.last = performance.now();
     trackFps(raw);
 
 
@@ -254,20 +258,24 @@ function frame(ts) {
         } else if (NET.dead) netSpectate(delta);
 
 
+        pfMark('player');
         if (!NET.inGame || NET.host) {
-            updateNavField(delta);
+            updateNavField(delta); pfMark('nav');
             if (!debugFreeze) updateEnemies(delta * (boostOn('slowmo') || (NET.inGame && netAnyMod('slowmo')) ? 0.8 : 1) * (NET.slowT > 0 ? 0.5 : 1));
         } else netUpdateEnemies(delta);
+        pfMark('enemyAI');
         if (simOn()) {
             updateProjectiles(delta);
             updatePickups(delta);
             updateSupplies(delta);
             updateOrbs(delta);
         }
+        pfMark('proj');
         updateCorpses(delta);
         updateCageRam(delta);
         tickBossIntro(delta);
         if (simOn()) { updateBossFx(delta); updateFires(delta); updateTurrets(delta); updateStrikes(delta); updateMines(delta); updateCornerPressure(delta); updateBossBar(); updateClass(delta); }
+        pfMark('bossFx');
         ui.strike.classList.toggle('hidden', strikeCharges <= 0);
         if (strikeCharges > 0) setText(ui.strike, `\u2708 AIRSTRIKE x${strikeCharges}  \u2014  PRESS G`);
         setText(ui.streak, streak > 0 ? `STREAK ${streak} / ${STREAK_FOR_STRIKE}` : '');
@@ -302,6 +310,7 @@ function frame(ts) {
             camera.position.add(camOffset);
             drawMinimap(delta);
         }
+        pfMark('hud');
     }
 
 
@@ -322,12 +331,15 @@ function frame(ts) {
         if (show && (!vmModel || vmModel.id !== 'ar')) showWeaponModel('ar');
         if (vmModel) { vmModel.root.visible = show; if (show) { vm.raise = 1; updateViewmodel(delta, false, false); } }
     }
+    pfMark('fx');
     updateWeather(delta);
     updateBlobs();
     updateHpBars();
     updateSun();
     updateZombieInstances();
     // the sun's shadow map only re-renders every other frame (half the shadow cost, invisible at 60fps)
+    pfMark('misc');
+    renderer.info.autoReset = false; renderer.info.reset();
     frameNo++;
     renderer.shadowMap.autoUpdate = false;
     if (Q.shadows && (frameNo & 1)) renderer.shadowMap.needsUpdate = true;
@@ -344,4 +356,5 @@ function frame(ts) {
             renderer.render(viewScene, weaponCam);
         }
     }
+    pfMark('render');
 }

@@ -270,6 +270,8 @@ animate();
 window.__blocky = {
     get state() { return { currentGameState, playerStats, currentHp, currentArmor, enemies, solids, projectiles, secondaryCooldown, waveActive, intermission, camera, velocity, onGround, vm, Q, dynScale, theme: themeId, runStats, supplies, power, fovNow, vmModel, weaponCam, viewScene, renderer, scene, THREE }; },
     debug(on = true) { debugNoLock = on; },
+    prof: PROF,
+    get info() { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, enemies: enemies.length }; },
     hurt: (n) => takeDamage(n, null, 'test'),
     clearWave: () => { enemies.forEach(e => { scene.remove(e); disposeEnemy(e); }); enemies.length = 0; checkWaveStatus(); },
     save: () => autoSaveRun(false), saveStatus: () => saveStatus(), get savedWave() { return savedWave; }, runSave: () => loadRunSave(),
