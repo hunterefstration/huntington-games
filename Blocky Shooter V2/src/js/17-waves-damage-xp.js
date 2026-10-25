@@ -49,6 +49,7 @@ function campSpawn(p, n) {
 function updateCornerPressure(dt) {
     if (!waveActive || run.mode === 'sandbox' || NET.pvp || (NET.inGame && !NET.host)) return;
     for (const t of aiTargets()) {
+        if (t.camp) continue;
         let s = campState.get(t.id);
         if (!s) campState.set(t.id, s = { edgeT: 0, flankT: 0, warned: false, ax: t.pos.x, az: t.pos.z, stayT: 0, spawnT: 0, lvl: 0 });
         const p = t.pos;
@@ -75,7 +76,6 @@ function updateCornerPressure(dt) {
 function spawnWave() {
     const camping = !NET.inGame && nearEdge(camera.position);
     waveHurt = false;
-    if (MODS.has('shield')) overshield = 50;      // OVERSHIELD tops up every wave
     enemies.forEach(e => { scene.remove(e); disposeEnemy(e); });
     enemies = [];
     const level = playerStats.level;
@@ -123,7 +123,7 @@ function spawnWave() {
 
 function damageEnemy(enemyGroup, amount, isHeadshot, point, isExplosion = false, knockDir = null, pellets = 1, src = null) {
     const u = enemyGroup.userData;
-    if (u.dead) return;
+    if (u.dead || u.hidden) return;
     // 3.9 boss rules: the Necromancer is untouchable while its Acolytes live, the Inferno shrugs off fire
     if (u.shielded || (u.config.fireImmune && (src === 'flamer' || src === 'molotov'))) {
         if (!dmgOwner && gameTime - (u.immT || -9) > 0.6) { u.immT = gameTime; spawnDamageNumber(point || new V3(enemyGroup.position.x, enemyGroup.position.y + u.totalHeight * 0.7, enemyGroup.position.z), u.shielded ? 'SHIELDED' : 'IMMUNE', 'boom'); sfx('thud'); }
@@ -131,9 +131,6 @@ function damageEnemy(enemyGroup, amount, isHeadshot, point, isExplosion = false,
     }
     if (!dmgOwner) amount = reconHit(u, amount);          // 4.0 RECON: your hits mark zombies (WEAK SPOT: marked ones take more)
     if (u.state === 'cloak') { u.state = 'walk'; u.aiT = 2.5; enemyGroup.visible = true; u.barShow = true; spawnDamageNumber(new V3(enemyGroup.position.x, enemyGroup.position.y + u.totalHeight, enemyGroup.position.z), 'REVEALED!', 'head'); }
-    if (boostOn('instakill') && !dmgOwner && !u.config.boss && u.hp - amount < u.maxHp * 0.25) amount = Math.max(amount, u.hp);
-    // explosive rounds: bullet hits set off a small blast (queued, handled next frame)
-    if (!isExplosion && point && boostOn('boom') && !dmgOwner && gameTime - boomLast > 0.1) { boomLast = gameTime; boomQ.push(point.clone()); }
     // multiplayer guest: tell the host (the referee) and show the hit right away so there's no lag
     if (NET.inGame && !NET.host) { netClientHit(enemyGroup, amount, isHeadshot, point, isExplosion, src || (isExplosion ? 'explosive' : playerStats.currentWeapon)); return; }
     if (u.config.armor && u.state !== 'stun' && !isExplosion) amount *= u.config.armor;     // the Juggernaut's plating
@@ -142,6 +139,8 @@ function damageEnemy(enemyGroup, amount, isHeadshot, point, isExplosion = false,
     u.hp -= amount;
     u.flash = 0.09;
     u.mat.emissive.setHex(0xffffff); u.mat.emissiveIntensity = 0.8;
+    if (u.hitT <= 0.12 && amount > 0) { u.hitT = 0.24; u.hitHead = !!isHeadshot; u.hitSide = Math.random() < 0.5 ? 1 : -1; }      // flinch
+    if (point && (isHeadshot || Math.random() < 0.6)) spawnParticles(point, isHeadshot ? 0xfff1a0 : 0xffffff, isHeadshot ? 6 : 3, 6, 0.2, 0.05, false, { grav: 10 });     // stylised, blood-free hit sparks
     u.barShow = true;
     if (knockDir) {
         const k = Math.min(16, 1.3 * pellets) / Math.max(0.8, u.config.scale * (u.config.boss ? 3 : 1));
@@ -179,8 +178,12 @@ function killEnemy(e, selfDestruct = false, headshot = false, src = 'explosive')
         explode(c, (24 + playerStats.level * 2.2) * DIFF().dmg, 6.5, { hurtsPlayer: true, color: 0xff6a2a, fxOnly: NET.inGame && !NET.host, by: 'a Bomber explosion' });
     } else {
         if (headshot) { u.head.visible = false; spawnParticles(new V3(e.position.x, e.position.y + 2.8 * u.config.scale, e.position.z), zLook(u.config).skin, 10, 7, 0.9, 0.2 * u.config.scale, true, { bounce: true, spin: 12, grav: 26 }); }
-        corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1 });
+        corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1, back: headshot || Math.random() < 0.35 });
         if (award && !u.noLoot) dropLoot(u, e.position);
+        if (u.config.id === 'blighter' && (!NET.inGame || NET.host)) {   // 5.0: its tank ruptures into a poison cloud
+            spawnParticles(c, 0x84cc16, 16, 7, 0.8, 0.25, false, { grav: 4 });
+            bossHazard(e.position.x, e.position.y, e.position.z, 3.2, 8 * lvlDmg(), 7, 0x84cc16, "a Blighter's toxic cloud");
+        }
         if (u.config.id === 'splitter' && (!NET.inGame || NET.host)) {   // 3.8: bursts into Mites
             spawnParticles(c, 0xc084fc, 14, 8, 0.7, 0.25, false, { grav: 14 });
             for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.random(); const m = spawnEnemy(enemyTypes.mite, e.position.x + Math.cos(a) * 1.4, e.position.z + Math.sin(a) * 1.4, e.position.y + 0.6, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }
@@ -193,7 +196,7 @@ function awardKill(u, c, headshot, src) {
     {
         combo++; comboTimer = 3.5;
         const mult = 1 + Math.min(combo - 1, 10) * 0.1;
-        const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1));
+        const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (twist && twist.cash || 1));
         playerStats.money += reward;
         spawnDamageNumber(c.clone().setY(c.y + 0.8), `+$${reward}`, 'cash');
         runStats.kills++;
@@ -204,7 +207,6 @@ function awardKill(u, c, headshot, src) {
         if (u.config.boss) { runStats.bosses++; bossDefeated(u.config); }
         gainXP(u.config.boss ? 200 : 10 + (headshot ? 5 : 0) + (u.config.hp >= 2 ? 10 : 0));
         sfx(headshot ? 'headkill' : 'kill');
-        if (boostOn('vamp') && currentHp > 0) currentHp = Math.min(maxHp, currentHp + 5);
         if (myClass() === 'assault' && abilityCd > 0) abilityCd = Math.max(0, abilityCd - 1);   // 4.0 ASSAULT passive
         chKill(u.config, headshot, src);                                                         // 4.0 challenges
     }
@@ -213,12 +215,19 @@ function awardKill(u, c, headshot, src) {
 function updateCorpses(dt) {
     for (let i = corpses.length - 1; i >= 0; i--) {
         const c = corpses[i]; c.t += dt;
-        const k = Math.min(1, c.t / 0.38);
-        c.e.rotation.x = -1.45 * k * k;
+        const k = Math.min(1, c.t / 0.42), u = c.e.userData;
+        // a shot to the head throws the body backwards, otherwise it crumples and topples forwards; the limbs flop out
+        const fall = c.back ? 1.35 : -1.45;
+        c.e.rotation.x = fall * k * k;
         c.e.rotation.z = 0.25 * c.dir * k;
-        if (c.t > 0.45) { scene.remove(c.e); spawnDebris(c.e); disposeEnemy(c.e); corpses.splice(i, 1); }
+        if (u.armL) {
+            u.armL.rotation.z = -1.1 * k; u.armR.rotation.z = 1.1 * k; u.armL.rotation.x = c.back ? -0.6 * k : -1.4 * (1 - k);
+            u.armR.rotation.x = c.back ? -0.4 * k : -1.2 * (1 - k); u.legL.rotation.x = 0.7 * k; u.legR.rotation.x = -0.5 * k; u.head.rotation.x = (c.back ? -0.7 : 0.6) * k;
+        }
+        if (c.t > 0.5) { scene.remove(c.e); spawnDebris(c.e); disposeEnemy(c.e); corpses.splice(i, 1); }
     }
 }
+const _dbP = new V3();
 function spawnDebris(e) {
     const u = e.userData; const s = u.config.scale;
     const n = Math.min(14, Math.round(8 * s) + 4);
@@ -230,6 +239,7 @@ function spawnDebris(e) {
         cols.forEach(c => spawnParticles(at, c, Math.ceil(n * 1.2 / cols.length), fx === 'fire' ? 6 : 9, fx === 'fire' ? 0.9 : 1.3, (fx === 'confetti' ? 0.2 : 0.32) * s, !glow, fx === 'fire' ? { grav: -4, jitter: s, jitterY: u.totalHeight * 0.6 } : { bounce: true, spin: 14, grav: fx === 'confetti' ? 9 : 26, jitter: s, jitterY: u.totalHeight * 0.4, up: 1.4, drag: fx === 'confetti' ? 1.5 : 0 }));
         return;
     }
+    _dbP.set(e.position.x, e.position.y + 0.2, e.position.z); spawnSmoke(_dbP, 2, 0.9 * s, 0.5, 0.8, 1.4 * s, 0.8, 0.4);       // dust poof
     spawnParticles(new V3(e.position.x, e.position.y + 0.3, e.position.z), zLook(u.config).skin, n, 9, 1.3, 0.42 * s, true, { bounce: true, spin: 12, grav: 28, jitter: s, jitterY: u.totalHeight * 0.4, up: 1.3 });
     spawnParticles(new V3(e.position.x, e.position.y + 0.5, e.position.z), u.config.color, Math.ceil(n / 2), 7, 1.1, 0.35 * s, true, { bounce: true, spin: 10, grav: 28, jitter: s, jitterY: u.totalHeight * 0.3 });
 }
@@ -238,7 +248,7 @@ function spawnDebris(e) {
 function checkWaveStatus() {
     if (enemies.length === 0 && waveActive) {
         waveActive = false;
-        const bonus = Math.round((40 + playerStats.level * 15) * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1) * (twist && twist.cash || 1)); twist = null;
+        const bonus = Math.round((40 + playerStats.level * 15) * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (twist && twist.cash || 1)); twist = null;
         playerStats.money += bonus;
         gainXP(40 + 10 * playerStats.level);
         chWave(playerStats.level);                  // 4.0 challenges
@@ -252,6 +262,7 @@ function checkWaveStatus() {
         if (!NET.on) autoSaveRun(true);         // single player: checkpoint at the start of the next wave
         sfx('wave');
         updateHUD();
+        if (CAMP.on) campWaveCleared();
     }
 }
 
@@ -260,22 +271,20 @@ const _hurtDir = new V3(), _camDir = new V3();
 let lastHurtBy = '';
 function takeDamage(amount, fromPos, by) {
     if (currentHp <= 0 || currentGameState !== 'playing' || debugGod || run.mode === 'sandbox') return;
+    if (CAMP.on && CAMP.inv > 0) return;       // 5.0 campaign: a moment of grace after you go down
     lastHurtT = gameTime;
     if (by) lastHurtBy = by;
     // no one-shots: a single hit from an enemy can never take more than 45% of your max health (PvP excluded)
     if (!NET.pvp) amount = Math.min(amount, maxHp * 0.45);
     if (adrenOn() && clsUp('assault', 3)) amount *= 0.6;     // 4.0 ASSAULT: UNSTOPPABLE
     if (lungeT > 0) amount *= 0.5;                             // 4.0 KATANA: half damage while lunging
-    if (overshield > 0) {      // OVERSHIELD soaks damage before armor and health
-        const s = Math.min(overshield, amount); overshield -= s; amount -= s;
-        if (amount <= 0.01) { screenFlash('rgba(96,165,250,0.3)'); sfx('hit'); if (fromPos) showHurtDir(fromPos); updateHUD(); return; }
-    }
     streak = 0;
     const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
     if (tier && currentArmor > 0) {
         const absorbed = Math.min(currentArmor, amount * tier.absorb);
         currentArmor -= absorbed; amount -= absorbed;
     }
+    if (CAMP.on) CAMP.dmg += amount;
     if (amount > 0.01) waveHurt = true;          // 4.0: "clear a wave without losing health" challenge
     currentHp -= amount;
     screenFlash('rgba(220,38,38,0.45)');
@@ -333,6 +342,7 @@ function fellOff() {
     if (NET.inGame) { camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; }
 }
 function die() {
+    if (CAMP.on && !NET.inGame) { campDeath(); return; }
     if (NET.inGame) { netLocalDeath(); return; }
     // 3.8: permadeath - dying ends the run for good and deletes its save (the auto-save is only for quitting and coming back)
     const sv = runSaveOK() ? loadRunSave() : null;

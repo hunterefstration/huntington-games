@@ -579,7 +579,36 @@ function addCeilingLight(x, z, y0, h, size = 9, cone = false, w = 1.6) {
 }
 
 
+// Soft dark rim around the foot of every solid block (vertex alpha, one merged mesh, no texture): the "contact shadow"
+// that grounds buildings on every quality tier, including Low where there are no real shadows.
+function buildContactShadows() {
+    const feet = worldBlocks.filter(b => b.solid && !AO_SKIP[b.key] && b.key !== 'bound' && b.h > 0.6 && b.y - b.h / 2 < 0.2 && b.w < 120 && b.d < 120).slice(0, 900);
+    if (!feet.length || VOID) return;
+    const pos = new Float32Array(feet.length * 8 * 3), col = new Float32Array(feet.length * 8 * 4), idx = new Uint32Array(feet.length * 24);
+    const M = 1.0, A = 0.42;
+    feet.forEach((b, n) => {
+        const hx = b.w / 2, hz = b.d / 2;
+        for (let k = 0; k < 8; k++) {
+            const outer = k >= 4, sx = (k & 1) ? 1 : -1, sz = (k & 2) ? 1 : -1, m = outer ? M : 0;
+            const o = (n * 8 + k);
+            pos[o * 3] = b.x + sx * (hx + m); pos[o * 3 + 1] = 0.035; pos[o * 3 + 2] = b.z + sz * (hz + m);
+            col[o * 4 + 3] = outer ? 0 : A;
+        }
+        const v = n * 8, q = [[0, 1], [1, 3], [3, 2], [2, 0]];
+        for (let e = 0; e < 4; e++) {
+            const a = q[e][0], c = q[e][1], i = n * 24 + e * 6;
+            idx[i] = v + a; idx[i + 1] = v + c; idx[i + 2] = v + 4 + c; idx[i + 3] = v + a; idx[i + 4] = v + 4 + c; idx[i + 5] = v + 4 + a;
+        }
+    });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 4)); g.setIndex(new THREE.BufferAttribute(idx, 1));
+    if (!mats.contact) mats.contact = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    const mesh = new THREE.Mesh(g, mats.contact); mesh.renderOrder = 1; mesh.frustumCulled = false;
+    worldGroup.add(mesh);
+}
 function finalizeWorld() {
+    buildAOGrid();
+    buildContactShadows();
     const groups = {};
     for (const b of worldBlocks) (groups[b.key] || (groups[b.key] = [])).push(b);
     for (const key in groups) {

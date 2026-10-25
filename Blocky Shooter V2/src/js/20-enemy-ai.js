@@ -7,6 +7,7 @@ const _localTarget = { id: 0, pos: null, feet: 0, local: true, alive: true };
 let _aiT = _localTarget;                 // the player the enemy being updated is going after
 function aiTargets() {
     _localTarget.id = NET.id; _localTarget.pos = camera.position; _localTarget.feet = feetY; _localTarget.alive = currentHp > 0 && !NET.dead;
+    if (CAMP.on && CAMP.decoys.length) return CAMP.T;       // 5.0 campaign: survivors, generators and barricades draw zombies too
     return NET.inGame ? netAiTargets(_localTarget) : [_localTarget];
 }
 function pickAITarget(u, enemy, T, dt) {
@@ -20,6 +21,7 @@ function pickAITarget(u, enemy, T, dt) {
 // hurt a player (you -> straight away, someone else -> send it to their computer). kb = knockback [x, up, z]
 function hurtTarget(tp, amount, fromPos, kb, by) {
     if (!tp || !tp.alive) return;
+    if (tp.camp) { campDamage(tp, amount); return; }
     if (tp.local) {
         takeDamage(amount, fromPos, by);
         if (kb) { push.x += kb[0]; push.z += kb[2]; if (kb[1]) { velocity.y = Math.max(velocity.y, kb[1]); onGround = false; } }

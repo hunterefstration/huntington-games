@@ -39,7 +39,7 @@ const BESTIARY = {
     boss: 'A giant zombie abomination. Ground-slams when you get close and calls in sprinters for backup.'
 };
 const hexC = (c) => '#' + new THREE.Color(c).getHexString();
-const KEY_KIND = { sleeve: 'sleeve', glove: 'glove', xhStyle: 'xhStyle', xhColor: 'xhColor', camo: 'camo', tracer: 'tracer', killfx: 'killfx', power: 'power' };
+const KEY_KIND = { sleeve: 'sleeve', glove: 'glove', xhStyle: 'xhStyle', xhColor: 'xhColor', camo: 'camo', tracer: 'tracer', killfx: 'killfx' };
 const menuLocked = (key, v) => !!KEY_KIND[key] && v !== 'random' && !isUnlocked(KEY_KIND[key], v);
 function chipRow(label, key, entries, desc, extra = '') {
     return `<div class="mlabel">${label}</div><div class="flex flex-wrap gap-2">${entries.map(([v, text, dot]) => { const lk = menuLocked(key, v);
@@ -47,7 +47,7 @@ function chipRow(label, key, entries, desc, extra = '') {
 }
 function swatchRow(label, key, table) {
     return `<div class="mlabel">${label}</div><div class="flex flex-wrap gap-2">${Object.entries(table).map(([k, c]) => { const lk = menuLocked(key, k);
-        return `<button class="sw${settings[key] === k ? ' on' : ''}${lk ? ' locked' : ''}" title="${k}${lk ? (prestigeNeed(KEY_KIND[key], k) ? ' - prestige ' + prestigeNeed(KEY_KIND[key], k) : ' - rank ' + unlockRank(KEY_KIND[key], k)) : ''}" style="background:${typeof c === 'number' ? hexC(c) : c}" data-set="${key}" data-val="${k}"${lk ? ` data-rank="${lockTag(KEY_KIND[key], k)}"` : ''}></button>`; }).join('')}</div>`;
+        return `<button class="sw${settings[key] === k ? ' on' : ''}${lk ? ' locked' : ''}" title="${k}${lk ? (campSkin(KEY_KIND[key], k) ? ' - campaign reward' : prestigeNeed(KEY_KIND[key], k) ? ' - prestige ' + prestigeNeed(KEY_KIND[key], k) : ' - rank ' + unlockRank(KEY_KIND[key], k)) : ''}" style="background:${typeof c === 'number' ? hexC(c) : c}" data-set="${key}" data-val="${k}"${lk ? ` data-rank="${lockTag(KEY_KIND[key], k)}"` : ''}></button>`; }).join('')}</div>`;
 }
 function renderRankBar() {
     const ri = rankInfo(), P = prestigeLvl();
@@ -75,19 +75,9 @@ function renderMenu() {
         h += chipRow('CLASS', 'cls', CLASS_ORDER.map(k => [k, CLASSES[k].name, hexC(CLASSES[k].color)]));
         h += classInfoCard(validClass(settings.cls));
         h += chipRow('MODE', 'mode', Object.entries(MODES).map(([k, m]) => [k, m.name, m.color]), MODES[settings.mode].desc);
-        h += chipRow('MAP', 'map', [['random', 'RANDOM']].concat(Object.entries(MAPS).map(([k, m]) => [k, m.chip || m.name])), settings.map === 'random' ? 'A different map every run.' : MAPS[settings.map].desc, ' sm');
+        h += chipRow('MAP', 'map', [['random', 'RANDOM']].concat(Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => [k, m.chip || m.name])), settings.map === 'random' ? 'A different map every run.' : MAPS[settings.map].desc, ' sm');
         h += chipRow('LIGHTING', 'light', [['random', 'RANDOM']].concat(Object.entries(THEMES).map(([k, t]) => [k, t.name, hexC(t.neon)])), settings.light === 'random' ? 'A different time of day every run.' : 'Preview it on the right.');
         h += chipRow('DIFFICULTY', 'diff', Object.entries(DIFFICULTIES).map(([k, d]) => [k, d.name, d.color]), DIFFICULTIES[settings.diff].desc);
-        // power-ups (permanent modifiers) only show up once you hit rank 10, and only the ones you've unlocked. Switch on as many as you like.
-        if (rankInfo().rank >= POWER_MENU_RANK) {
-            const on = settings.powers || [];
-            h += `<div class="mlabel">POWER-UPS <span class="text-gray-500">- ON FOR THE WHOLE RUN</span></div><div class="flex flex-wrap gap-2">` +
-                `<button class="chip${on.length ? '' : ' on'}" data-pow="none">NONE</button>` +
-                Object.entries(BOOSTS).filter(([k]) => powerUnlocked(k)).map(([k, b]) => { const c = hexC(b.color);
-                    return `<button class="chip${on.includes(k) ? ' on' : ''}" data-pow="${k}"><span class="pdot" style="background:${c};color:${c}"></span>${b.name}</button>`; }).join('') + `</div>`;
-            const act = on.filter(k => BOOSTS[k] && powerUnlocked(k));
-            h += `<div class="mdesc">${act.length ? act.map(k => `<b style="color:${hexC(BOOSTS[k].color)}">${BOOSTS[k].name}</b>: ${BOOSTS[k].desc}`).join('<br>') : 'Nothing is on. Click power-ups to switch them on - they last the whole run. (Not used in PvP.)'}</div>`;
-        }
     } else if (menuTab === 'challenges') {
         h += chPanel();
     } else if (menuTab === 'news') {
@@ -109,14 +99,14 @@ function renderMenu() {
         h += `<div class="mlabel">LIFETIME</div><div class="grid grid-cols-3 gap-2">${tile('RUNS', life.runs)}${tile('KILLS', life.kills)}${tile('HEADSHOTS', `${life.headshots} <span class="text-sm text-gray-400">${hs}%</span>`)}${tile('ACCURACY', acc + '%')}${tile('BOSSES', life.bosses)}${tile('WAVES CLEARED', life.waves)}${tile('TIME PLAYED', hrs ? `${hrs}h ${mins}m` : `${mins}m`)}${tile('DAMAGE', life.damage >= 10000 ? Math.round(life.damage / 1000) + 'k' : life.damage)}${tile('AVG WAVE', life.runs ? (life.waves / life.runs + 1).toFixed(1) : '-')}${tile('PRESTIGE', prestigeLvl() ? `<span class="flex items-center gap-2">${prestigeBadge(prestigeLvl(), 24)}${prestigeLvl()}</span>` : '0')}${tile('DAILY CHALLENGES', chState.doneD)}${tile('WEEKLY CHALLENGES', chState.doneW)}</div>`;
         h += `<div class="mlabel">BEST WAVES</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">DIFFICULTY</div><div class="text-gray-400">CLASSIC</div><div class="text-gray-400">RUSH</div><div class="text-gray-400">BOSS RUSH</div>${Object.entries(DIFFICULTIES).map(([k, d]) => `<div style="color:${d.color}">${d.name}</div><div>${life.best[k] || '-'}</div><div>${life.best[k + '_rush'] || '-'}</div><div>${life.best[k + '_boss'] || '-'}</div>`).join('')}</div>`;
         h += `<div class="mlabel">CLASSES</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">CLASS</div><div class="text-gray-400">RUNS</div><div class="text-gray-400">KILLS</div><div class="text-gray-400">BEST WAVE</div>${CLASS_ORDER.map(k => { const c = life.cls[k] || {}; return `<div style="color:${CLASSES[k].css}">${CLASSES[k].name}</div><div>${c.runs || '-'}</div><div>${c.kills || '-'}</div><div>${c.best || '-'}</div>`; }).join('')}</div>`;
-        h += `<div class="mlabel">MAPS</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">MAP</div><div class="text-gray-400">RUNS</div><div class="text-gray-400">WAVES CLEARED</div><div class="text-gray-400">BEST WAVE</div>${Object.entries(MAPS).map(([k, m]) => { const c = life.maps[k] || {}; return `<div>${m.name}</div><div>${c.runs || '-'}</div><div>${c.waves || '-'}</div><div>${c.best || '-'}</div>`; }).join('')}</div>`;
+        h += `<div class="mlabel">MAPS</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">MAP</div><div class="text-gray-400">RUNS</div><div class="text-gray-400">WAVES CLEARED</div><div class="text-gray-400">BEST WAVE</div>${Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => { const c = life.maps[k] || {}; return `<div>${m.name}</div><div>${c.runs || '-'}</div><div>${c.waves || '-'}</div><div>${c.best || '-'}</div>`; }).join('')}</div>`;
         const wk = Object.entries(life.weaponKills).sort((a, b) => b[1] - a[1]).slice(0, 6), top = wk.length ? wk[0][1] : 1;
         h += `<div class="mlabel">FAVORITE WEAPONS</div>` + (wk.length ? wk.map(([k, n]) => `<div class="flex items-center gap-3 text-sm font-bold mb-1"><div class="w-28 truncate">${killerName(k)}</div><div class="flex-1 h-3 bg-black/40 rounded overflow-hidden"><div class="h-full" style="width:${n / top * 100}%;background:${weaponsDb[k] ? hex(weaponsDb[k].color) : '#f97316'}"></div></div><div class="w-12 text-right">${n}</div></div>`).join('') : '<div class="mdesc">Play a run to start tracking.</div>');
         h += `<button class="chip mt-4" data-act="resetstats">RESET STATS</button>`;
     } else if (menuTab === 'ranks') {
         h += prestigePanel();
         const cur = unlockLevel();
-        h += `<div class="mdesc">Ranks unlock cosmetics (sleeves, gloves, weapon camos, tracers, kill effects, crosshairs), the five newest WEAPONS (Dual Pistols, Katana, Grenade Launcher, Tesla Gun, Railgun - buy them in the Armory once unlocked)${cur >= POWER_MENU_RANK ? ` and POWER-UPS. Switch on any you've unlocked in the POWER-UPS row on the Play tab and they stay on for the whole run (nothing is on unless you pick it)` : ''}. The other weapons, gadgets, maps and modes are always available. Earn XP from kills (bosses give a lot), headshots, clearing waves and CHALLENGES. Hard gives 1.5x XP, Nightmare 2.2x, Rush +20%. Sandbox gives none.${prestigeLvl() ? ' You have prestiged, so everything below stays unlocked.' : ''}</div><div class="flex flex-col gap-1.5 mt-3">`;
+        h += `<div class="mdesc">Ranks unlock cosmetics (sleeves, gloves, weapon camos, tracers, kill effects, crosshairs), the seven newest WEAPONS (Dual Pistols, Katana, Grenade Launcher, Tesla Gun, Railgun, Burst Carbine, Lever Rifle - buy them in the Armory once unlocked). The other weapons, gadgets, maps and modes are always available. Earn XP from kills (bosses give a lot), headshots, clearing waves and CHALLENGES. Hard gives 1.5x XP, Nightmare 2.2x, Rush +20%. Sandbox gives none.${prestigeLvl() ? ' You have prestiged, so everything below stays unlocked.' : ''}</div><div class="flex flex-col gap-1.5 mt-3">`;
         for (let r = 2; r <= 25; r++) {
             const u = shownUnlocksAtRank(r); if (!u.length) continue;
             const got = cur >= r;
@@ -124,12 +114,12 @@ function renderMenu() {
         }
         h += `</div>`;
     } else if (menuTab === 'bestiary') {
-        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer'];
+        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'riot', 'crawler', 'blighter'];
         h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
             return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
         // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
         const seenB = life.bossSeen || {}, killsB = life.bossKills || {};
-        h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the other seven in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back.</div>`;
+        h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the other seven in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back. Patient Zero only appears as the Campaign finale.</div>`;
         h += `<div class="flex flex-col gap-2 mt-2">${BOSS_IDS.map(id => { const t = enemyTypes[id], met = seenB[id] || killsB[id];
             return `<div class="bcard" style="border-color:${t.bar}55"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${t.bar}"></div><div class="flex-1"><div class="flex justify-between items-baseline gap-2"><div><span class="font-black tracking-wide" style="color:${t.bar}">${t.name.toUpperCase()}</span> <span class="text-[10px] font-black text-gray-400 tracking-widest">${t.title}</span></div><div class="text-xs font-bold text-gray-400 whitespace-nowrap">${killsB[id] ? 'DEFEATED x' + killsB[id] : met ? 'MET' : 'NOT MET YET'}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.tip}</div></div></div>`; }).join('')}</div>`;
         // 4.0: how the horde gets round the new maps
@@ -176,7 +166,24 @@ function prestigePanel() {
 // 4.0: the version line on the menu opens this - the highlights of the whole update
 function whatsNew() {
     const sec = (title, col, items) => `<div class="mlabel" style="color:${col}">${title}</div><ul class="news text-sm text-gray-200">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
-    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 4.0 - THE MEGA UPDATE</div>` +
+    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.0</div>` +
+        sec('PERFORMANCE + LIGHTING', '#86efac', ['Baked ambient occlusion and soft contact shadows on every building and block, on all quality tiers. Dithered sky with no colour banding.',
+            'Low settings get a muzzle flash and explosion light with no real lights. Zombies far away think less often and are skipped when off screen: less lag in big waves.']) +
+        sec('REALISTIC GUNS', '#fca5a5', ['All 18 weapons rebuilt: real receivers, rails, magazines, sights, grips, stocks and muzzle devices, with metal, polymer and wood textures.',
+            'Bolts cycle with each shot, the katana is one curved blade, and every gun is only about 10 to 13 draw calls. Upgrades, attachments and camos all work.']) +
+        sec('ENEMY + WORLD UPGRADES', '#7dd3fc', ['Props on every map: wrecked cars, barricades, sandbags, barrels, rubble, trees and more. New wall textures, drifting clouds, haze and a distant ridge line.',
+            'Surface-aware bullet impacts, cracked bullet holes, big explosions with smoke and scorch marks, bright tracers, muzzle sparks and punchier screen shake.',
+            'Zombies flinch when shot, lunge when they swing, walk with a bob and flop when they die. Office grunts and Bombers have new looks; some zombies shed embers, wisps and acid.']) +
+        sec('NEW LOOK', '#fde047', ['New start screen with a live 3D scene behind the menu and a big 5.0 logo. A clean home menu: PLAY, CONTINUE, CAMPAIGN, MULTIPLAYER, ARMORY, SETTINGS.',
+            'One shared button style, panel and colour theme on every screen, including the multiplayer lobby.']) +
+        sec('CAMPAIGN: 3 CHAPTERS', '#fde047', ['<b>CAMPAIGN</b> now has three chapters of six story missions each: Ashfall, Dead Air and Patient Zero, ending in a new final boss on a new arena.',
+            'Eight objective types, story briefings, 3 lives, 3 stars per mission and campaign-only weapon skins. It has its own save and never touches your normal run.']) +
+        sec('NEW MAP, ENEMIES + WEAPONS', '#f0abfc', ['New map: <b>SUBWAY</b> (night). New zombies: <b>RIOT BREAKER</b> (breakable shield), <b>VENT CRAWLER</b> (ambushes from floor vents) and <b>BLIGHTER</b> (poison clouds).',
+            'New guns: <b>BURST CARBINE</b> (rank 4) and <b>LEVER RIFLE</b> (rank 6).']) +
+        sec('POWER-UPS REMOVED', '#9ca3af', ['No more power-up orbs, menu row or timers. Supply drops now give ammo or medical supplies. Old saves load fine and nothing was lost.']) +
+        sec('WIFI GAME SCAN', '#7dd3fc', ['Open the <b>MULTIPLAYER</b> tab and games hosted on the same wifi show up in a list with a JOIN button. Hosts can switch this off with <b>Show my game on this wifi</b>.']) +
+        sec('GRAPEVINE INVITES', '#86efac', ['In a party lobby, press <b>INVITE A FRIEND</b> to send your party to a Grapevine friend. If you get an invite, the game opens and joins the party for you.']) +
+        `<div class="text-2xl font-black text-white mt-4">4.0 - THE MEGA UPDATE</div>` +
         sec('CLASSES', '#fb923c', ['Pick <b>ASSAULT</b>, <b>MEDIC</b>, <b>ENGINEER</b> or <b>RECON</b> on the Play tab. Each has an ability on <span class="key">X</span>, a passive and a 3-step upgrade tree in the Armory.',
             'Assault: Adrenaline (instant reload, speed and damage). Medic: a Healing Field. Engineer: a mini sentry and an ammo crate. Recon: a Radar Pulse that shows zombies through walls.',
             'Switch class for free between waves - each class keeps its own upgrades. Works in co-op too.']) +
@@ -200,19 +207,13 @@ function applyCrosshair() {
 }
 $('menu-tabs').addEventListener('click', (e) => { const b = e.target.closest('.mtab'); if (!b) return; menuTab = b.dataset.tab; initAudio(); sfx('click'); renderMenu(); });
 // 4.0: the PRESTIGE button on the rank bar opens the Ranks tab; the version line opens What's New
-$('menu-rank').addEventListener('click', (e) => { if (!e.target.closest('[data-act="goprestige"]')) return; menuTab = 'ranks'; initAudio(); sfx('click'); renderMenu(); $('menu-panel').scrollTop = 0; });
-$('menu-version').addEventListener('click', () => { menuTab = 'news'; initAudio(); sfx('click'); renderMenu(); $('menu-panel').scrollTop = 0; });
+$('menu-rank').addEventListener('click', (e) => { if (!e.target.closest('[data-act="goprestige"]')) return; menuTab = 'ranks'; initAudio(); sfx('click'); setMenuView('setup'); $('menu-panel').scrollTop = 0; });
+$('menu-version').addEventListener('click', () => { menuTab = 'news'; initAudio(); sfx('click'); setMenuView('setup'); $('menu-panel').scrollTop = 0; });
 // the challenges tab counts down (and rolls over at midnight) while it's open
 setInterval(() => { if (currentGameState === 'main' && menuTab === 'challenges' && !document.hidden) renderMenu(); }, 30000);
 $('menu-panel').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-set],[data-act],[data-pow]'); if (!b) return;
+    const b = e.target.closest('[data-set],[data-act]'); if (!b) return;
     initAudio(); sfx('click');
-    if (b.dataset.pow) {
-        if (b.dataset.rank) { sfx('deny'); const d = document.createElement('div'); d.className = 'mdesc'; d.style.color = '#fcd34d'; d.textContent = `Reach RANK ${b.dataset.rank} to unlock this.`; b.parentElement.after(d); setTimeout(() => d.remove(), 1600); return; }
-        const id = b.dataset.pow, on = settings.powers || [];
-        settings.powers = id === 'none' ? [] : (on.includes(id) ? on.filter(x => x !== id) : on.concat(id));
-        saveSettings(); renderMenu(); return;
-    }
     if (b.dataset.act === 'prestige') {          // 4.0: two clicks (the first one arms it)
         if (!canPrestige()) return;
         if (prestigeArm > performance.now()) {
@@ -226,10 +227,10 @@ $('menu-panel').addEventListener('click', (e) => {
         renderMenu(); return;
     }
     const key = b.dataset.set, val = b.dataset.val;
-    if (b.dataset.rank) { const t = b.dataset.rank; sfx('deny'); const d = document.createElement('div'); d.className = 'mdesc'; d.style.color = '#fcd34d'; d.textContent = t[0] === 'P' ? `Reach PRESTIGE ${t.slice(1)} to unlock this (Ranks tab).` : `Reach RANK ${t} to unlock this.`; b.parentElement.after(d); setTimeout(() => d.remove(), 1600); return; }
+    if (b.dataset.rank) { const t = b.dataset.rank; sfx('deny'); const d = document.createElement('div'); d.className = 'mdesc'; d.style.color = '#fcd34d'; d.textContent = t === 'C' ? 'Win this skin as a CAMPAIGN reward.' : t[0] === 'P' ? `Reach PRESTIGE ${t.slice(1)} to unlock this (Ranks tab).` : `Reach RANK ${t} to unlock this.`; b.parentElement.after(d); setTimeout(() => d.remove(), 1600); return; }
     settings[key] = val; saveSettings();
     if (key === 'cls' && currentGameState === 'main') playerStats.cls = validClass(val);
-    if (key === 'map') buildWorld(val === 'random' ? pickRandom(Object.keys(MAPS)) : val);
+    if (key === 'map') buildWorld(val === 'random' ? pickRandom(MAP_IDS()) : val);
     if (key === 'light') applyTheme(val === 'random' ? pickRandom(Object.keys(THEMES)) : val);
     if (key === 'sleeve' || key === 'glove') applyArmColors();
     if (key === 'camo') showWeaponModel(vmModel ? vmModel.id : 'ar');
@@ -268,9 +269,16 @@ animate();
 
 
 window.__blocky = {
-    get state() { return { currentGameState, playerStats, currentHp, currentArmor, enemies, solids, projectiles, secondaryCooldown, waveActive, intermission, camera, velocity, onGround, vm, Q, dynScale, theme: themeId, runStats, supplies, power, fovNow, vmModel, weaponCam, viewScene, renderer, scene, THREE }; },
+    campaign: {
+        start: (id) => { CAMP.dbg = true; const r = campStart(id); CAMP.dbg = false; return r; },
+        win: () => { if (CAMP.on) campWin(); }, fail: (why) => { if (CAMP.on) campFail(why || 'debug'); },
+        skip: () => { if (CAMP.on && CAMP.st && !CAMP.over) campNextStage(); }, leave: () => campLeave(true),
+        get focus() { return CAMP.tg ? { x: CAMP.tg.x, y: CAMP.tg.y, z: CAMP.tg.z, label: CAMP.tg.label } : null; }, get missions() { return CAMP_ALL.map(m => m.id); }, get save() { return campSave; },
+        get state() { return { on: CAMP.on, over: CAMP.over, mission: CAMP.m && CAMP.m.id, stage: CAMP.st && CAMP.st.def.t, si: CAMP.si, deaths: CAMP.deaths, lives: campLives(), t: CAMP.t, dmg: CAMP.dmg, kills: CAMP.kills, heads: CAMP.heads, stat: CAMP.stat, decoys: CAMP.decoys.length, objs: CAMP.objs.length, marks: CAMP.nm, stars: CAMP.on && CAMP.m ? campStars(true) : null, gs: currentGameState }; }
+    },
+    get state() { return { currentGameState, playerStats, currentHp, currentArmor, enemies, solids, projectiles, secondaryCooldown, waveActive, intermission, camera, velocity, onGround, vm, Q, dynScale, theme: themeId, runStats, supplies, fovNow, vmModel, weaponCam, viewScene, renderer, scene, THREE }; },
     debug(on = true) { debugNoLock = on; },
-    prof: PROF,
+    prof: PROF, get lightU() { return LIGHT_U; }, get scene() { return scene; }, get renderer() { return renderer; },
     get info() { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, enemies: enemies.length }; },
     hurt: (n) => takeDamage(n, null, 'test'),
     clearWave: () => { enemies.forEach(e => { scene.remove(e); disposeEnemy(e); }); enemies.length = 0; checkWaveStatus(); },
@@ -289,12 +297,22 @@ window.__blocky = {
     turret: (L, x, z) => { playerStats.upgrades.turret = L; deployTurret(x, groundAt(x, z, 0.3, 1), z); },
     get twist() { return twist; }, heal: () => { currentHp = maxHp; }, get lastHurtBy() { return lastHurtBy; }, get bossFx() { return bossFx; }, waveBosses: (n) => waveBosses(n), netBossFx: (m) => netBossFx(m), get runInfo() { return run; }, fresh: () => { resetRun(); needsNewWorld = true; changeGameState("playing"); },
     get nav() { return nav; }, skyOK: (x, z, f) => skyOK(x, z, f), ground: (x, z, m, f) => groundAt(x, z, m, f), ceil: (x, z, m, t) => ceilingAt(x, z, m, t), navSteer: (x, z, y) => navSteer(x, z, y, camera.position.x, camera.position.z) ? { ...navGoal } : null, navField: (d) => updateNavField(d || 1),
-    orb: (kind, x, z, y = 0) => { const n = orbs.length; spawnOrb(); if (orbs.length > n) { const o = orbs[orbs.length - 1]; o.kind = kind || o.kind; if (x !== undefined) { o.g.position.set(x, y + 1.1, z); o.baseY = y + 1.1; } return o; } },
-    get orbs() { return orbs; }, get boosts() { return boosts; }, get turrets() { return turrets; }, get arena() { return ARENA; }, get spawnPt() { return spawnPt; },
+    get turrets() { return turrets; }, get arena() { return ARENA; }, get spawnPt() { return spawnPt; },
     tpy: (x, y, z) => { camera.position.set(x, y + EYE_STAND, z); feetY = y; },
     rebuildGun: () => showWeaponModel(playerStats.currentWeapon),
+    // gun-model debug: draw calls / triangles per model, and a sight-line ray test
+    vmRoot: () => vmModel.root,
+    vmRay: (id) => { const m = getModel(id); m.root.updateMatrixWorld(true); const [sy, sz] = m.def.sight, rc = new THREE.Raycaster(), res = [];
+        const objs = []; m.g.traverse(o => { if (o.isMesh && o.visible && !o.material.transparent) objs.push(o); });
+        for (const dx of [0, 0.004, -0.004]) { const o = m.g.localToWorld(new V3(dx, sy, sz)), d = new V3(0, 0, -1).transformDirection(m.g.matrixWorld); rc.set(o, d);
+            const h = rc.intersectObjects(objs, false)[0]; res.push(h ? +(h.distance / m.g.scale.x).toFixed(3) + ':' + (h.object.material.userData.cls || h.object.material.type.slice(4, 9)) + '@' + h.point.z.toFixed(3) : 'clear'); }
+        return res.join(' '); },
+    vmInfo: (id) => { const m = getModel(id); let calls = 0, tris = 0; m.root.traverse(o => { if (o.isMesh && o.visible && o.parent !== m.flash) { calls++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } }); return { calls, tris: Math.round(tris)}; },
     gainXP: (n) => gainXP(n),
     boom: (x, z, d = 200, r = 7) => explode(new V3(x, 1, z), d, r),
+    fx: () => ({ smoke: smokeParts.length, scorch: scorchCount, decals: decalCount, blocks: worldBlocks.length, solids: solids.length, spark: glowParts.length, corpses: corpses.length }),
+    impact: (x, y, z, nx, ny, nz) => { const p = new V3(x, y, z), n = new V3(nx, ny, nz); const k = surfaceAt(p, n); impactFx(p, n, k); return k; },
+    hitEnemy: (i, head) => { const e = enemies[i]; damageEnemy(e, 1, !!head, new V3(e.position.x, e.position.y + 2, e.position.z)); return { hitT: e.userData.hitT, body: e.userData.body.rotation.x }; },
     lightning: () => { lightningFlash = 0.28; },
     q: (k, v) => { Q[k] = v; setupPointLights(); applyShadowSettings(); setupPost(); recompileAll(); },
     post: () => ({ passes: composer ? composer.passes.length : 0 }),

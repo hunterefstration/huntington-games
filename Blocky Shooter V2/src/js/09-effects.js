@@ -1,8 +1,8 @@
 // ==========================================
 // 2a. EFFECTS POOLS (instanced = one draw call each)
 // ==========================================
-const PMAX = 800, TMAX = 160, DMAX = 90, BMAX = 64, HMAX = 80;     // (4.0: more tracers for the tesla's lightning)
-let fxGlow, fxSolid, tracerMesh, boltMesh, decalMesh, blobMesh, hpBg, hpFg;
+const PMAX = 800, TMAX = 160, DMAX = 90, BMAX = 64, HMAX = 80, SMAX = 56, SCMAX = 20;     // (4.0: more tracers for the tesla's lightning)
+let fxGlow, fxSolid, tracerMesh, boltMesh, decalMesh, blobMesh, hpBg, hpFg, smokeMesh, scorchMesh;
 const glowParts = [], solidParts = [], tracerList = [];
 let decalIdx = 0, decalCount = 0;
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new V3(), _p = new V3(), _col = new THREE.Color();
@@ -22,7 +22,7 @@ function initFx() {
     fxGlow = makeInstanced(sharedBox, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), PMAX);
     fxSolid = makeInstanced(sharedBox, new THREE.MeshLambertMaterial({ color: 0xffffff }), PMAX);
     fxSolid.castShadow = false;
-    tracerMesh = makeInstanced(sharedBox, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), TMAX);
+    tracerMesh = makeInstanced(sharedBox, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), TMAX * 2);
     // 4.0: lightning is drawn on top of everything so the tesla's chain shows across the zombies it links
     boltMesh = makeInstanced(sharedBox, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, toneMapped: false }), TMAX);
     boltMesh.renderOrder = 4;
@@ -36,6 +36,15 @@ function initFx() {
     hpBg = makeInstanced(_hpGeo, new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.8, depthTest: false, depthWrite: false, toneMapped: false }), HMAX);
     hpFg = makeInstanced(_hpGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false, toneMapped: false }), HMAX);
     hpBg.renderOrder = 10; hpFg.renderOrder = 11;
+    // scorch marks left by blasts (lie flat on the ground)
+    const sg = new THREE.PlaneGeometry(1, 1);
+    scorchMesh = makeInstanced(sg, new THREE.MeshBasicMaterial({ map: scorchTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -3 }), SCMAX);
+    scorchMesh.renderOrder = 2;
+    // smoke: soft billboards, one draw call. instanceColor.r = opacity, .g = shade (small shader patch, no extra textures)
+    const sm = new THREE.MeshBasicMaterial({ map: smokeTex, transparent: true, depthWrite: false, toneMapped: false, fog: true });
+    sm.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', 'diffuseColor.a *= vColor.r; diffuseColor.rgb *= vColor.g;'); };
+    smokeMesh = makeInstanced(new THREE.PlaneGeometry(1, 1), sm, SMAX);
+    smokeMesh.renderOrder = 5;
 }
 const _hpGeo = new THREE.PlaneGeometry(1, 1);
 function updateHpBars() {
@@ -101,7 +110,7 @@ function stepParticleList(list, mesh, dt) {
     mesh.count = n;
     mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
 }
-function updateParticles(dt) { stepParticleList(glowParts, fxGlow, dt); stepParticleList(solidParts, fxSolid, dt); }
+function updateParticles(dt) { stepParticleList(glowParts, fxGlow, dt); stepParticleList(solidParts, fxSolid, dt); updateSmoke(dt); }
 
 
 const tracerPool = [];        // 4.0: finished tracers are reused instead of allocating new ones every shot
@@ -122,11 +131,19 @@ function updateTracers(dt) {
         const k = t.life / t.max;
         _dirT.subVectors(t.to, t.from).normalize();
         _q.setFromUnitVectors(_Z, _dirT);
-        _p.copy(t.from).lerp(t.to, 0.5);
-        _m4.compose(_p, _q, _s.set(t.w * (0.5 + 0.5 * k), t.w * (0.5 + 0.5 * k), t.len));
-        const mesh = t.top ? boltMesh : tracerMesh, j = t.top ? nb++ : n++;
-        mesh.setMatrixAt(j, _m4);
-        mesh.instanceColor.setXYZ(j, t.r * k, t.g * k, t.b * k);
+        if (t.top) {
+            _p.copy(t.from).lerp(t.to, 0.5);
+            _m4.compose(_p, _q, _s.set(t.w * (0.5 + 0.5 * k), t.w * (0.5 + 0.5 * k), t.len));
+            boltMesh.setMatrixAt(nb, _m4); boltMesh.instanceColor.setXYZ(nb, t.r * k, t.g * k, t.b * k); nb++;
+            continue;
+        }
+        // a bright streak that flies from the muzzle to the impact, with a hot white core inside a coloured glow
+        let a = 0, bEnd = t.len;
+        if (t.len > 9) { bEnd = t.len * Math.min(1, (1 - k) * 1.7 + 0.18); a = Math.max(0, bEnd - Math.max(7, t.len * 0.3)); }
+        const L = Math.max(0.05, bEnd - a), w = t.w * (0.55 + 0.45 * k), f = Math.min(1, k * 2.2);
+        _p.copy(t.from).addScaledVector(_dirT, a + L * 0.5);
+        _m4.compose(_p, _q, _s.set(w, w, L)); tracerMesh.setMatrixAt(n, _m4); tracerMesh.instanceColor.setXYZ(n, t.r * f, t.g * f, t.b * f); n++;
+        _m4.compose(_p, _q, _s.set(w * 0.38, w * 0.38, L * 0.96)); tracerMesh.setMatrixAt(n, _m4); tracerMesh.instanceColor.setXYZ(n, f, f, f * 0.95); n++;
     }
     tracerMesh.count = n; boltMesh.count = nb;
     tracerMesh.instanceMatrix.needsUpdate = true; tracerMesh.instanceColor.needsUpdate = true;
@@ -135,19 +152,34 @@ function updateTracers(dt) {
 }
 
 
-function addDecal(point, normal) {
+const _dq = new THREE.Quaternion();
+const DECAL_TINT = { m: [1.5, 1.45, 1.4], w: [1.1, 0.85, 0.6], d: [0.9, 0.85, 0.75], c: [1.3, 1.3, 1.4], g: [1.2, 1.5, 1.6], l: [0.7, 0.9, 0.6], s: [1, 1, 1] };
+function addDecal(point, normal, cls = 's') {
     _q.setFromUnitVectors(_Z, normal);
-    _q.multiply(new THREE.Quaternion().setFromAxisAngle(_Z, Math.random() * 6.28));
-    const s = 0.13 + Math.random() * 0.06;
+    _q.multiply(_dq.setFromAxisAngle(_Z, Math.random() * 6.28));
+    const s = (cls === 'w' ? 0.15 : 0.12) + Math.random() * 0.07;
     _m4.compose(_p.copy(point).addScaledVector(normal, 0.012), _q, _s.set(s, s, s));
     decalMesh.setMatrixAt(decalIdx, _m4);
-    decalMesh.instanceColor.setXYZ(decalIdx, 1, 1, 1);
+    const t = DECAL_TINT[cls] || DECAL_TINT.s;
+    decalMesh.instanceColor.setXYZ(decalIdx, t[0], t[1], t[2]);
     decalIdx = (decalIdx + 1) % DMAX;
     decalCount = Math.min(DMAX, decalCount + 1);
     decalMesh.count = decalCount;
     decalMesh.instanceMatrix.needsUpdate = true; decalMesh.instanceColor.needsUpdate = true;
 }
-function clearDecals() { decalIdx = 0; decalCount = 0; if (decalMesh) decalMesh.count = 0; }
+let scorchIdx = 0, scorchCount = 0;
+const _up3 = new V3(0, 1, 0);
+function addScorch(point, normal, size) {
+    _q.setFromUnitVectors(_Z, normal);
+    _q.multiply(_dq.setFromAxisAngle(_Z, Math.random() * 6.28));
+    _m4.compose(_p.copy(point).addScaledVector(normal, 0.02), _q, _s.set(size, size, size));
+    scorchMesh.setMatrixAt(scorchIdx, _m4);
+    const g = 0.75 + Math.random() * 0.25; scorchMesh.instanceColor.setXYZ(scorchIdx, g, g, g);
+    scorchIdx = (scorchIdx + 1) % SCMAX; scorchCount = Math.min(SCMAX, scorchCount + 1);
+    scorchMesh.count = scorchCount;
+    scorchMesh.instanceMatrix.needsUpdate = true; scorchMesh.instanceColor.needsUpdate = true;
+}
+function clearDecals() { decalIdx = 0; decalCount = 0; scorchIdx = 0; scorchCount = 0; if (decalMesh) decalMesh.count = 0; if (scorchMesh) scorchMesh.count = 0; }
 
 
 // Blob shadows under enemies, only used when real shadows are off (Low quality)
@@ -170,6 +202,112 @@ function updateBlobs() {
 }
 
 
+// Tiers without real point lights (Low / Auto-low) still get a muzzle + explosion glow: the world shaders add a
+// distance falloff from two uniform positions, so it costs a few ALU ops and no extra lights or shader variants.
+let fakeMz = 0, fakeBm = 0;
+const _fmz = new THREE.Vector3();
+function fakeMuzzle() { if (Q.pointLights === 0) fakeMz = 1; }
+function fakeBoom(pos) { if (Q.pointLights === 0) { fakeBm = 1; LIGHT_U.uBm.value.set(pos.x, pos.y + 1, pos.z, 0); } }
+function updateFakeLights(dt) {
+    if (Q.pointLights > 0) { if (fakeMz + fakeBm > 0) { fakeMz = fakeBm = 0; LIGHT_U.uMz.value.w = LIGHT_U.uBm.value.w = 0; } return; }
+    if (fakeMz > 0) {
+        fakeMz = Math.max(0, fakeMz - dt * 9);
+        camera.getWorldDirection(_fmz); _fmz.multiplyScalar(1.3).add(camera.position);
+        LIGHT_U.uMz.value.set(_fmz.x, _fmz.y, _fmz.z, 2.2 * fakeMz);
+    } else LIGHT_U.uMz.value.w = 0;
+    if (fakeBm > 0) { fakeBm = Math.max(0, fakeBm - dt * 2.2); LIGHT_U.uBm.value.w = 5 * (1 - 0.8 * (theme.bright || 0)) * fakeBm; } else LIGHT_U.uBm.value.w = 0;
+}
+
+
+// Smoke puffs: soft billboards that rise, swell and fade (one draw call, capped; fewer on Low)
+const smokeParts = [];
+function spawnSmoke(pos, count, size, shade = 0.35, rise = 1.6, spread = 1.5, life = 1.1, alpha = 0.55) {
+    const cap = Q.lite ? 22 : SMAX;
+    for (let i = 0; i < count && smokeParts.length < cap; i++) {
+        smokeParts.push({ x: pos.x + (Math.random() - 0.5) * spread * 0.4, y: pos.y, z: pos.z + (Math.random() - 0.5) * spread * 0.4,
+            vx: (Math.random() - 0.5) * spread, vy: rise * (0.6 + Math.random() * 0.6), vz: (Math.random() - 0.5) * spread,
+            life: life * (0.7 + Math.random() * 0.5), max: life, size: size * (0.7 + Math.random() * 0.6), shade: shade * (0.8 + Math.random() * 0.4), a: alpha, spin: (Math.random() - 0.5) * 1.5, rot: Math.random() * 6.28 });
+    }
+}
+const _smQ = new THREE.Quaternion(), _smR = new THREE.Quaternion();
+function updateSmoke(dt) {
+    let n = 0;
+    for (let i = smokeParts.length - 1; i >= 0; i--) {
+        const p = smokeParts[i];
+        p.life -= dt;
+        if (p.life <= 0) { smokeParts[i] = smokeParts[smokeParts.length - 1]; smokeParts.pop(); continue; }
+        const k = Math.exp(-dt * 1.6); p.vx *= k; p.vz *= k; p.vy *= Math.exp(-dt * 0.8);
+        p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.rot += p.spin * dt;
+    }
+    for (let i = 0; i < smokeParts.length && n < SMAX; i++) {
+        const p = smokeParts[i], u = 1 - p.life / p.max;
+        const sc = p.size * (0.5 + u * 1.5), al = p.a * Math.min(1, u * 8) * (1 - u) * (1 - u * 0.4);
+        _smR.setFromAxisAngle(_Z, p.rot); _smQ.copy(camera.quaternion).multiply(_smR);
+        _m4.compose(_p.set(p.x, p.y, p.z), _smQ, _s.set(sc, sc, sc));
+        smokeMesh.setMatrixAt(n, _m4); smokeMesh.instanceColor.setXYZ(n, al, p.shade, 0);
+        n++;
+    }
+    smokeMesh.count = n;
+    if (n || smokeMesh._had) { smokeMesh.instanceMatrix.needsUpdate = true; smokeMesh.instanceColor.needsUpdate = true; }
+    smokeMesh._had = n > 0;
+}
+
+
+// Muzzle burst: a few hot sparks thrown forward out of the barrel, plus an occasional wisp of gun smoke
+let muzzleN = 0;
+function muzzleBurst(pos, dir, power) {
+    const cap = Math.min(PMAX, Q.particles);
+    if (glowParts.length + 3 < cap) {
+        _col.setHex(0xffd88a);
+        for (let i = 0; i < 3; i++) {
+            const sp = (7 + Math.random() * 9) * power;
+            glowParts.push({ x: pos.x, y: pos.y, z: pos.z, vx: dir.x * sp + (Math.random() - 0.5) * 3, vy: dir.y * sp + (Math.random() - 0.3) * 3, vz: dir.z * sp + (Math.random() - 0.5) * 3,
+                life: 0.12 + Math.random() * 0.1, max: 0.2, size: 0.035, grav: 10, bounce: false, spin: 0, rx: 0, ry: 0, rz: 0, r: _col.r, g: _col.g, b: _col.b, drag: 3 });
+        }
+    }
+    if ((++muzzleN & 3) === 0) spawnSmoke(pos, 1, 0.22, 0.6, 0.5, 0.3, 0.6, 0.25);
+}
+// What a bullet hit is made of: metal, wood, stone/concrete, dirt/sand, leaves, glass or cloud. Looked up from the block that holds the hit point.
+const SURF = { steel: 'm', post: 'm', rust: 'm', fence: 'm', escF: 'm', escB: 'm', accR: 'm', accB: 'm', accG: 'm', accY: 'm', olive: 'm', rubber: 'r',
+               wood: 'w', woodDark: 'w', rope: 'w', leaf: 'l', leafDark: 'l', glass: 'g', sand: 'd', khaki: 'd', floor: 'd', cloud: 'c', cloudShade: 'c' };
+function surfaceAt(p, n) {
+    if (n.y > 0.5 && p.y < 0.08) return 'floor';
+    for (let i = worldBlocks.length - 1; i >= 0; i--) {
+        const b = worldBlocks[i];
+        if (!b.solid) continue;
+        if (Math.abs(p.x - b.x) <= b.w / 2 + 0.06 && Math.abs(p.y - b.y) <= b.h / 2 + 0.06 && Math.abs(p.z - b.z) <= b.d / 2 + 0.06) return b.key;
+    }
+    return 'floor';
+}
+const _imp = new V3();
+// per-surface impact: sparks + ricochet on metal, splinters on wood, chips and dust on stone, dust on dirt, leaves, glass glints
+function impactFx(point, normal, key) {
+    const c = SURF[key] || 's';
+    _imp.copy(point).addScaledVector(normal, 0.05);
+    if (c === 'm') {
+        spawnParticles(_imp, 0xfff1b0, 5, 9, 0.22, 0.045, false, { grav: 14, up: 0.8 });
+        spawnParticles(_imp, 0xff9a3a, 3, 5, 0.3, 0.05, false, { grav: 16 });
+    } else if (c === 'w') {
+        spawnParticles(_imp, 0xc89560, 4, 5, 0.5, 0.07, true, { grav: 16, bounce: true, spin: 10 });
+        spawnParticles(_imp, 0x8a5a30, 2, 3, 0.5, 0.09, true, { grav: 14, spin: 8 });
+    } else if (c === 'l') {
+        spawnParticles(_imp, 0x4ea04a, 4, 4, 0.7, 0.08, true, { grav: 5, drag: 1.5, spin: 12 });
+    } else if (c === 'g') {
+        spawnParticles(_imp, 0xbdf0ff, 6, 6, 0.4, 0.05, false, { grav: 10 });
+    } else if (c === 'c') {
+        spawnSmoke(_imp, 1, 0.5, 1.0, 0.4, 0.5, 0.5, 0.4);
+    } else if (c === 'd' || c === 'r') {
+        spawnParticles(_imp, 0xb8a47a, 3, 3, 0.5, 0.08, true, { grav: 8, drag: 2 });
+        spawnSmoke(_imp, 1, 0.5, c === 'r' ? 0.2 : 0.55, 0.9, 0.7, 0.8, 0.4);
+    } else {
+        spawnParticles(_imp, 0xffd27a, 2, 6, 0.2, 0.04, false);
+        spawnParticles(_imp, 0x9aa0aa, 3, 4, 0.6, 0.06, true, { grav: 14, bounce: true });
+        spawnSmoke(_imp, 1, 0.45, 0.62, 0.9, 0.6, 0.7, 0.4);
+    }
+    if (c !== 'c' && c !== 'g') addDecal(point, normal, c);
+}
+
+
 // Explosions: small pool of fireball + shock ring meshes that get reused
 const explosionPool = [], explosions = [];
 const _ballGeo = new THREE.SphereGeometry(1, 16, 12), _ringGeo = new THREE.RingGeometry(0.8, 1, 40);
@@ -179,11 +317,16 @@ function getExplosionFx() {
         const ball = new THREE.Mesh(_ballGeo, new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
         const ring = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
         ring.rotation.x = -Math.PI / 2;
-        fx = { ball, ring, active: false };
+        // a second, slower dust ring on the ground and a bright core flash that pops and dies fast
+        const dust = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0x9a8f80, transparent: true, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+        dust.rotation.x = -Math.PI / 2;
+        const core = new THREE.Mesh(_ballGeo, new THREE.MeshBasicMaterial({ color: 0xfff6d8, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+        fx = { ball, ring, dust, core, active: false };
         explosionPool.push(fx);
     }
     return fx;
 }
+const _scp = new V3();
 function spawnBlastFx(pos, radius, color, ringOnly = false, dur = 0.45) {
     const fx = getExplosionFx();
     fx.active = true; fx.t = 0; fx.dur = dur; fx.radius = radius; fx.ringOnly = ringOnly;
@@ -194,18 +337,36 @@ function spawnBlastFx(pos, radius, color, ringOnly = false, dur = 0.45) {
     if (bright > 0.5) fx.ball.material.color.multiplyScalar(0.85);
     fx.peak = 0.9 * (1 - 0.35 * bright); fx.ball.material.needsUpdate = true;
     fx.ball.position.copy(pos); fx.ball.visible = !ringOnly;
+    const big = !ringOnly && dur > 0.3;
+    fx.dust.visible = big; fx.core.visible = big;
+    if (big) {
+        fx.core.position.copy(pos);
+        const gy = groundAt(pos.x, pos.z, 0, pos.y);
+        fx.dust.position.set(pos.x, Math.max(0.1, gy + 0.12), pos.z);
+        // smoke column, ground scorch, flying debris
+        spawnSmoke(pos, Math.min(7, 2 + (radius / 2 | 0)), 1.2 + radius * 0.18, 0.28 + 0.3 * bright, 2.2, 3 + radius * 0.3, 1.5 + radius * 0.08, 0.6);
+        if (pos.y - gy < radius * 0.7 && radius >= 3) addScorch(_scp.set(pos.x, gy, pos.z), _up3, radius * 1.5);
+        spawnParticles(pos, bright > 0.5 ? 0x6b6358 : 0x5a5248, 8, 11, 0.9, 0.16, true, { grav: 16, bounce: true, spin: 12 });
+    }
     fx.ring.position.set(pos.x, Math.max(0.1, groundAt(pos.x, pos.z, 0, pos.y) + 0.08), pos.z);
-    scene.add(fx.ball, fx.ring);
+    scene.add(fx.ball, fx.ring, fx.dust, fx.core);
     explosions.push(fx);
 }
 function updateExplosions(dt) {
     for (let i = explosions.length - 1; i >= 0; i--) {
         const ex = explosions[i]; ex.t += dt;
         const k = ex.t / ex.dur;
-        if (k >= 1) { scene.remove(ex.ball, ex.ring); ex.active = false; explosions.splice(i, 1); continue; }
+        if (k >= 1) { scene.remove(ex.ball, ex.ring, ex.dust, ex.core); ex.active = false; explosions.splice(i, 1); continue; }
         const e = 1 - Math.pow(1 - k, 3);
         ex.ball.scale.setScalar(0.5 + e * ex.radius * 0.55); ex.ball.material.opacity = (ex.peak || 0.9) * (1 - k);
         ex.ring.scale.setScalar(0.5 + e * ex.radius); ex.ring.material.opacity = (ex.ringOnly ? 0.9 : 0.7) * (1 - k);
+        if (ex.dust.visible) {
+            const kd = Math.min(1, ex.t / (ex.dur * 1.6)), ed = 1 - Math.pow(1 - kd, 2.4);
+            ex.dust.scale.setScalar(0.6 + ed * ex.radius * 1.35); ex.dust.material.opacity = 0.32 * (1 - kd);
+            const kc = Math.min(1, ex.t / (ex.dur * 0.35));
+            ex.core.scale.setScalar((0.4 + kc * ex.radius * 0.3) ); ex.core.material.opacity = 0.95 * (1 - kc) * (1 - kc);
+            ex.core.visible = kc < 1;
+        }
     }
     for (const bl of boomLights) { if (bl.t > 0) { bl.t -= dt * 2.2; bl.light.intensity = (bl.peak || 900) * Math.max(0, bl.t); } }
 }
@@ -214,7 +375,8 @@ function updateExplosions(dt) {
 const _proj = new V3();
 // Damage numbers are a small pool of reused elements (no DOM churn during firefights)
 const dmgPool = [];
-const DMG_ANIM = [{ opacity: 1, transform: 'translate(-50%, -50%)' }, { opacity: 0, transform: 'translate(-50%, calc(-50% - 60px))' }];
+const DMG_ANIM = [{ opacity: 1, transform: 'translate(-50%, -50%) scale(0.5)', offset: 0 }, { opacity: 1, transform: 'translate(-50%, calc(-50% - 12px)) scale(1.35)', offset: 0.14 },
+                  { opacity: 1, transform: 'translate(-50%, calc(-50% - 26px)) scale(1)', offset: 0.5 }, { opacity: 0, transform: 'translate(-50%, calc(-50% - 62px)) scale(0.85)', offset: 1 }];
 function spawnDamageNumber(worldPos, text, cls) {
     _proj.copy(worldPos).project(camera);
     if (_proj.z > 1 || _proj.z < -1) return;
@@ -223,6 +385,8 @@ function spawnDamageNumber(worldPos, text, cls) {
     el._busy = true;
     el.className = 'dmg-num ' + (cls || '');
     el.textContent = text;
+    const v = parseFloat(text);       // bigger hits, bigger numbers
+    el.style.fontSize = (v === v && (!cls || cls === 'head' || cls === 'boom')) ? Math.round(Math.min(34, (cls === 'head' ? 21 : 15) + Math.sqrt(v) * 0.85)) + 'px' : '';
     el.style.left = ((_proj.x * 0.5 + 0.5) * window.innerWidth + (Math.random() * 30 - 15)) + 'px';
     el.style.top = ((-_proj.y * 0.5 + 0.5) * window.innerHeight + (Math.random() * 16 - 8)) + 'px';
     el.style.display = 'block';

@@ -23,12 +23,12 @@ const SEE_THRU = { glass: 1, fence: 1 };
 //  - ground haze: fog is a little thicker low down, so distance and tall structures read better
 function worldLighting(m, ao) {
     m.onBeforeCompile = (sh) => {
-        Object.assign(sh.uniforms, { uRim: LIGHT_U.uRim, uCool: LIGHT_U.uCool, uHaze: LIGHT_U.uHaze });
-        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY;')
-            .replace('#include <project_vertex>', '#include <project_vertex>\nvWY = (modelMatrix * vec4(transformed, 1.0)).y;');
-        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY;\nuniform vec3 uRim; uniform vec3 uCool; uniform float uHaze;')
+        Object.assign(sh.uniforms, { uRim: LIGHT_U.uRim, uCool: LIGHT_U.uCool, uHaze: LIGHT_U.uHaze, uMz: LIGHT_U.uMz, uBm: LIGHT_U.uBm });
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;')
+            .replace('#include <project_vertex>', '#include <project_vertex>\nvec4 wp4 = modelMatrix * vec4(transformed, 1.0); vWY = wp4.y; vWP = wp4.xyz;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;\nuniform vec3 uRim; uniform vec3 uCool; uniform float uHaze; uniform vec4 uMz; uniform vec4 uBm;')
             .replace('#include <aomap_fragment>', '#include <aomap_fragment>\n' + (ao ? 'float gAO = mix(0.42, 1.0, smoothstep(0.0, 1.5, vWY));\nreflectedLight.indirectDiffuse *= gAO; reflectedLight.indirectSpecular *= gAO; reflectedLight.directDiffuse *= mix(0.75, 1.0, gAO);\n' : '') + 'reflectedLight.indirectDiffuse *= uCool;')
-            .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat rimF = 1.0 - abs(dot(normal, normalize(vViewPosition)));\ntotalEmissiveRadiance += uRim * rimF * rimF * rimF;')
+            .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat rimF = 1.0 - abs(dot(normal, normalize(vViewPosition)));\ntotalEmissiveRadiance += uRim * rimF * rimF * rimF;\nif (uMz.w + uBm.w > 0.001) { vec3 dm = vWP - uMz.xyz, db = vWP - uBm.xyz; totalEmissiveRadiance += diffuseColor.rgb * (vec3(1.0, 0.76, 0.42) * (uMz.w / (1.0 + dot(dm, dm) * 0.09)) + vec3(1.0, 0.5, 0.2) * (uBm.w / (1.0 + dot(db, db) * 0.012))); }')
             .replace('#include <fog_fragment>', '#ifdef USE_FOG\nfloat fogF = smoothstep(fogNear, fogFar, vFogDepth);\nfogF = clamp(fogF * (1.0 + uHaze * exp(-max(vWY, 0.0) * 0.12)), 0.0, 1.0);\ngl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);\n#endif');
     };
     m.customProgramCacheKey = () => ao ? 'worldAO' : 'worldFlat';
@@ -73,8 +73,8 @@ function worldMat(key) {
         return (mats[ck] = Q.lite ? new THREE.MeshLambertMaterial(o) : new THREE.MeshStandardMaterial(Object.assign(o, { roughness: 0.5, metalness: 0.6, envMapIntensity: theme.envInt })));
     }
     const p = WORLD_PROPS[key] || [0.85, 0.02], tex = key === 'cloud' || key === 'cloudShade' ? null : (key === 'escF' || key === 'escB') ? escTex(key) : detailTex;
-    const m = Q.lite ? new THREE.MeshLambertMaterial({ color: WORLD_COLORS[key], map: tex })
-                     : new THREE.MeshStandardMaterial({ color: WORLD_COLORS[key], map: tex, roughness: p[0], metalness: p[1], envMapIntensity: theme.envInt });
+    const m = Q.lite ? new THREE.MeshLambertMaterial({ color: WORLD_COLORS[key], map: tex, vertexColors: true })
+                     : new THREE.MeshStandardMaterial({ color: WORLD_COLORS[key], map: tex, roughness: p[0], metalness: p[1], envMapIntensity: theme.envInt, vertexColors: true });
     // clouds glow softly and skip the ground contact-shadow (their tops sit at y = 0)
     if (key === 'cloud' || key === 'cloudShade') { worldLighting(m, false); m.emissive = new THREE.Color(WORLD_COLORS[key]).multiplyScalar(key === 'cloud' ? 0.28 : 0.16); }
     else addGroundAO(m);
@@ -136,6 +136,7 @@ function stairTower(cx, cz, h, size, key = 'concrete', rot = 0, stepKey = 'steel
 let bridgeRects = [];
 // 4.0 mall escalators: standing on one carries you along it. { x0, x1, z0, z1, y0, y1, vx, vz }
 let escalators = [];
+let ventSpots = [];         // 5.0: [x, z] floor vents (Vent Crawlers hide in them)
 const ESC_SPEED = 2.4;
 function ropeBridge(x1, z1, y1, x2, z2, y2, opt = {}) {
     const width = opt.width || 3, steel = !!opt.steel, rails = opt.rails !== false;
@@ -185,16 +186,46 @@ function container(x, z, level, alongX, key) {
 
 
 // Box with world-scaled UVs so the detail texture tiles evenly no matter the block size
+// Baked ambient occlusion: every vertex looks 0.4m out along its face normal and darkens when other solid blocks are near.
+// It's stored as vertex colours on the merged world meshes, so it costs nothing at run time on any quality tier.
+const AO_CELL = 4, AO_REACH = 1.1, AO_SKIP = { cloud: 1, cloudShade: 1, glass: 1, fence: 1 };
+let aoGrid = null;
+function buildAOGrid() {
+    aoGrid = new Map();
+    for (const b of worldBlocks) {
+        if (!b.solid || AO_SKIP[b.key]) continue;
+        const x0 = Math.floor((b.x - b.w / 2 - AO_REACH) / AO_CELL), x1 = Math.floor((b.x + b.w / 2 + AO_REACH) / AO_CELL);
+        const y0 = Math.floor((b.y - b.h / 2 - AO_REACH) / AO_CELL), y1 = Math.floor((b.y + b.h / 2 + AO_REACH) / AO_CELL);
+        const z0 = Math.floor((b.z - b.d / 2 - AO_REACH) / AO_CELL), z1 = Math.floor((b.z + b.d / 2 + AO_REACH) / AO_CELL);
+        for (let ix = x0; ix <= x1; ix++) for (let iy = y0; iy <= y1; iy++) for (let iz = z0; iz <= z1; iz++) {
+            const k = ix + ',' + iy + ',' + iz; const a = aoGrid.get(k); if (a) a.push(b); else aoGrid.set(k, [b]);
+        }
+    }
+}
+function vertexAO(b, px, py, pz) {
+    const a = aoGrid.get(Math.floor(px / AO_CELL) + ',' + Math.floor(py / AO_CELL) + ',' + Math.floor(pz / AO_CELL));
+    if (!a) return 1;
+    let occ = 0;
+    for (let i = 0; i < a.length; i++) {
+        const o = a[i]; if (o === b) continue;
+        const dx = Math.max(Math.abs(px - o.x) - o.w / 2, 0), dy = Math.max(Math.abs(py - o.y) - o.h / 2, 0), dz = Math.max(Math.abs(pz - o.z) - o.d / 2, 0);
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d < AO_REACH) occ += (1 - d / AO_REACH) * 0.4;
+    }
+    return 1 - Math.min(occ, 0.5);
+}
 function blockGeo(b) {
     const g = new THREE.BoxGeometry(b.w, b.h, b.d);
     g.translate(b.x, b.y, b.z);
     const pos = g.attributes.position, nrm = g.attributes.normal, uv = g.attributes.uv;
-    const T = 0.5;
+    const T = 0.5, cols = new Float32Array(pos.count * 3);
     for (let i = 0; i < pos.count; i++) {
         const nx = Math.abs(nrm.getX(i)), ny = Math.abs(nrm.getY(i));
         const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
         if (nx > 0.5) uv.setXY(i, z * T, y * T); else if (ny > 0.5) uv.setXY(i, x * T, z * T); else uv.setXY(i, x * T, y * T);
+        const k = 0.4; cols[i * 3] = cols[i * 3 + 1] = cols[i * 3 + 2] = aoGrid ? vertexAO(b, x + nrm.getX(i) * k, y + nrm.getY(i) * k, z + nrm.getZ(i) * k) : 1;
     }
+    g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
     return g;
 }
 
@@ -216,9 +247,10 @@ function buildWorldInner(mapId) {
     if (worldGroup) { scene.remove(worldGroup); disposeGroup(worldGroup); }
     worldGroup = new THREE.Group();
     scene.add(worldGroup);
-    solids = []; worldBlocks = []; lampSpots = []; bridgeRects = []; escalators = [];
+    skyIslands = []; solids = []; worldBlocks = []; lampSpots = []; bridgeRects = []; escalators = []; ventSpots = [];
     ARENA = (MAPS[mapId] && MAPS[mapId].size) || 100; spawnPt = [0, 0];
     VOID = !!(MAPS[mapId] && MAPS[mapId].void); cageOverride = null;
+    if (skyMat) skyMat.uniforms.ridge.value = VOID ? 0 : 1;
     const A = ARENA;
     clearDecals();
 
@@ -247,9 +279,10 @@ function buildWorldInner(mapId) {
 
 
     ({ blockyard: mapBlockyard, downtown: mapDowntown, fortress: mapFortress, plains: mapPlains,
-       skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary }[mapId] || mapBlockyard)();
+       skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab }[mapId] || mapBlockyard)();
     const cage = buildRamCage(); cageArea = cage;
     if (!VOID) edgeDecor(mapId);
+    scatterProps(mapId);
 
 
     finalizeWorld();
@@ -494,3 +527,110 @@ function mapPlains() {
     addStructure('tower', 0, 62, 0); addStructure('ziggurat', -62, -62, 0); addStructure('scaffold', 60, -10, 1);
     lampRing([[26, 5, 0.2]]);
 }
+
+
+// ---------- SCATTERED PROPS ----------
+// Cars, debris, barricades, signs, foliage and rubble dropped around every map. Everything is plain blocks (merged per material by
+// finalizeWorld, so it costs no extra draw calls); only a few big pieces are solid. Uses Math.random so seeded multiplayer worlds match.
+let skyIslands = [];
+const PR = (a, b) => a + Math.random() * (b - a);
+const PB = (x, y, z, w, h, d, key, solid = false) => addBlock(x, y, z, w, h, d, key, solid);
+function propFree(x, z, r) {
+    if (Math.abs(x) > ARENA - 4 || Math.abs(z) > ARENA - 4 || Math.hypot(x - spawnPt[0], z - spawnPt[1]) < 12) return false;
+    if (cageArea && Math.abs(x - cageArea.x) < cageArea.half + r + 3 && Math.abs(z - cageArea.z) < cageArea.half + r + 3) return false;
+    for (const b of solids) {
+        if (b.min.y > 1.5 || b.max.x - b.min.x > ARENA || b.max.z - b.min.z > ARENA) continue;
+        if (b.max.x > x - r && b.min.x < x + r && b.max.z > z - r && b.min.z < z + r) return false;
+    }
+    for (const [bx, bz, bw, bd] of bridgeRects) if (x + r > bx && x - r < bx + bw && z + r > bz && z - r < bz + bd) return false;
+    return true;
+}
+const PROP = {
+    rubble(x, z, y = 0) {
+        const keys = ['concrete', 'stone', 'brick', 'concreteDark', 'brickDark'], n = 4 + (Math.random() * 4 | 0);
+        for (let i = 0; i < n; i++) { const w = PR(0.25, 0.8), h = PR(0.15, 0.5), d = PR(0.25, 0.8); PB(x + PR(-1, 1), y + (i > 4 ? 0.3 : 0), z + PR(-1, 1), w, h, d, keys[Math.random() * 5 | 0]); }
+        PB(x + PR(-0.5, 0.5), y, z + PR(-0.5, 0.5), 0.06, PR(0.8, 1.5), 0.06, 'rust'); PB(x + PR(-0.5, 0.5), y, z + PR(-0.5, 0.5), 0.06, PR(0.6, 1.2), 0.06, 'rust');
+    },
+    stain(x, z) { const k = ['asphalt', 'rust', 'woodDark', 'asphalt'][Math.random() * 4 | 0], w = PR(1.5, 4), d = PR(1.5, 4); PB(x, 0.012, z, w, 0.02, d, k); PB(x + PR(-1, 1), 0.02, z + PR(-1, 1), w * 0.5, 0.02, d * 0.6, 'rubber'); },
+    barrel(x, z, y = 0) { const k = ['rust', 'accR', 'accB', 'accY', 'olive'][Math.random() * 5 | 0]; PB(x, y, z, 0.72, 1.05, 0.72, k, true); PB(x, y + 0.45, z, 0.76, 0.1, 0.76, 'post'); PB(x, y + 1.05, z, 0.6, 0.05, 0.6, 'steel'); },
+    jersey(x, z, y = 0, alongX = Math.random() < 0.5) { const [w, d] = alongX ? [3.2, 0.9] : [0.9, 3.2], [w2, d2] = alongX ? [3.2, 0.5] : [0.5, 3.2]; PB(x, y, z, w, 0.4, d, 'concrete', true); PB(x, y + 0.4, z, w2, 0.55, d2, 'concrete', true); PB(x, y + 0.7, z, alongX ? 3.22 : 0.52, 0.12, alongX ? 0.52 : 3.22, 'accY'); },
+    sandbags(x, z, y = 0, alongX = Math.random() < 0.5) {
+        for (let r = 0; r < 3; r++) for (let i = 0; i < 3 - (r > 1); i++) { const o = (i - 1 + r * 0.25) * 1.05; PB(alongX ? x + o : x, y + r * 0.34, alongX ? z : z + o, alongX ? 1.0 : 0.62, 0.34, alongX ? 0.62 : 1.0, r % 2 ? 'khaki' : 'sand', r < 2 || i === 0 ? true : false); }
+    },
+    planks(x, z, y = 0, alongX = Math.random() < 0.5) {
+        for (const o of [-1.5, 1.5]) PB(alongX ? x + o : x, y, alongX ? z : z + o, 0.2, 1.6, 0.2, 'woodDark', true);
+        for (let r = 0; r < 4; r++) PB(x + (alongX ? PR(-0.1, 0.1) : 0), y + 0.25 + r * 0.36, z + (alongX ? 0 : PR(-0.1, 0.1)), alongX ? 3.3 : 0.14, 0.26, alongX ? 0.14 : 3.3, r % 2 ? 'wood' : 'woodDark', true);
+    },
+    sign(x, z, y = 0, kind = Math.random() * 3 | 0) {
+        PB(x, y, z, 0.1, 2.6, 0.1, 'post'); const a = Math.random() < 0.5;
+        if (kind === 0) { PB(x, y + 2.7, z, a ? 0.9 : 0.06, 0.9, a ? 0.06 : 0.9, 'accR'); PB(x, y + 3.0, z, a ? 0.6 : 0.08, 0.1, a ? 0.08 : 0.6, 'paint'); }
+        else if (kind === 1) { PB(x, y + 2.7, z, a ? 1.0 : 0.06, 0.8, a ? 0.06 : 1.0, 'accY'); PB(x, y + 2.95, z, a ? 0.12 : 0.08, 0.35, a ? 0.08 : 0.12, 'post'); }
+        else { PB(x, y + 2.8, z, a ? 1.5 : 0.06, 0.5, a ? 0.06 : 1.5, 'accB'); PB(x, y + 2.95, z, a ? 1.2 : 0.09, 0.08, a ? 0.09 : 1.2, 'paint'); }
+    },
+    bush(x, z, y = 0) { const k = Math.random() < 0.5 ? 'leaf' : 'leafDark'; PB(x, y, z, PR(1.0, 1.6), PR(0.7, 1.1), PR(1.0, 1.6), k); PB(x + PR(-0.5, 0.5), y + 0.3, z + PR(-0.5, 0.5), PR(0.6, 1.0), PR(0.6, 0.9), PR(0.6, 1.0), k === 'leaf' ? 'leafDark' : 'leaf'); if (Math.random() < 0.3) PB(x + 0.3, y + 0.9, z - 0.2, 0.15, 0.15, 0.15, ['accR', 'accY'][Math.random() * 2 | 0]); },
+    rock(x, z, y = 0) { const s = PR(0.8, 1.8); PB(x, y, z, s, s * 0.7, s * 0.9, 'stone', s > 1.3); PB(x + PR(-0.4, 0.4), y + s * 0.5, z + PR(-0.4, 0.4), s * 0.6, s * 0.45, s * 0.55, 'concreteDark'); },
+    deadTree(x, z, y = 0) {
+        const h = PR(3.2, 5); PB(x, y, z, 0.42, h, 0.42, 'woodDark'); PB(x, y, z, 0.7, 0.4, 0.7, 'woodDark');
+        for (let i = 0; i < 3; i++) { const sd = i % 2 ? 1 : -1, hy = y + h * (0.45 + i * 0.17); PB(x + sd * 0.55, hy, z + PR(-0.2, 0.2), 1.1, 0.16, 0.16, 'woodDark'); PB(x + sd * 1.0, hy + 0.3, z, 0.14, 0.7, 0.14, 'woodDark'); }
+    },
+    log(x, z, y = 0) { const a = Math.random() < 0.5; PB(x, y, z, a ? PR(2.5, 4) : 0.55, 0.5, a ? 0.55 : PR(2.5, 4), 'woodDark', true); PB(x + (a ? 0.3 : 0), y + 0.5, z, a ? 0.5 : 0.3, 0.12, a ? 0.3 : 0.5, 'leafDark'); },
+    wreck(x, z, y = 0) {
+        const a = Math.random() < 0.5, [w, d] = a ? [4, 1.9] : [1.9, 4], body = ['rust', 'accR', 'steel', 'accB'][Math.random() * 4 | 0];
+        PB(x, y + 0.3, z, w, 0.85, d, body, true); PB(x + (a ? PR(-0.3, 0.3) : 0), y + 1.15, z + (a ? 0 : PR(-0.3, 0.3)), a ? 2.2 : 1.7, 0.7, a ? 1.7 : 2.2, 'rust', true);
+        PB(x, y + 1.2, z, a ? 2.24 : 1.74, 0.45, a ? 1.74 : 2.24, 'glass');
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) PB(x + sx * w * 0.33, y, z + sz * d * 0.4, a ? 0.8 : 0.3, 0.55, a ? 0.3 : 0.8, 'rubber');
+        PB(x + (a ? 2.05 : 0), y + 0.5, z + (a ? 0 : 2.05), a ? 0.1 : 1.4, 0.5, a ? 1.4 : 0.1, 'accY');           // hood crumpled open
+    },
+    dumpster(x, z, y = 0) { const a = Math.random() < 0.5; PB(x, y + 0.25, z, a ? 2.2 : 1.2, 1.1, a ? 1.2 : 2.2, 'accG', true); PB(x, y + 1.35, z, a ? 2.3 : 1.3, 0.1, a ? 1.3 : 2.3, 'steel'); PB(x, y, z, a ? 2.0 : 1.0, 0.25, a ? 1.0 : 2.0, 'post'); },
+    hydrant(x, z, y = 0) { PB(x, y, z, 0.36, 0.7, 0.36, 'accR'); PB(x, y + 0.55, z, 0.5, 0.14, 0.2, 'accR'); PB(x, y + 0.7, z, 0.22, 0.12, 0.22, 'accR'); },
+    cones(x, z, y = 0) { for (let i = 0; i < 3; i++) { const cx = x + PR(-1.2, 1.2), cz = z + PR(-1.2, 1.2); PB(cx, y, cz, 0.4, 0.14, 0.4, 'post'); PB(cx, y + 0.14, cz, 0.26, 0.5, 0.26, 'accY'); PB(cx, y + 0.4, cz, 0.28, 0.08, 0.28, 'paint'); } },
+    bench(x, z, y = 0) { const a = Math.random() < 0.5; PB(x, y + 0.45, z, a ? 1.8 : 0.5, 0.1, a ? 0.5 : 1.8, 'wood'); PB(x + (a ? 0 : 0.22), y + 0.8, z + (a ? 0.22 : 0), a ? 1.8 : 0.08, 0.4, a ? 0.08 : 1.8, 'woodDark'); for (const o of [-0.7, 0.7]) PB(a ? x + o : x, y, a ? z : z + o, a ? 0.1 : 0.5, 0.45, a ? 0.5 : 0.1, 'post'); },
+    planter(x, z, y = 0) { PB(x, y, z, 1.8, 0.7, 1.8, 'concrete', true); PB(x, y + 0.7, z, 1.6, 0.35, 1.6, 'woodDark'); PB(x, y + 1.0, z, 1.4, 0.7, 1.4, 'leaf'); PB(x + 0.2, y + 1.4, z - 0.1, 0.8, 0.6, 0.8, 'leafDark'); },
+    hedgehog(x, z, y = 0) { PB(x, y + 0.55, z, 1.5, 0.14, 0.14, 'steel'); PB(x, y + 0.55, z, 0.14, 1.5, 0.14, 'steel'); PB(x, y + 0.55, z, 0.14, 0.14, 1.5, 'steel'); PB(x, y, z, 0.9, 0.3, 0.9, 'rust'); },
+    hay(x, z, y = 0) { PB(x, y, z, 1.3, 0.8, 0.9, 'sand', true); PB(x, y + 0.8, z, 1.3, 0.05, 0.92, 'khaki'); PB(x + 0.4, y, z, 0.05, 0.82, 0.92, 'rope'); PB(x - 0.4, y, z, 0.05, 0.82, 0.92, 'rope'); },
+    pallet(x, z, y = 0) { PB(x, y, z, 1.4, 0.14, 1.4, 'wood'); PB(x, y + 0.14, z, 1.4, 0.08, 1.4, 'woodDark'); if (Math.random() < 0.6) PB(x, y + 0.22, z, 1.1, 0.9, 1.1, 'wood', true); },
+    column(x, z, y = 0) { const h = PR(1, 3.2); PB(x, y, z, 1.2, 0.35, 1.2, 'stone'); PB(x, y + 0.35, z, 0.9, h, 0.9, 'stone', true); PB(x + 0.2, y + h + 0.35, z, 0.6, 0.3, 0.5, 'concreteDark'); PB(x + 1.0, y, z + 0.4, 0.8, 0.5, 0.6, 'stone'); },
+    vines(x, z, y = 0) { PB(x, y, z, 0.12, PR(1.2, 2.4), 0.12, 'leaf'); PB(x + 0.3, y, z, 0.1, PR(0.8, 1.6), 0.1, 'leafDark'); PB(x, y, z + 0.3, 0.9, 0.3, 0.9, 'leafDark'); },
+    lamp(x, z) { addLamp(x, z); PB(x, 0, z, 0.9, 0.3, 0.9, 'concreteDark'); },
+    antenna(x, z, y = 0) { PB(x, y, z, 1.2, 0.4, 1.2, 'concrete', true); PB(x, y + 0.4, z, 0.15, 7, 0.15, 'steel'); PB(x, y + 4, z, 1.6, 0.08, 0.08, 'steel'); PB(x, y + 7.3, z, 0.22, 0.22, 0.22, 'glowR'); },
+    crate(x, z, y = 0) { PB(x, y, z, 1.2, 1.2, 1.2, 'wood', true); PB(x, y + 0.55, z, 1.24, 0.1, 1.24, 'woodDark'); if (Math.random() < 0.5) PB(x + PR(-0.2, 0.2), y + 1.2, z, 0.9, 0.9, 0.9, 'woodDark', true); },
+    cart(x, z, y = 0) { PB(x, y + 0.25, z, 0.9, 0.12, 0.6, 'steel'); PB(x, y + 0.37, z, 0.9, 0.45, 0.04, 'fence'); PB(x, y + 0.37, z + 0.3, 0.9, 0.45, 0.04, 'fence'); PB(x - 0.45, y + 0.37, z, 0.04, 0.45, 0.6, 'fence'); PB(x + 0.45, y + 0.8, z, 0.04, 0.05, 0.6, 'post'); },
+    anchor(x, z, y = 0) { PB(x, y, z, 0.2, 1.8, 0.2, 'rust'); PB(x, y + 1.6, z, 1.2, 0.18, 0.18, 'rust'); PB(x, y, z, 1.0, 0.18, 0.4, 'rust'); PB(x, y + 1.8, z, 0.4, 0.2, 0.2, 'rust'); },
+    bone(x, z, y = 0) { PB(x, y, z, 0.6, 0.12, 0.1, 'paint'); PB(x + 0.2, y, z + 0.15, 0.1, 0.12, 0.5, 'paint'); PB(x - 0.15, y, z - 0.2, 0.28, 0.2, 0.28, 'paint'); }
+};
+const PROP_SETS = {
+    blockyard: [['rubble', 12], ['stain', 14], ['barrel', 9], ['jersey', 6], ['pallet', 7], ['sign', 6], ['planks', 4], ['cones', 4], ['wreck', 3], ['bush', 6], ['dumpster', 3]],
+    downtown:  [['wreck', 10], ['rubble', 10], ['stain', 16], ['dumpster', 5], ['hydrant', 8], ['cones', 7], ['jersey', 6], ['sign', 10], ['bench', 5], ['planter', 5], ['barrel', 4], ['bone', 3]],
+    fortress:  [['sandbags', 8], ['rubble', 12], ['hay', 8], ['barrel', 6], ['planks', 7], ['bush', 10], ['crate', 6], ['stain', 10], ['hedgehog', 4], ['deadTree', 4], ['bone', 3]],
+    plains:    [['bush', 22], ['rock', 14], ['log', 8], ['deadTree', 7], ['stain', 12], ['wreck', 3], ['sign', 4], ['hay', 5], ['bone', 4]],
+    skybridge: [['jersey', 9], ['cones', 7], ['barrel', 6], ['sign', 8], ['rubble', 8], ['wreck', 4], ['stain', 12], ['dumpster', 3], ['antenna', 2]],
+    shipyard:  [['barrel', 14], ['crate', 10], ['pallet', 8], ['anchor', 5], ['rubble', 8], ['stain', 14], ['cones', 4], ['sign', 5], ['wreck', 3], ['hay', 3]],
+    temple:    [['column', 10], ['rubble', 16], ['vines', 14], ['bush', 12], ['rock', 8], ['stain', 8], ['deadTree', 4], ['bone', 5]],
+    mall:      [['planter', 6], ['bench', 8], ['cart', 8], ['rubble', 8], ['stain', 10], ['sign', 6], ['dumpster', 3], ['cones', 4], ['bone', 3]],
+    subway:    [['jersey', 6], ['bench', 4], ['barrel', 6], ['rubble', 10], ['stain', 14], ['sign', 6], ['dumpster', 3], ['cones', 5], ['bone', 4], ['wreck', 2]],
+    biolab:    [['barrel', 4], ['crate', 3], ['rubble', 3], ['stain', 12], ['bone', 3]],
+    military:  [['sandbags', 10], ['hedgehog', 8], ['barrel', 10], ['jersey', 8], ['crate', 8], ['rubble', 8], ['stain', 12], ['antenna', 3], ['wreck', 4], ['cones', 4], ['sign', 5]]
+};
+function scatterProps(mapId) {
+    if (VOID) {                 // sky islands: tufts, rocks and crates on top of the clouds
+        for (const [cx, cz, r, y] of skyIslands) {
+            const n = Math.max(2, Math.round(r / 4));
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * 6.28, d = PR(0.3, 0.72) * r, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
+                if (pointInSolid(_pv.set(x, y + 0.5, z), 1.2)) continue;
+                const f = Math.random(); if (f < 0.4) PROP.bush(x, z, y); else if (f < 0.7) PROP.rock(x, z, y); else if (f < 0.85) PROP.column(x, z, y); else PROP.crate(x, z, y);
+            }
+        }
+        return;
+    }
+    const set = PROP_SETS[mapId] || PROP_SETS.blockyard, sc = ARENA / 100;
+    for (const [name, base] of set) {
+        const n = Math.max(1, Math.round(base * (0.6 + 0.4 * sc * sc * 2)));
+        for (let i = 0; i < n; i++) for (let t = 0; t < 8; t++) {
+            const x = PR(-ARENA + 6, ARENA - 6), z = PR(-ARENA + 6, ARENA - 6);
+            if (!propFree(x, z, name === 'stain' ? 0.1 : 2.6)) continue;
+            PROP[name](x, z); break;
+        }
+    }
+}
+const _pv = new V3();

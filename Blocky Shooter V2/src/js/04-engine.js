@@ -13,7 +13,7 @@ const VM_FOV = 58, VM_SCALE = 0.55;
 const LOWEND = (navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
 // Auto remembers the last tier that ran smoothly here; each launch starts one tier better and re-checks on the menu
 const AUTO_TIERS = 4, AUTO_KEY = 'blocky_autotier';
-let autoTier = (() => { try { const v = localStorage.getItem(AUTO_KEY); if (v !== null) return clamp((+v | 0) - 1, 0, AUTO_TIERS - 1); } catch (e) {} return LOWEND ? 2 : 0; })();
+let autoTier = (() => { try { const v = localStorage.getItem(AUTO_KEY); if (v !== null) return clamp((+v | 0) - 1, 0, AUTO_TIERS - 1); } catch (e) {} return LOWEND ? 1 : 0; })();
 const autoTierStart = autoTier;
 function saveAutoTier() { try { localStorage.setItem(AUTO_KEY, String(autoTier)); } catch (e) {} }
 function qualityPreset() {
@@ -35,8 +35,8 @@ function qualityPreset() {
 }
 const QUALITY_DESC = {
     auto: 'Tests your device on the menu and picks the best look that holds 60 FPS (it remembers it). In a fight it only nudges resolution; bigger changes wait for the break between waves, so no stutter. Best for Chromebooks.',
-    low: 'Fast lighting model, blob shadows, 75% resolution. Still has the sky, fog, lamps and tone mapping. For very slow devices.',
-    normal: 'Sun shadows, sky reflections and full-resolution rendering.',
+    low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 75% resolution.',
+    normal: 'Everything in Low plus sun shadows, sky reflections and full-resolution rendering.',
     high: 'Soft 2K shadows, bloom glow on lights and muzzle flashes, light shafts under street lamps, real lamp lights, 4x MSAA.',
     cinematic: 'Everything in High plus 4K shadows, stronger bloom, 4 real lamp lights, film grain, lens vignette and color grading. Needs a strong GPU.'
 };
@@ -126,6 +126,9 @@ function makeFloorTexture() {
     g.fillStyle = '#d0d3da'; g.fillRect(0, 0, 256, 256);
     g.fillStyle = '#c3c6ce'; g.fillRect(0, 0, 128, 128); g.fillRect(128, 128, 128, 128);
     for (let i = 0; i < 2200; i++) { const v = 170 + Math.random() * 70 | 0; g.fillStyle = `rgba(${v},${v},${v + 6},0.35)`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
+    for (let i = 0; i < 22; i++) { const x = Math.random() * 256, y = Math.random() * 256, r = 10 + Math.random() * 34, v = Math.random() < 0.6 ? 0 : 255; const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},0.09)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    g.lineCap = 'round'; g.strokeStyle = 'rgba(60,62,72,0.35)'; g.lineWidth = 1;
+    for (let i = 0; i < 6; i++) { let x = Math.random() * 256, y = Math.random() * 256; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 7; k++) { x += (Math.random() - 0.5) * 22; y += (Math.random() - 0.5) * 22; g.lineTo(x, y); } g.stroke(); }
     g.strokeStyle = '#8e93a6'; g.lineWidth = 4; g.strokeRect(0, 0, 256, 256);
     g.strokeStyle = '#a3a8b8'; g.lineWidth = 2; g.beginPath(); g.moveTo(128, 0); g.lineTo(128, 256); g.moveTo(0, 128); g.lineTo(256, 128); g.stroke();
     const tex = canvasTex(c, 25);
@@ -133,11 +136,33 @@ function makeFloorTexture() {
     return tex;
 }
 function makeDetailTexture() {
-    const [c, g] = makeCanvas(128);
-    g.fillStyle = '#e8e8e8'; g.fillRect(0, 0, 128, 128);
-    for (let i = 0; i < 900; i++) { const v = 200 + Math.random() * 55 | 0; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
-    g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2; g.strokeRect(3, 3, 122, 122);
-    g.strokeStyle = 'rgba(90,90,90,0.55)'; g.lineWidth = 2; g.strokeRect(0, 0, 128, 128);
+    // neutral grey wall detail (multiplied by each block's colour): mottled blotches, fine grain, hairline cracks, rain streaks, scuffs and panel seams
+    const N = 256, [c, g] = makeCanvas(N);
+    g.fillStyle = '#e6e6e6'; g.fillRect(0, 0, N, N);
+    for (let i = 0; i < 70; i++) {          // big soft blotches (uneven paint / weathering), wrapped so the tile stays seamless
+        const x = Math.random() * N, y = Math.random() * N, r = 14 + Math.random() * 40, v = Math.random() < 0.5 ? 0 : 255;
+        const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${v},${v},${v},0.11)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`);
+        g.fillStyle = gr; for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) { if (x + ox + r < 0 || x + ox - r > N || y + oy + r < 0 || y + oy - r > N) continue; g.save(); g.translate(ox, oy); g.fillRect(x - r, y - r, r * 2, r * 2); g.restore(); }
+    }
+    for (let i = 0; i < 3600; i++) { const v = 196 + Math.random() * 59 | 0; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(Math.random() * N, Math.random() * N, 1 + (Math.random() < 0.3), 1 + (Math.random() < 0.3)); }
+    for (let i = 0; i < 9; i++) {            // rain / rust streaks running down from the top
+        const x = Math.random() * N, h = 30 + Math.random() * 110, gr = g.createLinearGradient(0, 0, 0, h);
+        gr.addColorStop(0, 'rgba(60,55,50,0.22)'); gr.addColorStop(1, 'rgba(60,55,50,0)'); g.fillStyle = gr; g.fillRect(x, 0, 1 + Math.random() * 3, h);
+    }
+    g.lineCap = 'round';
+    for (let i = 0; i < 7; i++) {            // hairline cracks
+        let x = Math.random() * N, y = Math.random() * N; g.strokeStyle = 'rgba(40,40,44,0.4)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 6; k++) { x += (Math.random() - 0.4) * 16; y += (Math.random() - 0.5) * 12; g.lineTo(x, y); }
+        g.stroke();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 1;
+    for (let i = 0; i < 14; i++) { const x = Math.random() * N, y = Math.random() * N, a = Math.random() * 6.28, l = 4 + Math.random() * 10; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    g.strokeStyle = 'rgba(70,70,76,0.3)'; g.lineWidth = 1.5;      // panel seams with a lit lower lip
+    for (const y of [N / 3, N * 2 / 3]) { g.beginPath(); g.moveTo(0, y); g.lineTo(N, y); g.stroke(); }
+    g.strokeStyle = 'rgba(255,255,255,0.28)'; for (const y of [N / 3 + 2, N * 2 / 3 + 2]) { g.beginPath(); g.moveTo(0, y); g.lineTo(N, y); g.stroke(); }
+    g.fillStyle = 'rgba(70,70,76,0.4)'; for (const [x, y] of [[8, 8], [N - 8, 8], [8, N - 8], [N - 8, N - 8]]) { g.beginPath(); g.arc(x, y, 2, 0, 6.28); g.fill(); }   // rivets
+    g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 3; g.strokeRect(5, 5, N - 10, N - 10);
+    g.strokeStyle = 'rgba(90,90,90,0.55)'; g.lineWidth = 2; g.strokeRect(0, 0, N, N);
     return canvasTex(c, 1);
 }
 function makeRadialTexture(stops) {
@@ -163,12 +188,31 @@ function makeFlashTexture() {
 }
 function makeHoleTexture() {
     const [c, g] = makeCanvas(64);
-    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.28, 'rgba(10,10,10,0.95)'); gr.addColorStop(0.45, 'rgba(40,36,32,0.6)'); gr.addColorStop(1, 'rgba(40,36,32,0)');
-    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    g.translate(32, 32);
+    const halo = g.createRadialGradient(0, 0, 4, 0, 0, 31);        // chipped, lighter ring around the hole
+    halo.addColorStop(0, 'rgba(235,230,220,0.0)'); halo.addColorStop(0.35, 'rgba(235,230,220,0.38)'); halo.addColorStop(1, 'rgba(235,230,220,0)');
+    g.fillStyle = halo; g.fillRect(-32, -32, 64, 64);
+    g.strokeStyle = 'rgba(25,22,20,0.55)'; g.lineWidth = 1;
+    for (let i = 0; i < 6; i++) { const a = i * 1.05 + Math.random() * 0.5, l = 13 + Math.random() * 14; g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * l * 0.5, Math.sin(a) * l * 0.5); g.lineTo(Math.cos(a + 0.25) * l, Math.sin(a + 0.25) * l); g.stroke(); }
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, 16);
+    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.45, 'rgba(8,8,8,0.96)'); gr.addColorStop(0.75, 'rgba(40,36,32,0.55)'); gr.addColorStop(1, 'rgba(40,36,32,0)');
+    g.fillStyle = gr; g.fillRect(-32, -32, 64, 64);
     return canvasTex(c);
 }
-let detailTex, floorTex, poolTex, flashTex, holeTex, blobTex;
+function makeScorchTexture() {       // blast mark: a dark ragged soot patch with a few streaks flung outward
+    const [c, g] = makeCanvas(128);
+    g.translate(64, 64);
+    for (let i = 0; i < 14; i++) { const a = Math.random() * 6.28, l = 26 + Math.random() * 34, w = 2 + Math.random() * 4; g.save(); g.rotate(a); const gr = g.createLinearGradient(0, 0, l, 0); gr.addColorStop(0, 'rgba(10,8,8,0.55)'); gr.addColorStop(1, 'rgba(10,8,8,0)'); g.fillStyle = gr; g.fillRect(0, -w / 2, l, w); g.restore(); }
+    for (let i = 0; i < 9; i++) { const a = Math.random() * 6.28, d = Math.random() * 14, r = 14 + Math.random() * 16, gr = g.createRadialGradient(Math.cos(a) * d, Math.sin(a) * d, 0, Math.cos(a) * d, Math.sin(a) * d, r); gr.addColorStop(0, 'rgba(8,6,6,0.5)'); gr.addColorStop(1, 'rgba(8,6,6,0)'); g.fillStyle = gr; g.fillRect(-64, -64, 128, 128); }
+    const core = g.createRadialGradient(0, 0, 0, 0, 0, 26); core.addColorStop(0, 'rgba(0,0,0,0.85)'); core.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = core; g.fillRect(-64, -64, 128, 128);
+    return canvasTex(c);
+}
+function makeSmokeTexture() {        // soft puff with an uneven edge
+    const [c, g] = makeCanvas(64);
+    for (let i = 0; i < 6; i++) { const x = 32 + (Math.random() - 0.5) * 16, y = 32 + (Math.random() - 0.5) * 16, r = 14 + Math.random() * 10, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(255,255,255,0.5)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
+    return canvasTex(c);
+}
+let detailTex, floorTex, poolTex, flashTex, holeTex, blobTex, scorchTex, smokeTex;
 
 
 function init3D() {
@@ -188,7 +232,7 @@ function init3D() {
     floorTex = makeFloorTexture(); floorTex.anisotropy = Math.max(Q.aniso, 2);
     poolTex = makeRadialTexture([[0, 'rgba(255,255,255,1)'], [0.4, 'rgba(255,255,255,0.45)'], [1, 'rgba(255,255,255,0)']]);
     blobTex = makeRadialTexture([[0, 'rgba(0,0,0,0.75)'], [0.6, 'rgba(0,0,0,0.35)'], [1, 'rgba(0,0,0,0)']]);
-    flashTex = makeFlashTexture(); holeTex = makeHoleTexture();
+    flashTex = makeFlashTexture(); holeTex = makeHoleTexture(); scorchTex = makeScorchTexture(); smokeTex = makeSmokeTexture();
 
 
     const aspect = window.innerWidth / window.innerHeight;
@@ -221,24 +265,48 @@ function init3D() {
     skyMat = new THREE.ShaderMaterial({
         uniforms: {
             top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() }, bottom: { value: new THREE.Color() },
-            sunDir: { value: new V3(0, 1, 0) }, sunColor: { value: new THREE.Color() }, sunSize: { value: 0.999 }, glow: { value: 0.5 }
+            sunDir: { value: new V3(0, 1, 0) }, sunColor: { value: new THREE.Color() }, sunSize: { value: 0.999 }, glow: { value: 0.5 },
+            cloudCol: { value: new THREE.Color(1, 1, 1) }, cloudAmt: { value: 0.5 }, ridge: { value: 1 }, uT: { value: 0 }
         },
         vertexShader: `varying vec3 vDir; void main() { vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
         fragmentShader: `
             uniform vec3 top; uniform vec3 horizon; uniform vec3 bottom; uniform vec3 sunDir; uniform vec3 sunColor; uniform float sunSize; uniform float glow;
+            uniform vec3 cloudCol; uniform float cloudAmt; uniform float ridge; uniform float uT;
             varying vec3 vDir;
+            float hs(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+            float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hs(i), hs(i + vec2(1.0, 0.0)), f.x), mix(hs(i + vec2(0.0, 1.0)), hs(i + vec2(1.0, 1.0)), f.x), f.y); }
             void main() {
                 vec3 d = normalize(vDir);
                 float h = d.y;
                 vec3 col = h > 0.0 ? mix(horizon, top, pow(clamp(h, 0.0, 1.0), 0.5)) : mix(horizon, bottom, pow(clamp(-h, 0.0, 1.0), 0.3));
                 float s = max(dot(d, normalize(sunDir)), 0.0);
+                if (h > 0.0) {
+                    // drifting clouds on a flat layer (fbm), lit brighter on the sun side, thinning toward the zenith; plus a haze band on the horizon
+                    vec2 cp = d.xz / (h + 0.22) * 1.6 + vec2(uT, uT * 0.4);
+                    float cn = vn(cp) * 0.58 + vn(cp * 2.1 + 7.0) * 0.28;
+                    #if SKY_OCT > 2
+                    cn += vn(cp * 4.3 + 3.0) * 0.14;
+                    #endif
+                    float cv = smoothstep(1.0 - cloudAmt * 0.85, 1.02 - cloudAmt * 0.3, cn) * smoothstep(0.0, 0.16, h) * (1.0 - smoothstep(0.55, 1.0, h) * 0.6);
+                    vec3 cc = cloudCol * (0.78 + 0.5 * pow(s, 3.0)) * (0.82 + 0.3 * cn);
+                    col = mix(col, cc, cv * 0.9);
+                    col = mix(col, horizon, (1.0 - smoothstep(0.0, 0.2, h)) * 0.35);
+                    if (ridge > 0.5) {
+                        // far ridge line on the horizon, a hazy silhouette that sits in the fog colour
+                        float az = atan(d.z, d.x);
+                        float rh = 0.012 + 0.03 * vn(vec2(az * 5.0, 1.0)) + 0.018 * vn(vec2(az * 17.0, 4.0)) + 0.008 * vn(vec2(az * 41.0, 9.0));
+                        col = mix(col, mix(horizon, bottom, 0.72) * 0.9, (1.0 - smoothstep(rh - 0.002, rh + 0.002, h)) * 0.95);
+                    }
+                }
                 col += sunColor * (smoothstep(sunSize, sunSize + 0.0004, s) * 5.0 + pow(s, 90.0) * glow + pow(s, 7.0) * glow * 0.22);
+                col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 255.0;   // dither: no colour banding in the sky
                 gl_FragColor = vec4(col, 1.0);
                 #include <tonemapping_fragment>
                 #include <colorspace_fragment>
             }`,
         side: THREE.BackSide, depthWrite: false, fog: false
     });
+    skyMat.fragmentShader = '#define SKY_OCT ' + (Q.lite ? 2 : 3) + '\n' + skyMat.fragmentShader;
     skyGroup = new THREE.Group();
     const dome = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), skyMat);
     dome.renderOrder = -10; skyGroup.add(dome);
@@ -354,6 +422,9 @@ function applyTheme(id) {
     u.top.value.setHex(theme.top); u.horizon.value.setHex(theme.horizon); u.bottom.value.setHex(theme.bottom);
     u.sunDir.value.fromArray(theme.sunDir).normalize(); u.sunColor.value.setHex(theme.disc);
     u.sunSize.value = theme.discSize; u.glow.value = theme.glow;
+    const SKYC = { night: [0x26306a, 0.3], sunset: [0xffb48a, 0.6], day: [0xffffff, 0.55], bloodmoon: [0x5a1218, 0.42], storm: [0x3a414a, 0.98], neon: [0x7a2a8a, 0.34] }[id] || [0xffffff, 0.4];
+    u.cloudCol.value.setHex(SKYC[0]); u.cloudAmt.value = SKYC[1];
+    u.ridge.value = (typeof currentMap !== 'undefined' && currentMap === 'sky') ? 0 : 1;
     if (!scene.fog) scene.fog = new THREE.Fog(theme.fog, theme.fogNear, theme.fogFar);
     scene.fog.color.setHex(theme.fog); scene.fog.near = theme.fogNear; scene.fog.far = theme.fogFar;
     renderer.setClearColor(theme.fog);

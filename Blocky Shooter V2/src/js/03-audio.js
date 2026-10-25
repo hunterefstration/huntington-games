@@ -47,6 +47,8 @@ function sfx(name) {
             case 'smg':      sfxNoise(0.07, 3500, 0.18, 600); sfxTone('square', 260, 90, 0.05, 0.08); break;
             case 'ar':       sfxNoise(0.1, 2600, 0.24, 350); sfxTone('square', 180, 50, 0.08, 0.12); break;
             case 'burst':    sfxNoise(0.08, 3100, 0.22, 420); sfxTone('square', 210, 60, 0.06, 0.1); break;
+            case 'carbine':  sfxNoise(0.07, 3300, 0.2, 450); sfxTone('square', 230, 70, 0.05, 0.09); break;
+            case 'lever':    sfxNoise(0.2, 2300, 0.4, 220); sfxTone('sawtooth', 140, 42, 0.16, 0.2); break;
             case 'shotgun':  sfxNoise(0.38, 1700, 0.5, 120); sfxTone('sawtooth', 110, 32, 0.25, 0.26); break;
             case 'dmr':      sfxNoise(0.26, 3200, 0.36, 200); sfxTone('sawtooth', 150, 45, 0.18, 0.18); break;
             case 'lmg':      sfxNoise(0.11, 2200, 0.26, 300); sfxTone('square', 150, 45, 0.08, 0.12); break;

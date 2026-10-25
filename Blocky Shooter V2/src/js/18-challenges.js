@@ -53,7 +53,7 @@ function chMake(t, weekly, rng) {
     let a = null;
     if (T.arg === 'weapon') a = pick(WEAPON_ORDER.filter(id => id !== 'pistol' && isUnlocked('weapon', id)));
     else if (T.arg === 'bossWeapon') { const l = ['katana', 'shotgun', 'sniper', 'rpg', 'railgun', 'revolver', 'crossbow'].filter(id => isUnlocked('weapon', id)); a = pick(l.includes('katana') && rng() < 0.4 ? ['katana'] : l); }
-    else if (T.arg === 'map') a = pick(Object.keys(MAPS));
+    else if (T.arg === 'map') a = pick(MAP_IDS());
     else if (T.arg === 'cls') a = pick(CLASS_ORDER);
     else if (T.arg === 'diff') a = weekly ? 'hard' : 'normal';
     return { t, a, n: weekly ? T.w : T.d, p: 0, done: false, xp: weekly ? 1500 + 1000 * T.r : 300 + 200 * T.r, cash: weekly ? 1000 + 750 * T.r : 250 + 250 * T.r };
@@ -179,8 +179,8 @@ function resetRun() {
     corpses.forEach(c => { scene.remove(c.e); disposeEnemy(c.e); }); corpses = [];
     projectiles.forEach(p => scene.remove(p.mesh)); projectiles = [];
     pickups.forEach(p => scene.remove(p.mesh)); pickups = [];
-    [...supplies].forEach(removeSupply); supplyTimer = -1; power = null;
-    [...orbs].forEach(removeOrb); boosts = {}; overshield = 0; boomQ.length = 0; turretCd = 0;
+    [...supplies].forEach(removeSupply); supplyTimer = -1;
+    turretCd = 0;
     clearGadgets();
     seenTypes = new Set(); resetCampState();
     cancelReload();

@@ -7,11 +7,11 @@ function dropLoot(u, pos) {
     const d = u.config.drops || [0.1, 15, 0.1, 20];
     if (u.config.boss) {
         spawnPickup(pos, 'health', 999, -1.2);
-        spawnPickup(pos, 'cash', Math.round(500 * (boostOn('gold') ? 1.5 : 1)), 1.2);
+        spawnPickup(pos, 'cash', Math.round(500), 1.2);
         return;
     }
     // drop-table cash grows 5% every wave (compounding, capped at 4x) so money keeps up with the waves
-    const cashMul = Math.min(4, Math.pow(1.05, playerStats.level - 1)) * DIFF().cash * (boostOn('gold') ? 1.5 : 1);
+    const cashMul = Math.min(4, Math.pow(1.05, playerStats.level - 1)) * DIFF().cash;
     const sc = 1 + 0.25 * perk('scav');
     if (Math.random() < d[0] * sc) spawnPickup(pos, 'health', d[1], -0.7);
     if (Math.random() < d[2] * sc) spawnPickup(pos, 'cash', Math.round(d[3] * cashMul * (twist && twist.cash || 1)), 0.7);
@@ -112,7 +112,7 @@ function cageRamHit(point, head) {
     showHitMarker(head, false);
     if (R.payT > 0) return;
     R.payT = 0.12;                                    // up to ~8 payouts a second
-    const pay = Math.round((CAGE_PAY + playerStats.level * CAGE_PAY_WAVE) * (head ? 1.5 : 1) * (boostOn('gold') ? 1.5 : 1));
+    const pay = Math.round((CAGE_PAY + playerStats.level * CAGE_PAY_WAVE) * (head ? 1.5 : 1));
     playerStats.money += pay;
     spawnDamageNumber(point, `+$${pay}`, 'cash');
     sfx(head ? 'head' : 'hit');
@@ -120,7 +120,7 @@ function cageRamHit(point, head) {
 }
 
 
-// ---------- SUPPLY DROPS & POWER-UPS ----------
+// ---------- SUPPLY DROPS (ammo / health) ----------
 const _crateMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.5, metalness: 0.4 });
 const _chuteMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9, side: THREE.DoubleSide });
 const _chuteGeo = new THREE.SphereGeometry(2, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
@@ -139,9 +139,8 @@ function spawnSupply() {
         ok = !pointInSolid(new V3(x, 1, z), 2) && groundAt(x, z, 1.5, 100) === 0;
     }
     if (!ok) return;
-    const ids = Object.keys(POWERUPS);
-    const kind = ids[Math.floor(Math.random() * ids.length)];
-    const pc = POWERUPS[kind].color;
+    const kind = Math.random() < 0.5 ? 'ammo' : 'med';
+    const pc = SUPPLY_KINDS[kind].color;
     const group = new THREE.Group();
     const crate = new THREE.Mesh(sharedBox, _crateMat); crate.scale.setScalar(1.4); crate.position.y = 0.7; crate.castShadow = true; group.add(crate);
     const band = new THREE.Mesh(sharedBox, new THREE.MeshBasicMaterial({ color: pc, toneMapped: false })); band.scale.set(1.46, 0.25, 1.46); band.position.y = 0.7; group.add(band);
@@ -169,137 +168,29 @@ function updateSupplies(dt) {
         if (d < 2.3 && Math.abs(feetY - g.position.y) < 2.5) { collectSupply(s); continue; }
         if (s.life <= 0) removeSupply(s);
     }
-    if (power && power.dur > 0) {
-        power.t -= dt;
-        if (power.t <= 0) { power = null; toast('Power-up ended', '#9ca3af', 1); }
-    }
-    ui.power.classList.toggle('hidden', !power);
-    if (power) {
-        const p = POWERUPS[power.id];
-        setText(ui.powerName, `${p.name}  ${Math.ceil(power.t)}s`);
-        setStyle(ui.powerName, 'color', hex(p.color));
-        setStyle(ui.powerBar, 'background', hex(p.color));
-        setWidth(ui.powerBar, power.t / power.dur * 100);
-    }
 }
 function removeSupply(s) { scene.remove(s.group); s.band.material.dispose(); s.beam.material.dispose(); supplies = supplies.filter(x => x !== s); }
 function collectSupply(s) {
     removeSupply(s);
-    const p = POWERUPS[s.kind];
+    const p = SUPPLY_KINDS[s.kind];
     sfx('power');
     screenFlash(`rgba(${(p.color >> 16) & 255},${(p.color >> 8) & 255},${p.color & 255},0.35)`);
     if (s.kind === 'med') {
         currentHp = maxHp;
         const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
         if (tier) currentArmor = tier.max;
-        toast('FULL RESTORE - health & armor', hex(p.color), 2);
-    } else if (s.kind === 'cash') {
-        const cash = 300 + playerStats.level * 60; playerStats.money += cash;
-        toast(`CASH JACKPOT  +$${cash}`, hex(p.color), 2);
+        toast('MEDICAL SUPPLIES - health & armor', hex(p.color), 2);
     } else {
-        power = { id: s.kind, t: p.dur, dur: p.dur };
-        if (s.kind === 'ammo') WEAPON_ORDER.forEach(k => ammoState[k] = Math.max(ammoState[k], W(k).magSize));
-        toast(p.name + '!', hex(p.color), 2);
+        WEAPON_ORDER.forEach(k => ammoState[k] = Math.max(ammoState[k], W(k).magSize));
+        toast('AMMO RESUPPLY - all magazines full', hex(p.color), 2);
     }
     updateHUD();
 }
 
-
-
-// ---------- FIELD POWER-UPS (rank-gated) ----------
-// Glowing orbs pop up during waves - usually somewhere high you have to climb to.
-// Only kinds your rank has unlocked ever show up; higher ranks see (and can grab) more of them.
-const _boostGeo = new THREE.OctahedronGeometry(0.42, 0);
-const _boostBeamGeo = new THREE.CylinderGeometry(0.08, 0.55, 4, 8, 1, true);
-const boomQ = [];
-let boomLast = -1, boostHtml = '', boostHudT = 0;
-function boostOn(id) { return MODS.has(id); }
-function unlockedBoosts() { return Object.keys(BOOSTS).filter(id => rankOK('power', id)); }
-function orbSpot() {
-    if (!nav || !nav.Y.length) return null;
-    const p = camera.position, high = Math.random() < 0.65;
-    for (let pass = 0; pass < 2; pass++) for (let i = 0; i < 120; i++) {
-        const n = (Math.random() * nav.Y.length) | 0, y = nav.Y[n];
-        if (pass === 0 && (high ? y < 2.5 : y > 0.01)) continue;
-        if (nav.target >= 0 && nav.dist[n] < 0) continue;          // somewhere you can actually get to
-        const c = nav.cell[n], ci = c % nav.N, x = -nav.A + ci + 0.5, z = -nav.A + (c - ci) / nav.N + 0.5;
-        const d = Math.hypot(x - p.x, z - p.z);
-        if (d < 12 || d > Math.min(65, ARENA * 1.1)) continue;
-        return [x, y, z];
-    }
-    return null;
-}
-function spawnOrb() {
-    const kinds = unlockedBoosts();
-    if (!kinds.length) return;
-    let kind = pickRandom(kinds);
-    if (kind === 'nuke' && Math.random() < 0.65) kind = kinds[Math.floor(Math.random() * (kinds.length - 1))];   // nukes are rare
-    const spot = orbSpot(); if (!spot) return;
-    const b = BOOSTS[kind];
-    const g = new THREE.Group();
-    const core = new THREE.Mesh(_boostGeo, new THREE.MeshBasicMaterial({ color: b.color, toneMapped: false }));
-    const shell = new THREE.Mesh(_boostGeo, new THREE.MeshBasicMaterial({ color: b.color, transparent: true, opacity: 0.35, wireframe: true, depthWrite: false, toneMapped: false }));
-    shell.scale.setScalar(1.8);
-    const beam = new THREE.Mesh(_boostBeamGeo, new THREE.MeshBasicMaterial({ color: b.color, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false }));
-    beam.position.y = 0.8;
-    g.add(core, shell, beam);
-    g.position.set(spot[0], spot[1] + 1.1, spot[2]);
-    scene.add(g);
-    orbs.push({ g, core, shell, beam, kind, life: 35, baseY: spot[1] + 1.1 });
-    toast(`POWER-UP: ${b.name}` + (spot[1] > 2.5 ? ' - up high!' : ''), hex(b.color), 1.8);
-    sfx('orb');
-}
-function removeOrb(o) { scene.remove(o.g); o.core.material.dispose(); o.shell.material.dispose(); o.beam.material.dispose(); orbs = orbs.filter(x => x !== o); }
-function collectOrb(o) { removeOrb(o); activateBoost(o.kind); }
-// ---------- POWER-UPS = PERMANENT MODIFIERS (switched on in the start menu, rank 10+) ----------
-const POWER_MENU_RANK = 10;
-let MODS = new Set();
-function powerUnlocked(id) { return unlockLevel() >= Math.max(POWER_MENU_RANK, unlockRank('power', id)); }
-// work out which modifiers this run gets (called when a run starts)
-function refreshMods() {
-    MODS = new Set();
-    if (NET.pvp) return;                             // PvP stays fair
-    for (const id of settings.powers || []) if (BOOSTS[id] && (run.mode === 'sandbox' || powerUnlocked(id))) MODS.add(id);
-    overshield = MODS.has('shield') ? 50 : 0;
-}
-function updatePowerHUD() {
-    const txt = [...MODS].map(id => BOOSTS[id].name + (id === 'shield' ? ' ' + Math.ceil(overshield) : '')).join('  -  ');
-    ui.pu.classList.toggle('hidden', !txt);
-    if (ui.pu._t !== txt) { ui.pu._t = txt; ui.pu.textContent = txt; ui.pu.style.color = '#e9d5ff'; }
-}
-function activateBoost(kind) {
-    const b = BOOSTS[kind];
-    const o = { kind };
-    sfx('power');
-    screenFlash(`rgba(${(b.color >> 16) & 255},${(b.color >> 8) & 255},${b.color & 255},0.35)`);
-    if (o.kind === 'nuke') {
-        screenFlash('rgba(255,255,255,0.7)'); sfx('boom'); shake = Math.max(shake, 0.8);
-        if (NET.inGame && !NET.host) netSend({ t: 'nuke' });
-        else for (const e of [...enemies]) if (!e.userData.dead && !e.userData.config.boss) killEnemy(e, false, false, 'nuke');
-        toast('NUKE! Every enemy wiped out', '#ffffff', 2.4);
-    } else {
-        boosts[o.kind] = b.dur;
-        if (o.kind === 'shield') overshield = 60;
-        if (o.kind === 'slowmo' && NET.inGame && !NET.host) netSend({ t: 'slow', d: b.dur });
-        toast(`${b.name}!  ${b.desc}`, hex(b.color), 2.2);
-    }
-    updateHUD();
-}
-function updateOrbs(dt) {
-    updatePowerHUD();
+function updateRegen(dt) {
     // REGENERATION upgrade: heal after a few seconds without getting hit
     // 4.0 MEDIC passive: regenerates on its own (2 HP/s, 4 with FIELD ARMOR) and REGENERATION kicks in after 3s instead of 4
     const medic = myClass() === 'medic', calm = gameTime - lastHurtT > (medic ? 3 : 4);
     if (perk('regen') && currentHp > 0 && currentHp < maxHp && calm) currentHp = Math.min(maxHp, currentHp + perk('regen') * dt);
     if (medic && currentHp > 0 && currentHp < maxHp && calm && !NET.dead) currentHp = Math.min(maxHp, currentHp + (clsUp('medic', 2) ? 4 : 2) * dt);
-    const p = camera.position;
-    for (let i = orbs.length - 1; i >= 0; i--) {
-        const o = orbs[i]; o.life -= dt;
-        o.core.rotation.y += dt * 2; o.core.rotation.x += dt * 0.7; o.shell.rotation.y -= dt * 1.2;
-        o.g.position.y = o.baseY + Math.sin(gameTime * 2.5 + i) * 0.18;
-        o.g.visible = o.life > 5 || Math.floor(o.life * 6) % 2 === 0;
-        if (Math.hypot(o.g.position.x - p.x, o.g.position.z - p.z) < 1.7 && Math.abs(feetY + 0.9 - o.g.position.y) < 2) { collectOrb(o); continue; }
-        if (o.life <= 0) removeOrb(o);
-    }
-    while (boomQ.length) explode(boomQ.shift(), 14, 2.6, { noSelf: true, mini: true, src: 'boom' });
 }

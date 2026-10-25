@@ -1,29 +1,16 @@
 // ---------- RANKS & UNLOCKS ----------
 // You earn XP from kills and waves (more on harder difficulties). Ranks unlock new stuff.
-// Ranks unlock cosmetics, power-ups and (4.0) the five new weapons - the classic guns, gadgets, maps, modes and difficulties
+// Ranks unlock cosmetics and (4.0) the five new weapons - the classic guns, gadgets, maps, modes and difficulties
 // are always available
 const UNLOCKS = {
     sleeve: { tan: 2, crimson: 3, arctic: 5, teal: 6, royal: 8, carbon: 10, gold: 15, plasma: 20 },
     glove: { brown: 2, tan: 3, skin: 4, dark: 4, blue: 6, red: 7, gold: 15 },
     xhStyle: { dot: 2, circle: 4 },
     xhColor: { '#22d3ee': 2, '#facc15': 3, '#f472b6': 5, '#ef4444': 6 },
-    camo: { desert: 3, forest: 4, arctic: 5, crimson: 7, midnight: 9, toxic: 11, chrome: 13, gold: 16, rainbow: 22 },
+    camo: { desert: 3, forest: 4, arctic: 5, crimson: 7, midnight: 9, toxic: 11, chrome: 13, gold: 16, rainbow: 22, ember: 99, hazard: 99, warden: 99, static: 99, toxin: 99, outbreak: 99 },
     tracer: { red: 3, green: 4, blue: 6, purple: 8, gold: 12, rainbow: 18 },
     killfx: { confetti: 5, fire: 7, ice: 9, void: 12, gold: 14 },
-    power: { speed: 10, shield: 10, vamp: 12, jump: 14, slowmo: 16, boom: 19, instakill: 22, gold: 25 },
-    weapon: { dual: 2, katana: 3, glauncher: 4, tesla: 5, railgun: 6 }      // 4.0: buyable in the Armory from this rank
-};
-// Power-ups: permanent modifiers for the whole run. From rank 10 you switch them on in the start menu
-// (as many as you've unlocked); more unlock as you rank up. Nothing is on by default.
-const BOOSTS = {
-    speed:     { name: 'SPEEDSTER',        color: 0x22d3ee, desc: 'You run 30% faster.' },
-    shield:    { name: 'OVERSHIELD',       color: 0x60a5fa, desc: 'A 50-point shield that soaks hits first and refills every wave.' },
-    vamp:      { name: 'VAMPIRE',          color: 0xef4444, desc: 'Every kill heals you 5 HP.' },
-    jump:      { name: 'MOON BOOTS',       color: 0xa3e635, desc: 'You jump 70% higher.' },
-    slowmo:    { name: 'TIME WARP',        color: 0xc084fc, desc: 'Enemies move 20% slower.' },
-    boom:      { name: 'EXPLOSIVE ROUNDS', color: 0xfb923c, desc: 'Bullet hits set off a small blast.' },
-    instakill: { name: 'EXECUTIONER',      color: 0xfde047, desc: 'Enemies under 25% health die to your next hit (not bosses).' },
-    gold:      { name: 'GOLDEN TOUCH',     color: 0xfbbf24, desc: '+50% cash from everything.' }
+    weapon: { dual: 2, katana: 3, glauncher: 4, tesla: 5, railgun: 6, carbine: 4, lever: 6 }      // 4.0: buyable in the Armory from this rank
 };
 // player upgrades, bought in the Armory (reset every run)
 const PERKS = {
@@ -80,11 +67,13 @@ const CAMOS = {
     stock: { name: 'STOCK' }, desert: { name: 'DESERT', c: 0xb89a6a }, forest: { name: 'FOREST', c: 0x3f5a36 }, arctic: { name: 'ARCTIC', c: 0xe5e9f0 },
     crimson: { name: 'CRIMSON', c: 0x8b1e2d }, midnight: { name: 'MIDNIGHT', c: 0x1e2a55 }, toxic: { name: 'TOXIC', c: 0x1c2b12, glow: 0xa3e635 },
     chrome: { name: 'CHROME', c: 0xd0d6de, metal: true }, gold: { name: 'GOLD', c: 0xf0b832, metal: true, emissive: 0x6a4300 }, rainbow: { name: 'RAINBOW', rainbow: true },
+    ember: { name: 'EMBER', c: 0xc2410c, glow: 0xfb923c }, hazard: { name: 'HAZARD', c: 0xeab308, glow: 0x713f12 }, warden: { name: 'WARDEN', c: 0x3b0764, metal: true, glow: 0xe879f9 },
+    static: { name: 'STATIC', c: 0x1e3a5f, metal: true, glow: 0x38bdf8 }, toxin: { name: 'TOXIN', c: 0x365314, glow: 0xa3e635 }, outbreak: { name: 'OUTBREAK', c: 0x7f1d1d, metal: true, glow: 0xfca5a5 },      // 5.0: campaign rewards
     obsidian: { name: 'OBSIDIAN', c: 0x1a1426, metal: true, glow: 0xfbbf24 }          // 4.0: prestige 1
 };
 const TRACERS = { default: { name: 'DEFAULT' }, red: { name: 'RED', c: 0xff4040 }, green: { name: 'GREEN', c: 0x4ade80 }, blue: { name: 'BLUE', c: 0x60a5fa }, purple: { name: 'PURPLE', c: 0xc084fc }, gold: { name: 'GOLD', c: 0xfbbf24 }, rainbow: { name: 'RAINBOW', rainbow: true }, starlight: { name: 'STARLIGHT', c: 0xdbe4ff } };
 const KILLFX = { blocks: { name: 'BLOCKS' }, confetti: { name: 'CONFETTI' }, fire: { name: 'FIRE' }, ice: { name: 'ICE' }, void: { name: 'VOID' }, gold: { name: 'GOLD RUSH' }, stardust: { name: 'STARDUST' } };
-const UNLOCK_KIND_NAMES = { sleeve: 'Sleeves', glove: 'Gloves', xhStyle: 'Crosshair', xhColor: 'Crosshair color', camo: 'Weapon camo', tracer: 'Tracers', killfx: 'Kill effect', power: 'Power-up', weapon: 'Weapon' };
+const UNLOCK_KIND_NAMES = { sleeve: 'Sleeves', glove: 'Gloves', xhStyle: 'Crosshair', xhColor: 'Crosshair color', camo: 'Weapon camo', tracer: 'Tracers', killfx: 'Kill effect', weapon: 'Weapon' };
 const XP_MULT = { easy: 0.75, normal: 1, hard: 1.5, nightmare: 2.2 };
 const MAX_RANK = 50;
 const xpNeed = (r) => 600 + 200 * r;               // XP to go from rank r to r+1
@@ -106,8 +95,8 @@ const prestigeLvl = () => clamp(life.prestige | 0, 0, MAX_PRESTIGE);
 const prestigeNeed = (kind, id) => (PRESTIGE_UNLOCKS[kind] && PRESTIGE_UNLOCKS[kind][id]) || 0;
 // after your first prestige everything that unlocks by rank stays unlocked, whatever your rank is now
 const unlockLevel = () => prestigeLvl() > 0 ? MAX_RANK : rankInfo().rank;
-const isUnlocked = (kind, id) => { const p = prestigeNeed(kind, id); return p ? prestigeLvl() >= p : unlockLevel() >= unlockRank(kind, id); };
-const lockTag = (kind, id) => prestigeNeed(kind, id) ? 'P' + prestigeNeed(kind, id) : String(unlockRank(kind, id));      // '12' = rank 12, 'P2' = prestige 2
+const isUnlocked = (kind, id) => { if (campOwns(kind, id)) return true; const p = prestigeNeed(kind, id); return p ? prestigeLvl() >= p : unlockLevel() >= unlockRank(kind, id); };
+const lockTag = (kind, id) => campSkin(kind, id) ? 'C' : prestigeNeed(kind, id) ? 'P' + prestigeNeed(kind, id) : String(unlockRank(kind, id));      // '12' = rank 12, 'P2' = prestige 2
 const canPrestige = () => rankInfo().rank >= MAX_RANK && prestigeLvl() < MAX_PRESTIGE;
 function doPrestige() {
     if (!canPrestige()) return false;
@@ -133,18 +122,14 @@ function unlocksAtRank(r) {
     for (const kind in UNLOCKS) for (const id in UNLOCKS[kind]) if (UNLOCKS[kind][id] === r) out.push({ kind, id });
     return out;
 }
-// same, but power-ups you haven't reached yet stay secret (they're never shown until you unlock them)
-const shownUnlocksAtRank = (r) => unlocksAtRank(r).filter(u => u.kind !== 'power' || unlockLevel() >= r);
+const shownUnlocksAtRank = (r) => unlocksAtRank(r);
 const DIFF = () => DIFFICULTIES[run.diff] || DIFFICULTIES.normal;
 const bestKey = (diff, mode) => diff + (mode === 'rush' ? '_rush' : mode === 'bossrush' ? '_boss' : '');
 
 
-const POWERUPS = {
-    dmg:   { name: 'DOUBLE DAMAGE',  color: 0xf97316, dur: 15 },
-    rapid: { name: 'RAPID FIRE',     color: 0xfacc15, dur: 15 },
-    ammo:  { name: 'BOTTOMLESS MAG', color: 0x38bdf8, dur: 12 },
-    med:   { name: 'FULL RESTORE',   color: 0x4ade80, dur: 0 },
-    cash:  { name: 'CASH JACKPOT',   color: 0x22c55e, dur: 0 }
+const SUPPLY_KINDS = {
+    ammo: { name: 'AMMO RESUPPLY', color: 0x38bdf8 },
+    med:  { name: 'MEDICAL SUPPLIES', color: 0x4ade80 }
 };
 
 
@@ -190,7 +175,9 @@ let isReloading = false, reloadTimer = 0, reloadTotal = 1, reloadStyle = 'mag', 
 let camera, scene, renderer, controls, viewScene, weaponCam;
 let hemi, sun, viewHemi, viewSun, viewFill, vmLight, muzzleLight = null;
 // shared shader inputs for the cheap lighting extras (rim light, cool shadows, ground haze) - set per theme
-const LIGHT_U = { uRim: { value: new THREE.Color() }, uRimE: { value: new THREE.Color() }, uCool: { value: new THREE.Color(1, 1, 1) }, uHaze: { value: 0.35 } };
+const LIGHT_U = { uRim: { value: new THREE.Color() }, uRimE: { value: new THREE.Color() }, uCool: { value: new THREE.Color(1, 1, 1) }, uHaze: { value: 0.35 },
+                   // fake dynamic lights for tiers with no real point lights: xyz = world position, w = strength (muzzle / explosion)
+                   uMz: { value: new THREE.Vector4(0, 0, 0, 0) }, uBm: { value: new THREE.Vector4(0, 0, 0, 0) } };
 let boomLights = [], lampLights = [];
 let autoStage = 0, autoCalm = 0;
 let skyMat, skyGroup, stars, envScene, pmrem, envRT = null, envTex = null;
@@ -241,8 +228,7 @@ let activeC4 = null;
 let projectiles = [];          // player grenades/shells/c4 + enemy spit
 let pickups = [];
 let supplies = [], supplyTimer = -1, suppliesLeft = 0;
-let power = null;              // { id, t, dur }  (supply-drop power-up)
-let boosts = {}, orbs = [], orbTimer = 0, overshield = 0;   // power-ups running right now
+let CAMP = { on: false, over: false, m: null, st: null, waves: false, decoys: [], T: [], marks: [], objs: [], nm: 0, stat: {}, skins: {}, inv: 0, dmg: 0, deaths: 0 };   // 5.0 campaign mission in progress (30-campaign.js)
 let lastHurtT = -99;                                       // when you last took damage (REGENERATION)
 // Multiplayer (experimental). Everything else checks NET.on before doing anything network-y.
 //   host: this browser runs the enemies and is the "referee".  pvp: team deathmatch instead of waves.
@@ -251,6 +237,8 @@ let dmgOwner = 0;              // host only: which player's hit is being applied
 let turrets = [], fires = [], strikes = [];
 let streak = 0, strikeCharges = 0, meleeCd = 0;
 const STREAK_FOR_STRIKE = 12;
+let menuView = 'home';      // 5.0 start screen: 'home' | 'setup' (29-start-screen.js)
+const MZ = { grp: null, zs: [], glow: null, t: 0, n: 0, gy: 0, key: '', mood: false };
 let menuOrbit = 0, lightningT = 6, lightningFlash = 0;
 let shake = 0;
 const camOffset = new V3();
@@ -280,7 +268,7 @@ const ui = {
     secName: $('hud-sec-name'), secStatus: $('hud-sec-status'), secCd: $('sec-cd'),
     combo: $('hud-combo'), toast: $('toast'), vignette: $('vignette'), flash: $('screen-flash'), scope: $('scope'), optic: $('optic'),
     dmgLayer: $('dmg-layer'), dmgDir: $('dmg-dir'), shopMoney: $('shop-money'), shopSubtitle: $('shop-subtitle'),
-    slots: $('hud-slots'), intel: $('hud-intel'), power: $('hud-power'), powerName: $('hud-power-name'), powerBar: $('hud-power-bar'),
+    slots: $('hud-slots'), intel: $('hud-intel'),
     fps: $('fps'), menuBest: $('menu-best'), pauseStats: $('pause-stats'), strike: $('hud-strike'), streak: $('hud-streak'), boss: $('hud-boss'), bossName: $('hud-boss-name'), bossBar: $('hud-boss-bar'), boosts: $('hud-boosts'), pu: $('hud-pu')
 };
 Object.assign(ui, { abil: $('hud-abil'), abilCls: $('hud-abil-cls'), abilName: $('hud-abil-name'), abilStatus: $('hud-abil-status'), abilBar: $('abil-cd'),

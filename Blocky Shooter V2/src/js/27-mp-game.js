@@ -189,7 +189,7 @@ function netUpdateEnemies(dt) {
 }
 function clientWaveStart(n) {
     playerStats.level = n; waveActive = true; intermission = 0; waveHurt = false;
-    scheduleSupply(); if (boostOn('shield')) overshield = 50;
+    scheduleSupply();
     toast(n % 5 === 0 ? `WAVE ${n} - BOSS INCOMING` : `WAVE ${n}`, n % 5 === 0 ? '#e879f9' : '#ffffff', 2.2);
     sfx('wave');
     netReviveIfDown();
@@ -197,7 +197,7 @@ function clientWaveStart(n) {
 }
 function clientWaveClear(n) {
     waveActive = false;
-    const bonus = Math.round((40 + (n - 1) * 15) * DIFF().cash * (boostOn('gold') ? 1.5 : 1));
+    const bonus = Math.round((40 + (n - 1) * 15) * DIFF().cash);
     playerStats.money += bonus;
     gainXP(40 + 10 * (n - 1));
     chWave(n - 1);                                  // 4.0 challenges
@@ -466,7 +466,7 @@ function netUpdateAvatars(dt) {
 function hostStartGame() {
     const L = NET.lobby, mode = L.mode;
     const err = startProblem(); if (err) { NET.hostMsg = err; renderMP(); return; }
-    const maps = Object.keys(MAPS);
+    const maps = MAP_IDS();
     const map = L.map === 'random' ? maps[Math.floor(Math.random() * maps.length)] : L.map;
     const themeIds = Object.keys(THEMES);
     const cfg = { t: 'start', seed: Math.floor(Math.random() * 1e9), map, theme: themeIds[Math.floor(Math.random() * themeIds.length)], mode, diff: L.diff,
@@ -497,7 +497,6 @@ function netApplyLate(L) {
     toast('Joined a match in progress!', '#c4b5fd', 2.2);
     updateHUD();
 }
-function netAnyMod(id) { if (!NET.host) return false; for (const p of netPlayers.values()) if (p.mods && p.mods.includes(id)) return true; return false; }
 function startProblem() {
     const mode = NET.lobby.mode, all = allPlayers();
     if (mode === 'coop') return all.length > 10 ? 'Co-op is capped at 10 players.' : '';
@@ -526,8 +525,6 @@ function netBeginGame(cfg) {
     runStats = freshRunStats(); runXP = 0; runUnlocks = [];
     netEnemySeq = 0; enemyById.clear(); NET.deadIds.clear();
     applyTheme(cfg.theme); buildWorld(cfg.map, cfg.seed);
-    refreshMods();
-    if (!NET.host) sendRel(NET.hostPeer, { t: 'mods', l: [...MODS] });
     for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
     if (NET.pvp) {
         playerStats.weapons = WEAPON_ORDER.slice(); playerStats.currentWeapon = 'ar';

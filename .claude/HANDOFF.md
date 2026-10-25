@@ -92,6 +92,10 @@ Real cross-network test (two Chromebooks, different states) still needed before 
 ## Blocky Shooter 5.0 (in progress on branch claude/pensive-planck-h9xqbg)
 - Owner asked (2026-10-25): perf + lighting (Chromebook can't hold 60 on LOW), realistic guns, model upgrades, one UI theme
   (restyle CONTINUE SAVE), new start screen, Campaign (3 chapters), power-ups removed, same-wifi game scan, Grapevine invites. One 5.0 release.
+- Round 1 built (game-finish run 2026-10-25, play-test 60/79 claims OK): all of the above. Still weak / to do: perf only
+  ~10-20% better (draw calls 158->~132, enemy loop makes ~75 KB garbage/frame, LOW p95 17-18 ms at 4x CPU throttle on
+  swiftshader); bosses kept old models; gun hand fit and screen position (overlaps HUD cards) need polish; flat map lighting;
+  new enemies/final boss not in multiplayer; campaign difficulty untuned; wifi scan only tested with a fake transport.
 - Launcher side of invites is in the hub `index.html` (HG_inviteTargets / HG_sendInvite / HG_takeJoin, invite pop-up with JOIN).
   The hub is NOT copied by `release.sh prepare`: port that block into `$W/index.html` by hand when releasing 5.0.
 

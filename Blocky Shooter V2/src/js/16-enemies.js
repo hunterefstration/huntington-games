@@ -66,7 +66,11 @@ const ZLOOK = {
     necro:    { skin: 0xb8b0c8, pants: 0x1e1b4b, hair: 0xe5e7eb, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
     egg:      { skin: 0x9bbf4a, pants: 0x4d6b1a, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9be15a },
     acolyte:  { skin: 0xa7a3b8, pants: 0x2e1065, hair: null, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
-    risen:    { skin: 0xd6d3c4, pants: 0x3a3632, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9ca3af }
+    risen:    { skin: 0xd6d3c4, pants: 0x3a3632, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9ca3af },
+    riot:     { skin: 0x6f7f6a, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x2b3544, blood: 0x7a1414 },
+    crawler:  { skin: 0x8a8a74, pants: 0x3f3a33, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x7a1414 },
+    blighter: { skin: 0x93a860, pants: 0x3d4a22, hair: null, shoe: 0x222222, sleeves: 'long', armor: 0x55662d, bigEyes: true, blood: 0x9be15a },
+    zero:     { skin: 0x7a8f55, pants: 0x2b3318, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0xa3e635 }
 };
 const zLook = cfg => ZLOOK[cfg.look || cfg.id] || ZLOOK.grunt;
 function mixHex(a, b, t) { return new THREE.Color(a).lerp(new THREE.Color(b), t).getHex(); }
@@ -141,6 +145,16 @@ function enemyKit(cfg) {
     let eyes = true, extra = null, shield = null;
 
     switch (id) {
+        case 'grunt': {
+            // office zombie: loosened tie, collar, a dangling ID badge, a bandaged forearm and a wristwatch
+            const TIE = 0xb91c1c;
+            T.push([0.16, 0.7, 0.03, 0, 2.0, hd + 0.015, TIE], [0.2, 0.14, 0.04, 0, 2.3, hd + 0.02, darken(TIE, 0.8)], [0.5, 0.1, 0.1, 0, 2.38, hd - 0.04, 0xe5e7eb, 0, 0, 0.1]);
+            T.push([0.2, 0.26, 0.02, -0.28 * sl, 1.82, hd + 0.02, 0xf1f5f9], [0.2, 0.05, 0.03, -0.28 * sl, 1.97, hd + 0.03, 0x2563eb], [0.02, 0.2, 0.02, -0.28 * sl, 2.1, hd + 0.02, BLACK]);
+            for (let i = 0; i < 3; i++) k.armR.push([0.3, 0.07, 0.3, 0, -0.72 - i * 0.1, 0.01, i % 2 ? 0xd6d3c4 : 0xece8d8]);
+            k.armR.push([0.04, 0.2, 0.04, 0.02, -0.98, 0.15, BLOOD]);
+            k.armL.push([0.28, 0.06, 0.28, 0, -1.04, 0, 0x9ca3af], [0.06, 0.07, 0.03, 0, -1.04, 0.15, 0x7ee8fa]);
+            break;
+        }
         case 'sprinter':
             // skinny runner: tank top, running shorts, white sneakers, ribs on both sides, glowing sweatband
             T.push([0.36 * sl, 0.42, 0.02, 0.2 * sl, 2.02, -hd - 0.012, HOLE]);
@@ -170,6 +184,10 @@ function enemyKit(cfg) {
             k.torsoGlow.push([0.16, 0.16, 0.06, -0.32, 2.15, hd + 0.02, 0xff8a1a], [0.12, 0.12, 0.06, 0.34, 2.05, hd + 0.02, 0xff8a1a], [0.18, 0.18, 0.06, 0.1, 2.0, -hd - 0.02, 0xff8a1a], [0.14, 0.14, 0.06, -0.25, 1.7, -hd - 0.02, 0xff8a1a]);
             k.headGlow.push([0.14, 0.14, 0.05, 0.24, -0.08, 0.385, 0xff8a1a], [0.12, 0.12, 0.05, -0.2, 0.3, 0.2, 0xff8a1a]);
             k.armLGlow.push([0.12, 0.12, 0.05, 0, -0.4, 0.19, 0xff8a1a]); k.armRGlow.push([0.1, 0.1, 0.05, 0, -0.55, 0.19, 0xff8a1a]);
+            // a bandolier of dynamite across the chest with a sparking fuse
+            for (let i = 0; i < 4; i++) T.push([0.14, 0.5, 0.14, -0.38 + i * 0.25, 2.0 - i * 0.04, hd + 0.18, 0xb91c1c, 0, 0, 0.1], [0.15, 0.06, 0.15, -0.38 + i * 0.25, 2.18 - i * 0.04, hd + 0.18, 0xe5e7eb]);
+            T.push([0.9 * sl, 0.07, 0.1, 0, 2.0, hd + 0.08, BLACK, 0, 0, 0.05]);
+            k.torsoGlow.push([0.06, 0.1, 0.06, -0.38, 2.3, hd + 0.18, 0xffd24d], [0.06, 0.1, 0.06, 0.12, 2.26, hd + 0.18, 0xffd24d]);
             break;
         case 'charger':
             // the ram: bone horns out of its skull, a spiked hump, one massive club arm, bare feet
@@ -195,6 +213,45 @@ function enemyKit(cfg) {
             shield = partsGeo([[1.55, 2.3, 0.12, 0, 0, 0, 0x3f4a5a], [1.62, 0.12, 0.16, 0, 1.1, 0, 0x1f2937], [1.62, 0.12, 0.16, 0, -1.1, 0, 0x1f2937], [0.9, 0.34, 0.14, 0, 0.62, 0, 0x7ee8fa],
                                [1.2, 0.14, 0.02, 0, 0.2, 0.07, 0xe5e7eb], [0.06, 0.6, 0.02, -0.35, -0.35, 0.07, 0x111827, 0, 0, 0.5], [0.05, 0.4, 0.02, -0.18, -0.55, 0.07, 0x111827, 0, 0, -0.6],
                                [0.3, 0.34, 0.02, 0.35, -0.35, 0.07, BLOOD], [0.1, 0.5, 0.02, 0.42, -0.75, 0.07, DRIED], [0.24, 0.2, 0.02, -0.4, 0.62, 0.08, DRIED]], s);
+            break;
+        case 'riot':
+            // heavy riot-gear zombie: full-face helmet with a glowing amber slit, chest plate with a hazard stripe, shoulder pads, a big cracked shield
+            H.push([0.94, 0.5, 0.94, 0, 0.26, 0, 0x1e293b], [0.98, 0.07, 0.98, 0, 0.0, 0, 0x0f172a], [0.1, 0.3, 0.1, -0.5, 0.0, 0, 0x1e293b], [0.1, 0.3, 0.1, 0.5, 0.0, 0, 0x1e293b]);
+            k.headGlow.push([0.62, 0.11, 0.04, 0, 0.12, 0.465, 0xfb923c]);
+            T.push([1.2 * sl, 0.96, 0.72 * sl, 0, 1.95, 0, Z.armor], [1.24 * sl, 0.1, 0.76 * sl, 0, 2.45, 0, 0x0f172a], [1.0 * sl, 0.14, 0.02, 0, 1.78, 0.37 * sl, 0xfacc15], [0.5 * sl, 0.5, 0.02, 0, 2.15, 0.37 * sl, 0x1f2937]);
+            T.push([0.6, 0.36, 0.84, -0.86, 2.44, 0, 0x1f2937], [0.6, 0.36, 0.84, 0.86, 2.44, 0, 0x1f2937], [1.0 * sl, 0.1, 0.02, 0, 1.55, -0.37 * sl, 0xfacc15]);
+            for (const A of [k.armL, k.armR]) A.push([0.5, 0.34, 0.5, 0, -0.04, 0, Z.armor], [0.38, 0.52, 0.38, 0, -0.9, 0, 0x1f2937]);
+            shield = partsGeo([[1.8, 2.5, 0.14, 0, 0, 0, 0x334155], [1.88, 0.14, 0.18, 0, 1.2, 0, 0x111827], [1.88, 0.14, 0.18, 0, -1.2, 0, 0x111827], [1.2, 0.4, 0.16, 0, 0.7, 0, 0x7ee8fa],
+                               [1.6, 0.2, 0.02, 0, 0.1, 0.08, 0xfacc15], [0.07, 0.7, 0.02, -0.4, -0.4, 0.08, 0x111827, 0, 0, 0.5], [0.34, 0.4, 0.02, 0.4, -0.45, 0.08, BLOOD], [0.1, 0.5, 0.02, 0.47, -0.85, 0.08, DRIED]], s);
+            break;
+        case 'crawler':
+            // vent crawler: pale, hairless and half-starved, spine bumps along the back, bony elbows, huge yellow eyes
+            for (let i = 0; i < 5; i++) T.push([0.14, 0.14, 0.12, 0, 1.55 + i * 0.2, -hd - 0.07, BONE]);
+            T.push([0.9 * sl, 0.2, 0.5, 0, 2.3, -0.1, rot], [0.3, 0.1, 0.02, 0.1, 1.9, hd + 0.02, rot]);
+            H.push([0.04, 0.3, 0.04, -0.2, 0.46, 0.0, BONE, 0.3, 0, 0], [0.04, 0.3, 0.04, 0.2, 0.46, 0.0, BONE, 0.3, 0, 0]);
+            k.headGlow.push([0.2, 0.16, 0.04, -0.17, 0.06, 0.39, 0xfacc15], [0.2, 0.16, 0.04, 0.17, 0.06, 0.39, 0xfacc15]);
+            for (const A of [k.armL, k.armR]) A.push([0.3, 0.12, 0.3, 0, -0.62, 0, BONE]);
+            break;
+        case 'blighter':
+            // hazmat zombie: hood and respirator with glowing green filters, hazard patch, canister belt and a bubbling tank on the back
+            H.push([0.84, 0.3, 0.84, 0, 0.36, 0, 0x55662d], [0.12, 0.7, 0.8, -0.42, 0.0, 0, 0x55662d], [0.12, 0.7, 0.8, 0.42, 0.0, 0, 0x55662d], [0.5, 0.34, 0.2, 0, -0.18, 0.44, 0x1f2937], [0.5, 0.06, 0.22, 0, -0.18, 0.46, 0x111827]);
+            k.headGlow.push([0.14, 0.14, 0.06, -0.2, -0.18, 0.55, 0xa3e635], [0.14, 0.14, 0.06, 0.2, -0.18, 0.55, 0xa3e635]);
+            T.push([1.08 * sl, 1.0, 0.64 * sl, 0, 1.95, 0, Z.armor], [0.34, 0.34, 0.02, 0.2 * sl, 2.1, hd + 0.34, 0xfacc15], [0.16, 0.16, 0.03, 0.2 * sl, 2.1, hd + 0.35, 0x111827]);
+            for (let i = 0; i < 4; i++) T.push([0.2, 0.34, 0.2, -0.45 + i * 0.3, 1.42, hd + 0.1, i % 2 ? 0x84cc16 : 0x1f2937]);
+            T.push([0.8, 0.9, 0.34, 0, 2.0, -hd - 0.2, 0x3f3f46], [0.6, 0.12, 0.3, 0, 2.5, -hd - 0.2, 0x111827]);
+            extra = { size: [0.62, 0.72, 0.2], pos: [0, 2.0, -hd - 0.4], color: 0xa3e635 };
+            for (const A of [k.armL, k.armR]) A.push([0.42, 0.2, 0.42, 0, -1.04, 0, 0x1f2937]);
+            break;
+        case 'zero':
+            // Patient Zero: a swollen patient in a torn hospital gown with a wristband and drip line, glowing boils, a huge pulsing tumour on the back
+            T.push([1.1 * sl, 1.0, 0.64 * sl, 0, 1.92, 0, 0xcbd5e1], [0.5, 0.4, 0.02, -0.24, 1.7, hd + 0.02, 0x93c5fd], [0.12, 1.1, 0.02, 0.35, 1.8, hd + 0.02, 0x93c5fd], [0.3, 0.5, 0.02, 0.1, 1.3, hd + 0.02, BLOOD]);
+            T.push([0.7, 0.45, 0.9, -0.8, 2.45, 0, skinD], [0.7, 0.45, 0.9, 0.8, 2.45, 0, skinD]);
+            for (let i = 0; i < 5; i++) T.push([0.12, 0.5, 0.12, -0.5 + i * 0.25, 2.8, -0.1, BONE, 0, 0, (i - 2) * 0.12]);
+            k.torsoGlow.push([0.3, 0.3, 0.06, -0.3, 2.1, hd + 0.04, 0xa3e635], [0.22, 0.22, 0.06, 0.28, 1.6, hd + 0.04, 0xa3e635], [0.26, 0.26, 0.06, 0.05, 1.5, -hd - 0.04, 0xa3e635], [0.2, 0.2, 0.06, -0.3, 2.2, -hd - 0.04, 0xa3e635]);
+            extra = { size: [1.3, 1.2, 1.0], pos: [0, 2.15, -0.95], color: 0x84cc16 };
+            k.headGlow.push([0.4, 0.14, 0.04, 0, -0.3, 0.385, 0xa3e635], [0.1, 0.1, 0.1, -0.41, 0.5, 0, 0xa3e635], [0.1, 0.1, 0.1, 0.41, 0.5, 0, 0xa3e635]);
+            for (const A of [k.armL, k.armR]) A.push([0.46, 0.12, 0.46, 0, -0.62, 0, BONE], [0.12, 0.5, 0.12, 0, -0.64, 0.3, BONE, 0.4, 0, 0]);
+            k.armL.push([0.3, 0.1, 0.3, 0, -0.98, 0, 0xe5e7eb]);
             break;
         case 'marksman':
             // zombie sniper: combat helmet, glowing red scope over one eye, tactical vest, backpack, rifle
@@ -340,7 +397,7 @@ function enemyKit(cfg) {
         k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
     }
     // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-    const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26 }[id] ?? 0.2;
+    const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, riot: 0.08, crawler: 1.15, blighter: 0.2, zero: 0.3 }[id] ?? 0.2;
     return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
 }
 // the Broodmother's egg sac: a lumpy, veiny, glowing blob on a puddle of goo (no real arms or legs)
@@ -454,22 +511,38 @@ function ziReset() {
     ZI.sets.clear(); ZI.mats.clear();
 }
 const _zc = new THREE.Color();
+const _ziNeed = new Map(), _ziFwd = new V3();
+let _ziCx = 0, _ziCz = 0, _ziFx = 0, _ziFz = 0, _ziCos = -2;
+// cheap view culling: zombies well outside the camera's side-to-side view (and not close) aren't written into the instance buffers
+function ziInView(e) {
+    const dx = e.position.x - _ziCx, dz = e.position.z - _ziCz, d2 = dx * dx + dz * dz;
+    if (d2 < 100) return true;
+    return (dx * _ziFx + dz * _ziFz) > _ziCos * Math.sqrt(d2);
+}
 function updateZombieInstances() {
-    // count first so each set is big enough, then fill
-    const need = new Map();
+    camera.getWorldDirection(_ziFwd);
+    const fl = Math.hypot(_ziFwd.x, _ziFwd.z);
+    if (fl > 0.2) {
+        _ziFx = _ziFwd.x / fl; _ziFz = _ziFwd.z / fl; _ziCx = camera.position.x; _ziCz = camera.position.z;
+        const halfH = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
+        _ziCos = Math.cos(Math.min(3.1, halfH + (Q.shadows ? 0.95 : 0.55)));
+    } else _ziCos = -2;      // looking straight up / down: draw everything
+    // count first so each set is big enough, then fill (cached keys + one reused Map: nothing is allocated per frame)
+    const need = _ziNeed; need.clear();
     for (const e of zombieSet) {
-        if (!e.parent || !e.visible) continue;
-        for (const p of e.userData.iparts) { const k = e.userData.kit.id + '|' + p.part; need.set(k, (need.get(k) || 0) + 1); }
+        if (!e.parent || !e.visible || !ziInView(e)) continue;
+        const ip = e.userData.iparts, id = e.userData.kit.id;
+        for (let i = 0; i < ip.length; i++) { const p = ip[i], k = p.k || (p.k = id + '|' + p.part); need.set(k, (need.get(k) || 0) + 1); }
     }
     for (const z of ZI.sets.values()) z.n = 0;
     for (const e of zombieSet) {
-        if (!e.parent || !e.visible) continue;
+        if (!e.parent || !e.visible || !ziInView(e)) continue;
         const u = e.userData;
         e.updateMatrixWorld(true);
         const fl = u.zapT > gameTime ? 2 : (u.flash > 0 ? 0.8 : 0);
         for (const p of u.iparts) {
             if (!p.mesh.visible) continue;
-            const z = ziSet(u.kit, p.part, u.config.glow || 0, need.get(u.kit.id + '|' + p.part));
+            const z = ziSet(u.kit, p.part, u.config.glow || 0, need.get(p.k));
             z.mesh.setMatrixAt(z.n, p.mesh.matrixWorld);
             z.mesh.setColorAt(z.n, u.tint);
             z.flash.array[z.n] = fl;
@@ -615,7 +688,7 @@ function createEnemy(cfg, opt = {}) {
         totalHeight: 3.2 * s, radius: 0.62 * s * (cfg.id === 'sprinter' ? 0.85 : 1),
         config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, aura, bubble, barShow: false, barW: bw, barY: 3.6 * s + 0.3,
         mat, baseEmissive: mat.emissive.getHex(), baseEmissiveI: mat.emissiveIntensity, flash: 0,
-        walkPhase: Math.random() * 6, knock: new V3(), limp: 0.55 + Math.random() * 0.4, tilt: (Math.random() - 0.5) * 0.3, lurch: 0.7 + Math.random() * 0.6,
+        bodyY: HIP_Y * s, hitT: 0, hitSide: 1, hitHead: false, lodD: 0, walkPhase: Math.random() * 6, knock: new V3(), limp: 0.55 + Math.random() * 0.4, tilt: (Math.random() - 0.5) * 0.3, lurch: 0.7 + Math.random() * 0.6,
         wanderT: 0, wanderDir: new V3(), stuckT: 0, lastX: 0, lastZ: 0,
         attackCooldown: 0, shootCooldown: 1 + Math.random() * 2, fuse: -1,
         state: 'walk', stateT: 0, aiT: 1 + Math.random() * 2, losT: 0, lostT: 0, cdir: new V3(), air: new V3(), leaping: false, airT: 0,
@@ -636,6 +709,41 @@ function zombieHead(u) {
     // the upper body lurches side to side and bobs with each step
     if (u.kit.hunch) { u.body.rotation.x = u.kit.hunch + Math.sin(u.walkPhase * 2) * 0.05 * u.lurch; u.body.rotation.z = Math.sin(u.walkPhase) * 0.08 * u.lurch; }
 }
+// Attack lunge, hit flinch and per-type ambient effects, layered on top of the walk cycle.
+// The body leans into a swing, jerks back when shot (a headshot snaps the head back), and some types shed embers / acid / wisps.
+const _ambP = new V3();
+const AMBIENT = { pyro: [0xff8a1f, 'ember'], boss: [0xc084fc, 'mote'], necro: [0xa78bfa, 'mote'], phantom: [0x22d3ee, 'wisp'], spitter: [0xa3e635, 'drip'], bomber: [0xffb020, 'spark'], splitter: [0xc084fc, 'drip'], brood: [0xbef264, 'drip'], titan: [0x57534e, 'dust'] };
+function animReact(u, e, delta, cfg) {
+    const kit = u.kit;
+    let a = u.armSwing > 0 ? Math.sin(Math.PI * Math.min(0.3, u.armSwing) / 0.3) : 0;
+    const h = u.hitT > 0 ? Math.sin(Math.PI * Math.min(1, u.hitT / 0.24)) * (cfg.boss ? 0.35 : 1) : 0;
+    if (u.hitT > 0) { u.hitT -= delta; if (u.hitT <= 0) { u.hitT = 0; if (!kit.hunch) { u.body.rotation.x = 0; u.body.rotation.z = 0; } u.body.rotation.y = 0; u.head.rotation.y = 0; } }
+    if ((a > 0 || h > 0) && cfg.ai !== 'egg') {
+        const b = u.body.rotation;
+        b.x += 0.38 * a - 0.34 * h;
+        b.z += u.hitSide * 0.22 * h;
+        b.y = u.hitSide * 0.2 * h;
+        u.head.rotation.x += 0.25 * a - (u.hitHead ? 0.8 : 0.3) * h;
+        u.head.rotation.y = u.hitSide * (u.hitHead ? 0.5 : 0.2) * h;
+        if (h > 0 && cfg.ai !== 'shielder' && cfg.ai !== 'marksman') { u.armL.rotation.x -= 0.5 * h; u.armR.rotation.x -= 0.5 * h; u.armL.rotation.z -= 0.3 * h; u.armR.rotation.z += 0.3 * h; }
+    }
+    // shambling bob: the whole upper body rises and falls with each step and twists against the legs
+    if (cfg.ai !== 'egg' && u.onGround && u.hitT <= 0) { u.body.position.y = u.bodyY + Math.abs(Math.sin(u.walkPhase)) * 0.045 * kit.s; if (!cfg.boss) u.body.rotation.y = Math.sin(u.walkPhase) * 0.1 * u.lurch; }
+    const am = AMBIENT[cfg.id];
+    if (am && Q.particles > 300) {
+        u.ambT = (u.ambT || 0) - delta;
+        if (u.ambT <= 0 && u.lodD < 45) {
+            u.ambT = 0.12 + Math.random() * 0.12;
+            const sc = cfg.scale, kind = am[1];
+            _ambP.set(e.position.x + (Math.random() - 0.5) * sc * 0.8, e.position.y + (kind === 'drip' ? 2.3 : kind === 'dust' ? 2.4 : 1 + Math.random() * 2) * sc, e.position.z + (Math.random() - 0.5) * sc * 0.8);
+            if (kind === 'ember') { spawnParticles(_ambP, am[0], 1, 1.5, 0.9, 0.07 * sc, false, { grav: -3 }); if (Math.random() < 0.35) spawnSmoke(_ambP, 1, 0.5 * sc, 0.12, 1.2, 0.4, 1.0, 0.3); }
+            else if (kind === 'wisp') spawnSmoke(_ambP, 1, 0.5 * sc, 0.06, 0.5, 0.5, 1.0, 0.35);
+            else if (kind === 'drip') spawnParticles(_ambP, am[0], 1, 0.6, 0.6, 0.07 * sc, false, { grav: 12 });
+            else if (kind === 'dust') spawnParticles(_ambP, 0x8a8378, 1, 0.8, 0.8, 0.09 * sc, true, { grav: 6 });
+            else spawnParticles(_ambP, am[0], 1, 2, 0.5, 0.05 * sc, false, { grav: 2 });
+        }
+    }
+}
 function disposeEnemy(e) {
     const u = e.userData;
     zombieSet.delete(e);
@@ -650,11 +758,11 @@ const _bubbleGeo = new THREE.IcosahedronGeometry(1, 1);
 function pickEnemyType(level, counts) {
     const r = Math.random();
     let acc = 0;
-    const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03]];
+    const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['riot', 0.035], ['blighter', 0.03]];
     const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
     for (const [id, chance] of table) {
         const t = enemyTypes[id];
-        if (level < t.minLvl) continue;
+        if (level < t.minLvl || (t.solo && NET.inGame)) continue;
         acc += chance * sk;
         if (r < acc) { if (t.cap && (counts[id] || 0) >= t.cap) return enemyTypes.grunt; return t; }
     }
@@ -671,11 +779,28 @@ function spawnEnemy(cfg, x, z, y, baseSpeed, baseReward) {
     u.speed = baseSpeed * cfg.speed * DIFF().speed;
     u.reward = baseReward * cfg.reward;
     u.lastX = x; u.lastZ = z; u.dropping = true;
+    if (cfg.shieldHp) u.shieldHp = cfg.shieldHp * (1 + (playerStats.level - 1) * 0.04);
+    if (cfg.id === 'crawler') {        // 5.0: starts hidden in a vent (or a manhole) and ambushes when you get close
+        u.hidden = true; enemy.visible = false; u.wakeT = 16 + Math.random() * 14;
+        const v = pickVent(x, z); if (v) { enemy.position.x = v[0]; enemy.position.z = v[1]; enemy.position.y = groundAt(v[0], v[1], 0, 6) + 0.05; u.lastX = v[0]; u.lastZ = v[1]; }
+    }
     u.netId = netEnemySeq = (netEnemySeq % 65000) + 1; enemyById.set(u.netId, enemy);
     scene.add(enemy);
     enemies.push(enemy);
     if (cfg.boss) bossIntro(cfg);
     return enemy;
+}
+// vents (floor grates) that Vent Crawlers hide in: filled in by the map (Subway, Biolab); other maps use the spot the wave picked
+function pickVent(x, z) {
+    if (!ventSpots.length) return null;
+    let best = null, bd = 1e9;
+    for (const v of ventSpots) {
+        if (Math.hypot(v[0] - camera.position.x, v[1] - camera.position.z) < 14) continue;
+        const d = Math.hypot(v[0] - x, v[1] - z) + Math.random() * 10 + (v.n || 0) * 12;     // closest to the wanted spot, spread out a little
+        if (d < bd) { bd = d; best = v; }
+    }
+    if (best) best.n = (best.n || 0) + 1;
+    return best;
 }
 let netEnemySeq = 0; const enemyById = new Map();
 const SPIT_RANGE = 24;         // spitter acid can't fly further than this

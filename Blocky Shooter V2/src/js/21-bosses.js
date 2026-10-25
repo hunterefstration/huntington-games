@@ -148,8 +148,18 @@ function bossMinion(id, cx, cz, cy, minD, maxD) {
     if (!sp) return null;
     const e = spawnEnemy(enemyTypes[id], sp[0], sp[2], sp[1] + 0.2, waveSpeed(playerStats.level), waveReward(playerStats.level));
     e.userData.dropping = false;
+    if (id === 'crawler') crawlerWake(e, 0, 0);
     spawnParticles(new V3(sp[0], sp[1] + 1, sp[2]), enemyTypes[id].eye || 0xffffff, 10, 5, 0.6, 0.15);
     return e;
+}
+// 5.0 vent crawlers: they start hidden; this pops one out of its vent and into a pounce
+function crawlerWake(e, dx, dz) {
+    const u = e.userData; if (!u.hidden && u.state === 'pounce') return;
+    u.hidden = false; e.visible = true; u.barShow = true;
+    if (dx || dz) u.cdir.set(dx, 0, dz); else u.cdir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+    u.state = 'pounce'; u.stateT = 0.5; u.velocityY = 5; u.onGround = false;
+    spawnParticles(new V3(e.position.x, e.position.y + 0.3, e.position.z), 0x9ca3af, 10, 5, 0.6, 0.15, true, { grav: 6 });
+    sfxAt('thud', Math.hypot(camera.position.x - e.position.x, camera.position.z - e.position.z));
 }
 function bossHpMul(cfg) {
     if (!cfg.boss) return 1;
@@ -159,7 +169,7 @@ function bossHpMul(cfg) {
 // Which bosses come on this wave. The 7 newer bosses come in a random order that's fixed for the run
 // (from the run's seed, so a saved run meets the same bosses), after the Abomination opens on wave 5.
 function bossOrder() {
-    const ids = BOSS_IDS.filter(k => k !== 'boss');
+    const ids = BOSS_IDS.filter(k => k !== 'boss' && !enemyTypes[k].campOnly);
     let x = (run.seed || 777) >>> 0;
     const rnd = () => (x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296;
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
@@ -204,11 +214,16 @@ function bossDefeated(cfg) {
 }
 
 
-function updateEnemies(delta) {
+// Far-away ordinary zombies think less often (every 2nd / 3rd frame, with the time they missed added up), which
+// is invisible at that distance and cuts the AI + collision cost of a big wave. Anything that shoots, casts or is a boss always updates.
+let aiTick = 0;
+const LOD_FREE = { crawler: 1, blighter: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
+function updateEnemies(dtFrame) {
     const T = aiTargets();
+    aiTick++;
     let pos = camera.position, pFeet = feetY;
     const ld = lvlDmg();
-    if (NET.slowT > 0) NET.slowT -= delta;
+    if (NET.slowT > 0) NET.slowT -= dtFrame;
 
 
     for (let ei = enemies.length - 1; ei >= 0; ei--) {
@@ -217,7 +232,12 @@ function updateEnemies(delta) {
         const u = enemy.userData;
         if (u.dead) continue;
         const cfg = u.config;
-
+        let delta = dtFrame;
+        if (u.lodD > 40 && !cfg.boss && !LOD_FREE[cfg.ai] && u.state !== 'charge' && u.state !== 'windup' && !(u.fuse >= 0) && !(u.burnT > 0)) {
+            u.lodAcc = (u.lodAcc || 0) + dtFrame;
+            if ((aiTick + ei) % (u.lodD > 70 ? 3 : 2)) continue;
+            delta = u.lodAcc; u.lodAcc = 0;
+        } else u.lodAcc = 0;
 
         if (u.flash > 0) { u.flash -= delta; if (u.flash <= 0) { u.mat.emissive.setHex(u.baseEmissive); u.mat.emissiveIntensity = u.baseEmissiveI; } }
         if (u.attackCooldown > 0) u.attackCooldown -= delta;
@@ -239,6 +259,7 @@ function updateEnemies(delta) {
         const tgt = decoy ? decoy.g.position : pos;
         const dx = tgt.x - enemy.position.x, dz = tgt.z - enemy.position.z;
         const hd = Math.hypot(dx, dz) || 0.0001;
+        u.lodD = hd;
         const vGap = (decoy ? tgt.y : pFeet) - enemy.position.y;            // + means the target is above
         let faceX = dx, faceZ = dz;
 
@@ -352,6 +373,144 @@ function updateEnemies(delta) {
                         u.onGround = false; u.leaping = true; u.airT = 0;
                         sfx('throw');
                     } else if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
+                }
+                break;
+            }
+            case 'riot': {
+                // RIOT BREAKER: its shield soaks bullets from the front. Bash charge (wind-up, then a straight ram), then once the shield is broken it sprints in bare-handed.
+                u.aiT -= delta;
+                const sh = u.shieldHp > 0;
+                if (u.state === 'windup') {
+                    wantMove = false; u.stateT -= delta;
+                    if (u.stateT <= 0) { u.state = 'charge'; u.stateT = 0.85; u.cdir.set(dx / hd, 0, dz / hd); sfx('charge'); }
+                } else if (u.state === 'charge') {
+                    custom = true; u.stateT -= delta;
+                    const st = 20 * delta;
+                    enemy.position.x += u.cdir.x * st; enemy.position.z += u.cdir.z * st;
+                    faceX = u.cdir.x; faceZ = u.cdir.z; u.walkPhase += st * 1.3 / cfg.scale;
+                    if (Math.random() < 0.4) spawnParticles(new V3(enemy.position.x, enemy.position.y + 0.1, enemy.position.z), 0x8a7f73, 1, 2, 0.5, 0.25, true, { grav: 3, drag: 2 });
+                    if (hd < u.radius + 1.3 && vGap < 2 && vGap > -u.totalHeight) {
+                        if (_aiT.local) { push.set(0, 0, 0); shake = Math.max(shake, 0.5); }
+                        hurtTarget(_aiT, cfg.damage * 1.4 * ld, enemy.position, [u.cdir.x * 13, 5, u.cdir.z * 13], 'a Riot Breaker shield bash');
+                        u.state = 'walk'; u.aiT = 5;
+                    } else if (u.stateT <= 0) { u.state = 'walk'; u.aiT = 4.5; }
+                } else if (u.state === 'stun') {
+                    wantMove = false; u.stateT -= delta;
+                    u.head.rotation.y = Math.sin(gameTime * 14) * 0.4;
+                    if (u.stateT <= 0) { u.state = 'walk'; u.head.rotation.y = 0; }
+                } else {
+                    spMul = sh ? 0.85 : 1.75;
+                    if (sh && u.aiT <= 0 && u.onGround && hd > 4.5 && hd < 15 && Math.abs(vGap) < 2.5) {
+                        if (losClear(enemy.position.x, enemy.position.y + 1.5, enemy.position.z, pos.x, pos.y - 0.6, pos.z)) { u.state = 'windup'; u.stateT = 0.8; sfx('growl'); }
+                        else u.aiT = 0.5;
+                    }
+                    if (inMelee) { if (u.onGround) wantMove = false; if (decoy) hitTurret(decoy, u, cfg); else meleeHit(u, cfg, enemy, sh ? 1 : 1.25, [dx / hd * 9, 0, dz / hd * 9]); }
+                }
+                break;
+            }
+            case 'crawler': {
+                // VENT CRAWLER: lies hidden (invisible, untouchable) until you walk close, then pounces out of the vent and scuttles low and fast
+                if (u.hidden) {
+                    wantMove = false; custom = true; faceX = dx; faceZ = dz;
+                    u.wakeT -= delta;
+                    if ((hd < 9.5 && Math.abs(vGap) < 4) || u.wakeT <= 0) crawlerWake(enemy, dx / hd, dz / hd);
+                    else if ((u.rattleT = (u.rattleT || 0) - delta) <= 0) { u.rattleT = 1.4 + Math.random() * 1.6; if (hd < 24) { sfxAt('thud', hd); spawnParticles(new V3(enemy.position.x, enemy.position.y + 0.15, enemy.position.z), 0x9ca3af, 2, 1.5, 0.4, 0.1, true, { grav: 4 }); } }
+                } else if (u.state === 'pounce') {
+                    custom = true; u.stateT -= delta;
+                    enemy.position.x += u.cdir.x * 11 * delta; enemy.position.z += u.cdir.z * 11 * delta;
+                    faceX = u.cdir.x; faceZ = u.cdir.z; u.walkPhase += 0.6;
+                    if (hd < u.radius + 1.2 && vGap < 2 && vGap > -u.totalHeight) { hurtTarget(_aiT, cfg.damage * 1.3 * ld, enemy.position, [u.cdir.x * 5, 3, u.cdir.z * 5], 'a Vent Crawler ambush'); u.state = 'walk'; }
+                    else if (u.stateT <= 0) u.state = 'walk';
+                } else {
+                    if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
+                }
+                break;
+            }
+            case 'blighter': {
+                // BLIGHTER: keeps its distance and lobs toxic canisters ahead of you; each one bursts into a lingering poison cloud (area denial)
+                if (hd < 11) { mx = -mx; mz = -mz; } else if (hd < 21) wantMove = false;
+                u.shootCooldown -= delta;
+                if (u.shootCooldown <= 0 && hd < 36 && u.onGround) {
+                    u.shootCooldown = 3.6 + Math.random() * 1.4;
+                    const from = bp(2.5), lead = _aiT.local ? 0.9 : 0;
+                    const tx = pos.x + (velocity.x || 0) * lead * (_aiT.local ? 1 : 0), tz = pos.z + (velocity.z || 0) * lead * (_aiT.local ? 1 : 0);
+                    const ty = groundAt(tx, tz, 0, pFeet + 2), T = 0.9 + hd * 0.02;
+                    const fire = { r: 3.4, dps: 9 * ld, t: 9, c: 0x84cc16 };
+                    bossTele(tx, ty, tz, fire.r, T, 0x84cc16, () => {});
+                    bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0x84cc16, s: 0.9, g: 20, life: T + 0.8, dmg: cfg.damage * ld, fire, by: "a Blighter's toxic cloud" });
+                    sfx('throw'); u.armSwing = 0.3;
+                }
+                if (inMelee) meleeHit(u, cfg, enemy);
+                break;
+            }
+            case 'zero': {
+                // PATIENT ZERO: toxic globs, jump-the-shockwave slams, a burrow-and-burst ambush, and (enraged) a toxic nova with a safe hole in the middle
+                u.aiT -= delta;
+                if (Math.random() < 0.4) spawnParticles(bp(2.8), 0xa3e635, 1, 2, 0.6, 0.3 * cfg.scale, false, { grav: -3 });
+                if (u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 4) * 0.1);
+                if (u.state === 'burrow') {
+                    u.stateT -= delta; spMul = 3.6;
+                    if ((u.shimT = (u.shimT || 0) - delta) <= 0) { u.shimT = 0.15; spawnParticles(new V3(enemy.position.x, enemy.position.y + 0.2, enemy.position.z), 0x57534e, 3, 3, 0.6, 0.25, true, { grav: 4 }); }
+                    if (hd < 5 || u.stateT <= 0) {
+                        wantMove = false; u.state = 'erupt'; u.stateT = 1.1;
+                        const c = enemy.position.clone();
+                        bossTele(c.x, c.y, c.z, 7, 1.1, 0xa3e635, () => {
+                            enemy.visible = true; u.shielded = false; u.barShow = true; u.state = 'walk'; u.aiT = u.phase2 ? 2.2 : 3.2;
+                            bossBlast(new V3(c.x, c.y + 0.4, c.z), 7, 34 * ld, 0xa3e635, "Patient Zero's eruption");
+                            bossWave(c.x, c.y, c.z, 14, 11, 20 * ld, 0xa3e635, "Patient Zero's shockwave");
+                            if (enemies.length < 40) for (let i = 0; i < (u.phase2 ? 3 : 2); i++) bossMinion('crawler', c.x, c.z, c.y, 3, 7);
+                            sfx('roar');
+                        });
+                    }
+                } else if (u.state === 'erupt') {
+                    wantMove = false; u.stateT -= delta;
+                } else if (u.state === 'slam') {
+                    wantMove = false; u.stateT -= delta;
+                    if (u.stateT <= 0) u.state = 'walk';
+                } else if (u.state === 'cast') {
+                    wantMove = false; u.stateT -= delta;
+                    if (u.stateT <= 0) {
+                        u.state = 'walk';
+                        const n = u.phase2 ? 7 : 5, from = bp(2.9);
+                        for (let i = 0; i < n; i++) {
+                            const a = i / n * Math.PI * 2 + Math.random(), rr = i ? 2 + Math.random() * 7 : 0;
+                            const lead = _aiT.local ? 0.6 : 0;
+                            const tx = pos.x + (velocity.x || 0) * lead + Math.cos(a) * rr, tz = pos.z + (velocity.z || 0) * lead + Math.sin(a) * rr;
+                            const ty = groundAt(tx, tz, 0, pFeet + 2), T = 1.0 + hd * 0.015 + i * 0.1;
+                            const fire = { r: 3, dps: 11 * ld, t: 7, c: 0x84cc16 };
+                            bossTele(tx, ty, tz, fire.r, T, 0x84cc16, () => {});
+                            bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0x84cc16, s: 1.2, g: 20, life: T + 0.8, dmg: 16 * ld, boom: 2.4, fire, by: "Patient Zero's toxic glob" });
+                        }
+                        sfx('throw'); u.aiT = u.phase2 ? 2.4 : 3.4;
+                    }
+                } else if (u.state === 'nova') {
+                    wantMove = false; u.stateT -= delta;
+                    if (u.stateT <= 0) u.state = 'walk';
+                } else {
+                    if (hd < 24) spMul = 0.7;
+                    if (u.aiT <= 0 && u.onGround) {
+                        const pool = u.phase2 ? ['globs', 'slam', 'burrow', 'nova', 'globs', 'burrow'] : ['globs', 'slam', 'burrow'];
+                        let pick = pool[(u.atk = ((u.atk ?? -1) + 1)) % pool.length];
+                        if (pick === 'slam' && hd > 22) pick = 'globs';
+                        const c = enemy.position.clone();
+                        if (pick === 'globs') { u.state = 'cast'; u.stateT = 1.0; sfx('growl'); }
+                        else if (pick === 'slam') {
+                            u.state = 'slam'; u.stateT = 1.3; sfx('growl');
+                            bossTele(c.x, c.y, c.z, 6, 1.1, 0xa3e635, () => { bossBlast(new V3(c.x, c.y + 0.4, c.z), 6, 28 * ld, 0xa3e635, "Patient Zero's slam"); bossWave(c.x, c.y, c.z, 24, 12, 24 * ld, 0xa3e635, "Patient Zero's shockwave"); if (u.phase2) setTimeout(() => { if (!u.dead && currentGameState === 'playing') bossWave(c.x, c.y, c.z, 24, 12, 24 * ld, 0xa3e635, "Patient Zero's shockwave"); }, 700); });
+                            u.aiT = u.phase2 ? 2.4 : 3.4;
+                        } else if (pick === 'burrow') {
+                            u.state = 'burrow'; u.stateT = 3.4; u.shielded = true; enemy.visible = false; u.barShow = false;
+                            spawnParticles(bp(1.2), 0x57534e, 18, 6, 0.7, 0.3, true, { grav: 8 }); sfx('slam');
+                            toast('PATIENT ZERO BURROWED - KEEP MOVING!', '#a3e635', 1.8);
+                        } else {
+                            u.state = 'nova'; u.stateT = 2.3; sfx('roar');
+                            toast('TOXIC NOVA - STAND IN THE HOLE!', '#a3e635', 2);
+                            bossTele(c.x, c.y, c.z, 5, 2.2, 0x38bdf8, () => {});
+                            bossTele(c.x, c.y, c.z, 16, 2.2, 0xa3e635, () => bossBlast(new V3(c.x, c.y + 0.4, c.z), 16, 38 * ld, 0xa3e635, "Patient Zero's toxic nova", { r: 2.6, dps: 9 * ld, t: 4, c: 0x84cc16 }, 5));
+                            u.aiT = 2.4;
+                        }
+                    }
+                    if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy); }
                 }
                 break;
             }
@@ -854,6 +1013,9 @@ function updateEnemies(delta) {
         const reach = -Math.PI / 2 + (u.armSwing > 0 ? -0.9 * Math.sin(Math.PI * u.armSwing / 0.3) : 0);
         if (cfg.ai === 'ranged' || cfg.ai === 'medic') { u.armL.rotation.x = -sw; u.armR.rotation.x = sw; }
         else if (cfg.ai === 'marksman') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.4; u.armL.rotation.x = u.state === 'aim' ? -1.3 : -sw; u.armL.rotation.z = u.state === 'aim' ? -0.5 : 0; }
+        else if (cfg.ai === 'crawler') { u.armL.rotation.x = -2.3 + sw * 0.5; u.armR.rotation.x = -2.3 - sw * 0.5; }
+        else if (cfg.ai === 'blighter') { u.armL.rotation.x = u.armR.rotation.x = u.armSwing > 0 ? -2.2 : -1.2; }
+        else if (cfg.ai === 'shielder' || cfg.ai === 'riot') { u.armL.rotation.x = u.shieldHp > 0 || cfg.ai === 'shielder' ? -1.2 : reach * 0.8; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
         else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
         else if (cfg.boss && u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
         else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }
@@ -865,12 +1027,13 @@ function updateEnemies(delta) {
         else if (u.leaping) { u.armL.rotation.x = u.armR.rotation.x = -2.6; }
         else zombieArms(u, reach, sw);
         if (u.state !== 'stun') zombieHead(u);
+        animReact(u, enemy, delta, cfg);
         if (cfg.id === 'spitter' && u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 5) * 0.12);
     }
 
 
     // keep enemies from stacking inside each other (eased out over a few frames, so crowds don't jitter)
-    const sepK = Math.min(1, delta * 9);
+    const sepK = Math.min(1, dtFrame * 9);
     for (let i = 0; i < enemies.length; i++) {
         const a = enemies[i];
         for (let j = i + 1; j < enemies.length; j++) {

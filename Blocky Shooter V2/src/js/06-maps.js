@@ -117,6 +117,7 @@ function mapTemple() {
 // joined by cloud paths and rope bridges, over a sea of clouds far below. Walk off an edge and you fall to your death.
 function cloudIsland(cx, cz, r, y = 0, opts = {}) {
     const cs = 3;
+    skyIslands.push([cx, cz, r, y]);
     for (let gx = -r; gx <= r + 0.01; gx += cs) for (let gz = -r; gz <= r + 0.01; gz += cs) {
         const d = Math.hypot(gx, gz);
         if (d > r - Math.random() * 1.2) continue;

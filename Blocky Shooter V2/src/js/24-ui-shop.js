@@ -4,7 +4,7 @@
 
 
 function updateHUD() {
-    setText(ui.txtLevel, `WAVE ${Math.max(1, waveActive || intermission <= 0 ? playerStats.level : playerStats.level - 1)}`);
+    setText(ui.txtLevel, CAMP.on && !CAMP.waves ? 'MISSION ' + CAMP.m.n : `WAVE ${Math.max(1, waveActive || intermission <= 0 ? playerStats.level : playerStats.level - 1)}`);
     setText(ui.txtEnemies, `Enemies: ${enemies.length}`);
     setText(ui.txtMoney, `$${playerStats.money}`);
 
@@ -51,9 +51,9 @@ function updateAmmoHUD() {
         return;
     }
     ui.txtAmmoCur._lc = null;
-    setText(ui.txtAmmoCur, powerOn('ammo') ? '\u221e' : String(ammoState[wp.id]));
+    setText(ui.txtAmmoCur, String(ammoState[wp.id]));
     setText(ui.txtAmmoMax, `/ ${wp.magSize}`);
-    const low = !powerOn('ammo') && ammoState[wp.id] <= wp.magSize * 0.25;
+    const low = ammoState[wp.id] <= wp.magSize * 0.25;
     ui.txtAmmoCur.classList.toggle('text-red-500', low);
     ui.txtAmmoCur.classList.toggle('text-white', !low);
 }

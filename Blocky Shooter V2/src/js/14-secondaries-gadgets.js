@@ -89,7 +89,7 @@ function explode(pos, damage, radius, opts = {}) {
         if (boomLights.length) {
             const bl = boomLights.reduce((a, b) => (a.t <= b.t ? a : b));
             bl.light.position.copy(pos); bl.light.position.y += 1; bl.t = 1; bl.peak = 900 * (1 - 0.8 * theme.bright); bl.light.intensity = bl.peak;
-        }
+        } else fakeBoom(pos);
         const dPlayer = pos.distanceTo(camera.position);
         shake = Math.max(shake, clamp(1.4 - dPlayer / 30, 0, 0.9));
         sfx('boom');
@@ -98,7 +98,7 @@ function explode(pos, damage, radius, opts = {}) {
     if (NET.inGame && !opts.hurtsPlayer && !opts.mini) netSendFx('boom', pos, radius, opts.color || 0xffa64d);
     if (NET.pvp) netExplodeAvatars(pos, damage, radius, opts.src);
     if (NET.inGame && NET.host && opts.hurtsPlayer) netExplodeRemotes(pos, damage, radius, opts.by);
-    const dmgMul = opts.pre ? 1 : (!opts.hurtsPlayer && powerOn('dmg') ? 2 : 1) * (!opts.hurtsPlayer && opts.src !== 'turret' ? 1 + 0.08 * perk('dmg') : 1)
+    const dmgMul = opts.pre ? 1 : (!opts.hurtsPlayer && opts.src !== 'turret' ? 1 + 0.08 * perk('dmg') : 1)
                  * (!opts.hurtsPlayer && opts.src !== 'turret' && opts.src !== 'rpg' ? clsDmg() : 1);     // Adrenaline (RPG rockets already have it)
 
 
@@ -253,7 +253,7 @@ function updateFires(dt) {
             f.tick = 0.25;
             for (const e of [...enemies]) {
                 const u = e.userData;
-                if (!u.dead && Math.hypot(e.position.x - f.x, e.position.z - f.z) < f.r + u.radius && Math.abs(e.position.y - f.y) < 1.5) damageEnemy(e, f.dps * 0.25 * (powerOn('dmg') ? 2 : 1) * clsDmg(), false, null, true, null, 1, 'molotov');
+                if (!u.dead && Math.hypot(e.position.x - f.x, e.position.z - f.z) < f.r + u.radius && Math.abs(e.position.y - f.y) < 1.5) damageEnemy(e, f.dps * 0.25 * clsDmg(), false, null, true, null, 1, 'molotov');
             }
         }
         if (f.t <= 0) { scene.remove(f.mesh); f.mesh.material.dispose(); fires.splice(i, 1); }
@@ -344,7 +344,7 @@ function updateTurrets(dt) {
                 if (!hit) _tq.add(_tmp.set(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).multiplyScalar(2.2));
                 spawnTracer(from, _tq, t.mini ? 0xfde68a : t.L >= 5 ? 0xd8b4fe : 0x7dd3fc, 0.03, 0.07);
                 spawnParticles(from, 0xbfe9ff, 2, 3, 0.1, 0.06);
-                if (hit) damageEnemy(e, st.damage * (powerOn('dmg') ? 2 : 1), false, null, true, null, 1, 'turret');
+                if (hit) damageEnemy(e, st.damage, false, null, true, null, 1, 'turret');
                 if (Math.random() < 0.5) sfx('turret');
                 if (t.ammo === 0) toast(t.mini ? 'MINI SENTRY OUT OF AMMO' : 'SENTRY OUT OF AMMO', t.mini ? '#fde047' : '#7dd3fc', 1.4);
             }
@@ -416,7 +416,7 @@ function melee() {
             const pt = new V3(best.position.x, best.position.y + u.totalHeight * 0.55, best.position.z);
             u.knock.addScaledVector(_fwd, 16 / Math.max(0.8, u.config.scale));
             if (u.state === 'aim' || u.state === 'windup') { u.state = 'walk'; u.aiT = 1.5; if (u.laser) u.laser.visible = false; }   // interrupts attacks
-            damageEnemy(best, 70 * (powerOn('dmg') ? 2 : 1) * clsDmg(), false, pt, false, null, 1, 'melee');
+            damageEnemy(best, 70 * clsDmg(), false, pt, false, null, 1, 'melee');
             spawnParticles(pt, 0xffffff, 6, 5, 0.3, 0.08);
             sfx('melee'); shake = Math.max(shake, 0.18);
         }, 110);
@@ -511,7 +511,7 @@ function updateMines(dt) {
             if (u.dead || Math.abs(e.position.y - m.y) > 2) continue;
             if (Math.hypot(e.position.x - m.x, e.position.z - m.z) < u.radius + 1.6) {
                 scene.remove(m.g); mines.splice(i, 1);
-                explode(new V3(m.x, m.y + 0.4, m.z), m.sec.damage * (powerOn('dmg') ? 2 : 1), m.sec.radius, { src: 'landmine', color: 0xffb020 });
+                explode(new V3(m.x, m.y + 0.4, m.z), m.sec.damage, m.sec.radius, { src: 'landmine', color: 0xffb020 });
                 break;
             }
         }

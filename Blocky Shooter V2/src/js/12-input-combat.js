@@ -106,7 +106,7 @@ function triggerReload() {
         reloadTotal = 99; reloadTimer = 99;
         shellTimer = w.shellTime / 1000;
     } else {
-        reloadTotal = w.reloadTime / 1000 * (power && power.id === 'rapid' ? 0.5 : 1);
+        reloadTotal = w.reloadTime / 1000;
         reloadTimer = reloadTotal;
     }
     vm.reloadMarks = {};
@@ -125,7 +125,7 @@ function tickReload(dt) {
     reloadElapsed += dt;
     if (reloadStyle === 'shell') {
         if (reloadElapsed < 0.25) return;
-        shellTimer -= dt * (power && power.id === 'rapid' ? 2 : 1);
+        shellTimer -= dt;
         if (shellTimer <= 0) {
             ammoState[id] = Math.min(w.magSize, ammoState[id] + 1);
             sfx('shell'); updateHUD();
@@ -152,7 +152,7 @@ function endShellReload() {
     isReloading = false; reloadEnding = 0.3;
     ui.txtReloading.classList.add('hidden');
     vm.pump = 0.5; sfx('pump');
-    setTimeout(() => { if (vmModel && vmModel.id === 'shotgun') ejectCasing(vmModel, 'shell'); }, 150);
+    setTimeout(() => { if (vmModel && (vmModel.id === 'shotgun' || vmModel.id === 'lever')) ejectCasing(vmModel, 'shell'); }, 150);
 }
 
 
@@ -168,7 +168,6 @@ function currentSpread(w) {
     if (w.bloom) s *= 1 + Math.min(heat, 20) * w.bloom;
     return s;
 }
-const powerOn = (id) => power && power.id === id;
 
 
 function canShoot() {
@@ -208,14 +207,14 @@ function tryFire(w, fresh) {
     if (!canShoot() || burstLeft > 0) return;
     const id = w.id;
     if (w.melee) {       // 4.0 KATANA: no ammo, just swing
-        if (lungeT <= 0 && (gameTime - lastShootTime) * 1000 >= w.fireRate * (powerOn('rapid') ? 0.7 : 1) * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1)) { lastShootTime = gameTime; katanaSlash(w); }
+        if (lungeT <= 0 && (gameTime - lastShootTime) * 1000 >= w.fireRate * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1)) { lastShootTime = gameTime; katanaSlash(w); }
         return;
     }
     if (isReloading) {
         if (reloadStyle === 'shell' && ammoState[id] > 0) { isReloading = false; reloadEnding = 0.2; ui.txtReloading.classList.add('hidden'); }
         else return;
     }
-    const rate = w.fireRate * (powerOn('rapid') ? 0.6 : 1) * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
+    const rate = w.fireRate * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
     if ((gameTime - lastShootTime) * 1000 < rate) return;
     if (vm.bolt >= 0) return;
     if (w.spinUp && spinT < 1) return;
@@ -247,7 +246,7 @@ function getMuzzleWorld(out) {
 function fireOnce(w) {
     const id = w.id;
     if (ammoState[id] <= 0) { burstLeft = 0; triggerReload(); return; }
-    if (!powerOn('ammo')) ammoState[id]--;
+    ammoState[id]--;
     runStats.shots++;
     vm.inspect = 0;
 
@@ -262,10 +261,12 @@ function fireOnce(w) {
     if (vmModel) { vmModel.flash.rotation.z = Math.random() * Math.PI; vmModel.flash.scale.setScalar(0.8 + Math.random() * 0.45); }
     vmLight.intensity = 2.2;
     if (muzzleLight) muzzleLight.intensity = 22;
+    fakeMuzzle();
     switch (id) {
         case 'pistol': vm.slideKick = 1; ejectCasing(vmModel); break;
         case 'revolver': vm.cylTarget += Math.PI / 3; vm.hammer = 1; break;
         case 'shotgun': vm.pump = 0.5; setTimeout(() => { if (vmModel && vmModel.id === 'shotgun') { ejectCasing(vmModel, 'shell'); sfx('pump'); } }, 170); break;
+        case 'lever': setTimeout(() => { if (vmModel && vmModel.id === 'lever') { vm.pump = 0.5; ejectCasing(vmModel, 'shell'); sfx('rack'); } }, 120); break;
         case 'sniper': vm.bolt = 0; vm.boltEjected = false; break;
         case 'rpg': case 'crossbow': case 'flamer': case 'tesla': case 'railgun': break;
         case 'glauncher': vm.cylTarget += Math.PI / 3; vm.hammer = 1; break;
@@ -277,7 +278,7 @@ function fireOnce(w) {
             vm.kickRoll += s ? 0.02 : -0.02;
             break;
         }
-        default: ejectCasing(vmModel);
+        default: vm.slideKick = 1; ejectCasing(vmModel);
     }
     VM.flash.color.setHex(id === 'railgun' ? 0x8ff8ff : id === 'tesla' ? 0xb4c0ff : 0xffffff);
     shake = Math.max(shake, w.recoil * 0.3);
@@ -287,14 +288,15 @@ function fireOnce(w) {
 
     getMuzzleWorld(_muzzleW);
     camera.getWorldDirection(_fwd);
+    if (!w.flame && !w.tesla) muzzleBurst(_muzzleW, _fwd, w.pellets > 1 ? 0.8 : 1);
     _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
     _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
     const spread = currentSpread(w);
-    const dmgMul = (powerOn('dmg') ? 2 : 1) * clsDmg() * (w.charge ? 0.25 + 0.75 * railC : 1);      // 4.0 railgun: damage follows the charge
+    const dmgMul = clsDmg() * (w.charge ? 0.25 + 0.75 * railC : 1);      // 4.0 railgun: damage follows the charge
     if (w.rocket) { fireRocket(w, dmgMul, spread); updateAmmoHUD(); return; }
     if (w.grenade) { fireGrenade(w, dmgMul, spread); updateAmmoHUD(); autoReloadSoon(id, 300); return; }
     if (w.tesla) { fireTesla(w, dmgMul); updateAmmoHUD(); autoReloadSoon(id, 200); return; }
-    if (w.flame) { fireFlame(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0 && !powerOn('ammo')) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, 200); return; }
+    if (w.flame) { fireFlame(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, 200); return; }
     const perEnemy = new Map();
     for (let p = 0; p < w.pellets; p++) {
         const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * spread;
@@ -307,7 +309,7 @@ function fireOnce(w) {
     perEnemy.forEach((rec, enemy) => damageEnemy(enemy, rec.dmg, rec.head, rec.point, false, w.knock ? rec.dir : null, rec.hits));
     if (perEnemy.size) runStats.hits++;
     updateAmmoHUD();
-    if (ammoState[id] <= 0 && !powerOn('ammo')) { burstLeft = 0; setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, id === 'sniper' ? 850 : 250); }
+    if (ammoState[id] <= 0) { burstLeft = 0; setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, id === 'sniper' ? 850 : 250); }
 }
 
 

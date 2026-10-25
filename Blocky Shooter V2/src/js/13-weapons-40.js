@@ -1,6 +1,6 @@
 // ==========  4.0 NEW WEAPONS: railgun, tesla gun, grenade launcher, katana  ==========
 function autoReloadSoon(id, ms) {
-    if (ammoState[id] <= 0 && !powerOn('ammo')) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, ms);
+    if (ammoState[id] <= 0) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, ms);
 }
 // ---------- RAILGUN: hold to charge (railC 0..1), let go to fire. Damage scales with the charge ----------
 function railTick(w) {
@@ -16,7 +16,7 @@ function railTick(w) {
         if (railC >= 1) { if (was < 1) sfx('railfull'); railHold = gameTime - railStart - railTime(w); if (railHold > 2) railRelease(w); }   // it can't hold a full charge for ever
     } else if (railC > 0) { if (railC >= 0.2) railRelease(w); else railCancel(); }
 }
-const railTime = (w) => w.charge * (powerOn('rapid') ? 0.6 : 1) * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
+const railTime = (w) => w.charge * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
 function railRelease(w) { lastShootTime = gameTime; fireOnce(w); railCancel(); }
 function railCancel() { railC = 0; railHold = 0; railOn = false; stopHum(railHum); railHum = null; setStyle(ui.railRing, 'opacity', '0'); }
 const _rbD = new V3(), _rbU = new V3(), _rbV = new V3(), _rbP = new V3();
@@ -168,7 +168,7 @@ function katanaSlash(w) {
     aimPunch += w.punch * (vm.slashDir === 2 ? -1 : 0.4); yawPunch += (vm.slashDir === 0 ? 1 : vm.slashDir === 1 ? -1 : 0) * 0.012;
     if (NET.inGame) { getMuzzleWorld(_muzzleW); netRecordShot(_muzzleW, _muzzleW); }      // teammates hear it
 }
-const katanaDmg = (w, k = 1) => w.damage * k * (powerOn('dmg') ? 2 : 1) * clsDmg();
+const katanaDmg = (w, k = 1) => w.damage * k * clsDmg();
 function katanaHits(w) {
     camera.getWorldDirection(_fwd);
     const o = camera.position, fl = Math.hypot(_fwd.x, _fwd.z) || 1, fx = _fwd.x / fl, fz = _fwd.z / fl, dmg = katanaDmg(w);
@@ -257,7 +257,7 @@ function traceShot(origin, dir, w, perEnemy, dmgMul) {
     raycaster.ray.origin.copy(origin); raycaster.ray.direction.copy(dir);
     raycaster.near = 0; raycaster.far = envT;
     for (const e of enemies) {
-        const u = e.userData; if (u.dead) continue;
+        const u = e.userData; if (u.dead || u.hidden) continue;
         const r = u.radius * 2.2;
         _box.min.set(e.position.x - r, e.position.y - 0.1, e.position.z - r);
         _box.max.set(e.position.x + r, e.position.y + u.totalHeight + 0.5 * u.config.scale, e.position.z + r);
@@ -289,6 +289,7 @@ function traceShot(origin, dir, w, perEnemy, dmgMul) {
             spawnParticles(h.point, 0x67e8f9, 5, 6, 0.25, 0.06);
             if (Math.random() < 0.3) sfx('ting');
             if (w.shieldPierce) { if (!w.rail) dmg *= 0.5; continue; }
+            if (u.shieldHp > 0) { u.shieldHp -= dmg; if (u.shieldHp <= 0) { breakShield(e, h.point); continue; } }       // 5.0 Riot Breaker: the shield can be shot apart
             if (Math.random() < 0.25) spawnDamageNumber(h.point, 'BLOCKED', 'block');
             end = h.point; break;
         }
@@ -303,9 +304,7 @@ function traceShot(origin, dir, w, perEnemy, dmgMul) {
     if (!end) {
         if (envPoint) {
             end = envPoint;
-            spawnParticles(envPoint, 0xffd27a, 3, 6, 0.25, 0.05);
-            spawnParticles(envPoint, 0x8a8f99, 2, 2.5, 0.6, 0.09, true, { grav: 3, drag: 2 });
-            addDecal(envPoint, envNormal);
+            impactFx(envPoint, envNormal, surfaceAt(envPoint, envNormal));
         } else end = origin.clone().addScaledVector(dir, Math.min(w.range, 150));
     }
     return end;
@@ -333,4 +332,14 @@ function toast(msg, color = '#fde047', dur = 1.6) {
 function showIntel(html, dur = 7) {
     ui.intel.innerHTML = html; ui.intel.classList.remove('hidden');
     intelTimer = dur;
+}
+
+// 5.0 Riot Breaker: its shield has health; when it's gone the shield flies off and the zombie is stunned for a moment, then enraged
+function breakShield(e, pt) {
+    const u = e.userData; u.shieldHp = 0;
+    if (u.shield) { u.shield.visible = false; const i = u.hitParts.indexOf(u.shield); if (i >= 0) u.hitParts.splice(i, 1); }
+    spawnParticles(pt || e.position, 0x7ee8fa, 16, 8, 0.7, 0.18, true, { grav: 12 }); spawnParticles(pt || e.position, 0xfacc15, 8, 6, 0.6, 0.12, true, { grav: 12 });
+    spawnDamageNumber(pt || e.position, 'SHIELD BROKEN', 'head'); sfx('ting'); sfx('thud');
+    if (u.state === 'walk' || u.state === 'windup' || u.state === 'charge') { u.state = 'stun'; u.stateT = 0.9; }
+    u.rage = Math.max(u.rage || 0, 6);
 }

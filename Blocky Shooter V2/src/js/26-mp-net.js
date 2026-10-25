@@ -413,6 +413,7 @@ function netReset() {
     NET.hitOut.length = 0; NET.pvpOut.clear(); NET.myShots.length = 0; NET.shotOut.length = 0; NET.deadIds.clear();
     netHud(false);
     stopHiddenTicker();
+    try { LAN.sync(); HGI.open = false; HGI.msg = ''; } catch (e) {}       // 5.0 (28b-mp-lan.js; not loaded yet on the very first call)
 }
 
 
@@ -436,7 +437,6 @@ function hostMessage(p, peer, m) {
             if (first && NET.inGame) hostLateJoin(p);          // jumped into a match that's already going (or rejoined after a drop)
             break;
         }
-        case 'mods': p.mods = Array.isArray(m.l) ? m.l.slice(0, 10) : []; break;
         case 'gvq': gvAnswer(peer, m); break;
         case 'gva': {
             const L = GVL.L, n = p.gvn; if (!L || !n) break; p.gvn = null;
@@ -462,8 +462,6 @@ function hostMessage(p, peer, m) {
         case 'ph': if (NET.inGame && NET.pvp) hostApplyPvpHits(p, m.l); break;
         case 'dead': hostOnDeath(p.id, m.by, m.s); break;
         case 'fx': netBroadcast(m, p.id); netPlayFx(m); break;
-        case 'nuke': if (NET.inGame && !NET.pvp) { dmgOwner = p.id; try { for (const e of [...enemies]) if (!e.userData.dead && !e.userData.config.boss) killEnemy(e, false, false, 'nuke'); } finally { dmgOwner = 0; } } break;
-        case 'slow': NET.slowT = Math.max(NET.slowT, +m.d || 0); break;
     }
 }
 function clientMessage(m) {

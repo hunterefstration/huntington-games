@@ -1,11 +1,11 @@
 // ---------- SAVED RUN (AUTO-SAVE) ----------
 // Single player auto-saves a checkpoint to this browser every time a wave is cleared (and again when you leave the
 // between-wave armory, so purchases stick): the map (same layout), lighting, wave, money, weapons, upgrades, perks,
-// health, armour and power-ups. CONTINUE on the main menu picks it back up at the start of the next wave.
+// health and armour. CONTINUE on the main menu picks it back up at the start of the next wave.
 // 3.8: dying deletes it (permadeath). Never in sandbox or multiplayer.
 const RUN_KEY = 'huntington.blockyshooter.run.v1';   // namespaced: every Huntington game shares one browser origin
 const RUN_KEY_OLD = 'blocky_run_save';                  // 3.5 auto-save: still readable, replaced by the next save
-const runSaveOK = () => !NET.on && run.mode !== 'sandbox';
+const runSaveOK = () => !NET.on && run.mode !== 'sandbox' && !CAMP.on;
 let storageGood = null, savedWave = -1, delArm = 0, badgeT = 0;
 function storageOK() {                                  // false in sandboxed iframes / private windows / blocked site data
     if (storageGood === null) {
@@ -26,7 +26,7 @@ function saveStatus() {
 function saveRun(phase = 'shop') {
     if (!runSaveOK() || currentHp <= 0 || !storageOK()) return false;
     try {
-        const json = JSON.stringify({ v: 1, phase, run, theme: themeId, mods: [...MODS], stats: playerStats, hp: currentHp, maxHp, armor: currentArmor,
+        const json = JSON.stringify({ v: 1, phase, run, theme: themeId, stats: playerStats, hp: currentHp, maxHp, armor: currentArmor,
                         strikes: strikeCharges, streak, runStats, runXP, seen: [...seenTypes], abil: Math.ceil(abilityCd), savedAt: Date.now() });   // 4.0: stats.cls / stats.clsUp = class + upgrades
         localStorage.setItem(RUN_KEY, json);
         if (localStorage.getItem(RUN_KEY) !== json) return false;
@@ -93,7 +93,7 @@ function updateContinueBtn() {
     const s = loadRunSave();
     b.classList.toggle('hidden', !s);
     const d = $('btn-delete-save'); if (d) { d.classList.toggle('hidden', !s); if (delArm) { clearTimeout(delArm); delArm = 0; } d.textContent = 'Delete save'; }
-    if (s) b.innerHTML = `CONTINUE FROM WAVE ${s.stats.level} - ${MAPS[s.run.map].name}, ${(DIFFICULTIES[s.run.diff] || DIFFICULTIES.normal).name}, ${(MODES[s.run.mode] || MODES.classic).name} <span class="text-sm font-bold" style="display:block">$${s.stats.money} &middot; ${Math.ceil(s.hp)} HP${CLASSES[s.stats.cls] ? ` &middot; ${CLASSES[s.stats.cls].name}` : ''}</span>`;
+    if (s) b.innerHTML = `CONTINUE &middot; WAVE ${s.stats.level}<small>${MAPS[s.run.map].name}, ${(DIFFICULTIES[s.run.diff] || DIFFICULTIES.normal).name}, ${(MODES[s.run.mode] || MODES.classic).name} &middot; $${s.stats.money} &middot; ${Math.ceil(s.hp)} HP${CLASSES[s.stats.cls] ? ` &middot; ${CLASSES[s.stats.cls].name}` : ''}</small>`;
 }
 function continueRun() {
     const s = loadRunSave(); if (!s) { updateContinueBtn(); return; }
@@ -104,7 +104,6 @@ function continueRun() {
     runStats = Object.assign(freshRunStats(), s.runStats); runXP = s.runXP || 0; runUnlocks = [];
     applyTheme(THEMES[s.theme] ? s.theme : 'night');
     buildWorld(run.map, run.seed);
-    MODS = new Set((s.mods || []).filter(id => BOOSTS[id]));
     camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; eyeH = EYE_STAND;
     camera.quaternion.identity();
     velocity.set(0, 0, 0); push.set(0, 0, 0); slideT = 0;
@@ -121,7 +120,6 @@ function continueRun() {
     if (!weaponsDb[playerStats.currentWeapon] || !playerStats.weapons.includes(playerStats.currentWeapon)) playerStats.currentWeapon = playerStats.weapons[0];
     abilityCd = clamp(+s.abil || 0, 0, 60); abilityT = 0; abilReadyWas = abilityCd <= 0;
     maxHp = s.maxHp || 100; currentHp = clamp(s.hp || maxHp, 1, maxHp); currentArmor = s.armor || 0;
-    overshield = MODS.has('shield') ? 50 : 0;
     strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(s.seen || []);
     resetAmmo();
     updateGunModel();
@@ -134,15 +132,14 @@ function startFreshRun() {
     runStats = freshRunStats();
     runXP = 0; runUnlocks = [];
     // anything still locked falls back to something you have
-    run = {
+    run = CAMP.on ? { mode: 'classic', diff: CAMP.m.diff, map: CAMP.m.map, seed: (Math.random() * 2147483647) | 0, camp: CAMP.m.id } : {
         mode: MODES[settings.mode] && rankOK('mode', settings.mode) ? settings.mode : 'classic',
         diff: DIFFICULTIES[settings.diff] && rankOK('diff', settings.diff) ? settings.diff : 'normal',
-        map: MAPS[settings.map] && rankOK('map', settings.map) ? settings.map : pickRandom(Object.keys(MAPS).filter(k => rankOK('map', k))),
+        map: MAPS[settings.map] && rankOK('map', settings.map) ? settings.map : pickRandom(MAP_IDS().filter(k => rankOK('map', k))),
         seed: (Math.random() * 2147483647) | 0          // the saved run rebuilds the exact same arena from this
     };
-    applyTheme(THEMES[settings.light] && rankOK('light', settings.light) ? settings.light : pickRandom(Object.keys(THEMES).filter(k => rankOK('light', k))));
+    applyTheme(CAMP.on ? CAMP.m.light : THEMES[settings.light] && rankOK('light', settings.light) ? settings.light : pickRandom(Object.keys(THEMES).filter(k => rankOK('light', k))));
     buildWorld(run.map, run.seed);
-    refreshMods();
     camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; eyeH = EYE_STAND;
     camera.quaternion.identity();
     velocity.set(0, 0, 0); push.set(0, 0, 0); slideT = 0;
@@ -155,6 +152,6 @@ function startFreshRun() {
         strikeCharges = 2;
     }
     if (run.mode === 'bossrush') playerStats.money = Math.max(playerStats.money, 2000);
-    runStartBonus(true);                // 4.0: prestige starting cash + banked challenge rewards
+    if (CAMP.on) campBegin(); else runStartBonus(true);                // 4.0: prestige starting cash + banked challenge rewards (5.0: campaign missions set their own start)
     updateGunModel();
 }

@@ -33,7 +33,7 @@ function drawMinimap(dt) {
     }
     for (const s of supplies) {
         const pulse = 4 + Math.sin(gameTime * 6) * 1.5;
-        c.strokeStyle = hex(POWERUPS[s.kind].color); c.lineWidth = 2;
+        c.strokeStyle = hex(SUPPLY_KINDS[s.kind].color); c.lineWidth = 2;
         c.strokeRect((s.x + off) * scale - pulse, (s.z + off) * scale - pulse, pulse * 2, pulse * 2);
     }
     const markPulse = 5.5 + Math.sin(gameTime * 8) * 1.2;
@@ -48,13 +48,9 @@ function drawMinimap(dt) {
     }
     for (const k of crates) { c.fillStyle = '#facc15'; c.fillRect((k.x + off) * scale - 2.5, (k.z + off) * scale - 2.5, 5, 5); }
     for (const f of healFields) { c.strokeStyle = 'rgba(74,222,128,0.85)'; c.lineWidth = 1.5; c.beginPath(); c.arc((f.x + off) * scale, (f.z + off) * scale, Math.max(3, f.r * scale), 0, Math.PI * 2); c.stroke(); }
-    for (const o of orbs) {
-        const x = (o.g.position.x + off) * scale, y = (o.g.position.z + off) * scale, r = 4 + Math.sin(gameTime * 6) * 1.2;
-        c.fillStyle = hex(BOOSTS[o.kind].color);
-        c.beginPath(); c.moveTo(x, y - r); c.lineTo(x + r, y); c.lineTo(x, y + r); c.lineTo(x - r, y); c.closePath(); c.fill();
-    }
     for (const t of turrets) { c.fillStyle = t.mini ? '#facc15' : '#38bdf8'; c.fillRect((t.g.position.x + off) * scale - 2.5, (t.g.position.z + off) * scale - 2.5, 5, 5); }
     if (NET.inGame) netDrawMinimap(c, scale, off);
+    if (CAMP.on) campMinimap(c, scale, off);
     c.fillStyle = '#facc15';
     for (const m of mines) c.fillRect((m.x + off) * scale - 1.5, (m.z + off) * scale - 1.5, 3, 3);
     if (activeC4) { c.fillStyle = '#ff2020'; c.fillRect((activeC4.mesh.position.x + off) * scale - 2, (activeC4.mesh.position.z + off) * scale - 2, 4, 4); }
@@ -110,7 +106,7 @@ function updatePlayer(delta) {
 
 
     const sprinting = sprintHeld && moveForward && !aimHeld && !isMouseDown && !sliding;
-    const speed = (sprinting ? 78.0 : 52.0) * (boostOn('speed') ? 1.3 : 1) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1.35 : 1);
+    const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1.35 : 1);
     if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
@@ -132,7 +128,7 @@ function updatePlayer(delta) {
 
     // Jump (hold space to keep hopping). Coyote time makes edge jumps forgiving. Slide-jumps keep momentum.
     if (onGround) coyote = 0.12; else coyote -= delta;
-    if (jumpHeld && coyote > 0 && velocity.y <= 0.01) { velocity.y = JUMP_V * (boostOn('jump') ? 1.3 : 1); coyote = 0; onGround = false; if (sliding) slideT = 0; }
+    if (jumpHeld && coyote > 0 && velocity.y <= 0.01) { velocity.y = JUMP_V; coyote = 0; onGround = false; if (sliding) slideT = 0; }
 
 
     velocity.y -= GRAVITY * delta;
@@ -173,6 +169,7 @@ function updatePlayer(delta) {
     const moving = Math.hypot(velocity.x, velocity.z) > 1.5 && onGround;
     updateViewmodel(delta, sprinting, moving && slideT <= 0);
     if (muzzleLight) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - delta * 500);
+    updateFakeLights(delta);
     headBob = moving && slideT <= 0 ? Math.abs(Math.sin(vm.bob)) * (sprinting ? 0.05 : 0.028) * (1 - a * 0.85) : 0;
 
 
@@ -223,8 +220,12 @@ function autoApplyPending() {
 }
 let frameNo = 0;
 // tiny frame profiler (off unless a test turns it on): ms spent per system, summed between marks
-const PROF = { on: false, last: 0, t: {} };
-function pfMark(k) { if (!PROF.on) return; const n = performance.now(); PROF.t[k] = (PROF.t[k] || 0) + (n - PROF.last); PROF.last = n; }
+const PROF = { on: false, mem: false, last: 0, lastMem: 0, t: {}, m: {} };
+function pfMark(k) {
+    if (!PROF.on) return;
+    const n = performance.now(); PROF.t[k] = (PROF.t[k] || 0) + (n - PROF.last); PROF.last = n;
+    if (PROF.mem) { const h = performance.memory.usedJSHeapSize; if (h > PROF.lastMem) PROF.m[k] = (PROF.m[k] || 0) + (h - PROF.lastMem); PROF.lastMem = h; }
+}
 
 
 function animate(ts) {
@@ -237,7 +238,7 @@ function frame(ts) {
     const raw = Math.max((time - prevTime) / 1000, 0);
     const delta = Math.min(raw, 0.05);
     prevTime = time;
-    if (PROF.on) PROF.last = performance.now();
+    if (PROF.on) { PROF.last = performance.now(); if (PROF.mem) PROF.lastMem = performance.memory.usedJSHeapSize; }
     trackFps(raw);
 
 
@@ -261,14 +262,15 @@ function frame(ts) {
         pfMark('player');
         if (!NET.inGame || NET.host) {
             updateNavField(delta); pfMark('nav');
-            if (!debugFreeze) updateEnemies(delta * (boostOn('slowmo') || (NET.inGame && netAnyMod('slowmo')) ? 0.8 : 1) * (NET.slowT > 0 ? 0.5 : 1));
+            if (!debugFreeze) updateEnemies(delta * (NET.slowT > 0 ? 0.5 : 1));
         } else netUpdateEnemies(delta);
         pfMark('enemyAI');
         if (simOn()) {
             updateProjectiles(delta);
             updatePickups(delta);
             updateSupplies(delta);
-            updateOrbs(delta);
+            updateRegen(delta);
+            if (CAMP.on) campTick(delta);
         }
         pfMark('proj');
         updateCorpses(delta);
@@ -303,8 +305,11 @@ function frame(ts) {
 
         if (currentGameState === 'playing') {
             if (shake > 0.002) {
-                camOffset.set((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
-                shake *= Math.max(0, 1 - delta * 7);
+                // tuned: capped, with a curve so small shakes (recoil, melee) stay subtle and blasts punch, and a frame-rate independent decay
+                if (shake > 1.1) shake = 1.1;
+                const amp = Math.pow(shake, 1.35) * 0.9;
+                camOffset.set((Math.random() - 0.5) * amp, (Math.random() - 0.5) * amp * 0.85, (Math.random() - 0.5) * amp * 0.5);
+                shake *= Math.exp(-delta * 6.5);
             } else shake = 0;
             camOffset.y += headBob;
             camera.position.add(camOffset);
@@ -321,13 +326,11 @@ function frame(ts) {
     // menus: slow cinematic orbit around the arena, with your gun + arms on show
     const inMenu = currentGameState === 'main' || (currentGameState === 'settings' && settingsReturn === 'main') || (currentGameState === 'shop' && returnMenuState === 'main');
     if (inMenu) {
-        menuOrbit += delta * 0.05;
-        camera.position.set(Math.cos(menuOrbit) * Math.min(62, ARENA * 0.8), 22, Math.sin(menuOrbit) * Math.min(62, ARENA * 0.8));
-        camera.lookAt(0, 2, 0);
+        updateMenuScene(delta);      // 5.0: moving camera + shambling zombies (29-start-screen.js)
         if (camera.fov !== settings.fov) { camera.fov = fovNow = settings.fov; camera.updateProjectionMatrix(); }
         gameTime += delta;
         // the Customize tab shows off your arms on a rifle
-        const show = currentGameState === 'main' && menuTab === 'customize';
+        const show = currentGameState === 'main' && menuView === 'setup' && menuTab === 'customize';
         if (show && (!vmModel || vmModel.id !== 'ar')) showWeaponModel('ar');
         if (vmModel) { vmModel.root.visible = show; if (show) { vm.raise = 1; updateViewmodel(delta, false, false); } }
     }

@@ -1,5 +1,5 @@
 // ==========================================
-// 1. STATE & CONFIGURATION (Version 4.0)
+// 1. STATE & CONFIGURATION (Version 5.0)
 // ==========================================
 
 
@@ -18,8 +18,8 @@ function loadJSON(k, def) { try { const v = JSON.parse(localStorage.getItem(k));
 function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 const settings = Object.assign({ quality: 'auto', fov: 75, sens: 1, volume: 0.8, showFps: false,
     sleeve: 'navy', glove: 'grey', xhStyle: 'cross', xhColor: '#ffffff', camo: 'stock', tracer: 'default', killfx: 'blocks',
-    mode: 'classic', map: 'random', light: 'random', diff: 'normal', powers: [], cls: 'assault' }, loadJSON('blocky21_settings', {}));
-if (!Array.isArray(settings.powers)) settings.powers = [];
+    mode: 'classic', map: 'random', light: 'random', diff: 'normal', cls: 'assault' }, loadJSON('blocky21_settings', {}));
+delete settings.powers;      // 5.0: power-up modifiers were removed (nothing was ever paid for them, so nothing to refund)
 // lifetime stats (the run itself is still permadeath - only these totals are kept)
 const life = Object.assign({ xp: undefined, runs: 0, kills: 0, headshots: 0, bosses: 0, shots: 0, hits: 0, damage: 0, time: 0, waves: 0, best: {}, weaponKills: {} }, loadJSON('blocky21_life', {}));
 if (!life.cls || typeof life.cls !== 'object') life.cls = {};      // 4.0: { assault: { runs, kills, best } ... } - older saves start at zero
@@ -38,8 +38,12 @@ const weaponsDb = {
     // 4.0: a sword in your weapon slots. No ammo: slashes cut every zombie in an arc in front of you, right-click lunges
     katana:   { name: 'Katana',      cost: 1800, color: 0xfda4af, damage: 55,  fireRate: 340,  auto: true,  magSize: 1,   reloadTime: 1,    range: 3.9, pellets: 1,  spread: 0, recoil: 0.02, punch: 0.012, zoomFov: 75, hsMult: 1, melee: true, noAds: true, moveMult: 1.12, arc: 0.42, lunge: 2.2, lungeCd: 3, reloadStyle: 'none', hip: [0.16, -0.085, -0.4], adsDist: 0.3, flash: 0, desc: 'Slashes cut every zombie in front of you. No ammo. RIGHT-CLICK to LUNGE through the horde.' },
     ar:       { name: 'Rifle',       cost: 1500, color: 0x10b981, damage: 17,  fireRate: 105,  auto: true,  magSize: 30,  reloadTime: 2000, range: 150, pellets: 1,  spread: 0.006, recoil: 0.04, punch: 0.009, zoomFov: 52, hsMult: 1.2, reloadStyle: 'mag',      hip: [0.144, -0.156, -0.36],  adsDist: 0.19, flash: 0.3,  desc: 'Accurate full-auto with a red dot. 3 hits per grunt.' },
+    // 5.0: compact 4-round burst carbine (short, light, hits in tight groups)
+    carbine:  { name: 'Burst Carbine', cost: 1800, color: 0x64748b, damage: 15, fireRate: 250, auto: true, burst: 4, burstGap: 46, magSize: 40, reloadTime: 1500, range: 130, pellets: 1, spread: 0.0045, recoil: 0.022, punch: 0.006, zoomFov: 54, hsMult: 1.3, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.19, flash: 0.28, desc: 'Short and light. Hold to fire tight 4-round bursts; the compact frame reloads fast.' },
     burst:    { name: 'Burst Rifle', cost: 2000, color: 0x14b8a6, damage: 18,  fireRate: 290,  auto: true,  burst: 3, burstGap: 55, magSize: 36, reloadTime: 1650, range: 170, pellets: 1, spread: 0.0025, recoil: 0.026, punch: 0.006, zoomFov: 48, hsMult: 1.15, reloadStyle: 'mag', hip: [0.144, -0.162, -0.36], adsDist: 0.12, flash: 0.28, desc: 'Hold to fire 3-round bursts. One burst to the head drops a grunt.' },
     shotgun:  { name: 'Shotgun',     cost: 2200, color: 0xef4444, damage: 30,  fireRate: 600,  auto: false, magSize: 8,   reloadTime: 250,  shellTime: 400, range: 60, pellets: 12, spread: 0.042, recoil: 0.2, punch: 0.05, zoomFov: 62, hsMult: 2, knock: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.46, desc: '12 heavy pellets. Knocks enemies back.' },
+    // 5.0: lever-action rifle - hard-hitting .45-70 rounds, one cycled shell at a time
+    lever:    { name: 'Lever Rifle', cost: 2600, color: 0xb45309, damage: 64, fireRate: 440, auto: false, magSize: 9, reloadTime: 300, shellTime: 380, range: 190, pellets: 1, spread: 0.0035, recoil: 0.11, punch: 0.032, zoomFov: 46, hsMult: 2.3, pierce: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.38, desc: 'Old-school lever action. Heavy rounds that pass through 1 zombie, loaded one shell at a time.' },
     dmr:      { name: 'Marksman',    cost: 3500, color: 0xc2a36b, damage: 75,  fireRate: 280,  auto: false, magSize: 12,  reloadTime: 2200, range: 260, pellets: 1,  spread: 0.002, recoil: 0.08, punch: 0.022, zoomFov: 30, hsMult: 2.5, pierce: 1, scoped: 'optic', reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.12, flash: 0.32, desc: '4x optic. Punches through 1 enemy.' },
     crossbow: { name: 'Crossbow',    cost: 2800, color: 0x92400e, damage: 150, fireRate: 260,  auto: false, magSize: 1,   reloadTime: 1050, range: 220, pellets: 1,  spread: 0.0025, recoil: 0.09, punch: 0.028, zoomFov: 42, hsMult: 3, pierce: 4, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.18, flash: 0.06, desc: 'Silent bolts that pass through up to 4 zombies. Headshots do triple damage.' },
     lmg:      { name: 'LMG',         cost: 4500, color: 0x84cc16, damage: 28,  fireRate: 92,   auto: true,  magSize: 90,  reloadTime: 3600, range: 150, pellets: 1,  spread: 0.008, bloom: 0.05, recoil: 0.04, punch: 0.008, zoomFov: 55, hsMult: 2, moveMult: 0.85, reloadStyle: 'box', hip: [0.156, -0.168, -0.36], adsDist: 0.2, flash: 0.34, desc: '90-round box. Heavy and hungry.' },
@@ -80,6 +84,8 @@ const ATT_FIT = {
     smg:      { scope: [0.094, 0.02], mag: true },
     ar:       { scope: [0.1, 0.0], mag: true, grip: [0.009, -0.34] },
     burst:    { scope: [0.15, -0.03], mag: true, grip: [-0.025, -0.24] },
+    lever:    { scope: [0.0775, -0.02], mag: true },
+    carbine:  { scope: [0.1, 0.0], mag: true, grip: [0.009, -0.25] },
     shotgun:  { scope: [0.0725, -0.02], mag: true, grip: [-0.025, 0] },      // the grip goes on the pump
     dmr:      { mag: true, grip: [0.009, -0.4] },
     crossbow: { scope: [0.065, -0.1], grip: [0.035, -0.26] },
@@ -166,7 +172,13 @@ const enemyTypes = {
     egg:      { id: 'egg',      name: 'Egg Sac',  color: 0x84cc16, hp: 0.9, speed: 0,    scale: 0.85, reward: 0.5, damage: 0,  ai: 'egg', eye: 0xd9f99d, minLvl: 999, fixed: true, drops: [0, 0, 0.3, 15] },
     phclone:  { id: 'phclone',  name: 'Phantom Decoy', look: 'phantom', color: 0x334155, hp: 0.3, speed: 1.05, scale: 1.75, reward: 0.2, damage: 10, ai: 'melee', eye: 0x67e8f9, slim: 0.9, minLvl: 999, drops: [0, 0, 0, 0] },
     acolyte:  { id: 'acolyte',  name: 'Acolyte',  color: 0x4c1d95, hp: 2.2, speed: 0,    scale: 1.05, reward: 2,   damage: 0,  ai: 'acolyte', eye: 0xc4b5fd, minLvl: 999, fixed: true, drops: [0.3, 25, 0.3, 40] },
-    risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] }
+    risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] },
+    // ---- 5.0: three new zombies and the campaign's final boss ----
+    riot:     { solo: true, id: 'riot',     name: 'Riot Breaker', color: 0x475569, hp: 2.4, speed: 0.7, scale: 1.2, reward: 3, damage: 18, ai: 'riot', eye: 0xfb923c, minLvl: 7, cap: 2, shieldHp: 260, intel: 'Heavy riot gear and a big shield that soaks up bullets from the front - until it cracks. Break the shield (or flank it) and it rips the shield off and sprints at you. It rams with the shield, so sidestep.', drops: [0.3, 30, 0.3, 55] },
+    crawler:  { solo: true, id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
+    blighter: { solo: true, id: 'blighter', name: 'Blighter', color: 0x65a30d, hp: 1.4, speed: 0.7, scale: 1.05, reward: 3.5, damage: 8, ai: 'blighter', eye: 0xbef264, minLvl: 9, cap: 2, intel: 'Lobs toxic canisters that burst into a lingering poison cloud, aimed ahead of where you are running. It does not hurt much, but it shuts down areas: do not stand in the green.', drops: [0.3, 30, 0.2, 45] },
+    zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',
+                title: 'THE FIRST TO FALL', tip: 'Spits toxic globs that leave poison pools, sweeps shockwaves you must JUMP, and burrows under you to burst out. Enraged: its toxic nova has a safe hole in the middle.' }
 };
 const BOSS_IDS = Object.keys(enemyTypes).filter(k => enemyTypes[k].boss);
 
@@ -222,8 +234,12 @@ const MAPS = {
     sky:       { name: 'SKY ISLANDS', size: 64, void: true, desc: 'COMPACT. Cloud islands high in the sky, joined by cloud paths and rope bridges. There is no floor: fall off the edge and you die - but so do zombies you knock off!' },
     // 4.0
     mall:      { name: 'MALL',      size: 72,  desc: 'NEW! Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
+    subway:    { name: 'SUBWAY', size: 64, desc: 'NEW! A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
+    biolab:    { name: 'BIOLAB', size: 46, hidden: true, desc: 'Campaign finale arena: a sunken containment pit ringed by catwalks, vents and quarantine pods.' },
     military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'NEW! Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
 };
+// maps with hidden: true are campaign-only arenas (never in the map pickers, random picks or challenges)
+const MAP_IDS = () => Object.keys(MAPS).filter(k => !MAPS[k].hidden);
 const SLEEVES = { navy: 0x36426e, olive: 0x66764f, black: 0x1e1f24, urban: 0x6b7280, tan: 0xb59a6d, crimson: 0x8b1e2d, arctic: 0xdfe5ec, teal: 0x0f766e, royal: 0x5b3a9c, carbon: 0x2b2d33, gold: 0xc9a227, plasma: 0x7c3aed, obsidian: 0x2a1f45 };
 const GLOVES = { grey: 0x5c5c63, black: 0x2e2e31, brown: 0x6b4a2f, tan: 0xb08d5a, skin: 0xd9a066, dark: 0x8d5a3b, blue: 0x2b4a8a, red: 0x9b1c1c, gold: 0xc9a227, obsidian: 0x2a1f45 };
 const XH_COLORS = ['#ffffff', '#4ade80', '#22d3ee', '#facc15', '#f472b6', '#ef4444'];
