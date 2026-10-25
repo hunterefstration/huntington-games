@@ -962,7 +962,7 @@ function toastIn(doc, n) {
   if (old) old.remove();
   var t = hgEl(doc, 'div', 'hgt'), tm;
   t.setAttribute('data-k', key.replace(/"/g, ''));
-  var label = { dm: 'Message', mention: 'Mention', msg: 'Grapevine', friendreq: 'Friend request', friendok: 'Friends' }[n.kind] || 'Grapevine';
+  var label = { dm: 'Message', mention: 'Mention', msg: 'Grapevine', friendreq: 'Friend request', friendok: 'Friends', invite: 'Game invite' }[n.kind] || 'Grapevine';
   t.appendChild(hgEl(doc, 'div', 'tk', label));
   t.appendChild(hgEl(doc, 'div', 'tt', n.kind === 'dm' || n.kind === 'mention' ? (n.from || n.title) : (n.title || '')));
   var tx = n.kind === 'msg' || n.kind === 'mention' || n.kind === 'dm' ? ((n.kind !== 'dm' && n.title ? n.title + ' - ' : '') + (n.from && n.kind === 'msg' ? n.from + ': ' : '') + (n.text || '')) : (n.text || '');
@@ -974,17 +974,60 @@ function toastIn(doc, n) {
     no.onclick = function (e) { e.stopPropagation(); var L = window.HGGrapevine; if (L) L.declineFriend(n.from); gone(); };
     b.appendChild(ok); b.appendChild(no); t.appendChild(b);
   }
+  if (n.kind === 'invite') {
+    var ib = hgEl(doc, 'div', 'tb'), join = hgEl(doc, 'button', 'go', 'Join'), skip = hgEl(doc, 'button', '', 'Ignore');
+    join.onclick = function (e) { e.stopPropagation(); gone(); joinInvite(n.game, n.code); };
+    skip.onclick = function (e) { e.stopPropagation(); gone(); };
+    ib.appendChild(join); ib.appendChild(skip); t.appendChild(ib);
+  }
   t.onclick = function () {
     gone();
+    if (n.kind === 'invite') { joinInvite(n.game, n.code); return; }
     if (n.kind === 'friendreq' || n.kind === 'friendok') { if (!current && doc === document) HG_openGrapevine('friends'); return; }
     if (doc !== document || current) { var tg = doc === document ? frame.contentDocument : doc; if (tg) openChatBox(tg, n.convId); }
     else { showTab('chat'); try { document.getElementById('gvapp').contentWindow.GV.openConv(n.convId); } catch (e) {} }
   };
   host.appendChild(t);
   while (host.children.length > 4) host.firstChild.remove();
-  tm = setTimeout(gone, n.kind === 'friendreq' ? 20000 : 7000);
+  tm = setTimeout(gone, n.kind === 'friendreq' || n.kind === 'invite' ? 20000 : 7000);
 }
-window.HG_notify = function (n) { hgDocs().forEach(function (d) { try { toastIn(d, n); } catch (e) {} }); };
+window.HG_notify = function (n) {
+  var inv = n.text && (n.kind === 'dm' || n.kind === 'msg' || n.kind === 'mention') && INVITE_RE.exec(n.text), g = inv && inviteGame(inv[1]);
+  if (g) n = { kind: 'invite', from: n.from, convId: n.convId, title: (n.from || 'A friend') + ' invited you', text: g.name.replace(/ [\d.]+$/, '') + ' - press to join', game: inv[1], code: inv[2] };
+  hgDocs().forEach(function (d) { try { toastIn(d, n); } catch (e) {} });
+};
+
+// ---- Game invites through Grapevine chats -----------------------------------------------------------------------
+// A game asks for the chats it can invite into (HG_inviteTargets) and sends an invite (HG_sendInvite): a normal chat
+// message ending in "hg-invite:<game>:<party code>", so it reads fine in the Grapevine app too. When one arrives the
+// pop-up shows a JOIN button: it opens the game (or tells the open one) and the game collects the code with HG_takeJoin.
+var INVITE_GAMES = { blocky: 'Blocky Shooter V2' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null;
+function inviteGame(id) { var d = INVITE_GAMES[id]; return d ? GAMES.filter(function (g) { return g.dir === d; })[0] || null : null; }
+window.HG_inviteTargets = function () {
+  var api = chatApi(); if (!api) return [];
+  return api.convs().map(function (c) { return { id: c.id, title: c.title, kind: c.kind }; })
+    .sort(function (a, b) { return (a.kind === 'dm' ? 0 : 1) - (b.kind === 'dm' ? 0 : 1); });
+};
+window.HG_sendInvite = function (convId, o) {
+  var api = chatApi(), g = o && inviteGame(o.game), code = o && String(o.code || '');
+  if (!api || !g || !/^[A-Za-z0-9-]{4,40}$/.test(code)) return false;
+  var what = g.name.replace(/ [\d.]+$/, '') + (o.mode ? ' (' + String(o.mode).replace(/[^\w -]/g, '').slice(0, 24) + ')' : '');
+  return !!api.send(convId, 'Join my ' + what + ' game! Party code ' + code + ' - hg-invite:' + o.game + ':' + code);
+};
+window.HG_takeJoin = function (game) {
+  var p = pendingJoin; if (!p || p.game !== game) return null;
+  pendingJoin = null; return Date.now() - p.at < 5 * 60000 ? p.code : null;
+};
+function joinInvite(game, code) {
+  var g = inviteGame(game); if (!g) return;
+  pendingJoin = { game: game, code: code, at: Date.now() };
+  // the game is already open (here or in the New-tab copy): hand it the code now
+  var wins = [];
+  if (current && current.game === g) { try { wins.push(frame.contentWindow); } catch (e) {} }
+  if (popup && !popup.closed && popupGame === g) wins.push(popup);
+  for (var i = 0; i < wins.length; i++) { try { if (wins[i].__hgJoin) { pendingJoin = null; wins[i].__hgJoin(code); return; } } catch (e) {} }
+  play(g);
+}
 document.addEventListener('fullscreenchange', function () { var h = document.getElementById('hgt-host'); if (h) toastHost(document); });
 
 // The chat window. `gdoc` is the page the game is in (the launcher's game frame, or the New-tab copy). The window is a small frame of

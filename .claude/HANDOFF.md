@@ -89,6 +89,12 @@ Real cross-network test (two Chromebooks, different states) still needed before 
 - `node tools/build-game.js "Blocky Shooter V2" --check` writes `index.html` (keeps the HG block). `release.sh prepare` rebuilds and
   ships the sources of any game that has `src/shell.html`.
 
+## Blocky Shooter 5.0 (in progress on branch claude/pensive-planck-h9xqbg)
+- Owner asked (2026-10-25): perf + lighting (Chromebook can't hold 60 on LOW), realistic guns, model upgrades, one UI theme
+  (restyle CONTINUE SAVE), new start screen, Campaign (3 chapters), power-ups removed, same-wifi game scan, Grapevine invites. One 5.0 release.
+- Launcher side of invites is in the hub `index.html` (HG_inviteTargets / HG_sendInvite / HG_takeJoin, invite pop-up with JOIN).
+  The hub is NOT copied by `release.sh prepare`: port that block into `$W/index.html` by hand when releasing 5.0.
+
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE
