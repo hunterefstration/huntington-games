@@ -20,7 +20,7 @@ function qualityPreset() {
     const dpr = window.devicePixelRatio || 1;
     const base = { shadows: true, shadowSize: 1024, extent: 48, soft: false, env: true, lite: false, dynamic: false, pointLights: 1, lampLights: 0, particles: 550, aniso: 2, post: null, cones: false, enemyShadows: 1, rain: 1, msaa: 0 };
     switch (settings.quality) {
-        case 'low':       return Object.assign(base, { name: 'low', shadows: false, shadowSize: 512, env: false, lite: true, scale: Math.min(dpr, 1) * 0.75, pointLights: 0, particles: 260, aniso: 1, enemyShadows: 0, rain: 0.5 });
+        case 'low':       return Object.assign(base, { name: 'low', shadows: false, shadowSize: 512, env: false, lite: true, scale: Math.min(dpr, 1) * 0.75, minScale: Math.min(dpr, 1) * 0.5, dynamic: true, resOnly: true, pointLights: 0, particles: 260, aniso: 1, enemyShadows: 0, rain: 0.5 });   // 5.0: Low also trims resolution to hold 60
         case 'normal':    return Object.assign(base, { name: 'normal', scale: Math.min(dpr, 1) });
         // High / Cinematic hold their frame rate by trimming render resolution only (never effects)
         case 'high':      return Object.assign(base, { name: 'high', shadowSize: 2048, extent: 56, soft: true, scale: Math.min(dpr, 1), minScale: 0.7, dynamic: true, resOnly: true, pointLights: 2, lampLights: 2, particles: 800, aniso: 8, post: 'high', cones: true, enemyShadows: 2, msaa: 4 });
@@ -35,7 +35,7 @@ function qualityPreset() {
 }
 const QUALITY_DESC = {
     auto: 'Tests your device on the menu and picks the best look that holds 60 FPS (it remembers it). In a fight it only nudges resolution; bigger changes wait for the break between waves, so no stutter. Best for Chromebooks.',
-    low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 75% resolution.',
+    low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 75% resolution, and lower (down to 50%) during heavy fights so it holds 60 FPS.',
     normal: 'Everything in Low plus sun shadows, sky reflections and full-resolution rendering.',
     high: 'Soft 2K shadows, bloom glow on lights and muzzle flashes, light shafts under street lamps, real lamp lights, 4x MSAA.',
     cinematic: 'Everything in High plus 4K shadows, stronger bloom, 4 real lamp lights, film grain, lens vignette and color grading. Needs a strong GPU.'

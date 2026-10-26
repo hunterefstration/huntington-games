@@ -1211,7 +1211,7 @@
             const dpr = window.devicePixelRatio || 1;
             const base = { shadows: true, shadowSize: 1024, extent: 48, soft: false, env: true, lite: false, dynamic: false, pointLights: 1, lampLights: 0, particles: 550, aniso: 2, post: null, cones: false, enemyShadows: 1, rain: 1, msaa: 0 };
             switch (settings.quality) {
-                case 'low':       return Object.assign(base, { name: 'low', shadows: false, shadowSize: 512, env: false, lite: true, scale: Math.min(dpr, 1) * 0.75, pointLights: 0, particles: 260, aniso: 1, enemyShadows: 0, rain: 0.5 });
+                case 'low':       return Object.assign(base, { name: 'low', shadows: false, shadowSize: 512, env: false, lite: true, scale: Math.min(dpr, 1) * 0.75, minScale: Math.min(dpr, 1) * 0.5, dynamic: true, resOnly: true, pointLights: 0, particles: 260, aniso: 1, enemyShadows: 0, rain: 0.5 });   // 5.0: Low also trims resolution to hold 60
                 case 'normal':    return Object.assign(base, { name: 'normal', scale: Math.min(dpr, 1) });
                 // High / Cinematic hold their frame rate by trimming render resolution only (never effects)
                 case 'high':      return Object.assign(base, { name: 'high', shadowSize: 2048, extent: 56, soft: true, scale: Math.min(dpr, 1), minScale: 0.7, dynamic: true, resOnly: true, pointLights: 2, lampLights: 2, particles: 800, aniso: 8, post: 'high', cones: true, enemyShadows: 2, msaa: 4 });
@@ -1226,7 +1226,7 @@
         }
         const QUALITY_DESC = {
             auto: 'Tests your device on the menu and picks the best look that holds 60 FPS (it remembers it). In a fight it only nudges resolution; bigger changes wait for the break between waves, so no stutter. Best for Chromebooks.',
-            low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 75% resolution.',
+            low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 75% resolution, and lower (down to 50%) during heavy fights so it holds 60 FPS.',
             normal: 'Everything in Low plus sun shadows, sky reflections and full-resolution rendering.',
             high: 'Soft 2K shadows, bloom glow on lights and muzzle flashes, light shafts under street lamps, real lamp lights, 4x MSAA.',
             cinematic: 'Everything in High plus 4K shadows, stronger bloom, 4 real lamp lights, film grain, lens vignette and color grading. Needs a strong GPU.'
@@ -3133,7 +3133,7 @@
             });
             const g = new THREE.BufferGeometry();
             g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 4)); g.setIndex(new THREE.BufferAttribute(idx, 1));
-            if (!mats.contact) mats.contact = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+            if (!mats.contact) mats.contact = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
             const mesh = new THREE.Mesh(g, mats.contact); mesh.renderOrder = 1; mesh.frustumCulled = false;
             worldGroup.add(mesh);
         }
@@ -3178,7 +3178,7 @@
                     const [c, g] = makeCanvas(64);
                     const gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.25)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
                     g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-                    mats.cone = new THREE.MeshBasicMaterial({ map: canvasTex(c), color: theme.lamp, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+                    mats.cone = new THREE.MeshBasicMaterial({ map: canvasTex(c), color: theme.lamp, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
                 }
                 // (4.0: lamps can stand on an upper floor or hang from a ceiling; ceiling lights in low rooms get no shaft)
                 const cg = lampSpots.filter(l => l[5]).map(([x, z, y0, h]) => { const H = h - 0.3, k = H / 6.7, g = new THREE.CylinderGeometry(0.4, 4.4 * Math.sqrt(k), H, 18, 1, true); g.translate(x, y0 + H / 2, z); return g; });
@@ -4258,10 +4258,10 @@
             let fx = explosionPool.find(f => !f.active);
             if (!fx) {
                 const ball = new THREE.Mesh(_ballGeo, new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
-                const ring = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+                const ring = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, forceSinglePass: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
                 ring.rotation.x = -Math.PI / 2;
                 // a second, slower dust ring on the ground and a bright core flash that pops and dies fast
-                const dust = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0x9a8f80, transparent: true, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+                const dust = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0x9a8f80, transparent: true, side: THREE.DoubleSide, forceSinglePass: true, depthWrite: false, toneMapped: false }));
                 dust.rotation.x = -Math.PI / 2;
                 const core = new THREE.Mesh(_ballGeo, new THREE.MeshBasicMaterial({ color: 0xfff6d8, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
                 fx = { ball, ring, dust, core, active: false };
@@ -4546,7 +4546,7 @@
             VM.green = new THREE.MeshBasicMaterial({ color: 0x5cff7a, toneMapped: false, vertexColors: true });
             VM.glass = S(0x9fc2ff, 0.05, 0.3, { transparent: true, opacity: 0.14, depthWrite: false });
             VM.lens = S(0x1d2d55, 0.05, 0.9, { emissive: 0x1a2f66, emissiveIntensity: 0.7 });
-            VM.flash = new THREE.MeshBasicMaterial({ map: flashTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+            VM.flash = new THREE.MeshBasicMaterial({ map: flashTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
             return VM;
         }
 
@@ -5248,7 +5248,7 @@
                     P.rh = makeArm(hold, [0, -0.07, 0.0], elR, 'grip', 0, SW);
                     P.lh = makeArm(hold, [0, -0.215, 0.0], elL, 'grip', 0, SW);
                     // the swing trail: an additive arc in front of the camera (shown during slashes)
-                    FX.trail = new THREE.Mesh(slashGeo(), new THREE.MeshBasicMaterial({ color: L >= 5 ? 0xc084fc : (L >= 3 ? w.color : 0xdfe8ff), vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+                    FX.trail = new THREE.Mesh(slashGeo(), new THREE.MeshBasicMaterial({ color: L >= 5 ? 0xc084fc : (L >= 3 ? w.color : 0xdfe8ff), vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false }));
                     FX.trail.visible = false; FX.trail.renderOrder = 6;
                     def = { sight: [0, 0], muzzle: [0, 0.6, -0.6], eject: [0, 0, 0] };
                     break;
@@ -7928,7 +7928,7 @@
 
 
         const _laserMat = new THREE.MeshBasicMaterial({ color: 0xff2020, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-        const _auraMat = new THREE.MeshBasicMaterial({ map: null, color: 0x4ade80, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+        const _auraMat = new THREE.MeshBasicMaterial({ map: null, color: 0x4ade80, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
         const _auraGeo = new THREE.RingGeometry(0.94, 1, 48); _auraGeo.rotateX(-Math.PI / 2);
 
 
@@ -9128,7 +9128,7 @@
         const _bWaveGeo = new THREE.CylinderGeometry(1, 1, 1, 56, 1, true); _bWaveGeo.translate(0, 0.5, 0);
         const _bShotGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
         const bossAuth = () => !NET.inGame || NET.host;
-        const fxMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+        const fxMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide, forceSinglePass: true });
         function bossNet(m) { if (NET.inGame && NET.host) netBroadcast(Object.assign({ t: 'bfx' }, m)); }
         const r2a = (v) => [r2(v.x), r2(v.y), r2(v.z)];
         // velocity to lob something from 'from' to (tx, ty, tz) in T seconds under gravity g
@@ -10591,7 +10591,7 @@
             if (currentGameState !== 'playing') return;
             // in a fight: only gentle resolution steps (never a shader rebuild). Down fast-ish, up slowly.
             autoRes.t++;
-            if (fps < 50) { autoRes.good = 0; if (autoRes.t >= 2 && dynScale > Q.minScale + 1e-3) { setRenderScale(Math.max(Q.minScale, dynScale - 0.06)); autoRes.t = 0; } }
+            if (fps < 54) { autoRes.good = 0; if (dynScale > Q.minScale + 1e-3) { setRenderScale(Math.max(Q.minScale, dynScale - (fps < 40 ? 0.12 : 0.06))); autoRes.t = 0; } }
             else if (fps >= 57.5) { if (++autoRes.good >= 4 && dynScale < Q.scale - 1e-3) { setRenderScale(Math.min(Q.scale, dynScale + 0.04)); autoRes.good = 0; autoRes.t = 0; } }
             else autoRes.good = 0;
             // still struggling at the lowest resolution for a while: drop a tier at the next break between waves
@@ -13379,7 +13379,7 @@
         const _cdGeo = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
         const _cOct = new THREE.OctahedronGeometry(0.4, 0);
         const _cv = new V3();
-        const campMat = (c, o) => new THREE.MeshBasicMaterial(Object.assign({ color: c, transparent: true, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide }, o));
+        const campMat = (c, o) => new THREE.MeshBasicMaterial(Object.assign({ color: c, transparent: true, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide, forceSinglePass: true }, o));
         function campBeacon(x, y, z, r, color) {
             const g = new THREE.Group(), br = Math.min(r, 1.1);
             const beam = new THREE.Mesh(_cbGeo, campMat(color, { opacity: 0.16, blending: THREE.AdditiveBlending })); beam.scale.set(br, 1, br); beam.position.y = 30;

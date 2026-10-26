@@ -602,7 +602,7 @@ function buildContactShadows() {
     });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 4)); g.setIndex(new THREE.BufferAttribute(idx, 1));
-    if (!mats.contact) mats.contact = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    if (!mats.contact) mats.contact = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
     const mesh = new THREE.Mesh(g, mats.contact); mesh.renderOrder = 1; mesh.frustumCulled = false;
     worldGroup.add(mesh);
 }
@@ -647,7 +647,7 @@ function finalizeWorld() {
             const [c, g] = makeCanvas(64);
             const gr = g.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,255,255,0.9)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.25)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
             g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-            mats.cone = new THREE.MeshBasicMaterial({ map: canvasTex(c), color: theme.lamp, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+            mats.cone = new THREE.MeshBasicMaterial({ map: canvasTex(c), color: theme.lamp, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
         }
         // (4.0: lamps can stand on an upper floor or hang from a ceiling; ceiling lights in low rooms get no shaft)
         const cg = lampSpots.filter(l => l[5]).map(([x, z, y0, h]) => { const H = h - 0.3, k = H / 6.7, g = new THREE.CylinderGeometry(0.4, 4.4 * Math.sqrt(k), H, 18, 1, true); g.translate(x, y0 + H / 2, z); return g; });

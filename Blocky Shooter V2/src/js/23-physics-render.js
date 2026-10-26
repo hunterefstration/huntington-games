@@ -202,7 +202,7 @@ function trackFps(raw) {
     if (currentGameState !== 'playing') return;
     // in a fight: only gentle resolution steps (never a shader rebuild). Down fast-ish, up slowly.
     autoRes.t++;
-    if (fps < 50) { autoRes.good = 0; if (autoRes.t >= 2 && dynScale > Q.minScale + 1e-3) { setRenderScale(Math.max(Q.minScale, dynScale - 0.06)); autoRes.t = 0; } }
+    if (fps < 54) { autoRes.good = 0; if (dynScale > Q.minScale + 1e-3) { setRenderScale(Math.max(Q.minScale, dynScale - (fps < 40 ? 0.12 : 0.06))); autoRes.t = 0; } }
     else if (fps >= 57.5) { if (++autoRes.good >= 4 && dynScale < Q.scale - 1e-3) { setRenderScale(Math.min(Q.scale, dynScale + 0.04)); autoRes.good = 0; autoRes.t = 0; } }
     else autoRes.good = 0;
     // still struggling at the lowest resolution for a while: drop a tier at the next break between waves

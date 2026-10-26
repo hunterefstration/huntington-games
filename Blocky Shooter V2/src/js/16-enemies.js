@@ -458,7 +458,7 @@ function classicKit(cfg) {
 
 
 const _laserMat = new THREE.MeshBasicMaterial({ color: 0xff2020, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-const _auraMat = new THREE.MeshBasicMaterial({ map: null, color: 0x4ade80, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+const _auraMat = new THREE.MeshBasicMaterial({ map: null, color: 0x4ade80, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
 const _auraGeo = new THREE.RingGeometry(0.94, 1, 48); _auraGeo.rotateX(-Math.PI / 2);
 
 

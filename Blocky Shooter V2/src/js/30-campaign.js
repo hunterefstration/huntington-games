@@ -208,7 +208,7 @@ const _crGeo = new THREE.RingGeometry(0.92, 1, 40).rotateX(-Math.PI / 2);
 const _cdGeo = new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2);
 const _cOct = new THREE.OctahedronGeometry(0.4, 0);
 const _cv = new V3();
-const campMat = (c, o) => new THREE.MeshBasicMaterial(Object.assign({ color: c, transparent: true, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide }, o));
+const campMat = (c, o) => new THREE.MeshBasicMaterial(Object.assign({ color: c, transparent: true, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide, forceSinglePass: true }, o));
 function campBeacon(x, y, z, r, color) {
     const g = new THREE.Group(), br = Math.min(r, 1.1);
     const beam = new THREE.Mesh(_cbGeo, campMat(color, { opacity: 0.16, blending: THREE.AdditiveBlending })); beam.scale.set(br, 1, br); beam.position.y = 30;

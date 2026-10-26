@@ -315,10 +315,10 @@ function getExplosionFx() {
     let fx = explosionPool.find(f => !f.active);
     if (!fx) {
         const ball = new THREE.Mesh(_ballGeo, new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
-        const ring = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+        const ring = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, side: THREE.DoubleSide, forceSinglePass: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
         ring.rotation.x = -Math.PI / 2;
         // a second, slower dust ring on the ground and a bright core flash that pops and dies fast
-        const dust = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0x9a8f80, transparent: true, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+        const dust = new THREE.Mesh(_ringGeo, new THREE.MeshBasicMaterial({ color: 0x9a8f80, transparent: true, side: THREE.DoubleSide, forceSinglePass: true, depthWrite: false, toneMapped: false }));
         dust.rotation.x = -Math.PI / 2;
         const core = new THREE.Mesh(_ballGeo, new THREE.MeshBasicMaterial({ color: 0xfff6d8, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
         fx = { ball, ring, dust, core, active: false };

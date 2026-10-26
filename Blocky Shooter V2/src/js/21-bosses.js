@@ -6,7 +6,7 @@ const _bRingGeo = new THREE.RingGeometry(0.9, 1, 48); _bRingGeo.rotateX(-Math.PI
 const _bWaveGeo = new THREE.CylinderGeometry(1, 1, 1, 56, 1, true); _bWaveGeo.translate(0, 0.5, 0);
 const _bShotGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
 const bossAuth = () => !NET.inGame || NET.host;
-const fxMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+const fxMat = (color, op) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide, forceSinglePass: true });
 function bossNet(m) { if (NET.inGame && NET.host) netBroadcast(Object.assign({ t: 'bfx' }, m)); }
 const r2a = (v) => [r2(v.x), r2(v.y), r2(v.z)];
 // velocity to lob something from 'from' to (tx, ty, tz) in T seconds under gravity g

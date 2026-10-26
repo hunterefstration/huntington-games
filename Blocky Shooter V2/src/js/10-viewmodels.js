@@ -150,7 +150,7 @@ function vmMats() {
     VM.green = new THREE.MeshBasicMaterial({ color: 0x5cff7a, toneMapped: false, vertexColors: true });
     VM.glass = S(0x9fc2ff, 0.05, 0.3, { transparent: true, opacity: 0.14, depthWrite: false });
     VM.lens = S(0x1d2d55, 0.05, 0.9, { emissive: 0x1a2f66, emissiveIntensity: 0.7 });
-    VM.flash = new THREE.MeshBasicMaterial({ map: flashTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    VM.flash = new THREE.MeshBasicMaterial({ map: flashTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
     return VM;
 }
 
@@ -852,7 +852,7 @@ function buildWeaponModel(id) {
             P.rh = makeArm(hold, [0, -0.07, 0.0], elR, 'grip', 0, SW);
             P.lh = makeArm(hold, [0, -0.215, 0.0], elL, 'grip', 0, SW);
             // the swing trail: an additive arc in front of the camera (shown during slashes)
-            FX.trail = new THREE.Mesh(slashGeo(), new THREE.MeshBasicMaterial({ color: L >= 5 ? 0xc084fc : (L >= 3 ? w.color : 0xdfe8ff), vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+            FX.trail = new THREE.Mesh(slashGeo(), new THREE.MeshBasicMaterial({ color: L >= 5 ? 0xc084fc : (L >= 3 ? w.color : 0xdfe8ff), vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false }));
             FX.trail.visible = false; FX.trail.renderOrder = 6;
             def = { sight: [0, 0], muzzle: [0, 0.6, -0.6], eject: [0, 0, 0] };
             break;
