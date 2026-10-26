@@ -110,11 +110,11 @@ const CAMP_CHAPTERS = [{
           s2: { k: 'time', v: 330, txt: 'Finish in under 5:30' }, s3: { k: 'dmg', v: 120, txt: 'Lose less than 120 health in total' },
           reward: { cash: 1600, xp: 1100 } },
         { id: 'c2m3', name: 'RIOT LINE', map: 'downtown', light: 'neon', diff: 'normal', lvl: 13, cash: 3000, lives: 3,
-          sum: 'Defend the barricade against riot-armoured zombies, then survive 2 waves.',
-          brief: [{ w: 'doc', t: 'Doc Cole. The old police line downtown is the only choke point between us and the Metro entrance. The dead there are wearing riot gear, shields and all.' },
-                  { w: 'gears', t: 'Shots at the front of a shield are wasted ammo. Crack the shield with sustained fire, flank them, or use explosives. Stand near the barricade to patch it.' }],
-          out: { w: 'doc', t: 'The line held. Those shields were cracking under your fire like glass. One more push and the way to Dr. Lang is open.' },
-          stages: [{ t: 'defend', secs: 80, hp: 1600, cap: 14, rate: 3, mix: { riot: 0.35 } }, { t: 'survive', n: 2 }],
+          sum: 'Defend the barricade against packs of zombie Hounds, then survive 2 waves.',
+          brief: [{ w: 'doc', t: 'Doc Cole. The old police line downtown is the only choke point between us and the Metro entrance. The police kennels are open, and the dogs did not stay dead.' },
+                  { w: 'gears', t: 'Hounds come in packs of three or four and circle you before they lunge, each from a different side. They are fast but fragile: keep moving and shoot them mid-leap. Stand near the barricade to patch it.' }],
+          out: { w: 'doc', t: 'The line held. The pack is down. One more push and the way to Dr. Lang is open.' },
+          stages: [{ t: 'defend', secs: 80, hp: 1600, cap: 14, rate: 3, mix: { hound: 0.12 } }, { t: 'survive', n: 2 }],
           s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'barr', v: 0.6, txt: 'Barricade ends above 60% health' },
           reward: { cash: 1800, xp: 1200 } },
         { id: 'c2m4', name: 'SAFE PASSAGE', map: 'military', light: 'sunset', diff: 'hard', lvl: 14, cash: 3400, lives: 3,
@@ -156,7 +156,7 @@ const CAMP_CHAPTERS = [{
           brief: [{ w: 'cmd', t: 'Command. The biolab is locked down tight. The access keycards were dropped in the mall during the evacuation: four of them, one per department.' },
                   { w: 'wren', t: 'Once you have the fourth card I will open the extraction route. You will not have long, because the lockdown alarm just went off and the whole district is awake.' }],
           out: { w: 'wren', t: 'Cards verified! Doors are unlocked and the biolab convoy is on its way. Rook says to get your gear ready.' },
-          stages: [{ t: 'intel', n: 4, cap: 14, rate: 3, mix: { blighter: 0.25 } }, { t: 'extract', secs: 120, cap: 15, rate: 2.8 }],
+          stages: [{ t: 'intel', n: 4, cap: 14, rate: 3, mix: { shocker: 0.2 } }, { t: 'extract', secs: 120, cap: 15, rate: 2.8 }],
           s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'timeleft', v: 40, txt: 'Reach extraction with 40s to spare' },
           reward: { cash: 2400, xp: 1700 } },
         { id: 'c3m3', name: 'THE ANTIDOTE', map: 'temple', light: 'night', diff: 'hard', lvl: 19, cash: 4400, lives: 3,
@@ -164,15 +164,15 @@ const CAMP_CHAPTERS = [{
           brief: [{ w: 'lang', t: 'My last three colleagues are carrying the only antidote samples. They are hiding in the temple ruins, and the dead have surrounded them.' },
                   { w: 'rook', t: 'Get them out, bring them back to the drop point and then hold. When the samples are loaded on the truck we are one step away from ending this.' }],
           out: { w: 'lang', t: 'The samples are safe and the truck is rolling. Now there is only the lab, and the patient in the lower level.' },
-          stages: [{ t: 'rescue', n: 3, need: 3, cap: 14, rate: 3.2 }, { t: 'defend', secs: 70, hp: 1800, cap: 15, rate: 2.8, mix: { riot: 0.2, crawler: 0.2 } }],
+          stages: [{ t: 'rescue', n: 3, need: 3, cap: 14, rate: 3.2 }, { t: 'defend', secs: 70, hp: 1800, cap: 15, rate: 2.8, mix: { hound: 0.08, crawler: 0.2 } }],
           s2: { k: 'time', v: 420, txt: 'Finish in under 7:00' }, s3: { k: 'allsurv', txt: 'Bring all 3 scientists home alive' },
           reward: { cash: 2600, xp: 1800, skin: 'camo:toxin' } },
         { id: 'c3m4', name: 'FLASHPOINT', map: 'skybridge', light: 'storm', diff: 'hard', lvl: 20, cash: 4800, lives: 3,
           sum: 'Repair 3 power relays, then defend the lift barricade.',
           brief: [{ w: 'gears', t: 'Gears. The lab lift needs power, and the three relays are on the skybridge towers. It is a storm up there, and everything on the ground will be coming for the noise.' },
-                  { w: 'rook', t: 'When the relays are up, hold the barricade at the lift. Riot Breakers will come first, then whatever else they have.' }],
+                  { w: 'rook', t: 'When the relays are up, hold the barricade at the lift. Hound packs will come first, then whatever else they have.' }],
           out: { w: 'gears', t: 'Power is on and the lift is humming. This is it, soldier. One more floor and we meet the patient.' },
-          stages: [{ t: 'repair', n: 3, secs: 12, hp: 520, cap: 14, rate: 3.2 }, { t: 'defend', secs: 75, hp: 1900, cap: 16, rate: 2.7, mix: { riot: 0.3, blighter: 0.15 } }],
+          stages: [{ t: 'repair', n: 3, secs: 12, hp: 520, cap: 14, rate: 3.2 }, { t: 'defend', secs: 75, hp: 1900, cap: 16, rate: 2.7, mix: { hound: 0.1, shocker: 0.15 } }],
           s2: { k: 'time', v: 420, txt: 'Finish in under 7:00' }, s3: { k: 'barr', v: 0.5, txt: 'Barricade ends above 50% health' },
           reward: { cash: 2800, xp: 1900 } },
         { id: 'c3m5', name: 'DESCENT', map: 'subway', light: 'bloodmoon', diff: 'hard', lvl: 21, cash: 5000, lives: 3,
@@ -180,7 +180,7 @@ const CAMP_CHAPTERS = [{
           brief: [{ w: 'lang', t: 'The elevator to the biolab is at the end of the Metro line. The tunnels are full of the first patient\'s children. Crawlers, carriers, everything.' },
                   { w: 'rook', t: 'Hold the platform until the rail switch is thrown, then sprint to the elevator. Stay out of the vents and out of the green.' }],
           out: { w: 'rook', t: 'We made it to the elevator. This is where we say it. Whatever is waiting down there, we finish what we started. For everyone upstairs.' },
-          stages: [{ t: 'hold', secs: 80, r: 12, cap: 15, rate: 2.8, mix: { crawler: 0.45, blighter: 0.2 } }, { t: 'extract', secs: 110, cap: 16, rate: 2.6, mix: { crawler: 0.3 } }],
+          stages: [{ t: 'hold', secs: 80, r: 12, cap: 15, rate: 2.8, mix: { crawler: 0.45, shocker: 0.2 } }, { t: 'extract', secs: 110, cap: 16, rate: 2.6, mix: { crawler: 0.3 } }],
           s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'timeleft', v: 35, txt: 'Reach the elevator with 35s to spare' },
           reward: { cash: 3000, xp: 2100 } },
         { id: 'c3m6', name: 'PATIENT ZERO', map: 'biolab', light: 'bloodmoon', diff: 'hard', lvl: 22, cash: 6000, lives: 3,
@@ -281,7 +281,7 @@ function campDirect(st, dt, ax, az, burst) {
         if (d.mix) for (const id in d.mix) if (Math.random() < d.mix[id] && (counts[id] || 0) < (enemyTypes[id].cap || 99)) { cfg = enemyTypes[id]; break; }      // this part of the mission favours some zombie types
         let sp = null;
         for (let k = 0; k < 6 && !sp; k++) { const c = navSpot(ax, az, 22, 62); if (c && Math.hypot(c[0] - camera.position.x, c[2] - camera.position.z) > 16) sp = c; }
-        if (sp) spawnEnemy(cfg, sp[0], sp[2], sp[1] + 0.15, waveSpeed(lvl), waveReward(lvl) * 0.7);
+        if (sp) { const ne = spawnEnemy(cfg, sp[0], sp[2], sp[1] + 0.15, waveSpeed(lvl), waveReward(lvl) * 0.7); if (cfg.id === 'hound') spawnHoundPack(ne, sp[0], sp[2], sp[1] + 0.15, waveSpeed(lvl), waveReward(lvl) * 0.7); }
     }
 }
 function campMark(x, y, z, c, r, label) {

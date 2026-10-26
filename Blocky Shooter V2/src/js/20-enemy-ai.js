@@ -19,13 +19,14 @@ function pickAITarget(u, enemy, T, dt) {
     return (u.tgt = best || T[0]);
 }
 // hurt a player (you -> straight away, someone else -> send it to their computer). kb = knockback [x, up, z]
-function hurtTarget(tp, amount, fromPos, kb, by) {
+function hurtTarget(tp, amount, fromPos, kb, by, jam) {
     if (!tp || !tp.alive) return;
     if (tp.camp) { campDamage(tp, amount); return; }
     if (tp.local) {
         takeDamage(amount, fromPos, by);
+        if (jam) jamGun(jam);
         if (kb) { push.x += kb[0]; push.z += kb[2]; if (kb[1]) { velocity.y = Math.max(velocity.y, kb[1]); onGround = false; } }
-    } else netSendDamage(tp.id, amount, fromPos, kb, by);
+    } else netSendDamage(tp.id, amount, fromPos, kb, by, jam);
 }
 function meleeHit(u, cfg, enemy, mult = 1, kb) {
     if (u.attackCooldown > 0) return;

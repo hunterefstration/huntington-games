@@ -289,7 +289,6 @@ function traceShot(origin, dir, w, perEnemy, dmgMul) {
             spawnParticles(h.point, 0x67e8f9, 5, 6, 0.25, 0.06);
             if (Math.random() < 0.3) sfx('ting');
             if (w.shieldPierce) { if (!w.rail) dmg *= 0.5; continue; }
-            if (u.shieldHp > 0) { u.shieldHp -= dmg; if (u.shieldHp <= 0) { breakShield(e, h.point); continue; } }       // 5.0 Riot Breaker: the shield can be shot apart
             if (Math.random() < 0.25) spawnDamageNumber(h.point, 'BLOCKED', 'block');
             end = h.point; break;
         }
@@ -334,12 +333,3 @@ function showIntel(html, dur = 7) {
     intelTimer = dur;
 }
 
-// 5.0 Riot Breaker: its shield has health; when it's gone the shield flies off and the zombie is stunned for a moment, then enraged
-function breakShield(e, pt) {
-    const u = e.userData; u.shieldHp = 0;
-    if (u.shield) { u.shield.visible = false; const i = u.hitParts.indexOf(u.shield); if (i >= 0) u.hitParts.splice(i, 1); }
-    spawnParticles(pt || e.position, 0x7ee8fa, 16, 8, 0.7, 0.18, true, { grav: 12 }); spawnParticles(pt || e.position, 0xfacc15, 8, 6, 0.6, 0.12, true, { grav: 12 });
-    spawnDamageNumber(pt || e.position, 'SHIELD BROKEN', 'head'); sfx('ting'); sfx('thud');
-    if (u.state === 'walk' || u.state === 'windup' || u.state === 'charge') { u.state = 'stun'; u.stateT = 0.9; }
-    u.rage = Math.max(u.rage || 0, 6);
-}

@@ -67,18 +67,121 @@ const ZLOOK = {
     egg:      { skin: 0x9bbf4a, pants: 0x4d6b1a, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9be15a },
     acolyte:  { skin: 0xa7a3b8, pants: 0x2e1065, hair: null, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
     risen:    { skin: 0xd6d3c4, pants: 0x3a3632, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9ca3af },
-    riot:     { skin: 0x6f7f6a, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x2b3544, blood: 0x7a1414 },
+    hound:    { skin: 0x8a7560, pants: 0x4a3a2c, hair: null, shoe: null, sleeves: 'none', claws: true, noBelly: true, blood: 0x7a1414 },
     crawler:  { skin: 0x8a8a74, pants: 0x3f3a33, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x7a1414 },
-    blighter: { skin: 0x93a860, pants: 0x3d4a22, hair: null, shoe: 0x222222, sleeves: 'long', armor: 0x55662d, bigEyes: true, blood: 0x9be15a },
+    shocker:  { skin: 0x7d8f98, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x1e3a5f, bigEyes: true, blood: 0x7dd3fc },
     zero:     { skin: 0x7a8f55, pants: 0x2b3318, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0xa3e635 }
 };
 const zLook = cfg => ZLOOK[cfg.look || cfg.id] || ZLOOK.grunt;
 function mixHex(a, b, t) { return new THREE.Color(a).lerp(new THREE.Color(b), t).getHex(); }
 
 
+// 5.0 boss detail layer: extra armour plates, exposed parts and glowing cores merged into the same kit meshes (no extra draw calls)
+function bossExtras(id, k, o) {
+    const { sl, hd, eye, BONE, IRON, BLACK, skin, skinD, cloth, clothD, rot } = o;
+    const T = k.torso, H = k.head, push = (a, ...p) => a.push(...p);
+    switch (id) {
+        case 'boss': {   // Abomination: spine of bone spikes, tusks, chained skull belt, bone-blade forearms, glowing veins
+            for (let i = 0; i < 6; i++) push(T, [0.12, 0.34 - i * 0.025, 0.12, 0, 2.3 - i * 0.17, -hd - 0.1, BONE, 0.5, 0, 0]);
+            for (let i = 0; i < 4; i++) { push(T, [0.5, 0.05, 0.05, 0, 1.55 + i * 0.2, hd + 0.04, BONE, 0, 0, i % 2 ? 0.12 : -0.12]); k.torsoGlow.push([0.04, 0.5, 0.04, -0.4 + i * 0.27, 1.9, hd + 0.03, eye]); }
+            push(T, [1.14, 0.12, 0.7, 0, 1.38, 0, IRON], [0.2, 0.22, 0.2, -0.3, 1.3, hd + 0.1, BONE], [0.2, 0.22, 0.2, 0.3, 1.3, hd + 0.1, BONE], [0.08, 0.1, 0.04, -0.3, 1.3, hd + 0.21, BLACK], [0.08, 0.1, 0.04, 0.3, 1.3, hd + 0.21, BLACK]);
+            push(T, [0.3, 0.8, 0.3, -1.0, 2.9, 0, BONE, 0, 0, 0.5], [0.3, 0.8, 0.3, 1.0, 2.9, 0, BONE, 0, 0, -0.5]);
+            push(H, [0.1, 0.4, 0.1, -0.28, -0.4, 0.34, BONE, 0.3, 0, 0.2], [0.1, 0.4, 0.1, 0.28, -0.4, 0.34, BONE, 0.3, 0, -0.2], [0.8, 0.12, 0.4, 0, 0.4, 0.3, skinD]);
+            for (const A of [k.armL, k.armR]) push(A, [0.1, 1.1, 0.34, 0, -1.4, -0.06, BONE, 0, 0, 0], [0.4, 0.14, 0.4, 0, -0.8, 0, IRON], [0.14, 0.4, 0.14, 0, -0.5, -0.24, BONE, -0.5, 0, 0]);
+            k.armLGlow.push([0.06, 0.5, 0.04, 0, -0.45, 0.17, eye]); k.armRGlow.push([0.06, 0.5, 0.04, 0, -0.45, 0.17, eye]);
+            for (const L of [k.legL, k.legR]) push(L, [0.46, 0.14, 0.5, 0, -0.55, 0.02, IRON], [0.12, 0.3, 0.12, 0, -0.55, 0.28, BONE, -0.4, 0, 0]);
+            break;
+        }
+        case 'jugg': {   // Juggernaut: tower slab on the back, exhaust stacks, spiked knuckles, greaves
+            const PL = 0x57534e, PLD = 0x3a3633, RIV = 0xa8a29e;
+            push(T, [1.3, 1.5, 0.16, 0, 1.95, -hd - 0.24, PLD], [1.1, 1.3, 0.1, 0, 1.95, -hd - 0.33, PL], [0.3, 0.5, 0.3, -0.4, 2.9, -hd - 0.2, IRON], [0.3, 0.5, 0.3, 0.4, 2.9, -hd - 0.2, IRON]);
+            k.torsoGlow.push([0.2, 0.06, 0.2, -0.4, 3.18, -hd - 0.2, 0xff7a1a], [0.2, 0.06, 0.2, 0.4, 3.18, -hd - 0.2, 0xff7a1a]);
+            for (let i = 0; i < 4; i++) push(T, [1.2, 0.06, 0.06, 0, 1.5 + i * 0.28, -hd - 0.4, RIV]);
+            push(T, [0.5, 0.5, 0.1, -0.5, 1.9, hd + 0.18, PLD], [0.5, 0.5, 0.1, 0.5, 1.9, hd + 0.18, PLD], [0.12, 0.6, 0.12, -1.2, 2.9, 0, RIV, 0, 0, 0.2], [0.12, 0.6, 0.12, 1.2, 2.9, 0, RIV, 0, 0, -0.2]);
+            k.torsoGlow.push([0.5, 0.05, 0.03, 0, 1.55, hd + 0.2, eye]);
+            push(H, [0.16, 0.5, 0.16, -0.5, 0.5, 0, RIV, 0, 0, 0.5], [0.16, 0.5, 0.16, 0.5, 0.5, 0, RIV, 0, 0, -0.5], [0.12, 0.7, 0.9, 0, 0.58, 0, PLD]);
+            for (const A of [k.armL, k.armR]) for (const x of [-0.14, 0.14]) push(A, [0.09, 0.18, 0.09, x, -1.5, 0.2, RIV]);
+            for (const L of [k.legL, k.legR]) push(L, [0.5, 0.5, 0.52, 0, -0.5, 0.02, PL], [0.4, 0.2, 0.2, 0, -0.5, 0.3, PLD], [0.5, 0.1, 0.6, 0, -0.1, 0, PLD], [0.14, 0.14, 0.2, 0, -0.45, 0.4, RIV]);
+            break;
+        }
+        case 'brood': {  // Broodmother: extra spider legs, egg sacs, dorsal spines, bristles
+            for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) push(T, [0.14, 1.4, 0.14, sd * 0.9, 1.5 + i * 0.15, -0.4 - i * 0.3, skinD, 0.3, 0, sd * (1.1 + i * 0.1)], [0.1, 0.9, 0.1, sd * 1.7, 0.7 + i * 0.12, -0.4 - i * 0.3, skin, 0.3, 0, sd * -0.3], [0.1, 0.2, 0.1, sd * 1.8, 0.1, -0.4 - i * 0.3, BONE]);
+            for (let i = 0; i < 7; i++) push(T, [0.14, 0.4, 0.14, 0, 2.05 - i * 0.05, -0.2 - i * 0.28, BONE, -0.3, 0, 0]);
+            for (const [x, y, z] of [[-0.75, 1.4, -1.0], [0.75, 1.4, -1.0], [-0.55, 1.2, -1.7], [0.55, 1.2, -1.7]]) { push(T, [0.5, 0.5, 0.5, x, y, z, 0x65751f]); k.torsoGlow.push([0.34, 0.34, 0.34, x, y, z, 0xd9f99d]); }
+            for (let i = 0; i < 6; i++) push(T, [0.05, 0.3, 0.05, -0.4 + i * 0.16, 1.4, -1.9, rot, 0.4, 0, 0]);
+            push(T, [0.9, 0.5, 0.5, 0, 2.3, -0.1, skinD], [0.7, 0.14, 0.1, 0, 1.55, hd + 0.04, BONE]);
+            push(H, [0.12, 0.5, 0.12, -0.3, -0.5, 0.4, BONE, 0.5, 0, 0.5], [0.12, 0.5, 0.12, 0.3, -0.5, 0.4, BONE, 0.5, 0, -0.5], [0.8, 0.12, 0.3, 0, 0.4, 0.3, skinD]);
+            for (const A of [k.armL, k.armR]) push(A, [0.12, 0.6, 0.12, 0, -1.8, 0.1, BONE, 0.4, 0, 0], [0.4, 0.12, 0.4, 0, -0.7, 0, skinD]);
+            break;
+        }
+        case 'pyro': {   // Pyromancer: fuel tanks with hoses, shoulder flame vents, horns, glowing leg cracks
+            const TK = 0x7f1d1d, TKD = 0x450a0a;
+            push(T, [0.5, 1.3, 0.5, -0.32, 2.0, -hd - 0.35, TK], [0.5, 1.3, 0.5, 0.32, 2.0, -hd - 0.35, TK], [0.54, 0.1, 0.54, -0.32, 1.5, -hd - 0.35, TKD], [0.54, 0.1, 0.54, 0.32, 1.5, -hd - 0.35, TKD], [0.54, 0.1, 0.54, -0.32, 2.5, -hd - 0.35, TKD], [0.54, 0.1, 0.54, 0.32, 2.5, -hd - 0.35, TKD], [0.2, 0.2, 0.2, -0.32, 2.75, -hd - 0.35, IRON], [0.2, 0.2, 0.2, 0.32, 2.75, -hd - 0.35, IRON]);
+            push(T, [0.1, 0.1, 0.9, -0.5, 2.45, 0.25, BLACK], [0.1, 0.1, 0.9, 0.5, 2.45, 0.25, BLACK], [1.12, 0.1, 0.62, 0, 1.45, 0, IRON]);
+            for (const x of [-0.72, 0.72]) { push(T, [0.34, 0.4, 0.34, x, 2.82, 0, BLACK]); k.torsoGlow.push([0.24, 0.1, 0.24, x, 3.05, 0, 0xffd24d]); }
+            k.torsoGlow.push([0.12, 0.12, 0.05, -0.32, 2.0, -hd - 0.62, 0xff6a1f], [0.12, 0.12, 0.05, 0.32, 2.0, -hd - 0.62, 0xff6a1f]);
+            push(H, [0.14, 0.6, 0.14, -0.36, 0.62, 0, BLACK, 0, 0, 0.4], [0.14, 0.6, 0.14, 0.36, 0.62, 0, BLACK, 0, 0, -0.4], [0.9, 0.12, 0.3, 0, -0.15, 0.3, BLACK]);
+            for (const L of [k.legL, k.legR]) { push(L, [0.44, 0.1, 0.46, 0, -0.5, 0, BLACK]); }
+            k.legLGlow = [[0.04, 0.5, 0.03, 0.1, -0.5, 0.215, 0xff6a1f]]; k.legRGlow = [[0.04, 0.5, 0.03, -0.1, -0.5, 0.215, 0xff6a1f]];
+            for (const A of [k.armL, k.armR]) push(A, [0.46, 0.14, 0.46, 0, -0.6, 0, BLACK], [0.14, 0.5, 0.14, 0, -1.7, 0.14, BLACK, 0.2, 0, 0]);
+            break;
+        }
+        case 'phantom': {  // Phantom: tattered cloak strips, shoulder spikes, hanging chains, floating shards, bone mask
+            for (let i = 0; i < 7; i++) push(T, [0.22, 1.1 + (i % 3) * 0.3, 0.04, -0.66 + i * 0.22, 0.9 - (i % 3) * 0.1, -hd - 0.1 - (i % 2) * 0.05, i % 2 ? clothD : cloth, 0.1 * (i % 3 - 1), 0, 0.08 * (i % 3 - 1)]);
+            push(T, [0.14, 0.9, 0.14, -0.58, 2.9, -0.1, 0xcbd5e1, 0, 0, 0.35], [0.14, 0.9, 0.14, 0.58, 2.9, -0.1, 0xcbd5e1, 0, 0, -0.35], [0.12, 0.6, 0.12, -0.9, 2.7, -0.1, 0xcbd5e1, 0, 0, 0.9], [0.12, 0.6, 0.12, 0.9, 2.7, -0.1, 0xcbd5e1, 0, 0, -0.9]);
+            for (let i = 0; i < 6; i++) push(T, [0.06, 0.1, 0.06, 0.4, 1.7 - i * 0.12, hd + 0.08, IRON, 0, i * 0.4, 0]);
+            for (const [x, y, z, r] of [[-0.9, 1.9, 0.5, 0.3], [0.95, 2.4, 0.6, -0.2], [-0.7, 3.2, -0.2, 0.5], [0.8, 1.2, -0.5, -0.5]]) { push(T, [0.2, 0.5, 0.2, x, y, z, 0x1e3a4a, r, r, r]); k.torsoGlow.push([0.08, 0.3, 0.08, x, y, z, eye, r, r, r]); }
+            k.torsoGlow.push([0.5, 0.05, 0.03, 0, 2.3, hd + 0.04, eye], [0.05, 0.5, 0.03, 0, 2.1, hd + 0.04, eye]);
+            push(H, [0.5, 0.5, 0.06, 0, -0.04, 0.42, BONE], [0.1, 0.7, 0.1, -0.42, 0.7, -0.1, 0xcbd5e1, 0, 0, 0.3], [0.1, 0.7, 0.1, 0.42, 0.7, -0.1, 0xcbd5e1, 0, 0, -0.3]);
+            for (const A of [k.armL, k.armR]) push(A, [0.5, 0.1, 0.5, 0, -0.9, 0, IRON], [0.06, 0.7, 0.1, 0.2, -1.9, 0.12, 0xcbd5e1, 0.3, 0, 0], [0.06, 0.7, 0.1, -0.2, -1.9, 0.12, 0xcbd5e1, 0.3, 0, 0]);
+            break;
+        }
+        case 'warlord': {  // Warlord: war banner on the back, spiked pauldrons, medals, ammo drum, helmet crest
+            const OL = 0x3a4a22, AM = 0xc9a227;
+            push(T, [0.1, 2.4, 0.1, 0.5, 2.9, -hd - 0.3, 0x5c4a2a], [0.9, 0.7, 0.06, 0.95, 3.8, -hd - 0.3, 0x7f1d1d], [0.3, 0.3, 0.02, 0.95, 3.8, -hd - 0.34, AM], [0.14, 0.14, 0.14, 0.5, 4.15, -hd - 0.3, AM]);
+            k.torsoGlow.push([0.18, 0.18, 0.02, 0.95, 3.8, -hd - 0.35, 0xff2020]);
+            push(T, [0.8, 0.8, 0.5, -0.2, 1.9, -hd - 0.3, OL], [0.7, 0.1, 0.52, -0.2, 2.2, -hd - 0.3, AM], [0.7, 0.1, 0.52, -0.2, 1.6, -hd - 0.3, AM]);
+            for (const x of [-0.8, 0.8]) for (let i = 0; i < 3; i++) push(T, [0.1, 0.5, 0.1, x + (i - 1) * 0.22, 2.8, (i - 1) * 0.2, IRON, 0, 0, (i - 1) * -0.1]);
+            for (let i = 0; i < 4; i++) push(T, [0.1, 0.12, 0.03, -0.45 + i * 0.12, 2.15, hd + 0.16, i % 2 ? AM : 0xb91c1c]);
+            push(T, [1.1, 0.14, 0.7, 0, 1.38, 0, 0x1a1a14], [0.24, 0.24, 0.1, 0, 1.38, hd + 0.1, AM]);
+            push(H, [0.1, 0.34, 0.9, 0, 0.62, 0, 0x7f1d1d], [0.2, 0.1, 0.2, 0, 0.8, 0.0, AM]);
+            for (const L of [k.legL, k.legR]) push(L, [0.48, 0.3, 0.2, 0, -0.45, 0.3, OL], [0.1, 0.16, 0.1, 0, -0.45, 0.42, AM]);
+            push(k.armL, [0.5, 0.2, 0.5, 0, -0.2, 0, OL], [0.3, 0.7, 0.14, 0.24, -1.0, 0.04, IRON]);
+            break;
+        }
+        case 'titan': {  // Titan: glowing crystals on shoulders and back, jagged stone crown, boulder knees, cracks
+            const ST = 0x78716c, STD = 0x57534e, CR = 0xfbbf24;
+            for (const [x, y, z, r] of [[-0.9, 2.95, 0.1, 0.3], [0.9, 2.95, -0.1, -0.3], [-0.5, 2.6, -0.7, 0.2], [0.6, 2.4, -0.7, -0.2], [0, 2.9, -0.8, 0]]) { push(T, [0.34, 0.9, 0.34, x, y, z, STD, 0, r, r]); k.torsoGlow.push([0.2, 0.7, 0.2, x, y + 0.08, z, CR, 0, r, r]); }
+            push(T, [1.2, 0.3, 0.9, 0, 1.4, 0, STD], [0.6, 0.7, 0.2, -0.6, 1.9, hd + 0.2, ST, 0, 0, 0.1], [0.6, 0.7, 0.2, 0.6, 1.9, hd + 0.2, STD, 0, 0, -0.1], [1.4, 0.3, 0.3, 0, 2.2, -hd - 0.3, ST]);
+            k.torsoGlow.push([0.3, 0.3, 0.05, 0, 2.0, hd + 0.31, CR]);
+            for (let i = 0; i < 5; i++) push(H, [0.16, 0.5 + (i % 2) * 0.3, 0.16, (i - 2) * 0.17, 0.6, (i % 2) * -0.1, STD, 0, 0, (i - 2) * 0.12]);
+            for (const L of [k.legL, k.legR]) { push(L, [0.7, 0.5, 0.7, 0, -0.4, 0, ST], [0.5, 0.4, 0.2, 0, -0.5, 0.4, STD], [0.7, 0.2, 0.8, 0, -0.1, 0, STD]); }
+            k.legLGlow = [[0.04, 0.4, 0.03, 0, -0.8, 0.22, CR]]; k.legRGlow = [[0.04, 0.4, 0.03, 0, -0.8, 0.22, CR]];
+            for (const A of [k.armL, k.armR]) push(A, [0.8, 0.3, 0.8, 0, -1.55, 0, ST], [0.14, 0.4, 0.14, -0.3, -1.8, 0.3, STD], [0.14, 0.4, 0.14, 0.3, -1.8, 0.3, STD]);
+            k.armLGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, CR]); k.armRGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, CR]);
+            break;
+        }
+        case 'necro': {  // Necromancer: floating bone ribs, skull belt, soul jars, spiked collar, rune hem
+            for (let i = 0; i < 4; i++) push(T, [0.9 - i * 0.1, 0.06, 0.06, 0, 2.0 + i * 0.14, hd + 0.1, BONE]);
+            for (let i = 0; i < 4; i++) push(T, [0.1, 0.5, 0.06, -0.4 + i * 0.27, 1.85, hd + 0.1, BONE, 0, 0, (i - 1.5) * 0.08]);
+            for (const x of [-0.5, 0, 0.5]) { push(T, [0.26, 0.28, 0.26, x, 1.25, hd + 0.14, BONE], [0.18, 0.08, 0.04, x, 1.22, hd + 0.28, BLACK]); }
+            for (const x of [-0.7, 0.7]) { push(T, [0.3, 0.4, 0.3, x, 1.05, 0.3, 0x1e1b4b]); k.torsoGlow.push([0.2, 0.28, 0.2, x, 1.05, 0.3, eye]); push(T, [0.08, 0.5, 0.04, x * 0.6, 1.4, 0.3, IRON]); }
+            for (let i = 0; i < 8; i++) push(T, [0.1, 0.5, 0.1, Math.cos(i * 0.785) * 0.55, 2.7, Math.sin(i * 0.785) * 0.4, BONE, 0, 0, Math.cos(i * 0.785) * -0.5]);
+            for (let i = 0; i < 5; i++) k.torsoGlow.push([0.2, 0.03, 0.03, -0.4 + i * 0.2, 0.66, hd + 0.4, eye]);
+            push(T, [1.3, 0.1, 0.9, 0, 0.58, 0, 0x4c1d95], [0.9, 1.2, 0.04, 0, 1.0, -hd - 0.1, 0x312e81]);
+            for (let i = 0; i < 3; i++) push(H, [0.1, 0.5, 0.1, -0.1 + i * 0.1, 0.9 + (i % 2) * 0.2, 0, BONE, 0, 0, (i - 1) * 0.3]);
+            k.headGlow.push([0.08, 0.1, 0.03, -0.17, 0.08, 0.385, eye], [0.08, 0.1, 0.03, 0.17, 0.08, 0.385, eye]);
+            push(k.armL, [0.5, 0.1, 0.5, 0, -0.7, 0, BONE], [0.14, 0.14, 0.4, 0, -1.3, 0.1, BONE]);
+            k.armLGlow.push([0.16, 0.16, 0.16, 0, -1.5, 0.3, eye]);
+            break;
+        }
+    }
+}
+
 function enemyKit(cfg) {
     if (enemyKits[cfg.id]) return enemyKits[cfg.id];
     if (cfg.id === 'egg') return (enemyKits.egg = eggKit(cfg));
+    if (cfg.id === 'hound') return (enemyKits.hound = houndKit(cfg));
     const s = cfg.scale, sl = cfg.slim || 1, id = cfg.look || cfg.id, Z = zLook(cfg);
     const eye = cfg.eye || 0xd9ff5a;
     const cloth = mixHex(cfg.color, 0x55554a, 0.18), clothD = darken(cloth, 0.58);
@@ -214,16 +317,6 @@ function enemyKit(cfg) {
                                [1.2, 0.14, 0.02, 0, 0.2, 0.07, 0xe5e7eb], [0.06, 0.6, 0.02, -0.35, -0.35, 0.07, 0x111827, 0, 0, 0.5], [0.05, 0.4, 0.02, -0.18, -0.55, 0.07, 0x111827, 0, 0, -0.6],
                                [0.3, 0.34, 0.02, 0.35, -0.35, 0.07, BLOOD], [0.1, 0.5, 0.02, 0.42, -0.75, 0.07, DRIED], [0.24, 0.2, 0.02, -0.4, 0.62, 0.08, DRIED]], s);
             break;
-        case 'riot':
-            // heavy riot-gear zombie: full-face helmet with a glowing amber slit, chest plate with a hazard stripe, shoulder pads, a big cracked shield
-            H.push([0.94, 0.5, 0.94, 0, 0.26, 0, 0x1e293b], [0.98, 0.07, 0.98, 0, 0.0, 0, 0x0f172a], [0.1, 0.3, 0.1, -0.5, 0.0, 0, 0x1e293b], [0.1, 0.3, 0.1, 0.5, 0.0, 0, 0x1e293b]);
-            k.headGlow.push([0.62, 0.11, 0.04, 0, 0.12, 0.465, 0xfb923c]);
-            T.push([1.2 * sl, 0.96, 0.72 * sl, 0, 1.95, 0, Z.armor], [1.24 * sl, 0.1, 0.76 * sl, 0, 2.45, 0, 0x0f172a], [1.0 * sl, 0.14, 0.02, 0, 1.78, 0.37 * sl, 0xfacc15], [0.5 * sl, 0.5, 0.02, 0, 2.15, 0.37 * sl, 0x1f2937]);
-            T.push([0.6, 0.36, 0.84, -0.86, 2.44, 0, 0x1f2937], [0.6, 0.36, 0.84, 0.86, 2.44, 0, 0x1f2937], [1.0 * sl, 0.1, 0.02, 0, 1.55, -0.37 * sl, 0xfacc15]);
-            for (const A of [k.armL, k.armR]) A.push([0.5, 0.34, 0.5, 0, -0.04, 0, Z.armor], [0.38, 0.52, 0.38, 0, -0.9, 0, 0x1f2937]);
-            shield = partsGeo([[1.8, 2.5, 0.14, 0, 0, 0, 0x334155], [1.88, 0.14, 0.18, 0, 1.2, 0, 0x111827], [1.88, 0.14, 0.18, 0, -1.2, 0, 0x111827], [1.2, 0.4, 0.16, 0, 0.7, 0, 0x7ee8fa],
-                               [1.6, 0.2, 0.02, 0, 0.1, 0.08, 0xfacc15], [0.07, 0.7, 0.02, -0.4, -0.4, 0.08, 0x111827, 0, 0, 0.5], [0.34, 0.4, 0.02, 0.4, -0.45, 0.08, BLOOD], [0.1, 0.5, 0.02, 0.47, -0.85, 0.08, DRIED]], s);
-            break;
         case 'crawler':
             // vent crawler: pale, hairless and half-starved, spine bumps along the back, bony elbows, huge yellow eyes
             for (let i = 0; i < 5; i++) T.push([0.14, 0.14, 0.12, 0, 1.55 + i * 0.2, -hd - 0.07, BONE]);
@@ -232,15 +325,16 @@ function enemyKit(cfg) {
             k.headGlow.push([0.2, 0.16, 0.04, -0.17, 0.06, 0.39, 0xfacc15], [0.2, 0.16, 0.04, 0.17, 0.06, 0.39, 0xfacc15]);
             for (const A of [k.armL, k.armR]) A.push([0.3, 0.12, 0.3, 0, -0.62, 0, BONE]);
             break;
-        case 'blighter':
-            // hazmat zombie: hood and respirator with glowing green filters, hazard patch, canister belt and a bubbling tank on the back
-            H.push([0.84, 0.3, 0.84, 0, 0.36, 0, 0x55662d], [0.12, 0.7, 0.8, -0.42, 0.0, 0, 0x55662d], [0.12, 0.7, 0.8, 0.42, 0.0, 0, 0x55662d], [0.5, 0.34, 0.2, 0, -0.18, 0.44, 0x1f2937], [0.5, 0.06, 0.22, 0, -0.18, 0.46, 0x111827]);
-            k.headGlow.push([0.14, 0.14, 0.06, -0.2, -0.18, 0.55, 0xa3e635], [0.14, 0.14, 0.06, 0.2, -0.18, 0.55, 0xa3e635]);
-            T.push([1.08 * sl, 1.0, 0.64 * sl, 0, 1.95, 0, Z.armor], [0.34, 0.34, 0.02, 0.2 * sl, 2.1, hd + 0.34, 0xfacc15], [0.16, 0.16, 0.03, 0.2 * sl, 2.1, hd + 0.35, 0x111827]);
-            for (let i = 0; i < 4; i++) T.push([0.2, 0.34, 0.2, -0.45 + i * 0.3, 1.42, hd + 0.1, i % 2 ? 0x84cc16 : 0x1f2937]);
-            T.push([0.8, 0.9, 0.34, 0, 2.0, -hd - 0.2, 0x3f3f46], [0.6, 0.12, 0.3, 0, 2.5, -hd - 0.2, 0x111827]);
-            extra = { size: [0.62, 0.72, 0.2], pos: [0, 2.0, -hd - 0.4], color: 0xa3e635 };
-            for (const A of [k.armL, k.armR]) A.push([0.42, 0.2, 0.42, 0, -1.04, 0, 0x1f2937]);
+        case 'shocker':
+            // electrified lineman: scorched skin, hard hat with a glowing cyan lamp, insulated cuffs, a crackling coil pack on the back, a glowing chest core
+            H.push([0.88, 0.26, 0.88, 0, 0.4, 0, 0xfacc15], [0.96, 0.06, 1.0, 0, 0.26, 0.06, 0xca8a04], [0.14, 0.14, 0.06, 0, 0.42, 0.46, 0xe0f2fe]);
+            k.headGlow.push([0.2, 0.1, 0.04, 0, 0.42, 0.5, 0x7dd3fc]);
+            T.push([1.08 * sl, 0.94, 0.64 * sl, 0, 1.95, 0, Z.armor], [1.1 * sl, 0.08, 0.66 * sl, 0, 1.5, 0, 0x0f172a], [0.9 * sl, 0.06, 0.02, 0, 2.2, hd + 0.34, 0xfacc15]);
+            T.push([0.8, 0.9, 0.34, 0, 2.0, -hd - 0.2, 0x27272a], [0.1, 0.6, 0.1, -0.26, 2.7, -hd - 0.2, 0x94a3b8], [0.1, 0.6, 0.1, 0.26, 2.7, -hd - 0.2, 0x94a3b8], [0.1, 0.45, 0.1, 0, 2.62, -hd - 0.2, 0x94a3b8]);
+            k.torsoGlow.push([0.34, 0.34, 0.05, 0, 1.92, hd + 0.04, 0x7dd3fc], [0.18, 0.18, 0.18, -0.26, 3.06, -hd - 0.2, 0xe0f2fe], [0.18, 0.18, 0.18, 0.26, 3.06, -hd - 0.2, 0xe0f2fe], [0.14, 0.14, 0.14, 0, 2.92, -hd - 0.2, 0xe0f2fe]);
+            extra = { size: [0.5, 0.5, 0.2], pos: [0, 2.0, -hd - 0.45], color: 0x7dd3fc };
+            for (const A of [k.armL, k.armR]) A.push([0.42, 0.22, 0.42, 0, -1.04, 0, 0x1d4ed8]);
+            k.armLGlow.push([0.04, 0.5, 0.04, 0, -0.5, 0.14, 0x7dd3fc]); k.armRGlow.push([0.04, 0.5, 0.04, 0, -0.5, 0.14, 0x7dd3fc]);
             break;
         case 'zero':
             // Patient Zero: a swollen patient in a torn hospital gown with a wristband and drip line, glowing boils, a huge pulsing tumour on the back
@@ -392,13 +486,38 @@ function enemyKit(cfg) {
             for (const A of [k.armL, k.armR]) A.push([0.34, 0.1, 0.34, 0, -0.6, 0, IRON]);
             break;
     }
+    bossExtras(id, k, { sl, hd, eye, BONE, IRON, BLACK, skin, skinD, cloth, clothD, rot });
     if (eyes) {
         const e = Z.bigEyes ? 0.13 : 0.09;
         k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
     }
     // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-    const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, riot: 0.08, crawler: 1.15, blighter: 0.2, zero: 0.3 }[id] ?? 0.2;
+    const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3 }[id] ?? 0.2;
     return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
+}
+// 5.0 Zombie Hound: a four-legged dog. The body is the usual hip/torso/head rig tipped flat (hunch 1.5): the torso runs forward,
+// the 'arms' are the front legs (they counter-rotate to hang down) and the 'legs' are the hind legs.
+function houndKit(cfg) {
+    const s = cfg.scale, Z = zLook(cfg), skin = Z.skin, skinD = darken(skin, 0.74), rot = darken(skin, 0.45), eye = cfg.eye;
+    const BONE = 0xd9cfb0, BLOOD = 0x7a1414, HOLE = 0x140808, BLACK = 0x17181c;
+    const k = { legL: [], legR: [], armL: [], armR: [], torso: [], head: [], torsoGlow: [], headGlow: [], armLGlow: [], armRGlow: [] };
+    for (const [L, torn] of [[k.legL, false], [k.legR, true]]) {      // hind legs: thigh, hock, paw
+        L.push([0.32, 0.56, 0.42, 0, -0.22, -0.04, skin], [0.2, 0.56, 0.22, 0, -0.74, 0.1, torn ? rot : skinD], [0.24, 0.14, 0.36, 0, -1.03, 0.2, skinD], [0.2, 0.05, 0.1, 0, -1.09, 0.4, BONE]);
+        if (torn) L.push([0.07, 0.3, 0.02, 0.1, -0.7, 0.2, BONE], [0.12, 0.1, 0.02, 0, -0.5, 0.22, BLOOD]);
+    }
+    for (const A of [k.armL, k.armR]) A.push([0.3, 0.6, 0.32, 0, -0.3, 0, skin], [0.2, 0.55, 0.22, 0, -0.82, 0.04, skinD], [0.24, 0.14, 0.36, 0, -1.03, 0.12, skinD], [0.2, 0.05, 0.1, 0, -1.09, 0.32, BONE]);
+    const T = k.torso;
+    T.push([0.62, 1.5, 0.62, 0, 1.72, 0, skin], [0.66, 0.5, 0.66, 0, 1.3, 0, skinD], [0.72, 0.42, 0.68, 0, 2.2, 0, skinD]);
+    for (let i = 0; i < 4; i++) T.push([0.66, 0.05, 0.46, 0, 1.55 + i * 0.17, 0.02, BONE]);
+    for (let i = 0; i < 5; i++) T.push([0.1, 0.1, 0.14, 0, 1.2 + i * 0.28, -0.36, BONE]);
+    T.push([0.02, 0.34, 0.3, 0.32, 1.62, 0.04, BLOOD], [0.02, 0.18, 0.16, -0.32, 1.85, 0.06, HOLE]);
+    T.push([0.11, 0.8, 0.11, 0, 0.62, -0.24, skinD, 0.55, 0, 0], [0.12, 0.2, 0.12, 0, 0.3, -0.5, rot, 0.55, 0, 0]);       // tail
+    const H = k.head;
+    H.push([0.5, 0.56, 0.5, 0, 0, 0, skin], [0.3, 0.52, 0.26, 0, 0.5, 0.06, skinD], [0.26, 0.4, 0.07, 0, 0.5, 0.25, rot], [0.14, 0.08, 0.12, 0, 0.78, 0.04, BLACK]);
+    for (const x of [-0.1, 0.1]) H.push([0.04, 0.08, 0.06, x, 0.58, 0.19, BONE], [0.04, 0.06, 0.06, x * 1.3, 0.62, 0.16, BONE]);
+    H.push([0.1, 0.18, 0.16, -0.2, -0.14, -0.3, skinD], [0.1, 0.12, 0.14, 0.2, -0.14, -0.3, rot]);
+    k.headGlow.push([0.12, 0.06, 0.1, -0.15, 0.27, -0.1, eye], [0.12, 0.06, 0.1, 0.15, 0.27, -0.1, eye]);
+    return (enemyKits.hound = finishKit(cfg, k, s, 1, { id: 'hound', hunch: 1.5, rough: 0.84, headZ: -0.05, legX: 0.2, armX: 0.2 }));
 }
 // the Broodmother's egg sac: a lumpy, veiny, glowing blob on a puddle of goo (no real arms or legs)
 function eggKit(cfg) {
@@ -413,8 +532,8 @@ function eggKit(cfg) {
 }
 // build the merged part meshes. Torso (and anything riding on it) is stored relative to the hip joint.
 function finishKit(cfg, k, s, sl, o) {
-    const kit = { s, sl, id: o.id, hunch: o.hunch, rough: o.rough, headZ: o.headZ };
-    for (const key of ['legL', 'legR']) kit[key] = partsGeo(k[key], s);
+    const kit = { s, sl, id: o.id, hunch: o.hunch, rough: o.rough, headZ: o.headZ, legX: o.legX, armX: o.armX };
+    for (const key of ['legL', 'legR']) kit[key] = partsGeo(k[key], s, k[key + 'Glow'] || []);
     kit.armL = partsGeo(k.armL, s, k.armLGlow || []); kit.armR = partsGeo(k.armR, s, k.armRGlow || []);
     kit.torso = partsGeo(k.torso, s, k.torsoGlow); kit.torso.translate(0, -HIP_Y * s, 0);
     kit.head = partsGeo(k.head, s, k.headGlow);
@@ -457,6 +576,7 @@ function classicKit(cfg) {
 }
 
 
+const _arcMat = new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
 const _laserMat = new THREE.MeshBasicMaterial({ color: 0xff2020, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
 const _auraMat = new THREE.MeshBasicMaterial({ map: null, color: 0x4ade80, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
 const _auraGeo = new THREE.RingGeometry(0.94, 1, 48); _auraGeo.rotateX(-Math.PI / 2);
@@ -654,12 +774,13 @@ function createEnemy(cfg, opt = {}) {
     const pivot = (parent, x, y, z) => { const p = new THREE.Group(); p.position.set(x * s, y * s, z * s); parent.add(p); return p; };
 
 
-    const legL = pivot(group, -0.27 * sl, HIP_Y, 0), legR = pivot(group, 0.27 * sl, HIP_Y, 0);
+    const lx = kit.legX ?? 0.27 * sl, ax = kit.armX ?? 0.68 * sl;
+    const legL = pivot(group, -lx, HIP_Y, 0), legR = pivot(group, lx, HIP_Y, 0);
     mk(kit.legL, legL, 'legL'); mk(kit.legR, legR, 'legR');
     // upper body hangs off the hips so it can hunch, sway and lurch
     const body = pivot(group, 0, HIP_Y, 0); body.rotation.x = kit.hunch;
     mk(kit.torso, body, 'torso');
-    const armL = pivot(body, -0.68 * sl, 2.2 - HIP_Y, 0), armR = pivot(body, 0.68 * sl, 2.2 - HIP_Y, 0);
+    const armL = pivot(body, -ax, 2.2 - HIP_Y, 0), armR = pivot(body, ax, 2.2 - HIP_Y, 0);
     mk(kit.armL, armL, 'armL'); mk(kit.armR, armR, 'armR');
     const head = mk(kit.head, body, 'head', { head: true });
     head.position.set(0, (2.78 - HIP_Y) * s, kit.headZ * s);
@@ -671,6 +792,8 @@ function createEnemy(cfg, opt = {}) {
         shield.position.set(0.05 * s, 1.55 * s, 0.78 * s);
     }
     if (cfg.ai === 'marksman') { laser = new THREE.Mesh(sharedBox, _laserMat.clone()); laser.visible = false; laser.frustumCulled = false; scene.add(laser); }
+    let arcs = null;      // 5.0 Shocker: 3 lightning links, each drawn as a 2-piece zigzag
+    if (cfg.ai === 'shocker') { arcs = []; for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(sharedBox, _arcMat); m.visible = false; m.frustumCulled = false; scene.add(m); arcs.push(m); } }
     let bubble = null;
     if (cfg.ai === 'necro') { bubble = new THREE.Mesh(_bubbleGeo, fxMat(0xa78bfa, 0.2)); bubble.scale.setScalar(2.3 * s); bubble.position.y = 1.7 * s; bubble.visible = false; group.add(bubble); }
     if (cfg.ai === 'medic' || cfg.ai === 'screamer') { aura = new THREE.Mesh(_auraGeo, _auraMat.clone()); aura.position.y = 0.06; aura.scale.setScalar(cfg.ai === 'screamer' ? 18 : 11); if (cfg.ai === 'screamer') aura.material.color.setHex(0xef4444); group.add(aura); }
@@ -685,8 +808,8 @@ function createEnemy(cfg, opt = {}) {
 
     group.userData = {
         isEnemy: true, velocityY: 0, onGround: false, dead: false,
-        totalHeight: 3.2 * s, radius: 0.62 * s * (cfg.id === 'sprinter' ? 0.85 : 1),
-        config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, aura, bubble, barShow: false, barW: bw, barY: 3.6 * s + 0.3,
+        totalHeight: (cfg.id === 'hound' ? 1.8 : 3.2) * s, radius: 0.62 * s * (cfg.id === 'sprinter' ? 0.85 : 1),
+        config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, arcs, links: arcs ? [] : null, aura, bubble, barShow: false, barW: bw, barY: (cfg.id === 'hound' ? 1.9 : 3.6) * s + 0.3,
         mat, baseEmissive: mat.emissive.getHex(), baseEmissiveI: mat.emissiveIntensity, flash: 0,
         bodyY: HIP_Y * s, hitT: 0, hitSide: 1, hitHead: false, lodD: 0, walkPhase: Math.random() * 6, knock: new V3(), limp: 0.55 + Math.random() * 0.4, tilt: (Math.random() - 0.5) * 0.3, lurch: 0.7 + Math.random() * 0.6,
         wanderT: 0, wanderDir: new V3(), stuckT: 0, lastX: 0, lastZ: 0,
@@ -712,7 +835,7 @@ function zombieHead(u) {
 // Attack lunge, hit flinch and per-type ambient effects, layered on top of the walk cycle.
 // The body leans into a swing, jerks back when shot (a headshot snaps the head back), and some types shed embers / acid / wisps.
 const _ambP = new V3();
-const AMBIENT = { pyro: [0xff8a1f, 'ember'], boss: [0xc084fc, 'mote'], necro: [0xa78bfa, 'mote'], phantom: [0x22d3ee, 'wisp'], spitter: [0xa3e635, 'drip'], bomber: [0xffb020, 'spark'], splitter: [0xc084fc, 'drip'], brood: [0xbef264, 'drip'], titan: [0x57534e, 'dust'] };
+const AMBIENT = { pyro: [0xff8a1f, 'ember'], boss: [0xc084fc, 'mote'], necro: [0xa78bfa, 'mote'], phantom: [0x22d3ee, 'wisp'], spitter: [0xa3e635, 'drip'], bomber: [0xffb020, 'spark'], splitter: [0xc084fc, 'drip'], brood: [0xbef264, 'drip'], titan: [0x57534e, 'dust'], shocker: [0x7dd3fc, 'spark'] };
 function animReact(u, e, delta, cfg) {
     const kit = u.kit;
     let a = u.armSwing > 0 ? Math.sin(Math.PI * Math.min(0.3, u.armSwing) / 0.3) : 0;
@@ -749,6 +872,7 @@ function disposeEnemy(e) {
     zombieSet.delete(e);
     if (u.shield) u.shield.material.dispose();
     if (u.laser) { scene.remove(u.laser); u.laser.material.dispose(); }
+    if (u.arcs) for (const m of u.arcs) scene.remove(m);
     if (u.aura) u.aura.material.dispose();
     if (u.bubble) u.bubble.material.dispose();
 }
@@ -758,11 +882,11 @@ const _bubbleGeo = new THREE.IcosahedronGeometry(1, 1);
 function pickEnemyType(level, counts) {
     const r = Math.random();
     let acc = 0;
-    const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['riot', 0.035], ['blighter', 0.03]];
+    const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['hound', 0.04], ['shocker', 0.03]];
     const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
     for (const [id, chance] of table) {
         const t = enemyTypes[id];
-        if (level < t.minLvl || (t.solo && NET.inGame)) continue;
+        if (level < t.minLvl) continue;
         acc += chance * sk;
         if (r < acc) { if (t.cap && (counts[id] || 0) >= t.cap) return enemyTypes.grunt; return t; }
     }
@@ -779,7 +903,6 @@ function spawnEnemy(cfg, x, z, y, baseSpeed, baseReward) {
     u.speed = baseSpeed * cfg.speed * DIFF().speed;
     u.reward = baseReward * cfg.reward;
     u.lastX = x; u.lastZ = z; u.dropping = true;
-    if (cfg.shieldHp) u.shieldHp = cfg.shieldHp * (1 + (playerStats.level - 1) * 0.04);
     if (cfg.id === 'crawler') {        // 5.0: starts hidden in a vent (or a manhole) and ambushes when you get close
         u.hidden = true; enemy.visible = false; u.wakeT = 16 + Math.random() * 14;
         const v = pickVent(x, z); if (v) { enemy.position.x = v[0]; enemy.position.z = v[1]; enemy.position.y = groundAt(v[0], v[1], 0, 6) + 0.05; u.lastX = v[0]; u.lastZ = v[1]; }
@@ -789,6 +912,15 @@ function spawnEnemy(cfg, x, z, y, baseSpeed, baseReward) {
     enemies.push(enemy);
     if (cfg.boss) bossIntro(cfg);
     return enemy;
+}
+// 5.0 Zombie Hounds come in packs of 3-4: the first one spawned calls this to add its packmates around it (each gets its own side to circle from)
+function spawnHoundPack(lead, x, z, y, spd, rew) {
+    const n = (NET.inGame || Math.random() < 0.5) ? 3 : 4, ul = lead.userData;
+    ul.packN = n; ul.packIdx = 0; ul.packDir = Math.random() < 0.5 ? 1 : -1; ul.aiT = 1 + Math.random() * 0.6;
+    for (let i = 1; i < n && enemies.length < 70; i++) {
+        const a = i / n * Math.PI * 2 + Math.random() * 0.5, m = spawnEnemy(enemyTypes.hound, x + Math.cos(a) * 2.2, z + Math.sin(a) * 2.2, y, spd, rew), um = m.userData;
+        um.packN = n; um.packIdx = i; um.packDir = ul.packDir; um.aiT = 1 + i * 0.7 + Math.random() * 0.6;      // staggered, so they do not all pounce at once
+    }
 }
 // vents (floor grates) that Vent Crawlers hide in: filled in by the map (Subway, Biolab); other maps use the spot the wave picked
 function pickVent(x, z) {

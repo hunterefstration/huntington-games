@@ -90,6 +90,13 @@
         @keyframes ddfade { 0% { opacity: 1; } 100% { opacity: 0; } }
 
 
+        /* 5.0: compact bottom-right cards on small screens so the gun and the cards don't fight over the corner */
+        @media (max-width: 1100px), (max-height: 640px) {
+            #hud-abil { width: 8.5rem !important; padding: 6px 8px !important; } #hud-sec { width: 9.5rem !important; padding: 6px 8px !important; } #hud-ammo-card { min-width: 118px !important; padding: 6px 10px !important; }
+            #hud-abil > div:nth-child(2), #hud-sec > div:nth-child(2) { font-size: 0.8rem; } #hud-weapon { font-size: 1rem !important; letter-spacing: 0.08em; }
+            #hud-ammo-current { font-size: 1.7rem !important; } #hud-ammo-max { font-size: 0.9rem !important; } #hud-slots { max-width: 330px !important; }
+        }
+        @media (max-width: 1400px) and (min-width: 1101px) { #hud-abil { width: 10rem !important; } #hud-sec { width: 11rem !important; } #hud-ammo-card { min-width: 150px !important; padding: 10px 14px !important; } }
         #hud-power { transition: opacity 0.2s; }
         .slot { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); color: #9ca3af; letter-spacing: 0.04em; }
         .slot.on { color: #fff; border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.14); }
@@ -178,6 +185,15 @@
         .logo-wrap { margin-bottom: 14px; }
         @media (max-height: 780px) { .logo .l1 { font-size: 58px; } .logo .l2 { font-size: 48px; } .logo .l3 { font-size: 30px; margin-top: 6px; } .home-btns .hbtn.cont { padding: 7px 14px; }  .home-btns { gap: 6px; } .hbtn.lg { padding: 9px 16px; font-size: 17px; } }
         @media (prefers-reduced-motion: reduce) { .mm-col, .home-btns > .hbtn { animation: none; } }
+
+/* 5.0: short screens (960x540 Chromebooks) - smaller bottom-right cards so the hip-pose gun clears them */
+@media (max-height: 600px) {
+    #hud-abil { width: 8.5rem !important; padding: 0.4rem 0.6rem !important; }
+    #hud-sec { width: 9rem !important; padding: 0.4rem 0.6rem !important; }
+    #hud-ammo-card { min-width: 130px !important; padding: 0.5rem 0.75rem !important; }
+    #hud-ammo-card #hud-weapon { font-size: 1.1rem !important; }
+    #hud-ammo-current { font-size: 1.9rem !important; }
+}
 
         /* ---------- 5.0 CAMPAIGN ---------- */
         #main-menu-overlay[data-view=camp] { background: linear-gradient(90deg, rgba(3,4,10,0.95) 0%, rgba(3,4,10,0.88) 60%, rgba(3,4,10,0.45) 100%); }
@@ -296,13 +312,13 @@
                         <div class="text-xs font-bold text-gray-300 whitespace-nowrap" id="hud-abil-status">READY</div>
                         <div class="absolute bottom-0 left-0 h-1" id="abil-cd" style="width:0%"></div>
                     </div>
-                    <div class="relative bg-black/40 p-3 rounded-xl border border-white/10 w-56 overflow-hidden">
+                    <div id="hud-sec" class="relative bg-black/40 p-3 rounded-xl border border-white/10 w-56 overflow-hidden">
                         <div class="text-[10px] font-bold text-gray-400 tracking-widest">SECONDARY <span class="text-white bg-white/20 px-1 rounded">Q</span></div>
                         <div class="text-base font-black hud-text uppercase whitespace-nowrap" id="hud-sec-name">NONE</div>
                         <div class="text-xs font-bold text-gray-300" id="hud-sec-status">Buy in Armory</div>
                         <div class="absolute bottom-0 left-0 h-1 bg-amber-400" id="sec-cd" style="width:0%"></div>
                     </div>
-                    <div class="text-right flex flex-col items-end bg-black/40 p-4 rounded-xl border border-white/10 min-w-[180px]">
+                    <div id="hud-ammo-card" class="text-right flex flex-col items-end bg-black/40 p-4 rounded-xl border border-white/10 min-w-[180px]">
                         <div class="text-2xl font-black text-blue-300 hud-text uppercase tracking-widest" id="hud-weapon">PISTOL</div>
                         <div class="flex items-baseline gap-2">
                             <span class="text-4xl font-black text-white hud-text" id="hud-ammo-current">12</span>
@@ -525,6 +541,15 @@
         if (!life.cls || typeof life.cls !== 'object') life.cls = {};      // 4.0: { assault: { runs, kills, best } ... } - older saves start at zero
         if (!life.maps || typeof life.maps !== 'object') life.maps = {};    // 4.0: { mall: { runs, waves, best } ... } - older saves start at zero
         if (life.xp === undefined) life.xp = Math.round((life.kills || 0) * 10 + (life.waves || 0) * 60);   // earlier play counts toward your rank
+        // 5.0 round 2: Riot Breaker became Zombie Hound and Blighter became Shocker. Anything saved under the old ids (stats, seen-lists,
+        // kill counts, bestiary) moves to the new ones, so old saves keep their progress.
+        const ENEMY_ID_MIGRATE = { riot: 'hound', blighter: 'shocker' };
+        const migEnemyIds = (o) => {
+            if (Array.isArray(o)) return [...new Set(o.map(x => ENEMY_ID_MIGRATE[x] || x))];
+            if (o && typeof o === 'object') for (const k in ENEMY_ID_MIGRATE) if (k in o) { const n = ENEMY_ID_MIGRATE[k]; o[n] = typeof o[k] === 'number' ? (o[n] || 0) + o[k] : (o[n] || o[k]); delete o[k]; }
+            return o;
+        };
+        for (const k in life) if (life[k] && typeof life[k] === 'object' && !Array.isArray(life[k])) { migEnemyIds(life[k]); for (const k2 in life[k]) if (life[k][k2] && typeof life[k][k2] === 'object' && !Array.isArray(life[k][k2])) migEnemyIds(life[k][k2]); }
         if (settings.quality === 'medium') settings.quality = 'normal';
 
 
@@ -674,9 +699,9 @@
             acolyte:  { id: 'acolyte',  name: 'Acolyte',  color: 0x4c1d95, hp: 2.2, speed: 0,    scale: 1.05, reward: 2,   damage: 0,  ai: 'acolyte', eye: 0xc4b5fd, minLvl: 999, fixed: true, drops: [0.3, 25, 0.3, 40] },
             risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] },
             // ---- 5.0: three new zombies and the campaign's final boss ----
-            riot:     { solo: true, id: 'riot',     name: 'Riot Breaker', color: 0x475569, hp: 2.4, speed: 0.7, scale: 1.2, reward: 3, damage: 18, ai: 'riot', eye: 0xfb923c, minLvl: 7, cap: 2, shieldHp: 260, intel: 'Heavy riot gear and a big shield that soaks up bullets from the front - until it cracks. Break the shield (or flank it) and it rips the shield off and sprints at you. It rams with the shield, so sidestep.', drops: [0.3, 30, 0.3, 55] },
-            crawler:  { solo: true, id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
-            blighter: { solo: true, id: 'blighter', name: 'Blighter', color: 0x65a30d, hp: 1.4, speed: 0.7, scale: 1.05, reward: 3.5, damage: 8, ai: 'blighter', eye: 0xbef264, minLvl: 9, cap: 2, intel: 'Lobs toxic canisters that burst into a lingering poison cloud, aimed ahead of where you are running. It does not hurt much, but it shuts down areas: do not stand in the green.', drops: [0.3, 30, 0.2, 45] },
+            hound:    { id: 'hound',    name: 'Zombie Hound', color: 0x8b6b4a, hp: 0.5, speed: 1.55, scale: 0.8, reward: 1.2, damage: 9, ai: 'hound', eye: 0xff4d4d, minLvl: 6, cap: 8, intel: 'Rabid zombie dogs that hunt in packs of 3-4. They circle you, then lunge from different sides at different times. Fast but fragile: keep your back to a wall and shoot them as they leap.', drops: [0.06, 10, 0.08, 15] },
+            crawler:  { id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
+            shocker:  { id: 'shocker',  name: 'Shocker', color: 0x38bdf8, glow: 0x0c4a6e, hp: 1.5, speed: 0.8, scale: 1.05, reward: 3.5, damage: 9, ai: 'shocker', eye: 0x7dd3fc, minLvl: 9, cap: 2, intel: 'An electrified zombie. It arcs a shock shield onto nearby zombies (they take far less damage while linked), and its zap JAMS your gun for a moment. Kill the Shocker first: the link breaks and it dies in an EMP burst.', drops: [0.3, 30, 0.2, 45] },
             zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',
                         title: 'THE FIRST TO FALL', tip: 'Spits toxic globs that leave poison pools, sweeps shockwaves you must JUMP, and burrows under you to burst out. Enraged: its toxic nova has a safe hole in the middle.' }
         };
@@ -684,30 +709,30 @@
 
 
         const THEMES = {
-            night:  { name: 'MIDNIGHT', bright: 0, top: 0x02040c, horizon: 0x1c2048, bottom: 0x05050a, fog: 0x151a33, fogNear: 30, fogFar: 175,
-                      sunDir: [-0.45, 0.62, -0.64], sunColor: 0xb4c4ff, sunInt: 1.4, disc: 0xe6ecff, discSize: 0.9993, glow: 0.25,
-                      hemiSky: 0x8a9ce0, hemiGround: 0x3a3450, hemiInt: 1.6, envInt: 0.7, exposure: 1.45, stars: true,
-                      neon: 0x6d5cff, lamp: 0xffc47a, lampPool: 0.5, floor: 0x2c3048 },
-            sunset: { name: 'SUNSET', bright: 0.55, top: 0x1d2a66, horizon: 0xff8a50, bottom: 0x2a1a2a, fog: 0xa8645a, fogNear: 35, fogFar: 200,
-                      sunDir: [0.85, 0.16, -0.5], sunColor: 0xffa860, sunInt: 3.0, disc: 0xffd29a, discSize: 0.9985, glow: 0.9,
-                      hemiSky: 0xffb48a, hemiGround: 0x4b3450, hemiInt: 1.2, envInt: 0.8, exposure: 1.05, stars: false,
-                      neon: 0xff4fa3, lamp: 0xffb070, lampPool: 0.22, floor: 0x6e5c64 },
-            day:    { name: 'DAYBREAK', bright: 1, top: 0x2f6fd0, horizon: 0xcfe2f5, bottom: 0x3c4250, fog: 0xa9c6e4, fogNear: 45, fogFar: 230,
-                      sunDir: [0.35, 0.82, 0.45], sunColor: 0xfff0d8, sunInt: 3.0, disc: 0xffffff, discSize: 0.9992, glow: 0.6,
-                      hemiSky: 0xc4dcff, hemiGround: 0x5f5a55, hemiInt: 1.2, envInt: 1.0, exposure: 0.9, stars: false,
-                      neon: 0x22d3ee, lamp: 0xfff2cc, lampPool: 0.05, floor: 0x8a8f9c },
-            bloodmoon: { name: 'BLOOD MOON', bright: 0, top: 0x0a0204, horizon: 0x4a0d12, bottom: 0x080203, fog: 0x2a0a0e, fogNear: 25, fogFar: 160,
-                      sunDir: [0.3, 0.55, -0.78], sunColor: 0xff7a6a, sunInt: 1.6, disc: 0xff3b2f, discSize: 0.9975, glow: 0.9,
-                      hemiSky: 0xd07878, hemiGround: 0x3a1a20, hemiInt: 1.4, envInt: 0.6, exposure: 1.4, stars: true,
-                      neon: 0xff2a2a, lamp: 0xff8a5a, lampPool: 0.45, floor: 0x3a2a30 },
-            storm:  { name: 'STORM', bright: 0.45, top: 0x262c35, horizon: 0x5a626e, bottom: 0x1e2227, fog: 0x4a525c, fogNear: 18, fogFar: 125,
-                      sunDir: [0.2, 0.8, 0.3], sunColor: 0xc8d4e4, sunInt: 0.9, disc: 0x9aa4b0, discSize: 0.99995, glow: 0.05,
-                      hemiSky: 0xb4c0d0, hemiGround: 0x3a3e44, hemiInt: 1.6, envInt: 0.7, exposure: 1.2, stars: false,
-                      neon: 0x60a5fa, lamp: 0xffe2b0, lampPool: 0.3, floor: 0x4a505c, rain: true, lightning: true },
-            neon:   { name: 'NEON NIGHTS', bright: 0, top: 0x0a0418, horizon: 0x6a1a6e, bottom: 0x06020c, fog: 0x1d0b2e, fogNear: 30, fogFar: 170,
-                      sunDir: [0, 0.12, -1], sunColor: 0xff7ad9, sunInt: 1.7, disc: 0xff4fb0, discSize: 0.996, glow: 1.3,
-                      hemiSky: 0x9b7bff, hemiGround: 0x30104a, hemiInt: 1.4, envInt: 0.8, exposure: 1.35, stars: true,
-                      neon: 0x22e5ff, lamp: 0xff4fd8, lampPool: 0.55, floor: 0x2a1f44 }
+            night:  { name: 'MIDNIGHT', bright: 0, top: 0x03061c, horizon: 0x2c3280, bottom: 0x05050a, fog: 0x151a33, fogNear: 30, fogFar: 175,
+                      sunDir: [-0.45, 0.62, -0.64], sunColor: 0xb4c4ff, sunInt: 1.9, disc: 0xe6ecff, discSize: 0.9993, glow: 0.25,
+                      hemiSky: 0x8a9ce0, hemiGround: 0x2a2a62, hemiInt: 1.2, envInt: 0.7, exposure: 1.45, stars: true,
+                      neon: 0x6d5cff, lamp: 0xffc47a, lampPool: 0.85, floor: 0x2c3048, grade: [[0.88, 0.94, 1.16], [1.06, 1.0, 0.9], 1.1] },
+            sunset: { name: 'SUNSET', bright: 0.55, top: 0x2a2478, horizon: 0xff7a40, bottom: 0x2a1a2a, fog: 0xa8645a, fogNear: 35, fogFar: 200,
+                      sunDir: [0.85, 0.16, -0.5], sunColor: 0xffa860, sunInt: 3.7, disc: 0xffd29a, discSize: 0.9985, glow: 0.9,
+                      hemiSky: 0xffb48a, hemiGround: 0x5e2a5c, hemiInt: 0.9, envInt: 0.8, exposure: 1.05, stars: false,
+                      neon: 0xff4fa3, lamp: 0xffb070, lampPool: 0.42, floor: 0x6e5c64, grade: [[0.9, 0.88, 1.14], [1.12, 1.0, 0.86], 1.14] },
+            day:    { name: 'DAYBREAK', bright: 1, top: 0x1f5fcc, horizon: 0xe0ecf8, bottom: 0x3c4250, fog: 0xa9c6e4, fogNear: 45, fogFar: 230,
+                      sunDir: [0.35, 0.82, 0.45], sunColor: 0xfff0d8, sunInt: 3.6, disc: 0xffffff, discSize: 0.9992, glow: 0.6,
+                      hemiSky: 0xc4dcff, hemiGround: 0x4f6046, hemiInt: 0.95, envInt: 1.0, exposure: 0.9, stars: false,
+                      neon: 0x22d3ee, lamp: 0xfff2cc, lampPool: 0.14, floor: 0x8a8f9c, grade: [[0.93, 0.98, 1.08], [1.05, 1.02, 0.95], 1.1] },
+            bloodmoon: { name: 'BLOOD MOON', bright: 0, top: 0x0a0204, horizon: 0x6a1018, bottom: 0x080203, fog: 0x2a0a0e, fogNear: 25, fogFar: 160,
+                      sunDir: [0.3, 0.55, -0.78], sunColor: 0xff7a6a, sunInt: 2.1, disc: 0xff3b2f, discSize: 0.9975, glow: 0.9,
+                      hemiSky: 0xd07878, hemiGround: 0x4e1418, hemiInt: 1.1, envInt: 0.6, exposure: 1.4, stars: true,
+                      neon: 0xff2a2a, lamp: 0xff8a5a, lampPool: 0.75, floor: 0x3a2a30, grade: [[1.06, 0.86, 0.9], [1.1, 0.95, 0.9], 1.1] },
+            storm:  { name: 'STORM', bright: 0.45, top: 0x262c35, horizon: 0x6c7888, bottom: 0x1e2227, fog: 0x4a525c, fogNear: 18, fogFar: 125,
+                      sunDir: [0.2, 0.8, 0.3], sunColor: 0xc8d4e4, sunInt: 1.3, disc: 0x9aa4b0, discSize: 0.99995, glow: 0.05,
+                      hemiSky: 0xb4c0d0, hemiGround: 0x2c3a4a, hemiInt: 1.3, envInt: 0.7, exposure: 1.2, stars: false,
+                      neon: 0x60a5fa, lamp: 0xffe2b0, lampPool: 0.55, floor: 0x4a505c, rain: true, lightning: true, grade: [[0.92, 0.98, 1.07], [1.0, 1.0, 1.03], 0.94] },
+            neon:   { name: 'NEON NIGHTS', bright: 0, top: 0x0a0418, horizon: 0x8a1f86, bottom: 0x06020c, fog: 0x1d0b2e, fogNear: 30, fogFar: 170,
+                      sunDir: [0, 0.12, -1], sunColor: 0xff7ad9, sunInt: 2.1, disc: 0xff4fb0, discSize: 0.996, glow: 1.3,
+                      hemiSky: 0x9b7bff, hemiGround: 0x3c1260, hemiInt: 1.1, envInt: 0.8, exposure: 1.35, stars: true,
+                      neon: 0x22e5ff, lamp: 0xff4fd8, lampPool: 0.85, floor: 0x2a1f44, grade: [[0.95, 0.85, 1.2], [1.1, 0.95, 1.1], 1.18] }
         };
 
 
@@ -931,7 +956,7 @@
         let camera, scene, renderer, controls, viewScene, weaponCam;
         let hemi, sun, viewHemi, viewSun, viewFill, vmLight, muzzleLight = null;
         // shared shader inputs for the cheap lighting extras (rim light, cool shadows, ground haze) - set per theme
-        const LIGHT_U = { uRim: { value: new THREE.Color() }, uRimE: { value: new THREE.Color() }, uCool: { value: new THREE.Color(1, 1, 1) }, uHaze: { value: 0.35 },
+        const LIGHT_U = { uRim: { value: new THREE.Color() }, uRimE: { value: new THREE.Color() }, uCool: { value: new THREE.Color(1, 1, 1) }, uHaze: { value: 0.35 }, uGS: { value: new THREE.Color(1, 1, 1) }, uGH: { value: new THREE.Color(1, 1, 1) }, uSat: { value: 1 },
                            // fake dynamic lights for tiers with no real point lights: xyz = world position, w = strength (muzzle / explosion)
                            uMz: { value: new THREE.Vector4(0, 0, 0, 0) }, uBm: { value: new THREE.Vector4(0, 0, 0, 0) } };
         let boomLights = [], lampLights = [];
@@ -1631,6 +1656,7 @@
             LIGHT_U.uRim.value.copy(sky).multiplyScalar(0.05 + 0.04 * (1 - theme.bright));
             LIGHT_U.uRimE.value.copy(sky).lerp(new THREE.Color(theme.neon), 0.35).multiplyScalar(0.34 - 0.16 * theme.bright);
             LIGHT_U.uHaze.value = theme.rain ? 0.55 : 0.35;
+            if (theme.grade) { LIGHT_U.uGS.value.fromArray(theme.grade[0]); LIGHT_U.uGH.value.fromArray(theme.grade[1]); LIGHT_U.uSat.value = theme.grade[2]; }
 
 
             if (envRT) envRT.dispose();
@@ -1713,13 +1739,13 @@
         //  - ground haze: fog is a little thicker low down, so distance and tall structures read better
         function worldLighting(m, ao) {
             m.onBeforeCompile = (sh) => {
-                Object.assign(sh.uniforms, { uRim: LIGHT_U.uRim, uCool: LIGHT_U.uCool, uHaze: LIGHT_U.uHaze, uMz: LIGHT_U.uMz, uBm: LIGHT_U.uBm });
+                Object.assign(sh.uniforms, { uRim: LIGHT_U.uRim, uCool: LIGHT_U.uCool, uHaze: LIGHT_U.uHaze, uMz: LIGHT_U.uMz, uBm: LIGHT_U.uBm, uGS: LIGHT_U.uGS, uGH: LIGHT_U.uGH, uSat: LIGHT_U.uSat });
                 sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;')
                     .replace('#include <project_vertex>', '#include <project_vertex>\nvec4 wp4 = modelMatrix * vec4(transformed, 1.0); vWY = wp4.y; vWP = wp4.xyz;');
-                sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;\nuniform vec3 uRim; uniform vec3 uCool; uniform float uHaze; uniform vec4 uMz; uniform vec4 uBm;')
-                    .replace('#include <aomap_fragment>', '#include <aomap_fragment>\n' + (ao ? 'float gAO = mix(0.42, 1.0, smoothstep(0.0, 1.5, vWY));\nreflectedLight.indirectDiffuse *= gAO; reflectedLight.indirectSpecular *= gAO; reflectedLight.directDiffuse *= mix(0.75, 1.0, gAO);\n' : '') + 'reflectedLight.indirectDiffuse *= uCool;')
+                sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;\nuniform vec3 uRim; uniform vec3 uCool; uniform float uHaze; uniform vec4 uMz; uniform vec4 uBm; uniform vec3 uGS; uniform vec3 uGH; uniform float uSat;')
+                    .replace('#include <aomap_fragment>', '#include <aomap_fragment>\n' + (ao ? 'float gAO = mix(0.3, 1.0, smoothstep(0.0, 2.1, vWY));\nreflectedLight.indirectDiffuse *= gAO; reflectedLight.indirectSpecular *= gAO; reflectedLight.directDiffuse *= mix(0.62, 1.0, gAO);\n' : '') + 'reflectedLight.indirectDiffuse *= uCool;')
                     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat rimF = 1.0 - abs(dot(normal, normalize(vViewPosition)));\ntotalEmissiveRadiance += uRim * rimF * rimF * rimF;\nif (uMz.w + uBm.w > 0.001) { vec3 dm = vWP - uMz.xyz, db = vWP - uBm.xyz; totalEmissiveRadiance += diffuseColor.rgb * (vec3(1.0, 0.76, 0.42) * (uMz.w / (1.0 + dot(dm, dm) * 0.09)) + vec3(1.0, 0.5, 0.2) * (uBm.w / (1.0 + dot(db, db) * 0.012))); }')
-                    .replace('#include <fog_fragment>', '#ifdef USE_FOG\nfloat fogF = smoothstep(fogNear, fogFar, vFogDepth);\nfogF = clamp(fogF * (1.0 + uHaze * exp(-max(vWY, 0.0) * 0.12)), 0.0, 1.0);\ngl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);\n#endif');
+                    .replace('#include <fog_fragment>', '{ float gLum = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114)); gl_FragColor.rgb *= mix(uGS, uGH, smoothstep(0.05, 0.75, gLum)); gl_FragColor.rgb = mix(vec3(gLum), gl_FragColor.rgb, uSat); }\n#ifdef USE_FOG\nfloat fogF = smoothstep(fogNear, fogFar, vFogDepth);\nfogF = clamp(fogF * (1.0 + uHaze * exp(-max(vWY, 0.0) * 0.12)), 0.0, 1.0);\ngl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);\n#endif');
             };
             m.customProgramCacheKey = () => ao ? 'worldAO' : 'worldFlat';
         }
@@ -6039,6 +6065,21 @@
             cancelReload();
             showWeaponModel(playerStats.currentWeapon);
         }
+        // 5.0 Shocker: its zap (or its EMP death burst) JAMS your gun: no firing, a reload in progress is cancelled, the HUD says JAMMED
+        let jamT = 0;
+        function jamGun(t) {
+            if (currentHp <= 0) return;
+            const was = jamT > 0;
+            jamT = Math.max(jamT, t);
+            cancelReload(); burstLeft = 0;
+            ui.txtReloading.textContent = 'JAMMED!'; ui.txtReloading.style.color = '#7dd3fc'; ui.txtReloading.classList.remove('hidden');
+            if (!was) { sfx('dry'); shake = Math.max(shake, 0.25); }
+        }
+        function tickJam(dt) {
+            if (jamT <= 0) return;
+            jamT -= dt;
+            if (jamT <= 0 || currentHp <= 0) { jamT = 0; ui.txtReloading.textContent = 'RELOADING...'; ui.txtReloading.style.color = ''; ui.txtReloading.classList.add('hidden'); }
+        }
         function cancelReload() { isReloading = false; reloadTimer = 0; reloadEnding = 0; ui.txtReloading.classList.add('hidden'); }
 
 
@@ -6054,7 +6095,7 @@
 
 
         function triggerReload() {
-            if (isReloading || currentHp <= 0) return;
+            if (isReloading || currentHp <= 0 || jamT > 0) return;
             const id = playerStats.currentWeapon, w = W(id);
             if (w.melee || ammoState[id] >= w.magSize) return;
             if (railC > 0) railCancel();
@@ -6130,7 +6171,7 @@
 
 
         function canShoot() {
-            return currentGameState === 'playing' && currentHp > 0 && vm.raise > 0.75 && vm.sprint < 0.5 && !(vm.melee > 0);
+            return currentGameState === 'playing' && currentHp > 0 && jamT <= 0 && vm.raise > 0.75 && vm.sprint < 0.5 && !(vm.melee > 0);
         }
         function weaponTick(dt) {
             const id = playerStats.currentWeapon, w = W(id);
@@ -6142,6 +6183,7 @@
             } else spinT = 0;
             heat = Math.max(0, heat - dt * (isMouseDown ? 2 : 7));
             if (meleeCd > 0) meleeCd -= dt;
+            if (jamT > 0) tickJam(dt);
             if (isReloading) tickReload(dt);
             if (reloadEnding > 0) reloadEnding = Math.max(0, reloadEnding - dt);
             if (burstLeft > 0 && gameTime >= nextBurstAt) {
@@ -6582,7 +6624,6 @@
                     spawnParticles(h.point, 0x67e8f9, 5, 6, 0.25, 0.06);
                     if (Math.random() < 0.3) sfx('ting');
                     if (w.shieldPierce) { if (!w.rail) dmg *= 0.5; continue; }
-                    if (u.shieldHp > 0) { u.shieldHp -= dmg; if (u.shieldHp <= 0) { breakShield(e, h.point); continue; } }       // 5.0 Riot Breaker: the shield can be shot apart
                     if (Math.random() < 0.25) spawnDamageNumber(h.point, 'BLOCKED', 'block');
                     end = h.point; break;
                 }
@@ -6627,15 +6668,6 @@
             intelTimer = dur;
         }
 
-        // 5.0 Riot Breaker: its shield has health; when it's gone the shield flies off and the zombie is stunned for a moment, then enraged
-        function breakShield(e, pt) {
-            const u = e.userData; u.shieldHp = 0;
-            if (u.shield) { u.shield.visible = false; const i = u.hitParts.indexOf(u.shield); if (i >= 0) u.hitParts.splice(i, 1); }
-            spawnParticles(pt || e.position, 0x7ee8fa, 16, 8, 0.7, 0.18, true, { grav: 12 }); spawnParticles(pt || e.position, 0xfacc15, 8, 6, 0.6, 0.12, true, { grav: 12 });
-            spawnDamageNumber(pt || e.position, 'SHIELD BROKEN', 'head'); sfx('ting'); sfx('thud');
-            if (u.state === 'walk' || u.state === 'windup' || u.state === 'charge') { u.state = 'stun'; u.stateT = 0.9; }
-            u.rage = Math.max(u.rage || 0, 6);
-        }
 
         // ---- 14-secondaries-gadgets.js ----
         // ---------- SECONDARIES (Q) ----------
@@ -7537,18 +7569,121 @@
             egg:      { skin: 0x9bbf4a, pants: 0x4d6b1a, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9be15a },
             acolyte:  { skin: 0xa7a3b8, pants: 0x2e1065, hair: null, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
             risen:    { skin: 0xd6d3c4, pants: 0x3a3632, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9ca3af },
-            riot:     { skin: 0x6f7f6a, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x2b3544, blood: 0x7a1414 },
+            hound:    { skin: 0x8a7560, pants: 0x4a3a2c, hair: null, shoe: null, sleeves: 'none', claws: true, noBelly: true, blood: 0x7a1414 },
             crawler:  { skin: 0x8a8a74, pants: 0x3f3a33, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x7a1414 },
-            blighter: { skin: 0x93a860, pants: 0x3d4a22, hair: null, shoe: 0x222222, sleeves: 'long', armor: 0x55662d, bigEyes: true, blood: 0x9be15a },
+            shocker:  { skin: 0x7d8f98, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x1e3a5f, bigEyes: true, blood: 0x7dd3fc },
             zero:     { skin: 0x7a8f55, pants: 0x2b3318, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0xa3e635 }
         };
         const zLook = cfg => ZLOOK[cfg.look || cfg.id] || ZLOOK.grunt;
         function mixHex(a, b, t) { return new THREE.Color(a).lerp(new THREE.Color(b), t).getHex(); }
 
 
+        // 5.0 boss detail layer: extra armour plates, exposed parts and glowing cores merged into the same kit meshes (no extra draw calls)
+        function bossExtras(id, k, o) {
+            const { sl, hd, eye, BONE, IRON, BLACK, skin, skinD, cloth, clothD, rot } = o;
+            const T = k.torso, H = k.head, push = (a, ...p) => a.push(...p);
+            switch (id) {
+                case 'boss': {   // Abomination: spine of bone spikes, tusks, chained skull belt, bone-blade forearms, glowing veins
+                    for (let i = 0; i < 6; i++) push(T, [0.12, 0.34 - i * 0.025, 0.12, 0, 2.3 - i * 0.17, -hd - 0.1, BONE, 0.5, 0, 0]);
+                    for (let i = 0; i < 4; i++) { push(T, [0.5, 0.05, 0.05, 0, 1.55 + i * 0.2, hd + 0.04, BONE, 0, 0, i % 2 ? 0.12 : -0.12]); k.torsoGlow.push([0.04, 0.5, 0.04, -0.4 + i * 0.27, 1.9, hd + 0.03, eye]); }
+                    push(T, [1.14, 0.12, 0.7, 0, 1.38, 0, IRON], [0.2, 0.22, 0.2, -0.3, 1.3, hd + 0.1, BONE], [0.2, 0.22, 0.2, 0.3, 1.3, hd + 0.1, BONE], [0.08, 0.1, 0.04, -0.3, 1.3, hd + 0.21, BLACK], [0.08, 0.1, 0.04, 0.3, 1.3, hd + 0.21, BLACK]);
+                    push(T, [0.3, 0.8, 0.3, -1.0, 2.9, 0, BONE, 0, 0, 0.5], [0.3, 0.8, 0.3, 1.0, 2.9, 0, BONE, 0, 0, -0.5]);
+                    push(H, [0.1, 0.4, 0.1, -0.28, -0.4, 0.34, BONE, 0.3, 0, 0.2], [0.1, 0.4, 0.1, 0.28, -0.4, 0.34, BONE, 0.3, 0, -0.2], [0.8, 0.12, 0.4, 0, 0.4, 0.3, skinD]);
+                    for (const A of [k.armL, k.armR]) push(A, [0.1, 1.1, 0.34, 0, -1.4, -0.06, BONE, 0, 0, 0], [0.4, 0.14, 0.4, 0, -0.8, 0, IRON], [0.14, 0.4, 0.14, 0, -0.5, -0.24, BONE, -0.5, 0, 0]);
+                    k.armLGlow.push([0.06, 0.5, 0.04, 0, -0.45, 0.17, eye]); k.armRGlow.push([0.06, 0.5, 0.04, 0, -0.45, 0.17, eye]);
+                    for (const L of [k.legL, k.legR]) push(L, [0.46, 0.14, 0.5, 0, -0.55, 0.02, IRON], [0.12, 0.3, 0.12, 0, -0.55, 0.28, BONE, -0.4, 0, 0]);
+                    break;
+                }
+                case 'jugg': {   // Juggernaut: tower slab on the back, exhaust stacks, spiked knuckles, greaves
+                    const PL = 0x57534e, PLD = 0x3a3633, RIV = 0xa8a29e;
+                    push(T, [1.3, 1.5, 0.16, 0, 1.95, -hd - 0.24, PLD], [1.1, 1.3, 0.1, 0, 1.95, -hd - 0.33, PL], [0.3, 0.5, 0.3, -0.4, 2.9, -hd - 0.2, IRON], [0.3, 0.5, 0.3, 0.4, 2.9, -hd - 0.2, IRON]);
+                    k.torsoGlow.push([0.2, 0.06, 0.2, -0.4, 3.18, -hd - 0.2, 0xff7a1a], [0.2, 0.06, 0.2, 0.4, 3.18, -hd - 0.2, 0xff7a1a]);
+                    for (let i = 0; i < 4; i++) push(T, [1.2, 0.06, 0.06, 0, 1.5 + i * 0.28, -hd - 0.4, RIV]);
+                    push(T, [0.5, 0.5, 0.1, -0.5, 1.9, hd + 0.18, PLD], [0.5, 0.5, 0.1, 0.5, 1.9, hd + 0.18, PLD], [0.12, 0.6, 0.12, -1.2, 2.9, 0, RIV, 0, 0, 0.2], [0.12, 0.6, 0.12, 1.2, 2.9, 0, RIV, 0, 0, -0.2]);
+                    k.torsoGlow.push([0.5, 0.05, 0.03, 0, 1.55, hd + 0.2, eye]);
+                    push(H, [0.16, 0.5, 0.16, -0.5, 0.5, 0, RIV, 0, 0, 0.5], [0.16, 0.5, 0.16, 0.5, 0.5, 0, RIV, 0, 0, -0.5], [0.12, 0.7, 0.9, 0, 0.58, 0, PLD]);
+                    for (const A of [k.armL, k.armR]) for (const x of [-0.14, 0.14]) push(A, [0.09, 0.18, 0.09, x, -1.5, 0.2, RIV]);
+                    for (const L of [k.legL, k.legR]) push(L, [0.5, 0.5, 0.52, 0, -0.5, 0.02, PL], [0.4, 0.2, 0.2, 0, -0.5, 0.3, PLD], [0.5, 0.1, 0.6, 0, -0.1, 0, PLD], [0.14, 0.14, 0.2, 0, -0.45, 0.4, RIV]);
+                    break;
+                }
+                case 'brood': {  // Broodmother: extra spider legs, egg sacs, dorsal spines, bristles
+                    for (const sd of [-1, 1]) for (let i = 0; i < 3; i++) push(T, [0.14, 1.4, 0.14, sd * 0.9, 1.5 + i * 0.15, -0.4 - i * 0.3, skinD, 0.3, 0, sd * (1.1 + i * 0.1)], [0.1, 0.9, 0.1, sd * 1.7, 0.7 + i * 0.12, -0.4 - i * 0.3, skin, 0.3, 0, sd * -0.3], [0.1, 0.2, 0.1, sd * 1.8, 0.1, -0.4 - i * 0.3, BONE]);
+                    for (let i = 0; i < 7; i++) push(T, [0.14, 0.4, 0.14, 0, 2.05 - i * 0.05, -0.2 - i * 0.28, BONE, -0.3, 0, 0]);
+                    for (const [x, y, z] of [[-0.75, 1.4, -1.0], [0.75, 1.4, -1.0], [-0.55, 1.2, -1.7], [0.55, 1.2, -1.7]]) { push(T, [0.5, 0.5, 0.5, x, y, z, 0x65751f]); k.torsoGlow.push([0.34, 0.34, 0.34, x, y, z, 0xd9f99d]); }
+                    for (let i = 0; i < 6; i++) push(T, [0.05, 0.3, 0.05, -0.4 + i * 0.16, 1.4, -1.9, rot, 0.4, 0, 0]);
+                    push(T, [0.9, 0.5, 0.5, 0, 2.3, -0.1, skinD], [0.7, 0.14, 0.1, 0, 1.55, hd + 0.04, BONE]);
+                    push(H, [0.12, 0.5, 0.12, -0.3, -0.5, 0.4, BONE, 0.5, 0, 0.5], [0.12, 0.5, 0.12, 0.3, -0.5, 0.4, BONE, 0.5, 0, -0.5], [0.8, 0.12, 0.3, 0, 0.4, 0.3, skinD]);
+                    for (const A of [k.armL, k.armR]) push(A, [0.12, 0.6, 0.12, 0, -1.8, 0.1, BONE, 0.4, 0, 0], [0.4, 0.12, 0.4, 0, -0.7, 0, skinD]);
+                    break;
+                }
+                case 'pyro': {   // Pyromancer: fuel tanks with hoses, shoulder flame vents, horns, glowing leg cracks
+                    const TK = 0x7f1d1d, TKD = 0x450a0a;
+                    push(T, [0.5, 1.3, 0.5, -0.32, 2.0, -hd - 0.35, TK], [0.5, 1.3, 0.5, 0.32, 2.0, -hd - 0.35, TK], [0.54, 0.1, 0.54, -0.32, 1.5, -hd - 0.35, TKD], [0.54, 0.1, 0.54, 0.32, 1.5, -hd - 0.35, TKD], [0.54, 0.1, 0.54, -0.32, 2.5, -hd - 0.35, TKD], [0.54, 0.1, 0.54, 0.32, 2.5, -hd - 0.35, TKD], [0.2, 0.2, 0.2, -0.32, 2.75, -hd - 0.35, IRON], [0.2, 0.2, 0.2, 0.32, 2.75, -hd - 0.35, IRON]);
+                    push(T, [0.1, 0.1, 0.9, -0.5, 2.45, 0.25, BLACK], [0.1, 0.1, 0.9, 0.5, 2.45, 0.25, BLACK], [1.12, 0.1, 0.62, 0, 1.45, 0, IRON]);
+                    for (const x of [-0.72, 0.72]) { push(T, [0.34, 0.4, 0.34, x, 2.82, 0, BLACK]); k.torsoGlow.push([0.24, 0.1, 0.24, x, 3.05, 0, 0xffd24d]); }
+                    k.torsoGlow.push([0.12, 0.12, 0.05, -0.32, 2.0, -hd - 0.62, 0xff6a1f], [0.12, 0.12, 0.05, 0.32, 2.0, -hd - 0.62, 0xff6a1f]);
+                    push(H, [0.14, 0.6, 0.14, -0.36, 0.62, 0, BLACK, 0, 0, 0.4], [0.14, 0.6, 0.14, 0.36, 0.62, 0, BLACK, 0, 0, -0.4], [0.9, 0.12, 0.3, 0, -0.15, 0.3, BLACK]);
+                    for (const L of [k.legL, k.legR]) { push(L, [0.44, 0.1, 0.46, 0, -0.5, 0, BLACK]); }
+                    k.legLGlow = [[0.04, 0.5, 0.03, 0.1, -0.5, 0.215, 0xff6a1f]]; k.legRGlow = [[0.04, 0.5, 0.03, -0.1, -0.5, 0.215, 0xff6a1f]];
+                    for (const A of [k.armL, k.armR]) push(A, [0.46, 0.14, 0.46, 0, -0.6, 0, BLACK], [0.14, 0.5, 0.14, 0, -1.7, 0.14, BLACK, 0.2, 0, 0]);
+                    break;
+                }
+                case 'phantom': {  // Phantom: tattered cloak strips, shoulder spikes, hanging chains, floating shards, bone mask
+                    for (let i = 0; i < 7; i++) push(T, [0.22, 1.1 + (i % 3) * 0.3, 0.04, -0.66 + i * 0.22, 0.9 - (i % 3) * 0.1, -hd - 0.1 - (i % 2) * 0.05, i % 2 ? clothD : cloth, 0.1 * (i % 3 - 1), 0, 0.08 * (i % 3 - 1)]);
+                    push(T, [0.14, 0.9, 0.14, -0.58, 2.9, -0.1, 0xcbd5e1, 0, 0, 0.35], [0.14, 0.9, 0.14, 0.58, 2.9, -0.1, 0xcbd5e1, 0, 0, -0.35], [0.12, 0.6, 0.12, -0.9, 2.7, -0.1, 0xcbd5e1, 0, 0, 0.9], [0.12, 0.6, 0.12, 0.9, 2.7, -0.1, 0xcbd5e1, 0, 0, -0.9]);
+                    for (let i = 0; i < 6; i++) push(T, [0.06, 0.1, 0.06, 0.4, 1.7 - i * 0.12, hd + 0.08, IRON, 0, i * 0.4, 0]);
+                    for (const [x, y, z, r] of [[-0.9, 1.9, 0.5, 0.3], [0.95, 2.4, 0.6, -0.2], [-0.7, 3.2, -0.2, 0.5], [0.8, 1.2, -0.5, -0.5]]) { push(T, [0.2, 0.5, 0.2, x, y, z, 0x1e3a4a, r, r, r]); k.torsoGlow.push([0.08, 0.3, 0.08, x, y, z, eye, r, r, r]); }
+                    k.torsoGlow.push([0.5, 0.05, 0.03, 0, 2.3, hd + 0.04, eye], [0.05, 0.5, 0.03, 0, 2.1, hd + 0.04, eye]);
+                    push(H, [0.5, 0.5, 0.06, 0, -0.04, 0.42, BONE], [0.1, 0.7, 0.1, -0.42, 0.7, -0.1, 0xcbd5e1, 0, 0, 0.3], [0.1, 0.7, 0.1, 0.42, 0.7, -0.1, 0xcbd5e1, 0, 0, -0.3]);
+                    for (const A of [k.armL, k.armR]) push(A, [0.5, 0.1, 0.5, 0, -0.9, 0, IRON], [0.06, 0.7, 0.1, 0.2, -1.9, 0.12, 0xcbd5e1, 0.3, 0, 0], [0.06, 0.7, 0.1, -0.2, -1.9, 0.12, 0xcbd5e1, 0.3, 0, 0]);
+                    break;
+                }
+                case 'warlord': {  // Warlord: war banner on the back, spiked pauldrons, medals, ammo drum, helmet crest
+                    const OL = 0x3a4a22, AM = 0xc9a227;
+                    push(T, [0.1, 2.4, 0.1, 0.5, 2.9, -hd - 0.3, 0x5c4a2a], [0.9, 0.7, 0.06, 0.95, 3.8, -hd - 0.3, 0x7f1d1d], [0.3, 0.3, 0.02, 0.95, 3.8, -hd - 0.34, AM], [0.14, 0.14, 0.14, 0.5, 4.15, -hd - 0.3, AM]);
+                    k.torsoGlow.push([0.18, 0.18, 0.02, 0.95, 3.8, -hd - 0.35, 0xff2020]);
+                    push(T, [0.8, 0.8, 0.5, -0.2, 1.9, -hd - 0.3, OL], [0.7, 0.1, 0.52, -0.2, 2.2, -hd - 0.3, AM], [0.7, 0.1, 0.52, -0.2, 1.6, -hd - 0.3, AM]);
+                    for (const x of [-0.8, 0.8]) for (let i = 0; i < 3; i++) push(T, [0.1, 0.5, 0.1, x + (i - 1) * 0.22, 2.8, (i - 1) * 0.2, IRON, 0, 0, (i - 1) * -0.1]);
+                    for (let i = 0; i < 4; i++) push(T, [0.1, 0.12, 0.03, -0.45 + i * 0.12, 2.15, hd + 0.16, i % 2 ? AM : 0xb91c1c]);
+                    push(T, [1.1, 0.14, 0.7, 0, 1.38, 0, 0x1a1a14], [0.24, 0.24, 0.1, 0, 1.38, hd + 0.1, AM]);
+                    push(H, [0.1, 0.34, 0.9, 0, 0.62, 0, 0x7f1d1d], [0.2, 0.1, 0.2, 0, 0.8, 0.0, AM]);
+                    for (const L of [k.legL, k.legR]) push(L, [0.48, 0.3, 0.2, 0, -0.45, 0.3, OL], [0.1, 0.16, 0.1, 0, -0.45, 0.42, AM]);
+                    push(k.armL, [0.5, 0.2, 0.5, 0, -0.2, 0, OL], [0.3, 0.7, 0.14, 0.24, -1.0, 0.04, IRON]);
+                    break;
+                }
+                case 'titan': {  // Titan: glowing crystals on shoulders and back, jagged stone crown, boulder knees, cracks
+                    const ST = 0x78716c, STD = 0x57534e, CR = 0xfbbf24;
+                    for (const [x, y, z, r] of [[-0.9, 2.95, 0.1, 0.3], [0.9, 2.95, -0.1, -0.3], [-0.5, 2.6, -0.7, 0.2], [0.6, 2.4, -0.7, -0.2], [0, 2.9, -0.8, 0]]) { push(T, [0.34, 0.9, 0.34, x, y, z, STD, 0, r, r]); k.torsoGlow.push([0.2, 0.7, 0.2, x, y + 0.08, z, CR, 0, r, r]); }
+                    push(T, [1.2, 0.3, 0.9, 0, 1.4, 0, STD], [0.6, 0.7, 0.2, -0.6, 1.9, hd + 0.2, ST, 0, 0, 0.1], [0.6, 0.7, 0.2, 0.6, 1.9, hd + 0.2, STD, 0, 0, -0.1], [1.4, 0.3, 0.3, 0, 2.2, -hd - 0.3, ST]);
+                    k.torsoGlow.push([0.3, 0.3, 0.05, 0, 2.0, hd + 0.31, CR]);
+                    for (let i = 0; i < 5; i++) push(H, [0.16, 0.5 + (i % 2) * 0.3, 0.16, (i - 2) * 0.17, 0.6, (i % 2) * -0.1, STD, 0, 0, (i - 2) * 0.12]);
+                    for (const L of [k.legL, k.legR]) { push(L, [0.7, 0.5, 0.7, 0, -0.4, 0, ST], [0.5, 0.4, 0.2, 0, -0.5, 0.4, STD], [0.7, 0.2, 0.8, 0, -0.1, 0, STD]); }
+                    k.legLGlow = [[0.04, 0.4, 0.03, 0, -0.8, 0.22, CR]]; k.legRGlow = [[0.04, 0.4, 0.03, 0, -0.8, 0.22, CR]];
+                    for (const A of [k.armL, k.armR]) push(A, [0.8, 0.3, 0.8, 0, -1.55, 0, ST], [0.14, 0.4, 0.14, -0.3, -1.8, 0.3, STD], [0.14, 0.4, 0.14, 0.3, -1.8, 0.3, STD]);
+                    k.armLGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, CR]); k.armRGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, CR]);
+                    break;
+                }
+                case 'necro': {  // Necromancer: floating bone ribs, skull belt, soul jars, spiked collar, rune hem
+                    for (let i = 0; i < 4; i++) push(T, [0.9 - i * 0.1, 0.06, 0.06, 0, 2.0 + i * 0.14, hd + 0.1, BONE]);
+                    for (let i = 0; i < 4; i++) push(T, [0.1, 0.5, 0.06, -0.4 + i * 0.27, 1.85, hd + 0.1, BONE, 0, 0, (i - 1.5) * 0.08]);
+                    for (const x of [-0.5, 0, 0.5]) { push(T, [0.26, 0.28, 0.26, x, 1.25, hd + 0.14, BONE], [0.18, 0.08, 0.04, x, 1.22, hd + 0.28, BLACK]); }
+                    for (const x of [-0.7, 0.7]) { push(T, [0.3, 0.4, 0.3, x, 1.05, 0.3, 0x1e1b4b]); k.torsoGlow.push([0.2, 0.28, 0.2, x, 1.05, 0.3, eye]); push(T, [0.08, 0.5, 0.04, x * 0.6, 1.4, 0.3, IRON]); }
+                    for (let i = 0; i < 8; i++) push(T, [0.1, 0.5, 0.1, Math.cos(i * 0.785) * 0.55, 2.7, Math.sin(i * 0.785) * 0.4, BONE, 0, 0, Math.cos(i * 0.785) * -0.5]);
+                    for (let i = 0; i < 5; i++) k.torsoGlow.push([0.2, 0.03, 0.03, -0.4 + i * 0.2, 0.66, hd + 0.4, eye]);
+                    push(T, [1.3, 0.1, 0.9, 0, 0.58, 0, 0x4c1d95], [0.9, 1.2, 0.04, 0, 1.0, -hd - 0.1, 0x312e81]);
+                    for (let i = 0; i < 3; i++) push(H, [0.1, 0.5, 0.1, -0.1 + i * 0.1, 0.9 + (i % 2) * 0.2, 0, BONE, 0, 0, (i - 1) * 0.3]);
+                    k.headGlow.push([0.08, 0.1, 0.03, -0.17, 0.08, 0.385, eye], [0.08, 0.1, 0.03, 0.17, 0.08, 0.385, eye]);
+                    push(k.armL, [0.5, 0.1, 0.5, 0, -0.7, 0, BONE], [0.14, 0.14, 0.4, 0, -1.3, 0.1, BONE]);
+                    k.armLGlow.push([0.16, 0.16, 0.16, 0, -1.5, 0.3, eye]);
+                    break;
+                }
+            }
+        }
+
         function enemyKit(cfg) {
             if (enemyKits[cfg.id]) return enemyKits[cfg.id];
             if (cfg.id === 'egg') return (enemyKits.egg = eggKit(cfg));
+            if (cfg.id === 'hound') return (enemyKits.hound = houndKit(cfg));
             const s = cfg.scale, sl = cfg.slim || 1, id = cfg.look || cfg.id, Z = zLook(cfg);
             const eye = cfg.eye || 0xd9ff5a;
             const cloth = mixHex(cfg.color, 0x55554a, 0.18), clothD = darken(cloth, 0.58);
@@ -7684,16 +7819,6 @@
                                        [1.2, 0.14, 0.02, 0, 0.2, 0.07, 0xe5e7eb], [0.06, 0.6, 0.02, -0.35, -0.35, 0.07, 0x111827, 0, 0, 0.5], [0.05, 0.4, 0.02, -0.18, -0.55, 0.07, 0x111827, 0, 0, -0.6],
                                        [0.3, 0.34, 0.02, 0.35, -0.35, 0.07, BLOOD], [0.1, 0.5, 0.02, 0.42, -0.75, 0.07, DRIED], [0.24, 0.2, 0.02, -0.4, 0.62, 0.08, DRIED]], s);
                     break;
-                case 'riot':
-                    // heavy riot-gear zombie: full-face helmet with a glowing amber slit, chest plate with a hazard stripe, shoulder pads, a big cracked shield
-                    H.push([0.94, 0.5, 0.94, 0, 0.26, 0, 0x1e293b], [0.98, 0.07, 0.98, 0, 0.0, 0, 0x0f172a], [0.1, 0.3, 0.1, -0.5, 0.0, 0, 0x1e293b], [0.1, 0.3, 0.1, 0.5, 0.0, 0, 0x1e293b]);
-                    k.headGlow.push([0.62, 0.11, 0.04, 0, 0.12, 0.465, 0xfb923c]);
-                    T.push([1.2 * sl, 0.96, 0.72 * sl, 0, 1.95, 0, Z.armor], [1.24 * sl, 0.1, 0.76 * sl, 0, 2.45, 0, 0x0f172a], [1.0 * sl, 0.14, 0.02, 0, 1.78, 0.37 * sl, 0xfacc15], [0.5 * sl, 0.5, 0.02, 0, 2.15, 0.37 * sl, 0x1f2937]);
-                    T.push([0.6, 0.36, 0.84, -0.86, 2.44, 0, 0x1f2937], [0.6, 0.36, 0.84, 0.86, 2.44, 0, 0x1f2937], [1.0 * sl, 0.1, 0.02, 0, 1.55, -0.37 * sl, 0xfacc15]);
-                    for (const A of [k.armL, k.armR]) A.push([0.5, 0.34, 0.5, 0, -0.04, 0, Z.armor], [0.38, 0.52, 0.38, 0, -0.9, 0, 0x1f2937]);
-                    shield = partsGeo([[1.8, 2.5, 0.14, 0, 0, 0, 0x334155], [1.88, 0.14, 0.18, 0, 1.2, 0, 0x111827], [1.88, 0.14, 0.18, 0, -1.2, 0, 0x111827], [1.2, 0.4, 0.16, 0, 0.7, 0, 0x7ee8fa],
-                                       [1.6, 0.2, 0.02, 0, 0.1, 0.08, 0xfacc15], [0.07, 0.7, 0.02, -0.4, -0.4, 0.08, 0x111827, 0, 0, 0.5], [0.34, 0.4, 0.02, 0.4, -0.45, 0.08, BLOOD], [0.1, 0.5, 0.02, 0.47, -0.85, 0.08, DRIED]], s);
-                    break;
                 case 'crawler':
                     // vent crawler: pale, hairless and half-starved, spine bumps along the back, bony elbows, huge yellow eyes
                     for (let i = 0; i < 5; i++) T.push([0.14, 0.14, 0.12, 0, 1.55 + i * 0.2, -hd - 0.07, BONE]);
@@ -7702,15 +7827,16 @@
                     k.headGlow.push([0.2, 0.16, 0.04, -0.17, 0.06, 0.39, 0xfacc15], [0.2, 0.16, 0.04, 0.17, 0.06, 0.39, 0xfacc15]);
                     for (const A of [k.armL, k.armR]) A.push([0.3, 0.12, 0.3, 0, -0.62, 0, BONE]);
                     break;
-                case 'blighter':
-                    // hazmat zombie: hood and respirator with glowing green filters, hazard patch, canister belt and a bubbling tank on the back
-                    H.push([0.84, 0.3, 0.84, 0, 0.36, 0, 0x55662d], [0.12, 0.7, 0.8, -0.42, 0.0, 0, 0x55662d], [0.12, 0.7, 0.8, 0.42, 0.0, 0, 0x55662d], [0.5, 0.34, 0.2, 0, -0.18, 0.44, 0x1f2937], [0.5, 0.06, 0.22, 0, -0.18, 0.46, 0x111827]);
-                    k.headGlow.push([0.14, 0.14, 0.06, -0.2, -0.18, 0.55, 0xa3e635], [0.14, 0.14, 0.06, 0.2, -0.18, 0.55, 0xa3e635]);
-                    T.push([1.08 * sl, 1.0, 0.64 * sl, 0, 1.95, 0, Z.armor], [0.34, 0.34, 0.02, 0.2 * sl, 2.1, hd + 0.34, 0xfacc15], [0.16, 0.16, 0.03, 0.2 * sl, 2.1, hd + 0.35, 0x111827]);
-                    for (let i = 0; i < 4; i++) T.push([0.2, 0.34, 0.2, -0.45 + i * 0.3, 1.42, hd + 0.1, i % 2 ? 0x84cc16 : 0x1f2937]);
-                    T.push([0.8, 0.9, 0.34, 0, 2.0, -hd - 0.2, 0x3f3f46], [0.6, 0.12, 0.3, 0, 2.5, -hd - 0.2, 0x111827]);
-                    extra = { size: [0.62, 0.72, 0.2], pos: [0, 2.0, -hd - 0.4], color: 0xa3e635 };
-                    for (const A of [k.armL, k.armR]) A.push([0.42, 0.2, 0.42, 0, -1.04, 0, 0x1f2937]);
+                case 'shocker':
+                    // electrified lineman: scorched skin, hard hat with a glowing cyan lamp, insulated cuffs, a crackling coil pack on the back, a glowing chest core
+                    H.push([0.88, 0.26, 0.88, 0, 0.4, 0, 0xfacc15], [0.96, 0.06, 1.0, 0, 0.26, 0.06, 0xca8a04], [0.14, 0.14, 0.06, 0, 0.42, 0.46, 0xe0f2fe]);
+                    k.headGlow.push([0.2, 0.1, 0.04, 0, 0.42, 0.5, 0x7dd3fc]);
+                    T.push([1.08 * sl, 0.94, 0.64 * sl, 0, 1.95, 0, Z.armor], [1.1 * sl, 0.08, 0.66 * sl, 0, 1.5, 0, 0x0f172a], [0.9 * sl, 0.06, 0.02, 0, 2.2, hd + 0.34, 0xfacc15]);
+                    T.push([0.8, 0.9, 0.34, 0, 2.0, -hd - 0.2, 0x27272a], [0.1, 0.6, 0.1, -0.26, 2.7, -hd - 0.2, 0x94a3b8], [0.1, 0.6, 0.1, 0.26, 2.7, -hd - 0.2, 0x94a3b8], [0.1, 0.45, 0.1, 0, 2.62, -hd - 0.2, 0x94a3b8]);
+                    k.torsoGlow.push([0.34, 0.34, 0.05, 0, 1.92, hd + 0.04, 0x7dd3fc], [0.18, 0.18, 0.18, -0.26, 3.06, -hd - 0.2, 0xe0f2fe], [0.18, 0.18, 0.18, 0.26, 3.06, -hd - 0.2, 0xe0f2fe], [0.14, 0.14, 0.14, 0, 2.92, -hd - 0.2, 0xe0f2fe]);
+                    extra = { size: [0.5, 0.5, 0.2], pos: [0, 2.0, -hd - 0.45], color: 0x7dd3fc };
+                    for (const A of [k.armL, k.armR]) A.push([0.42, 0.22, 0.42, 0, -1.04, 0, 0x1d4ed8]);
+                    k.armLGlow.push([0.04, 0.5, 0.04, 0, -0.5, 0.14, 0x7dd3fc]); k.armRGlow.push([0.04, 0.5, 0.04, 0, -0.5, 0.14, 0x7dd3fc]);
                     break;
                 case 'zero':
                     // Patient Zero: a swollen patient in a torn hospital gown with a wristband and drip line, glowing boils, a huge pulsing tumour on the back
@@ -7862,13 +7988,38 @@
                     for (const A of [k.armL, k.armR]) A.push([0.34, 0.1, 0.34, 0, -0.6, 0, IRON]);
                     break;
             }
+            bossExtras(id, k, { sl, hd, eye, BONE, IRON, BLACK, skin, skinD, cloth, clothD, rot });
             if (eyes) {
                 const e = Z.bigEyes ? 0.13 : 0.09;
                 k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
             }
             // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, riot: 0.08, crawler: 1.15, blighter: 0.2, zero: 0.3 }[id] ?? 0.2;
+            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3 }[id] ?? 0.2;
             return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
+        }
+        // 5.0 Zombie Hound: a four-legged dog. The body is the usual hip/torso/head rig tipped flat (hunch 1.5): the torso runs forward,
+        // the 'arms' are the front legs (they counter-rotate to hang down) and the 'legs' are the hind legs.
+        function houndKit(cfg) {
+            const s = cfg.scale, Z = zLook(cfg), skin = Z.skin, skinD = darken(skin, 0.74), rot = darken(skin, 0.45), eye = cfg.eye;
+            const BONE = 0xd9cfb0, BLOOD = 0x7a1414, HOLE = 0x140808, BLACK = 0x17181c;
+            const k = { legL: [], legR: [], armL: [], armR: [], torso: [], head: [], torsoGlow: [], headGlow: [], armLGlow: [], armRGlow: [] };
+            for (const [L, torn] of [[k.legL, false], [k.legR, true]]) {      // hind legs: thigh, hock, paw
+                L.push([0.32, 0.56, 0.42, 0, -0.22, -0.04, skin], [0.2, 0.56, 0.22, 0, -0.74, 0.1, torn ? rot : skinD], [0.24, 0.14, 0.36, 0, -1.03, 0.2, skinD], [0.2, 0.05, 0.1, 0, -1.09, 0.4, BONE]);
+                if (torn) L.push([0.07, 0.3, 0.02, 0.1, -0.7, 0.2, BONE], [0.12, 0.1, 0.02, 0, -0.5, 0.22, BLOOD]);
+            }
+            for (const A of [k.armL, k.armR]) A.push([0.3, 0.6, 0.32, 0, -0.3, 0, skin], [0.2, 0.55, 0.22, 0, -0.82, 0.04, skinD], [0.24, 0.14, 0.36, 0, -1.03, 0.12, skinD], [0.2, 0.05, 0.1, 0, -1.09, 0.32, BONE]);
+            const T = k.torso;
+            T.push([0.62, 1.5, 0.62, 0, 1.72, 0, skin], [0.66, 0.5, 0.66, 0, 1.3, 0, skinD], [0.72, 0.42, 0.68, 0, 2.2, 0, skinD]);
+            for (let i = 0; i < 4; i++) T.push([0.66, 0.05, 0.46, 0, 1.55 + i * 0.17, 0.02, BONE]);
+            for (let i = 0; i < 5; i++) T.push([0.1, 0.1, 0.14, 0, 1.2 + i * 0.28, -0.36, BONE]);
+            T.push([0.02, 0.34, 0.3, 0.32, 1.62, 0.04, BLOOD], [0.02, 0.18, 0.16, -0.32, 1.85, 0.06, HOLE]);
+            T.push([0.11, 0.8, 0.11, 0, 0.62, -0.24, skinD, 0.55, 0, 0], [0.12, 0.2, 0.12, 0, 0.3, -0.5, rot, 0.55, 0, 0]);       // tail
+            const H = k.head;
+            H.push([0.5, 0.56, 0.5, 0, 0, 0, skin], [0.3, 0.52, 0.26, 0, 0.5, 0.06, skinD], [0.26, 0.4, 0.07, 0, 0.5, 0.25, rot], [0.14, 0.08, 0.12, 0, 0.78, 0.04, BLACK]);
+            for (const x of [-0.1, 0.1]) H.push([0.04, 0.08, 0.06, x, 0.58, 0.19, BONE], [0.04, 0.06, 0.06, x * 1.3, 0.62, 0.16, BONE]);
+            H.push([0.1, 0.18, 0.16, -0.2, -0.14, -0.3, skinD], [0.1, 0.12, 0.14, 0.2, -0.14, -0.3, rot]);
+            k.headGlow.push([0.12, 0.06, 0.1, -0.15, 0.27, -0.1, eye], [0.12, 0.06, 0.1, 0.15, 0.27, -0.1, eye]);
+            return (enemyKits.hound = finishKit(cfg, k, s, 1, { id: 'hound', hunch: 1.5, rough: 0.84, headZ: -0.05, legX: 0.2, armX: 0.2 }));
         }
         // the Broodmother's egg sac: a lumpy, veiny, glowing blob on a puddle of goo (no real arms or legs)
         function eggKit(cfg) {
@@ -7883,8 +8034,8 @@
         }
         // build the merged part meshes. Torso (and anything riding on it) is stored relative to the hip joint.
         function finishKit(cfg, k, s, sl, o) {
-            const kit = { s, sl, id: o.id, hunch: o.hunch, rough: o.rough, headZ: o.headZ };
-            for (const key of ['legL', 'legR']) kit[key] = partsGeo(k[key], s);
+            const kit = { s, sl, id: o.id, hunch: o.hunch, rough: o.rough, headZ: o.headZ, legX: o.legX, armX: o.armX };
+            for (const key of ['legL', 'legR']) kit[key] = partsGeo(k[key], s, k[key + 'Glow'] || []);
             kit.armL = partsGeo(k.armL, s, k.armLGlow || []); kit.armR = partsGeo(k.armR, s, k.armRGlow || []);
             kit.torso = partsGeo(k.torso, s, k.torsoGlow); kit.torso.translate(0, -HIP_Y * s, 0);
             kit.head = partsGeo(k.head, s, k.headGlow);
@@ -7927,6 +8078,7 @@
         }
 
 
+        const _arcMat = new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
         const _laserMat = new THREE.MeshBasicMaterial({ color: 0xff2020, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
         const _auraMat = new THREE.MeshBasicMaterial({ map: null, color: 0x4ade80, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true, toneMapped: false });
         const _auraGeo = new THREE.RingGeometry(0.94, 1, 48); _auraGeo.rotateX(-Math.PI / 2);
@@ -8124,12 +8276,13 @@
             const pivot = (parent, x, y, z) => { const p = new THREE.Group(); p.position.set(x * s, y * s, z * s); parent.add(p); return p; };
 
 
-            const legL = pivot(group, -0.27 * sl, HIP_Y, 0), legR = pivot(group, 0.27 * sl, HIP_Y, 0);
+            const lx = kit.legX ?? 0.27 * sl, ax = kit.armX ?? 0.68 * sl;
+            const legL = pivot(group, -lx, HIP_Y, 0), legR = pivot(group, lx, HIP_Y, 0);
             mk(kit.legL, legL, 'legL'); mk(kit.legR, legR, 'legR');
             // upper body hangs off the hips so it can hunch, sway and lurch
             const body = pivot(group, 0, HIP_Y, 0); body.rotation.x = kit.hunch;
             mk(kit.torso, body, 'torso');
-            const armL = pivot(body, -0.68 * sl, 2.2 - HIP_Y, 0), armR = pivot(body, 0.68 * sl, 2.2 - HIP_Y, 0);
+            const armL = pivot(body, -ax, 2.2 - HIP_Y, 0), armR = pivot(body, ax, 2.2 - HIP_Y, 0);
             mk(kit.armL, armL, 'armL'); mk(kit.armR, armR, 'armR');
             const head = mk(kit.head, body, 'head', { head: true });
             head.position.set(0, (2.78 - HIP_Y) * s, kit.headZ * s);
@@ -8141,6 +8294,8 @@
                 shield.position.set(0.05 * s, 1.55 * s, 0.78 * s);
             }
             if (cfg.ai === 'marksman') { laser = new THREE.Mesh(sharedBox, _laserMat.clone()); laser.visible = false; laser.frustumCulled = false; scene.add(laser); }
+            let arcs = null;      // 5.0 Shocker: 3 lightning links, each drawn as a 2-piece zigzag
+            if (cfg.ai === 'shocker') { arcs = []; for (let i = 0; i < 6; i++) { const m = new THREE.Mesh(sharedBox, _arcMat); m.visible = false; m.frustumCulled = false; scene.add(m); arcs.push(m); } }
             let bubble = null;
             if (cfg.ai === 'necro') { bubble = new THREE.Mesh(_bubbleGeo, fxMat(0xa78bfa, 0.2)); bubble.scale.setScalar(2.3 * s); bubble.position.y = 1.7 * s; bubble.visible = false; group.add(bubble); }
             if (cfg.ai === 'medic' || cfg.ai === 'screamer') { aura = new THREE.Mesh(_auraGeo, _auraMat.clone()); aura.position.y = 0.06; aura.scale.setScalar(cfg.ai === 'screamer' ? 18 : 11); if (cfg.ai === 'screamer') aura.material.color.setHex(0xef4444); group.add(aura); }
@@ -8155,8 +8310,8 @@
 
             group.userData = {
                 isEnemy: true, velocityY: 0, onGround: false, dead: false,
-                totalHeight: 3.2 * s, radius: 0.62 * s * (cfg.id === 'sprinter' ? 0.85 : 1),
-                config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, aura, bubble, barShow: false, barW: bw, barY: 3.6 * s + 0.3,
+                totalHeight: (cfg.id === 'hound' ? 1.8 : 3.2) * s, radius: 0.62 * s * (cfg.id === 'sprinter' ? 0.85 : 1),
+                config: cfg, kit, iparts, tint, hitParts, shadowParts, far: false, legL, legR, armL, armR, head, body, extra, shield, laser, arcs, links: arcs ? [] : null, aura, bubble, barShow: false, barW: bw, barY: (cfg.id === 'hound' ? 1.9 : 3.6) * s + 0.3,
                 mat, baseEmissive: mat.emissive.getHex(), baseEmissiveI: mat.emissiveIntensity, flash: 0,
                 bodyY: HIP_Y * s, hitT: 0, hitSide: 1, hitHead: false, lodD: 0, walkPhase: Math.random() * 6, knock: new V3(), limp: 0.55 + Math.random() * 0.4, tilt: (Math.random() - 0.5) * 0.3, lurch: 0.7 + Math.random() * 0.6,
                 wanderT: 0, wanderDir: new V3(), stuckT: 0, lastX: 0, lastZ: 0,
@@ -8182,7 +8337,7 @@
         // Attack lunge, hit flinch and per-type ambient effects, layered on top of the walk cycle.
         // The body leans into a swing, jerks back when shot (a headshot snaps the head back), and some types shed embers / acid / wisps.
         const _ambP = new V3();
-        const AMBIENT = { pyro: [0xff8a1f, 'ember'], boss: [0xc084fc, 'mote'], necro: [0xa78bfa, 'mote'], phantom: [0x22d3ee, 'wisp'], spitter: [0xa3e635, 'drip'], bomber: [0xffb020, 'spark'], splitter: [0xc084fc, 'drip'], brood: [0xbef264, 'drip'], titan: [0x57534e, 'dust'] };
+        const AMBIENT = { pyro: [0xff8a1f, 'ember'], boss: [0xc084fc, 'mote'], necro: [0xa78bfa, 'mote'], phantom: [0x22d3ee, 'wisp'], spitter: [0xa3e635, 'drip'], bomber: [0xffb020, 'spark'], splitter: [0xc084fc, 'drip'], brood: [0xbef264, 'drip'], titan: [0x57534e, 'dust'], shocker: [0x7dd3fc, 'spark'] };
         function animReact(u, e, delta, cfg) {
             const kit = u.kit;
             let a = u.armSwing > 0 ? Math.sin(Math.PI * Math.min(0.3, u.armSwing) / 0.3) : 0;
@@ -8219,6 +8374,7 @@
             zombieSet.delete(e);
             if (u.shield) u.shield.material.dispose();
             if (u.laser) { scene.remove(u.laser); u.laser.material.dispose(); }
+            if (u.arcs) for (const m of u.arcs) scene.remove(m);
             if (u.aura) u.aura.material.dispose();
             if (u.bubble) u.bubble.material.dispose();
         }
@@ -8228,11 +8384,11 @@
         function pickEnemyType(level, counts) {
             const r = Math.random();
             let acc = 0;
-            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['riot', 0.035], ['blighter', 0.03]];
+            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['hound', 0.04], ['shocker', 0.03]];
             const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
             for (const [id, chance] of table) {
                 const t = enemyTypes[id];
-                if (level < t.minLvl || (t.solo && NET.inGame)) continue;
+                if (level < t.minLvl) continue;
                 acc += chance * sk;
                 if (r < acc) { if (t.cap && (counts[id] || 0) >= t.cap) return enemyTypes.grunt; return t; }
             }
@@ -8249,7 +8405,6 @@
             u.speed = baseSpeed * cfg.speed * DIFF().speed;
             u.reward = baseReward * cfg.reward;
             u.lastX = x; u.lastZ = z; u.dropping = true;
-            if (cfg.shieldHp) u.shieldHp = cfg.shieldHp * (1 + (playerStats.level - 1) * 0.04);
             if (cfg.id === 'crawler') {        // 5.0: starts hidden in a vent (or a manhole) and ambushes when you get close
                 u.hidden = true; enemy.visible = false; u.wakeT = 16 + Math.random() * 14;
                 const v = pickVent(x, z); if (v) { enemy.position.x = v[0]; enemy.position.z = v[1]; enemy.position.y = groundAt(v[0], v[1], 0, 6) + 0.05; u.lastX = v[0]; u.lastZ = v[1]; }
@@ -8259,6 +8414,15 @@
             enemies.push(enemy);
             if (cfg.boss) bossIntro(cfg);
             return enemy;
+        }
+        // 5.0 Zombie Hounds come in packs of 3-4: the first one spawned calls this to add its packmates around it (each gets its own side to circle from)
+        function spawnHoundPack(lead, x, z, y, spd, rew) {
+            const n = (NET.inGame || Math.random() < 0.5) ? 3 : 4, ul = lead.userData;
+            ul.packN = n; ul.packIdx = 0; ul.packDir = Math.random() < 0.5 ? 1 : -1; ul.aiT = 1 + Math.random() * 0.6;
+            for (let i = 1; i < n && enemies.length < 70; i++) {
+                const a = i / n * Math.PI * 2 + Math.random() * 0.5, m = spawnEnemy(enemyTypes.hound, x + Math.cos(a) * 2.2, z + Math.sin(a) * 2.2, y, spd, rew), um = m.userData;
+                um.packN = n; um.packIdx = i; um.packDir = ul.packDir; um.aiT = 1 + i * 0.7 + Math.random() * 0.6;      // staggered, so they do not all pounce at once
+            }
         }
         // vents (floor grates) that Vent Crawlers hide in: filled in by the map (Subway, Biolab); other maps use the spot the wave picked
         function pickVent(x, z) {
@@ -8359,6 +8523,7 @@
                 const cfg = pickEnemyType(level, counts); counts[cfg.id] = (counts[cfg.id] || 0) + 1;
                 const e = spawnEnemy(cfg, x, z, gy + 0.1, waveSpeed(level), waveReward(level) * 0.5);
                 e.userData.noLoot = true;       // no free health or cash for sitting still
+                if (cfg.id === 'hound') { spawnHoundPack(e, x, z, gy + 0.1, waveSpeed(level), waveReward(level) * 0.5); for (const m of enemies) if (m.userData.packN && !m.userData.dead && m.userData.packIdx > 0 && m.userData.config.id === 'hound') m.userData.noLoot = true; }
             }
         }
         function updateCornerPressure(dt) {
@@ -8403,7 +8568,7 @@
             bossList.forEach(id => list.push(enemyTypes[id]));
             // a new enemy type always shows up on the wave it unlocks, so you actually meet it
             const fresh = Object.values(enemyTypes).filter(t => t.minLvl === level && t.intel);
-            fresh.forEach(t => list.push(...(t.id === 'marksman' ? [t] : [t, t])));
+            fresh.forEach(t => list.push(...(t.id === 'marksman' || t.id === 'hound' ? [t] : [t, t])));
             list.forEach(t => counts[t.id] = (counts[t.id] || 0) + 1);
             while (list.length < count) { const t = pickEnemyType(level, counts); counts[t.id] = (counts[t.id] || 0) + 1; list.push(t); }
 
@@ -8420,6 +8585,7 @@
                 let sy = 18 + Math.random() * 10;
                 if (VOID) { const sp = navSpot(pp.x, pp.z, camping ? 18 : 24, 999) || navSpot(pp.x, pp.z, 10, 999) || navSpot(pp.x, pp.z, 0, 999); if (sp) { x = sp[0]; z = sp[2]; sy = sp[1] + 10 + Math.random() * 8; } }
                 const ne = spawnEnemy(eConf, x, z, sy, waveSpeed(level), waveReward(level));   // drop them in from the sky
+                if (eConf.id === 'hound') spawnHoundPack(ne, x, z, sy, waveSpeed(level), waveReward(level));
                 if (twist) { if (twist.hp && !eConf.boss) { ne.userData.hp *= twist.hp; ne.userData.maxHp = ne.userData.hp; } if (twist.speed) ne.userData.speed *= twist.speed; }
             }
             waveActive = true;
@@ -8449,6 +8615,7 @@
             // multiplayer guest: tell the host (the referee) and show the hit right away so there's no lag
             if (NET.inGame && !NET.host) { netClientHit(enemyGroup, amount, isHeadshot, point, isExplosion, src || (isExplosion ? 'explosive' : playerStats.currentWeapon)); return; }
             if (u.config.armor && u.state !== 'stun' && !isExplosion) amount *= u.config.armor;     // the Juggernaut's plating
+            if (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead) amount *= 0.35;      // 5.0 Shocker: linked zombies take reduced damage until the Shocker dies
             const mine = !dmgOwner;              // host applying someone else's hit: no hit marker / numbers here
             if (mine) runStats.damage += Math.min(amount, Math.max(0, u.hp));
             u.hp -= amount;
@@ -8475,6 +8642,7 @@
             enemies = enemies.filter(x => x !== e);
             u.barShow = false; e.visible = true;
             if (u.laser) u.laser.visible = false;
+            if (u.arcs) for (const m of u.arcs) m.visible = false;
             if (u.aura) u.aura.visible = false;
             if (u.bubble) u.bubble.visible = false;
             // a boss takes its helpers with it (Phantom decoys, the Necromancer's Acolytes)
@@ -8495,10 +8663,7 @@
                 if (headshot) { u.head.visible = false; spawnParticles(new V3(e.position.x, e.position.y + 2.8 * u.config.scale, e.position.z), zLook(u.config).skin, 10, 7, 0.9, 0.2 * u.config.scale, true, { bounce: true, spin: 12, grav: 26 }); }
                 corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1, back: headshot || Math.random() < 0.35 });
                 if (award && !u.noLoot) dropLoot(u, e.position);
-                if (u.config.id === 'blighter' && (!NET.inGame || NET.host)) {   // 5.0: its tank ruptures into a poison cloud
-                    spawnParticles(c, 0x84cc16, 16, 7, 0.8, 0.25, false, { grav: 4 });
-                    bossHazard(e.position.x, e.position.y, e.position.z, 3.2, 8 * lvlDmg(), 7, 0x84cc16, "a Blighter's toxic cloud");
-                }
+                if (u.config.ai === 'shocker' && (!NET.inGame || NET.host)) shockerDied(e, u);       // 5.0: frees its linked zombies and dies in an EMP burst
                 if (u.config.id === 'splitter' && (!NET.inGame || NET.host)) {   // 3.8: bursts into Mites
                     spawnParticles(c, 0xc084fc, 14, 8, 0.7, 0.25, false, { grav: 14 });
                     for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.random(); const m = spawnEnemy(enemyTypes.mite, e.position.x + Math.cos(a) * 1.4, e.position.z + Math.sin(a) * 1.4, e.position.y + 0.6, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }
@@ -9033,7 +9198,7 @@
             if (!weaponsDb[playerStats.currentWeapon] || !playerStats.weapons.includes(playerStats.currentWeapon)) playerStats.currentWeapon = playerStats.weapons[0];
             abilityCd = clamp(+s.abil || 0, 0, 60); abilityT = 0; abilReadyWas = abilityCd <= 0;
             maxHp = s.maxHp || 100; currentHp = clamp(s.hp || maxHp, 1, maxHp); currentArmor = s.armor || 0;
-            strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(s.seen || []);
+            strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(migEnemyIds(s.seen || []));
             resetAmmo();
             updateGunModel();
             runStartBonus(false);               // 4.0: banked challenge rewards
@@ -9091,13 +9256,14 @@
             return (u.tgt = best || T[0]);
         }
         // hurt a player (you -> straight away, someone else -> send it to their computer). kb = knockback [x, up, z]
-        function hurtTarget(tp, amount, fromPos, kb, by) {
+        function hurtTarget(tp, amount, fromPos, kb, by, jam) {
             if (!tp || !tp.alive) return;
             if (tp.camp) { campDamage(tp, amount); return; }
             if (tp.local) {
                 takeDamage(amount, fromPos, by);
+                if (jam) jamGun(jam);
                 if (kb) { push.x += kb[0]; push.z += kb[2]; if (kb[1]) { velocity.y = Math.max(velocity.y, kb[1]); onGround = false; } }
-            } else netSendDamage(tp.id, amount, fromPos, kb, by);
+            } else netSendDamage(tp.id, amount, fromPos, kb, by, jam);
         }
         function meleeHit(u, cfg, enemy, mult = 1, kb) {
             if (u.attackCooldown > 0) return;
@@ -9252,6 +9418,7 @@
             else if (m.k === 'haz') bossHazard(p[0], p[1], p[2], m.r, 0, m.d, m.c, '', false);
             else if (m.k === 'wave') bossWave(p[0], p[1], p[2], m.r, m.sp, 0, m.c, '', false);
             else if (m.k === 'shot' && m.o) bossShot(new V3(p[0], p[1], p[2]), new V3(m.v[0], m.v[1], m.v[2]), m.o, false);
+            else if (m.k === 'msg') toast(String(m.n).slice(0, 60), m.c || '#ffffff', clamp(+m.d || 1.6, 0.5, 4));
             else if (m.k === 'rage') toast(`${String(m.n).slice(0, 30).toUpperCase()} IS ENRAGED!`, m.c || '#f87171', 2.2);
         }
         // a spot near (cx, cz) between minD and maxD away that's on the map: [x, y, z]
@@ -9274,6 +9441,73 @@
             spawnParticles(new V3(sp[0], sp[1] + 1, sp[2]), enemyTypes[id].eye || 0xffffff, 10, 5, 0.6, 0.15);
             return e;
         }
+        // ---------- 5.0 SHOCKER + HOUND helpers (shared by the host's AI and the guests' copies) ----------
+        const _shA = new V3(), _shB = new V3(), _shM = new V3(), _shD = new V3();
+        function arcSeg(m, a, b, w) {
+            _shD.subVectors(b, a); const len = _shD.length();
+            if (len < 0.01) { m.visible = false; return; }
+            m.visible = true; m.position.lerpVectors(a, b, 0.5); m.quaternion.setFromUnitVectors(_Z, _shD.multiplyScalar(1 / len)); m.scale.set(w, w, len);
+        }
+        // The Shocker's shock shield: every 0.4 s it links the 3 nearest zombies within 10 m (they take reduced damage while linked, see damageEnemy);
+        // the links are drawn as zigzag lightning every frame. Guests don't decide links: they draw them to the zombies the host flagged as linked.
+        function shockerTick(e, u, dt, guest) {
+            const L = u.links;
+            if ((u.linkT = (u.linkT || 0) - dt) <= 0) {
+                u.linkT = guest ? 0.3 : 0.4; L.length = 0;
+                for (const o of enemies) {
+                    const ou = o.userData;
+                    if (o === e || ou.dead || ou.hidden || ou.config.boss || ou.config.ai === 'shocker' || ou.config.ai === 'egg' || ou.config.ai === 'acolyte' || !o.visible) continue;
+                    if (guest && !(ou.net && (ou.net.x & 1))) continue;
+                    const d = Math.hypot(o.position.x - e.position.x, o.position.z - e.position.z);
+                    if (d > 10.5 || Math.abs(o.position.y - e.position.y) > 5) continue;
+                    ou._ld = d;
+                    let k = L.length; if (k < 3) L.push(o); else if (d < L[2].userData._ld) k = 2; else continue;
+                    while (k > 0 && L[k - 1].userData._ld > d) { L[k] = L[k - 1]; k--; }
+                    L[k] = o;
+                }
+            }
+            const A = u.arcs; let k = 0;
+            if (e.visible && !u.dead) {
+                _shA.set(e.position.x, e.position.y + 2.3 * u.config.scale, e.position.z);
+                for (let i = 0; i < L.length; i++) {
+                    const o = L[i], ou = o.userData; if (ou.dead || !o.parent) continue;
+                    if (!guest) { ou.linkBy = e; ou.linkUntil = gameTime + 0.7; }
+                    if (Math.random() < 0.45) ou.zapT = gameTime + 0.07;
+                    _shB.set(o.position.x, o.position.y + ou.totalHeight * 0.55, o.position.z);
+                    _shM.lerpVectors(_shA, _shB, 0.5); _shM.x += (Math.random() - 0.5) * 1.6; _shM.y += (Math.random() - 0.5) * 1.6; _shM.z += (Math.random() - 0.5) * 1.6;
+                    arcSeg(A[k++], _shA, _shM, 0.06 + Math.random() * 0.05); arcSeg(A[k++], _shM, _shB, 0.06 + Math.random() * 0.05);
+                }
+            }
+            for (; k < 6; k++) A[k].visible = false;
+            if (u.zapT <= gameTime && Math.random() < dt * 2.5) u.zapT = gameTime + 0.09;       // the Shocker itself crackles now and then
+            if (u.extra) u.extra.scale.setScalar(0.8 + Math.random() * 0.5);
+        }
+        // an EMP burst: jams the gun of anyone close (each player's own computer works that out)
+        function empBurst(c, r) {
+            spawnBlastFx(c, r, 0x7dd3fc, true, 0.5);
+            spawnParticles(c, 0xbae6fd, 18, 8, 0.6, 0.12, false, { grav: 0 });
+            const d = Math.hypot(camera.position.x - c.x, camera.position.z - c.z);
+            sfxAt('slam', d);
+            if (currentGameState === 'playing' && currentHp > 0 && d < r * 0.75 && Math.abs(feetY - c.y) < 4) { jamGun(0.5); toastOnce2('EMP BURST - GUN JAMMED'); }
+        }
+        let _empToast = 0;
+        function toastOnce2(msg) { if (gameTime - _empToast > 1) { _empToast = gameTime; toast(msg, '#7dd3fc', 1.2); } }
+        function shockerDied(e, u) {
+            if (u.arcs) for (const m of u.arcs) m.visible = false;
+            for (const o of enemies) { const ou = o.userData; if (ou.linkBy === e) { ou.linkBy = null; ou.linkUntil = 0; } }
+            const c = new V3(e.position.x, e.position.y + 1.4, e.position.z);
+            empBurst(c, 6);
+            if (NET.inGame) netSendFx('emp', c, 6, 0x7dd3fc);
+        }
+        // Hound legs: front legs hang from the hunched body (so they counter-rotate), gallop in bounds, crouch for the pounce, stretch out in the lunge
+        function houndPose(u, sw) {
+            const h = u.kit.hunch;
+            if (u.state === 'windup') { u.armL.rotation.x = u.armR.rotation.x = -h - 0.9; u.legL.rotation.x = u.legR.rotation.x = -0.4; }
+            else if (u.state === 'charge' || !u.onGround) { u.armL.rotation.x = u.armR.rotation.x = -h - 1.5; u.legL.rotation.x = u.legR.rotation.x = 0.9; }
+            else { u.armL.rotation.x = -h + sw * 1.1; u.armR.rotation.x = -h + sw * 1.1; u.legL.rotation.x = -sw * 1.1; u.legR.rotation.x = -sw * 1.1; }
+        }
+        // shown on every screen: a short message from the host
+        function bossToast(msg, color, dur) { toast(msg, color, dur); bossNet({ k: 'msg', n: msg, c: color, d: dur }); }
         // 5.0 vent crawlers: they start hidden; this pops one out of its vent and into a pounce
         function crawlerWake(e, dx, dz) {
             const u = e.userData; if (!u.hidden && u.state === 'pounce') return;
@@ -9291,7 +9525,7 @@
         // Which bosses come on this wave. The 7 newer bosses come in a random order that's fixed for the run
         // (from the run's seed, so a saved run meets the same bosses), after the Abomination opens on wave 5.
         function bossOrder() {
-            const ids = BOSS_IDS.filter(k => k !== 'boss' && !enemyTypes[k].campOnly);
+            const ids = BOSS_IDS.filter(k => k !== 'boss' && (!enemyTypes[k].campOnly || (NET.inGame && k === 'zero')));      // (Patient Zero is a Campaign finale, and joins the boss rotation in co-op)
             let x = (run.seed || 777) >>> 0;
             const rnd = () => (x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296;
             for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
@@ -9339,7 +9573,7 @@
         // Far-away ordinary zombies think less often (every 2nd / 3rd frame, with the time they missed added up), which
         // is invisible at that distance and cuts the AI + collision cost of a big wave. Anything that shoots, casts or is a boss always updates.
         let aiTick = 0;
-        const LOD_FREE = { crawler: 1, blighter: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
+        const LOD_FREE = { crawler: 1, hound: 1, shocker: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
         function updateEnemies(dtFrame) {
             const T = aiTargets();
             aiTick++;
@@ -9498,35 +9732,34 @@
                         }
                         break;
                     }
-                    case 'riot': {
-                        // RIOT BREAKER: its shield soaks bullets from the front. Bash charge (wind-up, then a straight ram), then once the shield is broken it sprints in bare-handed.
+                    case 'hound': {
+                        // ZOMBIE HOUND: a pack circles you, each dog on its own side of the ring; they crouch, then lunge-bite one after another (staggered), then back off
                         u.aiT -= delta;
-                        const sh = u.shieldHp > 0;
                         if (u.state === 'windup') {
-                            wantMove = false; u.stateT -= delta;
-                            if (u.stateT <= 0) { u.state = 'charge'; u.stateT = 0.85; u.cdir.set(dx / hd, 0, dz / hd); sfx('charge'); }
+                            wantMove = false; u.stateT -= delta; faceX = dx; faceZ = dz;
+                            if (u.stateT <= 0) { u.state = 'charge'; u.stateT = 0.55; u.cdir.set(dx / hd, 0, dz / hd); u.velocityY = 4.2; u.onGround = false; sfx('growl'); }
                         } else if (u.state === 'charge') {
                             custom = true; u.stateT -= delta;
-                            const st = 20 * delta;
+                            const st = 15 * delta;
                             enemy.position.x += u.cdir.x * st; enemy.position.z += u.cdir.z * st;
                             faceX = u.cdir.x; faceZ = u.cdir.z; u.walkPhase += st * 1.3 / cfg.scale;
-                            if (Math.random() < 0.4) spawnParticles(new V3(enemy.position.x, enemy.position.y + 0.1, enemy.position.z), 0x8a7f73, 1, 2, 0.5, 0.25, true, { grav: 3, drag: 2 });
-                            if (hd < u.radius + 1.3 && vGap < 2 && vGap > -u.totalHeight) {
-                                if (_aiT.local) { push.set(0, 0, 0); shake = Math.max(shake, 0.5); }
-                                hurtTarget(_aiT, cfg.damage * 1.4 * ld, enemy.position, [u.cdir.x * 13, 5, u.cdir.z * 13], 'a Riot Breaker shield bash');
-                                u.state = 'walk'; u.aiT = 5;
-                            } else if (u.stateT <= 0) { u.state = 'walk'; u.aiT = 4.5; }
-                        } else if (u.state === 'stun') {
-                            wantMove = false; u.stateT -= delta;
-                            u.head.rotation.y = Math.sin(gameTime * 14) * 0.4;
-                            if (u.stateT <= 0) { u.state = 'walk'; u.head.rotation.y = 0; }
+                            if (hd < u.radius + 1.3 && vGap < 1.8 && vGap > -u.totalHeight) {
+                                hurtTarget(_aiT, cfg.damage * 1.25 * ld, enemy.position, [u.cdir.x * 5, 3, u.cdir.z * 5], 'a Zombie Hound bite');
+                                u.armSwing = 0.3; u.state = 'walk'; u.aiT = 2 + Math.random() * 1.4; u.backT = 0.7; sfx('hit');
+                            } else if (u.stateT <= 0) { u.state = 'walk'; u.aiT = 1.2 + Math.random() * 0.8; }
                         } else {
-                            spMul = sh ? 0.85 : 1.75;
-                            if (sh && u.aiT <= 0 && u.onGround && hd > 4.5 && hd < 15 && Math.abs(vGap) < 2.5) {
-                                if (losClear(enemy.position.x, enemy.position.y + 1.5, enemy.position.z, pos.x, pos.y - 0.6, pos.z)) { u.state = 'windup'; u.stateT = 0.8; sfx('growl'); }
-                                else u.aiT = 0.5;
+                            spMul = 1.1;
+                            if (u.backT > 0) { u.backT -= delta; mx = -mx; mz = -mz; }                      // just bit you: dart back out
+                            else if (hd < 15 && !u.navOn) {                                              // circle: head for this dog's own spot on the ring around you
+                                const ang = (u.packIdx || 0) / (u.packN || 1) * 6.2832 + gameTime * 0.6 * (u.packDir || 1), ring = hd < 6 ? 7.5 : 6.5;
+                                const cx = pos.x + Math.cos(ang) * ring - enemy.position.x, cz = pos.z + Math.sin(ang) * ring - enemy.position.z, cl = Math.hypot(cx, cz) || 1;
+                                mx = cx / cl; mz = cz / cl; faceX = dx; faceZ = dz;
                             }
-                            if (inMelee) { if (u.onGround) wantMove = false; if (decoy) hitTurret(decoy, u, cfg); else meleeHit(u, cfg, enemy, sh ? 1 : 1.25, [dx / hd * 9, 0, dz / hd * 9]); }
+                            if (u.aiT <= 0 && u.onGround && hd > 2.2 && hd < 10 && Math.abs(vGap) < 2.5) {
+                                if (losClear(enemy.position.x, enemy.position.y + 0.8, enemy.position.z, pos.x, pos.y - 0.6, pos.z)) { u.state = 'windup'; u.stateT = 0.4; sfx('growl'); }
+                                else u.aiT = 0.4;
+                            }
+                            if (inMelee && u.backT <= 0) meleeHit(u, cfg, enemy);
                         }
                         break;
                     }
@@ -9548,21 +9781,27 @@
                         }
                         break;
                     }
-                    case 'blighter': {
-                        // BLIGHTER: keeps its distance and lobs toxic canisters ahead of you; each one bursts into a lingering poison cloud (area denial)
-                        if (hd < 11) { mx = -mx; mz = -mz; } else if (hd < 21) wantMove = false;
-                        u.shootCooldown -= delta;
-                        if (u.shootCooldown <= 0 && hd < 36 && u.onGround) {
-                            u.shootCooldown = 3.6 + Math.random() * 1.4;
-                            const from = bp(2.5), lead = _aiT.local ? 0.9 : 0;
-                            const tx = pos.x + (velocity.x || 0) * lead * (_aiT.local ? 1 : 0), tz = pos.z + (velocity.z || 0) * lead * (_aiT.local ? 1 : 0);
-                            const ty = groundAt(tx, tz, 0, pFeet + 2), T = 0.9 + hd * 0.02;
-                            const fire = { r: 3.4, dps: 9 * ld, t: 9, c: 0x84cc16 };
-                            bossTele(tx, ty, tz, fire.r, T, 0x84cc16, () => {});
-                            bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0x84cc16, s: 0.9, g: 20, life: T + 0.8, dmg: cfg.damage * ld, fire, by: "a Blighter's toxic cloud" });
-                            sfx('throw'); u.armSwing = 0.3;
+                    case 'shocker': {
+                        // SHOCKER: shuffles at you, arcs a shock shield onto zombies around it (see shockerTick) and, up close, zaps: damage + JAMS your gun
+                        if (u.state === 'zap') {
+                            wantMove = false; u.stateT -= delta; faceX = dx; faceZ = dz;
+                            u.zapT = gameTime + 0.1;
+                            if (Math.random() < 0.6) spawnParticles(bp(1.2 + Math.random() * 1.6), 0x7dd3fc, 1, 3, 0.3, 0.07, false, { grav: 0 });
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.attackCooldown = 2.2; u.armSwing = 0.3;
+                                if (hd < 4.2 && Math.abs(vGap) < 2.5) {
+                                    const from = bp(2.2), to = new V3(pos.x, pos.y - 0.5, pos.z);
+                                    spawnTracer(from, to, 0x7dd3fc, 0.14, 0.22); spawnTracer(from, to, 0xffffff, 0.05, 0.14);
+                                    if (NET.inGame) netSendTracer(from, to, 0x7dd3fc);
+                                    sfx('laser');
+                                    hurtTarget(_aiT, cfg.damage * ld, enemy.position, [dx / hd * 6, 3, dz / hd * 6], 'a Shocker zap', 0.7);
+                                }
+                            }
+                        } else {
+                            spMul = 0.9;
+                            if (u.attackCooldown <= 0 && hd < 3.4 && u.onGround && Math.abs(vGap) < 2) { u.state = 'zap'; u.stateT = 0.4; sfx('beep'); }
                         }
-                        if (inMelee) meleeHit(u, cfg, enemy);
+                        shockerTick(enemy, u, delta, false);
                         break;
                     }
                     case 'zero': {
@@ -9623,10 +9862,10 @@
                                 } else if (pick === 'burrow') {
                                     u.state = 'burrow'; u.stateT = 3.4; u.shielded = true; enemy.visible = false; u.barShow = false;
                                     spawnParticles(bp(1.2), 0x57534e, 18, 6, 0.7, 0.3, true, { grav: 8 }); sfx('slam');
-                                    toast('PATIENT ZERO BURROWED - KEEP MOVING!', '#a3e635', 1.8);
+                                    bossToast('PATIENT ZERO BURROWED - KEEP MOVING!', '#a3e635', 1.8);
                                 } else {
                                     u.state = 'nova'; u.stateT = 2.3; sfx('roar');
-                                    toast('TOXIC NOVA - STAND IN THE HOLE!', '#a3e635', 2);
+                                    bossToast('TOXIC NOVA - STAND IN THE HOLE!', '#a3e635', 2);
                                     bossTele(c.x, c.y, c.z, 5, 2.2, 0x38bdf8, () => {});
                                     bossTele(c.x, c.y, c.z, 16, 2.2, 0xa3e635, () => bossBlast(new V3(c.x, c.y + 0.4, c.z), 16, 38 * ld, 0xa3e635, "Patient Zero's toxic nova", { r: 2.6, dps: 9 * ld, t: 4, c: 0x84cc16 }, 5));
                                     u.aiT = 2.4;
@@ -10136,8 +10375,8 @@
                 if (cfg.ai === 'ranged' || cfg.ai === 'medic') { u.armL.rotation.x = -sw; u.armR.rotation.x = sw; }
                 else if (cfg.ai === 'marksman') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.4; u.armL.rotation.x = u.state === 'aim' ? -1.3 : -sw; u.armL.rotation.z = u.state === 'aim' ? -0.5 : 0; }
                 else if (cfg.ai === 'crawler') { u.armL.rotation.x = -2.3 + sw * 0.5; u.armR.rotation.x = -2.3 - sw * 0.5; }
-                else if (cfg.ai === 'blighter') { u.armL.rotation.x = u.armR.rotation.x = u.armSwing > 0 ? -2.2 : -1.2; }
-                else if (cfg.ai === 'shielder' || cfg.ai === 'riot') { u.armL.rotation.x = u.shieldHp > 0 || cfg.ai === 'shielder' ? -1.2 : reach * 0.8; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
+                else if (cfg.ai === 'hound') houndPose(u, sw);
+                else if (cfg.ai === 'shocker') { if (u.state === 'zap') u.armL.rotation.x = u.armR.rotation.x = -1.45; else zombieArms(u, reach, sw); }
                 else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
                 else if (cfg.boss && u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
                 else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }
@@ -11194,12 +11433,12 @@
                 }
                 h += `</div>`;
             } else if (menuTab === 'bestiary') {
-                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'riot', 'crawler', 'blighter'];
+                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'hound', 'crawler', 'shocker'];
                 h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
                     return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
                 // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
                 const seenB = life.bossSeen || {}, killsB = life.bossKills || {};
-                h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the other seven in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back. Patient Zero only appears as the Campaign finale.</div>`;
+                h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the others in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back. Patient Zero is the Campaign finale and also joins the boss rotation in co-op.</div>`;
                 h += `<div class="flex flex-col gap-2 mt-2">${BOSS_IDS.map(id => { const t = enemyTypes[id], met = seenB[id] || killsB[id];
                     return `<div class="bcard" style="border-color:${t.bar}55"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${t.bar}"></div><div class="flex-1"><div class="flex justify-between items-baseline gap-2"><div><span class="font-black tracking-wide" style="color:${t.bar}">${t.name.toUpperCase()}</span> <span class="text-[10px] font-black text-gray-400 tracking-widest">${t.title}</span></div><div class="text-xs font-bold text-gray-400 whitespace-nowrap">${killsB[id] ? 'DEFEATED x' + killsB[id] : met ? 'MET' : 'NOT MET YET'}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.tip}</div></div></div>`; }).join('')}</div>`;
                 // 4.0: how the horde gets round the new maps
@@ -11258,7 +11497,10 @@
                     'One shared button style, panel and colour theme on every screen, including the multiplayer lobby.']) +
                 sec('CAMPAIGN: 3 CHAPTERS', '#fde047', ['<b>CAMPAIGN</b> now has three chapters of six story missions each: Ashfall, Dead Air and Patient Zero, ending in a new final boss on a new arena.',
                     'Eight objective types, story briefings, 3 lives, 3 stars per mission and campaign-only weapon skins. It has its own save and never touches your normal run.']) +
-                sec('NEW MAP, ENEMIES + WEAPONS', '#f0abfc', ['New map: <b>SUBWAY</b> (night). New zombies: <b>RIOT BREAKER</b> (breakable shield), <b>VENT CRAWLER</b> (ambushes from floor vents) and <b>BLIGHTER</b> (poison clouds).',
+                sec('BOSSES, GUNS + LIGHT', '#fca5a5', ['All eight bosses have new, much more detailed models: spiked, armoured and glowing, each with its own outline.',
+                    'Guns sit lower-left and clear of the ammo and ability cards on small screens, and the cards shrink to fit. Sights still line up with the crosshair.',
+                    'Every map has stronger sun and shade, coloured sky light, richer skies, warmer lamp pools, darker corners and a light colour grade. It costs nothing on Low.']) +
+                sec('NEW MAP, ENEMIES + WEAPONS', '#f0abfc', ['New map: <b>SUBWAY</b> (night). New zombies: <b>ZOMBIE HOUND</b> (fast packs that circle you), <b>VENT CRAWLER</b> (ambushes from floor vents) and <b>SHOCKER</b> (shock shield, jams your gun). All of them, and Patient Zero, now work in co-op.',
                     'New guns: <b>BURST CARBINE</b> (rank 4) and <b>LEVER RIFLE</b> (rank 6).']) +
                 sec('POWER-UPS REMOVED', '#9ca3af', ['No more power-up orbs, menu row or timers. Supply drops now give ammo or medical supplies. Old saves load fine and nothing was lost.']) +
                 sec('WIFI GAME SCAN', '#7dd3fc', ['Open the <b>MULTIPLAYER</b> tab and games hosted on the same wifi show up in a list with a JOIN button. Hosts can switch this off with <b>Show my game on this wifi</b>.']) +
@@ -11357,6 +11599,22 @@
                 get state() { return { on: CAMP.on, over: CAMP.over, mission: CAMP.m && CAMP.m.id, stage: CAMP.st && CAMP.st.def.t, si: CAMP.si, deaths: CAMP.deaths, lives: campLives(), t: CAMP.t, dmg: CAMP.dmg, kills: CAMP.kills, heads: CAMP.heads, stat: CAMP.stat, decoys: CAMP.decoys.length, objs: CAMP.objs.length, marks: CAMP.nm, stars: CAMP.on && CAMP.m ? campStars(true) : null, gs: currentGameState }; }
             },
             get state() { return { currentGameState, playerStats, currentHp, currentArmor, enemies, solids, projectiles, secondaryCooldown, waveActive, intermission, camera, velocity, onGround, vm, Q, dynScale, theme: themeId, runStats, supplies, fovNow, vmModel, weaponCam, viewScene, renderer, scene, THREE }; },
+            vmScreen: () => {   // debug: screen boxes (pixels) of the gun body and the gloved hands (sleeves excluded), and the sight point
+                const m = vmModel; if (!m) return null; weaponCam.updateMatrixWorld(true); m.root.updateMatrixWorld(true); weaponCam.matrixWorldInverse.copy(weaponCam.matrixWorld).invert();
+                const W0 = innerWidth, H0 = innerHeight, v = new V3(), G = [1e9, 1e9, -1e9, -1e9], Hn = [1e9, 1e9, -1e9, -1e9];
+                m.root.traverseVisible(o => {
+                    if (!o.isMesh || !o.geometry || o.material === VM.flash) return; const g = o.geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox;
+                    let hand = false, arm = false; for (let q = o.parent; q && q !== m.root; q = q.parent) if (q.userData && q.userData.style) { arm = true; hand = o.parent !== q; }
+                    if (arm && !hand) return; const B = hand ? Hn : G;
+                    for (let i = 0; i < 8; i++) {
+                        v.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld).project(weaponCam);
+                        B[0] = Math.min(B[0], v.x); B[2] = Math.max(B[2], v.x); B[1] = Math.min(B[1], v.y); B[3] = Math.max(B[3], v.y);
+                    }
+                });
+                const px = (n, a) => Math.round((a ? (1 - n) : (n + 1)) / 2 * (a ? H0 : W0)), bx = B => [px(B[0]), px(B[3], 1), px(B[2]), px(B[1], 1)];
+                const gp = m.muzzle.parent; v.set(0, m.def.sight[0], m.def.sight[1]); gp.localToWorld(v); v.project(weaponCam);
+                return { gun: bx(G), hands: bx(Hn), sight: [px(v.x), px(v.y, 1)], ads: +vm.adsT.toFixed(2) };
+            },
             debug(on = true) { debugNoLock = on; },
             prof: PROF, get lightU() { return LIGHT_U; }, get scene() { return scene; }, get renderer() { return renderer; },
             get info() { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, enemies: enemies.length }; },
@@ -11465,7 +11723,8 @@
         const NET_SRC = WEAPON_ORDER.concat(['explosive', 'molotov', 'turret', 'melee', 'airstrike', 'landmine', 'nuke', 'boom', 'grenade', 'c4', 'launcher', 'rpg']);
         const srcIdx = (s) => Math.max(0, NET_SRC.indexOf(s));
         const ENEMY_IDS = Object.keys(enemyTypes);
-        const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak'];
+        // (4 bits in the snapshot: 16 at most.) 5.0 added hidden (Vent Crawler in its vent), pounce, zap (Shocker) and Patient Zero's burrow/erupt/cast/nova
+        const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak', 'hidden', 'pounce', 'zap', 'burrow', 'erupt', 'cast', 'nova'];
         const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
         const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp ? ' TEAM DEATHMATCH' : '');
         const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -11961,7 +12220,7 @@
                 case 'wave': clientWaveStart(m.n); break;
                 case 'clr': clientWaveClear(m.n); break;
                 case 'k': clientKill(m); break;
-                case 'd': if (NET.inGame) { takeDamage(m.a, m.f ? new V3(m.f[0], 0, m.f[1]) : null, typeof m.by === 'string' ? m.by.slice(0, 40) : undefined); if (m.kb) { push.x += m.kb[0]; push.z += m.kb[2]; if (m.kb[1]) { velocity.y = Math.max(velocity.y, m.kb[1]); onGround = false; } } } break;
+                case 'd': if (NET.inGame) { takeDamage(m.a, m.f ? new V3(m.f[0], 0, m.f[1]) : null, typeof m.by === 'string' ? m.by.slice(0, 40) : undefined); if (m.jam) jamGun(clamp(+m.jam || 0.7, 0.1, 1.5)); if (m.kb) { push.x += m.kb[0]; push.z += m.kb[2]; if (m.kb[1]) { velocity.y = Math.max(velocity.y, m.kb[1]); onGround = false; } } } break;
                 case 'pd': netPvpDamaged(m.a, m.by, m.h, m.s, m.f); break;
                 case 'fx': netPlayFx(m); break;
                 case 'bfx': netBossFx(m); break;
@@ -11981,15 +12240,15 @@
             clockSample(NET.hostPeer, ht, now);
             const n = dv.getUint16(11);
             let o = 13;
-            for (let i = 0; i < n; i++, o += 13) {
+            for (let i = 0; i < n; i++, o += 14) {
                 const id = dv.getUint16(o), ti = dv.getUint8(o + 2), fl = dv.getUint8(o + 3);
                 const x = dv.getInt16(o + 4) / 32, y = dv.getInt16(o + 6) / 32, z = dv.getInt16(o + 8) / 32;
-                const rot = dv.getUint8(o + 10) / 256 * Math.PI * 2, hpf = dv.getUint8(o + 11) / 255, tg = dv.getUint8(o + 12);
+                const rot = dv.getUint8(o + 10) / 256 * Math.PI * 2, hpf = dv.getUint8(o + 11) / 255, tg = dv.getUint8(o + 12), xb = dv.getUint8(o + 13);
                 let e = enemyById.get(id);
                 if (!e) { if (NET.deadIds.has(id)) continue; e = netSpawnRemoteEnemy(id, ENEMY_IDS[ti] || 'grunt', x, y, z); }
                 const u = e.userData;
                 u.net.buf.push(ht, [x, y, z, rot]);
-                u.net.seen = now; u.net.fl = fl; u.net.tg = tg;
+                u.net.seen = now; u.net.fl = fl; u.net.tg = tg; u.net.x = xb; u.phase2 = !!(xb & 2);
                 const hp = hpf * u.maxHp;
                 u.hp = u.net.predT > now ? Math.min(u.hp, hp) : hp;
                 u.barShow = hpf < 0.999;
@@ -12004,9 +12263,9 @@
             if (!NET.pvp) for (const p of netPlayers.values()) if (p.tgt.feet > -50) _targets.push(p.tgt);
             return _targets;
         }
-        function netSendDamage(pid, amount, from, kb, by) {
+        function netSendDamage(pid, amount, from, kb, by, jam) {
             const p = netPlayers.get(pid); if (!p) return;
-            sendRel(p.peer, { t: 'd', a: r2(amount), f: from ? [r2(from.x), r2(from.z)] : null, kb: kb ? kb.map(r2) : undefined, by });
+            sendRel(p.peer, { t: 'd', a: r2(amount), f: from ? [r2(from.x), r2(from.z)] : null, kb: kb ? kb.map(r2) : undefined, by, jam: jam || undefined });
         }
         function hostApplyHits(pid, list) {
             if (!Array.isArray(list)) return;
@@ -12036,6 +12295,7 @@
                 spawnParticles(new V3(p.x, p.y + 0.2, p.z), 0x9ca3af, 12, 6, 0.7, 0.3, true, { grav: 6, drag: 2, jitter: m.r * 0.5 });
                 sfxAt('slam', camera.position.distanceTo(p));
             }
+            else if (m.k === 'emp') empBurst(p, clamp(+m.r || 6, 2, 12));
             // 4.0 classes: a teammate's Healing Field (heals you here when you stand in it) and Recon UPLINK marks
             else if (m.k === 'heal' && !NET.pvp) {
                 addHealField(p.x, p.y, p.z, clamp(+m.r || 6, 2, 12), clamp(+m.d || 8, 1, 15), clamp(+m.h || 8, 0, 20), clamp(+m.a || 0, 0, 10), false);
@@ -12063,15 +12323,15 @@
                 if (d < radius) netSendDamage(p.id, damage * (1 - 0.8 * d / radius), pos, [0, 9 * (1 - d / radius), 0], by);
             }
         }
-        // one binary packet with every enemy: 13 bytes each (id, type, state, position, facing, health, target)
+        // one binary packet with every enemy: 14 bytes each (id, type, state, position, facing, health, target, extra bits: 1 = linked to a Shocker, 2 = enraged)
         function hostEnemySnapshot(now) {
             const list = enemies, n = Math.min(list.length, 150);
-            const buf = new ArrayBuffer(13 + n * 13), dv = new DataView(buf);
+            const buf = new ArrayBuffer(13 + n * 14), dv = new DataView(buf);
             dv.setUint8(0, 1); dv.setFloat64(1, now); dv.setUint16(9, playerStats.level); dv.setUint16(11, n);
             let o = 13;
-            for (let i = 0; i < n; i++, o += 13) {
+            for (let i = 0; i < n; i++, o += 14) {
                 const e = list[i], u = e.userData;
-                const st = Math.max(0, E_STATES.indexOf(u.state));
+                const st = Math.max(0, E_STATES.indexOf(u.hidden ? 'hidden' : u.state));
                 dv.setUint16(o, u.netId); dv.setUint8(o + 2, ENEMY_IDS.indexOf(u.config.id));
                 dv.setUint8(o + 3, st | (u.onGround ? 16 : 0) | (u.leaping ? 32 : 0) | (u.fuse >= 0 ? 64 : 0) | (u.shielded ? 128 : 0));
                 dv.setInt16(o + 4, clamp(Math.round(e.position.x * 32), -32767, 32767));
@@ -12081,13 +12341,14 @@
                 dv.setUint8(o + 10, Math.round(r * 256) & 255);
                 dv.setUint8(o + 11, Math.round(clamp(u.hp / u.maxHp, 0, 1) * 255));
                 dv.setUint8(o + 12, u.tgt ? (u.tgt.id & 255) : 255);
+                dv.setUint8(o + 13, (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead ? 1 : 0) | (u.phase2 ? 2 : 0));
             }
             for (const p of netPlayers.values()) sendFast(p.peer, buf);
         }
 
 
         // ---------- GUEST: enemies are copies of the host's ----------
-        const _ev = [0, 0, 0, 0];
+        const _ev = [0, 0, 0, 0], _ev0 = new V3();
         function netSpawnRemoteEnemy(id, typeId, x, y, z) {
             const cfg = enemyTypes[typeId] || enemyTypes.grunt;
             const e = createEnemy(cfg);
@@ -12138,7 +12399,11 @@
                 const sp = Math.hypot(e.position.x - ox, e.position.z - oz) / Math.max(dt, 1e-3);
                 const fl = u.net.fl, cfg = u.config;
                 u.state = E_STATES[fl & 15] || 'walk'; u.onGround = !!(fl & 16); u.leaping = !!(fl & 32); u.shielded = !!(fl & 128);
-                e.visible = u.state !== 'cloak';
+                e.visible = !(u.state === 'cloak' || u.state === 'hidden' || u.state === 'burrow' || u.state === 'erupt');      // cloaked Phantom, Vent Crawler in its vent, Patient Zero underground
+                if (u.state === 'hidden' && cfg.ai === 'crawler' && (u.rattleT = (u.rattleT || 0) - dt) <= 0) {      // the vent rattles for everyone, not just the host
+                    u.rattleT = 1.4 + Math.random() * 1.6; const hd = Math.hypot(camera.position.x - e.position.x, camera.position.z - e.position.z);
+                    if (hd < 24) { sfxAt('thud', hd); spawnParticles(_ev0.set(e.position.x, e.position.y + 0.15, e.position.z), 0x9ca3af, 2, 1.5, 0.4, 0.1, true, { grav: 4 }); }
+                }
                 if (u.bubble) { u.bubble.visible = u.shielded; u.bubble.material.opacity = 0.16 + 0.08 * Math.sin(gameTime * 5); }
                 if (u.flash > 0) { u.flash -= dt; if (u.flash <= 0) { u.mat.emissive.setHex(u.baseEmissive); u.mat.emissiveIntensity = u.baseEmissiveI; } }
                 // animation from how fast it's actually sliding along
@@ -12151,6 +12416,9 @@
                 if (cfg.ai === 'ranged' || cfg.ai === 'medic') { u.armL.rotation.x = -sw; u.armR.rotation.x = sw; }
                 else if (cfg.ai === 'marksman') { const aim = u.state === 'aim'; u.armR.rotation.x = aim ? -Math.PI / 2 : -0.4; u.armL.rotation.x = aim ? -1.3 : -sw; u.armL.rotation.z = aim ? -0.5 : 0; }
                 else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
+                else if (cfg.ai === 'hound') houndPose(u, sw);
+                else if (cfg.ai === 'crawler') { u.armL.rotation.x = -2.3 + sw * 0.5; u.armR.rotation.x = -2.3 - sw * 0.5; }
+                else if (cfg.ai === 'shocker') { if (u.state === 'zap') { u.armL.rotation.x = u.armR.rotation.x = -1.45; u.zapT = gameTime + 0.1; } else zombieArms(u, reach, sw); }
                 else if (u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
                 else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }
                 else if (cfg.ai === 'acolyte') acolytePose(u);
@@ -12161,6 +12429,8 @@
                 else if (u.leaping) { u.armL.rotation.x = u.armR.rotation.x = -2.6; }
                 else zombieArms(u, reach, sw);
                 if (cfg.ai === 'pyro' && Math.random() < 0.4) spawnParticles(new V3(e.position.x, e.position.y + 3.1 * cfg.scale, e.position.z), Math.random() < 0.5 ? 0xff6a1f : 0xffd24d, 1, 2.5, 0.5, 0.35 * cfg.scale, false, { grav: -6 });
+                if (u.arcs) shockerTick(e, u, dt, true);
+                if (cfg.ai === 'zero') { if (u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 4) * 0.1); if (e.visible && Math.random() < 0.4) spawnParticles(_ev0.set(e.position.x, e.position.y + 2.8 * cfg.scale, e.position.z), 0xa3e635, 1, 2, 0.6, 0.3 * cfg.scale, false, { grav: -3 }); }
                 if (u.extra && (cfg.ai === 'brood' || cfg.ai === 'pyro')) u.extra.scale.setScalar(1 + Math.sin(gameTime * 6) * 0.13);
                 if (u.state === 'stun') u.head.rotation.y = Math.sin(gameTime * 14) * 0.4; else { u.head.rotation.y = 0; zombieHead(u); }
                 if (cfg.ai === 'bomber' && u.extra) u.extra.visible = !(fl & 64) || Math.floor(gameTime * 20) % 2 === 0;
@@ -12911,7 +13181,17 @@
         Object.assign(window.__blocky, {
             get NET() { return NET; }, get netPlayers() { return netPlayers; },
             netRevive: () => netRespawn(spawnPt, maxHp),
-            netDead: () => NET.dead
+            netDead: () => NET.dead,
+            // test hooks for the 5.0 enemies in co-op (a page can be both the host that writes a snapshot and the guest that reads it)
+            mpTest: {
+                netMessage: (m) => netMessage(NET.hostPeer || {}, m), netBinary: (b) => netBinary(NET.hostPeer, b), snapshot: (now) => hostEnemySnapshot(now),
+                updateGuest: (dt) => netUpdateEnemies(dt), E_STATES, ENEMY_IDS, jamT: () => jamT, jamGun: (t) => jamGun(t), tickJam: (dt) => tickJam(dt),
+                spawnPack: (x, z) => { const e = spawnEnemy(enemyTypes.hound, x, z, groundAt(x, z, 0, 50) + 0.1, 4, 10); spawnHoundPack(e, x, z, groundAt(x, z, 0, 50) + 0.1, 4, 10); return e; },
+                emp: (c, r) => empBurst(c, r), canShoot: () => canShoot(), reloading: () => isReloading, reload: () => triggerReload(), setAmmo: (n) => { ammoState[playerStats.currentWeapon] = n; },
+                life: () => life, mig: (x) => migEnemyIds(x), spawnWave: () => spawnWave(), waveInfo: () => ({ lvl: playerStats.level, bosses: waveBosses(playerStats.level) }),
+                dropAll: () => { enemies.forEach(e => { scene.remove(e); disposeEnemy(e); }); enemies.length = 0; enemyById.clear(); },
+                damage: (e, n) => damageEnemy(e, n, false, null), gameTime: () => gameTime, hold: () => { waveActive = true; intermission = 0; }, playFx: (m) => netPlayFx(m), enemyById: (id) => enemyById.get(id)
+            }
         });
 
         // ---- 28b-mp-lan.js ----
@@ -13281,11 +13561,11 @@
                   s2: { k: 'time', v: 330, txt: 'Finish in under 5:30' }, s3: { k: 'dmg', v: 120, txt: 'Lose less than 120 health in total' },
                   reward: { cash: 1600, xp: 1100 } },
                 { id: 'c2m3', name: 'RIOT LINE', map: 'downtown', light: 'neon', diff: 'normal', lvl: 13, cash: 3000, lives: 3,
-                  sum: 'Defend the barricade against riot-armoured zombies, then survive 2 waves.',
-                  brief: [{ w: 'doc', t: 'Doc Cole. The old police line downtown is the only choke point between us and the Metro entrance. The dead there are wearing riot gear, shields and all.' },
-                          { w: 'gears', t: 'Shots at the front of a shield are wasted ammo. Crack the shield with sustained fire, flank them, or use explosives. Stand near the barricade to patch it.' }],
-                  out: { w: 'doc', t: 'The line held. Those shields were cracking under your fire like glass. One more push and the way to Dr. Lang is open.' },
-                  stages: [{ t: 'defend', secs: 80, hp: 1600, cap: 14, rate: 3, mix: { riot: 0.35 } }, { t: 'survive', n: 2 }],
+                  sum: 'Defend the barricade against packs of zombie Hounds, then survive 2 waves.',
+                  brief: [{ w: 'doc', t: 'Doc Cole. The old police line downtown is the only choke point between us and the Metro entrance. The police kennels are open, and the dogs did not stay dead.' },
+                          { w: 'gears', t: 'Hounds come in packs of three or four and circle you before they lunge, each from a different side. They are fast but fragile: keep moving and shoot them mid-leap. Stand near the barricade to patch it.' }],
+                  out: { w: 'doc', t: 'The line held. The pack is down. One more push and the way to Dr. Lang is open.' },
+                  stages: [{ t: 'defend', secs: 80, hp: 1600, cap: 14, rate: 3, mix: { hound: 0.12 } }, { t: 'survive', n: 2 }],
                   s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'barr', v: 0.6, txt: 'Barricade ends above 60% health' },
                   reward: { cash: 1800, xp: 1200 } },
                 { id: 'c2m4', name: 'SAFE PASSAGE', map: 'military', light: 'sunset', diff: 'hard', lvl: 14, cash: 3400, lives: 3,
@@ -13327,7 +13607,7 @@
                   brief: [{ w: 'cmd', t: 'Command. The biolab is locked down tight. The access keycards were dropped in the mall during the evacuation: four of them, one per department.' },
                           { w: 'wren', t: 'Once you have the fourth card I will open the extraction route. You will not have long, because the lockdown alarm just went off and the whole district is awake.' }],
                   out: { w: 'wren', t: 'Cards verified! Doors are unlocked and the biolab convoy is on its way. Rook says to get your gear ready.' },
-                  stages: [{ t: 'intel', n: 4, cap: 14, rate: 3, mix: { blighter: 0.25 } }, { t: 'extract', secs: 120, cap: 15, rate: 2.8 }],
+                  stages: [{ t: 'intel', n: 4, cap: 14, rate: 3, mix: { shocker: 0.2 } }, { t: 'extract', secs: 120, cap: 15, rate: 2.8 }],
                   s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'timeleft', v: 40, txt: 'Reach extraction with 40s to spare' },
                   reward: { cash: 2400, xp: 1700 } },
                 { id: 'c3m3', name: 'THE ANTIDOTE', map: 'temple', light: 'night', diff: 'hard', lvl: 19, cash: 4400, lives: 3,
@@ -13335,15 +13615,15 @@
                   brief: [{ w: 'lang', t: 'My last three colleagues are carrying the only antidote samples. They are hiding in the temple ruins, and the dead have surrounded them.' },
                           { w: 'rook', t: 'Get them out, bring them back to the drop point and then hold. When the samples are loaded on the truck we are one step away from ending this.' }],
                   out: { w: 'lang', t: 'The samples are safe and the truck is rolling. Now there is only the lab, and the patient in the lower level.' },
-                  stages: [{ t: 'rescue', n: 3, need: 3, cap: 14, rate: 3.2 }, { t: 'defend', secs: 70, hp: 1800, cap: 15, rate: 2.8, mix: { riot: 0.2, crawler: 0.2 } }],
+                  stages: [{ t: 'rescue', n: 3, need: 3, cap: 14, rate: 3.2 }, { t: 'defend', secs: 70, hp: 1800, cap: 15, rate: 2.8, mix: { hound: 0.08, crawler: 0.2 } }],
                   s2: { k: 'time', v: 420, txt: 'Finish in under 7:00' }, s3: { k: 'allsurv', txt: 'Bring all 3 scientists home alive' },
                   reward: { cash: 2600, xp: 1800, skin: 'camo:toxin' } },
                 { id: 'c3m4', name: 'FLASHPOINT', map: 'skybridge', light: 'storm', diff: 'hard', lvl: 20, cash: 4800, lives: 3,
                   sum: 'Repair 3 power relays, then defend the lift barricade.',
                   brief: [{ w: 'gears', t: 'Gears. The lab lift needs power, and the three relays are on the skybridge towers. It is a storm up there, and everything on the ground will be coming for the noise.' },
-                          { w: 'rook', t: 'When the relays are up, hold the barricade at the lift. Riot Breakers will come first, then whatever else they have.' }],
+                          { w: 'rook', t: 'When the relays are up, hold the barricade at the lift. Hound packs will come first, then whatever else they have.' }],
                   out: { w: 'gears', t: 'Power is on and the lift is humming. This is it, soldier. One more floor and we meet the patient.' },
-                  stages: [{ t: 'repair', n: 3, secs: 12, hp: 520, cap: 14, rate: 3.2 }, { t: 'defend', secs: 75, hp: 1900, cap: 16, rate: 2.7, mix: { riot: 0.3, blighter: 0.15 } }],
+                  stages: [{ t: 'repair', n: 3, secs: 12, hp: 520, cap: 14, rate: 3.2 }, { t: 'defend', secs: 75, hp: 1900, cap: 16, rate: 2.7, mix: { hound: 0.1, shocker: 0.15 } }],
                   s2: { k: 'time', v: 420, txt: 'Finish in under 7:00' }, s3: { k: 'barr', v: 0.5, txt: 'Barricade ends above 50% health' },
                   reward: { cash: 2800, xp: 1900 } },
                 { id: 'c3m5', name: 'DESCENT', map: 'subway', light: 'bloodmoon', diff: 'hard', lvl: 21, cash: 5000, lives: 3,
@@ -13351,7 +13631,7 @@
                   brief: [{ w: 'lang', t: 'The elevator to the biolab is at the end of the Metro line. The tunnels are full of the first patient\'s children. Crawlers, carriers, everything.' },
                           { w: 'rook', t: 'Hold the platform until the rail switch is thrown, then sprint to the elevator. Stay out of the vents and out of the green.' }],
                   out: { w: 'rook', t: 'We made it to the elevator. This is where we say it. Whatever is waiting down there, we finish what we started. For everyone upstairs.' },
-                  stages: [{ t: 'hold', secs: 80, r: 12, cap: 15, rate: 2.8, mix: { crawler: 0.45, blighter: 0.2 } }, { t: 'extract', secs: 110, cap: 16, rate: 2.6, mix: { crawler: 0.3 } }],
+                  stages: [{ t: 'hold', secs: 80, r: 12, cap: 15, rate: 2.8, mix: { crawler: 0.45, shocker: 0.2 } }, { t: 'extract', secs: 110, cap: 16, rate: 2.6, mix: { crawler: 0.3 } }],
                   s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'timeleft', v: 35, txt: 'Reach the elevator with 35s to spare' },
                   reward: { cash: 3000, xp: 2100 } },
                 { id: 'c3m6', name: 'PATIENT ZERO', map: 'biolab', light: 'bloodmoon', diff: 'hard', lvl: 22, cash: 6000, lives: 3,
@@ -13452,7 +13732,7 @@
                 if (d.mix) for (const id in d.mix) if (Math.random() < d.mix[id] && (counts[id] || 0) < (enemyTypes[id].cap || 99)) { cfg = enemyTypes[id]; break; }      // this part of the mission favours some zombie types
                 let sp = null;
                 for (let k = 0; k < 6 && !sp; k++) { const c = navSpot(ax, az, 22, 62); if (c && Math.hypot(c[0] - camera.position.x, c[2] - camera.position.z) > 16) sp = c; }
-                if (sp) spawnEnemy(cfg, sp[0], sp[2], sp[1] + 0.15, waveSpeed(lvl), waveReward(lvl) * 0.7);
+                if (sp) { const ne = spawnEnemy(cfg, sp[0], sp[2], sp[1] + 0.15, waveSpeed(lvl), waveReward(lvl) * 0.7); if (cfg.id === 'hound') spawnHoundPack(ne, sp[0], sp[2], sp[1] + 0.15, waveSpeed(lvl), waveReward(lvl) * 0.7); }
             }
         }
         function campMark(x, y, z, c, r, label) {

@@ -22,7 +22,8 @@ const COOP_COLORS = [0x3b82f6, 0x22c55e, 0xf59e0b, 0xec4899, 0x8b5cf6, 0x06b6d4,
 const NET_SRC = WEAPON_ORDER.concat(['explosive', 'molotov', 'turret', 'melee', 'airstrike', 'landmine', 'nuke', 'boom', 'grenade', 'c4', 'launcher', 'rpg']);
 const srcIdx = (s) => Math.max(0, NET_SRC.indexOf(s));
 const ENEMY_IDS = Object.keys(enemyTypes);
-const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak'];
+// (4 bits in the snapshot: 16 at most.) 5.0 added hidden (Vent Crawler in its vent), pounce, zap (Shocker) and Patient Zero's burrow/erupt/cast/nova
+const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak', 'hidden', 'pounce', 'zap', 'burrow', 'erupt', 'cast', 'nova'];
 const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
 const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp ? ' TEAM DEATHMATCH' : '');
 const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -518,7 +519,7 @@ function clientMessage(m) {
         case 'wave': clientWaveStart(m.n); break;
         case 'clr': clientWaveClear(m.n); break;
         case 'k': clientKill(m); break;
-        case 'd': if (NET.inGame) { takeDamage(m.a, m.f ? new V3(m.f[0], 0, m.f[1]) : null, typeof m.by === 'string' ? m.by.slice(0, 40) : undefined); if (m.kb) { push.x += m.kb[0]; push.z += m.kb[2]; if (m.kb[1]) { velocity.y = Math.max(velocity.y, m.kb[1]); onGround = false; } } } break;
+        case 'd': if (NET.inGame) { takeDamage(m.a, m.f ? new V3(m.f[0], 0, m.f[1]) : null, typeof m.by === 'string' ? m.by.slice(0, 40) : undefined); if (m.jam) jamGun(clamp(+m.jam || 0.7, 0.1, 1.5)); if (m.kb) { push.x += m.kb[0]; push.z += m.kb[2]; if (m.kb[1]) { velocity.y = Math.max(velocity.y, m.kb[1]); onGround = false; } } } break;
         case 'pd': netPvpDamaged(m.a, m.by, m.h, m.s, m.f); break;
         case 'fx': netPlayFx(m); break;
         case 'bfx': netBossFx(m); break;
@@ -538,15 +539,15 @@ function netBinary(peer, buf) {
     clockSample(NET.hostPeer, ht, now);
     const n = dv.getUint16(11);
     let o = 13;
-    for (let i = 0; i < n; i++, o += 13) {
+    for (let i = 0; i < n; i++, o += 14) {
         const id = dv.getUint16(o), ti = dv.getUint8(o + 2), fl = dv.getUint8(o + 3);
         const x = dv.getInt16(o + 4) / 32, y = dv.getInt16(o + 6) / 32, z = dv.getInt16(o + 8) / 32;
-        const rot = dv.getUint8(o + 10) / 256 * Math.PI * 2, hpf = dv.getUint8(o + 11) / 255, tg = dv.getUint8(o + 12);
+        const rot = dv.getUint8(o + 10) / 256 * Math.PI * 2, hpf = dv.getUint8(o + 11) / 255, tg = dv.getUint8(o + 12), xb = dv.getUint8(o + 13);
         let e = enemyById.get(id);
         if (!e) { if (NET.deadIds.has(id)) continue; e = netSpawnRemoteEnemy(id, ENEMY_IDS[ti] || 'grunt', x, y, z); }
         const u = e.userData;
         u.net.buf.push(ht, [x, y, z, rot]);
-        u.net.seen = now; u.net.fl = fl; u.net.tg = tg;
+        u.net.seen = now; u.net.fl = fl; u.net.tg = tg; u.net.x = xb; u.phase2 = !!(xb & 2);
         const hp = hpf * u.maxHp;
         u.hp = u.net.predT > now ? Math.min(u.hp, hp) : hp;
         u.barShow = hpf < 0.999;

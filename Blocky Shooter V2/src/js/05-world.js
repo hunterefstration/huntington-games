@@ -23,13 +23,13 @@ const SEE_THRU = { glass: 1, fence: 1 };
 //  - ground haze: fog is a little thicker low down, so distance and tall structures read better
 function worldLighting(m, ao) {
     m.onBeforeCompile = (sh) => {
-        Object.assign(sh.uniforms, { uRim: LIGHT_U.uRim, uCool: LIGHT_U.uCool, uHaze: LIGHT_U.uHaze, uMz: LIGHT_U.uMz, uBm: LIGHT_U.uBm });
+        Object.assign(sh.uniforms, { uRim: LIGHT_U.uRim, uCool: LIGHT_U.uCool, uHaze: LIGHT_U.uHaze, uMz: LIGHT_U.uMz, uBm: LIGHT_U.uBm, uGS: LIGHT_U.uGS, uGH: LIGHT_U.uGH, uSat: LIGHT_U.uSat });
         sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;')
             .replace('#include <project_vertex>', '#include <project_vertex>\nvec4 wp4 = modelMatrix * vec4(transformed, 1.0); vWY = wp4.y; vWP = wp4.xyz;');
-        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;\nuniform vec3 uRim; uniform vec3 uCool; uniform float uHaze; uniform vec4 uMz; uniform vec4 uBm;')
-            .replace('#include <aomap_fragment>', '#include <aomap_fragment>\n' + (ao ? 'float gAO = mix(0.42, 1.0, smoothstep(0.0, 1.5, vWY));\nreflectedLight.indirectDiffuse *= gAO; reflectedLight.indirectSpecular *= gAO; reflectedLight.directDiffuse *= mix(0.75, 1.0, gAO);\n' : '') + 'reflectedLight.indirectDiffuse *= uCool;')
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vWY; varying vec3 vWP;\nuniform vec3 uRim; uniform vec3 uCool; uniform float uHaze; uniform vec4 uMz; uniform vec4 uBm; uniform vec3 uGS; uniform vec3 uGH; uniform float uSat;')
+            .replace('#include <aomap_fragment>', '#include <aomap_fragment>\n' + (ao ? 'float gAO = mix(0.3, 1.0, smoothstep(0.0, 2.1, vWY));\nreflectedLight.indirectDiffuse *= gAO; reflectedLight.indirectSpecular *= gAO; reflectedLight.directDiffuse *= mix(0.62, 1.0, gAO);\n' : '') + 'reflectedLight.indirectDiffuse *= uCool;')
             .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nfloat rimF = 1.0 - abs(dot(normal, normalize(vViewPosition)));\ntotalEmissiveRadiance += uRim * rimF * rimF * rimF;\nif (uMz.w + uBm.w > 0.001) { vec3 dm = vWP - uMz.xyz, db = vWP - uBm.xyz; totalEmissiveRadiance += diffuseColor.rgb * (vec3(1.0, 0.76, 0.42) * (uMz.w / (1.0 + dot(dm, dm) * 0.09)) + vec3(1.0, 0.5, 0.2) * (uBm.w / (1.0 + dot(db, db) * 0.012))); }')
-            .replace('#include <fog_fragment>', '#ifdef USE_FOG\nfloat fogF = smoothstep(fogNear, fogFar, vFogDepth);\nfogF = clamp(fogF * (1.0 + uHaze * exp(-max(vWY, 0.0) * 0.12)), 0.0, 1.0);\ngl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);\n#endif');
+            .replace('#include <fog_fragment>', '{ float gLum = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114)); gl_FragColor.rgb *= mix(uGS, uGH, smoothstep(0.05, 0.75, gLum)); gl_FragColor.rgb = mix(vec3(gLum), gl_FragColor.rgb, uSat); }\n#ifdef USE_FOG\nfloat fogF = smoothstep(fogNear, fogFar, vFogDepth);\nfogF = clamp(fogF * (1.0 + uHaze * exp(-max(vWY, 0.0) * 0.12)), 0.0, 1.0);\ngl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);\n#endif');
     };
     m.customProgramCacheKey = () => ao ? 'worldAO' : 'worldFlat';
 }

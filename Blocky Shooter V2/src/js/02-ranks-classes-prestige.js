@@ -175,7 +175,7 @@ let isReloading = false, reloadTimer = 0, reloadTotal = 1, reloadStyle = 'mag', 
 let camera, scene, renderer, controls, viewScene, weaponCam;
 let hemi, sun, viewHemi, viewSun, viewFill, vmLight, muzzleLight = null;
 // shared shader inputs for the cheap lighting extras (rim light, cool shadows, ground haze) - set per theme
-const LIGHT_U = { uRim: { value: new THREE.Color() }, uRimE: { value: new THREE.Color() }, uCool: { value: new THREE.Color(1, 1, 1) }, uHaze: { value: 0.35 },
+const LIGHT_U = { uRim: { value: new THREE.Color() }, uRimE: { value: new THREE.Color() }, uCool: { value: new THREE.Color(1, 1, 1) }, uHaze: { value: 0.35 }, uGS: { value: new THREE.Color(1, 1, 1) }, uGH: { value: new THREE.Color(1, 1, 1) }, uSat: { value: 1 },
                    // fake dynamic lights for tiers with no real point lights: xyz = world position, w = strength (muzzle / explosion)
                    uMz: { value: new THREE.Vector4(0, 0, 0, 0) }, uBm: { value: new THREE.Vector4(0, 0, 0, 0) } };
 let boomLights = [], lampLights = [];

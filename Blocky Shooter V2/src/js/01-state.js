@@ -25,6 +25,15 @@ const life = Object.assign({ xp: undefined, runs: 0, kills: 0, headshots: 0, bos
 if (!life.cls || typeof life.cls !== 'object') life.cls = {};      // 4.0: { assault: { runs, kills, best } ... } - older saves start at zero
 if (!life.maps || typeof life.maps !== 'object') life.maps = {};    // 4.0: { mall: { runs, waves, best } ... } - older saves start at zero
 if (life.xp === undefined) life.xp = Math.round((life.kills || 0) * 10 + (life.waves || 0) * 60);   // earlier play counts toward your rank
+// 5.0 round 2: Riot Breaker became Zombie Hound and Blighter became Shocker. Anything saved under the old ids (stats, seen-lists,
+// kill counts, bestiary) moves to the new ones, so old saves keep their progress.
+const ENEMY_ID_MIGRATE = { riot: 'hound', blighter: 'shocker' };
+const migEnemyIds = (o) => {
+    if (Array.isArray(o)) return [...new Set(o.map(x => ENEMY_ID_MIGRATE[x] || x))];
+    if (o && typeof o === 'object') for (const k in ENEMY_ID_MIGRATE) if (k in o) { const n = ENEMY_ID_MIGRATE[k]; o[n] = typeof o[k] === 'number' ? (o[n] || 0) + o[k] : (o[n] || o[k]); delete o[k]; }
+    return o;
+};
+for (const k in life) if (life[k] && typeof life[k] === 'object' && !Array.isArray(life[k])) { migEnemyIds(life[k]); for (const k2 in life[k]) if (life[k][k2] && typeof life[k][k2] === 'object' && !Array.isArray(life[k][k2])) migEnemyIds(life[k][k2]); }
 if (settings.quality === 'medium') settings.quality = 'normal';
 
 
@@ -174,9 +183,9 @@ const enemyTypes = {
     acolyte:  { id: 'acolyte',  name: 'Acolyte',  color: 0x4c1d95, hp: 2.2, speed: 0,    scale: 1.05, reward: 2,   damage: 0,  ai: 'acolyte', eye: 0xc4b5fd, minLvl: 999, fixed: true, drops: [0.3, 25, 0.3, 40] },
     risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] },
     // ---- 5.0: three new zombies and the campaign's final boss ----
-    riot:     { solo: true, id: 'riot',     name: 'Riot Breaker', color: 0x475569, hp: 2.4, speed: 0.7, scale: 1.2, reward: 3, damage: 18, ai: 'riot', eye: 0xfb923c, minLvl: 7, cap: 2, shieldHp: 260, intel: 'Heavy riot gear and a big shield that soaks up bullets from the front - until it cracks. Break the shield (or flank it) and it rips the shield off and sprints at you. It rams with the shield, so sidestep.', drops: [0.3, 30, 0.3, 55] },
-    crawler:  { solo: true, id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
-    blighter: { solo: true, id: 'blighter', name: 'Blighter', color: 0x65a30d, hp: 1.4, speed: 0.7, scale: 1.05, reward: 3.5, damage: 8, ai: 'blighter', eye: 0xbef264, minLvl: 9, cap: 2, intel: 'Lobs toxic canisters that burst into a lingering poison cloud, aimed ahead of where you are running. It does not hurt much, but it shuts down areas: do not stand in the green.', drops: [0.3, 30, 0.2, 45] },
+    hound:    { id: 'hound',    name: 'Zombie Hound', color: 0x8b6b4a, hp: 0.5, speed: 1.55, scale: 0.8, reward: 1.2, damage: 9, ai: 'hound', eye: 0xff4d4d, minLvl: 6, cap: 8, intel: 'Rabid zombie dogs that hunt in packs of 3-4. They circle you, then lunge from different sides at different times. Fast but fragile: keep your back to a wall and shoot them as they leap.', drops: [0.06, 10, 0.08, 15] },
+    crawler:  { id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
+    shocker:  { id: 'shocker',  name: 'Shocker', color: 0x38bdf8, glow: 0x0c4a6e, hp: 1.5, speed: 0.8, scale: 1.05, reward: 3.5, damage: 9, ai: 'shocker', eye: 0x7dd3fc, minLvl: 9, cap: 2, intel: 'An electrified zombie. It arcs a shock shield onto nearby zombies (they take far less damage while linked), and its zap JAMS your gun for a moment. Kill the Shocker first: the link breaks and it dies in an EMP burst.', drops: [0.3, 30, 0.2, 45] },
     zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',
                 title: 'THE FIRST TO FALL', tip: 'Spits toxic globs that leave poison pools, sweeps shockwaves you must JUMP, and burrows under you to burst out. Enraged: its toxic nova has a safe hole in the middle.' }
 };
@@ -184,30 +193,30 @@ const BOSS_IDS = Object.keys(enemyTypes).filter(k => enemyTypes[k].boss);
 
 
 const THEMES = {
-    night:  { name: 'MIDNIGHT', bright: 0, top: 0x02040c, horizon: 0x1c2048, bottom: 0x05050a, fog: 0x151a33, fogNear: 30, fogFar: 175,
-              sunDir: [-0.45, 0.62, -0.64], sunColor: 0xb4c4ff, sunInt: 1.4, disc: 0xe6ecff, discSize: 0.9993, glow: 0.25,
-              hemiSky: 0x8a9ce0, hemiGround: 0x3a3450, hemiInt: 1.6, envInt: 0.7, exposure: 1.45, stars: true,
-              neon: 0x6d5cff, lamp: 0xffc47a, lampPool: 0.5, floor: 0x2c3048 },
-    sunset: { name: 'SUNSET', bright: 0.55, top: 0x1d2a66, horizon: 0xff8a50, bottom: 0x2a1a2a, fog: 0xa8645a, fogNear: 35, fogFar: 200,
-              sunDir: [0.85, 0.16, -0.5], sunColor: 0xffa860, sunInt: 3.0, disc: 0xffd29a, discSize: 0.9985, glow: 0.9,
-              hemiSky: 0xffb48a, hemiGround: 0x4b3450, hemiInt: 1.2, envInt: 0.8, exposure: 1.05, stars: false,
-              neon: 0xff4fa3, lamp: 0xffb070, lampPool: 0.22, floor: 0x6e5c64 },
-    day:    { name: 'DAYBREAK', bright: 1, top: 0x2f6fd0, horizon: 0xcfe2f5, bottom: 0x3c4250, fog: 0xa9c6e4, fogNear: 45, fogFar: 230,
-              sunDir: [0.35, 0.82, 0.45], sunColor: 0xfff0d8, sunInt: 3.0, disc: 0xffffff, discSize: 0.9992, glow: 0.6,
-              hemiSky: 0xc4dcff, hemiGround: 0x5f5a55, hemiInt: 1.2, envInt: 1.0, exposure: 0.9, stars: false,
-              neon: 0x22d3ee, lamp: 0xfff2cc, lampPool: 0.05, floor: 0x8a8f9c },
-    bloodmoon: { name: 'BLOOD MOON', bright: 0, top: 0x0a0204, horizon: 0x4a0d12, bottom: 0x080203, fog: 0x2a0a0e, fogNear: 25, fogFar: 160,
-              sunDir: [0.3, 0.55, -0.78], sunColor: 0xff7a6a, sunInt: 1.6, disc: 0xff3b2f, discSize: 0.9975, glow: 0.9,
-              hemiSky: 0xd07878, hemiGround: 0x3a1a20, hemiInt: 1.4, envInt: 0.6, exposure: 1.4, stars: true,
-              neon: 0xff2a2a, lamp: 0xff8a5a, lampPool: 0.45, floor: 0x3a2a30 },
-    storm:  { name: 'STORM', bright: 0.45, top: 0x262c35, horizon: 0x5a626e, bottom: 0x1e2227, fog: 0x4a525c, fogNear: 18, fogFar: 125,
-              sunDir: [0.2, 0.8, 0.3], sunColor: 0xc8d4e4, sunInt: 0.9, disc: 0x9aa4b0, discSize: 0.99995, glow: 0.05,
-              hemiSky: 0xb4c0d0, hemiGround: 0x3a3e44, hemiInt: 1.6, envInt: 0.7, exposure: 1.2, stars: false,
-              neon: 0x60a5fa, lamp: 0xffe2b0, lampPool: 0.3, floor: 0x4a505c, rain: true, lightning: true },
-    neon:   { name: 'NEON NIGHTS', bright: 0, top: 0x0a0418, horizon: 0x6a1a6e, bottom: 0x06020c, fog: 0x1d0b2e, fogNear: 30, fogFar: 170,
-              sunDir: [0, 0.12, -1], sunColor: 0xff7ad9, sunInt: 1.7, disc: 0xff4fb0, discSize: 0.996, glow: 1.3,
-              hemiSky: 0x9b7bff, hemiGround: 0x30104a, hemiInt: 1.4, envInt: 0.8, exposure: 1.35, stars: true,
-              neon: 0x22e5ff, lamp: 0xff4fd8, lampPool: 0.55, floor: 0x2a1f44 }
+    night:  { name: 'MIDNIGHT', bright: 0, top: 0x03061c, horizon: 0x2c3280, bottom: 0x05050a, fog: 0x151a33, fogNear: 30, fogFar: 175,
+              sunDir: [-0.45, 0.62, -0.64], sunColor: 0xb4c4ff, sunInt: 1.9, disc: 0xe6ecff, discSize: 0.9993, glow: 0.25,
+              hemiSky: 0x8a9ce0, hemiGround: 0x2a2a62, hemiInt: 1.2, envInt: 0.7, exposure: 1.45, stars: true,
+              neon: 0x6d5cff, lamp: 0xffc47a, lampPool: 0.85, floor: 0x2c3048, grade: [[0.88, 0.94, 1.16], [1.06, 1.0, 0.9], 1.1] },
+    sunset: { name: 'SUNSET', bright: 0.55, top: 0x2a2478, horizon: 0xff7a40, bottom: 0x2a1a2a, fog: 0xa8645a, fogNear: 35, fogFar: 200,
+              sunDir: [0.85, 0.16, -0.5], sunColor: 0xffa860, sunInt: 3.7, disc: 0xffd29a, discSize: 0.9985, glow: 0.9,
+              hemiSky: 0xffb48a, hemiGround: 0x5e2a5c, hemiInt: 0.9, envInt: 0.8, exposure: 1.05, stars: false,
+              neon: 0xff4fa3, lamp: 0xffb070, lampPool: 0.42, floor: 0x6e5c64, grade: [[0.9, 0.88, 1.14], [1.12, 1.0, 0.86], 1.14] },
+    day:    { name: 'DAYBREAK', bright: 1, top: 0x1f5fcc, horizon: 0xe0ecf8, bottom: 0x3c4250, fog: 0xa9c6e4, fogNear: 45, fogFar: 230,
+              sunDir: [0.35, 0.82, 0.45], sunColor: 0xfff0d8, sunInt: 3.6, disc: 0xffffff, discSize: 0.9992, glow: 0.6,
+              hemiSky: 0xc4dcff, hemiGround: 0x4f6046, hemiInt: 0.95, envInt: 1.0, exposure: 0.9, stars: false,
+              neon: 0x22d3ee, lamp: 0xfff2cc, lampPool: 0.14, floor: 0x8a8f9c, grade: [[0.93, 0.98, 1.08], [1.05, 1.02, 0.95], 1.1] },
+    bloodmoon: { name: 'BLOOD MOON', bright: 0, top: 0x0a0204, horizon: 0x6a1018, bottom: 0x080203, fog: 0x2a0a0e, fogNear: 25, fogFar: 160,
+              sunDir: [0.3, 0.55, -0.78], sunColor: 0xff7a6a, sunInt: 2.1, disc: 0xff3b2f, discSize: 0.9975, glow: 0.9,
+              hemiSky: 0xd07878, hemiGround: 0x4e1418, hemiInt: 1.1, envInt: 0.6, exposure: 1.4, stars: true,
+              neon: 0xff2a2a, lamp: 0xff8a5a, lampPool: 0.75, floor: 0x3a2a30, grade: [[1.06, 0.86, 0.9], [1.1, 0.95, 0.9], 1.1] },
+    storm:  { name: 'STORM', bright: 0.45, top: 0x262c35, horizon: 0x6c7888, bottom: 0x1e2227, fog: 0x4a525c, fogNear: 18, fogFar: 125,
+              sunDir: [0.2, 0.8, 0.3], sunColor: 0xc8d4e4, sunInt: 1.3, disc: 0x9aa4b0, discSize: 0.99995, glow: 0.05,
+              hemiSky: 0xb4c0d0, hemiGround: 0x2c3a4a, hemiInt: 1.3, envInt: 0.7, exposure: 1.2, stars: false,
+              neon: 0x60a5fa, lamp: 0xffe2b0, lampPool: 0.55, floor: 0x4a505c, rain: true, lightning: true, grade: [[0.92, 0.98, 1.07], [1.0, 1.0, 1.03], 0.94] },
+    neon:   { name: 'NEON NIGHTS', bright: 0, top: 0x0a0418, horizon: 0x8a1f86, bottom: 0x06020c, fog: 0x1d0b2e, fogNear: 30, fogFar: 170,
+              sunDir: [0, 0.12, -1], sunColor: 0xff7ad9, sunInt: 2.1, disc: 0xff4fb0, discSize: 0.996, glow: 1.3,
+              hemiSky: 0x9b7bff, hemiGround: 0x3c1260, hemiInt: 1.1, envInt: 0.8, exposure: 1.35, stars: true,
+              neon: 0x22e5ff, lamp: 0xff4fd8, lampPool: 0.85, floor: 0x2a1f44, grade: [[0.95, 0.85, 1.2], [1.1, 0.95, 1.1], 1.18] }
 };
 
 

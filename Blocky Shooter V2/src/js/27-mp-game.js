@@ -5,9 +5,9 @@ function netAiTargets(localT) {
     if (!NET.pvp) for (const p of netPlayers.values()) if (p.tgt.feet > -50) _targets.push(p.tgt);
     return _targets;
 }
-function netSendDamage(pid, amount, from, kb, by) {
+function netSendDamage(pid, amount, from, kb, by, jam) {
     const p = netPlayers.get(pid); if (!p) return;
-    sendRel(p.peer, { t: 'd', a: r2(amount), f: from ? [r2(from.x), r2(from.z)] : null, kb: kb ? kb.map(r2) : undefined, by });
+    sendRel(p.peer, { t: 'd', a: r2(amount), f: from ? [r2(from.x), r2(from.z)] : null, kb: kb ? kb.map(r2) : undefined, by, jam: jam || undefined });
 }
 function hostApplyHits(pid, list) {
     if (!Array.isArray(list)) return;
@@ -37,6 +37,7 @@ function netPlayFx(m) {
         spawnParticles(new V3(p.x, p.y + 0.2, p.z), 0x9ca3af, 12, 6, 0.7, 0.3, true, { grav: 6, drag: 2, jitter: m.r * 0.5 });
         sfxAt('slam', camera.position.distanceTo(p));
     }
+    else if (m.k === 'emp') empBurst(p, clamp(+m.r || 6, 2, 12));
     // 4.0 classes: a teammate's Healing Field (heals you here when you stand in it) and Recon UPLINK marks
     else if (m.k === 'heal' && !NET.pvp) {
         addHealField(p.x, p.y, p.z, clamp(+m.r || 6, 2, 12), clamp(+m.d || 8, 1, 15), clamp(+m.h || 8, 0, 20), clamp(+m.a || 0, 0, 10), false);
@@ -64,15 +65,15 @@ function netExplodeRemotes(pos, damage, radius, by) {
         if (d < radius) netSendDamage(p.id, damage * (1 - 0.8 * d / radius), pos, [0, 9 * (1 - d / radius), 0], by);
     }
 }
-// one binary packet with every enemy: 13 bytes each (id, type, state, position, facing, health, target)
+// one binary packet with every enemy: 14 bytes each (id, type, state, position, facing, health, target, extra bits: 1 = linked to a Shocker, 2 = enraged)
 function hostEnemySnapshot(now) {
     const list = enemies, n = Math.min(list.length, 150);
-    const buf = new ArrayBuffer(13 + n * 13), dv = new DataView(buf);
+    const buf = new ArrayBuffer(13 + n * 14), dv = new DataView(buf);
     dv.setUint8(0, 1); dv.setFloat64(1, now); dv.setUint16(9, playerStats.level); dv.setUint16(11, n);
     let o = 13;
-    for (let i = 0; i < n; i++, o += 13) {
+    for (let i = 0; i < n; i++, o += 14) {
         const e = list[i], u = e.userData;
-        const st = Math.max(0, E_STATES.indexOf(u.state));
+        const st = Math.max(0, E_STATES.indexOf(u.hidden ? 'hidden' : u.state));
         dv.setUint16(o, u.netId); dv.setUint8(o + 2, ENEMY_IDS.indexOf(u.config.id));
         dv.setUint8(o + 3, st | (u.onGround ? 16 : 0) | (u.leaping ? 32 : 0) | (u.fuse >= 0 ? 64 : 0) | (u.shielded ? 128 : 0));
         dv.setInt16(o + 4, clamp(Math.round(e.position.x * 32), -32767, 32767));
@@ -82,13 +83,14 @@ function hostEnemySnapshot(now) {
         dv.setUint8(o + 10, Math.round(r * 256) & 255);
         dv.setUint8(o + 11, Math.round(clamp(u.hp / u.maxHp, 0, 1) * 255));
         dv.setUint8(o + 12, u.tgt ? (u.tgt.id & 255) : 255);
+        dv.setUint8(o + 13, (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead ? 1 : 0) | (u.phase2 ? 2 : 0));
     }
     for (const p of netPlayers.values()) sendFast(p.peer, buf);
 }
 
 
 // ---------- GUEST: enemies are copies of the host's ----------
-const _ev = [0, 0, 0, 0];
+const _ev = [0, 0, 0, 0], _ev0 = new V3();
 function netSpawnRemoteEnemy(id, typeId, x, y, z) {
     const cfg = enemyTypes[typeId] || enemyTypes.grunt;
     const e = createEnemy(cfg);
@@ -139,7 +141,11 @@ function netUpdateEnemies(dt) {
         const sp = Math.hypot(e.position.x - ox, e.position.z - oz) / Math.max(dt, 1e-3);
         const fl = u.net.fl, cfg = u.config;
         u.state = E_STATES[fl & 15] || 'walk'; u.onGround = !!(fl & 16); u.leaping = !!(fl & 32); u.shielded = !!(fl & 128);
-        e.visible = u.state !== 'cloak';
+        e.visible = !(u.state === 'cloak' || u.state === 'hidden' || u.state === 'burrow' || u.state === 'erupt');      // cloaked Phantom, Vent Crawler in its vent, Patient Zero underground
+        if (u.state === 'hidden' && cfg.ai === 'crawler' && (u.rattleT = (u.rattleT || 0) - dt) <= 0) {      // the vent rattles for everyone, not just the host
+            u.rattleT = 1.4 + Math.random() * 1.6; const hd = Math.hypot(camera.position.x - e.position.x, camera.position.z - e.position.z);
+            if (hd < 24) { sfxAt('thud', hd); spawnParticles(_ev0.set(e.position.x, e.position.y + 0.15, e.position.z), 0x9ca3af, 2, 1.5, 0.4, 0.1, true, { grav: 4 }); }
+        }
         if (u.bubble) { u.bubble.visible = u.shielded; u.bubble.material.opacity = 0.16 + 0.08 * Math.sin(gameTime * 5); }
         if (u.flash > 0) { u.flash -= dt; if (u.flash <= 0) { u.mat.emissive.setHex(u.baseEmissive); u.mat.emissiveIntensity = u.baseEmissiveI; } }
         // animation from how fast it's actually sliding along
@@ -152,6 +158,9 @@ function netUpdateEnemies(dt) {
         if (cfg.ai === 'ranged' || cfg.ai === 'medic') { u.armL.rotation.x = -sw; u.armR.rotation.x = sw; }
         else if (cfg.ai === 'marksman') { const aim = u.state === 'aim'; u.armR.rotation.x = aim ? -Math.PI / 2 : -0.4; u.armL.rotation.x = aim ? -1.3 : -sw; u.armL.rotation.z = aim ? -0.5 : 0; }
         else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
+        else if (cfg.ai === 'hound') houndPose(u, sw);
+        else if (cfg.ai === 'crawler') { u.armL.rotation.x = -2.3 + sw * 0.5; u.armR.rotation.x = -2.3 - sw * 0.5; }
+        else if (cfg.ai === 'shocker') { if (u.state === 'zap') { u.armL.rotation.x = u.armR.rotation.x = -1.45; u.zapT = gameTime + 0.1; } else zombieArms(u, reach, sw); }
         else if (u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
         else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }
         else if (cfg.ai === 'acolyte') acolytePose(u);
@@ -162,6 +171,8 @@ function netUpdateEnemies(dt) {
         else if (u.leaping) { u.armL.rotation.x = u.armR.rotation.x = -2.6; }
         else zombieArms(u, reach, sw);
         if (cfg.ai === 'pyro' && Math.random() < 0.4) spawnParticles(new V3(e.position.x, e.position.y + 3.1 * cfg.scale, e.position.z), Math.random() < 0.5 ? 0xff6a1f : 0xffd24d, 1, 2.5, 0.5, 0.35 * cfg.scale, false, { grav: -6 });
+        if (u.arcs) shockerTick(e, u, dt, true);
+        if (cfg.ai === 'zero') { if (u.extra) u.extra.scale.setScalar(1 + Math.sin(gameTime * 4) * 0.1); if (e.visible && Math.random() < 0.4) spawnParticles(_ev0.set(e.position.x, e.position.y + 2.8 * cfg.scale, e.position.z), 0xa3e635, 1, 2, 0.6, 0.3 * cfg.scale, false, { grav: -3 }); }
         if (u.extra && (cfg.ai === 'brood' || cfg.ai === 'pyro')) u.extra.scale.setScalar(1 + Math.sin(gameTime * 6) * 0.13);
         if (u.state === 'stun') u.head.rotation.y = Math.sin(gameTime * 14) * 0.4; else { u.head.rotation.y = 0; zombieHead(u); }
         if (cfg.ai === 'bomber' && u.extra) u.extra.visible = !(fl & 64) || Math.floor(gameTime * 20) % 2 === 0;

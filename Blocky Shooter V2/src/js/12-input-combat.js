@@ -80,6 +80,21 @@ function updateGunModel() {
     cancelReload();
     showWeaponModel(playerStats.currentWeapon);
 }
+// 5.0 Shocker: its zap (or its EMP death burst) JAMS your gun: no firing, a reload in progress is cancelled, the HUD says JAMMED
+let jamT = 0;
+function jamGun(t) {
+    if (currentHp <= 0) return;
+    const was = jamT > 0;
+    jamT = Math.max(jamT, t);
+    cancelReload(); burstLeft = 0;
+    ui.txtReloading.textContent = 'JAMMED!'; ui.txtReloading.style.color = '#7dd3fc'; ui.txtReloading.classList.remove('hidden');
+    if (!was) { sfx('dry'); shake = Math.max(shake, 0.25); }
+}
+function tickJam(dt) {
+    if (jamT <= 0) return;
+    jamT -= dt;
+    if (jamT <= 0 || currentHp <= 0) { jamT = 0; ui.txtReloading.textContent = 'RELOADING...'; ui.txtReloading.style.color = ''; ui.txtReloading.classList.add('hidden'); }
+}
 function cancelReload() { isReloading = false; reloadTimer = 0; reloadEnding = 0; ui.txtReloading.classList.add('hidden'); }
 
 
@@ -95,7 +110,7 @@ function startSlide() {
 
 
 function triggerReload() {
-    if (isReloading || currentHp <= 0) return;
+    if (isReloading || currentHp <= 0 || jamT > 0) return;
     const id = playerStats.currentWeapon, w = W(id);
     if (w.melee || ammoState[id] >= w.magSize) return;
     if (railC > 0) railCancel();
@@ -171,7 +186,7 @@ function currentSpread(w) {
 
 
 function canShoot() {
-    return currentGameState === 'playing' && currentHp > 0 && vm.raise > 0.75 && vm.sprint < 0.5 && !(vm.melee > 0);
+    return currentGameState === 'playing' && currentHp > 0 && jamT <= 0 && vm.raise > 0.75 && vm.sprint < 0.5 && !(vm.melee > 0);
 }
 function weaponTick(dt) {
     const id = playerStats.currentWeapon, w = W(id);
@@ -183,6 +198,7 @@ function weaponTick(dt) {
     } else spinT = 0;
     heat = Math.max(0, heat - dt * (isMouseDown ? 2 : 7));
     if (meleeCd > 0) meleeCd -= dt;
+    if (jamT > 0) tickJam(dt);
     if (isReloading) tickReload(dt);
     if (reloadEnding > 0) reloadEnding = Math.max(0, reloadEnding - dt);
     if (burstLeft > 0 && gameTime >= nextBurstAt) {

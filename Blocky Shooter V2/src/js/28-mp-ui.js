@@ -222,5 +222,15 @@ window.addEventListener('beforeunload', () => { if (NET.on) netSend({ t: 'bye' }
 Object.assign(window.__blocky, {
     get NET() { return NET; }, get netPlayers() { return netPlayers; },
     netRevive: () => netRespawn(spawnPt, maxHp),
-    netDead: () => NET.dead
+    netDead: () => NET.dead,
+    // test hooks for the 5.0 enemies in co-op (a page can be both the host that writes a snapshot and the guest that reads it)
+    mpTest: {
+        netMessage: (m) => netMessage(NET.hostPeer || {}, m), netBinary: (b) => netBinary(NET.hostPeer, b), snapshot: (now) => hostEnemySnapshot(now),
+        updateGuest: (dt) => netUpdateEnemies(dt), E_STATES, ENEMY_IDS, jamT: () => jamT, jamGun: (t) => jamGun(t), tickJam: (dt) => tickJam(dt),
+        spawnPack: (x, z) => { const e = spawnEnemy(enemyTypes.hound, x, z, groundAt(x, z, 0, 50) + 0.1, 4, 10); spawnHoundPack(e, x, z, groundAt(x, z, 0, 50) + 0.1, 4, 10); return e; },
+        emp: (c, r) => empBurst(c, r), canShoot: () => canShoot(), reloading: () => isReloading, reload: () => triggerReload(), setAmmo: (n) => { ammoState[playerStats.currentWeapon] = n; },
+        life: () => life, mig: (x) => migEnemyIds(x), spawnWave: () => spawnWave(), waveInfo: () => ({ lvl: playerStats.level, bosses: waveBosses(playerStats.level) }),
+        dropAll: () => { enemies.forEach(e => { scene.remove(e); disposeEnemy(e); }); enemies.length = 0; enemyById.clear(); },
+        damage: (e, n) => damageEnemy(e, n, false, null), gameTime: () => gameTime, hold: () => { waveActive = true; intermission = 0; }, playFx: (m) => netPlayFx(m), enemyById: (id) => enemyById.get(id)
+    }
 });

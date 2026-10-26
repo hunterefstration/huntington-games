@@ -440,6 +440,7 @@ function applyTheme(id) {
     LIGHT_U.uRim.value.copy(sky).multiplyScalar(0.05 + 0.04 * (1 - theme.bright));
     LIGHT_U.uRimE.value.copy(sky).lerp(new THREE.Color(theme.neon), 0.35).multiplyScalar(0.34 - 0.16 * theme.bright);
     LIGHT_U.uHaze.value = theme.rain ? 0.55 : 0.35;
+    if (theme.grade) { LIGHT_U.uGS.value.fromArray(theme.grade[0]); LIGHT_U.uGH.value.fromArray(theme.grade[1]); LIGHT_U.uSat.value = theme.grade[2]; }
 
 
     if (envRT) envRT.dispose();

@@ -130,6 +130,7 @@ function netBossFx(m) {
     else if (m.k === 'haz') bossHazard(p[0], p[1], p[2], m.r, 0, m.d, m.c, '', false);
     else if (m.k === 'wave') bossWave(p[0], p[1], p[2], m.r, m.sp, 0, m.c, '', false);
     else if (m.k === 'shot' && m.o) bossShot(new V3(p[0], p[1], p[2]), new V3(m.v[0], m.v[1], m.v[2]), m.o, false);
+    else if (m.k === 'msg') toast(String(m.n).slice(0, 60), m.c || '#ffffff', clamp(+m.d || 1.6, 0.5, 4));
     else if (m.k === 'rage') toast(`${String(m.n).slice(0, 30).toUpperCase()} IS ENRAGED!`, m.c || '#f87171', 2.2);
 }
 // a spot near (cx, cz) between minD and maxD away that's on the map: [x, y, z]
@@ -152,6 +153,73 @@ function bossMinion(id, cx, cz, cy, minD, maxD) {
     spawnParticles(new V3(sp[0], sp[1] + 1, sp[2]), enemyTypes[id].eye || 0xffffff, 10, 5, 0.6, 0.15);
     return e;
 }
+// ---------- 5.0 SHOCKER + HOUND helpers (shared by the host's AI and the guests' copies) ----------
+const _shA = new V3(), _shB = new V3(), _shM = new V3(), _shD = new V3();
+function arcSeg(m, a, b, w) {
+    _shD.subVectors(b, a); const len = _shD.length();
+    if (len < 0.01) { m.visible = false; return; }
+    m.visible = true; m.position.lerpVectors(a, b, 0.5); m.quaternion.setFromUnitVectors(_Z, _shD.multiplyScalar(1 / len)); m.scale.set(w, w, len);
+}
+// The Shocker's shock shield: every 0.4 s it links the 3 nearest zombies within 10 m (they take reduced damage while linked, see damageEnemy);
+// the links are drawn as zigzag lightning every frame. Guests don't decide links: they draw them to the zombies the host flagged as linked.
+function shockerTick(e, u, dt, guest) {
+    const L = u.links;
+    if ((u.linkT = (u.linkT || 0) - dt) <= 0) {
+        u.linkT = guest ? 0.3 : 0.4; L.length = 0;
+        for (const o of enemies) {
+            const ou = o.userData;
+            if (o === e || ou.dead || ou.hidden || ou.config.boss || ou.config.ai === 'shocker' || ou.config.ai === 'egg' || ou.config.ai === 'acolyte' || !o.visible) continue;
+            if (guest && !(ou.net && (ou.net.x & 1))) continue;
+            const d = Math.hypot(o.position.x - e.position.x, o.position.z - e.position.z);
+            if (d > 10.5 || Math.abs(o.position.y - e.position.y) > 5) continue;
+            ou._ld = d;
+            let k = L.length; if (k < 3) L.push(o); else if (d < L[2].userData._ld) k = 2; else continue;
+            while (k > 0 && L[k - 1].userData._ld > d) { L[k] = L[k - 1]; k--; }
+            L[k] = o;
+        }
+    }
+    const A = u.arcs; let k = 0;
+    if (e.visible && !u.dead) {
+        _shA.set(e.position.x, e.position.y + 2.3 * u.config.scale, e.position.z);
+        for (let i = 0; i < L.length; i++) {
+            const o = L[i], ou = o.userData; if (ou.dead || !o.parent) continue;
+            if (!guest) { ou.linkBy = e; ou.linkUntil = gameTime + 0.7; }
+            if (Math.random() < 0.45) ou.zapT = gameTime + 0.07;
+            _shB.set(o.position.x, o.position.y + ou.totalHeight * 0.55, o.position.z);
+            _shM.lerpVectors(_shA, _shB, 0.5); _shM.x += (Math.random() - 0.5) * 1.6; _shM.y += (Math.random() - 0.5) * 1.6; _shM.z += (Math.random() - 0.5) * 1.6;
+            arcSeg(A[k++], _shA, _shM, 0.06 + Math.random() * 0.05); arcSeg(A[k++], _shM, _shB, 0.06 + Math.random() * 0.05);
+        }
+    }
+    for (; k < 6; k++) A[k].visible = false;
+    if (u.zapT <= gameTime && Math.random() < dt * 2.5) u.zapT = gameTime + 0.09;       // the Shocker itself crackles now and then
+    if (u.extra) u.extra.scale.setScalar(0.8 + Math.random() * 0.5);
+}
+// an EMP burst: jams the gun of anyone close (each player's own computer works that out)
+function empBurst(c, r) {
+    spawnBlastFx(c, r, 0x7dd3fc, true, 0.5);
+    spawnParticles(c, 0xbae6fd, 18, 8, 0.6, 0.12, false, { grav: 0 });
+    const d = Math.hypot(camera.position.x - c.x, camera.position.z - c.z);
+    sfxAt('slam', d);
+    if (currentGameState === 'playing' && currentHp > 0 && d < r * 0.75 && Math.abs(feetY - c.y) < 4) { jamGun(0.5); toastOnce2('EMP BURST - GUN JAMMED'); }
+}
+let _empToast = 0;
+function toastOnce2(msg) { if (gameTime - _empToast > 1) { _empToast = gameTime; toast(msg, '#7dd3fc', 1.2); } }
+function shockerDied(e, u) {
+    if (u.arcs) for (const m of u.arcs) m.visible = false;
+    for (const o of enemies) { const ou = o.userData; if (ou.linkBy === e) { ou.linkBy = null; ou.linkUntil = 0; } }
+    const c = new V3(e.position.x, e.position.y + 1.4, e.position.z);
+    empBurst(c, 6);
+    if (NET.inGame) netSendFx('emp', c, 6, 0x7dd3fc);
+}
+// Hound legs: front legs hang from the hunched body (so they counter-rotate), gallop in bounds, crouch for the pounce, stretch out in the lunge
+function houndPose(u, sw) {
+    const h = u.kit.hunch;
+    if (u.state === 'windup') { u.armL.rotation.x = u.armR.rotation.x = -h - 0.9; u.legL.rotation.x = u.legR.rotation.x = -0.4; }
+    else if (u.state === 'charge' || !u.onGround) { u.armL.rotation.x = u.armR.rotation.x = -h - 1.5; u.legL.rotation.x = u.legR.rotation.x = 0.9; }
+    else { u.armL.rotation.x = -h + sw * 1.1; u.armR.rotation.x = -h + sw * 1.1; u.legL.rotation.x = -sw * 1.1; u.legR.rotation.x = -sw * 1.1; }
+}
+// shown on every screen: a short message from the host
+function bossToast(msg, color, dur) { toast(msg, color, dur); bossNet({ k: 'msg', n: msg, c: color, d: dur }); }
 // 5.0 vent crawlers: they start hidden; this pops one out of its vent and into a pounce
 function crawlerWake(e, dx, dz) {
     const u = e.userData; if (!u.hidden && u.state === 'pounce') return;
@@ -169,7 +237,7 @@ function bossHpMul(cfg) {
 // Which bosses come on this wave. The 7 newer bosses come in a random order that's fixed for the run
 // (from the run's seed, so a saved run meets the same bosses), after the Abomination opens on wave 5.
 function bossOrder() {
-    const ids = BOSS_IDS.filter(k => k !== 'boss' && !enemyTypes[k].campOnly);
+    const ids = BOSS_IDS.filter(k => k !== 'boss' && (!enemyTypes[k].campOnly || (NET.inGame && k === 'zero')));      // (Patient Zero is a Campaign finale, and joins the boss rotation in co-op)
     let x = (run.seed || 777) >>> 0;
     const rnd = () => (x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296;
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
@@ -217,7 +285,7 @@ function bossDefeated(cfg) {
 // Far-away ordinary zombies think less often (every 2nd / 3rd frame, with the time they missed added up), which
 // is invisible at that distance and cuts the AI + collision cost of a big wave. Anything that shoots, casts or is a boss always updates.
 let aiTick = 0;
-const LOD_FREE = { crawler: 1, blighter: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
+const LOD_FREE = { crawler: 1, hound: 1, shocker: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
 function updateEnemies(dtFrame) {
     const T = aiTargets();
     aiTick++;
@@ -376,35 +444,34 @@ function updateEnemies(dtFrame) {
                 }
                 break;
             }
-            case 'riot': {
-                // RIOT BREAKER: its shield soaks bullets from the front. Bash charge (wind-up, then a straight ram), then once the shield is broken it sprints in bare-handed.
+            case 'hound': {
+                // ZOMBIE HOUND: a pack circles you, each dog on its own side of the ring; they crouch, then lunge-bite one after another (staggered), then back off
                 u.aiT -= delta;
-                const sh = u.shieldHp > 0;
                 if (u.state === 'windup') {
-                    wantMove = false; u.stateT -= delta;
-                    if (u.stateT <= 0) { u.state = 'charge'; u.stateT = 0.85; u.cdir.set(dx / hd, 0, dz / hd); sfx('charge'); }
+                    wantMove = false; u.stateT -= delta; faceX = dx; faceZ = dz;
+                    if (u.stateT <= 0) { u.state = 'charge'; u.stateT = 0.55; u.cdir.set(dx / hd, 0, dz / hd); u.velocityY = 4.2; u.onGround = false; sfx('growl'); }
                 } else if (u.state === 'charge') {
                     custom = true; u.stateT -= delta;
-                    const st = 20 * delta;
+                    const st = 15 * delta;
                     enemy.position.x += u.cdir.x * st; enemy.position.z += u.cdir.z * st;
                     faceX = u.cdir.x; faceZ = u.cdir.z; u.walkPhase += st * 1.3 / cfg.scale;
-                    if (Math.random() < 0.4) spawnParticles(new V3(enemy.position.x, enemy.position.y + 0.1, enemy.position.z), 0x8a7f73, 1, 2, 0.5, 0.25, true, { grav: 3, drag: 2 });
-                    if (hd < u.radius + 1.3 && vGap < 2 && vGap > -u.totalHeight) {
-                        if (_aiT.local) { push.set(0, 0, 0); shake = Math.max(shake, 0.5); }
-                        hurtTarget(_aiT, cfg.damage * 1.4 * ld, enemy.position, [u.cdir.x * 13, 5, u.cdir.z * 13], 'a Riot Breaker shield bash');
-                        u.state = 'walk'; u.aiT = 5;
-                    } else if (u.stateT <= 0) { u.state = 'walk'; u.aiT = 4.5; }
-                } else if (u.state === 'stun') {
-                    wantMove = false; u.stateT -= delta;
-                    u.head.rotation.y = Math.sin(gameTime * 14) * 0.4;
-                    if (u.stateT <= 0) { u.state = 'walk'; u.head.rotation.y = 0; }
+                    if (hd < u.radius + 1.3 && vGap < 1.8 && vGap > -u.totalHeight) {
+                        hurtTarget(_aiT, cfg.damage * 1.25 * ld, enemy.position, [u.cdir.x * 5, 3, u.cdir.z * 5], 'a Zombie Hound bite');
+                        u.armSwing = 0.3; u.state = 'walk'; u.aiT = 2 + Math.random() * 1.4; u.backT = 0.7; sfx('hit');
+                    } else if (u.stateT <= 0) { u.state = 'walk'; u.aiT = 1.2 + Math.random() * 0.8; }
                 } else {
-                    spMul = sh ? 0.85 : 1.75;
-                    if (sh && u.aiT <= 0 && u.onGround && hd > 4.5 && hd < 15 && Math.abs(vGap) < 2.5) {
-                        if (losClear(enemy.position.x, enemy.position.y + 1.5, enemy.position.z, pos.x, pos.y - 0.6, pos.z)) { u.state = 'windup'; u.stateT = 0.8; sfx('growl'); }
-                        else u.aiT = 0.5;
+                    spMul = 1.1;
+                    if (u.backT > 0) { u.backT -= delta; mx = -mx; mz = -mz; }                      // just bit you: dart back out
+                    else if (hd < 15 && !u.navOn) {                                              // circle: head for this dog's own spot on the ring around you
+                        const ang = (u.packIdx || 0) / (u.packN || 1) * 6.2832 + gameTime * 0.6 * (u.packDir || 1), ring = hd < 6 ? 7.5 : 6.5;
+                        const cx = pos.x + Math.cos(ang) * ring - enemy.position.x, cz = pos.z + Math.sin(ang) * ring - enemy.position.z, cl = Math.hypot(cx, cz) || 1;
+                        mx = cx / cl; mz = cz / cl; faceX = dx; faceZ = dz;
                     }
-                    if (inMelee) { if (u.onGround) wantMove = false; if (decoy) hitTurret(decoy, u, cfg); else meleeHit(u, cfg, enemy, sh ? 1 : 1.25, [dx / hd * 9, 0, dz / hd * 9]); }
+                    if (u.aiT <= 0 && u.onGround && hd > 2.2 && hd < 10 && Math.abs(vGap) < 2.5) {
+                        if (losClear(enemy.position.x, enemy.position.y + 0.8, enemy.position.z, pos.x, pos.y - 0.6, pos.z)) { u.state = 'windup'; u.stateT = 0.4; sfx('growl'); }
+                        else u.aiT = 0.4;
+                    }
+                    if (inMelee && u.backT <= 0) meleeHit(u, cfg, enemy);
                 }
                 break;
             }
@@ -426,21 +493,27 @@ function updateEnemies(dtFrame) {
                 }
                 break;
             }
-            case 'blighter': {
-                // BLIGHTER: keeps its distance and lobs toxic canisters ahead of you; each one bursts into a lingering poison cloud (area denial)
-                if (hd < 11) { mx = -mx; mz = -mz; } else if (hd < 21) wantMove = false;
-                u.shootCooldown -= delta;
-                if (u.shootCooldown <= 0 && hd < 36 && u.onGround) {
-                    u.shootCooldown = 3.6 + Math.random() * 1.4;
-                    const from = bp(2.5), lead = _aiT.local ? 0.9 : 0;
-                    const tx = pos.x + (velocity.x || 0) * lead * (_aiT.local ? 1 : 0), tz = pos.z + (velocity.z || 0) * lead * (_aiT.local ? 1 : 0);
-                    const ty = groundAt(tx, tz, 0, pFeet + 2), T = 0.9 + hd * 0.02;
-                    const fire = { r: 3.4, dps: 9 * ld, t: 9, c: 0x84cc16 };
-                    bossTele(tx, ty, tz, fire.r, T, 0x84cc16, () => {});
-                    bossShot(from, lobVel(from, tx, ty, tz, T, 20), { c: 0x84cc16, s: 0.9, g: 20, life: T + 0.8, dmg: cfg.damage * ld, fire, by: "a Blighter's toxic cloud" });
-                    sfx('throw'); u.armSwing = 0.3;
+            case 'shocker': {
+                // SHOCKER: shuffles at you, arcs a shock shield onto zombies around it (see shockerTick) and, up close, zaps: damage + JAMS your gun
+                if (u.state === 'zap') {
+                    wantMove = false; u.stateT -= delta; faceX = dx; faceZ = dz;
+                    u.zapT = gameTime + 0.1;
+                    if (Math.random() < 0.6) spawnParticles(bp(1.2 + Math.random() * 1.6), 0x7dd3fc, 1, 3, 0.3, 0.07, false, { grav: 0 });
+                    if (u.stateT <= 0) {
+                        u.state = 'walk'; u.attackCooldown = 2.2; u.armSwing = 0.3;
+                        if (hd < 4.2 && Math.abs(vGap) < 2.5) {
+                            const from = bp(2.2), to = new V3(pos.x, pos.y - 0.5, pos.z);
+                            spawnTracer(from, to, 0x7dd3fc, 0.14, 0.22); spawnTracer(from, to, 0xffffff, 0.05, 0.14);
+                            if (NET.inGame) netSendTracer(from, to, 0x7dd3fc);
+                            sfx('laser');
+                            hurtTarget(_aiT, cfg.damage * ld, enemy.position, [dx / hd * 6, 3, dz / hd * 6], 'a Shocker zap', 0.7);
+                        }
+                    }
+                } else {
+                    spMul = 0.9;
+                    if (u.attackCooldown <= 0 && hd < 3.4 && u.onGround && Math.abs(vGap) < 2) { u.state = 'zap'; u.stateT = 0.4; sfx('beep'); }
                 }
-                if (inMelee) meleeHit(u, cfg, enemy);
+                shockerTick(enemy, u, delta, false);
                 break;
             }
             case 'zero': {
@@ -501,10 +574,10 @@ function updateEnemies(dtFrame) {
                         } else if (pick === 'burrow') {
                             u.state = 'burrow'; u.stateT = 3.4; u.shielded = true; enemy.visible = false; u.barShow = false;
                             spawnParticles(bp(1.2), 0x57534e, 18, 6, 0.7, 0.3, true, { grav: 8 }); sfx('slam');
-                            toast('PATIENT ZERO BURROWED - KEEP MOVING!', '#a3e635', 1.8);
+                            bossToast('PATIENT ZERO BURROWED - KEEP MOVING!', '#a3e635', 1.8);
                         } else {
                             u.state = 'nova'; u.stateT = 2.3; sfx('roar');
-                            toast('TOXIC NOVA - STAND IN THE HOLE!', '#a3e635', 2);
+                            bossToast('TOXIC NOVA - STAND IN THE HOLE!', '#a3e635', 2);
                             bossTele(c.x, c.y, c.z, 5, 2.2, 0x38bdf8, () => {});
                             bossTele(c.x, c.y, c.z, 16, 2.2, 0xa3e635, () => bossBlast(new V3(c.x, c.y + 0.4, c.z), 16, 38 * ld, 0xa3e635, "Patient Zero's toxic nova", { r: 2.6, dps: 9 * ld, t: 4, c: 0x84cc16 }, 5));
                             u.aiT = 2.4;
@@ -1014,8 +1087,8 @@ function updateEnemies(dtFrame) {
         if (cfg.ai === 'ranged' || cfg.ai === 'medic') { u.armL.rotation.x = -sw; u.armR.rotation.x = sw; }
         else if (cfg.ai === 'marksman') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.4; u.armL.rotation.x = u.state === 'aim' ? -1.3 : -sw; u.armL.rotation.z = u.state === 'aim' ? -0.5 : 0; }
         else if (cfg.ai === 'crawler') { u.armL.rotation.x = -2.3 + sw * 0.5; u.armR.rotation.x = -2.3 - sw * 0.5; }
-        else if (cfg.ai === 'blighter') { u.armL.rotation.x = u.armR.rotation.x = u.armSwing > 0 ? -2.2 : -1.2; }
-        else if (cfg.ai === 'shielder' || cfg.ai === 'riot') { u.armL.rotation.x = u.shieldHp > 0 || cfg.ai === 'shielder' ? -1.2 : reach * 0.8; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
+        else if (cfg.ai === 'hound') houndPose(u, sw);
+        else if (cfg.ai === 'shocker') { if (u.state === 'zap') u.armL.rotation.x = u.armR.rotation.x = -1.45; else zombieArms(u, reach, sw); }
         else if (cfg.ai === 'shielder') { u.armL.rotation.x = -1.2; u.armR.rotation.x = reach * 0.6 - sw * 0.25; }
         else if (cfg.boss && u.state === 'slam') { u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.9; }
         else if (cfg.ai === 'warlord') { u.armR.rotation.x = u.state === 'aim' ? -Math.PI / 2 : -0.45 - sw * 0.1; u.armL.rotation.x = -sw * 0.6; }

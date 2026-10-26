@@ -75,6 +75,13 @@
         @keyframes ddfade { 0% { opacity: 1; } 100% { opacity: 0; } }
 
 
+        /* 5.0: compact bottom-right cards on small screens so the gun and the cards don't fight over the corner */
+        @media (max-width: 1100px), (max-height: 640px) {
+            #hud-abil { width: 8.5rem !important; padding: 6px 8px !important; } #hud-sec { width: 9.5rem !important; padding: 6px 8px !important; } #hud-ammo-card { min-width: 118px !important; padding: 6px 10px !important; }
+            #hud-abil > div:nth-child(2), #hud-sec > div:nth-child(2) { font-size: 0.8rem; } #hud-weapon { font-size: 1rem !important; letter-spacing: 0.08em; }
+            #hud-ammo-current { font-size: 1.7rem !important; } #hud-ammo-max { font-size: 0.9rem !important; } #hud-slots { max-width: 330px !important; }
+        }
+        @media (max-width: 1400px) and (min-width: 1101px) { #hud-abil { width: 10rem !important; } #hud-sec { width: 11rem !important; } #hud-ammo-card { min-width: 150px !important; padding: 10px 14px !important; } }
         #hud-power { transition: opacity 0.2s; }
         .slot { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); color: #9ca3af; letter-spacing: 0.04em; }
         .slot.on { color: #fff; border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.14); }
@@ -163,3 +170,12 @@
         .logo-wrap { margin-bottom: 14px; }
         @media (max-height: 780px) { .logo .l1 { font-size: 58px; } .logo .l2 { font-size: 48px; } .logo .l3 { font-size: 30px; margin-top: 6px; } .home-btns .hbtn.cont { padding: 7px 14px; }  .home-btns { gap: 6px; } .hbtn.lg { padding: 9px 16px; font-size: 17px; } }
         @media (prefers-reduced-motion: reduce) { .mm-col, .home-btns > .hbtn { animation: none; } }
+
+/* 5.0: short screens (960x540 Chromebooks) - smaller bottom-right cards so the hip-pose gun clears them */
+@media (max-height: 600px) {
+    #hud-abil { width: 8.5rem !important; padding: 0.4rem 0.6rem !important; }
+    #hud-sec { width: 9rem !important; padding: 0.4rem 0.6rem !important; }
+    #hud-ammo-card { min-width: 130px !important; padding: 0.5rem 0.75rem !important; }
+    #hud-ammo-card #hud-weapon { font-size: 1.1rem !important; }
+    #hud-ammo-current { font-size: 1.9rem !important; }
+}

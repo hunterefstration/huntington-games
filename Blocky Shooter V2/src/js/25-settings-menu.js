@@ -114,12 +114,12 @@ function renderMenu() {
         }
         h += `</div>`;
     } else if (menuTab === 'bestiary') {
-        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'riot', 'crawler', 'blighter'];
+        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'hound', 'crawler', 'shocker'];
         h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
             return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
         // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
         const seenB = life.bossSeen || {}, killsB = life.bossKills || {};
-        h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the other seven in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back. Patient Zero only appears as the Campaign finale.</div>`;
+        h += `<div class="mlabel mt-5">BOSSES</div><div class="mdesc">A boss every 5th wave: the Abomination first, then the others in a random order. From wave 25 they come in pairs. Every boss is ENRAGED below half health. Boss Rush mode fights them all back to back. Patient Zero is the Campaign finale and also joins the boss rotation in co-op.</div>`;
         h += `<div class="flex flex-col gap-2 mt-2">${BOSS_IDS.map(id => { const t = enemyTypes[id], met = seenB[id] || killsB[id];
             return `<div class="bcard" style="border-color:${t.bar}55"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${t.bar}"></div><div class="flex-1"><div class="flex justify-between items-baseline gap-2"><div><span class="font-black tracking-wide" style="color:${t.bar}">${t.name.toUpperCase()}</span> <span class="text-[10px] font-black text-gray-400 tracking-widest">${t.title}</span></div><div class="text-xs font-bold text-gray-400 whitespace-nowrap">${killsB[id] ? 'DEFEATED x' + killsB[id] : met ? 'MET' : 'NOT MET YET'}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.tip}</div></div></div>`; }).join('')}</div>`;
         // 4.0: how the horde gets round the new maps
@@ -178,7 +178,10 @@ function whatsNew() {
             'One shared button style, panel and colour theme on every screen, including the multiplayer lobby.']) +
         sec('CAMPAIGN: 3 CHAPTERS', '#fde047', ['<b>CAMPAIGN</b> now has three chapters of six story missions each: Ashfall, Dead Air and Patient Zero, ending in a new final boss on a new arena.',
             'Eight objective types, story briefings, 3 lives, 3 stars per mission and campaign-only weapon skins. It has its own save and never touches your normal run.']) +
-        sec('NEW MAP, ENEMIES + WEAPONS', '#f0abfc', ['New map: <b>SUBWAY</b> (night). New zombies: <b>RIOT BREAKER</b> (breakable shield), <b>VENT CRAWLER</b> (ambushes from floor vents) and <b>BLIGHTER</b> (poison clouds).',
+        sec('BOSSES, GUNS + LIGHT', '#fca5a5', ['All eight bosses have new, much more detailed models: spiked, armoured and glowing, each with its own outline.',
+            'Guns sit lower-left and clear of the ammo and ability cards on small screens, and the cards shrink to fit. Sights still line up with the crosshair.',
+            'Every map has stronger sun and shade, coloured sky light, richer skies, warmer lamp pools, darker corners and a light colour grade. It costs nothing on Low.']) +
+        sec('NEW MAP, ENEMIES + WEAPONS', '#f0abfc', ['New map: <b>SUBWAY</b> (night). New zombies: <b>ZOMBIE HOUND</b> (fast packs that circle you), <b>VENT CRAWLER</b> (ambushes from floor vents) and <b>SHOCKER</b> (shock shield, jams your gun). All of them, and Patient Zero, now work in co-op.',
             'New guns: <b>BURST CARBINE</b> (rank 4) and <b>LEVER RIFLE</b> (rank 6).']) +
         sec('POWER-UPS REMOVED', '#9ca3af', ['No more power-up orbs, menu row or timers. Supply drops now give ammo or medical supplies. Old saves load fine and nothing was lost.']) +
         sec('WIFI GAME SCAN', '#7dd3fc', ['Open the <b>MULTIPLAYER</b> tab and games hosted on the same wifi show up in a list with a JOIN button. Hosts can switch this off with <b>Show my game on this wifi</b>.']) +
@@ -277,6 +280,22 @@ window.__blocky = {
         get state() { return { on: CAMP.on, over: CAMP.over, mission: CAMP.m && CAMP.m.id, stage: CAMP.st && CAMP.st.def.t, si: CAMP.si, deaths: CAMP.deaths, lives: campLives(), t: CAMP.t, dmg: CAMP.dmg, kills: CAMP.kills, heads: CAMP.heads, stat: CAMP.stat, decoys: CAMP.decoys.length, objs: CAMP.objs.length, marks: CAMP.nm, stars: CAMP.on && CAMP.m ? campStars(true) : null, gs: currentGameState }; }
     },
     get state() { return { currentGameState, playerStats, currentHp, currentArmor, enemies, solids, projectiles, secondaryCooldown, waveActive, intermission, camera, velocity, onGround, vm, Q, dynScale, theme: themeId, runStats, supplies, fovNow, vmModel, weaponCam, viewScene, renderer, scene, THREE }; },
+    vmScreen: () => {   // debug: screen boxes (pixels) of the gun body and the gloved hands (sleeves excluded), and the sight point
+        const m = vmModel; if (!m) return null; weaponCam.updateMatrixWorld(true); m.root.updateMatrixWorld(true); weaponCam.matrixWorldInverse.copy(weaponCam.matrixWorld).invert();
+        const W0 = innerWidth, H0 = innerHeight, v = new V3(), G = [1e9, 1e9, -1e9, -1e9], Hn = [1e9, 1e9, -1e9, -1e9];
+        m.root.traverseVisible(o => {
+            if (!o.isMesh || !o.geometry || o.material === VM.flash) return; const g = o.geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox;
+            let hand = false, arm = false; for (let q = o.parent; q && q !== m.root; q = q.parent) if (q.userData && q.userData.style) { arm = true; hand = o.parent !== q; }
+            if (arm && !hand) return; const B = hand ? Hn : G;
+            for (let i = 0; i < 8; i++) {
+                v.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).applyMatrix4(o.matrixWorld).project(weaponCam);
+                B[0] = Math.min(B[0], v.x); B[2] = Math.max(B[2], v.x); B[1] = Math.min(B[1], v.y); B[3] = Math.max(B[3], v.y);
+            }
+        });
+        const px = (n, a) => Math.round((a ? (1 - n) : (n + 1)) / 2 * (a ? H0 : W0)), bx = B => [px(B[0]), px(B[3], 1), px(B[2]), px(B[1], 1)];
+        const gp = m.muzzle.parent; v.set(0, m.def.sight[0], m.def.sight[1]); gp.localToWorld(v); v.project(weaponCam);
+        return { gun: bx(G), hands: bx(Hn), sight: [px(v.x), px(v.y, 1)], ads: +vm.adsT.toFixed(2) };
+    },
     debug(on = true) { debugNoLock = on; },
     prof: PROF, get lightU() { return LIGHT_U; }, get scene() { return scene; }, get renderer() { return renderer; },
     get info() { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, enemies: enemies.length }; },

@@ -44,6 +44,7 @@ function campSpawn(p, n) {
         const cfg = pickEnemyType(level, counts); counts[cfg.id] = (counts[cfg.id] || 0) + 1;
         const e = spawnEnemy(cfg, x, z, gy + 0.1, waveSpeed(level), waveReward(level) * 0.5);
         e.userData.noLoot = true;       // no free health or cash for sitting still
+        if (cfg.id === 'hound') { spawnHoundPack(e, x, z, gy + 0.1, waveSpeed(level), waveReward(level) * 0.5); for (const m of enemies) if (m.userData.packN && !m.userData.dead && m.userData.packIdx > 0 && m.userData.config.id === 'hound') m.userData.noLoot = true; }
     }
 }
 function updateCornerPressure(dt) {
@@ -88,7 +89,7 @@ function spawnWave() {
     bossList.forEach(id => list.push(enemyTypes[id]));
     // a new enemy type always shows up on the wave it unlocks, so you actually meet it
     const fresh = Object.values(enemyTypes).filter(t => t.minLvl === level && t.intel);
-    fresh.forEach(t => list.push(...(t.id === 'marksman' ? [t] : [t, t])));
+    fresh.forEach(t => list.push(...(t.id === 'marksman' || t.id === 'hound' ? [t] : [t, t])));
     list.forEach(t => counts[t.id] = (counts[t.id] || 0) + 1);
     while (list.length < count) { const t = pickEnemyType(level, counts); counts[t.id] = (counts[t.id] || 0) + 1; list.push(t); }
 
@@ -105,6 +106,7 @@ function spawnWave() {
         let sy = 18 + Math.random() * 10;
         if (VOID) { const sp = navSpot(pp.x, pp.z, camping ? 18 : 24, 999) || navSpot(pp.x, pp.z, 10, 999) || navSpot(pp.x, pp.z, 0, 999); if (sp) { x = sp[0]; z = sp[2]; sy = sp[1] + 10 + Math.random() * 8; } }
         const ne = spawnEnemy(eConf, x, z, sy, waveSpeed(level), waveReward(level));   // drop them in from the sky
+        if (eConf.id === 'hound') spawnHoundPack(ne, x, z, sy, waveSpeed(level), waveReward(level));
         if (twist) { if (twist.hp && !eConf.boss) { ne.userData.hp *= twist.hp; ne.userData.maxHp = ne.userData.hp; } if (twist.speed) ne.userData.speed *= twist.speed; }
     }
     waveActive = true;
@@ -134,6 +136,7 @@ function damageEnemy(enemyGroup, amount, isHeadshot, point, isExplosion = false,
     // multiplayer guest: tell the host (the referee) and show the hit right away so there's no lag
     if (NET.inGame && !NET.host) { netClientHit(enemyGroup, amount, isHeadshot, point, isExplosion, src || (isExplosion ? 'explosive' : playerStats.currentWeapon)); return; }
     if (u.config.armor && u.state !== 'stun' && !isExplosion) amount *= u.config.armor;     // the Juggernaut's plating
+    if (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead) amount *= 0.35;      // 5.0 Shocker: linked zombies take reduced damage until the Shocker dies
     const mine = !dmgOwner;              // host applying someone else's hit: no hit marker / numbers here
     if (mine) runStats.damage += Math.min(amount, Math.max(0, u.hp));
     u.hp -= amount;
@@ -160,6 +163,7 @@ function killEnemy(e, selfDestruct = false, headshot = false, src = 'explosive')
     enemies = enemies.filter(x => x !== e);
     u.barShow = false; e.visible = true;
     if (u.laser) u.laser.visible = false;
+    if (u.arcs) for (const m of u.arcs) m.visible = false;
     if (u.aura) u.aura.visible = false;
     if (u.bubble) u.bubble.visible = false;
     // a boss takes its helpers with it (Phantom decoys, the Necromancer's Acolytes)
@@ -180,10 +184,7 @@ function killEnemy(e, selfDestruct = false, headshot = false, src = 'explosive')
         if (headshot) { u.head.visible = false; spawnParticles(new V3(e.position.x, e.position.y + 2.8 * u.config.scale, e.position.z), zLook(u.config).skin, 10, 7, 0.9, 0.2 * u.config.scale, true, { bounce: true, spin: 12, grav: 26 }); }
         corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1, back: headshot || Math.random() < 0.35 });
         if (award && !u.noLoot) dropLoot(u, e.position);
-        if (u.config.id === 'blighter' && (!NET.inGame || NET.host)) {   // 5.0: its tank ruptures into a poison cloud
-            spawnParticles(c, 0x84cc16, 16, 7, 0.8, 0.25, false, { grav: 4 });
-            bossHazard(e.position.x, e.position.y, e.position.z, 3.2, 8 * lvlDmg(), 7, 0x84cc16, "a Blighter's toxic cloud");
-        }
+        if (u.config.ai === 'shocker' && (!NET.inGame || NET.host)) shockerDied(e, u);       // 5.0: frees its linked zombies and dies in an EMP burst
         if (u.config.id === 'splitter' && (!NET.inGame || NET.host)) {   // 3.8: bursts into Mites
             spawnParticles(c, 0xc084fc, 14, 8, 0.7, 0.25, false, { grav: 14 });
             for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.random(); const m = spawnEnemy(enemyTypes.mite, e.position.x + Math.cos(a) * 1.4, e.position.z + Math.sin(a) * 1.4, e.position.y + 0.6, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }

@@ -120,7 +120,7 @@ function continueRun() {
     if (!weaponsDb[playerStats.currentWeapon] || !playerStats.weapons.includes(playerStats.currentWeapon)) playerStats.currentWeapon = playerStats.weapons[0];
     abilityCd = clamp(+s.abil || 0, 0, 60); abilityT = 0; abilReadyWas = abilityCd <= 0;
     maxHp = s.maxHp || 100; currentHp = clamp(s.hp || maxHp, 1, maxHp); currentArmor = s.armor || 0;
-    strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(s.seen || []);
+    strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(migEnemyIds(s.seen || []));
     resetAmmo();
     updateGunModel();
     runStartBonus(false);               // 4.0: banked challenge rewards
