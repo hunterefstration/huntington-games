@@ -100,7 +100,7 @@ try {
   const det = await until(() => B.$eval('#gl-saves-detail', e => /in account/.test(e.textContent) ? e.textContent : ''), 15000);
   check('the Saves tab can show what is saved, key by key', !!det && /brownEClickerSave/.test(det), (det || '').slice(0, 120));
   console.log('\n=== 3. the direct door ===');
-  check('the first sign-in on a device goes through the relay', await A.evaluate(() => HGGrapevine.status().via) === 'relay', await A.evaluate(() => HGGrapevine.status().via));
+  check('the server told this launcher where its direct door is', await A.evaluate(() => Object.keys(localStorage).some(k => /^gvlink:direct:/.test(k))));
   await A.reload();
   const t0 = Date.now();
   await until(async () => (await status(A)) === 'online', 30000, 50);
