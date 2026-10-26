@@ -141,11 +141,35 @@ const GVLink = (() => {
   }
   const shuffled = n => { const a = Array.from({ length: n }, (_, i) => i); for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
+  // ---- the direct door ----
+  // The server tells us (inside the signed key exchange) where its own WebSocket is, if it has one. We remember it per
+  // server, with the server key we saw, and next time try it first: one connection, no relay in between. A network that
+  // blocks it (some school filters) is remembered too, so it costs a wait at most once in a while.
+  const DKEY = id => 'gvlink:direct:' + id;
+  function directInfo(id) { try { const d = JSON.parse(localStorage.getItem(DKEY(id)) || 'null'); return d && /^wss?:\/\//.test(d.url) ? d : null; } catch (e) { return null; } }
+  function saveDirect(id, d) { try { if (d) localStorage.setItem(DKEY(id), JSON.stringify(d)); else localStorage.removeItem(DKEY(id)); } catch (e) {} }
+  function directUsable(d) { return !!d && !(d.fails >= 2 && Date.now() - (d.failAt || 0) < 6 * 3600e3); }
+  function hasDirect(id) { return directUsable(directInfo(id)); }
+  function openDirect(url, ms) {
+    return new Promise((resolve, reject) => {
+      let ws, done = false;
+      try { ws = new WebSocket(url); } catch (e) { return reject(e); }
+      const n = emitter({});
+      const t = setTimeout(() => { if (done) return; done = true; try { ws.close(); } catch (e) {} reject(new Error('direct: no answer')); }, ms);
+      ws.onopen = () => { if (done) return; done = true; clearTimeout(t); resolve(n); };
+      ws.onerror = () => { if (done) return; done = true; clearTimeout(t); reject(new Error('direct: refused')); };
+      ws.onmessage = ev => { let m; try { m = JSON.parse(ev.data); } catch (e) { return; } n.emit('message', { id: 'host' }, m); };
+      ws.onclose = () => { if (!done) { done = true; clearTimeout(t); reject(new Error('direct: closed')); } n.emit('closed', 'closed'); };
+      n.send = (to, obj) => { if (ws.readyState === 1) ws.send(JSON.stringify(obj)); };
+      n.close = () => { try { ws.close(); } catch (e) {} };
+    });
+  }
+
   // opts: { shards (2), pinned (hex server key or ''), verify(pubHex, msg, sigHex) -> Promise<bool>,
-  //         relays (override), urlParams (false), onStatus(text) }
+  //         relays (override), urlParams (false), onStatus(text), direct (false: never use the direct door) }
   function connect(archiveId, opts) {
     opts = opts || {};
-    const conn = emitter({ peer: archiveId, open: false, relay: true, pid: '', serverPub: '', metadata: { role: 'client' }, status: '', marks: [] });
+    const conn = emitter({ peer: archiveId, open: false, relay: true, direct: false, pid: '', serverPub: '', metadata: { role: 'client' }, status: '', marks: [] });
     // Where the time goes, step by step (milliseconds since the connection was asked for). Shown in the launcher's Connection tab.
     const t0 = Date.now(), mark = name => conn.marks.push([name, Date.now() - t0]);
     mark('start');
@@ -171,6 +195,32 @@ const GVLink = (() => {
     };
 
     (async () => {
+      const d = opts.direct === false ? null : directInfo(archiveId);
+      let missed = false;
+      if (directUsable(d)) {
+        // Anything that goes wrong on the direct door (blocked, slow, wrong server) falls through to the relay below.
+        say('connecting directly…');
+        try {
+          net = await openDirect(d.url, opts.directMs || 3000); conn.direct = true; mark('direct door open');
+          await secure(d, 6000);
+        } catch (e) {
+          if (dead) return;
+          missed = true; mark('direct door failed');
+          try { net && net.close(); } catch (x) {}
+          net = null; conn.direct = false;
+        }
+        if (dead) { if (!conn.open) try { net && net.close(); } catch (e) {} return; }
+      }
+      if (conn.open) return;
+      await viaRelay();
+      if (dead || !net) return;
+      await secure(d, 12000);
+      // The door missed but the relay got through: the server is up, so it is this network that cannot use the door.
+      // (A miss while the server itself is down, e.g. restarting for an update, is not counted.)
+      if (missed && conn.open) { const now = directInfo(archiveId); if (now && now.url === d.url) { now.fails = (now.fails || 0) + 1; now.failAt = Date.now(); saveDirect(archiveId, now); } }
+    })().catch(e => finish(String(e && e.message || e), 'network'));
+
+    async function viaRelay() {
       say('loading relay library…');
       await loadMqtt(); mark('relay library ready');
       if (!window.HGNet) throw new Error('relay code missing');
@@ -193,16 +243,21 @@ const GVLink = (() => {
         return finish(e.code === 'blocked' ? 'blocked' : 'no-server', e.code === 'blocked' ? 'blocked' : 'peer-unavailable');
       }
       net = joined;
-      net.on('closed', (reason) => finish(reason || 'closed'));
+    }
 
+    async function secure(d, ms) {
       // ---- key exchange ----
       say('securing the link…'); mark('key exchange');
+      const via = net;
+      via.on('closed', (reason) => { if (via === net && (conn.open || !conn.direct)) finish(reason || 'closed'); });
       const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
       const cpub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
       const cpubB64 = b64(cpub);
       const reply = new Promise((resolve, reject) => {
-        const t = setTimeout(() => reject(new Error('server did not answer')), 12000);
-        net.on('message', (peer, m) => {
+        const t = setTimeout(() => reject(new Error('server did not answer')), ms);
+        via.on('closed', () => { clearTimeout(t); reject(new Error('link closed')); });
+        via.on('message', (peer, m) => {
+          if (via !== net) return;
           if (!m || typeof m !== 'object') return;
           if (m.k === 'ke' && !key) { clearTimeout(t); resolve(m); }
           else if (m.k === 'nk') finish('reset');
@@ -214,7 +269,13 @@ const GVLink = (() => {
       const spubB64 = String(m.pub || ''), pid = String(m.pid || ''), spub = String(m.spub || '');
       if (!/^rl-[0-9a-f]{12}$/.test(pid) || !/^[0-9a-f]{64}$/.test(spub)) throw new Error('bad key exchange');
       if (opts.pinned && opts.pinned !== spub) return finish('not-pinned', 'link-key');
+      if (conn.direct && d && d.spub !== spub) { saveDirect(archiveId, null); throw new Error('direct: not the server we learned it from'); }
       if (!(await opts.verify(spub, `gv-link|${cpubB64}|${spubB64}|${pid}`, String(m.sig || '')))) return finish('bad-signature', 'link-key');
+      if (conn.direct) { if (d.fails) { d.fails = 0; saveDirect(archiveId, d); } }
+      else if (typeof m.direct === 'string' && /^wss:\/\/|^ws:\/\/(127\.0\.0\.1|localhost)[:/]/.test(m.direct) && opts.direct !== false) {
+        const old = directInfo(archiveId);
+        if (!old || old.url !== m.direct || old.spub !== spub) saveDirect(archiveId, { url: m.direct, spub, at: Date.now(), fails: 0 });
+      }
       const spubKey = await crypto.subtle.importKey('raw', unb64(spubB64), { name: 'ECDH', namedCurve: 'P-256' }, false, []);
       const secret = await crypto.subtle.deriveBits({ name: 'ECDH', public: spubKey }, kp.privateKey, 256);
       const hk = await crypto.subtle.importKey('raw', secret, 'HKDF', false, ['deriveKey']);
@@ -222,10 +283,10 @@ const GVLink = (() => {
         hk, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
       conn.pid = pid; conn.serverPub = spub;
       conn.open = true; mark('link secured');
-      say('connected through relay');
+      say(conn.direct ? 'connected directly' : 'connected through relay');
       early.splice(0).forEach(onData);
       conn.emit('open');
-    })().catch(e => finish(String(e && e.message || e), 'network'));
+    }
 
     function onData(m) {
       if (!Number.isSafeInteger(m.n) || typeof m.c !== 'string') return;
@@ -247,7 +308,7 @@ const GVLink = (() => {
     return window.HGNet.diagnose(Object.assign({ game: 'gv-diag', urlParams: false }, opts || {}));
   }
 
-  return { connect, address, diagnose, loadMqtt, MQTT };
+  return { connect, address, diagnose, loadMqtt, hasDirect, MQTT };
 })();
 // Grapevine - core. Your normal Grapevine account inside the launcher.
 //
@@ -269,7 +330,7 @@ const GVLink = (() => {
 
   var CFG = Object.assign({
     // Must match client.html's CONFIG in the Grapevine repo (archiveIds and serverPubs).
-    archives: ['grapevine-a-f9c20eec06f3', 'grapevine-b-ae8b586e0081'],
+    archives: ['grapevine-a-f9c20eec06f3'],   // only servers that run: a missing one costs seconds every time it is tried
     pinned: { 'grapevine-a-f9c20eec06f3': '114bee3b10b7d63870478007f5008b1dc5230389e4f5ad0786ef68b86a408ba0' },
     shards: 2,
     relays: undefined,          // tests point this at a local broker
@@ -745,7 +806,7 @@ const GVLink = (() => {
     version: 1,
     config: CFG,
     me: function () { return st.name ? { name: st.name, userId: st.userId, pub: st.pub, status: st.status } : null; },
-    status: function () { return { status: st.status, text: st.text }; },
+    status: function () { return { status: st.status, text: st.text, via: st.conn && st.conn.open ? (st.conn.direct ? 'direct' : 'relay') : '' }; },
     online: function () { return st.ready; },
     friends: function () { return { friends: st.friends.slice(), incoming: st.incoming.slice(), outgoing: st.outgoing.slice(), loaded: st.haveFriends }; },
     friendState: friendState,
@@ -1076,7 +1137,9 @@ const GVLink = (() => {
   function connView() {
     var box = h('div');
     box.appendChild(h('div', { class: 'sect', text: 'connection' }));
-    box.appendChild(h('p', { class: 'sub', text: 'Grapevine reaches the server through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
+    box.appendChild(h('p', { class: 'sub', text: 'Grapevine connects straight to its server when this network allows it, and otherwise through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
+    var via = L.status().via;
+    if (via) box.appendChild(h('div', { class: 'row', id: 'gl-via' }, h('span', { class: 'dot on' }), h('span', { class: 'nm', text: via === 'direct' ? 'Connected directly to the server (fastest)' : 'Connected through a relay' })));
     var tlv = L.timeline();
     if (tlv.steps.length > 1) {
       box.appendChild(h('div', { class: 'sect', text: 'last connection - ' + (tlv.total / 1000).toFixed(1) + ' s in all' }));
