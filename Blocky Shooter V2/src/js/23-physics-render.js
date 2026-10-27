@@ -22,7 +22,7 @@ function buildMinimapStatic() {
     mmStatic = c;
 }
 function drawMinimap(dt) {
-    mmTick += dt; if (mmTick < 1 / 20) return; mmTick = 0;
+    mmTick += dt; if (mmTick < 1 / (Q.lite ? 12 : 20)) return; mmTick = 0;
     const MAP_SIZE = mapSize(), w = ui.minimap.width, scale = w / MAP_SIZE, off = MAP_SIZE / 2;
     const c = minimapCtx;
     c.clearRect(0, 0, w, ui.minimap.height);
@@ -179,13 +179,16 @@ function updatePlayer(delta) {
 }
 
 
-let fpsAcc = 0, fpsFrames = 0;
+let fpsAcc = 0, fpsFrames = 0, cpuAcc = 0;
+// Resolution steps are tested: if a step down doesn't really raise the frame rate, the graphics chip wasn't the limit
+// (the processor is, e.g. a Chromebook with other tabs open), so the sharpness goes back and it stops trying for a while.
+const RES = { prev: 0, before: 0, check: 0, last: -9, noHelpUntil: 0 };
 function trackFps(raw) {
     fpsAcc += raw; fpsFrames++;
     if (fpsAcc < 1) return;
-    const fps = fpsFrames / fpsAcc; fpsAcc = 0; fpsFrames = 0;
+    const fps = fpsFrames / fpsAcc, cpu = cpuAcc / fpsFrames; fpsAcc = 0; fpsFrames = 0; cpuAcc = 0;
     ui.fps.classList.toggle('hidden', !settings.showFps || currentGameState !== 'playing');
-    if (settings.showFps) setText(ui.fps, `${Math.round(fps)} FPS \u00b7 ${Math.round(dynScale * 100)}% res \u00b7 ${Q.shadows ? 'shadows on' : 'shadows off'} \u00b7 ${Q.name}`);
+    if (settings.showFps) setText(ui.fps, `${Math.round(fps)} FPS \u00b7 ${Math.round(dynScale * 100)}% res \u00b7 cpu ${cpu.toFixed(1)}ms \u00b7 ${Q.shadows ? 'shadows on' : 'shadows off'} \u00b7 ${Q.name}${Q.tier !== undefined ? ' ' + (Q.tier + 1) : ''}`);
     if (!Q.dynamic || (document.hidden && !debugNoLock)) return;
     // AUTO picks its quality tier on the menu (the arena renders behind it), where a shader rebuild doesn't matter.
     if (currentGameState === 'main' && settings.quality === 'auto') {
@@ -200,23 +203,44 @@ function trackFps(raw) {
         return;
     }
     if (currentGameState !== 'playing') return;
-    // in a fight: only gentle resolution steps (never a shader rebuild). Down fast-ish, up slowly.
-    autoRes.t++;
-    if (fps < 54) { autoRes.good = 0; if (dynScale > Q.minScale + 1e-3) { setRenderScale(Math.max(Q.minScale, dynScale - (fps < 40 ? 0.12 : 0.06))); autoRes.t = 0; } }
-    else if (fps >= 57.5) { if (++autoRes.good >= 4 && dynScale < Q.scale - 1e-3) { setRenderScale(Math.min(Q.scale, dynScale + 0.04)); autoRes.good = 0; autoRes.t = 0; } }
+    const sec = ++autoRes.t;
+    if (settings.quality === 'auto') { autoPlay.sum += fps; autoPlay.n++; if (autoPlay.n % 20 === 0) saveAutoFps(); }
+    // judge the last step down (2 seconds on, so the resize itself doesn't count)
+    if (RES.check && --RES.check === 0 && dynScale < RES.prev && fps < RES.before * 1.07) {
+        setRenderScale(RES.prev); RES.last = sec; RES.noHelpUntil = sec + 30; return;
+    }
+    // in a fight: only resolution steps (never a shader rebuild), at most one every 2 seconds. Down fast-ish, up slowly.
+    if (fps < 54) {
+        autoRes.good = 0;
+        if (dynScale > Q.minScale + 1e-3 && sec >= RES.noHelpUntil && !RES.check && sec - RES.last >= 2) {
+            RES.prev = dynScale; RES.before = fps; RES.check = 2; RES.last = sec;
+            setRenderScale(Math.max(Q.minScale, dynScale - (fps < 40 ? 0.1 : 0.05)));
+        }
+    } else if (fps >= 57.5) { if (++autoRes.good >= 4 && dynScale < Q.scale - 1e-3) { setRenderScale(Math.min(Q.scale, dynScale + 0.04)); autoRes.good = 0; RES.last = sec; } }
     else autoRes.good = 0;
-    // still struggling at the lowest resolution for a while: drop a tier at the next break between waves
-    if (settings.quality === 'auto' && fps < 45 && dynScale <= Q.minScale + 1e-3) { if (++autoRes.bad >= 8 && autoTier < AUTO_TIERS - 1) autoPending = true; }
-    else autoRes.bad = Math.max(0, autoRes.bad - 1);
+    // AUTO: under 50 and resolution can't help (at its floor, or it made no difference): a lighter tier at the next
+    // break between waves; under 40 for 6 seconds straight: right away (one short hitch beats a whole slow wave)
+    if (settings.quality === 'auto' && autoTier < AUTO_TIERS - 1) {
+        const resDone = dynScale <= Q.minScale + 1e-3 || sec < RES.noHelpUntil;
+        if (fps < 50 && resDone) { if (++autoRes.bad >= 4) autoPending = true; } else autoRes.bad = Math.max(0, autoRes.bad - 1);
+        if (fps < 40) { if (++autoRes.awful >= 6) { autoPending = false; dropAutoTier(); } } else autoRes.awful = 0;
+    }
 }
-const autoMenuFps = [], autoRes = { t: 0, good: 0, bad: 0, warm: 4 };
+// how Auto actually played (average FPS in a fight at this tier): the next launch only tries a better tier if it was smooth
+const autoPlay = { sum: 0, n: 0 };
+function saveAutoFps() { if (autoPlay.n >= 10) try { localStorage.setItem(AUTO_KEY + '_fps', autoTier + ':' + Math.round(autoPlay.sum / autoPlay.n)); } catch (e) {} }
+function dropAutoTier() {
+    saveAutoFps(); autoPlay.sum = autoPlay.n = 0;
+    autoTier++; saveAutoTier(); applyQuality();
+    toast('Auto graphics: lowered a notch for smoother play', '#9ca3af', 2);
+}
+const autoMenuFps = [], autoRes = { t: 0, good: 0, bad: 0, awful: 0, warm: 4 };
 let autoPending = false;
 // called every frame; applies a pending tier drop only when no wave is running
 function autoApplyPending() {
     if (!autoPending || waveActive || currentGameState !== 'playing') return;
     autoPending = false; autoRes.bad = 0;
-    autoTier++; saveAutoTier(); applyQuality();
-    toast('Auto graphics: lowered a notch for smoother play', '#9ca3af', 2);
+    dropAutoTier();
 }
 let frameNo = 0;
 // tiny frame profiler (off unless a test turns it on): ms spent per system, summed between marks
@@ -233,7 +257,7 @@ function animate(ts) {
     frame(ts);
 }
 function frame(ts) {
-    const time = (typeof ts === 'number') ? ts : performance.now();
+    const time = (typeof ts === 'number') ? ts : performance.now(), cpu0 = performance.now();
     if (prevTime === null) prevTime = time;
     const raw = Math.max((time - prevTime) / 1000, 0);
     const delta = Math.min(raw, 0.05);
@@ -339,7 +363,9 @@ function frame(ts) {
     updateBlobs();
     updateHpBars();
     updateSun();
+    scene.updateMatrixWorld();
     updateZombieInstances();
+    instFlush();
     // the sun's shadow map only re-renders every other frame (half the shadow cost, invisible at 60fps)
     pfMark('misc');
     renderer.info.autoReset = false; renderer.info.reset();
@@ -360,4 +386,5 @@ function frame(ts) {
         }
     }
     pfMark('render');
+    cpuAcc += performance.now() - cpu0;
 }

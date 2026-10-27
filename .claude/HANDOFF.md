@@ -118,6 +118,19 @@ Real cross-network test (two Chromebooks, different states) still needed before 
 - Launcher side of invites is in the hub `index.html` (HG_inviteTargets / HG_sendInvite / HG_takeJoin, invite pop-up with JOIN).
   The hub is NOT copied by `release.sh prepare`: port that block into `$W/index.html` by hand when releasing 5.0.
 
+## Blocky Shooter 5.1 performance (r47, 2026-10-27)
+- Owner: LOW could not hold 45 FPS on a Chromebook with other tabs open; Auto useless; no 50% resolution. Diagnosis: the
+  Chromebook is CPU-bound (dropping to 50% res did not help), so the fixes cut per-frame processor work:
+  zombies draw ONE instanced mesh per type (`ZM` in 16-enemies.js: merged parts + a float texture of part matrices, WebGL2;
+  the old per-part `ZI` sets are the fallback), `scene.matrixWorldAutoUpdate = false` (frame() updates once, before the
+  instances), hidden gun models skip matrix updates, limb pivots hidden from the renderer walk, effect meshes upload only
+  used instances (`instUpload`) and hide when empty (`instFlush`), sky drawn after the world, Lambert gun on Low.
+  With 32 zombies at 5x CPU throttle: 22-25 ms -> 13-15 ms per frame.
+- Resolution: Low 85% (floor 70%); a step down is kept only if FPS rises 7% (`RES` in 23-physics-render.js), else it
+  reverts (CPU-bound). Auto drops a tier when res can't help (between waves, or at once after 6 s under 40) and saves
+  `blocky_autotier_fps` so the next launch only tries a better tier if fights held 58+. FPS overlay shows cpu ms.
+- Probes (not in the repo): CDP `Emulation.setCPUThrottlingRate` 5 + a 480x270 viewport approximates a Chromebook CPU.
+
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE

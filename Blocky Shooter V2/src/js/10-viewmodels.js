@@ -161,6 +161,24 @@ function applyArmColors() {
     VM.sleeve.color.setHex(sc); VM.cuff.color.setHex(sc).multiplyScalar(0.62);
     VM.glove.color.setHex(gc); VM.gloveDark.color.setHex(gc).multiplyScalar(0.7);
 }
+// Low / lite: the gun draws with Lambert copies of its PBR materials (much cheaper per pixel). A copy shares the
+// original's colours and passes emissive / opacity through, so pulsing skins and fades still animate.
+const VM_LITE = new WeakMap();
+function vmLiteMat(m) {
+    if (!m) return m;
+    if (!Q.lite) return m.userData.std || m;
+    if (!m.isMeshStandardMaterial) return m;
+    let l = VM_LITE.get(m);
+    if (!l) {
+        l = new THREE.MeshLambertMaterial({ map: m.map, vertexColors: m.vertexColors, transparent: m.transparent, side: m.side, alphaTest: m.alphaTest, depthWrite: m.depthWrite, depthTest: m.depthTest, toneMapped: m.toneMapped, blending: m.blending });
+        l.color = m.color; l.emissive = m.emissive;
+        for (const k of ['emissiveIntensity', 'opacity']) Object.defineProperty(l, k, { get: () => m[k], set: v => { m[k] = v; }, configurable: true });
+        l.userData = Object.assign({}, m.userData, { std: m });
+        VM_LITE.set(m, l);
+    }
+    return l;
+}
+function vmLiteMats(root) { root.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material)) o.material = vmLiteMat(o.material); }); }
 // ---- merge: bake every static mesh of a build into one mesh per material class (per moving group) ----
 function matClass(mat) {
     const u = mat.userData; if (u.base) return 'ARM';
@@ -1168,7 +1186,10 @@ function buildWeaponModel(id) {
 
 
     root.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+    vmLiteMats(root);
     root.visible = false;
+    // every gun you've held stays cached here; the hidden ones skip the per-frame matrix update (most of the gun scene's cost)
+    root.updateMatrixWorld = function (force) { if (this.visible) THREE.Object3D.prototype.updateMatrixWorld.call(this, force); };
     weaponCam.add(root);
     if (FX.trail) weaponCam.add(FX.trail);
     if (FX.ox) {           // dual pistols: where the left gun's muzzle / ejection port are, in the right gun's space
@@ -1212,7 +1233,7 @@ function ejectCasing(m, kind = 'brass', count = 1, flip = 0) {
             else { const mesh = new THREE.Mesh(_casingGeo, VM.brass); mesh.frustumCulled = false; weaponCam.add(mesh); cs = { mesh, life: 0, v: new V3(), spin: new V3() }; casings.push(cs); }
         }
         const shell = kind === 'shell';
-        cs.mesh.material = shell ? VM.shellRed : VM.brass;
+        cs.mesh.material = vmLiteMat(shell ? VM.shellRed : VM.brass);
         cs.mesh.scale.set(shell ? 0.016 : 0.007, shell ? 0.016 : 0.007, shell ? 0.045 : 0.02);
         m.eject.getWorldPosition(_p); weaponCam.worldToLocal(_p);
         cs.mesh.position.copy(_p);

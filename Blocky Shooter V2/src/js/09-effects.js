@@ -15,8 +15,20 @@ function makeInstanced(geo, mat, max) {
     m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3);
     m.instanceColor.setUsage(THREE.DynamicDrawUsage);
     m.frustumCulled = false; m.count = 0;
-    scene.add(m);
+    scene.add(m); INST.push(m);
     return m;
+}
+// Upload only the instances in use: the buffers are sized for the busiest moment, and sending all of them
+// every frame (even when empty) was a big share of the per-frame GPU traffic on slow machines.
+const INST = [];
+function instUpload(m, n, from = 0) {
+    if (n <= 0) return;
+    const a = m.instanceMatrix; a.addUpdateRange(from * 16, n * 16); a.needsUpdate = true;
+    const c = m.instanceColor; if (c) { c.addUpdateRange(from * 3, n * 3); c.needsUpdate = true; }
+}
+// right before rendering: an empty effect mesh is skipped instead of costing a draw call (blob shadows only on Low)
+function instFlush() {
+    for (let i = 0; i < INST.length; i++) { const m = INST[i]; m.visible = m.count > 0 && (m !== blobMesh || !Q.shadows); }
 }
 function initFx() {
     fxGlow = makeInstanced(sharedBox, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), PMAX);
@@ -60,7 +72,7 @@ function updateHpBars() {
         n++;
     }
     hpBg.count = hpFg.count = n;
-    if (n) { hpBg.instanceMatrix.needsUpdate = hpFg.instanceMatrix.needsUpdate = true; hpBg.instanceColor.needsUpdate = hpFg.instanceColor.needsUpdate = true; }
+    instUpload(hpBg, n); instUpload(hpFg, n);
 }
 
 
@@ -108,7 +120,7 @@ function stepParticleList(list, mesh, dt) {
         n++;
     }
     mesh.count = n;
-    mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
+    instUpload(mesh, n);
 }
 function updateParticles(dt) { stepParticleList(glowParts, fxGlow, dt); stepParticleList(solidParts, fxSolid, dt); updateSmoke(dt); }
 
@@ -146,9 +158,7 @@ function updateTracers(dt) {
         _m4.compose(_p, _q, _s.set(w * 0.38, w * 0.38, L * 0.96)); tracerMesh.setMatrixAt(n, _m4); tracerMesh.instanceColor.setXYZ(n, f, f, f * 0.95); n++;
     }
     tracerMesh.count = n; boltMesh.count = nb;
-    tracerMesh.instanceMatrix.needsUpdate = true; tracerMesh.instanceColor.needsUpdate = true;
-    if (nb || boltMesh._had) { boltMesh.instanceMatrix.needsUpdate = true; boltMesh.instanceColor.needsUpdate = true; }
-    boltMesh._had = nb > 0;
+    instUpload(tracerMesh, n); instUpload(boltMesh, nb);
 }
 
 
@@ -165,7 +175,7 @@ function addDecal(point, normal, cls = 's') {
     decalIdx = (decalIdx + 1) % DMAX;
     decalCount = Math.min(DMAX, decalCount + 1);
     decalMesh.count = decalCount;
-    decalMesh.instanceMatrix.needsUpdate = true; decalMesh.instanceColor.needsUpdate = true;
+    instUpload(decalMesh, 1, (decalIdx + DMAX - 1) % DMAX);
 }
 let scorchIdx = 0, scorchCount = 0;
 const _up3 = new V3(0, 1, 0);
@@ -177,14 +187,14 @@ function addScorch(point, normal, size) {
     const g = 0.75 + Math.random() * 0.25; scorchMesh.instanceColor.setXYZ(scorchIdx, g, g, g);
     scorchIdx = (scorchIdx + 1) % SCMAX; scorchCount = Math.min(SCMAX, scorchCount + 1);
     scorchMesh.count = scorchCount;
-    scorchMesh.instanceMatrix.needsUpdate = true; scorchMesh.instanceColor.needsUpdate = true;
+    instUpload(scorchMesh, 1, (scorchIdx + SCMAX - 1) % SCMAX);
 }
 function clearDecals() { decalIdx = 0; decalCount = 0; scorchIdx = 0; scorchCount = 0; if (decalMesh) decalMesh.count = 0; if (scorchMesh) scorchMesh.count = 0; }
 
 
 // Blob shadows under enemies, only used when real shadows are off (Low quality)
 function updateBlobs() {
-    if (!blobMesh.visible) return;
+    if (Q.shadows) return;
     let n = 0;
     for (const e of enemies) {
         if (n >= BMAX) break;
@@ -198,7 +208,7 @@ function updateBlobs() {
         n++;
     }
     blobMesh.count = n;
-    blobMesh.instanceMatrix.needsUpdate = true; blobMesh.instanceColor.needsUpdate = true;
+    instUpload(blobMesh, n);
 }
 
 
@@ -248,8 +258,7 @@ function updateSmoke(dt) {
         n++;
     }
     smokeMesh.count = n;
-    if (n || smokeMesh._had) { smokeMesh.instanceMatrix.needsUpdate = true; smokeMesh.instanceColor.needsUpdate = true; }
-    smokeMesh._had = n > 0;
+    instUpload(smokeMesh, n);
 }
 
 

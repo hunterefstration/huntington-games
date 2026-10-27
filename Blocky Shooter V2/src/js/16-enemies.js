@@ -629,6 +629,102 @@ function ziReset() {
     for (const z of ZI.sets.values()) { scene.remove(z.mesh); z.mesh.geometry.dispose(); z.mesh.dispose(); }
     for (const m of ZI.mats.values()) m.dispose();
     ZI.sets.clear(); ZI.mats.clear();
+    for (const k of ZM.kinds.values()) { scene.remove(k.mesh); k.mesh.geometry.dispose(); k.mesh.dispose(); }
+    for (const m of ZM.mats.values()) m.dispose();
+    ZM.kinds.clear(); ZM.mats.clear();
+}
+// ---------- 5.1: ONE DRAW CALL PER ZOMBIE TYPE ----------
+// A type's 6 body parts are merged into one mesh (each vertex knows its part), and every visible zombie's 6 part
+// matrices go into one float texture that the vertex shader reads (WebGL2). A type then costs 1 draw call and 2 small
+// uploads instead of 6 draw calls and 18 uploads, which was a big share of each frame on a slow Chromebook processor.
+// Without WebGL2 the per-part sets above are used.
+const ZM_PARTS = ['legL', 'legR', 'torso', 'armL', 'armR', 'head'], ZM_PI = { legL: 0, legR: 1, torso: 2, armL: 3, armR: 4, head: 5 };
+const ZM = { kinds: new Map(), geos: new Map(), mats: new Map(), tex: null, data: null, rows: 0, texU: { value: null }, depth: null };
+const zmOn = () => renderer.capabilities.isWebGL2;
+const _zmHide = new Float32Array(16); _zmHide[15] = 1;      // a part that's gone (head shot off): squashed to a point
+function zmVert(sh) {
+    sh.uniforms.zMatTex = ZM.texU;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aPart;\nattribute vec2 iData;\nuniform highp sampler2D zMatTex;\nmat4 zMat;\n#define instanceMatrix zMat')
+        .replace('void main() {', 'void main() {\n{ int zr = int(iData.y + 0.5), zp = int(aPart + 0.5) * 4; zMat = mat4(texelFetch(zMatTex, ivec2(zp, zr), 0), texelFetch(zMatTex, ivec2(zp + 1, zr), 0), texelFetch(zMatTex, ivec2(zp + 2, zr), 0), texelFetch(zMatTex, ivec2(zp + 3, zr), 0)); }');
+}
+function zmShader(sh) {
+    enemyGlowShader(sh); zmVert(sh);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vFlash;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvFlash = iData.x;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vFlash;')
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vFlash > 1.5 ? vec3(0.08, 0.24, 0.95) : vec3(vFlash);');
+}
+function zmMat(kit, boss) {
+    const key = (kit.rough + (boss ? 'b' + boss : '')) + (Q.lite ? 'L' : 'S');
+    if (ZM.mats.has(key)) return ZM.mats.get(key);
+    const m = Q.lite ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: kit.rough, metalness: 0, envMapIntensity: theme.envInt * 0.6 });
+    if (boss) { m.emissive.setHex(boss); m.emissiveIntensity = 0.6; }
+    m.onBeforeCompile = zmShader;
+    m.customProgramCacheKey = () => 'zmerge';
+    ZM.mats.set(key, m);
+    return m;
+}
+function zmDepth() {
+    if (ZM.depth) return ZM.depth;
+    const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    m.onBeforeCompile = zmVert; m.customProgramCacheKey = () => 'zmdepth';
+    return (ZM.depth = m);
+}
+function zmGeo(kit) {
+    let g = ZM.geos.get(kit.id);
+    if (g) return g;
+    const parts = ZM_PARTS.map((p, i) => { const pg = kit[p].clone(); pg.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(pg.attributes.position.count).fill(i), 1)); return pg; });
+    g = mergeGeometries(parts, false); parts.forEach(pg => pg.dispose());
+    ZM.geos.set(kit.id, g);
+    return g;
+}
+function zmKind(kit, boss, need) {
+    let k = ZM.kinds.get(kit.id);
+    if (k && k.cap >= need) return k;
+    let cap = k ? k.cap : 8; while (cap < need) cap *= 2;
+    if (k) { scene.remove(k.mesh); k.mesh.geometry.dispose(); k.mesh.dispose(); }
+    const geo = zmGeo(kit).clone();
+    const data = new THREE.InstancedBufferAttribute(new Float32Array(cap * 2), 2); data.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('iData', data);
+    const mesh = new THREE.InstancedMesh(geo, zmMat(kit, boss), cap);
+    mesh.setColorAt(0, _zc.setRGB(1, 1, 1)); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false; mesh.count = 0;
+    mesh.castShadow = Q.enemyShadows >= 1; mesh.customDepthMaterial = zmDepth();
+    scene.add(mesh);
+    k = { mesh, data, cap, n: 0 };
+    ZM.kinds.set(kit.id, k);
+    return k;
+}
+function zmTex(rows) {
+    if (ZM.tex && ZM.rows >= rows) return;
+    let r = ZM.rows || 32; while (r < rows) r *= 2;
+    if (ZM.tex) ZM.tex.dispose();
+    ZM.data = new Float32Array(24 * 4 * r);           // a row per zombie: 6 matrices x 4 texels
+    ZM.tex = new THREE.DataTexture(ZM.data, 24, r, THREE.RGBAFormat, THREE.FloatType);
+    ZM.rows = r; ZM.texU.value = ZM.tex;
+}
+function zmUpdate() {
+    const need = _ziNeed; need.clear();
+    let rows = 0;
+    for (const e of zombieSet) {
+        if (!e.parent || !e.visible || !ziInView(e)) continue;
+        const id = e.userData.kit.id; need.set(id, (need.get(id) || 0) + 1); rows++;
+    }
+    for (const k of ZM.kinds.values()) k.n = 0;
+    if (rows) zmTex(rows);
+    let row = 0;
+    for (const e of zombieSet) {
+        if (!e.parent || !e.visible || !ziInView(e)) continue;
+        const u = e.userData, k = zmKind(u.kit, u.config.glow || 0, need.get(u.kit.id)), base = row * 96;
+        for (const p of u.iparts) ZM.data.set(p.mesh.visible ? p.mesh.matrixWorld.elements : _zmHide, base + ZM_PI[p.part] * 16);
+        k.mesh.setColorAt(k.n, u.tint);
+        k.data.array[k.n * 2] = u.zapT > gameTime ? 2 : (u.flash > 0 ? 0.8 : 0); k.data.array[k.n * 2 + 1] = row;
+        k.n++; row++;
+    }
+    for (const k of ZM.kinds.values()) {
+        k.mesh.count = k.n; k.mesh.visible = k.n > 0;
+        if (k.n) { const c = k.mesh.instanceColor; c.addUpdateRange(0, k.n * 3); c.needsUpdate = true; k.data.addUpdateRange(0, k.n * 2); k.data.needsUpdate = true; }
+    }
+    if (row) ZM.tex.needsUpdate = true;
 }
 const _zc = new THREE.Color();
 const _ziNeed = new Map(), _ziFwd = new V3();
@@ -647,6 +743,7 @@ function updateZombieInstances() {
         const halfH = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
         _ziCos = Math.cos(Math.min(3.1, halfH + (Q.shadows ? 0.95 : 0.55)));
     } else _ziCos = -2;      // looking straight up / down: draw everything
+    if (zmOn()) { zmUpdate(); updateXray(); return; }
     // count first so each set is big enough, then fill (cached keys + one reused Map: nothing is allocated per frame)
     const need = _ziNeed; need.clear();
     for (const e of zombieSet) {
@@ -657,8 +754,7 @@ function updateZombieInstances() {
     for (const z of ZI.sets.values()) z.n = 0;
     for (const e of zombieSet) {
         if (!e.parent || !e.visible || !ziInView(e)) continue;
-        const u = e.userData;
-        e.updateMatrixWorld(true);
+        const u = e.userData;     // its matrices are fresh: frame() updates the whole scene just before this (once, not twice)
         const fl = u.zapT > gameTime ? 2 : (u.flash > 0 ? 0.8 : 0);
         for (const p of u.iparts) {
             if (!p.mesh.visible) continue;
@@ -671,7 +767,7 @@ function updateZombieInstances() {
     }
     for (const z of ZI.sets.values()) {
         z.mesh.count = z.n; z.mesh.visible = z.n > 0;
-        if (z.n) { z.mesh.instanceMatrix.needsUpdate = true; z.mesh.instanceColor.needsUpdate = true; z.flash.needsUpdate = true; }
+        if (z.n) { instUpload(z.mesh, z.n); z.flash.addUpdateRange(0, z.n); z.flash.needsUpdate = true; }
     }
     updateXray();
 }
@@ -752,7 +848,7 @@ function updateXray() {
     }
     for (const z of XR.sets.values()) {
         z.mesh.count = z.n; z.mesh.visible = z.n > 0;
-        if (z.n) { z.mesh.instanceMatrix.needsUpdate = true; z.mesh.instanceColor.needsUpdate = true; }
+        if (z.n) instUpload(z.mesh, z.n);
     }
     XR.mat.uniforms.uTime.value = gameTime;
 }
@@ -767,7 +863,7 @@ function createEnemy(cfg, opt = {}) {
     const mk = (geo, parent, part, flags = {}) => {
         const m = new THREE.Mesh(geo, flags.mat || glowMat);
         m.userData = { parentEnemy: group, isHead: !!flags.head, isShield: !!flags.shield };
-        if (part) { m.layers.set(ENEMY_LAYER); iparts.push({ mesh: m, part }); }
+        if (part) { m.layers.set(ENEMY_LAYER); iparts.push({ mesh: m, part }); if (part !== 'head') m.matrixAutoUpdate = false; }     // limbs + torso never move on their pivot (the head nods)
         else { m.castShadow = Q.enemyShadows >= 1; if (m.castShadow) shadowParts.push(m); }
         parent.add(m); hitParts.push(m); return m;
     };
@@ -777,11 +873,13 @@ function createEnemy(cfg, opt = {}) {
     const lx = kit.legX ?? 0.27 * sl, ax = kit.armX ?? 0.68 * sl;
     const legL = pivot(group, -lx, HIP_Y, 0), legR = pivot(group, lx, HIP_Y, 0);
     mk(kit.legL, legL, 'legL'); mk(kit.legR, legR, 'legR');
+    legL.visible = legR.visible = false;      // their meshes only feed the instancing: the renderer needn't walk them
     // upper body hangs off the hips so it can hunch, sway and lurch
     const body = pivot(group, 0, HIP_Y, 0); body.rotation.x = kit.hunch;
     mk(kit.torso, body, 'torso');
     const armL = pivot(body, -ax, 2.2 - HIP_Y, 0), armR = pivot(body, ax, 2.2 - HIP_Y, 0);
     mk(kit.armL, armL, 'armL'); mk(kit.armR, armR, 'armR');
+    armL.visible = armR.visible = false;
     const head = mk(kit.head, body, 'head', { head: true });
     head.position.set(0, (2.78 - HIP_Y) * s, kit.headZ * s);
 

@@ -1227,31 +1227,35 @@
 
         // A 4GB Chromebook reports deviceMemory <= 4 and few cores: Auto starts lighter there
         const LOWEND = (navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
-        // Auto remembers the last tier that ran smoothly here; each launch starts one tier better and re-checks on the menu
+        // Auto remembers the tier it settled on here. The next launch starts there, and only tries one tier better when the
+        // last fights at that tier really held ~60 FPS (the menu alone is lighter than a fight, so it can't tell).
         const AUTO_TIERS = 4, AUTO_KEY = 'blocky_autotier';
-        let autoTier = (() => { try { const v = localStorage.getItem(AUTO_KEY); if (v !== null) return clamp((+v | 0) - 1, 0, AUTO_TIERS - 1); } catch (e) {} return LOWEND ? 1 : 0; })();
+        let autoTier = (() => { try {
+            const v = localStorage.getItem(AUTO_KEY);
+            if (v !== null) { const t = clamp(+v | 0, 0, AUTO_TIERS - 1), f = String(localStorage.getItem(AUTO_KEY + '_fps') || '').split(':'); return (+f[0] === t && +f[1] >= 58) ? Math.max(0, t - 1) : t; }
+        } catch (e) {} return LOWEND ? 1 : 0; })();
         const autoTierStart = autoTier;
         function saveAutoTier() { try { localStorage.setItem(AUTO_KEY, String(autoTier)); } catch (e) {} }
         function qualityPreset() {
             const dpr = window.devicePixelRatio || 1;
             const base = { shadows: true, shadowSize: 1024, extent: 48, soft: false, env: true, lite: false, dynamic: false, pointLights: 1, lampLights: 0, particles: 550, aniso: 2, post: null, cones: false, enemyShadows: 1, rain: 1, msaa: 0 };
             switch (settings.quality) {
-                case 'low':       return Object.assign(base, { name: 'low', shadows: false, shadowSize: 512, env: false, lite: true, scale: Math.min(dpr, 1) * 0.75, minScale: Math.min(dpr, 1) * 0.5, dynamic: true, resOnly: true, pointLights: 0, particles: 260, aniso: 1, enemyShadows: 0, rain: 0.5 });   // 5.0: Low also trims resolution to hold 60
+                case 'low':       return Object.assign(base, { name: 'low', shadows: false, shadowSize: 512, env: false, lite: true, scale: Math.min(dpr, 1) * 0.85, minScale: Math.min(dpr, 1) * 0.7, dynamic: true, resOnly: true, pointLights: 0, particles: 260, aniso: 1, enemyShadows: 0, rain: 0.5 });   // 5.1: never below 70% (only when that actually helps)
                 case 'normal':    return Object.assign(base, { name: 'normal', scale: Math.min(dpr, 1) });
                 // High / Cinematic hold their frame rate by trimming render resolution only (never effects)
                 case 'high':      return Object.assign(base, { name: 'high', shadowSize: 2048, extent: 56, soft: true, scale: Math.min(dpr, 1), minScale: 0.7, dynamic: true, resOnly: true, pointLights: 2, lampLights: 2, particles: 800, aniso: 8, post: 'high', cones: true, enemyShadows: 2, msaa: 4 });
                 case 'cinematic': return Object.assign(base, { name: 'cinematic', shadowSize: 2048, extent: 50, soft: true, scale: Math.min(dpr, 1.25), minScale: 0.75, dynamic: true, resOnly: true, pointLights: 2, lampLights: 3, particles: 900, aniso: 16, post: 'cinematic', cones: true, enemyShadows: 2, msaa: 4 });
                 // AUTO has 4 tiers (0 = normal look ... 3 = fastest). It remembers the tier that ran smoothly on this device.
                 default: {
-                    const t = autoTier, sc = Math.min(dpr, 1) * [1, 1, 0.85, 0.72][t];
-                    return Object.assign(base, { name: 'auto', tier: t, extent: 44, shadows: t === 0, env: t < 2, lite: t >= 2, scale: sc, minScale: sc * 0.72, dynamic: true,
+                    const t = autoTier, sc = Math.min(dpr, 1) * [1, 1, 0.9, 0.85][t];
+                    return Object.assign(base, { name: 'auto', tier: t, extent: 44, shadows: t === 0, env: t < 2, lite: t >= 2, scale: sc, minScale: Math.min(dpr, 1) * 0.7, dynamic: true,
                                                  pointLights: t < 2 ? 1 : 0, particles: [520, 460, 360, 260][t], aniso: t < 2 ? 2 : 1, enemyShadows: t === 0 ? 1 : 0, rain: t < 2 ? 1 : 0.5 });
                 }
             }
         }
         const QUALITY_DESC = {
-            auto: 'Tests your device on the menu and picks the best look that holds 60 FPS (it remembers it). In a fight it only nudges resolution; bigger changes wait for the break between waves, so no stutter. Best for Chromebooks.',
-            low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 75% resolution, and lower (down to 50%) during heavy fights so it holds 60 FPS.',
+            auto: 'Picks the best look that holds 60 FPS on this device and remembers it. In a fight it first tries a little less resolution (never under 70%), and if that does not help it switches to lighter effects, at the break between waves (or right away if it is really struggling). Best for Chromebooks.',
+            low: 'Fastest. Baked corner shadows, contact shadows under buildings, soft blob shadows under zombies, glowing muzzle flashes and explosions (no real lights), fog, sky and tone mapping. 85% resolution; in heavy fights it can dip to 70%, but only when that really raises the frame rate.',
             normal: 'Everything in Low plus sun shadows, sky reflections and full-resolution rendering.',
             high: 'Soft 2K shadows, bloom glow on lights and muzzle flashes, light shafts under street lamps, real lamp lights, 4x MSAA.',
             cinematic: 'Everything in High plus 4K shadows, stronger bloom, 4 real lamp lights, film grain, lens vignette and color grading. Needs a strong GPU.'
@@ -1456,6 +1460,7 @@
             camera.position.set(0, EYE_STAND, 0);
             fovNow = settings.fov;
             scene = new THREE.Scene();
+            scene.matrixWorldAutoUpdate = false;     // frame() updates it once, before the zombie instances read it (the renderer used to do it a second time)
             scene.add(camera);
             // The gun is drawn in its own pass with its own camera: never clips into walls,
             // and zooming in (ADS) doesn't blow the gun up.
@@ -1525,7 +1530,9 @@
             skyMat.fragmentShader = '#define SKY_OCT ' + (Q.lite ? 2 : 3) + '\n' + skyMat.fragmentShader;
             skyGroup = new THREE.Group();
             const dome = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), skyMat);
-            dome.renderOrder = -10; skyGroup.add(dome);
+            // drawn after the opaque world (not first): the depth test then skips every pixel a wall or the ground already covers,
+            // so the cloud shader only runs on sky you can actually see (it used to run on the whole screen)
+            dome.renderOrder = 1e4; skyGroup.add(dome);
             // Stars: tiny crisp dots of different brightness. Kept below the bloom threshold and
             // outside tone mapping so they never grow a fuzzy glow.
             const starPos = [], starCol = [];
@@ -1539,7 +1546,7 @@
             starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
             starGeo.setAttribute('color', new THREE.Float32BufferAttribute(starCol, 3));
             stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ vertexColors: true, size: 1.5, sizeAttenuation: false, fog: false, depthWrite: false, toneMapped: false }));
-            stars.renderOrder = -9;
+            stars.renderOrder = 1e4 + 1;
             skyGroup.add(stars);
             scene.add(skyGroup);
             envScene = new THREE.Scene();
@@ -1603,7 +1610,6 @@
             sun.shadow.mapSize.set(Q.shadowSize, Q.shadowSize);
             const c = sun.shadow.camera;
             c.left = c.bottom = -Q.extent; c.right = c.top = Q.extent; c.updateProjectionMatrix();
-            if (blobMesh) blobMesh.visible = !Q.shadows;
         }
         function recompileAll() {
             ziReset();
@@ -1614,7 +1620,8 @@
 
         function applyQuality() {
             Q = qualityPreset();
-            dynScale = Q.scale; lowFpsStreak = 0; autoStage = 0; autoRes.t = autoRes.good = autoRes.bad = 0; autoRes.warm = 4; autoMenuFps.length = 0;
+            dynScale = Q.scale; lowFpsStreak = 0; autoStage = 0; autoRes.t = autoRes.good = autoRes.bad = autoRes.awful = 0; autoRes.warm = 4; autoMenuFps.length = 0;
+            RES.check = 0; RES.last = -9; RES.noHelpUntil = 0;
             renderer.setPixelRatio(dynScale);
             renderer.setSize(window.innerWidth, window.innerHeight);
             detailTex.anisotropy = Q.aniso; detailTex.needsUpdate = true;
@@ -1623,6 +1630,7 @@
             refreshWorldMaterials();
             applyTheme(themeId);
             setupPost();
+            for (const c of weaponCam.children) vmLiteMats(c);
             recompileAll();
         }
         function setRenderScale(s) {
@@ -3984,8 +3992,20 @@
             m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3);
             m.instanceColor.setUsage(THREE.DynamicDrawUsage);
             m.frustumCulled = false; m.count = 0;
-            scene.add(m);
+            scene.add(m); INST.push(m);
             return m;
+        }
+        // Upload only the instances in use: the buffers are sized for the busiest moment, and sending all of them
+        // every frame (even when empty) was a big share of the per-frame GPU traffic on slow machines.
+        const INST = [];
+        function instUpload(m, n, from = 0) {
+            if (n <= 0) return;
+            const a = m.instanceMatrix; a.addUpdateRange(from * 16, n * 16); a.needsUpdate = true;
+            const c = m.instanceColor; if (c) { c.addUpdateRange(from * 3, n * 3); c.needsUpdate = true; }
+        }
+        // right before rendering: an empty effect mesh is skipped instead of costing a draw call (blob shadows only on Low)
+        function instFlush() {
+            for (let i = 0; i < INST.length; i++) { const m = INST[i]; m.visible = m.count > 0 && (m !== blobMesh || !Q.shadows); }
         }
         function initFx() {
             fxGlow = makeInstanced(sharedBox, new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), PMAX);
@@ -4029,7 +4049,7 @@
                 n++;
             }
             hpBg.count = hpFg.count = n;
-            if (n) { hpBg.instanceMatrix.needsUpdate = hpFg.instanceMatrix.needsUpdate = true; hpBg.instanceColor.needsUpdate = hpFg.instanceColor.needsUpdate = true; }
+            instUpload(hpBg, n); instUpload(hpFg, n);
         }
 
 
@@ -4077,7 +4097,7 @@
                 n++;
             }
             mesh.count = n;
-            mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true;
+            instUpload(mesh, n);
         }
         function updateParticles(dt) { stepParticleList(glowParts, fxGlow, dt); stepParticleList(solidParts, fxSolid, dt); updateSmoke(dt); }
 
@@ -4115,9 +4135,7 @@
                 _m4.compose(_p, _q, _s.set(w * 0.38, w * 0.38, L * 0.96)); tracerMesh.setMatrixAt(n, _m4); tracerMesh.instanceColor.setXYZ(n, f, f, f * 0.95); n++;
             }
             tracerMesh.count = n; boltMesh.count = nb;
-            tracerMesh.instanceMatrix.needsUpdate = true; tracerMesh.instanceColor.needsUpdate = true;
-            if (nb || boltMesh._had) { boltMesh.instanceMatrix.needsUpdate = true; boltMesh.instanceColor.needsUpdate = true; }
-            boltMesh._had = nb > 0;
+            instUpload(tracerMesh, n); instUpload(boltMesh, nb);
         }
 
 
@@ -4134,7 +4152,7 @@
             decalIdx = (decalIdx + 1) % DMAX;
             decalCount = Math.min(DMAX, decalCount + 1);
             decalMesh.count = decalCount;
-            decalMesh.instanceMatrix.needsUpdate = true; decalMesh.instanceColor.needsUpdate = true;
+            instUpload(decalMesh, 1, (decalIdx + DMAX - 1) % DMAX);
         }
         let scorchIdx = 0, scorchCount = 0;
         const _up3 = new V3(0, 1, 0);
@@ -4146,14 +4164,14 @@
             const g = 0.75 + Math.random() * 0.25; scorchMesh.instanceColor.setXYZ(scorchIdx, g, g, g);
             scorchIdx = (scorchIdx + 1) % SCMAX; scorchCount = Math.min(SCMAX, scorchCount + 1);
             scorchMesh.count = scorchCount;
-            scorchMesh.instanceMatrix.needsUpdate = true; scorchMesh.instanceColor.needsUpdate = true;
+            instUpload(scorchMesh, 1, (scorchIdx + SCMAX - 1) % SCMAX);
         }
         function clearDecals() { decalIdx = 0; decalCount = 0; scorchIdx = 0; scorchCount = 0; if (decalMesh) decalMesh.count = 0; if (scorchMesh) scorchMesh.count = 0; }
 
 
         // Blob shadows under enemies, only used when real shadows are off (Low quality)
         function updateBlobs() {
-            if (!blobMesh.visible) return;
+            if (Q.shadows) return;
             let n = 0;
             for (const e of enemies) {
                 if (n >= BMAX) break;
@@ -4167,7 +4185,7 @@
                 n++;
             }
             blobMesh.count = n;
-            blobMesh.instanceMatrix.needsUpdate = true; blobMesh.instanceColor.needsUpdate = true;
+            instUpload(blobMesh, n);
         }
 
 
@@ -4217,8 +4235,7 @@
                 n++;
             }
             smokeMesh.count = n;
-            if (n || smokeMesh._had) { smokeMesh.instanceMatrix.needsUpdate = true; smokeMesh.instanceColor.needsUpdate = true; }
-            smokeMesh._had = n > 0;
+            instUpload(smokeMesh, n);
         }
 
 
@@ -4583,6 +4600,24 @@
             VM.sleeve.color.setHex(sc); VM.cuff.color.setHex(sc).multiplyScalar(0.62);
             VM.glove.color.setHex(gc); VM.gloveDark.color.setHex(gc).multiplyScalar(0.7);
         }
+        // Low / lite: the gun draws with Lambert copies of its PBR materials (much cheaper per pixel). A copy shares the
+        // original's colours and passes emissive / opacity through, so pulsing skins and fades still animate.
+        const VM_LITE = new WeakMap();
+        function vmLiteMat(m) {
+            if (!m) return m;
+            if (!Q.lite) return m.userData.std || m;
+            if (!m.isMeshStandardMaterial) return m;
+            let l = VM_LITE.get(m);
+            if (!l) {
+                l = new THREE.MeshLambertMaterial({ map: m.map, vertexColors: m.vertexColors, transparent: m.transparent, side: m.side, alphaTest: m.alphaTest, depthWrite: m.depthWrite, depthTest: m.depthTest, toneMapped: m.toneMapped, blending: m.blending });
+                l.color = m.color; l.emissive = m.emissive;
+                for (const k of ['emissiveIntensity', 'opacity']) Object.defineProperty(l, k, { get: () => m[k], set: v => { m[k] = v; }, configurable: true });
+                l.userData = Object.assign({}, m.userData, { std: m });
+                VM_LITE.set(m, l);
+            }
+            return l;
+        }
+        function vmLiteMats(root) { root.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material)) o.material = vmLiteMat(o.material); }); }
         // ---- merge: bake every static mesh of a build into one mesh per material class (per moving group) ----
         function matClass(mat) {
             const u = mat.userData; if (u.base) return 'ARM';
@@ -5590,7 +5625,10 @@
 
 
             root.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+            vmLiteMats(root);
             root.visible = false;
+            // every gun you've held stays cached here; the hidden ones skip the per-frame matrix update (most of the gun scene's cost)
+            root.updateMatrixWorld = function (force) { if (this.visible) THREE.Object3D.prototype.updateMatrixWorld.call(this, force); };
             weaponCam.add(root);
             if (FX.trail) weaponCam.add(FX.trail);
             if (FX.ox) {           // dual pistols: where the left gun's muzzle / ejection port are, in the right gun's space
@@ -5634,7 +5672,7 @@
                     else { const mesh = new THREE.Mesh(_casingGeo, VM.brass); mesh.frustumCulled = false; weaponCam.add(mesh); cs = { mesh, life: 0, v: new V3(), spin: new V3() }; casings.push(cs); }
                 }
                 const shell = kind === 'shell';
-                cs.mesh.material = shell ? VM.shellRed : VM.brass;
+                cs.mesh.material = vmLiteMat(shell ? VM.shellRed : VM.brass);
                 cs.mesh.scale.set(shell ? 0.016 : 0.007, shell ? 0.016 : 0.007, shell ? 0.045 : 0.02);
                 m.eject.getWorldPosition(_p); weaponCam.worldToLocal(_p);
                 cs.mesh.position.copy(_p);
@@ -8131,6 +8169,102 @@
             for (const z of ZI.sets.values()) { scene.remove(z.mesh); z.mesh.geometry.dispose(); z.mesh.dispose(); }
             for (const m of ZI.mats.values()) m.dispose();
             ZI.sets.clear(); ZI.mats.clear();
+            for (const k of ZM.kinds.values()) { scene.remove(k.mesh); k.mesh.geometry.dispose(); k.mesh.dispose(); }
+            for (const m of ZM.mats.values()) m.dispose();
+            ZM.kinds.clear(); ZM.mats.clear();
+        }
+        // ---------- 5.1: ONE DRAW CALL PER ZOMBIE TYPE ----------
+        // A type's 6 body parts are merged into one mesh (each vertex knows its part), and every visible zombie's 6 part
+        // matrices go into one float texture that the vertex shader reads (WebGL2). A type then costs 1 draw call and 2 small
+        // uploads instead of 6 draw calls and 18 uploads, which was a big share of each frame on a slow Chromebook processor.
+        // Without WebGL2 the per-part sets above are used.
+        const ZM_PARTS = ['legL', 'legR', 'torso', 'armL', 'armR', 'head'], ZM_PI = { legL: 0, legR: 1, torso: 2, armL: 3, armR: 4, head: 5 };
+        const ZM = { kinds: new Map(), geos: new Map(), mats: new Map(), tex: null, data: null, rows: 0, texU: { value: null }, depth: null };
+        const zmOn = () => renderer.capabilities.isWebGL2;
+        const _zmHide = new Float32Array(16); _zmHide[15] = 1;      // a part that's gone (head shot off): squashed to a point
+        function zmVert(sh) {
+            sh.uniforms.zMatTex = ZM.texU;
+            sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aPart;\nattribute vec2 iData;\nuniform highp sampler2D zMatTex;\nmat4 zMat;\n#define instanceMatrix zMat')
+                .replace('void main() {', 'void main() {\n{ int zr = int(iData.y + 0.5), zp = int(aPart + 0.5) * 4; zMat = mat4(texelFetch(zMatTex, ivec2(zp, zr), 0), texelFetch(zMatTex, ivec2(zp + 1, zr), 0), texelFetch(zMatTex, ivec2(zp + 2, zr), 0), texelFetch(zMatTex, ivec2(zp + 3, zr), 0)); }');
+        }
+        function zmShader(sh) {
+            enemyGlowShader(sh); zmVert(sh);
+            sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vFlash;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvFlash = iData.x;');
+            sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vFlash;')
+                .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vFlash > 1.5 ? vec3(0.08, 0.24, 0.95) : vec3(vFlash);');
+        }
+        function zmMat(kit, boss) {
+            const key = (kit.rough + (boss ? 'b' + boss : '')) + (Q.lite ? 'L' : 'S');
+            if (ZM.mats.has(key)) return ZM.mats.get(key);
+            const m = Q.lite ? new THREE.MeshLambertMaterial({ vertexColors: true }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: kit.rough, metalness: 0, envMapIntensity: theme.envInt * 0.6 });
+            if (boss) { m.emissive.setHex(boss); m.emissiveIntensity = 0.6; }
+            m.onBeforeCompile = zmShader;
+            m.customProgramCacheKey = () => 'zmerge';
+            ZM.mats.set(key, m);
+            return m;
+        }
+        function zmDepth() {
+            if (ZM.depth) return ZM.depth;
+            const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+            m.onBeforeCompile = zmVert; m.customProgramCacheKey = () => 'zmdepth';
+            return (ZM.depth = m);
+        }
+        function zmGeo(kit) {
+            let g = ZM.geos.get(kit.id);
+            if (g) return g;
+            const parts = ZM_PARTS.map((p, i) => { const pg = kit[p].clone(); pg.setAttribute('aPart', new THREE.BufferAttribute(new Float32Array(pg.attributes.position.count).fill(i), 1)); return pg; });
+            g = mergeGeometries(parts, false); parts.forEach(pg => pg.dispose());
+            ZM.geos.set(kit.id, g);
+            return g;
+        }
+        function zmKind(kit, boss, need) {
+            let k = ZM.kinds.get(kit.id);
+            if (k && k.cap >= need) return k;
+            let cap = k ? k.cap : 8; while (cap < need) cap *= 2;
+            if (k) { scene.remove(k.mesh); k.mesh.geometry.dispose(); k.mesh.dispose(); }
+            const geo = zmGeo(kit).clone();
+            const data = new THREE.InstancedBufferAttribute(new Float32Array(cap * 2), 2); data.setUsage(THREE.DynamicDrawUsage);
+            geo.setAttribute('iData', data);
+            const mesh = new THREE.InstancedMesh(geo, zmMat(kit, boss), cap);
+            mesh.setColorAt(0, _zc.setRGB(1, 1, 1)); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
+            mesh.frustumCulled = false; mesh.count = 0;
+            mesh.castShadow = Q.enemyShadows >= 1; mesh.customDepthMaterial = zmDepth();
+            scene.add(mesh);
+            k = { mesh, data, cap, n: 0 };
+            ZM.kinds.set(kit.id, k);
+            return k;
+        }
+        function zmTex(rows) {
+            if (ZM.tex && ZM.rows >= rows) return;
+            let r = ZM.rows || 32; while (r < rows) r *= 2;
+            if (ZM.tex) ZM.tex.dispose();
+            ZM.data = new Float32Array(24 * 4 * r);           // a row per zombie: 6 matrices x 4 texels
+            ZM.tex = new THREE.DataTexture(ZM.data, 24, r, THREE.RGBAFormat, THREE.FloatType);
+            ZM.rows = r; ZM.texU.value = ZM.tex;
+        }
+        function zmUpdate() {
+            const need = _ziNeed; need.clear();
+            let rows = 0;
+            for (const e of zombieSet) {
+                if (!e.parent || !e.visible || !ziInView(e)) continue;
+                const id = e.userData.kit.id; need.set(id, (need.get(id) || 0) + 1); rows++;
+            }
+            for (const k of ZM.kinds.values()) k.n = 0;
+            if (rows) zmTex(rows);
+            let row = 0;
+            for (const e of zombieSet) {
+                if (!e.parent || !e.visible || !ziInView(e)) continue;
+                const u = e.userData, k = zmKind(u.kit, u.config.glow || 0, need.get(u.kit.id)), base = row * 96;
+                for (const p of u.iparts) ZM.data.set(p.mesh.visible ? p.mesh.matrixWorld.elements : _zmHide, base + ZM_PI[p.part] * 16);
+                k.mesh.setColorAt(k.n, u.tint);
+                k.data.array[k.n * 2] = u.zapT > gameTime ? 2 : (u.flash > 0 ? 0.8 : 0); k.data.array[k.n * 2 + 1] = row;
+                k.n++; row++;
+            }
+            for (const k of ZM.kinds.values()) {
+                k.mesh.count = k.n; k.mesh.visible = k.n > 0;
+                if (k.n) { const c = k.mesh.instanceColor; c.addUpdateRange(0, k.n * 3); c.needsUpdate = true; k.data.addUpdateRange(0, k.n * 2); k.data.needsUpdate = true; }
+            }
+            if (row) ZM.tex.needsUpdate = true;
         }
         const _zc = new THREE.Color();
         const _ziNeed = new Map(), _ziFwd = new V3();
@@ -8149,6 +8283,7 @@
                 const halfH = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
                 _ziCos = Math.cos(Math.min(3.1, halfH + (Q.shadows ? 0.95 : 0.55)));
             } else _ziCos = -2;      // looking straight up / down: draw everything
+            if (zmOn()) { zmUpdate(); updateXray(); return; }
             // count first so each set is big enough, then fill (cached keys + one reused Map: nothing is allocated per frame)
             const need = _ziNeed; need.clear();
             for (const e of zombieSet) {
@@ -8159,8 +8294,7 @@
             for (const z of ZI.sets.values()) z.n = 0;
             for (const e of zombieSet) {
                 if (!e.parent || !e.visible || !ziInView(e)) continue;
-                const u = e.userData;
-                e.updateMatrixWorld(true);
+                const u = e.userData;     // its matrices are fresh: frame() updates the whole scene just before this (once, not twice)
                 const fl = u.zapT > gameTime ? 2 : (u.flash > 0 ? 0.8 : 0);
                 for (const p of u.iparts) {
                     if (!p.mesh.visible) continue;
@@ -8173,7 +8307,7 @@
             }
             for (const z of ZI.sets.values()) {
                 z.mesh.count = z.n; z.mesh.visible = z.n > 0;
-                if (z.n) { z.mesh.instanceMatrix.needsUpdate = true; z.mesh.instanceColor.needsUpdate = true; z.flash.needsUpdate = true; }
+                if (z.n) { instUpload(z.mesh, z.n); z.flash.addUpdateRange(0, z.n); z.flash.needsUpdate = true; }
             }
             updateXray();
         }
@@ -8254,7 +8388,7 @@
             }
             for (const z of XR.sets.values()) {
                 z.mesh.count = z.n; z.mesh.visible = z.n > 0;
-                if (z.n) { z.mesh.instanceMatrix.needsUpdate = true; z.mesh.instanceColor.needsUpdate = true; }
+                if (z.n) instUpload(z.mesh, z.n);
             }
             XR.mat.uniforms.uTime.value = gameTime;
         }
@@ -8269,7 +8403,7 @@
             const mk = (geo, parent, part, flags = {}) => {
                 const m = new THREE.Mesh(geo, flags.mat || glowMat);
                 m.userData = { parentEnemy: group, isHead: !!flags.head, isShield: !!flags.shield };
-                if (part) { m.layers.set(ENEMY_LAYER); iparts.push({ mesh: m, part }); }
+                if (part) { m.layers.set(ENEMY_LAYER); iparts.push({ mesh: m, part }); if (part !== 'head') m.matrixAutoUpdate = false; }     // limbs + torso never move on their pivot (the head nods)
                 else { m.castShadow = Q.enemyShadows >= 1; if (m.castShadow) shadowParts.push(m); }
                 parent.add(m); hitParts.push(m); return m;
             };
@@ -8279,11 +8413,13 @@
             const lx = kit.legX ?? 0.27 * sl, ax = kit.armX ?? 0.68 * sl;
             const legL = pivot(group, -lx, HIP_Y, 0), legR = pivot(group, lx, HIP_Y, 0);
             mk(kit.legL, legL, 'legL'); mk(kit.legR, legR, 'legR');
+            legL.visible = legR.visible = false;      // their meshes only feed the instancing: the renderer needn't walk them
             // upper body hangs off the hips so it can hunch, sway and lurch
             const body = pivot(group, 0, HIP_Y, 0); body.rotation.x = kit.hunch;
             mk(kit.torso, body, 'torso');
             const armL = pivot(body, -ax, 2.2 - HIP_Y, 0), armR = pivot(body, ax, 2.2 - HIP_Y, 0);
             mk(kit.armL, armL, 'armL'); mk(kit.armR, armR, 'armR');
+            armL.visible = armR.visible = false;
             const head = mk(kit.head, body, 'head', { head: true });
             head.position.set(0, (2.78 - HIP_Y) * s, kit.headZ * s);
 
@@ -10650,7 +10786,7 @@
             mmStatic = c;
         }
         function drawMinimap(dt) {
-            mmTick += dt; if (mmTick < 1 / 20) return; mmTick = 0;
+            mmTick += dt; if (mmTick < 1 / (Q.lite ? 12 : 20)) return; mmTick = 0;
             const MAP_SIZE = mapSize(), w = ui.minimap.width, scale = w / MAP_SIZE, off = MAP_SIZE / 2;
             const c = minimapCtx;
             c.clearRect(0, 0, w, ui.minimap.height);
@@ -10807,13 +10943,16 @@
         }
 
 
-        let fpsAcc = 0, fpsFrames = 0;
+        let fpsAcc = 0, fpsFrames = 0, cpuAcc = 0;
+        // Resolution steps are tested: if a step down doesn't really raise the frame rate, the graphics chip wasn't the limit
+        // (the processor is, e.g. a Chromebook with other tabs open), so the sharpness goes back and it stops trying for a while.
+        const RES = { prev: 0, before: 0, check: 0, last: -9, noHelpUntil: 0 };
         function trackFps(raw) {
             fpsAcc += raw; fpsFrames++;
             if (fpsAcc < 1) return;
-            const fps = fpsFrames / fpsAcc; fpsAcc = 0; fpsFrames = 0;
+            const fps = fpsFrames / fpsAcc, cpu = cpuAcc / fpsFrames; fpsAcc = 0; fpsFrames = 0; cpuAcc = 0;
             ui.fps.classList.toggle('hidden', !settings.showFps || currentGameState !== 'playing');
-            if (settings.showFps) setText(ui.fps, `${Math.round(fps)} FPS \u00b7 ${Math.round(dynScale * 100)}% res \u00b7 ${Q.shadows ? 'shadows on' : 'shadows off'} \u00b7 ${Q.name}`);
+            if (settings.showFps) setText(ui.fps, `${Math.round(fps)} FPS \u00b7 ${Math.round(dynScale * 100)}% res \u00b7 cpu ${cpu.toFixed(1)}ms \u00b7 ${Q.shadows ? 'shadows on' : 'shadows off'} \u00b7 ${Q.name}${Q.tier !== undefined ? ' ' + (Q.tier + 1) : ''}`);
             if (!Q.dynamic || (document.hidden && !debugNoLock)) return;
             // AUTO picks its quality tier on the menu (the arena renders behind it), where a shader rebuild doesn't matter.
             if (currentGameState === 'main' && settings.quality === 'auto') {
@@ -10828,23 +10967,44 @@
                 return;
             }
             if (currentGameState !== 'playing') return;
-            // in a fight: only gentle resolution steps (never a shader rebuild). Down fast-ish, up slowly.
-            autoRes.t++;
-            if (fps < 54) { autoRes.good = 0; if (dynScale > Q.minScale + 1e-3) { setRenderScale(Math.max(Q.minScale, dynScale - (fps < 40 ? 0.12 : 0.06))); autoRes.t = 0; } }
-            else if (fps >= 57.5) { if (++autoRes.good >= 4 && dynScale < Q.scale - 1e-3) { setRenderScale(Math.min(Q.scale, dynScale + 0.04)); autoRes.good = 0; autoRes.t = 0; } }
+            const sec = ++autoRes.t;
+            if (settings.quality === 'auto') { autoPlay.sum += fps; autoPlay.n++; if (autoPlay.n % 20 === 0) saveAutoFps(); }
+            // judge the last step down (2 seconds on, so the resize itself doesn't count)
+            if (RES.check && --RES.check === 0 && dynScale < RES.prev && fps < RES.before * 1.07) {
+                setRenderScale(RES.prev); RES.last = sec; RES.noHelpUntil = sec + 30; return;
+            }
+            // in a fight: only resolution steps (never a shader rebuild), at most one every 2 seconds. Down fast-ish, up slowly.
+            if (fps < 54) {
+                autoRes.good = 0;
+                if (dynScale > Q.minScale + 1e-3 && sec >= RES.noHelpUntil && !RES.check && sec - RES.last >= 2) {
+                    RES.prev = dynScale; RES.before = fps; RES.check = 2; RES.last = sec;
+                    setRenderScale(Math.max(Q.minScale, dynScale - (fps < 40 ? 0.1 : 0.05)));
+                }
+            } else if (fps >= 57.5) { if (++autoRes.good >= 4 && dynScale < Q.scale - 1e-3) { setRenderScale(Math.min(Q.scale, dynScale + 0.04)); autoRes.good = 0; RES.last = sec; } }
             else autoRes.good = 0;
-            // still struggling at the lowest resolution for a while: drop a tier at the next break between waves
-            if (settings.quality === 'auto' && fps < 45 && dynScale <= Q.minScale + 1e-3) { if (++autoRes.bad >= 8 && autoTier < AUTO_TIERS - 1) autoPending = true; }
-            else autoRes.bad = Math.max(0, autoRes.bad - 1);
+            // AUTO: under 50 and resolution can't help (at its floor, or it made no difference): a lighter tier at the next
+            // break between waves; under 40 for 6 seconds straight: right away (one short hitch beats a whole slow wave)
+            if (settings.quality === 'auto' && autoTier < AUTO_TIERS - 1) {
+                const resDone = dynScale <= Q.minScale + 1e-3 || sec < RES.noHelpUntil;
+                if (fps < 50 && resDone) { if (++autoRes.bad >= 4) autoPending = true; } else autoRes.bad = Math.max(0, autoRes.bad - 1);
+                if (fps < 40) { if (++autoRes.awful >= 6) { autoPending = false; dropAutoTier(); } } else autoRes.awful = 0;
+            }
         }
-        const autoMenuFps = [], autoRes = { t: 0, good: 0, bad: 0, warm: 4 };
+        // how Auto actually played (average FPS in a fight at this tier): the next launch only tries a better tier if it was smooth
+        const autoPlay = { sum: 0, n: 0 };
+        function saveAutoFps() { if (autoPlay.n >= 10) try { localStorage.setItem(AUTO_KEY + '_fps', autoTier + ':' + Math.round(autoPlay.sum / autoPlay.n)); } catch (e) {} }
+        function dropAutoTier() {
+            saveAutoFps(); autoPlay.sum = autoPlay.n = 0;
+            autoTier++; saveAutoTier(); applyQuality();
+            toast('Auto graphics: lowered a notch for smoother play', '#9ca3af', 2);
+        }
+        const autoMenuFps = [], autoRes = { t: 0, good: 0, bad: 0, awful: 0, warm: 4 };
         let autoPending = false;
         // called every frame; applies a pending tier drop only when no wave is running
         function autoApplyPending() {
             if (!autoPending || waveActive || currentGameState !== 'playing') return;
             autoPending = false; autoRes.bad = 0;
-            autoTier++; saveAutoTier(); applyQuality();
-            toast('Auto graphics: lowered a notch for smoother play', '#9ca3af', 2);
+            dropAutoTier();
         }
         let frameNo = 0;
         // tiny frame profiler (off unless a test turns it on): ms spent per system, summed between marks
@@ -10861,7 +11021,7 @@
             frame(ts);
         }
         function frame(ts) {
-            const time = (typeof ts === 'number') ? ts : performance.now();
+            const time = (typeof ts === 'number') ? ts : performance.now(), cpu0 = performance.now();
             if (prevTime === null) prevTime = time;
             const raw = Math.max((time - prevTime) / 1000, 0);
             const delta = Math.min(raw, 0.05);
@@ -10967,7 +11127,9 @@
             updateBlobs();
             updateHpBars();
             updateSun();
+            scene.updateMatrixWorld();
             updateZombieInstances();
+            instFlush();
             // the sun's shadow map only re-renders every other frame (half the shadow cost, invisible at 60fps)
             pfMark('misc');
             renderer.info.autoReset = false; renderer.info.reset();
@@ -10988,6 +11150,7 @@
                 }
             }
             pfMark('render');
+            cpuAcc += performance.now() - cpu0;
         }
 
         // ---- 24-ui-shop.js ----
