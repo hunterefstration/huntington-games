@@ -60,8 +60,17 @@ Real cross-network test (two Chromebooks, different states) still needed before 
 ## Grapevine in the launcher + relay (on `main` in both repos; server runs the grapevine repo's `main`)
 - Grapevine's server was reachable only over WebRTC, which school networks block. The fix is in the **grapevine** repo: `relay/` (HGNet over public MQTT relays
   on 443, end-to-end encrypted, raced against PeerJS) plus PeerJS TURN servers. The server is a $5 Vultr box (Atlanta); hosting guide: grapevine `deploy/DEPLOY.md`;
-  database (Supabase) needs the migrations up to `migrate-v13.sql`. Update the server with (owner runs it in the console):
-  `cd ~/grapevine && git fetch && git checkout main && git pull && systemctl restart grapevine`.
+  database (Supabase): migrations run by themselves at server start (archive.js `migrate()`).
+  **The server updates itself**: a systemd timer runs grapevine `deploy/update.sh` every 2 minutes; it follows grapevine `main`, restarts
+  only when server files changed, rolls back a version that does not come up, and restarts a hung server. So to change the server:
+  push to grapevine `main`, wait ~3 minutes. Never ask the owner to use a terminal. Machine setup lives in `deploy/provision.sh`
+  (re-applied on every update). Test the updater with `bash test/update-test.sh` before pushing changes to it: if it breaks, nobody
+  can fix the server without a terminal.
+- Direct door: Caddy (auto-HTTPS on `<server IP>.sslip.io`) passes `/gv` to `relay/direct.js`; browsers learn the address from the
+  signed relay key exchange and connect straight there afterwards (~0.3 s instead of seconds), falling back to the relays where blocked.
+  GVLink (`relay/gvlink.js`, copied to `gv/vendor/gvlink.js`) does this by itself; `HGGrapevine.status().via` says 'direct' or 'relay'.
+- Only servers that actually run belong in the archive lists (`CONFIG.archiveIds` in client.html, `archives` in gv/core.js): a missing
+  one costs seconds whenever it is tried.
 - The launcher IS Grapevine (`gv/`, see gv/README.md): an account gates the launcher, the Grapevine tab runs the full app signed in as the same account
   (`gv/app.html`, copied from grapevine `client.html` with `tools/sync-grapevine.sh`; rebuild `gv/account.js` with `tools/build-gv.sh`; the vendor copies in
   `gv/vendor/` come from grapevine `relay/`). Games read the account as `parent.HGGrapevine` (or `opener` in the New-tab copy).

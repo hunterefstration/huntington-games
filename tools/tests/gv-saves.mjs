@@ -36,7 +36,7 @@ async function device(ctx) {
     let html = fs.readFileSync(ROOT + 'gv/app.html', 'utf8');
     html = html.replace(/archiveIds: \[[\s\S]*?\],/, `archiveIds: ['${ARCHIVE}'],`)
       .replace(/relay: \{ shards: 2 \}/, "relay: { shards: 2, relays: ['ws://127.0.0.1:9001'] }")
-      .replace("connect-src 'self' ", "connect-src 'self' ws://127.0.0.1:9001 ws://127.0.0.1:9999 ")
+      .replace("connect-src 'self' ", "connect-src 'self' ws://127.0.0.1:9001 ws://127.0.0.1:9999 ws://127.0.0.1:8787 ")
       .replace(/peerOptions: \{\s*debug: [0-9],?/, "peerOptions: { debug: 0, host: '127.0.0.1', port: 9999, path: '/gv', secure: false,")
       .replace(/serverPubs: \{[^}]*\}/, 'serverPubs: {}');
     await r.fulfill({ contentType: 'text/html', body: html });
@@ -99,6 +99,13 @@ try {
   await B.evaluate(() => document.getElementById('gl-saves-show').click());
   const det = await until(() => B.$eval('#gl-saves-detail', e => /in account/.test(e.textContent) ? e.textContent : ''), 15000);
   check('the Saves tab can show what is saved, key by key', !!det && /brownEClickerSave/.test(det), (det || '').slice(0, 120));
+  console.log('\n=== 3. the direct door ===');
+  check('the server told this launcher where its direct door is', await A.evaluate(() => Object.keys(localStorage).some(k => /^gvlink:direct:/.test(k))));
+  await A.reload();
+  const t0 = Date.now();
+  await until(async () => (await status(A)) === 'online', 30000, 50);
+  const ms = Date.now() - t0;
+  check('after that the launcher connects straight to the server', await A.evaluate(() => HGGrapevine.status().via) === 'direct', `${ms} ms from reload to online`);
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 await browser.close();
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');

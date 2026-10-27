@@ -18,7 +18,7 @@
 
   var CFG = Object.assign({
     // Must match client.html's CONFIG in the Grapevine repo (archiveIds and serverPubs).
-    archives: ['grapevine-a-f9c20eec06f3', 'grapevine-b-ae8b586e0081'],
+    archives: ['grapevine-a-f9c20eec06f3'],   // only servers that run: a missing one costs seconds every time it is tried
     pinned: { 'grapevine-a-f9c20eec06f3': '114bee3b10b7d63870478007f5008b1dc5230389e4f5ad0786ef68b86a408ba0' },
     shards: 2,
     relays: undefined,          // tests point this at a local broker
@@ -494,7 +494,7 @@
     version: 1,
     config: CFG,
     me: function () { return st.name ? { name: st.name, userId: st.userId, pub: st.pub, status: st.status } : null; },
-    status: function () { return { status: st.status, text: st.text }; },
+    status: function () { return { status: st.status, text: st.text, via: st.conn && st.conn.open ? (st.conn.direct ? 'direct' : 'relay') : '' }; },
     online: function () { return st.ready; },
     friends: function () { return { friends: st.friends.slice(), incoming: st.incoming.slice(), outgoing: st.outgoing.slice(), loaded: st.haveFriends }; },
     friendState: friendState,

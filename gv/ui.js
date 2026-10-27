@@ -285,7 +285,9 @@
   function connView() {
     var box = h('div');
     box.appendChild(h('div', { class: 'sect', text: 'connection' }));
-    box.appendChild(h('p', { class: 'sub', text: 'Grapevine reaches the server through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
+    box.appendChild(h('p', { class: 'sub', text: 'Grapevine connects straight to its server when this network allows it, and otherwise through public relay servers on port 443, so it works on school networks. Everything between you and the server is encrypted.' }));
+    var via = L.status().via;
+    if (via) box.appendChild(h('div', { class: 'row', id: 'gl-via' }, h('span', { class: 'dot on' }), h('span', { class: 'nm', text: via === 'direct' ? 'Connected directly to the server (fastest)' : 'Connected through a relay' })));
     var tlv = L.timeline();
     if (tlv.steps.length > 1) {
       box.appendChild(h('div', { class: 'sect', text: 'last connection - ' + (tlv.total / 1000).toFixed(1) + ' s in all' }));
