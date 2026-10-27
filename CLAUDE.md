@@ -21,6 +21,8 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
 - Keep existing saves working: migrate, never wipe.
 
 ## Tools
+- Sovereign and Blocky Shooter V2 are built from many files in `<game>/src/` (+ `data/`): edit those, never their
+  `index.html`, then `node tools/build-game.js "<game dir>" --check` and commit the sources and the rebuilt `index.html` together.
 - `tools/setup-tools.sh` once per container (obfuscator, offline three.js and Tailwind for tests, in `/tmp/hg-tools`).
 - `tools/release.sh prepare|finish` for releases; licence tests in `tools/tests/gate.js` and `gate2.js`.
 - Playwright: `NODE_PATH=/opt/node22/lib/node_modules`, launch Chromium with
