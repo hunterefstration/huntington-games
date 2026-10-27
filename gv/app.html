@@ -518,6 +518,7 @@ html[data-reduce="on"] .daysep span,html[data-reduce="on"] .divider span{animati
 .die b{font-size:16px;font-weight:700}
 .die span{font-size:10px;color:var(--dim)}
 .rcard{position:relative}
+.rcard.invite{border-color:var(--signal);gap:4px}.rcard.invite b{color:var(--signal)}.rcard.invite .btn{margin-top:6px;align-self:flex-start}
 .rcard .minted{position:absolute;right:8px;top:6px;font-style:normal;font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
 .rcard{padding-right:56px}
 #send{text-transform:uppercase;font-weight:600}
@@ -6256,7 +6257,8 @@ function actPaint(){
     head.textContent = 'Actions';
     $('#actBack').style.display = 'none';
     const grid = document.createElement('div'); grid.className = 'actgrid';
-    for (const [id, icon, name, desc] of ACTIONS) {
+    const hub = gameHub();
+    for (const [id, icon, name, desc] of ACTIONS.concat(hub ? [['game', '🎮', 'Invite to a game', 'host a game and send the code here']] : [])) {
       const b = document.createElement('button'); b.className = 'acttile'; b.dataset.act = id;
       b.innerHTML = `<i>${icon}</i><b>${esc(name)}</b><span>${esc(desc)}</span>`;
       b.onclick = () => { if (id === 'coin') return actRoll({ what: 'coin' });
@@ -6268,7 +6270,21 @@ function actPaint(){
   }
   $('#actBack').style.display = '';
   const def = ACTIONS.find(a => a[0] === ACT.view);
-  head.textContent = def ? def[2] : 'Action';
+  head.textContent = def ? def[2] : ACT.view === 'game' ? 'Invite to a game' : 'Action';
+  if (ACT.view === 'game') {
+    const hub = gameHub(); let games = [];
+    try { games = hub ? hub.HG_inviteGames() : []; } catch (e) {}
+    const grid = document.createElement('div'); grid.className = 'actgrid';
+    for (const g of games) {
+      const b = document.createElement('button'); b.className = 'acttile'; b.dataset.game = g.id;
+      b.innerHTML = `<i>🎮</i><b>${esc(g.name)}</b><span>opens it and hosts a party; the code is posted here</span>`;
+      b.onclick = () => { const conv = S.active; actClose(); let ok = false; try { ok = hub.HG_hostInvite(g.id, conv); } catch (e) {} toast(ok ? `Opening ${g.name}... the invite is posted here when your party is ready.` : 'Could not open the game.', ok ? '' : 'warn', 5000); };
+      grid.append(b);
+    }
+    if (!games.length) grid.textContent = 'No multiplayer games found.';
+    el.append(grid);
+    return;
+  }
   const submitOn = (inp, btn) => inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });
   if (ACT.view === 'poll') {
     const q = field('the question', '', 200); el.append(q);
@@ -6329,6 +6345,9 @@ document.addEventListener('pointerdown', e => {
 });
 $('#actions').addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); actClose(); $('#text').focus(); } });
 
+// Inside the Huntington Games launcher the page above us can open games (invites); anywhere else there is none.
+const INVITE_NAMES = { blocky: 'Blocky Shooter', frontline: 'Frontline: Command' };
+function gameHub(){ try { return window.parent !== window && window.parent.HG_inviteGames ? window.parent : null; } catch (e) { return null; } }
 // Result cards: a roll, a flip, a pick, a countdown. Anything that is not one
 // of these shapes falls through to ordinary text.
 function renderCard(el, m){
@@ -6349,6 +6368,20 @@ function renderCard(el, m){
     return false;
   }
   if (m.kind !== 'text') return false;
+  // a game invite from the Huntington Games launcher: "... hg-invite:<game>:<party code>"
+  if ((mm = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/.exec(t))) {
+    const hub = gameHub(), name = INVITE_NAMES[mm[1]] || mm[1], said = t.replace(mm[0], '').replace(/\s*-\s*$/, '').trim();
+    const c = document.createElement('div'); c.className = 'rcard invite';
+    c.innerHTML = `<b>🎮 ${esc(name)}</b>` + (said ? `<span>${esc(said)}</span>` : '') + (said.includes(mm[2]) ? '' : `<span>party code ${esc(mm[2])}</span>`);
+    if (m.userId !== S.userId) {
+      const go = document.createElement('button'); go.className = 'btn'; go.textContent = hub && hub.HG_joinInvite ? 'Join game' : 'Open Huntington Games to join';
+      go.disabled = !(hub && hub.HG_joinInvite);
+      const g = mm[1], code = mm[2];
+      go.onclick = () => { try { hub.HG_joinInvite(g, code); } catch (e) {} };
+      c.append(go);
+    }
+    el.append(c); return true;
+  }
   if ((mm = /^⏳ (.+)\nends (\d{10,16})$/s.exec(t))) {
     const c = document.createElement('div'); c.className = 'rcard timer'; c.dataset.ends = mm[2];
     c.innerHTML = `<b class="tick"></b><span>${esc(mm[1])}</span>`;

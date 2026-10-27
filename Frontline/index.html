@@ -6635,7 +6635,7 @@ function lobbyMainHtml() {
       rows += '</div>';
     }
     const mc = MAPS.map(m => `<div class="mc ${m.id === SK.map ? 'on' : ''}" data-act="map" data-v="${m.id}"><img src="${mapPreview(m.id)}" style="width:100%;border-radius:4px;display:block;margin-bottom:3px"/>${m.name}${m.naval || m.tod || m.wx ? '<small>' + [m.naval ? 'ships' : '', m.tod === 'night' ? 'night' : '', m.wx ? WXD[m.wx].n.toLowerCase() : ''].filter(Boolean).join(', ') + '</small>' : ''}</div>`).join('');   // 3.0: online battles use the map's own conditions
-    return `<div class="lbl" style="margin-top:0">Your code</div><div class="big" data-tip="Share this code with your friend">${NET.code}</div><div style="text-align:center"><button class="tbtn" data-act="copycode">Copy code</button></div>
+    return `<div class="lbl" style="margin-top:0">Your code</div><div class="big" data-tip="Share this code with your friend">${NET.code}</div><div style="text-align:center"><button class="tbtn" data-act="copycode">Copy code</button></div>${hgiHtml()}
     <div class="lbl">Map</div><div class="mapcards">${mc}</div><div class="lbl">Players</div>${rows}
     <div class="row" style="gap:16px"><div><div class="lbl">Starting score</div>${seg('tickets', [[200, '200'], [400, '400'], [700, '700']], SK.tickets)}</div><div><div class="lbl">Starting money</div>${seg('supplies', [['low', 'Low'], ['normal', 'Normal'], ['high', 'High']], SK.supplies)}</div><div><div class="lbl">Fog of war</div>${seg('fog', [[1, 'On'], [0, 'Off']], SK.fog ? 1 : 0)}</div><div><div class="lbl">Army limit</div>${seg('maxPop', [[80, '80'], [120, '120'], [160, '160']], SK.maxPop)}</div></div>
     <button class="mbtn go" style="margin-top:12px" data-act="mpstart" ${NET.peer && NET.guestReady ? '' : 'disabled'}>${NET.peer ? (NET.guestReady ? 'Start Match' : 'Waiting for friend to be ready...') : 'Waiting for a friend to join...'}</button>`;
@@ -6657,6 +6657,47 @@ SCREENS_AFTER.mplobby = () => {
 function refreshLobby() { const l = $('#lobbyMain'); if (l && SCREEN === 'mplobby') l.innerHTML = lobbyMainHtml(); }
 ACT.mpback = () => { netReset(); showScreen('main'); };
 ACT.mphost = () => { netReset(); showScreen('mplobby'); netHostStart(); };
+// 3.1 Grapevine invites (same launcher API as Blocky Shooter): HG_inviteTargets() lists the chats, HG_sendInvite(chat,
+// { game, code }) posts "... hg-invite:frontline:<code>", and a friend's JOIN opens this game with HG_takeJoin / __hgJoin.
+// HG_takeHost: Grapevine's "Invite to a game" opens the game wanting a room hosted and the code sent to one chat.
+const HGHUB = (() => { try { const h = window.parent !== window ? window.parent : window.opener; return h && typeof h.HG_inviteTargets === 'function' && typeof h.HG_sendInvite === 'function' ? h : null; } catch (e) { return null; } })();
+const HGI = { open: false, msg: '' };
+function hgiHtml() {
+  if (!HGHUB || NET.codeState !== 'ready' || !NET.code) return '';
+  let h = '<div style="margin-top:8px;text-align:center"><button class="tbtn" data-act="gvinvite">Invite a friend on Grapevine</button> <span class="note" style="display:inline">' + esc(HGI.msg) + '</span>';
+  if (HGI.open) {
+    let t = []; try { t = HGHUB.HG_inviteTargets() || []; } catch (e) { }
+    h += '<div style="display:flex;flex-direction:column;gap:5px;margin-top:6px;max-height:220px;overflow:auto;text-align:left">' + (t.length ? t.slice(0, 40).map(x => '<div class="note" style="display:flex;align-items:center;gap:8px;margin:0"><span style="flex:1;font-weight:700">' + (x.kind === 'dm' ? '@ ' : '') + esc(String(x.title || x.id).slice(0, 30)) + '</span><button class="tbtn" data-act="gvsend" data-v="' + esc(x.id) + '">Send</button></div>').join('') : '<div class="note">Grapevine is still connecting, or you are not in any chats yet.</div>') + '</div>';
+  }
+  return h + '</div>';
+}
+function hgiSend(id) {
+  let ok = false; try { ok = !!HGHUB.HG_sendInvite(id, { game: 'frontline', code: NET.code }); } catch (e) { }
+  HGI.msg = ok ? 'Invite sent!' : 'Invite failed - try again.'; if (ok) HGI.open = false; refreshLobby();
+}
+ACT.gvinvite = () => { HGI.open = !HGI.open; HGI.msg = ''; refreshLobby(); };
+ACT.gvsend = (t) => hgiSend(t.dataset.v);
+function hgJoin(raw) {
+  const c = String(raw || '').replace(/\D/g, ''); if (c.length !== 6) return false;
+  if (W && !W.o.demo && !W.over) { toast('Finish or leave this battle first, then join from Play a Friend Online.'); return false; }
+  netReset(); showScreen('mp'); netJoin(c); return true;
+}
+window.__hgJoin = hgJoin;
+window.__hgHost = convId => hgHost(convId);
+function hgHost(convId) {
+  ACT.mphost();
+  const t0 = Date.now(), iv = setInterval(() => {
+    if (NET.role !== 'host' || Date.now() - t0 > 25000) { clearInterval(iv); return; }
+    if (NET.codeState === 'ready' && NET.code) { clearInterval(iv); hgiSend(convId); }
+  }, 300);
+}
+setTimeout(() => {
+  try {
+    if (!HGHUB) return;
+    const c = HGHUB.HG_takeJoin && HGHUB.HG_takeJoin('frontline'); if (c) { hgJoin(c); return; }
+    const h = HGHUB.HG_takeHost && HGHUB.HG_takeHost('frontline'); if (h) hgHost(h.convId);
+  } catch (e) { }
+}, 1200);
 ACT.mpjoin = () => { const i = $('#joincode'); netJoin(i ? i.value : NET.joinCode); };
 ACT.gvfriend = el => { const L = GVL.L, who = el.dataset.n; if (!L || !who) return; el.disabled = true; L.addFriend(who).then(() => { toast('Friend request sent to ' + who); if (SCREEN === 'mplobby') refreshLobby(); }, e => { el.disabled = false; toast(e.message || 'Could not send that request'); }); };
 ACT.mpready = () => { NET.myReady = !NET.myReady; sendRel({ t: 'ready', v: NET.myReady ? 1 : 0 }); refreshLobby(); };

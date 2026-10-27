@@ -158,10 +158,24 @@ function hgTryJoin() {
 function hgAccept(raw) { const c = String(raw || '').replace(/\D/g, ''); if (c.length !== 6) return false; hgPending = c; hgTries = 0; hgTryJoin(); return true; }
 window.__hgJoin = hgAccept;
 function hgBoot() {
-    let c = '';
+    let c = '', h = null;
     try { const p = window.parent; if (p && p !== window && typeof p.HG_takeJoin === 'function') c = p.HG_takeJoin('blocky') || ''; } catch (e) {}
-    if (c) hgAccept(c);
+    if (c) { hgAccept(c); return; }
+    try { const p = window.parent; if (p && p !== window && typeof p.HG_takeHost === 'function') h = p.HG_takeHost('blocky'); } catch (e) {}
+    if (h && h.convId) hgHost(h.convId);
 }
+// Grapevine's "Invite to a game": open the party as host, and send the code to that chat once it is ready
+let hgHostTries = 0;
+function hgHost(convId) {
+    if (currentGameState !== 'main' || NET.on) { if (++hgHostTries < 90) setTimeout(() => hgHost(convId), 1000); return; }
+    hgHostTries = 0;
+    openMP('home'); const b = document.getElementById('mp-host'); if (!b) return; b.click();
+    const t0 = Date.now(), iv = setInterval(() => {
+        if (!NET.host || Date.now() - t0 > 25000) { clearInterval(iv); return; }
+        if (NET.codeState === 'ready' && /^\d{6}$/.test(NET.code || '')) { clearInterval(iv); HGI.send(convId); }
+    }, 300);
+}
+window.__hgHost = hgHost;
 setTimeout(hgBoot, 0);
 Object.assign(window.__blocky, { lan: {
     scan: () => { LAN.lastAt = 0; return LAN.scan(); }, get results() { return LAN.results; }, get state() { return LAN.state; }, get obj() { return LAN; },

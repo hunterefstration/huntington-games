@@ -666,7 +666,7 @@ function playNow(g) {
   hint.textContent = g.noChat || !(Lg && Lg.me()) ? '' : (g.chatShift ? 'Shift+T to chat' : 'T to chat');
   document.getElementById('player').classList.add('open');
   try { history.replaceState(null, '', '#' + encodeURIComponent(g.dir)); } catch (e) {}
-  if (local) { HG_set(g); frame.removeAttribute('srcdoc'); frame.src = path(g); return; }
+  if (local) { HG_set(g); frame.removeAttribute('srcdoc'); frame.src = path(g) + (window.HG_TEST_QUERY || ''); return; }   // HG_TEST_QUERY: tests only (local copies)
   frame.srcdoc = message('Loading ' + g.name + '...');
   loadGameHtml(g).then(function (r) {
     if (id !== loadId) return;
@@ -1001,7 +1001,7 @@ window.HG_notify = function (n) {
 // A game asks for the chats it can invite into (HG_inviteTargets) and sends an invite (HG_sendInvite): a normal chat
 // message ending in "hg-invite:<game>:<party code>", so it reads fine in the Grapevine app too. When one arrives the
 // pop-up shows a JOIN button: it opens the game (or tells the open one) and the game collects the code with HG_takeJoin.
-var INVITE_GAMES = { blocky: 'Blocky Shooter V2' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null;
+var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
 function inviteGame(id) { var d = INVITE_GAMES[id]; return d ? GAMES.filter(function (g) { return g.dir === d; })[0] || null : null; }
 window.HG_inviteTargets = function () {
   var api = chatApi(); if (!api) return [];
@@ -1018,6 +1018,22 @@ window.HG_takeJoin = function (game) {
   var p = pendingJoin; if (!p || p.game !== game) return null;
   pendingJoin = null; return Date.now() - p.at < 5 * 60000 ? p.code : null;
 };
+// Grapevine's "Invite to a game" (its + menu): open the game, host a party there, and the game sends the code to that chat
+window.HG_inviteGames = function () { return Object.keys(INVITE_GAMES).map(function (id) { var g = inviteGame(id); return g ? { id: id, name: g.name.replace(/ [\d.]+$/, '') } : null; }).filter(Boolean); };
+window.HG_takeHost = function (game) {
+  var p = pendingHost; if (!p || p.game !== game) return null;
+  pendingHost = null; return Date.now() - p.at < 5 * 60000 ? { convId: p.convId } : null;
+};
+window.HG_hostInvite = function (game, convId) {
+  var g = inviteGame(game); if (!g || !convId) return false;
+  var wins = [];
+  if (current && current.game === g) { try { wins.push(frame.contentWindow); } catch (e) {} }
+  if (popup && !popup.closed && popupGame === g) wins.push(popup);
+  for (var i = 0; i < wins.length; i++) { try { if (wins[i].__hgHost) { wins[i].__hgHost(convId); return true; } } catch (e) {} }
+  pendingHost = { game: game, convId: convId, at: Date.now() };
+  play(g); return true;
+};
+window.HG_joinInvite = function (game, code) { joinInvite(game, code); };
 function joinInvite(game, code) {
   var g = inviteGame(game); if (!g) return;
   pendingJoin = { game: game, code: code, at: Date.now() };
@@ -1061,7 +1077,12 @@ function openChatBox(gdoc, convId) {
     ls.textContent = '';
     var ms = cur ? api.msgs(cur, 40) : [];
     if (!ms.length) ls.appendChild(hgEl(doc, 'div', 'none', cur ? 'No messages yet.' : 'You are not in any chats yet.'));
-    ms.forEach(function (m) { var d = hgEl(doc, 'div', m.mine ? 'me' : ''); d.appendChild(hgEl(doc, 'b', '', m.from + ': ')); d.appendChild(doc.createTextNode(m.text)); ls.appendChild(d); });
+    ms.forEach(function (m) {
+      var d = hgEl(doc, 'div', m.mine ? 'me' : ''), inv = INVITE_RE.exec(m.text || ''), g = inv && inviteGame(inv[1]);
+      d.appendChild(hgEl(doc, 'b', '', m.from + ': ')); d.appendChild(doc.createTextNode(inv ? (m.text || '').replace(INVITE_RE, '').replace(/\s*-\s*$/, '') : m.text));
+      if (g && !m.mine) { var jb = hgEl(doc, 'button', 'go', 'Join'); jb.style.marginLeft = '6px'; jb.onclick = function () { joinInvite(inv[1], inv[2]); }; d.appendChild(jb); }
+      ls.appendChild(d);
+    });
     ls.scrollTop = ls.scrollHeight;
     gdoc.__hgchatConv = cur;
     if (cur) api.read(cur);
