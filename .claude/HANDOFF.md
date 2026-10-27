@@ -1,7 +1,7 @@
 # Handoff (updated 2026-10-24)
 
 ## Where things stand
-- Live: **r41** or newer (check `latest.json` on `main`). r40 added in-game pop-ups and chat on T; r41 fixed game-save sync. r39 made the whole launcher wear
+- Live: **r46** or newer (check `latest.json` on `main`). r40 added in-game pop-ups and chat on T; r41 fixed game-save sync. r39 made the whole launcher wear
   Grapevine's theme; r37 made Grapevine the launcher; r36/r38 shipped Sovereign. Everything above is on **`main`** in both repos (huntington-games and grapevine).
   Anyone (including other bots) can branch from `main`, change things and release; there are no private branches holding released work any more.
 - Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
@@ -88,6 +88,16 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   commit and `git push origin HEAD:main` (an Action tags rN). Run `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
 - Tests (need the Grapevine rig, grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves incl. the game-waits-for-saves check, Grapevine tab,
   cards, new tab), `tools/tests/gv-notify.mjs` (menu buttons, pop-ups, chat on T), `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
+- Achievements (`gv/ach.js`, built into gv/account.js): ~72 across all games, worked out from each game's own save keys (no game code needed;
+  add one = one line). Unlocks in 'hgach:v1' (synced), summary sent to the server (`achSet`) and shown on Grapevine profile cards; Account >
+  Achievements lists them and shares one into a chat ("... hg-ach:<game>:<id>" renders as a card). Sovereign writes 'sov.hgach' for its ones.
+- Game invites: launcher API `HG_inviteTargets/HG_sendInvite/HG_takeJoin` (+ `HG_inviteGames/HG_hostInvite/HG_takeHost` for Grapevine's
+  + menu "Invite to a game"); games implement `__hgJoin(code)` / `__hgHost(convId)` (Blocky 28b-mp-lan.js, Frontline). Messages end in
+  "hg-invite:<game>:<code>" and render as Join cards. Test: tools/tests/gv-invite.mjs (also gv-ach.mjs, gv-saves.mjs).
+- Server saves: if the DB role cannot use user_saves (no GRANT / row-level security) archive.js keeps saves in the settings table instead
+  (`SAVES` in archive.js) - nothing to fix by hand.
+- Sovereign 1.2 (src/js/67b-sim-conquest.js): conquest/controlled lands (nation.owner, tribute, unrest, uprisings), weekly fronts
+  (`warWeek`), strikes push fronts (`f.push`), detailed fronts when zoomed in (`drawFronts`, Cam.alt < 0.75), World Domination.
 - Connection speed: Account > Connection shows a step-by-step timeline of the last connection (milliseconds per step); ask a slow user for it.
 ## Blocky Shooter V2 source (split 2026-10-24)
 - `Blocky Shooter V2/src/shell.html` (page HTML), `src/css/00-tailwind.css` + `10-game.css`, `src/js/00-imports.js` ... `28-mp-ui.js`
