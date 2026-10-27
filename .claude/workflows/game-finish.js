@@ -8,9 +8,10 @@ export const meta = {
 // debug hooks instead of screenshots, and returns short reports. One play-test round; the fixer re-tests its own fixes.
 const MODEL = args.model || 'sonnet', EFFORT = args.effort || 'medium'
 const T = '/tmp/hg-tools'
+const BUILT = ['Sovereign', 'Blocky Shooter V2']   // games built from <dir>/src by tools/build-game.js
 function rules(c) {
   return `Huntington Games: single-file browser games for school Chromebooks. Repo /home/user/huntington-games.
-GAME: ${c.title} | FILE: ${c.dir}/index.html (edit ONLY this file)
+GAME: ${c.title} | ${BUILT.includes(c.dir) ? `FILES: ${c.dir}/src/shell.html, src/css/*.css, src/js/*.js (edit ONLY these, never index.html). After every change run: node tools/build-game.js "${c.dir}" --check (joins them into ${c.dir}/index.html, the file the browser loads)` : `FILE: ${c.dir}/index.html (edit ONLY this file)`}
 
 RULES
 - Never change the <!--HG-->...<!--/HG--> licence block. No git writes (read-only git diff/show is fine). Never kill processes you did not start.
@@ -19,7 +20,7 @@ RULES
 - Machine is small and shared: at most ONE browser open at a time, close it in finally, keep runs short.
 
 EFFICIENCY (strict - usage is limited)
-- NEVER read the whole game file. Find code with Grep (-n, small -C) and Read only the line ranges you need (offset/limit, <=200 lines per read).
+- NEVER read a whole game file (or index.html of a built game). Find code with Grep (-n, small -C) and Read only the line ranges you need (offset/limit, <=200 lines per read).
 - Make targeted Edits; do not rewrite large sections.
 - Verify through the game's debug hook (window.__${c.slug} or existing window.__* hooks; add small ones if missing) with page.evaluate assertions. Take at most 2 screenshots total, only for new UI layout, at 1280x720.
 - Keep test scripts small; put them in ${T}/tests/${c.slug}/. Do not paste large logs into your context (tail/grep them).

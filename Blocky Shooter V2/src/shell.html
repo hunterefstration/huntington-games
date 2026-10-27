@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Blocky Shooter - Version 5.0</title>
+    <!-- Tailwind, precompiled (no runtime CSS compiler = less CPU during play) -->
+    <!--@css-->
+
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body class="text-white">
+
+
+    <div id="game-container"></div>
+    <div id="vignette"></div>
+    <div id="cls-fx"></div>
+    <div id="screen-flash"></div>
+    <div id="scope" class="hidden"><div class="lens"></div><div class="ph"></div><div class="pv"></div><div class="rh"></div><div class="rv"></div><div class="dot"></div></div>
+    <div id="optic" class="hidden"><div class="ring"></div><div class="ln h"></div><div class="ln v"></div><div class="chev"></div></div>
+    <div id="dmg-layer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+    <div id="dmg-dir" class="absolute inset-0 pointer-events-none overflow-hidden" style="z-index:27"></div>
+
+
+    <div id="ui-hud" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 hidden" style="z-index:26">
+        <div class="flex justify-between items-start">
+            <div class="flex flex-col gap-2">
+                <div class="text-3xl font-black text-white hud-text tracking-wider" id="hud-level">WAVE 1</div>
+                <div class="text-xl font-bold text-gray-300 hud-text" id="hud-enemies">Enemies: 0</div>
+                <div class="text-xs font-black text-amber-300 hud-text flex items-center gap-1" id="hud-rank"></div>
+                <div class="text-lg font-black text-orange-400 hud-text hidden" id="hud-combo"></div>
+                <div class="text-sm font-black text-red-300 hud-text hidden" id="hud-strike"></div>
+                <div class="text-xs font-bold text-gray-300 hud-text" id="hud-streak"></div>
+                <div id="hud-obj" class="hidden"><div id="obj-mis"></div><div id="obj-main"></div><div id="obj-bar"><i id="obj-fill"></i></div><div id="obj-sub"></div><div id="obj-lives"></div></div>
+                <div class="max-w-xs bg-black/50 border-l-4 border-amber-400 px-3 py-2 rounded-r hidden" id="hud-intel"></div>
+            </div>
+
+
+            <div class="flex flex-col items-end mr-[220px]">
+                <div class="text-3xl font-black text-green-400 hud-text tracking-wider" id="hud-money">$0</div>
+                <div class="text-lg font-bold text-yellow-400 hud-text tracking-wider mt-1 hidden" id="hud-reloading">RELOADING...</div>
+            </div>
+        </div>
+
+
+        <div id="toast" class="absolute top-24 left-1/2 -translate-x-1/2 text-2xl font-black hud-text text-yellow-300 opacity-0 text-center whitespace-nowrap"></div>
+        <div id="hud-boss" class="absolute top-6 left-1/2 -translate-x-1/2 hidden flex flex-col items-center w-[min(520px,50vw)]">
+            <div class="text-sm font-black hud-text tracking-widest text-fuchsia-300" id="hud-boss-name">BOSS</div>
+            <div class="w-full h-3 bg-black/60 border border-fuchsia-400/60 rounded overflow-hidden mt-1"><div id="hud-boss-bar" class="h-full bg-gradient-to-r from-fuchsia-600 to-purple-400" style="width:100%"></div></div>
+        </div>
+        <div id="hud-boosts" class="absolute top-48 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-2 text-xs font-black tracking-wider hud-text"></div>
+        <div id="net-score" class="absolute top-4 left-1/2 -translate-x-1/2 hidden flex items-center gap-3 text-3xl font-black hud-text"></div>
+        <div id="net-feed" class="absolute right-6 flex flex-col items-end gap-1 text-sm font-bold" style="top:236px"></div>
+        <div id="net-team" class="absolute left-6 flex flex-col gap-1 w-52" style="top:210px"></div>
+        <div id="net-down" class="absolute top-1/3 left-1/2 -translate-x-1/2 hidden text-center hud-text"></div>
+        <div id="net-board" class="absolute inset-0 hidden flex items-center justify-center"><div class="bg-gray-950/85 border border-white/15 rounded-xl p-6 min-w-[520px]" id="net-board-inner"></div></div>
+        <div id="net-ping" class="absolute bottom-2 right-6 text-xs font-bold text-gray-300 hud-text"></div>
+        <div id="fps" class="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-300 hud-text hidden"></div>
+
+
+        <div class="flex justify-between items-end">
+            <div class="flex flex-col gap-1">
+                <div id="hud-healing" class="text-xs font-black tracking-widest text-green-300 hud-text hidden"></div>
+                <div id="hud-armor-wrap" class="w-64 bg-gray-900/80 border-2 border-gray-700 rounded-md overflow-hidden h-5 relative hidden">
+                    <div id="hud-armor-bar" class="absolute top-0 left-0 h-full bg-sky-500 transition-all duration-200" style="width: 100%;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center font-bold text-xs hud-text" id="hud-armor-text">ARMOR 0</div>
+                </div>
+                <div id="hud-health-wrap" class="w-64 bg-gray-900/80 border-4 border-gray-700 rounded-lg overflow-hidden h-10 relative">
+                    <div id="hud-health-bar" class="absolute top-0 left-0 h-full bg-red-600 transition-all duration-200" style="width: 100%;"></div>
+                    <div class="absolute inset-0 flex items-center justify-center font-bold text-lg hud-text" id="hud-health-text">100 / 100</div>
+                </div>
+            </div>
+
+
+            <div class="flex flex-col items-end gap-2">
+                <div id="hud-slots" class="flex gap-1 flex-wrap justify-end max-w-[520px]"></div>
+                <div class="flex items-end gap-3">
+                    <div id="hud-abil" class="relative bg-black/40 p-3 rounded-xl border border-white/10 w-48 overflow-hidden hidden">
+                        <div class="text-[10px] font-bold text-gray-400 tracking-widest whitespace-nowrap"><span id="hud-abil-cls">CLASS</span> ABILITY <span class="abil-key inline-block text-white bg-white/20 px-1 rounded">X</span></div>
+                        <div class="text-base font-black hud-text uppercase whitespace-nowrap" id="hud-abil-name">-</div>
+                        <div class="text-xs font-bold text-gray-300 whitespace-nowrap" id="hud-abil-status">READY</div>
+                        <div class="absolute bottom-0 left-0 h-1" id="abil-cd" style="width:0%"></div>
+                    </div>
+                    <div id="hud-sec" class="relative bg-black/40 p-3 rounded-xl border border-white/10 w-56 overflow-hidden">
+                        <div class="text-[10px] font-bold text-gray-400 tracking-widest">SECONDARY <span class="text-white bg-white/20 px-1 rounded">Q</span></div>
+                        <div class="text-base font-black hud-text uppercase whitespace-nowrap" id="hud-sec-name">NONE</div>
+                        <div class="text-xs font-bold text-gray-300" id="hud-sec-status">Buy in Armory</div>
+                        <div class="absolute bottom-0 left-0 h-1 bg-amber-400" id="sec-cd" style="width:0%"></div>
+                    </div>
+                    <div id="hud-ammo-card" class="text-right flex flex-col items-end bg-black/40 p-4 rounded-xl border border-white/10 min-w-[180px]">
+                        <div class="text-2xl font-black text-blue-300 hud-text uppercase tracking-widest" id="hud-weapon">PISTOL</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-4xl font-black text-white hud-text" id="hud-ammo-current">12</span>
+                            <span class="text-xl font-bold text-gray-400 hud-text" id="hud-ammo-max">/ 12</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <canvas id="minimap" width="200" height="200" class="absolute top-6 right-6 border-2 border-gray-600 rounded-lg hidden pointer-events-none" style="z-index:26"></canvas>
+
+
+    <div id="rail-ring"></div>
+    <div id="crosshair" class="xhair hidden">
+        <div class="ch-t"></div><div class="ch-b"></div><div class="ch-l"></div><div class="ch-r"></div><div class="ch-dot"></div><div class="ch-c"></div>
+    </div>
+
+
+    <div id="hit-marker" class="absolute top-1/2 left-1/2 w-8 h-8 -mt-4 -ml-4 pointer-events-none hidden transition-opacity duration-150 opacity-0" style="z-index:28">
+        <svg viewBox="0 0 100 100" class="w-full h-full fill-current" id="hit-marker-svg">
+            <path d="M20,20 L40,40 M80,20 L60,40 M20,80 L40,60 M80,80 L60,60" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+
+    <div id="main-menu-overlay" class="absolute inset-0 z-50 flex" data-view="home">
+        <div id="home-menu" class="mm-col flex flex-col justify-center h-full">
+            <div class="logo-wrap">
+                <div class="logo-kicker">THE ZOMBIE SHOOTER</div>
+                <h1 class="logo"><span class="l1">BLOCKY</span><span class="l2">SHOOTER</span><b class="l3">5.0</b></h1>
+                <button id="menu-version" class="logo-ver">VERSION 5.0 &middot; <span>SEE WHAT'S NEW &rsaquo;</span></button>
+                <p class="text-amber-300 text-xs font-bold tracking-widest mt-3 h-4" id="menu-best"></p>
+                <div id="menu-rank" class="flex items-center gap-3 mb-3"></div>
+            </div>
+            <div class="home-btns">
+                <button id="btn-home-play" class="hbtn pri lg">PLAY <i>&#9654;</i></button>
+                <button id="btn-continue" class="hbtn cont hidden"></button>
+                <button id="btn-campaign" class="hbtn lg">CAMPAIGN <em>CHAPTER 1</em></button>
+                <button id="btn-mp" class="hbtn lg">MULTIPLAYER</button>
+                <button id="btn-main-shop" class="hbtn lg">ARMORY</button>
+                <button id="btn-main-settings" class="hbtn lg">SETTINGS</button>
+                <button id="btn-delete-save" class="hidden self-start text-xs font-bold text-gray-500 mt-1" style="background:none;text-decoration:underline;cursor:pointer">Delete save</button>
+            </div>
+        </div>
+        <div id="setup-menu" class="mm-col hidden h-full flex flex-col px-10 py-7" style="width:min(660px,100vw)">
+            <div class="flex items-center gap-3 mb-2">
+                <button id="btn-setup-back" class="hbtn sm">&lsaquo; BACK</button>
+                <h2 class="htitle text-3xl text-white">NEW RUN</h2>
+            </div>
+            <div class="flex flex-wrap gap-1 border-b border-white/10 mb-1" id="menu-tabs">
+                <button class="mtab on" data-tab="play">PLAY</button>
+                <button class="mtab" data-tab="challenges">CHALLENGES</button>
+                <button class="mtab" data-tab="customize">CUSTOMIZE</button>
+                <button class="mtab" data-tab="ranks">RANKS</button>
+                <button class="mtab" data-tab="stats">STATS</button>
+                <button class="mtab" data-tab="bestiary">BESTIARY</button>
+                <button class="mtab" data-tab="controls">CONTROLS</button>
+            </div>
+            <div id="menu-panel" class="flex-1 overflow-y-auto pr-2 pb-2"></div>
+            <div class="flex gap-2 pt-3 items-stretch">
+                <button id="btn-start" class="hbtn pri lg flex-1">START RUN &#9654;</button>
+            </div>
+        </div>
+        <div id="camp-menu" class="mm-col hidden h-full flex flex-col px-10 py-7" style="width:min(1060px,100vw)">
+            <div class="flex items-center gap-3 mb-1">
+                <button id="btn-camp-back" class="hbtn sm">&lsaquo; BACK</button>
+                <h2 class="htitle text-3xl text-white">CAMPAIGN</h2>
+                <div id="camp-total" class="ml-auto text-amber-300 font-black text-sm tracking-widest"></div>
+            </div>
+            <div class="text-xs font-black tracking-widest text-gray-400" id="camp-chap"></div>
+            <div class="flex-1 min-h-0 flex gap-4 mt-3">
+                <div id="camp-map" class="panel relative flex-1 overflow-hidden"></div>
+                <div id="camp-detail" class="panel p-4 overflow-y-auto" style="width:min(340px,42vw)"></div>
+            </div>
+        </div>
+        <div class="flex-1 relative pointer-events-none">
+            <div class="absolute top-8 right-8 text-right" id="menu-preview">
+                <div class="text-xs font-black tracking-widest text-gray-300 hud-text">ARENA PREVIEW</div>
+                <div class="text-3xl font-black hud-text" id="menu-preview-name"></div>
+                <div class="text-sm font-bold text-gray-200 hud-text" id="menu-preview-sub"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="mp-overlay" class="absolute inset-0 z-50 hidden overflow-y-auto" style="background: linear-gradient(135deg, rgba(8,10,20,0.97), rgba(3,4,10,0.96));">
+        <div class="max-w-4xl mx-auto py-8 px-6">
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <div class="text-amber-300 font-black tracking-widest text-xs">EXPERIMENTAL</div>
+                    <h2 class="text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500 pr-2">MULTIPLAYER</h2>
+                </div>
+                <button id="mp-back" class="chip">BACK</button>
+            </div>
+            <div id="mp-body"></div>
+        </div>
+    </div>
+
+
+    <div id="pause-menu-overlay" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50 hidden backdrop-blur-md">
+        <h2 class="text-5xl font-black text-white mb-3 tracking-widest drop-shadow-lg">PAUSED</h2>
+        <p class="text-gray-400 mb-4 font-bold" id="pause-stats"></p>
+        <div id="pause-ch" class="mb-6 bg-black/40 border border-white/10 rounded-lg px-3 py-2" style="width:min(460px,92vw)"></div>
+
+
+        <div class="flex flex-col gap-4 w-64">
+            <button id="btn-resume" class="hbtn pri lg">RESUME GAME</button>
+            <button id="btn-pause-shop" class="hbtn lg">ARMORY</button>
+            <div id="pause-save-note" class="hidden text-center text-sm font-bold" style="color:#fcd34d"></div>
+            <button id="btn-pause-settings" class="hbtn lg">SETTINGS</button>
+            <button id="btn-quit" class="hbtn dng lg mt-4">QUIT TO MENU</button>
+        </div>
+    </div>
+
+
+    <div id="settings-overlay" class="absolute inset-0 bg-gray-950/95 flex flex-col items-center justify-center z-50 hidden backdrop-blur-md">
+        <h2 class="text-4xl font-black text-white mb-6 tracking-widest">SETTINGS</h2>
+        <div class="w-[min(560px,92vw)] bg-gray-900/80 border border-gray-700 rounded-xl p-6 flex flex-col gap-5">
+            <div>
+                <div class="text-xs font-black text-gray-400 tracking-widest mb-2">GRAPHICS QUALITY</div>
+                <div class="grid grid-cols-5 gap-2" id="set-quality">
+                    <button class="qbtn text-sm" data-q="auto">AUTO</button>
+                    <button class="qbtn text-sm" data-q="low">LOW</button>
+                    <button class="qbtn text-sm" data-q="normal">NORMAL</button>
+                    <button class="qbtn text-sm" data-q="high">HIGH</button>
+                    <button class="qbtn text-sm" data-q="cinematic">CINEMATIC</button>
+                </div>
+                <div class="text-xs text-gray-400 mt-2 h-12" id="set-quality-desc"></div>
+            </div>
+            <label class="block"><div class="flex justify-between text-xs font-black text-gray-400 tracking-widest mb-1"><span>FIELD OF VIEW</span><span id="set-fov-v" class="text-white"></span></div><input type="range" id="set-fov" min="65" max="100" step="1"></label>
+            <label class="block"><div class="flex justify-between text-xs font-black text-gray-400 tracking-widest mb-1"><span>MOUSE SENSITIVITY</span><span id="set-sens-v" class="text-white"></span></div><input type="range" id="set-sens" min="0.2" max="2.5" step="0.05"></label>
+            <label class="block"><div class="flex justify-between text-xs font-black text-gray-400 tracking-widest mb-1"><span>VOLUME</span><span id="set-vol-v" class="text-white"></span></div><input type="range" id="set-vol" min="0" max="1" step="0.05"></label>
+            <label class="flex items-center gap-3 text-sm font-bold text-gray-300"><input type="checkbox" id="set-fps" class="w-4 h-4 accent-blue-500"> Show FPS counter</label>
+        </div>
+        <button id="btn-settings-back" class="hbtn pri mt-6" style="min-width:200px">BACK</button>
+    </div>
+
+
+    <div id="shop-overlay" class="absolute inset-0 bg-gray-900/95 flex flex-col items-center justify-start py-8 px-6 z-50 hidden backdrop-blur-md overflow-y-auto">
+        <div class="w-full max-w-6xl flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+            <div>
+                <h2 class="text-4xl font-black text-white">ARMORY</h2>
+                <div class="text-sm font-bold text-green-400 hidden" id="shop-subtitle"></div>
+                <div class="text-sm font-bold hidden" id="shop-save-note" style="color:#fcd34d"></div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-2xl font-black text-green-400 bg-gray-800 px-4 py-2 rounded-lg" id="shop-money">$0</div>
+                <button id="btn-shop-back-top" class="hbtn pri">BACK</button>
+            </div>
+        </div>
+
+
+        <div id="shop-items" class="w-full max-w-6xl flex flex-col gap-6">
+            <!-- Items injected by JS -->
+        </div>
+
+
+        <button id="btn-shop-back" class="hbtn mt-8" style="min-width:200px">BACK</button>
+    </div>
+
+
+    <div id="save-badge" style="position:fixed;top:9.5rem;left:50%;transform:translateX(-50%);z-index:60;pointer-events:none;opacity:0;transition:opacity 0.35s;background:rgba(5,46,22,0.85);border:1px solid #22c55e;color:#bbf7d0;font-weight:800;font-size:0.95rem;padding:0.35rem 0.9rem;border-radius:0.5rem;white-space:nowrap"></div>
+    <div id="camp-arrow" class="hidden"><b id="camp-arr-i">&#9650;</b><span id="camp-arr-t"></span></div>
+    <div id="camp-brief" class="hidden absolute inset-0 z-[60] flex items-center justify-center"></div>
+    <div id="camp-result" class="hidden absolute inset-0 z-50 flex items-center justify-center"></div>
+    <div id="gameover-overlay" class="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center z-50 hidden backdrop-blur-md">
+        <h2 class="text-7xl font-black text-red-500 mb-4 tracking-widest drop-shadow-[0_0_30px_rgba(255,0,0,0.8)]">WASTED</h2>
+        <p class="text-3xl text-white mb-2 font-black">ALL PROGRESS LOST</p>
+        <p class="text-xl text-gray-300 mb-6" id="gameover-stats">You survived until Wave X</p>
+        <div id="gameover-grid" class="grid grid-cols-3 gap-3 mb-5 text-center"></div>
+        <div id="gameover-xp" class="mb-8 text-center flex flex-col items-center"></div>
+        <div class="flex gap-4">
+            <button id="btn-go-continue" class="hbtn cont hidden xl">CONTINUE</button>
+            <button id="btn-respawn" class="hbtn pri xl">START OVER</button>
+            <button id="btn-go-menu" class="hbtn xl">MAIN MENU</button>
+        </div>
+    </div>
+
+
+    <!--@js indent=8-->
+</body>
+</html>
