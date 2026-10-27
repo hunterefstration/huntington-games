@@ -837,7 +837,10 @@ const GVLink = (() => {
           if (sy.synced) return res(true);
           if (st.status !== 'connecting' && st.status !== 'online') return res(false);
           var off = function () {}, t = setTimeout(function () { off(); res(false); }, ms || 25000);
-          off = on('sync', function () { if (sy.synced) { clearTimeout(t); off(); res(true); } });
+          off = on('sync', function () {
+            if (sy.synced) { clearTimeout(t); off(); res(true); }
+            else if (sy.state === 'error') { clearTimeout(t); off(); res(false); }   // a sync that failed: do not hold the game for it
+          });
           if (st.status === 'online' && st.ready && !sy.running) syncRun().catch(function () {});
         });
       },

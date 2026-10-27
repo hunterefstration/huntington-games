@@ -552,7 +552,7 @@ let MAX_SPEED = 6;          // only ever changed by the window.__spikes.setPhys 
 let JUMP_FORCE = -11.5;     // (same)
 const MAX_LEVELS = 100;
 const GENERATED_LEVELS = 50; // levels 1-50 get a fresh layout every try; 51-100 are hand-built (HAND_LEVELS)
-const GAME_VERSION = '2.0';
+const GAME_VERSION = '2.1';
 
 // Hand-built levels and the editor use a tile grid: 30px tiles, 18 rows (= the 540px screen height)
 const TILE = 30;
@@ -2274,6 +2274,76 @@ function continueGame() {
 }
 
 
+// The game has opinions about how you died. Roasts get meaner the more times you die on the same level; never the same
+// one twice in a row. {n} = deaths on this level, {lv} = the level.
+const INSULTS = {
+    first: [
+        "You hit a spike. A stationary spike. It did not move.",
+        "Bold strategy. Let's see if it works next time.",
+        "The spike thanks you for your contribution.",
+        "Gravity: 1. You: 0.",
+        "That was a jump in the sense that you left the ground.",
+        "Have you tried not touching the pointy things?",
+        "Even the tutorial is embarrassed for you.",
+        "Somewhere, a spike is telling its friends about you.",
+        "That spike has been there the whole time, you know.",
+        "Your keyboard did nothing wrong.",
+        "Speedrun to the death screen: new personal best.",
+        "Was that a plan, or more of a vibe?",
+        "Level {lv} would like to see your ID. It does not believe you are a gamer.",
+        "The void said hi. You said hi back. Too enthusiastically.",
+        "That landing was more of a suggestion.",
+        "Spikes: famously hard to see. Wait, no, they are bright red.",
+        "You died so fast the music did not notice.",
+        "Hint: the floor is the part without spikes."
+    ],
+    again: [
+        "Death {n}. The spikes are starting a fan club.",
+        "{n} deaths. You are not learning, you are collecting.",
+        "Same spike, same result. Science!",
+        "The definition of insanity is right here, {n} times.",
+        "At this point the spike should pay rent for living in your head.",
+        "{n} tries. Have you considered a different hobby? Knitting has fewer spikes.",
+        "Your character has filed a complaint.",
+        "This level is not hard. You are just very consistent.",
+        "You have died more times than a phone battery.",
+        "Respawning is not a strategy. Well, technically it is. A bad one.",
+        "{n} deaths on level {lv}. Legendary. Not in a good way.",
+        "The spikes are getting bored of winning.",
+        "Somewhere a speedrunner felt that and winced.",
+        "Plot twist: the spike was the main character all along.",
+        "Your reflexes called. They are on vacation.",
+        "Bro really said 'what if I jump INTO it this time'.",
+        "Do you want the level to just move the spikes for you?",
+        "Achievement unlocked: Spike Magnet."
+    ],
+    many: [
+        "{n} deaths. I'm not mad, I'm just disappointed.",
+        "Death number {n}. Even the void is asking you to stop visiting.",
+        "{n}. I have run out of jokes. You have not run out of ways to die.",
+        "Are you okay? Blink twice if the spikes are holding you hostage.",
+        "Level {lv} is now legally your landlord.",
+        "{n} deaths. That is not a skill issue, that is a skill crisis.",
+        "The spikes have unionized. They want you to keep going. You are their only work.",
+        "Fun fact: {n} is also how many times the game thought about quitting on you.",
+        "At {n} deaths, you are basically part of the level design.",
+        "I would say 'so close', but I have seen the replay.",
+        "You know you can stop, right? ...Fine. Try again.",
+        "{n} deaths. The game would like to remind you it is free and you are choosing this."
+    ]
+};
+let insultLevelKey = '', insultDeaths = 0, lastInsult = '';
+function deathInsult() {
+    const key = playMode + ':' + (playMode === 'campaign' ? currentLevel : (customLevel ? customLevel.name : ''));
+    if (key !== insultLevelKey) { insultLevelKey = key; insultDeaths = 0; }
+    insultDeaths++;
+    const pool = insultDeaths <= 1 ? INSULTS.first : insultDeaths <= 6 ? INSULTS.again : INSULTS.many;
+    let line = lastInsult;
+    for (let i = 0; i < 8 && line === lastInsult; i++) line = pool[Math.floor(Math.random() * pool.length)];
+    lastInsult = line;
+    return line.replace(/\{n\}/g, insultDeaths).replace(/\{lv\}/g, playMode === 'campaign' ? currentLevel : 'this');
+}
+
 function triggerDeath() {
     gameState = 'DEAD';
     if (playMode === 'campaign') totalDeaths++; else customDeaths++;
@@ -2284,11 +2354,11 @@ function triggerDeath() {
         if (currentLevel - 1 > progress.bestOneLife) { progress.bestOneLife = currentLevel - 1; saveProgress(); }
         currentLevel = 1;
         document.getElementById('deathHeader').textContent = "LIFE LOST";
-        document.getElementById('deathMessage').textContent = "One Life Mode: Progress reset to Level 1.";
+        document.getElementById('deathMessage').textContent = "One Life Mode: Progress reset to Level 1. " + deathInsult();
         document.getElementById('retryBtn').textContent = "Restart Journey";
     } else {
         document.getElementById('deathHeader').textContent = "You Died";
-        document.getElementById('deathMessage').textContent = "You hit a spike or fell into the void!";
+        document.getElementById('deathMessage').textContent = deathInsult();
         document.getElementById('retryBtn').textContent = "Try Again";
     }
     document.getElementById('deathBackBtn').textContent = backLabel();
