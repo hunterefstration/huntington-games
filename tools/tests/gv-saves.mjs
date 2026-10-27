@@ -60,7 +60,7 @@ async function createAccount(page, name) {
 }
 
 
-const GAMES = ['Brown E Clicker', 'Bean & Brew Tycoon 2.0', 'Tetris Surge', 'Frontline'];   // card names; each writes a save by itself within seconds
+const GAMES = ['Brown E Clicker', 'Bean & Brew Tycoon', 'Tetris Surge', 'Frontline'];   // card names; each writes a save by itself within seconds
 const plain = async (P, name, secs) => {
   await P.evaluate(n => { [...document.querySelectorAll('.game')].find(g => g.textContent.includes(n)).click(); }, name);
   await P.waitForSelector('#player.open', { timeout: 20000 });
