@@ -74,13 +74,6 @@ const Setup = {
         <div class="field"><label>Society</label>${seg('social', [[-0.6, 'Progressive'], [0, 'Moderate'], [0.6, 'Traditional']])}</div>
         <div class="field"><label>Pick 2 traits (${o.traits.length}/2)</label><div class="traits">${TRAITS.map(t => `<button class="trait${o.traits.includes(t.id) ? ' on' : ''}" data-trait="${t.id}">${t.name}<small>${t.desc}</small></button>`).join('')}</div></div>
       </div><div>
-        <div class="portrait">${faceSvg(o.face)}</div>
-        ${o.real ? '<div class="sub" style="margin-top:6px">A drawn portrait, not a photo.</div>' : `<div class="face-opts">
-          <span>Skin</span>${sw('skin', FACE.skin)}<span>Hair</span>${sw('hairColor', FACE.hairColor)}
-          <span>Style</span><div class="seg" data-face="hair">${FACE.hair.map(h => `<button data-v="${h}" class="${o.face.hair === h ? 'on' : ''}">${h}</button>`).join('')}</div>
-          <span>Beard</span><div class="seg" data-face="beard">${FACE.beard.map(h => `<button data-v="${h}" class="${o.face.beard === h ? 'on' : ''}">${h}</button>`).join('')}</div>
-          <span>Suit</span>${sw('suit', FACE.suit)}
-          <span>Glasses</span><div class="seg" data-face="glasses"><button data-v="false" class="${o.face.glasses ? '' : 'on'}">No</button><button data-v="true" class="${o.face.glasses ? 'on' : ''}">Yes</button></div></div>`}
         <div class="facts" style="margin-top:12px"><b>People</b><span>${fmtBig(n.pop)}</span><b>GDP</b><span>$${fmtBig(gdpUsd(n))}</span><b>Debt</b><span>${debtPct(n).toFixed(0)}% of GDP</span><b>Approval</b><span>${n.approval.toFixed(0)}%</span></div>
         <button class="btn gold" style="width:100%;text-align:center;margin-top:8px" data-act="take-office">Take office</button>
       </div></div>`;

@@ -31,10 +31,11 @@ function frontLine(f) {
     const cap = capitalOf(f.b), from = capitalOf(f.a), x = lerp(cap.lon, from.lon, 0.25 - 0.2 * k), y = lerp(cap.lat, from.lat, 0.25 - 0.2 * k);
     return [[[x - 0.6, y - 0.4], [x, y], [x + 0.6, y + 0.4]]];
   }
-  return lines.map(l => l.map(([x, y]) => [lerp(x, toward.lon, k), lerp(y, toward.lat, k)]));
+  const seed = (f.a * 31 + f.b * 17) % 97;
+  return lines.map(l => l.map(([x, y], i) => { const q = k * (0.72 + 0.28 * Math.sin(i * 0.21 + seed) + 0.12 * Math.sin(i * 0.067 + seed * 2.1)); return [lerp(x, toward.lon, q), lerp(y, toward.lat, q)]; }));
 }
 
-const WAR_GOALS = { land: 'Take territory', regime: 'Regime change', punish: 'Punish them', defend: 'Defend' };
+const WAR_GOALS = { land: 'Take territory', regime: 'Regime change', punish: 'Punish them', defend: 'Defend', conquer: 'Conquer the whole country' };
 function startWar(att, def, goal, silent) {
   if (G.wars.some(w => w.a.includes(att) && w.d.includes(def) || w.a.includes(def) && w.d.includes(att))) return null;
   const w = { id: (G.warN = (G.warN || 0) + 1), a: [att], d: [def], goal, start: G.day, score: 0, fronts: [{ a: att, b: def, prog: 0 }], dead: {}, weary: {}, taken: {} };
@@ -69,38 +70,50 @@ function joinWar(w, idx, side) {
   for (const e of enemies) { addRel(idx, e, -40); if (borderBetween(idx, e).length) w.fronts.push(side === 'a' ? { a: idx, b: e, prog: 0 } : { a: e, b: idx, prog: 0 }); }
   newsWorld(World.countries[idx].name + ' joins the war ' + (side === 'a' ? 'against ' : 'to defend ') + World.countries[side === 'a' ? w.d[0] : w.d[0]].name);
 }
-// one month of fighting
+// one week of fighting on every front (k = a quarter of a month). Lines move every week; strikes made since the
+// last week (f.push) move them too.
+function fightFronts(w, k) {
+    const sidePower = list => list.reduce((s, i) => s + landPower(G.nations[i]) * (G.nations[i].army.mobilized ? 1.4 : 1) * (i === list[0] ? 1 : 0.35), 0);
+  // friends outside the war send weapons and money
+  const aid = (side, foe) => { let a = 0; for (const m of G.nations) if (m && !w.a.includes(m.idx) && !w.d.includes(m.idx) && relation(m.idx, side) > 25 && relation(m.idx, foe) < -25) a += landPower(m) * 0.03; return a; };
+  w.aidA = aid(w.a[0], w.d[0]); w.aidD = aid(w.d[0], w.a[0]);
+  const airA = w.a.reduce((s, i) => s + airPower(G.nations[i]), 0), airD = w.d.reduce((s, i) => s + airPower(G.nations[i]), 0);
+  for (const f of w.fronts) {
+    const was = f.prog;
+    const A = G.nations[f.a], D = G.nations[f.b];
+    const stA = { attack: 1.25, balanced: 1, defend: 0.75 }[A.army.stance], stD = { attack: 1.15, balanced: 1, defend: 1.2 }[D.army.stance];
+    // allies add part of their strength; air control, supply over long distances and defending home soil matter
+    let pa = (sidePower(w.a.includes(f.a) ? [f.a, ...w.a.filter(x => x !== f.a)] : [f.a]) + w.aidA) * stA * (1 + 0.3 * (airA - airD) / (airA + airD + 1));
+    let pd = (sidePower(w.d.includes(f.b) ? [f.b, ...w.d.filter(x => x !== f.b)] : [f.b]) + w.aidD) * stD * (1.25 + Math.min(0.3, (G.day - w.start) / 3000)) * (1 + 0.3 * (airD - airA) / (airA + airD + 1));
+    pa *= 1 - Math.max(0, f.prog) * 0.5; // supply lines stretch as the attacker goes deeper
+    pa *= 0.85 + G.rng() * 0.3; pd *= 0.85 + G.rng() * 0.3;
+    const tot = pa + pd, move = (pa - pd) / tot * 0.025 * k * (borderBetween(f.a, f.b).length ? 1 : 0.5) + (f.push || 0);
+    f.push = 0;   // strikes since last week (War.strike, aiStrikes)
+    f.prog = clamp(f.prog + move, -0.6, 1);
+    f.fighting = Math.abs(move) > 0.001 || A.army.stance === 'attack';
+    f.week = f.prog - was;   // how far it moved this week (the weekly report)
+    // Lanchester-style losses: the side facing more power loses more
+    const base = Math.min(A.army.troops, D.army.troops) * 0.012 * k * (A.army.stance === 'attack' ? 1.4 : 1);
+    const la = base * (pd / tot) ** 2 * 2, ld = base * (pa / tot) ** 2 * 2;
+    A.army.troops = Math.max(1000, A.army.troops - la); D.army.troops = Math.max(500, D.army.troops - ld);
+    A.army.E *= 1 - 0.01 * k * pd / tot; D.army.E *= 1 - 0.01 * k * pa / tot;
+    w.dead[f.a] = (w.dead[f.a] || 0) + la * 0.3; w.dead[f.b] = (w.dead[f.b] || 0) + ld * 0.3;
+    // cities fall as the front passes them
+    // cities nearest the border fall first; the capital only when the front reaches it
+    if (!f.order) { const B = borderBetween(f.a, f.b).flat(), ac = capitalOf(f.a), dist = c => B.length ? Math.min(...B.filter((_, i) => i % 4 === 0).map(([x, y]) => Math.hypot(x - c.lon, y - c.lat))) : Math.hypot(c.lon - ac.lon, c.lat - ac.lat); f.order = World.cities.filter(c => c.c === f.b && !c.cap).map(c => [World.cities.indexOf(c), dist(c)]).sort((a, b) => a[1] - b[1]).map(x => x[0]); }
+    const nTaken = f.prog > 0 ? Math.floor(f.order.length * Math.min(1, f.prog * 1.1) ** 1.6) : 0;
+    w.taken[f.b] = f.order.slice(0, nTaken);
+    if (f.prog >= 0.85) { endWar(w, 'a', 'capital'); return; }
+  }
+}
+function warWeek() {
+  for (const w of G.wars.slice()) { aiStrikes(w); if (G.wars.includes(w)) fightFronts(w, 0.25); }
+  weeklyWarReport();
+  syncWarVisuals();
+}
+// the rest of a month of war: weariness, the economy, will to fight
 function warMonth() {
   for (const w of G.wars.slice()) {
-    const sidePower = list => list.reduce((s, i) => s + landPower(G.nations[i]) * (G.nations[i].army.mobilized ? 1.4 : 1) * (i === list[0] ? 1 : 0.35), 0);
-    // friends outside the war send weapons and money
-    const aid = (side, foe) => { let a = 0; for (const m of G.nations) if (m && !w.a.includes(m.idx) && !w.d.includes(m.idx) && relation(m.idx, side) > 25 && relation(m.idx, foe) < -25) a += landPower(m) * 0.03; return a; };
-    w.aidA = aid(w.a[0], w.d[0]); w.aidD = aid(w.d[0], w.a[0]);
-    const airA = w.a.reduce((s, i) => s + airPower(G.nations[i]), 0), airD = w.d.reduce((s, i) => s + airPower(G.nations[i]), 0);
-    for (const f of w.fronts) {
-      const A = G.nations[f.a], D = G.nations[f.b];
-      const stA = { attack: 1.25, balanced: 1, defend: 0.75 }[A.army.stance], stD = { attack: 1.15, balanced: 1, defend: 1.2 }[D.army.stance];
-      // allies add part of their strength; air control, supply over long distances and defending home soil matter
-      let pa = (sidePower(w.a.includes(f.a) ? [f.a, ...w.a.filter(x => x !== f.a)] : [f.a]) + w.aidA) * stA * (1 + 0.3 * (airA - airD) / (airA + airD + 1));
-      let pd = (sidePower(w.d.includes(f.b) ? [f.b, ...w.d.filter(x => x !== f.b)] : [f.b]) + w.aidD) * stD * (1.25 + Math.min(0.3, (G.day - w.start) / 3000)) * (1 + 0.3 * (airD - airA) / (airA + airD + 1));
-      pa *= 1 - Math.max(0, f.prog) * 0.5; // supply lines stretch as the attacker goes deeper
-      pa *= 0.85 + G.rng() * 0.3; pd *= 0.85 + G.rng() * 0.3;
-      const tot = pa + pd, move = (pa - pd) / tot * 0.025 * (borderBetween(f.a, f.b).length ? 1 : 0.5);
-      f.prog = clamp(f.prog + move, -0.6, 1);
-      f.fighting = Math.abs(move) > 0.004 || A.army.stance === 'attack';
-      // Lanchester-style losses: the side facing more power loses more
-      const base = Math.min(A.army.troops, D.army.troops) * 0.012 * (A.army.stance === 'attack' ? 1.4 : 1);
-      const la = base * (pd / tot) ** 2 * 2, ld = base * (pa / tot) ** 2 * 2;
-      A.army.troops = Math.max(1000, A.army.troops - la); D.army.troops = Math.max(500, D.army.troops - ld);
-      A.army.E *= 1 - 0.01 * pd / tot; D.army.E *= 1 - 0.01 * pa / tot;
-      w.dead[f.a] = (w.dead[f.a] || 0) + la * 0.3; w.dead[f.b] = (w.dead[f.b] || 0) + ld * 0.3;
-      // cities fall as the front passes them
-      // cities nearest the border fall first; the capital only when the front reaches it
-      if (!f.order) { const B = borderBetween(f.a, f.b).flat(), ac = capitalOf(f.a), dist = c => B.length ? Math.min(...B.filter((_, i) => i % 4 === 0).map(([x, y]) => Math.hypot(x - c.lon, y - c.lat))) : Math.hypot(c.lon - ac.lon, c.lat - ac.lat); f.order = World.cities.filter(c => c.c === f.b && !c.cap).map(c => [World.cities.indexOf(c), dist(c)]).sort((a, b) => a[1] - b[1]).map(x => x[0]); }
-      const nTaken = f.prog > 0 ? Math.floor(f.order.length * Math.min(1, f.prog * 1.1) ** 1.6) : 0;
-      w.taken[f.b] = f.order.slice(0, nTaken);
-      if (f.prog >= 0.85) { endWar(w, 'a', 'capital'); break; }
-    }
     if (!G.wars.includes(w)) continue;
     // weariness, economy and stability for everyone involved
     const months = (G.day - w.start) / 30;
@@ -147,11 +160,13 @@ function endWar(w, winner, how) {
     const win = winner === 'a' ? w.a : w.d, lose = winner === 'a' ? w.d : w.a, W0 = G.nations[win[0]], L0 = G.nations[lose[0]];
     newsWorld(World.countries[win[0]].name + ' wins the war against ' + World.countries[lose[0]].name);
     if (winner === 'a' && w.goal === 'land') annex(w, w.a[0], w.d[0]);
+    if (winner === 'a' && (w.goal === 'conquer' || (how === 'capital' && w.a[0] !== G.player.idx && G.rng() < 0.35))) w.conquer = true;
     if (winner === 'a' && (w.goal === 'regime' || how === 'capital')) { L0.leader = personName(World.countries[L0.idx], G.rng); L0.title = 'Interim Leader'; L0.gov = 'TRANS'; newsWorld('New government installed in ' + World.countries[L0.idx].name); if (L0.idx === G.player.idx) { endGame('conquered', 'Defeated in war', `Enemy forces took the capital. ${G.player.title} ${G.player.name} was removed from power.`); } }
     for (const i of win) G.nations[i].warsWon = (G.nations[i].warsWon || 0) + 1, G.nations[i].prestige = (G.nations[i].prestige || 0) + 2;
     for (const i of lose) G.nations[i].warsLost = (G.nations[i].warsLost || 0) + 1, G.nations[i].evStab -= 8;
   }
   for (const i of w.a.concat(w.d)) if (i === G.player.idx) inbox(winner === 'white' ? 'info' : (w[winner] || []).includes(i) ? 'good' : 'bad', 'The war is over', winner === 'white' ? 'A ceasefire holds. The front stays where it is.' : (w[winner] || []).includes(i) ? 'We won.' : 'We lost the war.');
+  if (w.conquer && winner === 'a') conquer(w.a[0], w.d[0], how);   // 67b-sim-conquest.js
   syncWarVisuals();
 }
 // land taken in a winning war joins the winner (people and part of the economy move)
@@ -168,10 +183,10 @@ function aiWars() {
   if (G.rng() > 0.25) return;
   const cands = [];
   for (const n of G.nations) {
-    if (!n || n.idx === G.player.idx || n.atWar) continue;
+    if (!n || n.idx === G.player.idx || n.atWar || n.owner != null) continue;
     const p = n.persona || makePersona(n); if (p.aggr < 60) continue;
     for (const id of World.countries[n.idx].borders) {
-      const o = G.nations[World.byId[id].idx]; if (o.atWar || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
+      const o = G.nations[World.byId[id].idx]; if (o.atWar || o.owner != null || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
       // deterrence: the target's allies count, and anyone under a nuclear umbrella is left alone
       const allies = G.nations.filter(m => m && m.idx !== o.idx && m.idx !== n.idx && (hasTreaty(m.idx, o.idx, 'defence') || ['NATO', 'CSTO'].some(b => m.blocs.includes(b) && o.blocs.includes(b))));
       if (o.nukes || allies.some(m => m.nukes)) continue;
@@ -187,6 +202,8 @@ const War = {
   myWars() { const me = G.player.idx; return G.wars.filter(w => w.a.includes(me) || w.d.includes(me)); },
   declare(t, goal) {
     const me = G.player.idx, n = G.nations[me];
+    if (G.nations[t].owner === me) return 'We already control ' + World.countries[t].name + '.';
+    if (G.nations[t].owner != null) return World.countries[t].name + ' is controlled by ' + World.countries[G.nations[t].owner].name + '. Declare war on them instead.';
     if (n.pc < 10) return 'Not enough political capital (10).';
     n.pc -= 10;
     const reason = relation(me, t) < -50 || G.wars.some(w => w.a.includes(t) && w.d.some(x => hasTreaty(x, me, 'defence')));
@@ -216,6 +233,7 @@ const War = {
     // each strike hurts their will less if they have already been hit a lot this month
     const wk = warOf(me, t), hits = wk ? (wk.hits = wk.hits || {})[t] = ((wk.hits[t] || 0) + 1) : 0;
     const ww = hurtWill(t, ({ air: 1.6, missile: 2.6, cyber: 1, blockade: 2.2 }[kind] + G.rng() * 1.6) / (1 + hits * 0.35));
+    if (ww) pushFronts(ww, me, t, hit * 0.012 / (1 + hits * 0.35));   // strikes behind their lines move the front next week
     if (ww && kind === 'blockade') (ww.blockade = ww.blockade || {})[t] = G.day + 90;
     react(n, { title: { air: 'Air strikes on ', missile: 'Missile strikes on ', cyber: 'Cyber attack on ', blockade: 'Naval blockade of ' }[kind] + World.countries[t].name, stance: { military: 3, students: -3 }, size: 0.8, abroad: -2, topic: 'War' });
     return { air: 'Our jets hit military targets.', missile: 'Missiles struck bases and power plants.', cyber: 'Their banks and power grid went dark.', blockade: 'Our navy is blocking their ports.' }[kind];
@@ -269,12 +287,15 @@ function warActionsHtml(t) {
   const me = G.player.idx, w = G.wars.find(x => (x.a.includes(me) && x.d.includes(t)) || (x.d.includes(me) && x.a.includes(t)));
   const spy = G.spy[t] || 0;
   let h = '<h3>Military</h3>';
+  const own = G.nations[t].owner;
+  if (own === me) return h + `<div class="note-box">${esc(World.countries[t].name)} is under our control. Manage its tribute and unrest in Military, Controlled lands.</div>`;
+  if (own != null) h += `<div class="note-box">${esc(World.countries[t].name)} is controlled by ${esc(World.countries[own].name)}. To free it, defeat ${esc(World.countries[own].name)}.</div>`;
   if (w) h += `<div class="note-box">We are at war with them. War score ${w.score > 0 === w.a.includes(me) ? '+' : ''}${(w.a.includes(me) ? w.score : -w.score)}.</div>
     <div class="btnrow"><button class="btn small" data-war="air">Air strikes (3)</button><button class="btn small" data-war="missile">Missile strikes (4)</button><button class="btn small" data-war="cyber">Cyber attack (3)</button><button class="btn small" data-war="blockade">Naval blockade (4)</button>${G.nations[me].nukes ? '<button class="btn small" data-war="nuke" style="border-color:#ef6b5b;color:#ef6b5b">☢ Nuclear strike</button>' : ''}</div>
     <div class="sub" style="margin:6px 0">Their will to fight: <b>${willWord(w.will[t] == null ? 60 : w.will[t])}</b>${(G.spy[t] || 0) > 30 ? ' (' + Math.round(w.will[t]) + '/100, from our spies)' : ''}. Losses, bombing, blockades and nuclear strikes wear it down.</div>
     <div class="btnrow"><button class="btn small" data-peace="white">Ceasefire on current lines (${Math.round(peaceChance(w, 'white') * 100)}%)</button><button class="btn small" data-peace="land">Demand the land we hold (${Math.round(peaceChance(w, 'land') * 100)}%)</button><button class="btn small" data-peace="pay">Demand reparations (${Math.round(peaceChance(w, 'pay') * 100)}%)</button><button class="btn small" data-peace="regime">Demand surrender (${Math.round(peaceChance(w, 'regime') * 100)}%)</button></div>`;
   else h += `<div class="sub">Our army ${fmtBig(G.nations[me].army.troops)} troops, power ${landPower(G.nations[me]).toFixed(0)}. Theirs: ${spy > 40 ? fmtBig(G.nations[t].army.troops) + ' troops, power ' + landPower(G.nations[t]).toFixed(0) : 'unknown (build a spy network to find out)'}.</div>
-    <div class="btnrow"><select id="wgoal" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px"><option value="land">Take territory</option><option value="regime">Regime change</option><option value="punish">Punish them</option></select><button class="btn small" data-war="declare" style="border-color:#ef6b5b">Declare war (10)</button></div>`;
+    <div class="btnrow"><select id="wgoal" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:5px"><option value="conquer">Conquer the whole country</option><option value="land">Take territory</option><option value="regime">Regime change</option><option value="punish">Punish them</option></select><button class="btn small" data-war="declare" style="border-color:#ef6b5b">Declare war (10)</button></div>`;
   h += `<h3>Intelligence</h3><div class="sub">Spy network in ${esc(World.countries[t].name)}: ${spy.toFixed(0)}/100. Grows each month while it is our focus (needs intelligence spending).</div>
     <div class="btnrow"><button class="btn small" data-spy="focus">${G.spyFocus === t ? 'Current focus' : 'Make this our focus'}</button>${Object.entries(SPY_OPS).map(([k, o]) => `<button class="btn small" data-spy="${k}"${spy < o.need ? ' disabled' : ''}>${o.name} (${o.need}+)</button>`).join('')}</div>`;
   return h;
@@ -348,19 +369,57 @@ function syncWarVisuals() {
   Life.units = units; Globe.dirty = true;
 }
 ICON_SOURCES.push(() => G.wars.map(w => { const c1 = capitalOf(w.a[0]), c2 = capitalOf(w.d[0]), L = borderBetween(w.a[0], w.d[0]).flat(); const p = L.length ? L[Math.floor(L.length / 2)] : [(c1.lon + c2.lon) / 2, (c1.lat + c2.lat) / 2]; return { lon: p[0], lat: p[1], icon: '⚔', ring: '#ef6b5b', bg: 'rgba(80,10,10,.85)' }; }));
-// fronts drawn on the 2D overlay, so they stay crisp at every zoom
+// fronts drawn on the 2D overlay, so they stay crisp at every zoom. Zoomed in (and only then, it costs more) they look
+// like a real war map: the ground each side has taken is shaded, the line has trench marks facing the enemy, and
+// arrows show where it is moving this week.
 function drawFronts(ctx) {
   if (!G || !G.wars.length) return;
-  const s = {};
-  for (const w of G.wars) for (const f of w.fronts) for (const line of frontLine(f)) {
-    ctx.beginPath(); let started = false;
-    for (const [x, y] of line) { const p = llToScreen(x, y, 1.0008, s); if (!p.front) { started = false; continue; } started ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); started = true; }
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(255,90,60,.35)'; ctx.lineWidth = 9; ctx.stroke();
-    ctx.strokeStyle = '#ff6a3d'; ctx.lineWidth = 2.5; ctx.setLineDash([7, 5]); ctx.stroke(); ctx.setLineDash([]);
+  const s = {}, near = Cam.alt < 0.75, me = G.player.idx;
+  for (const w of G.wars) for (const f of w.fronts) {
+    const front = frontLine(f), border = near ? borderBetween(f.a, f.b) : null, mine = w.a.includes(me) || w.d.includes(me);
+    const col = mine ? (w.a.includes(me) === (f.prog >= 0) ? '255,196,70' : '255,90,60') : '255,106,61';
+    front.forEach((line, li) => {
+      const P = line.map(([x, y]) => llToScreen(x, y, 1.0008, Object.create(null)));
+      if (near && border && border[li] && f.prog !== 0) {   // the occupied strip between the old border and the front
+        const B = border[li].map(([x, y]) => llToScreen(x, y, 1.0008, Object.create(null)));
+        if (P.every(p => p.front) && B.every(p => p.front)) {
+          ctx.beginPath(); P.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); for (let i = B.length - 1; i >= 0; i--) ctx.lineTo(B[i].x, B[i].y); ctx.closePath();
+          ctx.fillStyle = 'rgba(' + col + ',.18)'; ctx.fill();
+          ctx.save(); ctx.clip(); ctx.strokeStyle = 'rgba(' + col + ',.35)'; ctx.lineWidth = 1;
+          let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity; for (const p of P.concat(B)) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+          ctx.beginPath(); for (let x = x0 - (y1 - y0); x < x1; x += 7) { ctx.moveTo(x, y1); ctx.lineTo(x + (y1 - y0), y0); } ctx.stroke(); ctx.restore();
+        }
+      }
+      ctx.beginPath(); let started = false;
+      for (const p of P) { if (!p.front) { started = false; continue; } started ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); started = true; }
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(' + col + ',.35)'; ctx.lineWidth = near ? 6 : 9; ctx.stroke();
+      ctx.strokeStyle = 'rgb(' + col + ')'; ctx.lineWidth = near ? 2 : 2.5;
+      if (!near) { ctx.setLineDash([7, 5]); ctx.stroke(); ctx.setLineDash([]); return; }
+      ctx.stroke();
+      // trench marks: short ticks on the defender's side every few pixels
+      const cap = capitalOf(f.prog >= 0 ? f.b : f.a), cp = llToScreen(cap.lon, cap.lat, 1.0008, Object.create(null));
+      let acc = 0; ctx.beginPath();
+      for (let i = 1; i < P.length; i++) {
+        const a = P[i - 1], b = P[i]; if (!a.front || !b.front) continue;
+        const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy); acc += L; if (acc < 9 || L < 0.5) continue; acc = 0;
+        let nx = -dy / L, ny = dx / L; if ((cp.x - b.x) * nx + (cp.y - b.y) * ny < 0) { nx = -nx; ny = -ny; }
+        ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + nx * 5, b.y + ny * 5);
+      }
+      ctx.lineWidth = 1.5; ctx.stroke();
+      // this week's push: arrows along the line
+      if (f.fighting && Math.abs(f.week || 0) > 0.0005) {
+        const tgt = capitalOf((f.week || 0) > 0 ? f.b : f.a), tp = llToScreen(tgt.lon, tgt.lat, 1.0008, Object.create(null));
+        for (let i = Math.floor(P.length / 6); i < P.length; i += Math.max(1, Math.floor(P.length / 3))) {
+          const p = P[i]; if (!p.front) continue; const dx = tp.x - p.x, dy = tp.y - p.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + ux * 22, p.y + uy * 22); ctx.lineTo(p.x + ux * 15 - uy * 5, p.y + uy * 15 + ux * 5); ctx.moveTo(p.x + ux * 22, p.y + uy * 22); ctx.lineTo(p.x + ux * 15 + uy * 5, p.y + uy * 15 - ux * 5);
+          ctx.strokeStyle = 'rgb(' + col + ')'; ctx.lineWidth = 2.5; ctx.stroke();
+        }
+      }
+    });
   }
   // occupied cities
-  for (const w of G.wars) for (const id in w.taken) for (const ci of w.taken[id]) { const c = World.cities[ci], p = llToScreen(c.lon, c.lat, 1.001, s); if (!p.front) continue; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 7); ctx.fillStyle = '#ff6a3d'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke(); }
+  for (const w of G.wars) for (const id in w.taken) for (const ci of w.taken[id]) { const c = World.cities[ci], p = llToScreen(c.lon, c.lat, 1.001, s); if (!p.front) continue; ctx.beginPath(); ctx.arc(p.x, p.y, near ? 4 : 5, 0, 7); ctx.fillStyle = '#ff6a3d'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke(); if (near) { ctx.fillStyle = '#ffd9cc'; ctx.font = '11px system-ui'; ctx.fillText(c.name + ' (occupied)', p.x + 6, p.y - 4); } }
 }
 let warFxT = 0;
 DAILY.push(() => { // a few flashes along active fronts while time runs
@@ -368,6 +427,7 @@ DAILY.push(() => { // a few flashes along active fronts while time runs
   for (const w of G.wars) for (const f of w.fronts) if (f.fighting && G.rng() < 0.6) { const L = frontLine(f).flat(); if (L.length) { const p = L[Math.floor(G.rng() * L.length)]; Life.flash(p[0] + (G.rng() - 0.5) * 0.4, p[1] + (G.rng() - 0.5) * 0.4, 0.6, [1, 0.65, 0.25], 1.5); } }
 });
 MONTHLY.push(warMonth);
+DAILY.push(() => { if (G.day % 7 === 0) warWeek(); });
 MONTHLY.push(spyMonth);
 SYSTEM_INITS.push(g => {
   g.wars = g.wars || []; g.spy = g.spy || {};
@@ -420,6 +480,7 @@ function surrenderTerms(w, winSide, loser, why) {
   const intro = why === 'nuke' ? `After the nuclear strike, ${n.title} ${n.leader} went on television, pale and shaking: ${c.name} will stop fighting.` : pickLine(SURRENDER_LINES, c.name, n);
   UI.modal(`<h2>🏳 ${esc(c.name)} surrenders</h2><p style="font-size:15px">${esc(intro)}</p><p class="sub">Choose the peace terms.</p>
     <div class="menu" style="width:auto">
+      <button class="btn gold" data-terms="conquer">Take full control of ${esc(c.name)}: its land, its cities, its economy</button>
       ${held ? `<button class="btn" data-terms="land">Annex the ${held} cities we hold</button>` : ''}
       <button class="btn" data-terms="regime">Install a friendly government</button>
       <button class="btn" data-terms="pay">Make them pay reparations (2% of their GDP a year for 5 years)</button>
@@ -428,6 +489,7 @@ function surrenderTerms(w, winSide, loser, why) {
     const t = b.dataset.terms; UI.closeModal();
     if (winSide === 'd') { [w.a, w.d] = [w.d, w.a]; w.fronts.forEach(f => { [f.a, f.b] = [f.b, f.a]; f.prog = -f.prog; }); }
     if (t === 'white') { endWar(w, 'white', 'talks'); react(G.nations[me], { title: 'Generous peace with ' + c.name, stance: { media: 3, military: -3 }, size: 1, abroad: 6, mood: 0.4 }); addRel(me, loser, 20); return; }
+    if (t === 'conquer') { w.goal = 'conquer'; endWar(w, 'a', 'surrender'); react(G.nations[me], { title: c.name + ' is ours', stance: { military: 8, students: -4 }, size: 2, mood: 0.6, abroad: -12 }); return; }
     if (t === 'pay') { w.goal = 'punish'; endWar(w, 'a', 'surrender'); G.reparations = (G.reparations || []).concat([{ from: loser, to: me, until: G.day + 1825 }]); }
     else { w.goal = t; endWar(w, 'a', 'surrender'); if (t === 'regime') { addRel(me, loser, 60); n.title = 'Interim President'; } }
     react(G.nations[me], { title: 'Victory over ' + c.name, stance: { military: 8, retirees: 2, students: -2 }, size: 2, mood: 0.6, abroad: t === 'land' ? -8 : -2 });

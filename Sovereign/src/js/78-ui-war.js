@@ -16,9 +16,11 @@ Object.assign(Panels, {
           <div class="sumrow"><span>Our dead / theirs</span><span>${fmtInt(w.dead[me] || 0)} / ${fmtInt(w.dead[mine ? w.d[0] : w.a[0]] || 0)}</span></div>
           <div class="sumrow"><span>War weariness at home</span><b>${(w.weary[me] || 0).toFixed(0)}/100</b></div>
           <div class="btnrow"><button class="btn small" data-wt="${mine ? w.d[0] : w.a[0]}">Strikes and peace talks</button><button class="btn small" data-wlook="${w.id}">Look at the front</button></div></div>`; }).join('') : '<div class="sub">We are at peace. To go to war, open a country in Diplomacy.</div>') +
+      controlledHtml() +
       `<h3>Wars around the world</h3>` + (G.wars.filter(w => !wars.includes(w)).map(w => `<div class="sumrow"><span>${World.countries[w.a[0]].flag} ${esc(World.countries[w.a[0]].name)} vs ${World.countries[w.d[0]].flag} ${esc(World.countries[w.d[0]].name)}</span><span><button class="btn small" data-med="${w.id}">Mediate (8)</button> <button class="btn small" data-wlook="${w.id}">Look</button></span></div>`).join('') || '<div class="sub">None.</div>') +
       `<h3>Spy networks</h3>` + (nets.length ? nets.map(([t, v]) => `<div class="sumrow"><span>${World.countries[t].flag} ${esc(World.countries[t].name)}${+t === G.spyFocus ? ' (focus)' : ''}</span><span>${v.toFixed(0)}/100 <button class="btn small" data-wt="${t}">Operations</button></span></div>`).join('') : '<div class="sub">No networks yet. Pick a focus country on its Diplomacy page. Intelligence spending makes them grow faster.</div>');
     $$('[data-med]', el).forEach(b => b.onclick = () => { toast(mediate(G.wars.find(x => x.id === +b.dataset.med))); Bus.emit('changed'); });
+    bindControlled(el);
     $$('[data-mob]', el).forEach(b => b.onclick = () => War.mobilize(b.dataset.mob === '1'));
     $$('[data-st]', el).forEach(b => b.onclick = () => War.stance(b.dataset.st));
     $$('[data-wt]', el).forEach(b => b.onclick = () => { Panels.diploTarget = +b.dataset.wt; Game.panel = null; Game.open('diplomacy'); });

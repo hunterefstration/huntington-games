@@ -139,6 +139,12 @@ A('join', 'Joiner', 'Join an organisation', n => n.blocs.some(b => !World.nat0[n
 A('leave', 'Going it alone', 'Leave an organisation', n => World.nat0[n.idx].blocs.some(b => !n.blocs.includes(b)));
 A('un', 'Diplomat at the UN', 'Pass a UN resolution', n => (G.log || []).some(l => /^UN vote .* passed/.test(l.text)));
 A('warwin', 'Victory', 'Win a war', n => (n.warsWon || 0) >= 1);
+// 1.2 conquest (67b-sim-conquest.js)
+A('conquer1', 'Conqueror', 'Take full control of another country', n => ruledBy(n.idx).length >= 1);
+A('conquer5', 'Empire', 'Control 5 countries besides your own', n => ruledBy(n.idx).length >= 5);
+A('conquer25', 'Superpower Empire', 'Control 25 countries besides your own', n => ruledBy(n.idx).length >= 25);
+A('wars5', 'Warlord', 'Win 5 wars', n => (n.warsWon || 0) >= 5);
+A('world', 'World Domination', 'Control every country on Earth', n => !!G.dominated);
 A('warlose', 'Defeat', 'Lose a war', n => (n.warsLost || 0) >= 1);
 A('war3', 'Warlord', 'Win three wars', n => (n.warsWon || 0) >= 3);
 A('defend', 'They shall not pass', 'Push an invader back over the border', n => G.wars.some(w => w.d.includes(n.idx) && w.fronts.some(f => f.b === n.idx && f.prog < -0.05)));

@@ -31,7 +31,7 @@ Object.assign(Panels, {
     const tr = G.treaties.filter(x => (x.a === me && x.b === t) || (x.a === t && x.b === me));
     n.why.rel = relWhy(me, t); WHY_TITLES.rel = 'Relations with ' + c.name;
     el.innerHTML = this.head(c.flag + ' ' + esc(c.name), `<a href="#" data-back style="color:var(--gold2)">← all countries</a>`) +
-      `<div style="display:flex;gap:12px;align-items:center;margin:10px 0"><div class="portrait" style="width:72px;flex:none">${faceSvg(faceFromName(m.leader))}</div>
+      `<div style="display:flex;gap:12px;align-items:center;margin:10px 0"><div style="font-size:44px;line-height:1;flex:none">${World.countries[m.idx].flag}</div>
         <div><b>${esc(m.title + ' ' + m.leader)}</b><div class="sub">${esc(GOV[m.gov].name)} · ${esc(personaText(p))}</div>
         <div class="sub">GDP ${usd(gdpUsd(m))} · ${fmtInt(m.mil)} troops${m.nukes ? ' · nuclear power' : ''}</div></div></div>
       <div class="kv"><div data-why="rel"><small>Relations with us</small><b class="${rel > 0 ? 'up' : 'down'}">${rel > 0 ? '+' : ''}${rel.toFixed(0)}</b></div><div><small>Trust</small><b>${(G.trust[PAIR(t, me)] == null ? 50 : G.trust[PAIR(t, me)]).toFixed(0)}</b></div><div><small>Stability</small><b>${m.stability.toFixed(0)}</b></div></div>

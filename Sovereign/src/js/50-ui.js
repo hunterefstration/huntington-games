@@ -5,7 +5,8 @@ const MapModes = {
   add(id, name, color, legend) { this.list.push({ id, name, color, legend }); },
   get(id) { return this.list.find(m => m.id === id) || this.list[0]; }
 };
-MapModes.add('political', 'Political', c => c.color);
+// 1.2: a country under someone's full control is drawn in its ruler's colour
+MapModes.add('political', 'Political', c => { const n = G && G.nations && G.nations[c.idx], o = n && n.owner != null ? World.countries[n.owner] : null; return o ? o.color : c.color; });
 MapModes.add('regions', 'Regions', c => REGION_COLORS[c.region] || '#999');
 MapModes.add('size', 'Size', c => { const t = clamp(Math.log10(c.area || 1) / 7.2, 0, 1); return '#' + new THREE.Color().setHSL(0.6 - t * 0.55, 0.45, 0.32 + t * 0.25).getHexString(); });
 
@@ -205,7 +206,7 @@ const UI = {
     this.modal(`<h2>Credits</h2><div class="credits">
       <div class="hg">A Huntington Games production</div>
       <p><b>Sovereign</b> version ${VERSION}. Made by Huntington Games.</p>
-      <p><b>Country figures:</b> rounded public estimates for 2025. Leaders as of mid 2026. Portraits are drawings, not photos.</p>
+      <p><b>Country figures:</b> rounded public estimates for 2025. Leaders as of mid 2026.</p>
       <p><b>Map borders:</b> Natural Earth (public domain), via world-atlas.</p>
       <p><b>Country facts:</b> mledoze/countries (Open Database License).</p>
       <p><b>Cities:</b> GeoNames (CC BY 4.0).</p>

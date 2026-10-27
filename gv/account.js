@@ -873,7 +873,7 @@ const GVLink = (() => {
       BE = function () { return rd('brownEClickerSave') || {}; }, BB = function () { return rd('beanBrewSaveV2') || {}; },
       ML = function () { var s = rd('marketLifeSave'); return (s && s.life) || {}; }, TDR = function () { return rd('td2_records') || {}; },
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
-      SV = function () { return rd('sov.ach') || {}; }, PL = function () { return rd('hgach:plays') || {}; };
+      SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
   var ACH = [
     // 100 Levels of Spikes
@@ -947,11 +947,12 @@ const GVLink = (() => {
     { id: 'nd1', g: 'neon', i: '⚡', n: 'Neon Runner', d: 'Score 1,000 in Neon Dash.', p: 10, t: function () { return (rd('neonScores') || []).some(function (s) { return num(s && s.val) >= 1000; }); } },
     { id: 'nd2', g: 'neon', i: '🌈', n: 'Neon Legend', d: 'Score 10,000 in Neon Dash.', p: 50, t: function () { return (rd('neonScores') || []).some(function (s) { return num(s && s.val) >= 10000; }); } },
     { id: 'ndfork', g: 'neon', i: '🍴', n: 'Fork in the Road', d: 'Reach level 10 in Hunter\'s Fork.', p: 25, t: function () { return num(rd('neonMaxLevel')) >= 10; } },
-    // Sovereign (Sovereign writes 'sov.ach' as you play)
+    // Sovereign (Sovereign writes 'sov.hgach' as you play; its own achievements are in 'sov.ach')
     { id: 'sovwar', g: 'sov', i: '⚔️', n: 'Victory', d: 'Win a war in Sovereign.', p: 25, t: function () { return num(SV().warsWon) >= 1; } },
     { id: 'sovconq', g: 'sov', i: '🏴', n: 'Conqueror', d: 'Take full control of another country.', p: 25, t: function () { return num(SV().conquered) >= 1; } },
     { id: 'sovconq10', g: 'sov', i: '🗺️', n: 'Empire Builder', d: 'Control 10 countries besides your own.', p: 50, t: function () { return num(SV().conquered) >= 10; } },
     { id: 'sovyears', g: 'sov', i: '📅', n: 'Long Reign', d: 'Rule for 20 years in one game.', p: 25, t: function () { return num(SV().years) >= 20; } },
+    { id: 'sovach', g: 'sov', i: '🏅', n: 'Statesman', d: 'Earn 15 of Sovereign\'s own achievements.', p: 50, t: function () { return cnt(rd('sov.ach')) >= 15; } },
     { id: 'sovworld', g: 'sov', i: '🌍', n: 'World Domination', d: 'Control every country on Earth.', p: 100, t: function () { return !!SV().domination; } },
     // the launcher itself
     { id: 'hubgames', g: 'hub', i: '🎮', n: 'Game Hopper', d: 'Play 5 different games.', p: 10, t: function () { return cnt(PL()) >= 5; } },

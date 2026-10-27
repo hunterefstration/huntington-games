@@ -45,7 +45,7 @@ const Panels = {
     const traits = P.traits.map(id => TRAITS.find(t => t.id === id).name).join(', ');
     el.innerHTML = this.head(c.flag + ' ' + esc(c.name), esc(GOV[n.gov].name) + ' · ' + fmtDate(G.day)) + `
       <div style="display:flex;gap:14px;align-items:center;margin:12px 0">
-        <div class="portrait" style="width:84px;flex:none">${faceSvg(P.face)}</div>
+        <div style="font-size:52px;line-height:1;flex:none">${c.flag}</div>
         <div><b style="font-size:16px">${esc(P.title + ' ' + P.name)}</b><div class="sub">${esc(P.party)} · ${ideologyName(P.econ, P.social)}</div>
         <div class="sub">Traits: ${esc(traits)}</div><div class="sub">In office ${Math.floor(n.months / 12)} years ${n.months % 12} months</div></div>
       </div>

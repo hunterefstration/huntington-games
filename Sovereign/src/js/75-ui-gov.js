@@ -50,7 +50,7 @@ Object.assign(Panels, {
     const n = me();
     el.innerHTML = this.head('Cabinet', 'Skilled ministers make their area work better. Disloyal, ambitious ones may quit or plot.') +
       POSTS.map(([p, title]) => { const m = n.cabinet[p];
-        return `<div class="slot" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)"><div style="width:44px" class="portrait">${faceSvg(faceFromName(m.name))}</div>
+        return `<div class="slot" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
         <div style="flex:1"><b>${esc(m.name)}</b><div class="sub">${title} · skill ${m.skill}/10 · loyalty ${m.loyalty.toFixed(0)} · ambition ${m.ambition}</div></div><button class="btn small" data-post="${p}">Replace</button></div>`; }).join('') +
       (this.postSel ? `<div class="forecast"><b>Candidates for ${POSTS.find(x => x[0] === this.postSel)[1]}</b> (5 capital)${this.cands.map((c, i) => `<div class="sumrow"><span>${esc(c.name)} <span class="sub">skill ${c.skill}, loyalty ${c.loyalty}, ambition ${c.ambition}, honesty ${c.honesty}</span></span><button class="btn small gold" data-hire="${i}">Hire</button></div>`).join('')}</div>` : '');
     $$('[data-post]', el).forEach(b => b.onclick = () => { this.postSel = b.dataset.post; this.cands = Politics.candidates(this.postSel); this.cabinet(el); });
