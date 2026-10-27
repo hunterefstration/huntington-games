@@ -7,7 +7,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Market & Life 2.0</title>
+    <title>Market & Life 2.1</title>
     <style>
         :root { --bg:#0f172a; --card:#1e293b; --card2:#172033; --line:#334155; --muted:#94a3b8; --text:#f8fafc; --green:#10b981; --red:#ef4444; --amber:#fbbf24; --sky:#38bdf8; --violet:#8b5cf6; --pink:#f472b6; }
         * { box-sizing: border-box; }
@@ -370,7 +370,7 @@
                 <button data-act="speed" data-arg="4" title="Faster">4x</button>
                 <button data-act="speed" data-arg="8" title="Fastest">8x</button>
             </div>
-            <div style="display:flex; gap:6px"><button class="btn-reset" data-act="whatsNew" title="What's new in version 2.0">✨ What's New</button><button class="btn-reset" data-act="reset">RESET DATA</button></div>
+            <div style="display:flex; gap:6px"><button class="btn-reset" data-act="whatsNew" title="What's new in version 2.1">✨ What's New</button><button class="btn-reset" data-act="reset">RESET DATA</button></div>
         </div>
     </header>
 
@@ -489,9 +489,18 @@
         m_edu:  { name: "Master's in Education", school: 'Graduate School', icon: '📚', years: 2, cost: 1500, lvl: 'grad', req: ['b_edu'], score: 1000 },
         jd:     { name: 'Law Degree (JD)', school: 'Graduate School', icon: '⚖️', years: 3, cost: 3500, lvl: 'grad', req: ['bach'], score: 1500 },
         md:     { name: 'Medical Degree (MD)', school: 'Graduate School', icon: '⚕️', years: 4, cost: 5000, lvl: 'grad', req: ['b_bio', 'b_nur'], score: 1800 },
-        phd:    { name: 'PhD in Science', school: 'Graduate School', icon: '🔭', years: 5, cost: 0, stipend: 90, lvl: 'grad', req: ['b_bio', 'b_cs'], score: 2000 }
+        phd:    { name: 'PhD in Science', school: 'Graduate School', icon: '🔭', years: 5, cost: 0, stipend: 90, lvl: 'grad', req: ['b_bio', 'b_cs'], score: 2000 },
+        m_eng:  { name: "Master's in Engineering", school: 'Graduate School', icon: '🛠️', years: 2, cost: 2400, lvl: 'grad', req: ['b_cs', 'mil_academy'], score: 1200 },
+        m_pa:   { name: "Master's in Public Administration", school: 'Graduate School', icon: '🏛️', years: 2, cost: 1800, lvl: 'grad', req: ['b_pol', 'b_bus', 'mil_academy'], score: 1100 },
+        // 2.1 the military: enlist after Basic Training, or become an officer through the Academy, ROTC or Officer Training School
+        mil_boot:    { name: 'Basic Training', school: 'Military', icon: '🪖', years: 1, cost: 0, stipend: 120, lvl: 'mil', req: ['hs'], minHealth: 55, score: 300 },
+        mil_academy: { name: 'Military Academy', school: 'Military', icon: '🏰', years: 4, cost: 0, stipend: 60, lvl: 'bach', req: ['hs'], minHealth: 65, score: 1100 },
+        mil_ots:     { name: 'Officer Training School', school: 'Military', icon: '🎖️', years: 1, cost: 0, stipend: 150, lvl: 'mil', req: ['bach'], minHealth: 55, score: 400 },
+        rotc:        { name: 'ROTC Commission', school: 'Military', icon: '⭐', years: 4, cost: 0, lvl: 'mil', req: ['never'], hidden: true, score: 300 }
     };
-    const SCHOOL_GROUPS = ['Community College', 'Trade School', 'University', 'Graduate School'];
+    const SCHOOL_GROUPS = ['Community College', 'Trade School', 'University', 'Graduate School', 'Military'];
+    const MASTERS_FOR = { b_cs: 'm_cs', b_nur: 'm_nur', b_edu: 'm_edu', b_bus: 'm_mba', b_pol: 'm_pa', b_bio: 'phd', mil_academy: 'm_eng' };   // "stay for a master's" offers
+    const COMMISSION = ['mil_academy', 'mil_ots', 'rotc'];
 
     // Careers: ranks are [title, weekly pay, required degree(s)].
     const CAREERS = {
@@ -511,6 +520,15 @@
         athlete:   { name: 'Pro Sports', icon: '🏅', sat: 8, danger: 6, minAge: 18, maxJoin: 26, minHealth: 75, endAge: 36, ranks: [['Minor Leaguer', 300], ['Bench Player', 700], ['Starter', 1300], ['All-Star', 2200], ['League MVP', 3200]] }
     };
 
+    CAREERS.army = { name: 'Military (Enlisted)', icon: '🪖', sat: 4, benefits: true, danger: 5, minAge: 18, minHealth: 55, mil: true,
+        ranks: [['Private', 230, ['mil_boot']], ['Private First Class', 270, ['mil_boot']], ['Corporal', 330, ['mil_boot']], ['Sergeant', 410, ['mil_boot']],
+                ['Staff Sergeant', 500, ['mil_boot']], ['Sergeant First Class', 600, ['mil_boot']], ['Master Sergeant', 720, ['mil_boot']], ['Sergeant Major', 870, ['mil_boot']]] };
+    CAREERS.officer = { name: 'Military (Officer)', icon: '🎖️', sat: 5, benefits: true, danger: 4, minAge: 21, minHealth: 55, mil: true,
+        ranks: [['Second Lieutenant', 560, COMMISSION], ['First Lieutenant', 680, COMMISSION], ['Captain', 850, COMMISSION], ['Major', 1050, COMMISSION],
+                ['Lieutenant Colonel', 1300, COMMISSION], ['Colonel', 1600, COMMISSION], ['Brigadier General', 2000, COMMISSION], ['General', 2700, COMMISSION]] };
+    function milYears() { return (L.milDays || 0) / YEAR_DAYS; }
+    function giBill() { return milYears() >= 3; }   // three years of service: the GI Bill pays tuition from then on
+
     // Degrees that let you skip the bottom rungs when you join a career: [[degrees], start rank]
     const STARTS = {
         corporate: [[['bach'], 2], [['m_mba'], 4]],
@@ -520,7 +538,8 @@
         teaching:  [[['b_edu'], 1], [['m_edu'], 2]],
         science:   [[['b_bio', 'b_cs'], 1], [['phd'], 2]],
         chef:      [[['t_cul'], 1]],
-        retail:    [[['assoc', 'bach'], 1]]
+        retail:    [[['assoc', 'bach'], 1]],
+        officer:   [[['m_eng', 'm_pa'], 1]]
     };
 
     const RENTALS = {
@@ -997,10 +1016,14 @@
         const P = PROGRAMS[id];
         if (!P || !canEnroll(id) || L.phase !== 'play') return;
         if (!useLoan && P.cost > cash) return;
-        L.school = { id, d: 0, total: P.years * YEAR_DAYS, gpa: L.trait === 'brainy' ? 3.4 : 3.0, loan: !!useLoan, paid: 0 };
+        // community college credits transfer: a Bachelor's after an Associate's takes two years, not four
+        const transfer = P.lvl === 'bach' && P.school === 'University' && hasTok('assoc');
+        const yrs = transfer ? Math.max(2, P.years - 2) : P.years;
+        L.school = { id, d: 0, total: yrs * YEAR_DAYS, years: yrs, gpa: L.trait === 'brainy' ? 3.4 : 3.0, loan: !!useLoan, paid: 0, transfer };
+        if (transfer) logMessage(`📘 Your community college credits transfer: you start as a junior (${yrs} years to go).`, 'boost-alert');
         if (L.loans.student) L.loans.student.n = 0; // payments pause while you are a student
         chargeTuition();
-        logMessage(`🎓 Enrolled: ${P.name} (${P.years} yr${P.years > 1 ? 's' : ''})`, 'boost-alert');
+        logMessage(`🎓 Enrolled: ${P.name} (${L.school.years} yr${L.school.years > 1 ? 's' : ''})`, 'boost-alert');
         toast(`${P.icon} Enrolled in ${P.name}!`, 'good');
         addTimeline(P.icon, 'Started ' + P.name);
         if (L.job) logMessage('Your job is part-time while you study (half pay, slower promotions).');
@@ -1009,6 +1032,8 @@
     function chargeTuition() {
         const s = L.school, P = PROGRAMS[s.id];
         if (!P.cost) return;
+        if (s.rotc) { logMessage(`⭐ ROTC scholarship covered this year's tuition (${money(P.cost)})`, 'boost-alert'); return; }
+        if (giBill()) { logMessage(`🪖 The GI Bill covered this year's tuition (${money(P.cost)})`, 'boost-alert'); return; }
         if (s.loan) {
             const l = L.loans.student || (L.loans.student = { bal: 0, pay: 0, n: 0, rate: STUDENT_LOAN.rate, label: 'Student Loan' });
             l.bal += P.cost; l.n = 0; l.pay = 0;
@@ -1035,6 +1060,27 @@
         if (s.d >= s.total) graduate();
         else if (s.d % YEAR_DAYS === 0) chargeTuition();
     }
+    // ROTC: join while studying for a Bachelor's. Tuition is free from then on; in return you serve as an officer.
+    function joinRotc() {
+        const s = L.school; if (!s || s.rotc || PROGRAMS[s.id].lvl !== 'bach' || PROGRAMS[s.id].school !== 'University') return;
+        if (L.health < 50) { toast('ROTC needs health 50+', 'bad'); return; }
+        s.rotc = true; boostHealth(3);
+        logMessage('⭐ Joined ROTC: tuition is covered, and you will be commissioned as an officer when you graduate.', 'boost-alert');
+        toast('⭐ You joined ROTC!', 'good'); addTimeline('⭐', 'Joined ROTC'); changed();
+    }
+    function offerAfterGrad(id, wasRotc) {
+        const P = PROGRAMS[id];
+        if (COMMISSION.includes(id) || wasRotc) {
+            const go = () => { hire('officer', startRank('officer'), 0); changed(); };
+            if (canJoin('officer') && !(L.job && L.job.c === 'officer')) setTimeout(() => confirmBox('🎖️', 'Commissioned!', `You are now a <b>Second Lieutenant</b>. Report for duty as an officer (${money(CAREERS.officer.ranks[startRank('officer')][1])}/wk, health insurance included)?`, 'Report for duty', go), 400);
+            return;
+        }
+        const m = MASTERS_FOR[id];
+        if (P.lvl === 'bach' && m && !L.degrees.includes(m) && canEnroll(m)) {
+            const M = PROGRAMS[m], free = !M.cost || giBill();
+            setTimeout(() => confirmBox(M.icon, "Stay for a master's?", `You could go straight on to a <b>${M.name}</b> (${M.years} years, ${free ? 'free' + (giBill() ? ' with the GI Bill' : '') : money(M.cost) + '/yr'}). It unlocks better jobs: ${M.unlocks.join(', ') || 'higher pay'}.`, 'Enroll', () => enroll(m, !free && cash < M.cost)), 400);
+        }
+    }
     function graduate() {
         const s = L.school, P = PROGRAMS[s.id];
         if (s.gpa < 2.0) {
@@ -1046,6 +1092,7 @@
         }
         const honors = s.gpa >= 3.5;
         L.degrees.push(s.id);
+        if (s.rotc && !L.degrees.includes('rotc')) L.degrees.push('rotc');
         if (honors) L.honors.push(s.id);
         const pts = Math.round(P.score * (honors ? 1.25 : 1));
         addScore(pts); boostHappy(12);
@@ -1054,6 +1101,7 @@
         toast(`🎓 You earned your ${P.name}${honors ? ' with honors!' : '!'}`, 'good');
         addTimeline('🎓', `Graduated: ${P.name}${honors ? ' (honors)' : ''}`);
         startLoanRepayment();
+        offerAfterGrad(s.id, !!s.rotc);
         markDirty();
     }
     function dropOut() {
@@ -2505,7 +2553,105 @@
           choices: () => [
               { t: 'Go ($100)', sub: 'Happiness +5, reconnect with old friends', ok: cash >= 100, run: () => { cash -= 100; boostHappy(5); if (L.rel.s === 'single' && luck(0.3)) { newPartner(); return `You reconnected with ${L.rel.p.name} and started dating!`; } friendsAdd(1); return 'You caught up with old friends. +1 friend.'; } },
               { t: 'Skip it', run: () => 'Maybe next time.' }
-          ] }
+          ] },
+        // 2.1 more things that can happen
+        { id: 'recruiter', icon: '🪖', title: 'A Military Recruiter',
+          w: () => L.age >= 17 && L.age <= 30 && !(L.job && CAREERS[L.job.c].mil) && !L.degrees.includes('mil_boot') && !(L.school && L.school.id.startsWith('mil')) ? 2.5 : 0,
+          text: () => `A recruiter stops you outside the store. "Steady pay, health insurance, and after three years the GI Bill pays for college."${L.school && PROGRAMS[L.school.id].lvl === 'bach' ? ' Since you are in college, ROTC would pay your tuition right now.' : ''}`,
+          choices: () => [
+              { t: 'Sign up for Basic Training', sub: 'Paid while you train, then enlist', ok: canEnroll('mil_boot'), run: () => { enroll('mil_boot', false); return 'You ship out to Basic Training!'; } },
+              ...(L.school && PROGRAMS[L.school.id].lvl === 'bach' && PROGRAMS[L.school.id].school === 'University' && !L.school.rotc ? [{ t: 'Join ROTC', sub: 'Free tuition, officer after you graduate', run: () => { joinRotc(); return 'Welcome to ROTC!'; } }] : []),
+              { t: 'No thanks', run: () => 'You take a brochure, just in case.' }
+          ] },
+        { id: 'deploy', icon: '🌍', title: 'Deployment Orders',
+          w: () => L.job && CAREERS[L.job.c].mil ? 3 : 0,
+          make: () => ({ bonus: Math.round(rankOf(L.job)[1] * rnd(3, 6) / 10) * 10 }),
+          text: d => `Your unit is deploying overseas for six months. Hazard pay comes to about <b>${money(d.bonus)}</b>.`,
+          choices: d => [
+              { t: 'Deploy with your unit', sub: `+${money(d.bonus)}, faster promotion, risky`, run: () => { cash += d.bonus; L.job.perf = Math.min(100, L.job.perf + 30); boostHappy(-6); if (luck(0.12)) { boostHealth(-25); return `You came home with an injury. +${money(d.bonus)}, Health -25.`; } addScore(150); return `Mission complete. +${money(d.bonus)}, +150 Life Score.`; } },
+              { t: 'Ask for a stateside post', sub: 'Safe, but slower promotion', run: () => { L.job.perf = Math.max(0, L.job.perf - 15); return 'You stay home. Your commander is not thrilled.'; } }
+          ] },
+        { id: 'medal', icon: '🏅', title: 'A Medal Ceremony',
+          w: () => L.job && CAREERS[L.job.c].mil && L.job.days > 60 ? 1 : 0,
+          text: () => 'Your commander puts you in for a medal for outstanding service.',
+          choices: () => [{ t: 'Accept it proudly', sub: '+300 Life Score, Happiness +10', run: () => { addScore(300); boostHappy(10); addTimeline('🏅', 'Awarded a medal'); return 'Decorated! +300 Life Score.'; } }] },
+        { id: 'abroad', icon: '✈️', title: 'Study Abroad',
+          w: () => L.school && ['bach', 'grad'].includes(PROGRAMS[L.school.id].lvl) ? 2 : 0,
+          text: () => 'Your school offers a semester abroad in Spain for $900.',
+          choices: () => [
+              { t: 'Go ($900)', sub: 'Happiness +12, GPA +0.1', ok: cash >= 900, run: () => { cash -= 900; boostHappy(12); L.school.gpa = clamp(L.school.gpa + 0.1, 0, 4); addTimeline('✈️', 'Studied abroad'); return '¡Increíble! Happiness +12, GPA +0.1.'; } },
+              { t: 'Stay home', run: () => 'You will see the world another time.' }
+          ] },
+        { id: 'intern', icon: '🧑‍💼', title: 'Summer Internship',
+          w: () => L.school && PROGRAMS[L.school.id].lvl === 'bach' ? 2.5 : 0,
+          text: () => 'A company offers you an unpaid summer internship.',
+          choices: () => [
+              { t: 'Take it', sub: 'Happiness -3, much better job offers later', run: () => { boostHappy(-3); L.payBonus = Math.max(L.payBonus, 0.05); addScore(100); return 'Great experience. Your next job pays 5% more. +100 Life Score.'; } },
+              { t: 'Enjoy your summer', run: () => { boostHappy(6); return 'Beach days. Happiness +6.'; } }
+          ] },
+        { id: 'tuitionHike', icon: '📈', title: 'Tuition Is Going Up',
+          w: () => L.school && PROGRAMS[L.school.id].cost && !L.school.rotc && !giBill() ? 1.5 : 0,
+          make: () => ({ cost: Math.round(PROGRAMS[L.school.id].cost * 0.3 / 10) * 10 }),
+          text: d => `The school raised fees. You owe an extra <b>${money(d.cost)}</b> this year.`,
+          choices: d => [
+              { t: `Pay it (${money(d.cost)})`, ok: cash >= d.cost, run: () => { cash -= d.cost; return 'Paid. Ouch.'; } },
+              { t: 'Put it on the student loan', run: () => { const l = L.loans.student || (L.loans.student = { bal: 0, pay: 0, n: 0, rate: STUDENT_LOAN.rate, label: 'Student Loan' }); l.bal += d.cost; return 'Added to your student loan.'; } }
+          ] },
+        { id: 'jury', icon: '⚖️', title: 'Jury Duty',
+          w: () => L.age >= 18 ? 1.5 : 0,
+          text: () => 'You have been summoned for jury duty next week.',
+          choices: () => [
+              { t: 'Serve', sub: 'A week of lower pay, +Life Score', run: () => { cash -= Math.round(weeklyWage() * 0.5); addScore(80); return 'Justice served. +80 Life Score.'; } },
+              { t: 'Ask to be excused', sub: '50% chance', run: () => luck(0.5) ? 'Excused!' : (cash -= Math.round(weeklyWage() * 0.5), 'Request denied. You serve anyway.') }
+          ] },
+        { id: 'phone', icon: '📱', title: 'Cracked Phone',
+          w: () => 2,
+          text: () => 'You dropped your phone and the screen shattered.',
+          choices: () => [
+              { t: 'New phone ($700)', sub: 'Happiness +3', ok: cash >= 700, run: () => { cash -= 700; boostHappy(3); return 'Shiny new phone.'; } },
+              { t: 'Repair it ($150)', ok: cash >= 150, run: () => { cash -= 150; return 'Good as new. Mostly.'; } },
+              { t: 'Live with the cracks', sub: 'Happiness -3', run: () => { boostHappy(-3); return 'Every text is a puzzle now.'; } }
+          ] },
+        { id: 'bonus', icon: '💰', title: 'Surprise Bonus',
+          w: () => L.job && L.job.perf > 60 ? 2 : 0,
+          make: () => ({ amt: Math.round(weeklyWage() * rnd(1, 3) / 10) * 10 }),
+          text: d => `Your boss hands you a surprise bonus of <b>${money(d.amt)}</b> for great work.`,
+          choices: d => [
+              { t: `Take it (+${money(d.amt)})`, run: () => { cash += d.amt; boostHappy(4); return `+${money(d.amt)}!`; } },
+              { t: 'Split it with your team', sub: 'Happiness +8, +Life Score', run: () => { cash += Math.round(d.amt / 2); boostHappy(8); addScore(60); return 'Your team loves you.'; } }
+          ] },
+        { id: 'identity', icon: '🕵️', title: 'Identity Theft',
+          w: () => L.age >= 18 && cash > 2000 ? 1 : 0,
+          make: () => ({ amt: Math.round(Math.min(cash * 0.15, 4000) / 10) * 10 }),
+          text: d => `Someone used your card online. <b>${money(d.amt)}</b> is missing.`,
+          choices: d => [
+              { t: 'Call the bank right away', sub: '70% chance to get it back', run: () => luck(0.7) ? 'The bank reversed the charges.' : (cash -= d.amt, `The bank could not help. -${money(d.amt)}.`) },
+              { t: 'Hire a fraud lawyer ($400)', sub: 'Always works', ok: cash >= 400, run: () => { cash -= 400; return 'Your lawyer got every penny back (minus the fee).'; } }
+          ] },
+        { id: 'foodtruck', icon: '🌮', title: 'Food Truck Idea',
+          w: () => L.age >= 20 ? 1.2 : 0,
+          text: () => 'Your friend wants you to invest $2,000 in their taco truck.',
+          choices: () => [
+              { t: 'Invest $2,000', sub: 'Could double, could vanish', ok: cash >= 2000, run: () => { cash -= 2000; if (luck(0.45)) { cash += 4500; return 'The tacos are a hit! You got $4,500 back.'; } return 'The truck broke down for good. The $2,000 is gone.'; } },
+              { t: 'Pass', run: () => 'You wish them luck (and ask for free tacos).' }
+          ] },
+        { id: 'concert', icon: '🎸', title: 'Concert Tickets',
+          w: () => L.age >= 15 ? 1.5 : 0,
+          text: () => 'Your favorite band is in town. Tickets are $180.',
+          choices: () => [
+              { t: 'Go ($180)', sub: 'Happiness +10', ok: cash >= 180, run: () => { cash -= 180; boostHappy(10); return 'Best night of the year!'; } },
+              { t: 'Stream it at home', run: () => { boostHappy(1); return 'Not quite the same.'; } }
+          ] },
+        { id: 'pipe', icon: '🚰', title: 'Burst Pipe',
+          w: () => L.props && L.props.length ? 1.5 : 0,
+          make: () => ({ cost: Math.round(rnd(600, 2500) / 10) * 10 }),
+          text: d => `A pipe burst in your home. Repairs cost <b>${money(d.cost)}</b>.`,
+          choices: d => [{ t: `Fix it (${money(d.cost)})`, run: () => { cash -= d.cost; return 'Dry again.'; } }] },
+        { id: 'scholarshipGrad', icon: '🎓', title: 'Graduate School Fellowship',
+          w: () => L.school && PROGRAMS[L.school.id].lvl === 'bach' && L.school.gpa >= 3.5 ? 1.5 : 0,
+          make: () => ({ amt: 1500 }),
+          text: () => 'Your professors nominate you for a fellowship toward a master\'s degree.',
+          choices: d => [{ t: `Accept (+${money(d.amt)})`, run: () => { cash += d.amt; addScore(150); return 'Fellowship won! +150 Life Score.'; } }] }
     ];
     const EVBYID = {};
     for (const e of EVENTS) EVBYID[e.id] = e;
@@ -2561,7 +2707,7 @@
         // collapsed from overwork, illness or injuries: checked before the daily recovery
         if (L.health < 5) queueEvent('hospital', { cost: Math.round(1500 * (1 + L.age / 40)) });
         schoolDay();
-        if (L.job) { L.job.days++; L.job.perf = Math.min(100, L.job.perf + perfGain()); checkPromotion(); }
+        if (L.job) { L.job.days++; L.job.perf = Math.min(100, L.job.perf + perfGain()); checkPromotion(); if (CAREERS[L.job.c].mil) { L.milDays = (L.milDays || 0) + 1; if (L.milDays === 3 * YEAR_DAYS) { logMessage('🪖 Three years of service: the GI Bill now pays your tuition.', 'boost-alert'); toast('🪖 GI Bill earned: free tuition', 'good'); } } }
         L.health = clamp(L.health + (healthTarget() - L.health) * 0.02, 0, 100);
         L.happy = clamp(L.happy + (happyTarget() - L.happy) * 0.03, 0, 100);
         L.stats.hapSum += L.happy; L.stats.hapDays++;
@@ -3047,15 +3193,15 @@
         let h = '';
         if (s) {
             const P = PROGRAMS[s.id];
-            const yr = Math.min(P.years, Math.floor(s.d / YEAR_DAYS) + 1);
+            const yrs = s.years || P.years, yr = Math.min(yrs, Math.floor(s.d / YEAR_DAYS) + 1);
             h += `<div class="card" style="border-left:4px solid #0284c7">
-                <div class="flex-row"><div><div class="h2">${P.icon} ${P.name}</div><div class="tiny muted">${P.school} · Year ${yr} of ${P.years} · ${P.cost ? (s.loan ? 'Paid with student loans' : 'Paying cash') + ` (${money(P.cost)}/yr)` : P.stipend ? `Stipend ${money(P.stipend)}/wk` : 'Free'}</div></div>
+                <div class="flex-row"><div><div class="h2">${P.icon} ${P.name}</div><div class="tiny muted">${P.school} · Year ${yr} of ${yrs}${s.transfer ? ' (transfer)' : ''}${s.rotc ? ' · ⭐ ROTC' : ''} · ${P.cost ? (s.loan ? 'Paid with student loans' : 'Paying cash') + ` (${money(P.cost)}/yr)` : P.stipend ? `Stipend ${money(P.stipend)}/wk` : 'Free'}</div></div>
                 <div style="text-align:right"><div class="tiny muted">GPA</div><div class="h2 gold" data-b="gpa"></div></div></div>
                 <div class="flex-row tiny" style="margin-top:6px"><span class="muted">Progress to graduation</span><b data-b="schoolLeft"></b></div>
                 ${bar(s.d / s.total * 100, 'sky', 'school')}
                 <div class="tiny muted">Graduate with a 3.5+ GPA for honors (+25% Life Score). Below 2.0 and you repeat the final year. Studying raises GPA; Hustle and unhappiness lower it.</div>
                 <div class="progress-bg" style="height:14px"><div data-w="study" style="height:100%; width:0; background:linear-gradient(90deg,#0284c7,#38bdf8)"></div></div>
-                <div class="row" style="display:flex; gap:6px; flex-wrap:wrap">${btn('📖 STUDY', 'study', null, { cls: 'sky' })}${s.id !== 'hs' ? btn('🚪 Drop out', 'dropout', null, { cls: 'gray' }) : ''}</div>
+                <div class="row" style="display:flex; gap:6px; flex-wrap:wrap">${btn('📖 STUDY', 'study', null, { cls: 'sky' })}${s.id !== 'hs' ? btn('🚪 Drop out', 'dropout', null, { cls: 'gray' }) : ''}${P.lvl === 'bach' && P.school === 'University' && !s.rotc ? btn('⭐ Join ROTC (free tuition, serve as an officer)', 'rotc', null, { cls: 'green' }) : ''}</div>
             </div>`;
         }
         h += `<div class="grid2"><div class="card"><div class="card-title">Your degrees</div><div class="chips">${L.degrees.length ? L.degrees.map(d => `<span class="chip pos">${PROGRAMS[d].icon} ${PROGRAMS[d].name}${L.honors.includes(d) ? ' ⭐' : ''}</span>`).join('') : '<span class="muted tiny">None yet. Finish high school first!</span>'}</div></div>`;
@@ -3063,8 +3209,9 @@
         h += `<div class="card"><div class="card-title">Student loan</div>${l && l.bal > 0 ? `<div class="kv"><span>Balance</span><b class="bad">${money(l.bal)}</b></div><div class="kv"><span>Payment</span><b>${l.n > 0 ? `${money(l.pay)}/mo · ${l.n} left` : 'Paused while in school'}</b></div>${btn(`Pay off (${money(l.bal)})`, 'payStudent', null, { cls: 'green', cost: l.bal })}` : '<div class="tiny muted">No student debt. Loans let you study now and pay later (0.8%/mo over 40 months after you finish).</div>'}</div></div>`;
         for (const g of SCHOOL_GROUPS) {
             h += `<div class="section-title">${g}</div><div class="cards">`;
+            if (g === 'Military') h += `<div class="tiny muted" style="margin:-4px 0 8px">Enlist after Basic Training, or become an officer: the Military Academy (a free Bachelor's), ROTC during any university Bachelor's, or Officer Training School after one. Three years of service earns the GI Bill: free tuition after that.${milYears() ? ` You have served ${milYears().toFixed(1)} years${giBill() ? ' - GI Bill earned!' : ''}.` : ''}</div>`;
             for (const id in PROGRAMS) {
-                const P = PROGRAMS[id]; if (P.school !== g) continue;
+                const P = PROGRAMS[id]; if (P.school !== g || P.hidden) continue;
                 const has = L.degrees.includes(id), cur = s && s.id === id, ok = canEnroll(id);
                 let why = '';
                 if (!meets(P.req)) why = 'Needs ' + reqText(P.req);
@@ -3337,7 +3484,11 @@
         if (day % 30 === 0) { S.nwHist.push(Math.round(nw)); if (S.nwHist.length > 80) S.nwHist.shift(); dirty.stats = true; }
     }
     function showWhatsNew() {
-        openModal(`<div class="ev-icon">✨</div><h2>What's new in Market & Life 2.0</h2><ul class="whats">
+        openModal(`<div class="ev-icon">✨</div><h2>What's new in Market & Life 2.1</h2><ul class="whats">
+            <li>🪖 <b>The military</b>: enlist after Basic Training, or become an officer through the Military Academy, ROTC or Officer Training School. Deployments, medals, and the GI Bill (free tuition after 3 years of service).</li>
+            <li>🎓 <b>Bigger college</b>: community college credits transfer (a Bachelor's in 2 years), ROTC during any Bachelor's, an offer to stay for a master's when you graduate, and two new master's degrees.</li>
+            <li>🎲 <b>14 new things that can happen</b>: study abroad, internships, jury duty, identity theft, surprise bonuses, a taco truck and more.</li>
+            <li style="margin-top:8px;color:var(--muted)">2.0:</li>
             <li>📈 <b>42 stocks, funds and coins</b> in 6 sectors, with a price chart, history ranges and a mini chart for every one.</li>
             <li>📰 <b>Market news</b>: sector and company headlines, bull and bear markets, and the odd crash.</li>
             <li>💵 <b>Dividends</b> paid every month on stocks that pay them.</li>
@@ -3615,7 +3766,7 @@
         buy: a => buyStock(a), sell: a => sellStock(a), biz1: () => handleBusiness1(), biz2: () => handleBusiness2(),
         shop: a => buyShop(a), sub: a => toggleSub(a), style: a => setStyle(+a),
         apply: a => applyJob(a), quit: () => quitJob(), raise: () => askRaise(),
-        enroll: a => enroll(a, false), enrollLoan: a => enroll(a, true), dropout: () => dropOut(), payStudent: () => payStudentLoan(),
+        enroll: a => enroll(a, false), enrollLoan: a => enroll(a, true), dropout: () => dropOut(), rotc: () => joinRotc(), payStudent: () => payStudentLoan(),
         rent: a => rentHome(a), buyHome: a => buyHome(a, false), mortgage: a => buyHome(a, true), sellProp: a => askSellProp(+a), moveIn: a => moveIn(+a), payMortgage: a => payMortgage(+a),
         buyCar: a => buyCar(a, false), financeCar: a => buyCar(a, true), sellCar: () => sellCar(), service: () => serviceCar(), payCar: () => payCarLoan(),
         findDate: () => findDate(), dateNight: () => dateNight(), propose: () => propose(), wedding: a => wedding(+a === 1), baby: () => tryBaby(), adoptKid: () => adoptKid(),
