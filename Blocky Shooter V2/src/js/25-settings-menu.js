@@ -114,7 +114,7 @@ function renderMenu() {
         }
         h += `</div>`;
     } else if (menuTab === 'bestiary') {
-        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'hound', 'crawler', 'shocker'];
+        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'shambler', 'crawler', 'shocker'];
         h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
             return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
         // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25

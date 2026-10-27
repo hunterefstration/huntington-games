@@ -27,7 +27,7 @@ if (!life.maps || typeof life.maps !== 'object') life.maps = {};    // 4.0: { ma
 if (life.xp === undefined) life.xp = Math.round((life.kills || 0) * 10 + (life.waves || 0) * 60);   // earlier play counts toward your rank
 // 5.0 round 2: Riot Breaker became Zombie Hound and Blighter became Shocker. Anything saved under the old ids (stats, seen-lists,
 // kill counts, bestiary) moves to the new ones, so old saves keep their progress.
-const ENEMY_ID_MIGRATE = { riot: 'hound', blighter: 'shocker' };
+const ENEMY_ID_MIGRATE = { riot: 'shambler', hound: 'shambler', blighter: 'shocker' };
 const migEnemyIds = (o) => {
     if (Array.isArray(o)) return [...new Set(o.map(x => ENEMY_ID_MIGRATE[x] || x))];
     if (o && typeof o === 'object') for (const k in ENEMY_ID_MIGRATE) if (k in o) { const n = ENEMY_ID_MIGRATE[k]; o[n] = typeof o[k] === 'number' ? (o[n] || 0) + o[k] : (o[n] || o[k]); delete o[k]; }
@@ -183,7 +183,9 @@ const enemyTypes = {
     acolyte:  { id: 'acolyte',  name: 'Acolyte',  color: 0x4c1d95, hp: 2.2, speed: 0,    scale: 1.05, reward: 2,   damage: 0,  ai: 'acolyte', eye: 0xc4b5fd, minLvl: 999, fixed: true, drops: [0.3, 25, 0.3, 40] },
     risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] },
     // ---- 5.0: three new zombies and the campaign's final boss ----
-    hound:    { id: 'hound',    name: 'Zombie Hound', color: 0x8b6b4a, hp: 0.5, speed: 1.55, scale: 0.8, reward: 1.2, damage: 9, ai: 'hound', eye: 0xff4d4d, minLvl: 6, cap: 8, intel: 'Rabid zombie dogs that hunt in packs of 3-4. They circle you, then lunge from different sides at different times. Fast but fragile: keep your back to a wall and shoot them as they leap.', drops: [0.06, 10, 0.08, 15] },
+    hound:    { id: 'hound',    name: 'Zombie Hound', color: 0x8b6b4a, hp: 0.5, speed: 1.55, scale: 0.8, reward: 1.2, damage: 9, ai: 'hound', eye: 0xff4d4d, minLvl: 999, cap: 8, intel: 'Rabid zombie dogs that hunt in packs of 3-4. They circle you, then lunge from different sides at different times. Fast but fragile: keep your back to a wall and shoot them as they leap.', drops: [0.06, 10, 0.08, 15] },
+    // 5.1: the Zombie Hounds were pulled (packs that tore you apart); the Shambler takes their place in waves and the campaign
+    shambler: { id: 'shambler', name: 'Shambler', color: 0x6b7280, hp: 0.6, speed: 0.6, scale: 0.95, reward: 1.5, damage: 5, ai: 'melee', slim: 0.9, eye: 0xd9f99d, minLvl: 6, cap: 6, drops: [0.18, 15, 0.2, 25], intel: 'A slow, half-rotted zombie that drags itself toward you on its own. Weak bite, falls apart in a couple of shots, and often drops health or cash. Easy pickings.' },
     crawler:  { id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
     shocker:  { id: 'shocker',  name: 'Shocker', color: 0x38bdf8, glow: 0x0c4a6e, hp: 1.5, speed: 0.8, scale: 1.05, reward: 3.5, damage: 9, ai: 'shocker', eye: 0x7dd3fc, minLvl: 9, cap: 2, intel: 'An electrified zombie. It arcs a shock shield onto nearby zombies (they take far less damage while linked), and its zap JAMS your gun for a moment. Kill the Shocker first: the link breaks and it dies in an EMP burst.', drops: [0.3, 30, 0.2, 45] },
     zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',

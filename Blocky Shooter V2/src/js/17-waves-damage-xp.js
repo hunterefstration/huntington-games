@@ -89,7 +89,7 @@ function spawnWave() {
     bossList.forEach(id => list.push(enemyTypes[id]));
     // a new enemy type always shows up on the wave it unlocks, so you actually meet it
     const fresh = Object.values(enemyTypes).filter(t => t.minLvl === level && t.intel);
-    fresh.forEach(t => list.push(...(t.id === 'marksman' || t.id === 'hound' ? [t] : [t, t])));
+    fresh.forEach(t => list.push(...(t.id === 'marksman' ? [t] : [t, t])));
     list.forEach(t => counts[t.id] = (counts[t.id] || 0) + 1);
     while (list.length < count) { const t = pickEnemyType(level, counts); counts[t.id] = (counts[t.id] || 0) + 1; list.push(t); }
 

@@ -543,7 +543,7 @@
         if (life.xp === undefined) life.xp = Math.round((life.kills || 0) * 10 + (life.waves || 0) * 60);   // earlier play counts toward your rank
         // 5.0 round 2: Riot Breaker became Zombie Hound and Blighter became Shocker. Anything saved under the old ids (stats, seen-lists,
         // kill counts, bestiary) moves to the new ones, so old saves keep their progress.
-        const ENEMY_ID_MIGRATE = { riot: 'hound', blighter: 'shocker' };
+        const ENEMY_ID_MIGRATE = { riot: 'shambler', hound: 'shambler', blighter: 'shocker' };
         const migEnemyIds = (o) => {
             if (Array.isArray(o)) return [...new Set(o.map(x => ENEMY_ID_MIGRATE[x] || x))];
             if (o && typeof o === 'object') for (const k in ENEMY_ID_MIGRATE) if (k in o) { const n = ENEMY_ID_MIGRATE[k]; o[n] = typeof o[k] === 'number' ? (o[n] || 0) + o[k] : (o[n] || o[k]); delete o[k]; }
@@ -699,7 +699,9 @@
             acolyte:  { id: 'acolyte',  name: 'Acolyte',  color: 0x4c1d95, hp: 2.2, speed: 0,    scale: 1.05, reward: 2,   damage: 0,  ai: 'acolyte', eye: 0xc4b5fd, minLvl: 999, fixed: true, drops: [0.3, 25, 0.3, 40] },
             risen:    { id: 'risen',    name: 'Risen',    color: 0x57534e, hp: 0.6, speed: 1.05, scale: 0.95, reward: 0.5, damage: 8,  ai: 'melee', eye: 0xa78bfa, minLvl: 999, drops: [0.04, 10, 0.04, 10] },
             // ---- 5.0: three new zombies and the campaign's final boss ----
-            hound:    { id: 'hound',    name: 'Zombie Hound', color: 0x8b6b4a, hp: 0.5, speed: 1.55, scale: 0.8, reward: 1.2, damage: 9, ai: 'hound', eye: 0xff4d4d, minLvl: 6, cap: 8, intel: 'Rabid zombie dogs that hunt in packs of 3-4. They circle you, then lunge from different sides at different times. Fast but fragile: keep your back to a wall and shoot them as they leap.', drops: [0.06, 10, 0.08, 15] },
+            hound:    { id: 'hound',    name: 'Zombie Hound', color: 0x8b6b4a, hp: 0.5, speed: 1.55, scale: 0.8, reward: 1.2, damage: 9, ai: 'hound', eye: 0xff4d4d, minLvl: 999, cap: 8, intel: 'Rabid zombie dogs that hunt in packs of 3-4. They circle you, then lunge from different sides at different times. Fast but fragile: keep your back to a wall and shoot them as they leap.', drops: [0.06, 10, 0.08, 15] },
+            // 5.1: the Zombie Hounds were pulled (packs that tore you apart); the Shambler takes their place in waves and the campaign
+            shambler: { id: 'shambler', name: 'Shambler', color: 0x6b7280, hp: 0.6, speed: 0.6, scale: 0.95, reward: 1.5, damage: 5, ai: 'melee', slim: 0.9, eye: 0xd9f99d, minLvl: 6, cap: 6, drops: [0.18, 15, 0.2, 25], intel: 'A slow, half-rotted zombie that drags itself toward you on its own. Weak bite, falls apart in a couple of shots, and often drops health or cash. Easy pickings.' },
             crawler:  { id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
             shocker:  { id: 'shocker',  name: 'Shocker', color: 0x38bdf8, glow: 0x0c4a6e, hp: 1.5, speed: 0.8, scale: 1.05, reward: 3.5, damage: 9, ai: 'shocker', eye: 0x7dd3fc, minLvl: 9, cap: 2, intel: 'An electrified zombie. It arcs a shock shield onto nearby zombies (they take far less damage while linked), and its zap JAMS your gun for a moment. Kill the Shocker first: the link breaks and it dies in an EMP burst.', drops: [0.3, 30, 0.2, 45] },
             zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',
@@ -7607,6 +7609,7 @@
             egg:      { skin: 0x9bbf4a, pants: 0x4d6b1a, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9be15a },
             acolyte:  { skin: 0xa7a3b8, pants: 0x2e1065, hair: null, shoe: null, sleeves: 'long', noBelly: true, blood: 0x7c3aed },
             risen:    { skin: 0xd6d3c4, pants: 0x3a3632, hair: null, shoe: null, sleeves: 'none', noBelly: true, blood: 0x9ca3af },
+            shambler: { skin: 0x9aa58c, pants: 0x3a3a34, hair: 0x2a2620, shoe: null, sleeves: 'short', blood: 0x6a1212 },
             hound:    { skin: 0x8a7560, pants: 0x4a3a2c, hair: null, shoe: null, sleeves: 'none', claws: true, noBelly: true, blood: 0x7a1414 },
             crawler:  { skin: 0x8a8a74, pants: 0x3f3a33, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x7a1414 },
             shocker:  { skin: 0x7d8f98, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x1e3a5f, bigEyes: true, blood: 0x7dd3fc },
@@ -8032,7 +8035,7 @@
                 k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
             }
             // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3 }[id] ?? 0.2;
+            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, shambler: 0.38, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3 }[id] ?? 0.2;
             return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
         }
         // 5.0 Zombie Hound: a four-legged dog. The body is the usual hip/torso/head rig tipped flat (hunch 1.5): the torso runs forward,
@@ -8520,7 +8523,7 @@
         function pickEnemyType(level, counts) {
             const r = Math.random();
             let acc = 0;
-            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['hound', 0.04], ['shocker', 0.03]];
+            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['shambler', 0.05], ['shocker', 0.03]];
             const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
             for (const [id, chance] of table) {
                 const t = enemyTypes[id];
@@ -8704,7 +8707,7 @@
             bossList.forEach(id => list.push(enemyTypes[id]));
             // a new enemy type always shows up on the wave it unlocks, so you actually meet it
             const fresh = Object.values(enemyTypes).filter(t => t.minLvl === level && t.intel);
-            fresh.forEach(t => list.push(...(t.id === 'marksman' || t.id === 'hound' ? [t] : [t, t])));
+            fresh.forEach(t => list.push(...(t.id === 'marksman' ? [t] : [t, t])));
             list.forEach(t => counts[t.id] = (counts[t.id] || 0) + 1);
             while (list.length < count) { const t = pickEnemyType(level, counts); counts[t.id] = (counts[t.id] || 0) + 1; list.push(t); }
 
@@ -11596,7 +11599,7 @@
                 }
                 h += `</div>`;
             } else if (menuTab === 'bestiary') {
-                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'hound', 'crawler', 'shocker'];
+                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'shambler', 'crawler', 'shocker'];
                 h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
                     return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
                 // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
@@ -13742,7 +13745,7 @@
                   brief: [{ w: 'doc', t: 'Doc Cole. The old police line downtown is the only choke point between us and the Metro entrance. The police kennels are open, and the dogs did not stay dead.' },
                           { w: 'gears', t: 'Hounds come in packs of three or four and circle you before they lunge, each from a different side. They are fast but fragile: keep moving and shoot them mid-leap. Stand near the barricade to patch it.' }],
                   out: { w: 'doc', t: 'The line held. The pack is down. One more push and the way to Dr. Lang is open.' },
-                  stages: [{ t: 'defend', secs: 80, hp: 1600, cap: 14, rate: 3, mix: { hound: 0.12 } }, { t: 'survive', n: 2 }],
+                  stages: [{ t: 'defend', secs: 80, hp: 1600, cap: 14, rate: 3, mix: { shambler: 0.12 } }, { t: 'survive', n: 2 }],
                   s2: { k: 'nodeath', txt: 'Finish without going down' }, s3: { k: 'barr', v: 0.6, txt: 'Barricade ends above 60% health' },
                   reward: { cash: 1800, xp: 1200 } },
                 { id: 'c2m4', name: 'SAFE PASSAGE', map: 'military', light: 'sunset', diff: 'hard', lvl: 14, cash: 3400, lives: 3,
@@ -13792,7 +13795,7 @@
                   brief: [{ w: 'lang', t: 'My last three colleagues are carrying the only antidote samples. They are hiding in the temple ruins, and the dead have surrounded them.' },
                           { w: 'rook', t: 'Get them out, bring them back to the drop point and then hold. When the samples are loaded on the truck we are one step away from ending this.' }],
                   out: { w: 'lang', t: 'The samples are safe and the truck is rolling. Now there is only the lab, and the patient in the lower level.' },
-                  stages: [{ t: 'rescue', n: 3, need: 3, cap: 14, rate: 3.2 }, { t: 'defend', secs: 70, hp: 1800, cap: 15, rate: 2.8, mix: { hound: 0.08, crawler: 0.2 } }],
+                  stages: [{ t: 'rescue', n: 3, need: 3, cap: 14, rate: 3.2 }, { t: 'defend', secs: 70, hp: 1800, cap: 15, rate: 2.8, mix: { shambler: 0.08, crawler: 0.2 } }],
                   s2: { k: 'time', v: 420, txt: 'Finish in under 7:00' }, s3: { k: 'allsurv', txt: 'Bring all 3 scientists home alive' },
                   reward: { cash: 2600, xp: 1800, skin: 'camo:toxin' } },
                 { id: 'c3m4', name: 'FLASHPOINT', map: 'skybridge', light: 'storm', diff: 'hard', lvl: 20, cash: 4800, lives: 3,
@@ -13800,7 +13803,7 @@
                   brief: [{ w: 'gears', t: 'Gears. The lab lift needs power, and the three relays are on the skybridge towers. It is a storm up there, and everything on the ground will be coming for the noise.' },
                           { w: 'rook', t: 'When the relays are up, hold the barricade at the lift. Hound packs will come first, then whatever else they have.' }],
                   out: { w: 'gears', t: 'Power is on and the lift is humming. This is it, soldier. One more floor and we meet the patient.' },
-                  stages: [{ t: 'repair', n: 3, secs: 12, hp: 520, cap: 14, rate: 3.2 }, { t: 'defend', secs: 75, hp: 1900, cap: 16, rate: 2.7, mix: { hound: 0.1, shocker: 0.15 } }],
+                  stages: [{ t: 'repair', n: 3, secs: 12, hp: 520, cap: 14, rate: 3.2 }, { t: 'defend', secs: 75, hp: 1900, cap: 16, rate: 2.7, mix: { shambler: 0.1, shocker: 0.15 } }],
                   s2: { k: 'time', v: 420, txt: 'Finish in under 7:00' }, s3: { k: 'barr', v: 0.5, txt: 'Barricade ends above 50% health' },
                   reward: { cash: 2800, xp: 1900 } },
                 { id: 'c3m5', name: 'DESCENT', map: 'subway', light: 'bloodmoon', diff: 'hard', lvl: 21, cash: 5000, lives: 3,
