@@ -16,7 +16,7 @@
 | Tetris | 2.0 | ranks, perks, bosses, daily, achievements, 70 puzzles, themes, tutorial | play-test + fix |
 | Coffee Shop NEW (Bean & Brew) | 2.0 | cities, recipes, staff skills, events, franchises, seasons, story, latte art | play-test + fix |
 | Tower Defense 2.0 | 3.0 | heroes, 18 towers, alien era, 12 maps, stars, bosses, daily, map editor | play-test found issues; fix + re-test |
-| Blocky Shooter V2 | 4.0 | released in r35 (classes, new weapons, Mall + Military Base, challenges, prestige) plus Grapevine names/friends on `main`; the wip copy is OLDER, do not restore it | source split into `Blocky Shooter V2/src/` (see below); next: the big update |
+| Blocky Shooter V2 | 5.0 | released in r44 (see the 5.0 section); 4.0 was r35 (classes, new weapons, Mall + Military Base, challenges, prestige) plus Grapevine names/friends on `main`; the wip copy is OLDER, do not restore it | source split into `Blocky Shooter V2/src/` (see below); next: the big update |
 | Brown E Clicker | 2.0 | 24 buildings, 287 upgrades, golden E, 126 achievements, offline earnings | chunk "Ascension 2.0...", then play-test |
 | Market Life 1.9 (Market & Life) | 2.0 | life sim: education, careers, housing, cars, health, family, retirement | chunk "Market and business depth", then play-test |
 | 50 Levels Of Spikes 1.2 | 2.0 | released in r33 (the wip copy matches) | nothing |
@@ -98,15 +98,17 @@ Real cross-network test (two Chromebooks, different states) still needed before 
 - `node tools/build-game.js "Blocky Shooter V2" --check` writes `index.html` (keeps the HG block). `release.sh prepare` rebuilds and
   ships the sources of any game that has `src/shell.html`.
 
-## Blocky Shooter 5.0 (in progress on branch claude/pensive-planck-h9xqbg)
+## Blocky Shooter 5.0 (released in r44, 2026-10-26)
 - Owner asked (2026-10-25): perf + lighting (Chromebook can't hold 60 on LOW), realistic guns, model upgrades, one UI theme
   (restyle CONTINUE SAVE), new start screen, Campaign (3 chapters), power-ups removed, same-wifi game scan, Grapevine invites. One 5.0 release.
 - Round 1 built (game-finish run 2026-10-25, play-test 60/79 claims OK): all of the above. Still weak / to do: perf only
   ~10-20% better (draw calls 158->~132, enemy loop makes ~75 KB garbage/frame, LOW p95 17-18 ms at 4x CPU throttle on
   swiftshader); bosses kept old models; gun hand fit and screen position (overlaps HUD cards) need polish; flat map lighting;
   new enemies/final boss not in multiplayer; campaign difficulty untuned; wifi scan only tested with a fake transport.
-- Launcher side of invites is in the hub `index.html` (HG_inviteTargets / HG_sendInvite / HG_takeJoin, invite pop-up with JOIN).
-  The hub is NOT copied by `release.sh prepare`: port that block into `$W/index.html` by hand when releasing 5.0.
+- Round 2 + release: Hound and Shocker replaced the copycat Riot Breaker/Blighter; 5.0 enemies + Patient Zero in co-op;
+  new boss models; per-frame shader re-setup fixed (forceSinglePass); Low scales resolution 50-75%.
+- Still to verify on real hardware: FPS on the owner's Chromebook (Settings > show FPS), wifi scan and Grapevine invites
+  between two Chromebooks. Campaign difficulty untuned. Launcher invite code (HG_inviteTargets/HG_sendInvite/HG_takeJoin) is live.
 
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
