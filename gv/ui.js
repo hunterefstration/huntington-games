@@ -225,17 +225,49 @@
       h('div', { class: 'add' },
         h('button', { class: 'mbtn', id: 'gl-open-chat', text: 'Open Grapevine', onclick: function () { window.HG_openGrapevine && window.HG_openGrapevine(); } }),
         h('button', { class: 'mbtn', id: 'gl-open-friends', text: nIn ? 'Friend requests (' + nIn + ')' : 'Friends', onclick: function () { window.HG_openGrapevine && window.HG_openGrapevine(nIn ? 'requests' : 'friends'); } }))));
-    var tabs = [['saves', 'Saves'], ['met', 'Met in games'], ['conn', 'Connection']];
+    var tabs = [['saves', 'Saves'], ['ach', 'Achievements'], ['met', 'Met in games'], ['conn', 'Connection']];
     wrap.appendChild(h('div', { class: 'seg' }, tabs.map(function (t) {
       return h('button', { class: view === t[0] ? 'on' : '', 'data-view': t[0], text: t[1], onclick: function () { view = t[0]; render(); } });
     })));
-    wrap.appendChild(view === 'met' ? metView() : view === 'conn' ? connView() : savesView());
+    wrap.appendChild(view === 'met' ? metView() : view === 'conn' ? connView() : view === 'ach' ? achView() : savesView());
     return wrap;
   }
 
   function act(btn, p, okMsg) {
     btn.disabled = true;
     p.then(function () { if (okMsg) toast(okMsg); }, function (e) { toast(e.message || 'That did not work.', true); }).then(function () { btn.disabled = false; });
+  }
+
+  // Achievements across every game. Unlocked ones can be shared into any chat.
+  var achShare = '';
+  function achView() {
+    var A = window.HGAch, box = h('div');
+    if (!A) return box;
+    A.check();
+    var got = A.got(), sm = A.summary(got);
+    box.appendChild(h('div', { class: 'card', style: 'margin-top:12px' }, h('div', { class: 'k', text: 'your achievements' }),
+      h('div', { class: 'h', id: 'gl-ach-total', style: 'font-size:22px;font-weight:700;margin:4px 0', text: sm.n + ' of ' + sm.of + ' - ' + sm.pts + ' points' }),
+      h('p', { class: 'sub', text: 'Earned in any game, saved to your account, and shown on your Grapevine profile card. Share one into a chat to show it off.' })));
+    Object.keys(A.games).forEach(function (g) {
+      var list = A.list.filter(function (a) { return a.g === g; }); if (!list.length) return;
+      var n = list.filter(function (a) { return got[a.id]; }).length;
+      box.appendChild(h('div', { class: 'sect', text: A.games[g] + ' - ' + n + '/' + list.length }));
+      list.forEach(function (a) {
+        var on = !!got[a.id], right = h('span', { class: 'btns' }, h('span', { class: 'sm', text: a.p + ' pts' }));
+        if (on && window.HG_inviteTargets && window.HG_shareAch) right.appendChild(h('button', { class: 'mbtn', 'data-share': a.id, text: achShare === a.id ? 'Close' : 'Share', onclick: function () { achShare = achShare === a.id ? '' : a.id; render(); } }));
+        box.appendChild(h('div', { class: 'row', 'data-ach': a.id, style: on ? '' : 'opacity:.45' },
+          h('span', { style: 'font-size:20px;width:28px;text-align:center', text: on ? a.i : '🔒' }),
+          h('span', { class: 'nm', style: 'flex:1' }, h('b', { text: a.n }), h('div', { class: 'sm', text: a.d + (on ? ' - ' + ago(got[a.id]) : '') })), right));
+        if (achShare === a.id) {
+          var t = []; try { t = window.HG_inviteTargets() || []; } catch (e) {}
+          var pick = h('div', { class: 'diag', style: 'margin:0 0 8px 38px' });
+          if (!t.length) pick.appendChild(h('div', { text: 'Grapevine is still connecting, or you are not in any chats yet.' }));
+          t.slice(0, 30).forEach(function (x) { pick.appendChild(h('div', { class: 'row' }, h('span', { class: 'nm', text: (x.kind === 'dm' ? '@ ' : '') + x.title }), h('button', { class: 'mbtn', text: 'Send', onclick: function () { var ok = window.HG_shareAch(a.id, x.id); toast(ok ? 'Shared!' : 'Could not share it.', !ok); if (ok) { achShare = ''; render(); } } }))); });
+          box.appendChild(pick);
+        }
+      });
+    });
+    return box;
   }
 
   function metView() {

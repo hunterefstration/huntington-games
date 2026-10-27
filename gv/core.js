@@ -158,6 +158,7 @@
         }, 8000);
         send({ type: 'friendsList' });
         startSync();
+        if (st.ach) send({ type: 'achSet', ach: st.ach });   // the achievements showcase, after every (re)connect
         var a = st.auth; st.auth = null; if (a) a.resolve({ name: st.name, userId: st.userId });
         return;
       }
@@ -330,7 +331,7 @@
   //  * signing out saves first and then clears the device.
   // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
   // must be added here: it is the list of prefixes the games write.
-  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|gv:set:)/;
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|hgach|gv:set:)/;
   var SAVE_MAX = 400000;
   var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {}, synced: false };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
@@ -496,6 +497,8 @@
     me: function () { return st.name ? { name: st.name, userId: st.userId, pub: st.pub, status: st.status } : null; },
     status: function () { return { status: st.status, text: st.text, via: st.conn && st.conn.open ? (st.conn.direct ? 'direct' : 'relay') : '' }; },
     online: function () { return st.ready; },
+    // the launcher's achievements summary for the profile card ({ n, of, pts, show: [{ g, n, i }] }); sent now and after reconnects
+    setAchievements: function (a) { var j = JSON.stringify(a); if (j === st.achJ) return; st.achJ = j; st.ach = a; if (st.ready) send({ type: 'achSet', ach: a }); },
     friends: function () { return { friends: st.friends.slice(), incoming: st.incoming.slice(), outgoing: st.outgoing.slice(), loaded: st.haveFriends }; },
     friendState: friendState,
     addFriend: function (n) { return friendOp('friendRequest', n); },

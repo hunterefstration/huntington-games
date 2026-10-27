@@ -10,7 +10,7 @@ npx --yes terser gv/vendor/hgnet.js -c -m --comments false -o "$T"
   echo "/* Grapevine - built by tools/build-gv.sh from gv/*.js. Do not edit. */"
   cat "$T"; echo
   echo "(function(){"
-  cat gv/vendor/ed25519.js gv/vendor/gvlink.js gv/core.js gv/ui.js
+  cat gv/vendor/ed25519.js gv/vendor/gvlink.js gv/core.js gv/ach.js gv/ui.js
   echo "})();"
 } > gv/account.js
 rm -f "$T"

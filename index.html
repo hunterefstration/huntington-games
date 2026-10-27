@@ -655,7 +655,13 @@ async function downloadOffline() {
   }
   btn.disabled = false; btn.textContent = old;
 }
-function play(g) { if (document.getElementById('gate').hidden === false) return; gvBeforePlay(g, function () { playNow(g); }); }
+function play(g) { if (document.getElementById('gate').hidden === false) return; if (window.HGAch) window.HGAch.played(g.dir); gvBeforePlay(g, function () { playNow(g); }); }
+// an unlocked achievement, posted into a chat as a card
+window.HG_shareAch = function (id, convId) {
+  var A = window.HGAch, a = A && A.byId(id), api = chatApi(), L = window.HGGrapevine, me = L && L.me();
+  if (!a || !api || !A.got()[id]) return false;
+  return !!api.send(convId, (me ? me.name : 'I') + ' unlocked ' + a.i + ' ' + a.n + ' in ' + A.games[a.g] + ': ' + a.d + ' - hg-ach:' + a.g + ':' + a.id);
+};
 var skipWait = null;
 window.HG_skipWait = function () { if (skipWait) skipWait(); };
 function playNow(g) {
@@ -777,7 +783,9 @@ function loadGV() {
     fetchGV('gv/account.js').then(function (code) {
       try { var sc = document.createElement('script'); sc.textContent = code; document.head.appendChild(sc); resolve(window.HGGrapevine); } catch (e) { reject(e); }
     }, function () { reject(new Error('Could not load Grapevine. The game CDN (cdn.jsdelivr.net) may be blocked on this network.')); });
-  }).then(function (L) { L.on('change', onGvChange); L.on('notify', function (n) { window.HG_notify(n); }); onGvChange(); return L; }, function (e) { gvP = null; throw e; });
+  }).then(function (L) { L.on('change', onGvChange); L.on('notify', function (n) { window.HG_notify(n); });
+    if (window.HGAch) window.HGAch.on('unlock', function (a) { window.HG_notify({ kind: 'ach', title: a.i + ' ' + a.n, text: a.d + ' (' + window.HGAch.games[a.g] + ', +' + a.p + ' points)' }); });
+    onGvChange(); return L; }, function (e) { gvP = null; throw e; });
   return gvP;
 }
 function savedName() { try { return localStorage.getItem('hgv:name') || ''; } catch (e) { return ''; } }
@@ -962,7 +970,7 @@ function toastIn(doc, n) {
   if (old) old.remove();
   var t = hgEl(doc, 'div', 'hgt'), tm;
   t.setAttribute('data-k', key.replace(/"/g, ''));
-  var label = { dm: 'Message', mention: 'Mention', msg: 'Grapevine', friendreq: 'Friend request', friendok: 'Friends', invite: 'Game invite' }[n.kind] || 'Grapevine';
+  var label = { dm: 'Message', mention: 'Mention', msg: 'Grapevine', friendreq: 'Friend request', friendok: 'Friends', invite: 'Game invite', ach: 'Achievement unlocked' }[n.kind] || 'Grapevine';
   t.appendChild(hgEl(doc, 'div', 'tk', label));
   t.appendChild(hgEl(doc, 'div', 'tt', n.kind === 'dm' || n.kind === 'mention' ? (n.from || n.title) : (n.title || '')));
   var tx = n.kind === 'msg' || n.kind === 'mention' || n.kind === 'dm' ? ((n.kind !== 'dm' && n.title ? n.title + ' - ' : '') + (n.from && n.kind === 'msg' ? n.from + ': ' : '') + (n.text || '')) : (n.text || '');
@@ -1140,7 +1148,7 @@ function gvBeforePlay(g, go) {
   var p = first ? L.sync.whenSynced(25000) : Promise.race([L.sync.run().catch(function () {}), new Promise(function (r) { setTimeout(r, 3000); })]);
   p.then(function () { clearTimeout(late); start(); });
 }
-function gvAfterPlay() { var L = window.HGGrapevine; if (L && L.me()) setTimeout(function () { L.sync.setGameOpen(false); }, 500); }
+function gvAfterPlay() { var L = window.HGGrapevine; if (L && L.me()) setTimeout(function () { L.sync.setGameOpen(false); }, 500); if (window.HGAch) setTimeout(function () { window.HGAch.check(); }, 800); }
 document.addEventListener('visibilitychange', function () { var L = window.HGGrapevine; if (document.hidden && L && L.me() && L.online()) L.sync.run().catch(function () {}); });
 if (!BUNDLE) {
   if (hasSavedKey()) { paintChip(); loadGV().then(function (L) { L.resume(); }, function () {}); }   // signed in before: bring the account up quietly

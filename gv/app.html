@@ -518,6 +518,8 @@ html[data-reduce="on"] .daysep span,html[data-reduce="on"] .divider span{animati
 .die b{font-size:16px;font-weight:700}
 .die span{font-size:10px;color:var(--dim)}
 .rcard{position:relative}
+.pfach{margin-top:6px}.pfachs{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.pfachip{font-size:11.5px;border:1px solid var(--line2);border-radius:10px;padding:2px 8px;color:var(--text)}
+.rcard.ach{border-color:#d4a72c}.rcard.ach b{color:#d4a72c}
 .rcard.invite{border-color:var(--signal);gap:4px}.rcard.invite b{color:var(--signal)}.rcard.invite .btn{margin-top:6px;align-self:flex-start}
 .rcard .minted{position:absolute;right:8px;top:6px;font-style:normal;font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
 .rcard{padding-right:56px}
@@ -4330,7 +4332,15 @@ function paintUserProfile(m){
     const ab = document.createElement('div'); ab.className = 'pfline';
     ab.textContent = p2.about; holder.append(ab);
   }
-  holder.style.display = (p2.status || p2.about) ? 'block' : 'none';
+  // achievements from the Huntington Games launcher
+  const ac = p2.ach;
+  if (ac && ac.n > 0) {
+    const ab = document.createElement('div'); ab.className = 'pfline pfach';
+    ab.innerHTML = `🏆 <b>${ac.n}</b>${ac.of ? ' of ' + ac.of : ''} achievements · <b>${ac.pts}</b> points` +
+      (ac.show && ac.show.length ? '<div class="pfachs">' + ac.show.map(x => `<span class="pfachip" title="${esc(x.g)}">${esc(x.i)} ${esc(x.n)}</span>`).join('') + '</div>' : '');
+    holder.append(ab);
+  }
+  holder.style.display = (p2.status || p2.about || (ac && ac.n > 0)) ? 'block' : 'none';
 }
 function openUser(name, userId){
   if (name === S.name) { openAcct(); return; }
@@ -6368,6 +6378,13 @@ function renderCard(el, m){
     return false;
   }
   if (m.kind !== 'text') return false;
+  // an achievement shared from the Huntington Games launcher: "... hg-ach:<game>:<id>"
+  if ((mm = /hg-ach:([a-z0-9]+):([A-Za-z0-9_-]{1,40})/.exec(t))) {
+    const said = t.replace(mm[0], '').replace(/\s*-\s*$/, '').trim();
+    const c = document.createElement('div'); c.className = 'rcard ach';
+    c.innerHTML = `<b>🏆 Achievement</b><span>${esc(said)}</span>`;
+    el.append(c); return true;
+  }
   // a game invite from the Huntington Games launcher: "... hg-invite:<game>:<party code>"
   if ((mm = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/.exec(t))) {
     const hub = gameHub(), name = INVITE_NAMES[mm[1]] || mm[1], said = t.replace(mm[0], '').replace(/\s*-\s*$/, '').trim();
