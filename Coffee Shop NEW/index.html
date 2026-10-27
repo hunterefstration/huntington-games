@@ -714,7 +714,14 @@ const SUPPLY = {
   honey: { name: 'Honey', short: 'Honey', price: 14, icon: 'drop', pantry: true, season: 0 },
   lemon: { name: 'Lemon', short: 'Lemon', price: 10, icon: 'lemon', pantry: true, season: 1 },
   pumpkin: { name: 'Pumpkin', short: 'Pumpkin', price: 14, icon: 'pumpkin', pantry: true, season: 2 },
-  mint: { name: 'Peppermint', short: 'Mint', price: 14, icon: 'candy', pantry: true, season: 3 }
+  mint: { name: 'Peppermint', short: 'Mint', price: 14, icon: 'candy', pantry: true, season: 3 },
+  // 2.1 local pantry: only sold in shops in their own city (leftovers can still be used anywhere)
+  maple: { name: 'Maple Syrup', short: 'Maple', price: 12, icon: 'leaf', pantry: true, city: 'home' },
+  oat: { name: 'Oat Milk', short: 'Oat', price: 9, icon: 'wheat', pantry: true, city: 'campus' },
+  coconut: { name: 'Coconut', short: 'Coconut', price: 14, icon: 'berry', pantry: true, city: 'beach' },
+  marsh: { name: 'Marshmallows', short: 'Marsh.', price: 12, icon: 'candy', pantry: true, city: 'pines' },
+  nitro: { name: 'Nitro Keg', short: 'Nitro', price: 24, icon: 'snow', pantry: true, city: 'metro' },
+  gold: { name: 'Edible Gold', short: 'Gold', price: 60, icon: 'sparkle', pantry: true, city: 'peak' }
 };
 const MAIN_SUP = Object.keys(SUPPLY).filter(k => !SUPPLY[k].pantry);
 const PANTRY = Object.keys(SUPPLY).filter(k => SUPPLY[k].pantry);
@@ -834,10 +841,23 @@ const RECIPES = [
   { id: 'psl', name: 'Pumpkin Spice Latte', base: 0, ing: ['pumpkin', 'cinnamon'], price: 14, tags: ['cozy', 'sweet'], col: '#ea580c', season: 2 },
   { id: 'ppie', name: 'Pumpkin Pie', base: -1, ing: ['flour', 'pumpkin'], price: 13, tags: ['food', 'cozy'], col: '#c2410c', food: true, season: 2 },
   { id: 'pmocha', name: 'Peppermint Mocha', base: 0, ing: ['mint', 'choc'], price: 14, tags: ['sweet', 'cozy'], col: '#be123c', season: 3 },
-  { id: 'ccookie', name: 'Candy Cane Cookie', base: -1, ing: ['flour', 'mint'], price: 9, tags: ['food', 'sweet'], col: '#f43f5e', food: true, season: 3 }
+  { id: 'ccookie', name: 'Candy Cane Cookie', base: -1, ing: ['flour', 'mint'], price: 9, tags: ['food', 'sweet'], col: '#f43f5e', food: true, season: 3 },
+  // 2.1 local specials: customers only order them in their own city's shops, and pay 20% extra for them there
+  { id: 'maplelatte', name: 'Maple Latte', base: 0, ing: ['maple'], price: 11, tags: ['sweet', 'cozy'], col: '#b7791f', city: 'home' },
+  { id: 'maplescone', name: 'Maple Pecan Scone', base: -1, ing: ['flour', 'maple'], price: 10, tags: ['food', 'cozy'], col: '#c0843d', food: true, city: 'home' },
+  { id: 'studybuddy', name: 'Study Buddy Oat Latte', base: 0, ing: ['oat'], price: 8, tags: ['strong', 'cozy'], col: '#d6c3a1', city: 'campus' },
+  { id: 'oatcookie', name: 'Oatmeal Cookie', base: -1, ing: ['flour', 'oat'], price: 6, tags: ['food', 'sweet'], col: '#b08a5a', food: true, city: 'campus' },
+  { id: 'cocoiced', name: 'Coconut Iced Coffee', base: 0, ing: ['coconut', 'ice'], price: 13, tags: ['iced', 'sweet'], col: '#f5f0e1', city: 'beach' },
+  { id: 'cocosmoothie', name: 'Tropical Coconut Smoothie', base: -1, ing: ['coconut', 'berries', 'ice'], price: 16, tags: ['iced', 'tea'], col: '#f472b6', city: 'beach' },
+  { id: 'smores', name: "Campfire S'mores Latte", base: 0, ing: ['marsh', 'choc'], price: 15, tags: ['cozy', 'sweet'], col: '#8b5a2b', city: 'pines' },
+  { id: 'smoresbar', name: "S'mores Bar", base: -1, ing: ['flour', 'marsh', 'choc'], price: 14, tags: ['food', 'cozy'], col: '#6b3f1d', food: true, city: 'pines' },
+  { id: 'nitrocb', name: 'Nitro Cold Brew', base: 1, ing: ['nitro', 'ice'], price: 30, tags: ['strong', 'iced'], col: '#3b2a1f', city: 'metro' },
+  { id: 'nitrovan', name: 'Vanilla Sweet Cream Nitro', base: 1, ing: ['nitro', 'vanilla'], price: 33, tags: ['fancy', 'sweet'], col: '#e7d7b8', city: 'metro' },
+  { id: 'goldcocoa', name: 'Gold Leaf Hot Chocolate', base: -1, ing: ['gold', 'choc'], price: 48, tags: ['fancy', 'cozy'], col: '#d4af37', city: 'peak' },
+  { id: 'goldtruffle', name: 'Golden Truffle Cake', base: -1, ing: ['flour', 'gold', 'choc'], price: 52, tags: ['food', 'fancy'], col: '#b8860b', food: true, city: 'peak' }
 ];
 const RECIPE_BY_ID = {}; RECIPES.forEach(r => { RECIPE_BY_ID[r.id] = r; });
-const CLASSIC_N = RECIPES.filter(r => r.season === undefined).length, SEASONAL_N = RECIPES.length - CLASSIC_N;
+const CLASSIC_N = RECIPES.filter(r => r.season === undefined && !r.city).length, LOCAL_N = RECIPES.filter(r => r.city).length, SEASONAL_N = RECIPES.length - CLASSIC_N - LOCAL_N;
 const BASE_NAME = ['No coffee', 'Basic coffee', 'Premium coffee', 'Luxury coffee'];   // index = base + 1
 // Seasons and holidays: the calendar comes from the game clock (4 days per season, 16-day year), so no extra save data.
 const SEASON_DAYS = 4, YEAR_DAYS = SEASON_DAYS * 4;
@@ -1348,7 +1368,10 @@ function inSeason(r) { return r.season === undefined || r.season === seasonIdx()
 function seasonBonus(r) { return r.season === undefined || r.season !== seasonIdx() ? 1 : 1.25 + 0.1 * U('seasonal'); }
 function ambOf(v) { return TILE_AMB[v] + (TILE_SEASON[v] >= 0 && TILE_SEASON[v] === seasonIdx() ? SEASON_AMB : 0); }
 function seasonalKnown() { let n = 0; RECIPES.forEach(r => { if (r.season !== undefined && state.recipes[r.id]) n++; }); return n; }
-function classicKnown() { let n = 0; RECIPES.forEach(r => { if (r.season === undefined && state.recipes[r.id]) n++; }); return n; }
+function classicKnown() { let n = 0; RECIPES.forEach(r => { if (r.season === undefined && !r.city && state.recipes[r.id]) n++; }); return n; }
+function localKnown() { let n = 0; RECIPES.forEach(r => { if (r.city && state.recipes[r.id]) n++; }); return n; }
+// sold here: in season, and (for a local special) in a shop in its own city
+function sellsHere(r, loc) { return inSeason(r) && (!r.city || (loc || curLoc()).city === r.city); }
 // ----- staff skills -----
 function sk(s, b) { return (s && s.sk && s.sk[b]) || 0; }
 function bestSkill(loc, role, b) {
@@ -1492,8 +1515,9 @@ function rankIdx(earned) {
   for (let i = 0; i < RANKS.length; i++) if (earned >= RANKS[i].at) r = i;
   return r;
 }
-function unlocked(what) {
+function unlocked(what, loc) {
   const r = rankIdx(), S = SUPPLY[what];
+  if (S && S.city && cityOf(loc || curLoc()).id !== S.city) return false;          // local ingredient: only sold in its city
   if (what === 'beans_luxury' || what === 'table') return r >= 1;
   if (S && S.rank && r < S.rank) return false;
   if (S && S.season !== undefined && S.season !== seasonIdx()) return false;     // seasonal ingredient: only sold in its season
@@ -1501,6 +1525,7 @@ function unlocked(what) {
 }
 function lockWhy(what) {
   const S = SUPPLY[what];
+  if (S && S.city && cityOf(curLoc()).id !== S.city) return S.name + ' is only sold in ' + CITY_BY_ID[S.city].name + '.';
   if (S && S.season !== undefined && S.season !== seasonIdx()) return S.name + ' is only sold in ' + SEASONS[S.season].name + '.';
   return (S ? S.name : 'That') + ' unlocks at rank: ' + RANKS[what === 'beans_luxury' ? 1 : ((S && S.rank) || 1)].n + '.';
 }
@@ -1592,9 +1617,9 @@ function pickWant(loc, kn, lt) {
   let fav = null, n = 0, sea = null, ns = 0, any = null, na = 0;
   for (let i = 0; i < loc.menu.length; i++) {
     const r = RECIPE_BY_ID[loc.menu[i]];
-    if (!r || !inSeason(r)) continue;                      // out-of-season specials are not ordered
+    if (!r || !sellsHere(r, loc)) continue;                // out-of-season (or out-of-town) specials are not ordered
     na++; if (Math.random() * na < 1) any = r;
-    if (r.season !== undefined) { ns++; if (Math.random() * ns < 1) sea = r; }
+    if (r.season !== undefined || r.city) { ns++; if (Math.random() * ns < 1) sea = r; }
     if (r.tags.indexOf(lt) < 0) continue;
     n++; if (Math.random() * n < 1) fav = r;
   }
@@ -1632,7 +1657,7 @@ function trySell(loc, c, manual, who) {
   if (rec) {
     for (let i = 0; i < rec.ing.length; i++) inv[rec.ing[i]]--;
     if (rec.base < 0 && !rec.food) { inv.milk--; inv.cups--; }
-    pay = rec.price * K.pay * pm * (c.fav ? 1.4 : 1) * (bestSkill(loc, 'barista', 'qua') >= 5 ? 1.15 : 1) * (bestSkill(loc, 'manager', 'qua') >= 5 ? 1.1 : 1) * seasonBonus(rec);
+    pay = rec.price * K.pay * pm * (c.fav ? 1.4 : 1) * (bestSkill(loc, 'barista', 'qua') >= 5 ? 1.15 : 1) * (bestSkill(loc, 'manager', 'qua') >= 5 ? 1.1 : 1) * seasonBonus(rec) * (rec.city ? 1.2 : 1);
     rep = c.fav ? 2 + (bestSkill(loc, 'manager', 'cha') >= 5 ? 1 : 0) : 1;
     state.stats.specials++; if (c.fav) state.stats.favs++;
     state.rsold[rec.id] = (state.rsold[rec.id] || 0) + 1;
@@ -1985,7 +2010,7 @@ function restockRun(loc, s, vis, mgr) {
   }
   for (let i = 0; i < list.length; i++) {
     const ing = list[i], lowAt = SUPPLY[ing].pantry ? Math.ceil(lim / 2) + 1 : lim;
-    if (loc.inventory[ing] >= lowAt || !unlocked(ing) || state.globalMoney < supplyPrice(ing, loc) * disc) continue;
+    if (loc.inventory[ing] >= lowAt || !unlocked(ing, loc) || state.globalMoney < supplyPrice(ing, loc) * disc) continue;
     if (buySupplies(ing, loc, packs, true, disc)) {
       let bonus = '';
       if (ch && Math.random() < 0.03 * ch * (ch >= 5 ? 2 : 1)) { loc.inventory[ing] += packSize(ing); bonus = ' (free pack!)'; }
@@ -2024,7 +2049,7 @@ function restockerAI(loc, s, idx) {
 function buySupplies(type, loc, packs, silent, disc) {
   loc = loc || curLoc();
   packs = packs || 1;
-  if (!SUPPLY[type] || !unlocked(type)) return 0;
+  if (!SUPPLY[type] || !unlocked(type, loc)) return 0;
   const price = Math.max(1, Math.round(supplyPrice(type, loc) * (disc || 1)));
   let n = 0;
   for (let i = 0; i < packs; i++) {
@@ -4549,17 +4574,17 @@ function dlgRecipes() {
   }
   html += '<p>Specials on the menu at <b>' + esc(locName(loc, cur)) + '</b>: <b>' + loc.menu.length + '/' + slots + '</b> slots. Every customer has a favorite flavor (heart over their head): they pay <b>40% more</b> for a special that matches it. Specials use pantry ingredients from this shop.</p>';
   html += '<div class="chips">' + (loc.menu.length ? loc.menu.map(id => {
-    const r = RECIPE_BY_ID[id], sea = inSeason(r), ok = sea && canMake(loc, r);
-    const why = !sea ? 'Out of season: customers only order it in ' + SEASONS[r.season].name : 'Missing ingredients or coffee: customers get plain coffee instead';
-    return '<span class="rchip"' + (ok ? '' : ' style="border-color:#8b3030" title="' + esc(why) + '"') + '><span class="rdot" style="background:' + r.col + '"></span>' + esc(r.name) + (ok ? '' : ' <small style="color:var(--bad)">(' + (sea ? 'out' : 'off season') + ')</small>') + '<button data-act="menutog" data-id="' + id + '" title="Remove from menu" aria-label="Remove">&times;</button></span>';
+    const r = RECIPE_BY_ID[id], sea = sellsHere(r, loc), ok = sea && canMake(loc, r);
+    const why = !sea ? (r.city && inSeason(r) ? 'Local special: customers only order it in ' + CITY_BY_ID[r.city].name : 'Out of season: customers only order it in ' + SEASONS[r.season].name) : 'Missing ingredients or coffee: customers get plain coffee instead';
+    return '<span class="rchip"' + (ok ? '' : ' style="border-color:#8b3030" title="' + esc(why) + '"') + '><span class="rdot" style="background:' + r.col + '"></span>' + esc(r.name) + (ok ? '' : ' <small style="color:var(--bad)">(' + (sea ? 'out' : r.city && inSeason(r) ? 'not sold here' : 'off season') + ')</small>') + '<button data-act="menutog" data-id="' + id + '" title="Remove from menu" aria-label="Remove">&times;</button></span>';
   }).join('') : '<span class="empty">No specials yet. Discover recipes in the lab, then add them here.</span>') + '</div>';
   html += '<h4>All recipes</h4><div class="grid2">' + RECIPES.map(r => {
     const k = !!state.recipes[r.id], on = loc.menu.indexOf(r.id) >= 0;
-    const tags = r.tags.map(t => '<span class="tagl">' + TAG_NAME[t] + '</span>').join('') + (r.season !== undefined ? '<span class="tagl seat" style="color:' + SEASONS[r.season].col + '">' + icon(SEASONS[r.season].icon) + ' ' + SEASONS[r.season].name + (inSeason(r) ? ' - in season!' : ' only') + '</span>' : '');
+    const tags = r.tags.map(t => '<span class="tagl">' + TAG_NAME[t] + '</span>').join('') + (r.season !== undefined ? '<span class="tagl seat" style="color:' + SEASONS[r.season].col + '">' + icon(SEASONS[r.season].icon) + ' ' + SEASONS[r.season].name + (inSeason(r) ? ' - in season!' : ' only') + '</span>' : '') + (r.city ? '<span class="tagl seat" style="color:#fbbf24">' + icon('star') + ' ' + CITY_BY_ID[r.city].short + ' special' + (cityOf(loc).id === r.city ? ' - sells here!' : ' only') + '</span>' : '');
     if (k) {
       const ok = canMake(loc, r), full = !on && loc.menu.length >= slots;
       return '<div class="card' + (on ? ' onm' : '') + '"><div class="row"><span class="ico" style="background:' + r.col + ';color:#fff">' + icon(r.food ? 'cup' : 'coffee') + '</span><div style="min-width:0;flex:1"><b>' + esc(r.name) + '</b><small>' + esc(recipeIngText(r)) + '</small></div><b style="color:var(--good)">' + money(r.price) + '</b></div><div>' + tags + '</div>' +
-        '<div class="meta"><span>' + (!inSeason(r) ? '<span style="color:var(--dim)">Back in ' + SEASONS[r.season].name + '</span>' : (ok ? 'Can make here' : '<span style="color:var(--bad)">Missing ingredients here</span>')) + '</span><span>Sold ' + fmt(state.rsold[r.id] || 0) + '</span></div>' +
+        '<div class="meta"><span>' + (!inSeason(r) ? '<span style="color:var(--dim)">Back in ' + SEASONS[r.season].name + '</span>' : r.city && cityOf(loc).id !== r.city ? '<span style="color:var(--dim)">Only sold in ' + CITY_BY_ID[r.city].name + '</span>' : (ok ? 'Can make here' : '<span style="color:var(--bad)">Missing ingredients here</span>')) + '</span><span>Sold ' + fmt(state.rsold[r.id] || 0) + '</span></div>' +
         '<div class="btnrow"><button class="btn' + (on ? '' : (full ? ' dis' : ' primary')) + '" data-act="menutog" data-id="' + r.id + '">' + (on ? 'Remove from menu' : (full ? 'Menu full' : 'Add to menu')) + '</button></div></div>';
     }
     const h = state.rhint[r.id] || 0, shown = r.ing.slice(0, h).map(x => SUPPLY[x].name);
