@@ -20,7 +20,7 @@ const SAVE = (() => {
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
-    d.stats = d.stats || {};
+    d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {};
     return { d, write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} } };
 })();
 
@@ -118,7 +118,13 @@ const Sound = (() => {
         shrine: () => [0, 5, 9, 12, 17, 21, 24].forEach((s, i) => { tone(392 * Math.pow(2, s / 12), 392 * Math.pow(2, s / 12), 0.9, 'sine', 0.1, i * 0.1); }),
         boss: () => { tone(80, 40, 0.8, 'sawtooth', 0.25); noise(0.8, 400, 60, 0.3); },
         click: () => tone(1200, 900, 0.05, 'square', 0.06),
-        bounce: () => tone(400, 700, 0.1, 'sine', 0.12)
+        bounce: () => tone(400, 700, 0.1, 'sine', 0.12),
+        pop: () => { tone(700, 1400, 0.08, 'sine', 0.1); noise(0.06, 5000, 2000, 0.06); },
+        hurtBoss: () => { tone(160, 50, 0.4, 'sawtooth', 0.2); tone(90, 40, 0.5, 'square', 0.12); },
+        screech: () => { tone(1800, 900, 0.35, 'sawtooth', 0.07); tone(2400, 1300, 0.3, 'square', 0.04, 0.05); noise(0.3, 6000, 3000, 0.08); },
+        gong: () => { [1, 2.76, 5.4].forEach((m, i) => tone(110 * m, 110 * m * 0.99, 1.4 - i * 0.3, 'sine', 0.16 / (i + 1))); noise(0.15, 1200, 300, 0.1); },
+        roar: () => { tone(120, 60, 0.7, 'sawtooth', 0.2); noise(0.7, 900, 150, 0.25, 0, 0.5); },
+        memory: () => [0, 3, 7, 10, 14].forEach((s, i) => tone(392 * Math.pow(2, s / 12), 392 * Math.pow(2, s / 12), 1.2, 'sine', 0.08, i * 0.12))
     };
     // music: a soft generative pad + plucked arpeggio per world, scheduled a bar at a time
     const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10]];
@@ -131,7 +137,8 @@ const Sound = (() => {
         if (mus && mus.world === world) return;
         stopMusic();
         mus = { world, bar: 0, next: ac.currentTime + 0.1, timer: null };
-        const bar = 2.4, sc = SCALES[world % SCALES.length], root = ROOTS[world % ROOTS.length], prog = PROG[world % PROG.length];
+        // 10+: a guardian fight: the world's music, faster and harder
+        const boss = world >= 10, bar = boss ? 1.5 : 2.4, sc = SCALES[world % 10 % SCALES.length], root = ROOTS[world % 10 % ROOTS.length] - (boss ? 2 : 0), prog = boss ? PROG[3] : PROG[world % PROG.length];
         const step = () => {
             if (!mus || mus.world !== world) return;
             while (mus.next < ac.currentTime + 1.2) {
@@ -141,8 +148,9 @@ const Sound = (() => {
                 const r = seeded(mus.bar * 31 + world * 7);
                 for (let i = 0; i < 8; i++) if (r() < 0.72) {
                     const n = deg(Math.floor(r() * 5)) + 12;
-                    tone(mf(n), mf(n), 0.35, world === 4 ? 'square' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
+                    tone(mf(n), mf(n), 0.35, world === 4 || boss ? 'square' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
                 }
+                if (boss) for (let i = 0; i < 4; i++) { tone(70, 40, 0.18, 'sine', 0.16, t0 - ac.currentTime + i * bar / 4, musBus); tone(1800, 1700, 0.03, 'square', 0.012, t0 - ac.currentTime + (i + 0.5) * bar / 4, musBus); }
                 mus.next += bar; mus.bar++;
             }
             mus.timer = setTimeout(step, 400);

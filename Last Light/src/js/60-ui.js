@@ -38,13 +38,13 @@ const UI = {
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
                 b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
-                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">✦</span>`).join('')}</span>` : '');
+                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}<span class="${SAVE.d.lore[l.id] ? 'mem-on' : 'moth-off'}" title="Memory">◆</span></span>` : '');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
                 list.appendChild(b);
             });
             card.appendChild(list); box.appendChild(card);
         });
-        $('#m-total').innerHTML = `<span class="moth-on">✦</span> ${moths}/${mothsOf}`;
+        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf}`;
         this.show('map');
     },
     pause() {
@@ -60,7 +60,7 @@ const UI = {
         const rows = [
             ['Time', fmtTime(r.time) + (r.best ? '<span class="new">NEW BEST</span>' : '')],
             ['Sparks', r.sparks + ' / ' + r.sparksOf],
-            ['Star moths', r.moths.slice(0, LEVELS[G.idx].map.join('').split('*').length - 1).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">✦</span>`).join(' ') + (r.mothsNew > 0 ? '<span class="new">+' + r.mothsNew + ' NEW</span>' : '')],
+            ['Stars', r.moths.slice(0, LEVELS[G.idx].map.join('').split('*').length - 1).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">★</span>`).join(' ') + (r.mothsNew > 0 ? '<span class="new">+' + r.mothsNew + ' NEW</span>' : '')],
             ['Hits taken', r.hits ? r.hits : 'none<span class="new">FLAWLESS</span>'],
             ['Enemies defeated', r.kills],
             ['Falls', r.deaths]
@@ -97,10 +97,11 @@ const UI = {
 };
 // the light went out: what got you, how it is going, and straight back in with one key
 const CAUSE = { pit: 'You fell into the dark.', spike: 'Spikes.', lava: 'The lava took you.', slime: 'A slime got you.', bat: 'A bat got you.',
-    thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.' };
+    thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.',
+    moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.' };
 const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump longer to jump higher.', 'You can still jump a moment after running off a ledge.',
     'Stomp slimes, bats and turrets from above. Never thornbacks.', 'A dash goes straight through enemies.', 'Press R to go back to the last lantern.',
-    'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.',
+    'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.', 'Guardians can only be hurt when they show a !. Watch what they do first.', 'Find the memories: they tell what happened here.',
     'Hold down to drop through a thin ledge.'];
 UI.died = function () {
     G.state = 'dead'; Input.clear(); $('#banner').classList.remove('on'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden');
@@ -117,7 +118,8 @@ UI.stats = function () {
     const done = LEVELS.filter(l => lv[l.id] && lv[l.id].best != null), total = done.length === LEVELS.length ? done.reduce((t, l) => t + lv[l.id].best, 0) : null;
     const pt = SAVE.d.playTime || 0, tp = pt >= 3600 ? Math.floor(pt / 3600) + 'h ' + Math.floor(pt % 3600 / 60) + 'm' : Math.floor(pt / 60) + 'm ' + Math.floor(pt % 60) + 's';
     const enemy = n('death_enemy');
-    const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Star moths', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
+    const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
+        ['Memories found', loreCount() + ' / ' + Object.keys(LORE).length], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'],
         ['Flawless clears', n('flawless')], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
         ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],

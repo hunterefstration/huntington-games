@@ -7,7 +7,7 @@ const G = {
     got: { sparks: 0, moths: [] }, stats: {}, checkpoint: null, idx: -1,
     maxHearts: () => settings.hard ? 1 : 3,
     shake(a) { if (!settings.shake) return; this.shakeA = Math.max(this.shakeA * (this.shakeT > 0 ? 1 : 0), a); this.shakeT = 0.25; },
-    bossAlive() { return !!this.boss; },
+    bossAlive() { return !!this.boss || !!(this.guard && this.guard.state !== 'free' && this.guard.state !== 'gone'); },
     start(idx) {
         const def = LEVELS[idx]; if (!def) return;
         this.idx = idx; this.L = parseLevel(def); this.world = def.world; this.levelKey = def.id + ':' + Date.now();
@@ -20,7 +20,9 @@ const G = {
         const rec = SAVE.d.levels[def.id];
         for (const e of this.L.ents) if (e.kind === 'moth' && rec && rec.moths && rec.moths[e.idx]) e.ghost = true;
         const be = this.L.ents.find(e => e.kind === 'boss'); this.boss = be ? makeBoss(be) : null;
-        if (this.boss) { const gt = this.L.ents.find(e => e.kind === 'gate'); if (gt) { gt.gone = true; gt.hidden = true; } }
+        const ge = this.L.ents.find(e => e.kind === 'guard'); this.guard = ge ? makeGuard(this, ge) : null; UI.bossbar(null);
+        if (this.boss || this.guard) { const gt = this.L.ents.find(e => e.kind === 'gate'); if (gt) { gt.gone = true; gt.hidden = true; } }
+        this.iris = 0; this.outro = null; this.hitstop = 0; this.p.spawnT = 0.75; Sound.play('lantern');
         const r = seeded(def.id.length * 977 + idx);
         this.motes = Array.from({ length: 40 }, () => ({ x: r() * 2000, y: r() * 1200, r: 0.8 + r() * 2.2, s: 0.3 + r() * 0.8, p: r() * 9, k: 0.3 + r() * 0.6 }));
         this.cam.x = this.p.x; this.cam.y = this.p.y - 40; this.cam.snap = 0; this.cam.look = 0;
@@ -32,11 +34,14 @@ const G = {
     },
     update(dt) {
         if (this.state !== 'play') return;
-        this.t += dt;
+        // a split-second freeze when a stomp lands: it makes the hit feel solid
+        if (this.hitstop > 0) { this.hitstop -= dt; return; }
+        this.t += dt; this.iris = Math.min(1, (this.iris ?? 1) + dt * 1.5); if (this.p.spawnT > 0) this.p.spawnT -= dt;
         if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } }
         updatePlayer(this, dt);
         updateWorld(this, dt);
         if (this.boss) bossUpdate(this, dt);
+        if (this.guard) guardUpdate(this, dt);
         updateParts(this, dt);
         this.flash = Math.max(0, this.flash - dt * 1.5);
         if (this.white > 0 && !(this.boss && this.boss.state === 'dying')) this.white = Math.max(0, this.white - dt * 0.6);
@@ -48,11 +53,14 @@ const G = {
         cam.look = approach(cam.look || 0, want, dt * (Math.abs(want) > Math.abs(cam.look || 0) ? 110 : 60));
         let tx = p.x + cam.look, ty = p.y - 30 + (p.vy > 300 ? p.vy * 0.12 : 0);
         if (this.boss) { tx = lerp(tx, this.boss.x, 0.35); }
+        // a guardian fight frames the arena: floor near the bottom, the guardian and you both in view
+        const B = this.guard;
+        if (B && B.state !== 'wait' && B.state !== 'gone') { tx = clamp(lerp(p.x, B.x, 0.35), Math.min(B.x0 - TS + vw / 2, (B.x0 + B.x1) / 2), Math.max(B.x1 - vw / 2, (B.x0 + B.x1) / 2)); ty = B.floor - vh * 0.36; }
         tx = clamp(tx, vw / 2, Math.max(vw / 2, L.w * TS - vw / 2)); ty = clamp(ty, vh / 2, Math.max(vh / 2, L.h * TS - vh / 2));
         if (L.w * TS < vw) tx = L.w * TS / 2; if (L.h * TS < vh) ty = L.h * TS / 2;
         if (this.cam.snap > 0) { this.cam.snap -= dt; this.cam.x = tx; this.cam.y = ty; }
         else { this.cam.x = lerp(this.cam.x, tx, Math.min(1, dt * 6)); this.cam.y = lerp(this.cam.y, ty, Math.min(1, dt * 5)); }
-        if (Input.hit('retry') && !p.dead) { respawn(this); this.toast('Back to the last lantern'); }
+        if (Input.hit('retry') && !p.dead && !this.done) { respawn(this); this.toast('Back to the last lantern'); }
     },
     revealGate() { const g = this.L.ents.find(e => e.kind === 'gate'); if (g) { g.gone = false; g.hidden = false; burst(this, g.x, g.y, '#fff2c4', 40, 260); } },
     shrine(e) {
@@ -66,6 +74,9 @@ const G = {
     },
     finish() {
         this.done = true; Sound.play('gate');
+        // the gate takes you: you spin into it as the light closes in, then the results
+        const gt = this.L.ents.find(e => e.kind === 'gate'); this.outro = { t: 0, x: gt ? gt.x : this.p.x, y: gt ? gt.y - 10 : this.p.y };
+        burst(this, this.outro.x, this.outro.y, '#fff2c4', 40, 260, true);
         const def = this.L.def, rec = SAVE.d.levels[def.id] || { best: null, moths: [false, false, false], sparks: 0, clears: 0 };
         const best = rec.best == null || this.time < rec.best, mothsBefore = rec.moths.filter(Boolean).length;
         rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);
@@ -76,8 +87,8 @@ const G = {
         this.p.vx = 0;
         setTimeout(() => {
             this.state = 'done';
-            UI.results({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
-        }, 900);
+            (def.world === 4 ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
+        }, 1500);
     },
     hud() {
         if (!this.p) return;
@@ -85,7 +96,7 @@ const G = {
         for (let i = 0; i < H; i++) hs.push(`<div class="heart"><svg viewBox="0 0 26 24"><path d="M13 22 C2 14 1 8 4 4.5 C7 1 11 2 13 5.5 C15 2 19 1 22 4.5 C25 8 24 14 13 22Z" fill="${i < this.p.hearts ? '#ff6b8b' : 'rgba(255,255,255,.18)'}" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/></svg></div>`);
         $('#hearts').innerHTML = hs.join('');
         $('#h-sparks').textContent = this.got.sparks; $('#h-sparks-of').textContent = '/' + this.L.sparks;
-        $('#h-moths').innerHTML = this.got.moths.slice(0, this.L.moths).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">✦</span>`).join(' ') || '<span class="moth-off">✦</span>';
+        $('#h-moths').innerHTML = this.got.moths.slice(0, this.L.moths).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">★</span>`).join(' ') || '<span class="moth-off">★</span>';
         $('#h-moths').style.display = this.L.moths ? '' : 'none';
         $('#h-level').textContent = this.L.def.id + ' · ' + this.L.def.name;
     },

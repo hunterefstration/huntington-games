@@ -76,15 +76,29 @@ function render(G) {
     for (const m of G.L.movers) if (vis(m.x, m.y, 200)) Sprites.mover(x, m, t, T);
     for (const e of G.L.ents) {
         if (e.gone || !vis(e.x, e.y)) continue;
-        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn' }[e.kind];
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', memory: 'memory' }[e.kind];
         if (!f) continue;
-        if (e.ghost) { x.save(); x.globalAlpha = 0.4; Sprites[f](x, e, t, T); x.restore(); } else Sprites[f](x, e, t, T);
+        if (e.dying !== undefined) {          // stomped: flattened into the ground, then it pops
+            const k = clamp(e.dying / 0.22, 0, 1), fy = e.y + 14;
+            x.save(); x.translate(e.x, fy); x.scale(1 + (1 - k) * 0.7, 0.15 + k * 0.6); x.translate(-e.x, -fy); Sprites[f](x, e, t, T); x.restore();
+        } else if (e.ghost) { x.save(); x.globalAlpha = 0.4; Sprites[f](x, e, t, T); x.restore(); } else Sprites[f](x, e, t, T);
     }
     if (G.boss) drawBoss(x, G, t);
-    for (const b of G.shots) b.shadow ? Sprites.shadowOrb(x, b, t) : Sprites.orb(x, b, t);
+    if (G.guard) drawGuard(x, G, t);
+    for (const b of G.shots) b.shadow ? Sprites.shadowOrb(x, b, t) : b.style ? drawGShot(x, b, t) : Sprites.orb(x, b, t);
     // dash after-images
     for (const g of G.ghosts) { x.save(); x.globalAlpha = g.life / 0.22 * 0.45; x.globalCompositeOperation = 'lighter'; Sprites.lumi(x, { x: g.x, y: g.y, sx: g.sx, sy: g.sy, face: g.face, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0 }, t); x.restore(); }
-    if (!G.p.dead && !(G.p.hurtT > 0 && Math.floor(t * 16) % 2 && G.p.hurtT < 1.1)) Sprites.lumi(x, G.p, t);
+    const P = G.p;
+    if (P.spawnT > 0) {      // arriving: a beam of light and you pop into being
+        const a = clamp(P.spawnT / 0.75, 0, 1), g = x.createLinearGradient(0, P.y - 400, 0, P.y + 16); g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(1, `rgba(255,240,200,${a * 0.7})`);
+        x.fillStyle = g; x.fillRect(P.x - 14 * a - 4, P.y - 400, (14 * a + 4) * 2, 416);
+    }
+    if (!P.dead && !(P.hurtT > 0 && Math.floor(t * 16) % 2 && P.hurtT < 1.1)) {
+        let k = 1, rot = 0;
+        if (P.spawnT > 0) { const u = 1 - clamp(P.spawnT / 0.75, 0, 1); k = u < 0.6 ? u / 0.6 * 1.25 : 1.25 - (u - 0.6) / 0.4 * 0.25; }
+        if (G.outro) { k = Math.max(0, 1 - G.outro.t / 0.9); rot = G.outro.t * 9; }
+        if (k > 0) { if (k !== 1 || rot) { x.save(); x.translate(P.x, P.y); x.rotate(rot); x.scale(k, k); x.translate(-P.x, -P.y); Sprites.lumi(x, P, t); x.restore(); } else Sprites.lumi(x, P, t); }
+    }
     // particles
     for (const q of G.parts) {
         if (!vis(q.x, q.y, 20)) continue;
@@ -92,6 +106,7 @@ function render(G) {
         x.globalAlpha = a; x.fillStyle = q.color;
         if (q.add) { x.globalCompositeOperation = 'lighter'; }
         if (q.sq) x.fillRect(q.x - q.size / 2, q.y - q.size / 2, q.size, q.size);
+        else if (q.star) star5(x, q.x, q.y, q.size);
         else { x.beginPath(); x.arc(q.x, q.y, q.size * (q.add ? a * 0.6 + 0.4 : 1), 0, 7); x.fill(); }
         x.globalCompositeOperation = 'source-over';
     }
@@ -114,6 +129,15 @@ function render(G) {
         v.fillStyle = g; v.fillRect(0, 0, W, H);
     }
     x.drawImage(R.vig, 0, 0);
+    // the iris: opens on you when a level starts, closes on the gate when you finish
+    let ir = null;
+    if (G.outro) ir = { x: G.outro.x, y: G.outro.y, k: 1 - clamp((G.outro.t - 0.45) / 0.85, 0, 1) };
+    else if (G.iris < 1) ir = { x: P.x, y: P.y, k: 1 - Math.pow(1 - G.iris, 3) };
+    if (ir && ir.k < 1) {
+        const sx = (ir.x - cx) * z, sy = (ir.y - cy) * z, rr = Math.hypot(W, H) * ir.k;
+        x.fillStyle = '#05030a'; x.beginPath(); x.rect(0, 0, W, H); x.arc(sx, sy, rr, 0, Math.PI * 2, true); x.fill();
+        if (rr > 1) { x.strokeStyle = 'rgba(255,220,150,.55)'; x.lineWidth = 3 * R.dpr; x.beginPath(); x.arc(sx, sy, rr, 0, Math.PI * 2); x.stroke(); }
+    }
 }
 
 function lightPass(G, cx, cy, vw, vh) {
@@ -128,7 +152,8 @@ function lightPass(G, cx, cy, vw, vh) {
         if (e.kind === 'lantern') add(e.x + 12, e.y - 14, e.lit ? 240 + Math.sin(t * 9 + e.seed) * 8 : 40, e.lit ? 1 : 0.5, '255,190,100');
         else if (e.kind === 'gate') add(e.x, e.y - 14, 190, 1, '255,230,160');
         else if (e.kind === 'spark') { if (amb > 0.5) sparkL.push([e.x, e.y]); }
-        else if (e.kind === 'moth') add(e.x, e.y, 80, 0.9, '140,240,255');
+        else if (e.kind === 'moth') add(e.x, e.y, e.got !== undefined ? 200 : 90, 0.9, '255,230,150');
+        else if (e.kind === 'memory') add(e.x, e.y, 100, 0.9, '200,170,255');
         else if (e.kind === 'shrine' && !e.used) add(e.x, e.y - 30, 140, 1, '160,240,255');
         else if (e.kind === 'key') add(e.x, e.y, 60, 0.7, '255,210,120');
         else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');
@@ -139,7 +164,8 @@ function lightPass(G, cx, cy, vw, vh) {
     const lavaL = []; let lastTx = -9;
     for (const l of G.L.lava) if (l.top && l.tx * TS > cx - 80 && l.tx * TS < cx + vw + 80 && l.tx - lastTx >= 2) { lavaL.push([l.tx * TS + 16, l.ty * TS + 8]); lastTx = l.tx; }
     lavaL.sort(near).slice(0, 12).forEach(([lx2, ly2]) => add(lx2, ly2, 110, 0.9, '255,110,30'));
-    for (const b of G.shots) add(b.x, b.y, b.shadow ? 40 : 60, 0.8, b.shadow ? '170,110,255' : '255,210,120');
+    for (const b of G.shots) add(b.x, b.y, b.shadow ? 40 : 60, 0.8, b.light || (b.shadow ? '170,110,255' : '255,210,120'));
+    const B = G.guard; if (B && B.state !== 'gone') add(B.x, B.y, B.open || B.state === 'free' ? 240 : 150, 1, B.state === 'free' ? '255,240,200' : B.D.light);
     if (G.boss) add(G.boss.x, G.boss.y, G.boss.stun > 0 ? 260 : 140, 1, G.boss.stun > 0 ? '255,240,200' : '170,110,255');
     if (amb > 0.02) {
         lx.globalCompositeOperation = 'source-over'; lx.clearRect(0, 0, LW, LH);

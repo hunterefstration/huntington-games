@@ -145,6 +145,12 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   enemies. Pits kill at once; death screen `#s-dead` (UI.died/UI.retry, state 'dead'); lifetime stats in `SAVE.d.stats`
   (ST(key, n)), shown on the title's Stats screen. Hold down to drop through a one-way ledge. Camera look-ahead follows real
   speed, so turning around does not swing it.
+- r52: guardians (mini bosses) in `src/js/47-guard.js`: `Q` in a level + `def.guard` (moss/shard/bell/cinder); levels.py
+  `arena()` widens each x-4 level by 34 columns (old gate -> lantern, door column w0+1 closes at runtime, gate hidden till
+  freed; a fall resets the fight via guardReset in respawn). Lore in `src/js/65-lore.js`: `r` = memory (levels.py `memory()`
+  places one per level on a high reachable spot; The Gloom drops 5-1's), `SAVE.d.lore`, journal on the title, ending screen
+  after 5-1. Star moths are drawn/called "stars" (kind and save field still `moth(s)`). Splash `#splash` (>= 2 s), iris
+  in/out, stomp hit-stop + squash, spawn beam. levels.py `spice()`/`bats()` add seeded enemies.
 
 ## Launcher: Multiplayer tab (hub rooms) + Go live (r49)
 - In the hub `index.html` ("Multiplayer hub + Go live" block), on HGNet (comes with gv/account.js): HGNet game 'hghub' = rooms

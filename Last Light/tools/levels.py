@@ -32,6 +32,9 @@ class Lv:
     def arc(s, x0, y0, n=5, h=2):                 # sparks over a jump
         for i in range(n):
             t = i / max(1, n - 1); s.put(x0 + i, y0 - round(4 * h * t * (1 - t)), 'o')
+    def widen(s, n):
+        for r in s.g: r.extend([' '] * n)
+        s.w += n
     def map(s): return [''.join(r).rstrip() for r in s.g]
 
 LEVELS = []
@@ -420,12 +423,13 @@ def check(v, ab, doors_open=False):
     if not doors_open and any(g[yy][xx] == 'k' and ((xx, yy) in air or (xx, yy) in seen) for yy in range(H) for xx in range(W)):
         return check(v, ab, True)
     probs = []
+    v.seen = seen
     keys = sum(r.count('k') for r in g) and sum(1 for y in range(H) for x in range(W) if g[y][x] == 'k')
     for y in range(H):
         for x in range(W):
             c = g[y][x]
-            if c in 'E*oLkuG' and (x, y) not in air and (x, y) not in seen:
-                probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'moth', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss'}[c], x, y))
+            if c in 'E*oLkuGr' and (x, y) not in air and (x, y) not in seen:
+                probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'star', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss', 'r': 'memory'}[c], x, y))
     # traps: places you can get to but never get out of to the gate (falling into a pit is fine: that is a death and a
     # respawn, but a box with no way out leaves you stuck). Walk backwards from the gate over the same moves.
     gate = [(x, y) for y in range(H) for x in range(W) if g[y][x] == 'E']
@@ -465,8 +469,8 @@ def spice(v):
     """A few more enemies on the open ground of every level after the first (seeded, so the levels never change between
     builds): slimes and bats early, thornbacks and turrets once you can wall-jump. Never near the start, a lantern, the
     gate or anything else, and never two close together."""
-    n = {0: 2, 1: 3, 2: 3, 3: 4}.get(v.world, 0)
-    if v.id == '1-1': n = 1
+    n = {0: 4, 1: 5, 2: 5, 3: 6}.get(v.world, 0)
+    if v.id == '1-1': n = 2
     rnd, g, spots = random.Random('spice' + v.id), v.g, []
     for y in range(3, v.h - 1):
         for x in range(10, v.w - 10):
@@ -476,7 +480,7 @@ def spice(v):
     rnd.shuffle(spots); used = []
     for x, y in spots:
         if len(used) >= n: break
-        if any(abs(x - a) < 12 for a in used): continue
+        if any(abs(x - a) < 9 for a in used): continue
         kind = rnd.choice('ggb' if v.world < 2 else 'gbht')
         if kind == 'b':
             if not all(g[y - k][x] in ' o' for k in range(1, 4)): continue
@@ -484,7 +488,51 @@ def spice(v):
         v.put(x, y, kind); used.append(x)
 for v in LEVELS: spice(v)
 
+def bats(v):
+    """A bat or two hanging over the open jumps (worlds 1-4; never in the first level)."""
+    n = {0: 1, 1: 2, 2: 2, 3: 3}.get(v.world, 0)
+    if v.id == '1-1': return
+    rnd, g, spots = random.Random('bats' + v.id), v.g, []
+    used = [x for y in range(v.h) for x in range(v.w) if g[y][x] in 'gbht']
+    for y in range(4, v.h - 6):
+        for x in range(14, v.w - 12):
+            if all(g[yy][xx] in ' o' for yy in range(y - 2, y + 3) for xx in range(x - 3, x + 4)) and \
+               all(g[yy][x] in ' o' for yy in range(y + 3, v.h)) and \
+               not any(g[yy][xx] not in ' #=^Clo' for yy in range(max(0, y - 4), min(v.h, y + 5)) for xx in range(x - 6, x + 7)):
+                spots.append((x, y))
+    rnd.shuffle(spots); k = 0
+    for x, y in spots:
+        if k >= n: break
+        if any(abs(x - a) < 10 for a in used): continue
+        v.put(x, y, 'b'); used.append(x); k += 1
+for v in LEVELS: bats(v)
+
+def arena(v, kind):
+    """The end of every world: the gate moves into a walled arena past a guardian (a mini boss). The old gate spot gets a
+    lantern, so a fall in the fight starts again right at the door. The door (runtime) closes behind you at column w0+1."""
+    ex, ey = next((x, y) for y in range(v.h) for x in range(v.w) if v.g[y][x] == 'E')
+    v.put(ex, ey, 'L'); floor = ey + 1; w0 = v.w; v.widen(34); v.w0 = w0
+    v.ground(w0, v.w - 1, floor)
+    if floor - 12 >= 0: v.rect(w0, 0, v.w - 1, floor - 12)
+    if kind == 'bell': v.ledge(w0 + 8, w0 + 11, floor - 4); v.ledge(w0 + 21, w0 + 24, floor - 4)
+    v.put(w0 + 20, floor - 1, 'Q'); v.put(w0 + 31, floor - 1, 'E')
+    v.guard = kind
+for lid, kind in (('1-4', 'moss'), ('2-4', 'shard'), ('3-4', 'bell'), ('4-4', 'cinder')):
+    arena(next(v for v in LEVELS if v.id == lid), kind)
+
 ABIL = [dict(double=False, wall=False, dash=False), dict(double=True, wall=False, dash=False), dict(double=True, wall=True, dash=False), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True)]
+def memory(v):
+    if v.world == 4: return                      # the last memory is what The Gloom leaves behind
+    check(v, ABIL[v.world]); g, rnd = v.g, random.Random('memory' + v.id)
+    hi = getattr(v, 'w0', v.w)
+    def spots(r, ok):
+        return [(x, y) for (x, y) in v.seen if hi * 0.2 < x < hi * 0.85 and y > 1 and g[y][x] == ' ' and g[y - 1][x] == ' ' and
+                not any(g[yy][xx] not in ok for yy in range(max(0, y - 3), min(v.h, y + 2)) for xx in range(max(0, x - r), min(v.w, x + r + 1)))]
+    c = spots(4, ' #=^C') or spots(2, ' #=^Co')
+    c.sort(key=lambda q: (q[1], q[0])); c = c[:max(1, len(c) // 3)]
+    x, y = rnd.choice(c); v.put(x, y, 'r')
+for v in LEVELS: memory(v)
+
 bad = 0
 for v in LEVELS:
     p = check(v, ABIL[v.world])
@@ -493,6 +541,6 @@ for v in LEVELS:
     bad += len(p)
 with open(OUT, 'w') as f:
     f.write('// ==========================================\n// LEVELS (generated by tools/levels.py - edit that, then run it)\n// ==========================================\n')
-    f.write('const LEVELS = ' + json.dumps([dict(id=v.id, name=v.name, world=v.world, gives=v.gives, hint=v.hint, map=v.map()) for v in LEVELS], indent=0) + ';\n')
+    f.write('const LEVELS = ' + json.dumps([dict(id=v.id, name=v.name, world=v.world, gives=v.gives, hint=v.hint, guard=getattr(v, 'guard', None), map=v.map()) for v in LEVELS], indent=0) + ';\n')
 print('wrote', os.path.relpath(OUT), '-', 'all reachable' if not bad else '%d problem(s)' % bad)
 sys.exit(1 if bad and '--strict' in sys.argv else 0)

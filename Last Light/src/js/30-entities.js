@@ -16,6 +16,8 @@ const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h 
 function updatePlayer(G, dt) {
     const p = G.p, L = G.L, A = SAVE.d.abilities;
     if (p.dead) { p.deadT -= dt; if (p.deadT <= 0 && !G.deathShown) { G.deathShown = true; UI.died(); } return; }
+    if (G.outro) { const o = G.outro; o.t += dt; p.x = lerp(p.x, o.x, Math.min(1, dt * 5)); p.y = lerp(p.y, o.y, Math.min(1, dt * 5)); p.vx = p.vy = 0;
+        if (Math.random() < 0.5) burst(G, p.x + rand(-20, 20), p.y + rand(-20, 20), '#fff2c4', 1, 80, true); return; }
     ST('dist', Math.abs(p.vx) * dt / TS);
     // hold down for a moment on a thin ledge to drop through it (down + jump works too)
     p.downT = Input.held('down') && p.ground ? (p.downT || 0) + dt : 0;
@@ -174,8 +176,9 @@ function hurt(G, why, from) {
 function respawn(G, full = true) {
     const p = G.p, c = G.checkpoint; G.deathShown = false;
     Object.assign(p, makePlayer(c.x, c.y), { keys: p.keys, hearts: G.maxHearts() });
-    G.cam.snap = 0.2; G.hud();
+    G.cam.snap = 0.2; G.hud(); p.spawnT = 0.6; G.iris = 0.35;
     burst(G, p.x, p.y, '#fff2c4', 22, 180);
+    guardReset(G);
 }
 
 // ---------- enemies, items, moving bits ----------
@@ -192,12 +195,17 @@ function updateWorld(G, dt) {
         else if (c.state === 3) { c.alpha = 0; c.t -= dt; if (c.t <= 0 && !overlap(pb, { x: c.x, y: c.y, w: TS, h: TS })) { c.state = 0; c.alpha = 1; } }
         else c.alpha = Math.min(1, c.alpha + dt * 3);
     }
-    for (const d of L.doors) if (d.open) d.slide = Math.min(1, d.slide + dt * 2);
+    for (const d of L.doors) if (d.open) d.slide = Math.min(1, d.slide + dt * 2); else if (d.slide > 0) d.slide = Math.max(0, d.slide - dt * 5);
     for (const e of L.ents) {
         if (e.gone) continue;
+        if (e.dying !== undefined) { e.dying -= dt; if (e.dying <= 0) { e.gone = true; popEnemy(G, e); } continue; }     // squashed, about to pop
         switch (e.kind) {
             case 'spark': if (near(p, e, 20)) { e.gone = true; G.got.sparks++; SAVE.d.sparks++; Sound.play('spark', G.got.sparks); burst(G, e.x, e.y, '#ffd36b', 8, 120, true); G.hud(); } break;
-            case 'moth': if (near(p, e, 22)) { e.gone = true; G.got.moths[e.idx] = true; ST('mothsCaught'); Sound.play('moth'); burst(G, e.x, e.y, '#bff7ff', 24, 180, true); G.toast('Star moth ' + (G.got.moths.filter(Boolean).length) + ' of ' + G.L.moths); G.hud(); } break;
+            case 'moth':        // a star: it flares, spins up and bursts when you catch it
+                if (e.got !== undefined) { e.got -= dt; if (e.got <= 0) { e.gone = true; burst(G, e.x, e.y - 20, '#fff6c0', 30, 260, true); } }
+                else if (near(p, e, 22)) { e.got = 0.55; G.got.moths[e.idx] = true; ST('mothsCaught'); Sound.play('moth'); burst(G, e.x, e.y, '#ffe9a0', 16, 160, true); G.toast('Star ' + (G.got.moths.filter(Boolean).length) + ' of ' + G.L.moths); G.hud(); }
+                break;
+            case 'memory': if (near(p, e, 22) && !p.dead) { e.gone = true; Sound.play('memory'); burst(G, e.x, e.y, '#d8c0ff', 30, 200, true); UI.memory(e.lid || G.L.def.id); } break;
             case 'key': if (near(p, e, 20)) { e.gone = true; p.keys++; Sound.play('key'); burst(G, e.x, e.y, '#ffd36b', 12, 140, true); G.toast('A key! It opens a door.'); } break;
             case 'lantern':
                 if (!e.lit && Math.abs(p.x - e.x) < 26 && Math.abs(p.y - e.y) < 40) {
@@ -221,12 +229,13 @@ function updateWorld(G, dt) {
     }
     // turret orbs
     for (const b of G.shots) {
+        if (b.g) b.vy += b.g * dt;
         b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
-        if (solidAtPx(L, b.x, b.y) || b.life <= 0) { b.dead = true; burst(G, b.x, b.y, b.shadow ? '#a070ff' : '#ffd36b', 6, 90); continue; }
+        if (solidAtPx(L, b.x, b.y) || b.life <= 0) { b.dead = true; burst(G, b.x, b.y, b.col || (b.shadow ? '#a070ff' : '#ffd36b'), 6, 90); continue; }
         if (!p.dead && Math.hypot(p.x - b.x, p.y - b.y) < 13) { b.dead = true; if (p.dashT > 0) continue; hurt(G, 'enemy', b); }
     }
     G.shots = G.shots.filter(b => !b.dead);
-    for (const k of L.doors) if (!k.open && p.keys > 0 && Math.abs(p.x - (k.x + TS / 2)) < TS && p.y > k.y - TS && p.y < k.y + k.h * TS + TS) { k.open = true; p.keys--; Sound.play('door'); G.shake(5); }
+    for (const k of L.doors) if (!k.open && !k.boss && p.keys > 0 && Math.abs(p.x - (k.x + TS / 2)) < TS && p.y > k.y - TS && p.y < k.y + k.h * TS + TS) { k.open = true; p.keys--; Sound.play('door'); G.shake(5); }
 }
 const near = (p, e, r) => Math.abs(p.x - e.x) < r && Math.abs(p.y - e.y) < r + 4;
 function walker(G, e, dt) {
@@ -257,12 +266,17 @@ function contact(G, e, r) {
     if (fromAbove && e.kind !== 'thorn') { kill(G, e); p.vy = Input.held('jump') ? -PH.stomp * 1.25 : -PH.stomp; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true; p.cut = false; p.sx = 1.3; p.sy = 0.75; return; }
     if (p.hurtT <= 0) hurt(G, 'enemy', e);
 }
+// a stomp: a tiny freeze, the enemy squashes flat for a moment, then pops
 function kill(G, e) {
-    e.dead = true; e.gone = true; G.stats.stomps++; ST('kills');
-    Sound.play('stomp'); G.shake(3);
+    e.dead = true; e.dying = 0.22; G.stats.stomps++; ST('kills');
+    Sound.play('stomp'); G.shake(4); G.hitstop = Math.max(G.hitstop || 0, 0.06);
+    ring(G, e.x, e.y + 12, '#fff3c4'); burst(G, e.x, e.y - 6, '#fff3c4', 8, 140, true);
+}
+function popEnemy(G, e) {
     const T = WORLDS[G.world], col = e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
     for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });
-    burst(G, e.x, e.y, '#fff3c4', 10, 160, true);
+    for (let i = 0; i < 5; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-120, 120), vy: rand(-260, -120), life: 0.8, max: 0.8, size: rand(4, 6), color: '#ffe08a', g: 500, star: true });
+    burst(G, e.x, e.y, '#fff3c4', 10, 160, true); Sound.play('pop');
 }
 
 // ---------- particles ----------

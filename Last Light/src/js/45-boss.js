@@ -42,7 +42,10 @@ function bossUpdate(G, dt) {
         case 'dying':
             B.r = Math.max(0, B.r - dt * 18); G.white = Math.min(1, G.white + dt * 0.35);
             if (Math.random() < 0.6) burst(G, B.x + rand(-40, 40), B.y + rand(-40, 40), '#fff2c4', 6, 260);
-            if (B.t <= 0) { G.boss = null; G.white = 1; G.ambient = 0.15; G.toast('The Gloom is gone. The lanterns are lit!'); G.revealGate(); }
+            if (B.t <= 0) {
+                G.boss = null; G.white = 1; G.ambient = 0.15; G.toast('The Gloom is gone. Something was left behind...'); G.revealGate();
+                G.L.ents.push({ kind: 'memory', x: B.x, y: floorY - 50, sx: B.x, sy: floorY - 50, seed: 3, lid: '5-1' });
+            }
             return;
     }
     // shockwaves along the floor

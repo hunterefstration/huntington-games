@@ -11,6 +11,9 @@ on('t-play', () => fadeTo(() => UI.map()));
 on('t-settings', () => UI.settings('title'));
 on('t-how', () => UI.show('how'));
 on('t-stats-btn', () => UI.stats());
+on('t-lore-btn', () => UI.journal());
+on('lo-done', () => UI.show('title'));
+on('rd-go', () => UI.readDone());
 on('st-done', () => UI.show('title'));
 on('dd-retry', () => UI.retry());
 on('dd-restart', () => fadeTo(() => G.start(G.idx)));
@@ -40,7 +43,7 @@ for (const b of document.querySelectorAll('#touch button')) {
 
 function titleStats() {
     const done = Object.keys(SAVE.d.levels).length, moths = Object.values(SAVE.d.levels).reduce((n, r) => n + (r.moths || []).filter(Boolean).length, 0);
-    $('#t-stats').textContent = done ? `${done} of ${LEVELS.length} levels · ${moths} star moths · ${SAVE.d.sparks} sparks` : 'The last light in a dark world';
+    $('#t-stats').textContent = done ? `${done} of ${LEVELS.length} levels · ${moths} stars · ${SAVE.d.sparks} sparks` : 'The last light in a dark world';
     $('#t-play').textContent = done ? 'Continue' : 'Play';
 }
 titleStats();
@@ -54,12 +57,13 @@ function frame(now) {
     Input.poll();
     if (Input.hit('pause')) { if (G.state === 'play') UI.pause(); else if (G.state === 'paused') UI.resume(); }
     if (G.state === 'dead' && (Input.hit('jump') || Input.hit('ok') || Input.hit('retry'))) UI.retry();
+    if (G.state === 'read' && (Input.hit('jump') || Input.hit('ok') || Input.hit('pause'))) UI.readDone();
     if (G.state === 'play') {
         acc += dt;
         let n = 0; while (acc >= STEP && n < 12) { G.update(STEP); acc -= STEP; n++; Input.endFrame(); }
         if (G.state === 'play' && settings.timer !== false) $('#h-time').textContent = fmtTime(G.time);
         render(G);
-    } else if (G.state === 'paused' || G.state === 'done' || G.state === 'dead') {
+    } else if (G.state === 'paused' || G.state === 'done' || G.state === 'dead' || G.state === 'read') {
         render(G); Input.endFrame();
     } else {
         titleT += dt; renderTitle(titleT); Input.endFrame();
@@ -72,6 +76,8 @@ function frame(now) {
     }
 }
 requestAnimationFrame(frame);
+// the opening splash stays at least 2 seconds from when the page started, however fast everything loaded
+setTimeout(() => { const s = $('#splash'); if (!s) return; s.classList.add('out'); setTimeout(() => s.remove(), 600); }, Math.max(0, 2000 - performance.now()));
 
 // test hook (used by the launcher's automated tests)
 window.__lumi = {
@@ -81,6 +87,7 @@ window.__lumi = {
     key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
     tick(sec, watch) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { G.update(STEP); Input.endFrame(); if (watch) watch(G); } },
     tp(x, y) { G.p.x = x * TS + TS / 2; G.p.y = y * TS + TS / 2; G.p.vx = G.p.vy = 0; },
+    hitGuard() { if (G.guard) guardHit(G, G.guard); },
     ability(k, v = true) { SAVE.d.abilities[k] = v; },
     render: () => render(G)
 };

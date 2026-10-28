@@ -7,11 +7,18 @@
 <!--@css-->
 </head>
 <body>
+<!-- the opening: "Huntington Games presents", then the title lights up (at least 2 seconds, loaded or not) -->
+<div id="splash">
+  <div class="sp-embers"><i style="left:43%;animation-delay:1.52s;animation-duration:2.15s;--s:2px"></i><i style="left:11%;animation-delay:1.31s;animation-duration:1.73s;--s:2px"></i><i style="left:66%;animation-delay:0.34s;animation-duration:1.72s;--s:5px"></i><i style="left:10%;animation-delay:0.39s;animation-duration:2.37s;--s:2px"></i><i style="left:74%;animation-delay:0.20s;animation-duration:1.91s;--s:2px"></i><i style="left:75%;animation-delay:0.94s;animation-duration:1.67s;--s:3px"></i><i style="left:7%;animation-delay:0.89s;animation-duration:1.79s;--s:5px"></i><i style="left:20%;animation-delay:0.87s;animation-duration:2.40s;--s:3px"></i><i style="left:15%;animation-delay:0.93s;animation-duration:2.49s;--s:4px"></i><i style="left:14%;animation-delay:0.88s;animation-duration:1.69s;--s:2px"></i><i style="left:81%;animation-delay:0.33s;animation-duration:2.55s;--s:5px"></i><i style="left:42%;animation-delay:0.74s;animation-duration:2.89s;--s:4px"></i><i style="left:40%;animation-delay:0.40s;animation-duration:1.85s;--s:3px"></i><i style="left:12%;animation-delay:0.92s;animation-duration:2.34s;--s:4px"></i><i style="left:95%;animation-delay:0.72s;animation-duration:2.45s;--s:2px"></i><i style="left:17%;animation-delay:0.82s;animation-duration:1.83s;--s:4px"></i><i style="left:21%;animation-delay:1.49s;animation-duration:2.19s;--s:2px"></i><i style="left:73%;animation-delay:0.92s;animation-duration:2.83s;--s:4px"></i><i style="left:45%;animation-delay:1.11s;animation-duration:2.43s;--s:5px"></i><i style="left:10%;animation-delay:1.34s;animation-duration:2.92s;--s:5px"></i><i style="left:91%;animation-delay:1.06s;animation-duration:1.68s;--s:4px"></i><i style="left:84%;animation-delay:0.92s;animation-duration:2.55s;--s:5px"></i></div>
+  <div class="sp-hg"><span>Huntington Games</span><em>presents</em></div>
+  <div class="sp-title"><b class="sp-spark"></b><div class="sp-l1">Last</div><div class="sp-l2">Light</div></div>
+</div>
 <canvas id="view"></canvas>
 <div id="fade"></div>
 
 <!-- in-level HUD -->
 <div id="hud" class="hidden">
+  <div id="bossbar" class="hidden"><span id="bb-name"></span><div><i id="bb-fill"></i></div></div>
   <div class="hud-l">
     <div id="hearts"></div>
     <div class="hud-pill"><span class="ico spark"></span><b id="h-sparks">0</b><small id="h-sparks-of">/0</small></div>
@@ -31,6 +38,7 @@
     <button class="btn big" id="t-play">Play</button>
     <button class="btn" id="t-settings">Settings</button>
     <button class="btn" id="t-stats-btn">Stats</button>
+    <button class="btn" id="t-lore-btn">Memories</button>
     <button class="btn" id="t-how">How to play</button>
   </div>
   <div class="foot" id="t-stats"></div>
@@ -79,6 +87,34 @@
   <div class="dead-key">Space / Enter: try again</div>
 </div>
 
+<!-- a memory, read where you found it -->
+<div id="s-read" class="screen readscr hidden">
+  <div class="rd-card">
+    <div id="rd-n"></div>
+    <h2 id="rd-t"></h2>
+    <p id="rd-x"></p>
+    <button class="btn big" id="rd-go">Continue</button>
+  </div>
+</div>
+
+<!-- the journal of memories -->
+<div id="s-lore" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Memories</h2>
+    <div id="lo-n"></div>
+    <div id="lo-list"></div>
+    <button class="btn big" id="lo-done">Back</button>
+  </div>
+</div>
+
+<!-- the end -->
+<div id="s-end" class="screen endscr hidden">
+  <div class="en-t">The lanterns are lit</div>
+  <div id="en-lines"></div>
+  <div id="en-stats"></div>
+  <button class="btn big" id="en-go">Continue</button>
+</div>
+
 <!-- stats -->
 <div id="s-stats" class="screen dim hidden">
   <div class="card wide">
@@ -109,8 +145,8 @@
       <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
       <div>Gamepads and touch screens work too.</div>
       <p>Touch a <b>lantern</b> to light it: it is where you come back to. Collect <b>sparks</b>, find the
-      three hidden <b>star moths</b> in every level, and reach the <b>gate</b>. Shrines at the end of each world teach
-      you something new.</p>
+      three hidden <b>stars</b> and a <b>memory</b> in every level, and reach the <b>gate</b>. Shrines at the end of each world teach
+      you something new, and a <b>guardian</b> waits: when it shows <b>!</b>, stomp it or dash into it.</p>
     </div>
     <button class="btn big" id="how-done">Got it</button>
   </div>

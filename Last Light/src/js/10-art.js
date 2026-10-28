@@ -289,13 +289,39 @@ const Sprites = {
         x.fillStyle = '#fffbe6'; x.beginPath(); x.moveTo(0, -4); x.lineTo(2.5, 0); x.lineTo(0, 4); x.lineTo(-2.5, 0); x.closePath(); x.fill();
         x.restore();
     },
+    // a star (the "3 per level" collectible): five points, a soft halo, twinkles; caught, it flares and spins up
     moth(x, e, t) {
-        const fl = Math.abs(Math.sin(t * 12 + e.seed)), by = Math.sin(t * 2 + e.seed) * 4;
+        const got = e.got !== undefined ? 1 - clamp(e.got / 0.55, 0, 1) : 0, by = Math.sin(t * 2 + e.seed) * 4 - got * 46;
+        const s = 1 + Math.sin(t * 4 + e.seed) * 0.06 + got * 1.2, rot = Math.sin(t * 1.3 + e.seed) * 0.25 + got * 14;
+        x.save(); x.translate(e.x, e.y + by); if (got) x.globalAlpha = 1 - got * 0.7;
+        const h = x.createRadialGradient(0, 0, 2, 0, 0, 26 * s); h.addColorStop(0, 'rgba(255,240,180,.55)'); h.addColorStop(1, 'rgba(255,220,120,0)');
+        x.fillStyle = h; x.beginPath(); x.arc(0, 0, 26 * s, 0, 7); x.fill();
+        // rays
+        x.save(); x.rotate(t * 0.6 + e.seed); x.strokeStyle = 'rgba(255,245,200,.45)'; x.lineWidth = 1.5;
+        for (let i = 0; i < 4; i++) { x.rotate(Math.PI / 4); const l = 16 + 5 * Math.sin(t * 3 + i + e.seed); x.beginPath(); x.moveTo(-l * s, 0); x.lineTo(l * s, 0); x.stroke(); }
+        x.restore();
+        x.rotate(rot); x.scale(s, s);
+        const g = x.createLinearGradient(0, -12, 0, 12); g.addColorStop(0, '#fffbe6'); g.addColorStop(0.55, '#ffe07a'); g.addColorStop(1, '#ffb43a');
+        x.fillStyle = g; x.strokeStyle = 'rgba(160,90,10,.55)'; x.lineWidth = 1.5; x.lineJoin = 'round';
+        x.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 5 : 12; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fill(); x.stroke();
+        x.fillStyle = 'rgba(255,255,255,.85)'; x.beginPath(); x.ellipse(-2.5, -3.5, 2.2, 3.5, -0.5, 0, 7); x.fill();
+        x.restore();
+        // twinkles
+        if (!got) for (let i = 0; i < 2; i++) { const k = (t * 0.8 + i * 0.5 + e.seed) % 1, a = i * 2.4 + e.seed; x.globalAlpha = Math.sin(k * Math.PI); x.fillStyle = '#fff';
+            x.save(); x.translate(e.x + Math.cos(a) * 18, e.y + by + Math.sin(a) * 14); x.fillRect(-0.75, -4, 1.5, 8); x.fillRect(-4, -0.75, 8, 1.5); x.restore(); x.globalAlpha = 1; }
+    },
+    // a memory: a small floating rune stone that hums with violet light
+    memory(x, e, t) {
+        const by = Math.sin(t * 1.7 + e.seed) * 5;
         x.save(); x.translate(e.x, e.y + by);
-        x.fillStyle = 'rgba(160,240,255,.85)';
-        for (const s of [-1, 1]) { x.save(); x.scale(s * (0.3 + fl * 0.7), 1); x.beginPath(); x.moveTo(0, 0); x.bezierCurveTo(6, -14, 16, -10, 13, 0); x.bezierCurveTo(16, 8, 6, 10, 0, 2); x.fill(); x.restore(); }
-        x.fillStyle = '#fff'; x.beginPath(); x.ellipse(0, 0, 2, 6, 0, 0, 7); x.fill();
-        x.strokeStyle = '#d8fbff'; x.lineWidth = 1; x.beginPath(); x.moveTo(-1, -5); x.quadraticCurveTo(-4, -10, -6, -10); x.moveTo(1, -5); x.quadraticCurveTo(4, -10, 6, -10); x.stroke();
+        const h = x.createRadialGradient(0, 0, 2, 0, 0, 30); h.addColorStop(0, 'rgba(210,180,255,.5)'); h.addColorStop(1, 'rgba(160,110,255,0)');
+        x.fillStyle = h; x.beginPath(); x.arc(0, 0, 30, 0, 7); x.fill();
+        for (let i = 0; i < 3; i++) { const a = t * 1.6 + i * 2.1; x.fillStyle = '#e8dcff'; x.globalAlpha = 0.8; x.beginPath(); x.arc(Math.cos(a) * 17, Math.sin(a) * 6 - 2, 1.8, 0, 7); x.fill(); }
+        x.globalAlpha = 1; x.rotate(Math.sin(t * 1.1 + e.seed) * 0.12);
+        const g = x.createLinearGradient(0, -14, 0, 14); g.addColorStop(0, '#6a5a8a'); g.addColorStop(1, '#2e2448');
+        x.fillStyle = g; x.beginPath(); x.moveTo(-9, -12); x.quadraticCurveTo(0, -17, 9, -12); x.lineTo(10, 11); x.quadraticCurveTo(0, 14, -10, 11); x.closePath(); x.fill();
+        x.strokeStyle = `rgba(220,195,255,${0.65 + 0.35 * Math.sin(t * 3 + e.seed)})`; x.lineWidth = 1.6; x.lineCap = 'round';
+        x.beginPath(); x.moveTo(-4, -8); x.lineTo(0, -4); x.lineTo(4, -8); x.moveTo(0, -4); x.lineTo(0, 3); x.moveTo(-4, 1); x.lineTo(4, 1); x.moveTo(-3, 7); x.lineTo(3, 7); x.stroke();
         x.restore();
     },
     spring(x, e, t, T) {

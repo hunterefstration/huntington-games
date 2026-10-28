@@ -2,11 +2,11 @@
 // LEVELS: the ASCII maps in 70-levels.js become a tile grid plus things that move.
 //   #  ground          =  one-way ledge        ^  spikes (they point away from the ground they sit on)
 //   l  lava            B  dark wall behind you C  crumbling block      D  door (opens with a key)
-//   P  start           E  exit gate            L  lantern (checkpoint) o  spark   *  star moth (3 per level)
+//   P  start           E  exit gate            L  lantern (checkpoint) o  spark   *  star (3 per level)
 //   S  spring          k  key                  u  shrine (teaches the world's new move)
 //   g  slime           b  bat                  t  flower turret        h  thornback (spiky: do not stomp)
 //   M  moving ledge, left/right (runs between walls or '|' markers)    N  moving ledge, up/down (between '|' markers)
-//   G  The Gloom (the last boss)
+//   G  The Gloom (the last boss)  Q  the world's guardian (mini boss: def.guard says which)  r  a memory (lore)
 // ==========================================
 const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
 
@@ -40,8 +40,8 @@ function parseLevel(def) {
                 break;
             }
             default:
-                if ('oEL*Skubgthg G'.includes(c) && c !== ' ') {
-                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss' }[c];
+                if ('oEL*SkubgthGQr'.includes(c)) {
+                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', r: 'memory' }[c];
                     L.ents.push({ kind, x: px, y: py, sx: px, sy: py, seed: (x * 7919 + y * 104729) % 1000 / 100 });
                     if (c === 'o') L.sparks++;
                     if (c === '*') L.moths++;
