@@ -235,7 +235,12 @@ function updateWorld(G, dt) {
         if (!p.dead && Math.hypot(p.x - b.x, p.y - b.y) < 13) { b.dead = true; if (p.dashT > 0) continue; hurt(G, 'enemy', b); }
     }
     G.shots = G.shots.filter(b => !b.dead);
-    for (const k of L.doors) if (!k.open && !k.boss && p.keys > 0 && Math.abs(p.x - (k.x + TS / 2)) < TS && p.y > k.y - TS && p.y < k.y + k.h * TS + TS) { k.open = true; p.keys--; Sound.play('door'); G.shake(5); }
+    for (const k of L.doors) if (!k.open && !k.boss && p.keys > 0 && Math.abs(p.x - (k.x + TS / 2)) < TS && p.y > k.y - TS && p.y < k.y + k.h * TS + TS) { openDoor(L, k); p.keys--; Sound.play('door'); G.shake(5); }
+}
+// a door wider than one tile is one door: the key opens every column of it
+function openDoor(L, k) {
+    k.open = true;
+    for (const d of L.doors) if (!d.open && !d.boss && Math.abs(d.tx - k.tx) === 1 && d.ty < k.ty + k.h && k.ty < d.ty + d.h) openDoor(L, d);
 }
 const near = (p, e, r) => Math.abs(p.x - e.x) < r && Math.abs(p.y - e.y) < r + 4;
 function walker(G, e, dt) {

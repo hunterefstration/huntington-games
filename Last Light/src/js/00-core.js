@@ -21,7 +21,24 @@ const SAVE = (() => {
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
     d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {};
-    return { d, write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} } };
+    // The launcher's chat caches messages in this same storage, and a full storage used to make saves fail silently
+    // (progress looked fine, then was gone the next time). If a save is refused: drop the biggest chat caches (only a
+    // cache, the chat server keeps the history) and try again; if it still fails, say so.
+    let warned = false;
+    function write() {
+        const v = JSON.stringify(d);
+        for (let round = 0; round < 6; round++) {
+            try { localStorage.setItem(SAVE_KEY, v); return true; } catch (e) {}
+            let logs = [];
+            try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^gv:log:/.test(k)) logs.push([k, (localStorage.getItem(k) || '').length]); } } catch (e) {}
+            if (!logs.length) break;
+            logs.sort((a, b) => b[1] - a[1]);
+            for (const [k] of logs.slice(0, Math.max(2, Math.ceil(logs.length / 3)))) try { localStorage.removeItem(k); } catch (e) {}
+        }
+        if (!warned && typeof G !== 'undefined' && G.toast) { warned = true; G.toast('Could not save: this browser\'s storage is full'); }
+        return false;
+    }
+    return { d, write };
 })();
 
 // lifetime stats (Stats screen): ST('jumps'), ST('dist', tiles)...

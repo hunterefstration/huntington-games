@@ -153,6 +153,10 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   in/out, stomp hit-stop + squash, spawn beam. levels.py `spice()`/`bats()` add seeded enemies.
 
 ## Launcher: Multiplayer tab (hub rooms) + Go live (r49)
+- r53: saves lost on reopen = localStorage FULL (Grapevine's gv:log:* chat cache shares the launcher origin), so game
+  saves failed silently. Launcher `roomForSaves()` keeps ~1 MB free (drops biggest gv:log caches, then hgv:bak backups) at
+  start, every minute and before play; Last Light's SAVE.write also frees chat cache and toasts if it still cannot save.
+  Doors more than one tile wide are one door (`openDoor`): 2-4 needed two keys.
 - In the hub `index.html` ("Multiplayer hub + Go live" block), on HGNet (comes with gv/account.js): HGNet game 'hghub' = rooms
   for ANY 6-digit code (join, or host if not found); 'hgspec' = Go live streams. One code box tries both at once.
 - Start a game for the room: HG_hostInvite(game, 'hub:<code>'); the game's HG_sendInvite('hub:...') is routed to the room as a
