@@ -1133,7 +1133,7 @@ function ledgeBelow(L, x, w, yOld, yNew) {
 // PLAYER + EVERYTHING ELSE THAT MOVES
 // Feel: coyote time, jump buffering, variable jump height, corner nudges, squash and stretch.
 // ==========================================
-const PH = { g: 2050, fall: 880, run: 270, accG: 2900, accA: 1900, fricG: 3000, fricA: 700, jump: 690, djump: 610,
+const PH = { g: 2050, fall: 880, run: 270, accG: 2900, accA: 1500, fricG: 3000, fricA: 2600, jump: 690, djump: 610,
     wallFall: 140, wallJumpX: 320, wallJumpY: 650, dash: 760, dashT: 0.17, spring: 1080, coyote: 0.1, buffer: 0.13, stomp: 470 };
 
 function makePlayer(x, y) {
@@ -1173,7 +1173,8 @@ function updatePlayer(G, dt) {
         // run
         const target = dir * PH.run;
         if (p.wallLock <= 0) {
-            if (dir) { p.vx = approach(p.vx, target, (p.ground ? PH.accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? 1.6 : 1)); p.face = dir; }
+            // in the air: let go and you stop drifting almost at once; turning around takes a moment (no twitchy flips)
+            if (dir) { p.vx = approach(p.vx, target, (p.ground ? PH.accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? (p.ground ? 1.6 : 1.25) : 1)); p.face = dir; }
             else p.vx = approach(p.vx, 0, (p.ground ? PH.fricG : PH.fricA) * dt);
         }
         // gravity, wall slide

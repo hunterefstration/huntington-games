@@ -591,7 +591,9 @@ function netBackToLobby() {
     for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = null; p.tgt.alive = false; p.tgt.feet = -100; }
     h2Reset();
     resetRun();
-    NET.dead = false; NET.pvp = false; NET.me = null;
+    // the host stays in its own party: clearing this used to drop the host from the lobby list and the next match's
+    // players, so guests had no avatar for it (an invisible host that could still shoot them)
+    NET.dead = false; NET.pvp = false; NET.me = NET.host ? hostMe() : null;
     netHud(false);
     if (!NET.host) stopHiddenTicker();          // the host keeps it: it pings the lobby while its tab is hidden
     changeGameState('main');

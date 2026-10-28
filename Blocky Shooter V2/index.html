@@ -12113,7 +12113,8 @@
 
 
         // ---------- players ----------
-        function allPlayers() { return NET.me ? [NET.me, ...netPlayers.values()] : [...netPlayers.values()]; }
+        function hostMe() { return { id: NET.id, name: NET.name, team: NET.team || 0, color: NET.color || COOP_COLORS[0], kills: 0, deaths: 0, alive: true, rtt: 0 }; }
+        function allPlayers() { if (NET.host && NET.on && !NET.me) NET.me = hostMe(); return NET.me ? [NET.me, ...netPlayers.values()] : [...netPlayers.values()]; }
         function playerById(id) { return id === NET.id ? NET.me : netPlayers.get(id); }
         function makePlayer(id, name, team, color) {
             return { id, name, team, color, peer: null, buf: new Interp([4, 5]), cur: [0, 0, 0, 0, 0, 0], w: 0, f: 0, hp: 100, alive: true, kills: 0, deaths: 0, rtt: 0,
@@ -13015,7 +13016,9 @@
             for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = null; p.tgt.alive = false; p.tgt.feet = -100; }
             h2Reset();
             resetRun();
-            NET.dead = false; NET.pvp = false; NET.me = null;
+            // the host stays in its own party: clearing this used to drop the host from the lobby list and the next match's
+            // players, so guests had no avatar for it (an invisible host that could still shoot them)
+            NET.dead = false; NET.pvp = false; NET.me = NET.host ? hostMe() : null;
             netHud(false);
             if (!NET.host) stopHiddenTicker();          // the host keeps it: it pings the lobby while its tab is hidden
             changeGameState('main');
@@ -13353,6 +13356,7 @@
                 netMessage: (m) => netMessage(NET.hostPeer || {}, m), netBinary: (b) => netBinary(NET.hostPeer, b), snapshot: (now) => hostEnemySnapshot(now),
                 updateGuest: (dt) => netUpdateEnemies(dt), E_STATES, ENEMY_IDS, jamT: () => jamT, jamGun: (t) => jamGun(t), tickJam: (dt) => tickJam(dt),
                 spawnPack: (x, z) => { const e = spawnEnemy(enemyTypes.hound, x, z, groundAt(x, z, 0, 50) + 0.1, 4, 10); spawnHoundPack(e, x, z, groundAt(x, z, 0, 50) + 0.1, 4, 10); return e; },
+                endMatch: () => { if (!NET.host || !NET.inGame) return; NET.over = true; const m = { t: 'over', n: playerStats.level }; netBroadcast(m); netShowEnd(m); },   // as a squad wipe ends it
                 emp: (c, r) => empBurst(c, r), canShoot: () => canShoot(), reloading: () => isReloading, reload: () => triggerReload(), setAmmo: (n) => { ammoState[playerStats.currentWeapon] = n; },
                 life: () => life, mig: (x) => migEnemyIds(x), spawnWave: () => spawnWave(), waveInfo: () => ({ lvl: playerStats.level, bosses: waveBosses(playerStats.level) }),
                 dropAll: () => { enemies.forEach(e => { scene.remove(e); disposeEnemy(e); }); enemies.length = 0; enemyById.clear(); },

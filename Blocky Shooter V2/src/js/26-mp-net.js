@@ -246,7 +246,8 @@ async function clientJoinCode(raw, attempt = 0) {
 
 
 // ---------- players ----------
-function allPlayers() { return NET.me ? [NET.me, ...netPlayers.values()] : [...netPlayers.values()]; }
+function hostMe() { return { id: NET.id, name: NET.name, team: NET.team || 0, color: NET.color || COOP_COLORS[0], kills: 0, deaths: 0, alive: true, rtt: 0 }; }
+function allPlayers() { if (NET.host && NET.on && !NET.me) NET.me = hostMe(); return NET.me ? [NET.me, ...netPlayers.values()] : [...netPlayers.values()]; }
 function playerById(id) { return id === NET.id ? NET.me : netPlayers.get(id); }
 function makePlayer(id, name, team, color) {
     return { id, name, team, color, peer: null, buf: new Interp([4, 5]), cur: [0, 0, 0, 0, 0, 0], w: 0, f: 0, hp: 100, alive: true, kills: 0, deaths: 0, rtt: 0,
