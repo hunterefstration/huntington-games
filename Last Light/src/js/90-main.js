@@ -10,6 +10,11 @@ const on = (id, fn) => { const el = $(id); if (el) el.onclick = () => { Sound.in
 on('t-play', () => fadeTo(() => UI.map()));
 on('t-settings', () => UI.settings('title'));
 on('t-how', () => UI.show('how'));
+on('t-stats-btn', () => UI.stats());
+on('st-done', () => UI.show('title'));
+on('dd-retry', () => UI.retry());
+on('dd-restart', () => fadeTo(() => G.start(G.idx)));
+on('dd-map', () => fadeTo(() => UI.map()));
 on('how-done', () => UI.show(G.state === 'paused' ? 'pause' : 'title'));
 on('m-back', () => { G.state = 'title'; UI.show('title'); titleStats(); });
 on('b-pause', () => UI.pause());
@@ -35,7 +40,7 @@ for (const b of document.querySelectorAll('#touch button')) {
 
 function titleStats() {
     const done = Object.keys(SAVE.d.levels).length, moths = Object.values(SAVE.d.levels).reduce((n, r) => n + (r.moths || []).filter(Boolean).length, 0);
-    $('#t-stats').textContent = done ? `${done} of ${LEVELS.length} levels · ${moths} star moths · ${SAVE.d.sparks} sparks` : 'A tiny light in a big dark world';
+    $('#t-stats').textContent = done ? `${done} of ${LEVELS.length} levels · ${moths} star moths · ${SAVE.d.sparks} sparks` : 'The last light in a dark world';
     $('#t-play').textContent = done ? 'Continue' : 'Play';
 }
 titleStats();
@@ -48,12 +53,13 @@ function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     Input.poll();
     if (Input.hit('pause')) { if (G.state === 'play') UI.pause(); else if (G.state === 'paused') UI.resume(); }
+    if (G.state === 'dead' && (Input.hit('jump') || Input.hit('ok') || Input.hit('retry'))) UI.retry();
     if (G.state === 'play') {
         acc += dt;
         let n = 0; while (acc >= STEP && n < 12) { G.update(STEP); acc -= STEP; n++; Input.endFrame(); }
         if (G.state === 'play' && settings.timer !== false) $('#h-time').textContent = fmtTime(G.time);
         render(G);
-    } else if (G.state === 'paused' || G.state === 'done') {
+    } else if (G.state === 'paused' || G.state === 'done' || G.state === 'dead') {
         render(G); Input.endFrame();
     } else {
         titleT += dt; renderTitle(titleT); Input.endFrame();

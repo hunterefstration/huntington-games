@@ -32,11 +32,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070a1a; col
 #s-title { justify-content: flex-start; padding-top: 11vh; pointer-events: none; }
 #s-title .menu, #s-title button { pointer-events: auto; }
 .logo { display: flex; flex-direction: column; align-items: center; line-height: .9; filter: drop-shadow(0 0 30px rgba(255, 190, 90, .55)); animation: bob 4s ease-in-out infinite; }
-.logo .l1 { font-size: clamp(28px, 4.5vw, 54px); font-weight: 900; color: #ffe9b0; letter-spacing: .12em; text-transform: uppercase; }
-.logo .l2 { font-size: clamp(64px, 11vw, 150px); font-weight: 900; letter-spacing: .02em;
+.logo .l1 { font-size: clamp(22px, 3.4vw, 40px); font-weight: 900; color: #ffe9b0; letter-spacing: .9em; margin-right: -.9em; text-transform: uppercase; opacity: .9; }
+.logo .l2 { font-size: clamp(64px, 11vw, 150px); font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
   background: linear-gradient(180deg, #fffbe9 0%, #ffd36b 40%, #ff9f45 75%, #e8572a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
   -webkit-text-stroke: 2px rgba(80, 30, 0, .35); }
-.tag { margin-top: 10px; font-size: 20px; color: #cfd6ff; letter-spacing: .25em; text-transform: uppercase; opacity: .85; }
+.tag { margin-top: 10px; font-size: clamp(11px, 1.9vw, 20px); color: #cfd6ff; letter-spacing: .22em; text-transform: uppercase; opacity: .85; text-align: center; max-width: 92vw; }
 #s-title .menu { margin-top: 5vh; display: flex; flex-direction: column; align-items: center; }
 #s-title .foot { position: absolute; bottom: 18px; font-size: 14px; color: #aab3e6; opacity: .8; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
@@ -106,6 +106,21 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070a1a; col
 .how p { line-height: 1.5; opacity: .9; }
 kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; border-radius: 7px; background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.25); border-bottom-width: 3px; font: inherit; font-weight: 800; font-size: 14px; text-align: center; }
+
+/* the light went out */
+.deadscr { background: radial-gradient(ellipse at center, rgba(40, 6, 10, .72), rgba(4, 1, 4, .94)); backdrop-filter: grayscale(.85) blur(2px); animation: deadin .6s ease-out; }
+@keyframes deadin { from { opacity: 0; } to { opacity: 1; } }
+.dead-t { font-size: clamp(30px, 6vw, 80px); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: #ffd0b8; white-space: nowrap; text-align: center;
+  text-shadow: 0 0 30px rgba(255, 70, 40, .55), 0 4px 0 rgba(0,0,0,.5); animation: deadt 1.2s ease-out; }
+@keyframes deadt { from { letter-spacing: .3em; opacity: 0; filter: blur(6px); } to { letter-spacing: .12em; opacity: 1; filter: blur(0); } }
+#dd-cause { font-size: 20px; color: #f3c9c0; margin: 6px 0 16px; font-weight: 700; }
+#dd-rows { display: flex; gap: 26px; margin-bottom: 18px; }
+#dd-rows div { text-align: center; } #dd-rows b { display: block; font-size: 28px; color: #fff; } #dd-rows span { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .7; }
+.dead-tip { margin-top: 14px; max-width: 520px; text-align: center; opacity: .8; font-size: 15px; }
+.dead-key { margin-top: 10px; font-size: 13px; opacity: .5; letter-spacing: .08em; }
+.strows { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; margin-bottom: 14px; }
+@media (max-width: 600px) { .strows { grid-template-columns: 1fr; } }
+.strows .drow { font-size: 16px; } .strows .sec { grid-column: 1 / -1; text-align: left; color: var(--gold); font-weight: 900; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; margin: 12px 0 2px; }
 
 /* touch */
 #touch { position: fixed; inset: auto 0 0 0; z-index: 22; display: flex; justify-content: space-between; padding: 18px; pointer-events: none; }

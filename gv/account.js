@@ -874,7 +874,7 @@ const GVLink = (() => {
   // To add one: { id, g (game id), i (icon), n (name), d (how to get it), p (points: 10 / 25 / 50 / 100), t: fn }.
   var AG = { spikes: '100 Levels of Spikes', tetris: 'Tetris Surge', clicker: 'Brown E Clicker', coffee: 'Bean & Brew Tycoon',
     market: 'Market & Life', td: 'Tower Defense', frontline: 'Frontline: Command', blocky: 'Blocky Shooter', neon: 'Neon Dash',
-    sov: 'Sovereign', lumi: "Lumi's Lantern", hub: 'Huntington Games' };
+    sov: 'Sovereign', lumi: 'Last Light', hub: 'Huntington Games' };
   function rd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function cnt(x) { return !x ? 0 : Array.isArray(x) ? x.length : typeof x === 'object' ? Object.keys(x).filter(function (k) { return x[k]; }).length : 0; }
@@ -967,8 +967,8 @@ const GVLink = (() => {
     { id: 'sovach', g: 'sov', i: '🏅', n: 'Statesman', d: 'Earn 15 of Sovereign\'s own achievements.', p: 50, t: function () { return cnt(rd('sov.ach')) >= 15; } },
     { id: 'sovworld', g: 'sov', i: '🌍', n: 'World Domination', d: 'Control every country on Earth.', p: 100, t: function () { return !!SV().domination; } },
     // the launcher itself
-    // Lumi's Lantern
-    { id: 'lu11', g: 'lumi', i: '🏮', n: 'First Light', d: "Finish the first level of Lumi's Lantern.", p: 10, t: function () { return luDone('1-1'); } },
+    // Last Light
+    { id: 'lu11', g: 'lumi', i: '🏮', n: 'First Light', d: "Finish the first level of Last Light.", p: 10, t: function () { return luDone('1-1'); } },
     { id: 'luw1', g: 'lumi', i: '🌲', n: 'Glowwood Glowing', d: 'Finish Glowwood (and learn the double jump).', p: 25, t: function () { return luDone('1-4'); } },
     { id: 'luw2', g: 'lumi', i: '💎', n: 'Crystal Clear', d: 'Finish the Hollow Caves.', p: 25, t: function () { return luDone('2-4'); } },
     { id: 'luw3', g: 'lumi', i: '☁️', n: 'Head in the Clouds', d: 'Finish the Sky Ruins.', p: 25, t: function () { return luDone('3-4'); } },

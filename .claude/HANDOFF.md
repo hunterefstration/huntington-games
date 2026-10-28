@@ -131,15 +131,20 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   `blocky_autotier_fps` so the next launch only tries a better tier if fights held 58+. FPS overlay shows cpu ms.
 - Probes (not in the repo): CDP `Emulation.setCPUThrottlingRate` 5 + a 480x270 viewport approximates a Chromebook CPU.
 
-## Lumi's Lantern (new 2D platformer, r49, 2026-10-28)
-- `Lumi Lantern/src/` (shell.html, css/10-ui.css, js/00-core ... 90-main), built with `node tools/build-game.js "Lumi Lantern" --check`.
+## Last Light (new 2D platformer, r49 as "Lumi's Lantern", renamed r51)
+- `Last Light/src/` (shell.html, css/10-ui.css, js/00-core ... 90-main), built with `node tools/build-game.js "Last Light" --check`.
   Canvas 2D, everything drawn procedurally at screen resolution: terrain auto-tiled into cached 8x8-tile chunks, parallax
   strips per world, a half-resolution light pass (darkness with light discs stamped out) plus additive glow.
-- Levels are NOT typed: `python3 "Lumi Lantern/tools/levels.py"` builds them with helpers (ground/pit/ledge/rect/put) and writes
+- Levels are NOT typed: `python3 "Last Light/tools/levels.py"` builds them with helpers (ground/pit/ledge/rect/put) and writes
   `src/js/70-levels.js`, after a reachability check with each world's moves (world 1 jump; 2 +double; 3 +wall; 4 +dash). Wall
   climbing needs a shaft (walls 3 tiles apart). `--show 2-3` prints a level with what is reachable.
 - Save key `lumi_save` (cloud-synced: `lumi_` is in GAME_KEYS), 9 achievements in gv/ach.js (`g: 'lumi'`). Debug hook `window.__lumi`
   (start, key, tick, tp, ability). Real jump: 3.7 tiles up, 5.5 across; double 6.6 up; dash 4.6 across.
+- r51 tuning: the checker also finds TRAPS (places you can reach but not leave for the gate; walks back from the gate over the
+  same moves, never by dropping through a one-way ledge; a nearby pit counts as a way out). `spice()` adds seeded extra
+  enemies. Pits kill at once; death screen `#s-dead` (UI.died/UI.retry, state 'dead'); lifetime stats in `SAVE.d.stats`
+  (ST(key, n)), shown on the title's Stats screen. Hold down to drop through a one-way ledge. Camera look-ahead follows real
+  speed, so turning around does not swing it.
 
 ## Launcher: Multiplayer tab (hub rooms) + Go live (r49)
 - In the hub `index.html` ("Multiplayer hub + Go live" block), on HGNet (comes with gv/account.js): HGNet game 'hghub' = rooms

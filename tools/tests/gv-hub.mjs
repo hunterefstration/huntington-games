@@ -113,7 +113,7 @@ try {
 
   console.log('\n=== Go live ===');
   await A.evaluate(() => { document.getElementById('tab-games').click(); });
-  await A.evaluate(() => { const g = GAMES.find(x => x.dir === 'Lumi Lantern'); play(g); });
+  await A.evaluate(() => { const g = GAMES.find(x => x.dir === 'Last Light'); play(g); });
   await until(() => A.evaluate(() => { try { return !!document.getElementById('frame').contentWindow.__lumi; } catch (e) { return false; } }), 30000);
   await A.evaluate(() => document.getElementById('frame').contentWindow.__lumi.start('1-1'));
   await A.evaluate(() => document.getElementById('golive').click());

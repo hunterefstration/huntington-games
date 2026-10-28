@@ -51,7 +51,8 @@ const UI = {
         if (G.state !== 'play' || G.done) return;
         G.state = 'paused'; Input.clear();
         const rec = SAVE.d.levels[G.L.def.id];
-        $('#p-info').innerHTML = `<div class="drow"><span>${G.L.def.id} · ${G.L.def.name}</span><b>${fmtTime(G.time)}</b></div>` + (rec && rec.best != null ? `<div class="drow"><span>Best</span><b>${fmtTime(rec.best)}</b></div>` : '');
+        $('#p-info').innerHTML = `<div class="drow"><span>${G.L.def.id} · ${G.L.def.name}</span><b>${fmtTime(G.time)}</b></div>` + (rec && rec.best != null ? `<div class="drow"><span>Best</span><b>${fmtTime(rec.best)}</b></div>` : '')
+            + `<div class="drow"><span>Falls this run</span><b>${G.stats.deaths}</b></div><div class="drow"><span>Sparks</span><b>${G.got.sparks} / ${G.L.sparks}</b></div>`;
         this.show('pause');
     },
     resume() { if (G.state !== 'paused') return; G.state = 'play'; this.show(null); Input.clear(); },
@@ -60,6 +61,8 @@ const UI = {
             ['Time', fmtTime(r.time) + (r.best ? '<span class="new">NEW BEST</span>' : '')],
             ['Sparks', r.sparks + ' / ' + r.sparksOf],
             ['Star moths', r.moths.slice(0, LEVELS[G.idx].map.join('').split('*').length - 1).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">✦</span>`).join(' ') + (r.mothsNew > 0 ? '<span class="new">+' + r.mothsNew + ' NEW</span>' : '')],
+            ['Hits taken', r.hits ? r.hits : 'none<span class="new">FLAWLESS</span>'],
+            ['Enemies defeated', r.kills],
             ['Falls', r.deaths]
         ];
         $('#d-title').textContent = r.def.world === 4 ? 'You relit the world!' : 'Level complete!';
@@ -92,9 +95,39 @@ const UI = {
         this.show('settings');
     }
 };
+// the light went out: what got you, how it is going, and straight back in with one key
+const CAUSE = { pit: 'You fell into the dark.', spike: 'Spikes.', lava: 'The lava took you.', slime: 'A slime got you.', bat: 'A bat got you.',
+    thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.' };
+const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump longer to jump higher.', 'You can still jump a moment after running off a ledge.',
+    'Stomp slimes, bats and turrets from above. Never thornbacks.', 'A dash goes straight through enemies.', 'Press R to go back to the last lantern.',
+    'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.',
+    'Hold down to drop through a thin ledge.'];
+UI.died = function () {
+    G.state = 'dead'; Input.clear(); $('#banner').classList.remove('on'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden');
+    $('#dd-cause').textContent = CAUSE[G.cause] || 'The light went out.';
+    const rec = SAVE.d.levels[G.L.def.id];
+    $('#dd-rows').innerHTML = `<div><b>${G.stats.deaths}</b><span>this run</span></div><div><b>${SAVE.d.deaths}</b><span>all time</span></div><div><b>${fmtTime(G.time)}</b><span>time</span></div>` + (rec && rec.best != null ? `<div><b>${fmtTime(rec.best)}</b><span>best</span></div>` : '');
+    $('#dd-tip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+    SAVE.write(); this.show('dead');
+};
+UI.retry = function () { if (G.state !== 'dead') return; respawn(G); G.state = 'play'; this.show(null); $('#hud').classList.remove('hidden'); touchControls(); Input.clear(); };
+UI.stats = function () {
+    const S = SAVE.d.stats, n = k => Math.round(S[k] || 0), lv = SAVE.d.levels;
+    const moths = Object.keys(lv).reduce((t, k) => t + (lv[k].moths || []).filter(Boolean).length, 0), allMoths = LEVELS.reduce((t, l) => t + l.map.join('').split('*').length - 1, 0);
+    const done = LEVELS.filter(l => lv[l.id] && lv[l.id].best != null), total = done.length === LEVELS.length ? done.reduce((t, l) => t + lv[l.id].best, 0) : null;
+    const pt = SAVE.d.playTime || 0, tp = pt >= 3600 ? Math.floor(pt / 3600) + 'h ' + Math.floor(pt % 3600 / 60) + 'm' : Math.floor(pt / 60) + 'm ' + Math.floor(pt % 60) + 's';
+    const enemy = n('death_enemy');
+    const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Star moths', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
+        ['Flawless clears', n('flawless')], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
+        ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
+        ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
+        ['Distance', n('dist').toLocaleString() + ' tiles']];
+    $('#st-rows').innerHTML = rows.map(([a, b]) => a === 'sec' ? `<div class="sec">${b}</div>` : `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
+    this.show('stats');
+};
 function fadeTo(fn) { const f = $('#fade'); f.classList.add('on'); setTimeout(() => { fn(); setTimeout(() => f.classList.remove('on'), 60); }, 330); }
 
-// title scene: the first world's sky, Lumi floating over a hill of lanterns
+// title scene: the first world's sky, the wisp floating over a hill of lanterns
 function renderTitle(t) {
     const x = R.x, W = R.W, H = R.H;
     const key = 'title:' + W + 'x' + H;

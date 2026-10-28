@@ -17,7 +17,7 @@ function bossUpdate(G, dt) {
             B.x = lerp(B.x, tx, dt * 0.9 * speed); B.y = lerp(B.y, B.hy + Math.sin(B.wob * 1.6) * 30, dt * 2);
             B.fireT -= dt;
             if (B.fireT <= 0) {
-                B.fireT = 1.5 / speed; const n = 2 + B.phase;
+                B.fireT = 1.2 / speed; const n = 2 + B.phase;
                 for (let i = 0; i < n; i++) { const a = Math.atan2(p.y - B.y, p.x - B.x) + (i - (n - 1) / 2) * 0.35; G.shots.push({ x: B.x, y: B.y, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 6, shadow: true, home: 0.9 }); }
                 Sound.play('shoot');
             }

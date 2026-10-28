@@ -15,7 +15,12 @@ const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h 
 
 function updatePlayer(G, dt) {
     const p = G.p, L = G.L, A = SAVE.d.abilities;
-    if (p.dead) { p.deadT -= dt; if (p.deadT <= 0) respawn(G, false); return; }
+    if (p.dead) { p.deadT -= dt; if (p.deadT <= 0 && !G.deathShown) { G.deathShown = true; UI.died(); } return; }
+    ST('dist', Math.abs(p.vx) * dt / TS);
+    // hold down for a moment on a thin ledge to drop through it (down + jump works too)
+    p.downT = Input.held('down') && p.ground ? (p.downT || 0) + dt : 0;
+    if (p.downT > 0.15) { p.dropT = 0.22; p.downT = 0; }
+    p.dropT = Math.max(0, (p.dropT || 0) - dt);
     const dir = (Input.held('right') ? 1 : 0) - (Input.held('left') ? 1 : 0);
     if (Input.hit('jump')) p.buffer = PH.buffer;
     p.buffer = Math.max(0, p.buffer - dt); p.coyote = Math.max(0, p.coyote - dt); p.wallT = Math.max(0, p.wallT - dt);
@@ -23,7 +28,7 @@ function updatePlayer(G, dt) {
     // dash
     if (Input.hit('dash') && A.dash && p.canDash && p.dashT <= 0) {
         p.dashT = PH.dashT; p.canDash = false; p.dashDir = dir || p.face; p.dashDY = Input.held('up') ? -1 : 0;
-        p.vy = 0; p.sx = 1.35; p.sy = 0.7; G.shake(4); Sound.play('dash'); G.stats.dashes++;
+        p.vy = 0; p.sx = 1.35; p.sy = 0.7; G.shake(4); Sound.play('dash'); G.stats.dashes++; ST('dashes');
         burst(G, p.x, p.y, '#ffe9a8', 14, 220);
     }
     if (p.dashT > 0) {
@@ -51,12 +56,12 @@ function updatePlayer(G, dt) {
         if (p.buffer > 0) {
             if (p.ground || p.coyote > 0) {
                 p.vy = -PH.jump; p.ground = false; p.coyote = 0; p.buffer = 0; p.cut = false; p.on = null;
-                p.sx = 0.72; p.sy = 1.32; Sound.play('jump'); dust(G, p.x, p.y + 12, 6); G.stats.jumps++;
+                p.sx = 0.72; p.sy = 1.32; Sound.play('jump'); dust(G, p.x, p.y + 12, 6); G.stats.jumps++; ST('jumps');
             } else if (A.wall && p.wallT > 0) {
                 p.vy = -PH.wallJumpY; p.vx = -p.wallDir * PH.wallJumpX; p.face = -p.wallDir; p.wallLock = 0.15; p.buffer = 0; p.cut = false; p.wallT = 0;
-                p.sx = 0.75; p.sy = 1.28; Sound.play('walljump'); dust(G, p.x + p.wallDir * 10, p.y, 6);
+                p.sx = 0.75; p.sy = 1.28; Sound.play('walljump'); ST('walljumps'); dust(G, p.x + p.wallDir * 10, p.y, 6);
             } else if (A.double && p.air > 0) {
-                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump');
+                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump'); ST('djumps');
                 ring(G, p.x, p.y + 10, '#bff7ff');
             }
         }
@@ -83,7 +88,7 @@ function updatePlayer(G, dt) {
     if (p.trailT <= 0 && (Math.abs(p.vx) > 150 || Math.abs(p.vy) > 300)) { p.trailT = 0.03; G.parts.push({ x: p.x + rand(-4, 4), y: p.y + rand(-2, 6), vx: -p.vx * 0.05, vy: rand(-20, 10), life: 0.45, max: 0.45, size: rand(2, 4), color: '#ffd98a', add: true }); }
     // hazards
     if (p.hurtT <= 0 || true) hazards(G);
-    if (p.y > L.h * TS + 80) hurt(G, 'pit');
+    if (p.y > L.h * TS + 24) hurt(G, 'pit');
 }
 function moveX(G, d) {
     const p = G.p, L = G.L; if (!d) return;
@@ -115,7 +120,7 @@ function moveY(G, d) {
             }
             p.vy = 0; return;
         }
-        if (s >= 0 && !(Input.held('down') && Input.held('jump'))) {
+        if (s >= 0 && !(p.dropT > 0) && !(Input.held('down') && Input.held('jump'))) {
             const led = ledgeBelow(L, b.x, b.w, oldBottom, b.y + b.h);
             if (led) { p.y = led.y - p.h / 2 - 0.01; p.vy = 0; p.ground = true; p.on = led.mover || null; landedOn(G); return; }
         }
@@ -127,7 +132,7 @@ function landedOn(G) {
     const p = G.p;
     // crumbling blocks start to shake when stood on
     const ty = Math.floor((p.y + p.h / 2 + 2) / TS);
-    for (const c of G.L.crumbles) if (c.state === 0 && c.ty === ty && p.x + p.w / 2 > c.x && p.x - p.w / 2 < c.x + TS) { c.state = 1; c.t = 0.45; }
+    for (const c of G.L.crumbles) if (c.state === 0 && c.ty === ty && p.x + p.w / 2 > c.x && p.x - p.w / 2 < c.x + TS) { c.state = 1; c.t = 0.35; }
 }
 function hazards(G) {
     const p = G.p, L = G.L, b = pBox(p), hb = { x: b.x + 3, y: b.y + 4, w: b.w - 6, h: b.h - 6 };
@@ -146,11 +151,14 @@ function hazards(G) {
 function hurt(G, why, from) {
     const p = G.p;
     if (p.dead || G.done) return;
-    if (p.hurtT > 0 && why !== 'pit' && why !== 'lava' && why !== 'spike') return;
-    p.hearts--; G.stats.hits++;
+    if (p.hurtT > 0 && why === 'enemy') return;
+    // a pit is the end of that life, straight away; everything else costs a heart
+    p.hearts = why === 'pit' ? 0 : p.hearts - 1; G.stats.hits++; ST('hits');
     G.shake(why === 'enemy' ? 6 : 9); G.flash = 0.35;
     if (p.hearts <= 0) {
-        p.dead = true; p.deadT = 0.75; G.stats.deaths++; SAVE.d.deaths++;
+        p.dead = true; p.deadT = 0.9; G.stats.deaths++; SAVE.d.deaths++; ST('deaths');
+        G.cause = why !== 'enemy' ? why : from === G.boss ? 'boss' : from && from.kind ? from.kind : from && from.shadow ? 'boss' : 'turret';
+        ST('death_' + (G.cause === 'pit' || G.cause === 'spike' || G.cause === 'lava' ? G.cause : 'enemy'));
         Sound.play('die'); burst(G, p.x, p.y, '#ffd36b', 40, 340); burst(G, p.x, p.y, '#ffffff', 16, 200);
         return;
     }
@@ -164,7 +172,7 @@ function hurt(G, why, from) {
     G.hud();
 }
 function respawn(G, full = true) {
-    const p = G.p, c = G.checkpoint;
+    const p = G.p, c = G.checkpoint; G.deathShown = false;
     Object.assign(p, makePlayer(c.x, c.y), { keys: p.keys, hearts: G.maxHearts() });
     G.cam.snap = 0.2; G.hud();
     burst(G, p.x, p.y, '#fff2c4', 22, 180);
@@ -189,11 +197,11 @@ function updateWorld(G, dt) {
         if (e.gone) continue;
         switch (e.kind) {
             case 'spark': if (near(p, e, 20)) { e.gone = true; G.got.sparks++; SAVE.d.sparks++; Sound.play('spark', G.got.sparks); burst(G, e.x, e.y, '#ffd36b', 8, 120, true); G.hud(); } break;
-            case 'moth': if (near(p, e, 22)) { e.gone = true; G.got.moths[e.idx] = true; Sound.play('moth'); burst(G, e.x, e.y, '#bff7ff', 24, 180, true); G.toast('Star moth ' + (G.got.moths.filter(Boolean).length) + ' of ' + G.L.moths); G.hud(); } break;
+            case 'moth': if (near(p, e, 22)) { e.gone = true; G.got.moths[e.idx] = true; ST('mothsCaught'); Sound.play('moth'); burst(G, e.x, e.y, '#bff7ff', 24, 180, true); G.toast('Star moth ' + (G.got.moths.filter(Boolean).length) + ' of ' + G.L.moths); G.hud(); } break;
             case 'key': if (near(p, e, 20)) { e.gone = true; p.keys++; Sound.play('key'); burst(G, e.x, e.y, '#ffd36b', 12, 140, true); G.toast('A key! It opens a door.'); } break;
             case 'lantern':
                 if (!e.lit && Math.abs(p.x - e.x) < 26 && Math.abs(p.y - e.y) < 40) {
-                    e.lit = true; G.checkpoint = { x: e.x, y: e.y }; p.hearts = G.maxHearts(); Sound.play('lantern'); burst(G, e.x + 12, e.y - 14, '#ffe9a8', 26, 160, true); G.hud();
+                    e.lit = true; G.checkpoint = { x: e.x, y: e.y }; p.hearts = G.maxHearts(); ST('lanterns'); Sound.play('lantern'); burst(G, e.x + 12, e.y - 14, '#ffe9a8', 26, 160, true); G.hud();
                     for (const o of L.ents) if (o.kind === 'lantern' && o !== e && o.lit && o.x < e.x) o.lit = true;
                 }
                 break;
@@ -207,7 +215,7 @@ function updateWorld(G, dt) {
             case 'gate': if (near(p, e, 24) && !G.done && !G.bossAlive()) G.finish(); break;
             case 'shrine': if (!e.used && near(p, e, 26)) G.shrine(e); break;
             case 'slime': case 'thorn': walker(G, e, dt); break;
-            case 'bat': e.x = e.sx + Math.sin(t * 0.9 + e.seed) * 46; e.y = e.sy + Math.sin(t * 1.8 + e.seed) * 18; e.dir = Math.cos(t * 0.9 + e.seed) > 0 ? 1 : -1; contact(G, e, 13); break;
+            case 'bat': e.x = e.sx + Math.sin(t * 1.2 + e.seed) * 62; e.y = e.sy + Math.sin(t * 2.3 + e.seed) * 24; e.dir = Math.cos(t * 1.2 + e.seed) > 0 ? 1 : -1; contact(G, e, 13); break;
             case 'turret': turret(G, e, dt); contact(G, e, 14); break;
         }
     }
@@ -222,7 +230,7 @@ function updateWorld(G, dt) {
 }
 const near = (p, e, r) => Math.abs(p.x - e.x) < r && Math.abs(p.y - e.y) < r + 4;
 function walker(G, e, dt) {
-    const L = G.L, sp = e.kind === 'thorn' ? 72 : 46;
+    const L = G.L, sp = e.kind === 'thorn' ? 95 : 62;
     if (e.dir === undefined) e.dir = Math.random() < 0.5 ? -1 : 1;
     if (e.dead) return;
     e.squash = Math.max(0, (e.squash || 0) - dt * 4);
@@ -235,9 +243,9 @@ function turret(G, e, dt) {
     const p = G.p, dx = p.x - e.x, dy = p.y - (e.y - 2), d = Math.hypot(dx, dy);
     e.aim = lerp(e.aim || 0, Math.atan2(dy, dx), Math.min(1, dt * 4));
     e.cool = (e.cool ?? (1 + e.seed % 1.5)) - dt;
-    if (d < TS * 10 && !p.dead) {
+    if (d < TS * 12 && !p.dead) {
         if (e.cool < 0.5) e.charge = Math.min(1, (e.charge || 0) + dt * 2);
-        if (e.cool <= 0) { e.cool = 2.3; e.charge = 0; const a = e.aim; G.shots.push({ x: e.x + Math.cos(a) * 14, y: e.y - 2 + Math.sin(a) * 14, vx: Math.cos(a) * 165, vy: Math.sin(a) * 165, life: 5 }); Sound.play('shoot'); }
+        if (e.cool <= 0) { e.cool = 1.6; e.charge = 0; const a = e.aim; G.shots.push({ x: e.x + Math.cos(a) * 14, y: e.y - 2 + Math.sin(a) * 14, vx: Math.cos(a) * 215, vy: Math.sin(a) * 215, life: 5 }); Sound.play('shoot'); }
     } else e.charge = Math.max(0, (e.charge || 0) - dt);
 }
 // touching an enemy: from above it is a stomp (not the spiky ones), a dash goes straight through anything, else it hurts
@@ -250,7 +258,7 @@ function contact(G, e, r) {
     if (p.hurtT <= 0) hurt(G, 'enemy', e);
 }
 function kill(G, e) {
-    e.dead = true; e.gone = true; G.stats.stomps++;
+    e.dead = true; e.gone = true; G.stats.stomps++; ST('kills');
     Sound.play('stomp'); G.shake(3);
     const T = WORLDS[G.world], col = e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
     for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });

@@ -1,5 +1,5 @@
 // ==========================================
-// LUMI'S LANTERN - core: helpers, saves, settings, input, sound
+// LAST LIGHT - core: helpers, saves, settings, input, sound
 // ==========================================
 const TS = 32;                                   // one tile, in world pixels
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -20,8 +20,12 @@ const SAVE = (() => {
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
+    d.stats = d.stats || {};
     return { d, write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} } };
 })();
+
+// lifetime stats (Stats screen): ST('jumps'), ST('dist', tiles)...
+const ST = (k, n = 1) => { SAVE.d.stats[k] = (SAVE.d.stats[k] || 0) + n; };
 
 // ---------- settings ----------
 const SET_KEY = 'lumi_settings';

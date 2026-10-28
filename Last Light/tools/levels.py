@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Builds Lumi's Lantern's levels and checks that each one can be finished with the moves that world has.
+"""Builds Last Light's levels and checks that each one can be finished with the moves that world has.
 
-    python3 "Lumi Lantern/tools/levels.py"        writes src/js/70-levels.js and prints a report
+    python3 "Last Light/tools/levels.py"        writes src/js/70-levels.js and prints a report
 
 Levels are drawn with small helpers (ground, pits, ledges, things at coordinates) instead of typed ASCII, so
 columns always line up. The checker walks a simplified model of the player's moves over the tiles (jump heights and
 distances below are a little shorter than the real ones) and reports anything it cannot reach: the gate, every
 spark, every star moth, every lantern."""
-import json, os, sys, collections
+import json, os, sys, collections, random
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'src', 'js', '70-levels.js')
@@ -142,7 +142,7 @@ def l21():
     v.ground(65, 80, 15); v.put(70, 14, 'g'); v.put(76, 14, 'L'); v.arc(65, 12, 6, 2)
     v.pit(81, 92, 0); v.ground(83, 84, 12); v.ground(88, 89, 10); v.put(86, 7, 'b'); v.put(90, 4, '*'); v.arc(81, 9, 4, 2); v.arc(86, 7, 4, 2)
     v.ground(93, 129, 13); v.put(98, 12, 'g'); v.put(104, 12, 't'); v.put(110, 12, 'L')
-    v.ledge(115, 117, 7); v.put(116, 6, '*'); v.rect(114, 2, 114, 6); v.rect(118, 2, 118, 6)
+    v.ledge(115, 117, 7); v.put(116, 6, '*'); v.rect(114, 2, 114, 4); v.rect(118, 2, 118, 6)     # open on the left: never a box
     v.put(125, 12, 'E')
     return v
 
@@ -151,9 +151,9 @@ def l22():
     v = Lv('2-2', 'Crystal Stair', 1, 120, 30)
     v.rect(0, 0, 119, 1); v.ground(0, 119, 27); v.put(3, 26, 'P')
     v.rect(9, 22, 13, 26); v.rect(16, 17, 20, 26); v.arc(8, 20, 5, 2); v.arc(14, 15, 5, 2)
-    v.ledge(23, 26, 13); v.ledge(18, 21, 9); v.put(19, 8, 'L'); v.row(22, 12, 'o o o o')
+    v.ledge(23, 26, 13); v.ledge(18, 21, 9); v.rect(24, 22, 26, 26); v.put(19, 8, 'L'); v.row(22, 12, 'o o o o')
     v.rect(27, 9, 40, 9); v.put(33, 8, 'g'); v.rect(27, 10, 27, 26, '#'); v.rect(28, 26, 50, 26, '^')
-    v.ledge(32, 34, 21); v.put(33, 20, '*'); v.ledge(37, 39, 17)
+    v.ledge(32, 34, 21); v.put(33, 20, '*'); v.ledge(37, 39, 17); v.ledge(42, 45, 13)
     v.rect(41, 5, 41, 9); v.ledge(42, 46, 9); v.put(44, 4, 'b')
     v.rect(47, 12, 52, 26); v.put(50, 11, 'L')
     v.pit(53, 70, 2); v.ledge(55, 57, 9); v.ledge(60, 62, 6); v.ledge(65, 67, 9); v.put(66, 13, 'b')
@@ -188,17 +188,17 @@ def l23():
 def l24():
     v = Lv('2-4', 'The Deep Bell', 1, 126, 32, gives='wall')
     v.rect(0, 0, 125, 1); v.ground(0, 125, 28); v.put(3, 27, 'P')
-    v.rect(8, 24, 11, 27); v.rect(14, 20, 17, 27); v.rect(20, 16, 23, 27); v.rect(26, 12, 29, 27); v.put(28, 11, 'L')
+    v.rect(8, 24, 11, 27); v.rect(14, 20, 17, 27); v.rect(20, 16, 23, 27); v.rect(26, 12, 29, 27); v.rect(18, 24, 19, 27); v.rect(24, 20, 25, 27); v.put(28, 11, 'L')
     v.arc(7, 22, 5, 2); v.arc(13, 18, 5, 2); v.arc(19, 14, 5, 2)
     v.pit(30, 50, 2); v.rect(30, 27, 50, 27, '^')
     v.rect(33, 12, 34, 12, 'C'); v.rect(38, 10, 39, 10, 'C'); v.rect(43, 12, 44, 12, 'C'); v.rect(47, 9, 48, 9, 'C')
     v.put(41, 6, 'b'); v.row(33, 9, 'o o o o o o o o', 2); v.put(40, 4, '*'); v.ledge(39, 41, 5)
     v.rect(51, 10, 64, 27); v.put(54, 9, 'L'); v.put(59, 9, 'h'); v.put(63, 9, 'k')
-    v.rect(65, 5, 66, 9, 'D'); v.rect(65, 2, 66, 4); v.rect(67, 10, 72, 27); v.put(70, 9, 'g')
+    v.rect(65, 5, 66, 9, 'D'); v.rect(65, 2, 66, 4); v.rect(65, 10, 66, 27); v.rect(67, 10, 72, 27); v.put(70, 9, 'g')
     v.rect(73, 14, 73, 27); v.pit(74, 92, 2); v.rect(74, 27, 92, 27, '^')
     v.put(76, 12, 'M'); v.put(77, 12, 'M'); v.put(74, 12, '|'); v.put(91, 12, '|'); v.put(82, 8, 'b'); v.put(84, 5, '*'); v.ledge(83, 85, 6)
     v.rect(93, 12, 125, 27); v.put(96, 11, 'L'); v.put(101, 11, 't'); v.put(108, 11, 'g')
-    v.rect(112, 17, 116, 20, ' '); v.rect(112, 12, 116, 16, ' '); v.put(114, 20, '*'); v.rect(112, 21, 116, 21, '#'); v.put(112, 12, '#'); v.put(116, 12, '#')
+    v.rect(112, 17, 116, 20, ' '); v.rect(112, 12, 116, 16, ' '); v.put(114, 20, '*'); v.rect(112, 21, 116, 21, '#'); v.put(112, 12, '#'); v.put(116, 12, '#'); v.ledge(112, 113, 16)
     v.put(118, 11, 'u'); v.put(122, 11, 'E')
     return v
 
@@ -233,7 +233,7 @@ def l32():
     v.put(44, 32, 'g'); v.put(54, 32, 'g'); v.arc(35, 28, 8, 1); v.arc(45, 28, 8, 1)
     v.rect(57, 8, 57, 29); v.rect(61, 6, 61, 32); v.put(59, 14, '*'); v.row(58, 24, 'o o o')
     v.rect(62, 6, 80, 6); v.put(66, 5, 'h'); v.put(72, 5, 't'); v.put(77, 5, 'L')
-    v.put(83, 8, 'M'); v.put(84, 8, 'M'); v.put(81, 8, '|'); v.put(91, 8, '|'); v.put(86, 3, '*'); v.put(87, 5, 'b')
+    v.pit(81, 91, 9); v.put(83, 8, 'M'); v.put(84, 8, 'M'); v.put(81, 8, '|'); v.put(91, 8, '|'); v.put(86, 3, '*'); v.put(87, 5, 'b')
     v.rect(92, 8, 99, 8); v.put(96, 7, 'E')
     return v
 
@@ -371,9 +371,11 @@ def check(v, ab, doors_open=False):
     DX = 5 + (2 if ab['double'] else 0) + (4 if ab['dash'] else 0)
     start = next((x, y) for y in range(H) for x in range(W) if g[y][x] == 'P')
     seen, q, air = {start}, collections.deque([start]), set()
-    def clear_path(x0, y0, x1, y1, top):
-        # up from (x0,y0) to the top row, across, then down to (x1,y1); or across first
-        def col(x, a, b): return all(free(x, yy) for yy in range(min(a, b), max(a, b) + 1))
+    edges = collections.defaultdict(set)          # stand cell -> stand cells you can get to from it (for the trap check)
+    def clear_path(x0, y0, x1, y1, top, strict=False):
+        # up from (x0,y0) to the top row, across, then down to (x1,y1); or across first. strict: no dropping down
+        # through a one-way ledge (most players never find that move, so it must never be the only way out)
+        def col(x, a, b): return all(free(x, yy) and not (strict and b > a and yy > a and t(x, yy) == '=') for yy in range(min(a, b), max(a, b) + 1))
         def rowc(y, a, b): return all(free(xx, y) for xx in range(min(a, b), max(a, b) + 1))
         return (col(x0, y0, top) and rowc(top, x0, x1) and col(x1, top, y1)) or (rowc(y0, x0, x1) and col(x1, y0, y1))
     while q:
@@ -392,6 +394,7 @@ def check(v, ab, doors_open=False):
                 top = max(top, y - up)
                 if not clear_path(x, y, nx, ny, top) and not clear_path(x, y, nx, ny, min(y, ny)): continue
                 air.add((nx, ny))
+                if stand(nx, ny) and (clear_path(x, y, nx, ny, top, True) or clear_path(x, y, nx, ny, min(y, ny), True)): edges[(x, y)].add((nx, ny))
                 if stand(nx, ny) and (nx, ny) not in seen: seen.add((nx, ny)); q.append((nx, ny))
         # wall climbing: any air cell next to a wall, straight up, while the wall goes on
         if ab['wall']:
@@ -408,6 +411,7 @@ def check(v, ab, doors_open=False):
                                 cx, cy = x + ddx, ny + ddy
                                 if free(cx, cy):
                                     air.add((cx, cy))
+                                    if stand(cx, cy): edges[(x, y)].add((cx, cy))
                                     if stand(cx, cy) and (cx, cy) not in seen: seen.add((cx, cy)); q.append((cx, cy))
                     elif k > H1: break              # a normal jump gets you into the shaft
     if SHOW == v.id:
@@ -422,12 +426,64 @@ def check(v, ab, doors_open=False):
             c = g[y][x]
             if c in 'E*oLkuG' and (x, y) not in air and (x, y) not in seen:
                 probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'moth', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss'}[c], x, y))
+    # traps: places you can get to but never get out of to the gate (falling into a pit is fine: that is a death and a
+    # respawn, but a box with no way out leaves you stuck). Walk backwards from the gate over the same moves.
+    gate = [(x, y) for y in range(H) for x in range(W) if g[y][x] == 'E']
+    back = collections.defaultdict(set)
+    for a, bs in edges.items():
+        for b2 in bs: back[b2].add(a)
+    ok = {c for c in seen if any(abs(c[0] - e[0]) <= 2 and abs(c[1] - e[1]) <= 2 for e in gate)}
+    if g[start[1]][start[0]] and v.world == 4 and not gate: ok = set(seen)     # the boss arena has no gate
+    def falls_out(c):        # a pit within a few steps: dropping in is a death and a respawn at the lantern, not a trap
+        x0, y0 = c
+        for d in (-1, 1):
+            for k in range(0, 4):
+                x = x0 + d * k
+                if not free(x, y0): break
+                if all(free(x, yy) for yy in range(y0, H)): return True
+        return False
+    ok |= {c for c in seen if falls_out(c)}
+    q2 = collections.deque(ok)
+    while q2:
+        c = q2.popleft()
+        for a in back[c]:
+            if a not in ok: ok.add(a); q2.append(a)
+    stuck = sorted(c for c in seen if c not in ok)
+    if stuck:
+        groups = []
+        for c in stuck:
+            if groups and abs(groups[-1][-1][0] - c[0]) <= 3: groups[-1].append(c)
+            else: groups.append([c])
+        probs += ['TRAP %d,%d (%d cells)' % (gr[0][0], gr[0][1], len(gr)) for gr in groups]
     nm = sum(r.count('*') for r in g)
     if v.world < 4 and nm != 3: probs.append('%d moths (want 3)' % nm)
     if not any(c == 'E' for r in g for c in r): probs.append('no gate')
     return probs
 
 SHOW = sys.argv[sys.argv.index('--show') + 1] if '--show' in sys.argv else None
+def spice(v):
+    """A few more enemies on the open ground of every level after the first (seeded, so the levels never change between
+    builds): slimes and bats early, thornbacks and turrets once you can wall-jump. Never near the start, a lantern, the
+    gate or anything else, and never two close together."""
+    n = {0: 2, 1: 3, 2: 3, 3: 4}.get(v.world, 0)
+    if v.id == '1-1': n = 1
+    rnd, g, spots = random.Random('spice' + v.id), v.g, []
+    for y in range(3, v.h - 1):
+        for x in range(10, v.w - 10):
+            if all(g[y][xx] in ' o' and g[y - 1][xx] in ' o' and g[y + 1][xx] == '#' for xx in range(x - 2, x + 3)) and \
+               not any(g[yy][xx] not in ' #=^Co' for yy in range(max(0, y - 5), min(v.h, y + 2)) for xx in range(x - 6, x + 7)):
+                spots.append((x, y))
+    rnd.shuffle(spots); used = []
+    for x, y in spots:
+        if len(used) >= n: break
+        if any(abs(x - a) < 12 for a in used): continue
+        kind = rnd.choice('ggb' if v.world < 2 else 'gbht')
+        if kind == 'b':
+            if not all(g[y - k][x] in ' o' for k in range(1, 4)): continue
+            y -= 3
+        v.put(x, y, kind); used.append(x)
+for v in LEVELS: spice(v)
+
 ABIL = [dict(double=False, wall=False, dash=False), dict(double=True, wall=False, dash=False), dict(double=True, wall=True, dash=False), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True)]
 bad = 0
 for v in LEVELS:

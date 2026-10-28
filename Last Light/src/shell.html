@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Lumi's Lantern</title>
+<title>Last Light</title>
 <!--@css-->
 </head>
 <body>
@@ -25,11 +25,12 @@
 
 <!-- title -->
 <div id="s-title" class="screen">
-  <div class="logo"><span class="l1">Lumi's</span><span class="l2">Lantern</span></div>
-  <div class="tag">Relight the four worlds</div>
+  <div class="logo"><span class="l1">Last</span><span class="l2">Light</span></div>
+  <div class="tag">The dark took everything. Take it back.</div>
   <div class="menu">
     <button class="btn big" id="t-play">Play</button>
     <button class="btn" id="t-settings">Settings</button>
+    <button class="btn" id="t-stats-btn">Stats</button>
     <button class="btn" id="t-how">How to play</button>
   </div>
   <div class="foot" id="t-stats"></div>
@@ -67,6 +68,26 @@
   </div>
 </div>
 
+<!-- the light went out -->
+<div id="s-dead" class="screen deadscr hidden">
+  <div class="dead-t">The light went out</div>
+  <div id="dd-cause"></div>
+  <div id="dd-rows"></div>
+  <button class="btn big" id="dd-retry">Try again</button>
+  <div class="row"><button class="btn small ghost" id="dd-restart">Restart level</button><button class="btn small ghost" id="dd-map">Level map</button></div>
+  <div class="dead-tip" id="dd-tip"></div>
+  <div class="dead-key">Space / Enter: try again</div>
+</div>
+
+<!-- stats -->
+<div id="s-stats" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Stats</h2>
+    <div id="st-rows" class="strows"></div>
+    <button class="btn big" id="st-done">Back</button>
+  </div>
+</div>
+
 <!-- settings -->
 <div id="s-settings" class="screen dim hidden">
   <div class="card wide">
@@ -84,6 +105,7 @@
       <div><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> move</div>
       <div><kbd>Space</kbd>, <kbd>W</kbd>, <kbd>&uarr;</kbd> or <kbd>Z</kbd> jump (hold to jump higher)</div>
       <div><kbd>Shift</kbd> or <kbd>X</kbd> dash (once you have found it)</div>
+      <div><kbd>&darr;</kbd> or <kbd>S</kbd> (hold) drop through a thin ledge</div>
       <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
       <div>Gamepads and touch screens work too.</div>
       <p>Touch a <b>lantern</b> to light it: it is where you come back to. Collect <b>sparks</b>, find the

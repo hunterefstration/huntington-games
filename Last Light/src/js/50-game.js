@@ -14,7 +14,7 @@ const G = {
         this.p = makePlayer(this.L.start.x, this.L.start.y); this.p.hearts = this.maxHearts();
         this.checkpoint = { x: this.L.start.x, y: this.L.start.y };
         this.parts = []; this.ghosts = []; this.rings = []; this.shots = []; this.t = 0; this.time = 0; this.done = false; this.flash = 0; this.white = 0; this.ambient = null;
-        this.got = { sparks: 0, moths: [false, false, false] }; this.stats = { deaths: 0, hits: 0, jumps: 0, stomps: 0, dashes: 0 };
+        this.got = { sparks: 0, moths: [false, false, false] }; this.deathShown = false; this.cause = ''; this.stats = { deaths: 0, hits: 0, jumps: 0, stomps: 0, dashes: 0 };
         let mi = 0; for (const e of this.L.ents) if (e.kind === 'moth') e.idx = mi++;
         // moths already found stay found (shown faint) so a replay is about what is still missing
         const rec = SAVE.d.levels[def.id];
@@ -23,7 +23,7 @@ const G = {
         if (this.boss) { const gt = this.L.ents.find(e => e.kind === 'gate'); if (gt) { gt.gone = true; gt.hidden = true; } }
         const r = seeded(def.id.length * 977 + idx);
         this.motes = Array.from({ length: 40 }, () => ({ x: r() * 2000, y: r() * 1200, r: 0.8 + r() * 2.2, s: 0.3 + r() * 0.8, p: r() * 9, k: 0.3 + r() * 0.6 }));
-        this.cam.x = this.p.x; this.cam.y = this.p.y - 40; this.cam.snap = 0;
+        this.cam.x = this.p.x; this.cam.y = this.p.y - 40; this.cam.snap = 0; this.cam.look = 0;
         this.state = 'play';
         Sound.musicFor(this.world);
         UI.show(null); $('#hud').classList.remove('hidden');
@@ -33,7 +33,7 @@ const G = {
     update(dt) {
         if (this.state !== 'play') return;
         this.t += dt;
-        if (!this.done) this.time += dt;
+        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } }
         updatePlayer(this, dt);
         updateWorld(this, dt);
         if (this.boss) bossUpdate(this, dt);
@@ -41,15 +41,18 @@ const G = {
         this.flash = Math.max(0, this.flash - dt * 1.5);
         if (this.white > 0 && !(this.boss && this.boss.state === 'dying')) this.white = Math.max(0, this.white - dt * 0.6);
         if (this.shakeT > 0) { this.shakeT -= dt; if (this.shakeT <= 0) this.shakeA = 0; }
-        // camera: leads in the direction you are going, a little above you
-        const p = this.p, L = this.L, vw = R.W / R.z, vh = R.H / R.z;
-        let tx = p.x + p.face * 46 + p.vx * 0.18, ty = p.y - 30 + (p.vy > 300 ? p.vy * 0.12 : 0);
+        // camera: leads in the direction you are actually moving, eased in and out, so turning around (or tapping the
+        // other way) barely moves it; standing still it drifts back to centre slowly
+        const p = this.p, L = this.L, vw = R.W / R.z, vh = R.H / R.z, cam = this.cam;
+        const want = Math.abs(p.vx) > 40 ? clamp(p.vx * 0.3, -80, 80) : (cam.look || 0) * 0.995;
+        cam.look = approach(cam.look || 0, want, dt * (Math.abs(want) > Math.abs(cam.look || 0) ? 110 : 60));
+        let tx = p.x + cam.look, ty = p.y - 30 + (p.vy > 300 ? p.vy * 0.12 : 0);
         if (this.boss) { tx = lerp(tx, this.boss.x, 0.35); }
         tx = clamp(tx, vw / 2, Math.max(vw / 2, L.w * TS - vw / 2)); ty = clamp(ty, vh / 2, Math.max(vh / 2, L.h * TS - vh / 2));
         if (L.w * TS < vw) tx = L.w * TS / 2; if (L.h * TS < vh) ty = L.h * TS / 2;
         if (this.cam.snap > 0) { this.cam.snap -= dt; this.cam.x = tx; this.cam.y = ty; }
         else { this.cam.x = lerp(this.cam.x, tx, Math.min(1, dt * 6)); this.cam.y = lerp(this.cam.y, ty, Math.min(1, dt * 5)); }
-        if (Input.hit('retry') && !p.dead) { p.hearts = 1; hurt(this, 'pit'); }
+        if (Input.hit('retry') && !p.dead) { respawn(this); this.toast('Back to the last lantern'); }
     },
     revealGate() { const g = this.L.ents.find(e => e.kind === 'gate'); if (g) { g.gone = false; g.hidden = false; burst(this, g.x, g.y, '#fff2c4', 40, 260); } },
     shrine(e) {
@@ -67,11 +70,13 @@ const G = {
         const best = rec.best == null || this.time < rec.best, mothsBefore = rec.moths.filter(Boolean).length;
         rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);
         rec.sparks = Math.max(rec.sparks || 0, this.got.sparks); rec.clears = (rec.clears || 0) + 1; if (best) rec.best = +this.time.toFixed(2);
-        SAVE.d.levels[def.id] = rec; SAVE.d.playTime += this.time; SAVE.write();
+        rec.deaths = (rec.deaths || 0) + this.stats.deaths; if (!this.stats.hits) rec.flawless = true;
+        ST('clears'); if (!this.stats.hits) ST('flawless'); if (def.world === 4) ST('bossKills');
+        SAVE.d.levels[def.id] = rec; SAVE.write();
         this.p.vx = 0;
         setTimeout(() => {
             this.state = 'done';
-            UI.results({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
+            UI.results({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
         }, 900);
     },
     hud() {
