@@ -2350,7 +2350,7 @@ async function answerChallenge(m){
   const sig = ED.hex(await ED.sign(ID.kp, `gv-login|${archiveId}|${m.nonce}|${myId()}|${ID.cnonce}`));
   const signup = S.signup !== false;
   const hello = { type: 'hello', v: 12, userId: S.userId, pub: ID.pub, sig, cnonce: ID.cnonce, signup,
-    displayName: signup ? (S.name || undefined) : undefined, invite: S.invite, client: CLIENT_VERSION, rl: 1 };
+    displayName: signup ? (S.name || undefined) : undefined, invite: S.invite, client: CLIENT_VERSION, rl: 1, dev: deviceId() };
   // An account from before signed sign-in binds its key the first time it
   // signs in here — the only time the recovery key is ever sent, and only to a
   // server that then proves itself in the welcome before anything else happens.
@@ -4122,6 +4122,20 @@ function takeBack(m){
   if (p && m.convId === S.active && !$('#text').value.trim()) { $('#text').value = p.text; growText(); }
   if (m.wait) { const st = S.spamSt || (S.spamSt = {}); st.nextAt = Math.max(st.nextAt || 0, Date.now() + m.wait); }
 }
+// A random id for this browser, sent at sign-in so an operator's "Device ban" can stop it making new accounts.
+// Kept in local storage, a cookie and IndexedDB; whichever survives brings the others back.
+function deviceId(){
+  const ok = v => /^[A-Za-z0-9_-]{12,64}$/.test(v || '');
+  let id = null; try { id = localStorage.getItem('gv:dev'); } catch (e) {}
+  if (!ok(id)) { const c = /(?:^|;\s*)gvdev=([A-Za-z0-9_-]+)/.exec(document.cookie || ''); id = c && c[1]; }
+  if (!ok(id)) id = deviceId._idb;
+  if (!ok(id)) id = 'd' + randHex(16);
+  try { localStorage.setItem('gv:dev', id); } catch (e) {}
+  try { document.cookie = 'gvdev=' + id + '; max-age=' + 60 * 60 * 24 * 3650 + '; path=/; SameSite=Lax'; } catch (e) {}
+  try { const r = indexedDB.open('gvdev', 1); r.onupgradeneeded = () => r.result.createObjectStore('k'); r.onsuccess = () => { try { r.result.transaction('k', 'readwrite').objectStore('k').put(id, 'id'); } catch (e) {} }; } catch (e) {}
+  return id;
+}
+try { const r = indexedDB.open('gvdev', 1); r.onupgradeneeded = () => r.result.createObjectStore('k'); r.onsuccess = () => { try { const g = r.result.transaction('k').objectStore('k').get('id'); g.onsuccess = () => { deviceId._idb = g.result || null; }; } catch (e) {} }; } catch (e) {}
 function rateOk(){
   const now = Date.now(), st = SEND_RATE.stamps;
   while (st.length && now - st[0] >= SEND_RATE.window) st.shift();
@@ -5691,11 +5705,12 @@ function handleArchive(m){
       // Only say something happened when something happened. Every poll the
       // panel makes comes back with an 'ok' too, and toasting those buries the
       // screen in "stats done" while you are trying to read the stats.
-      const MUTATION = ['ban','unban','promote','demote','mkinvite','rminvite',
+      const MUTATION = ['ban','unban','deviceBan','promote','demote','mkinvite','rminvite',
                         'freeze','rename','tombstone','announce','clearConv'];
       if (m.op === 'clearConv') toast('Cleared ' + (m.n || 0) + ' message(s).', 'good', 3000);
+      else if (m.op === 'deviceBan') toast(`Banned ${m.name} and ${m.devices || 0} device(s).`, 'good', 3500);
       else if (MUTATION.includes(m.op)) toast(m.op + ' done', 'good', 2400);
-      if (['ban','unban','promote','demote'].includes(m.op)) adm('users');
+      if (['ban','unban','deviceBan','promote','demote'].includes(m.op)) adm('users');
       if (m.op === 'mkinvite' || m.op === 'rminvite') adm('invites');
       if (['freeze','rename','tombstone','announce','clearConv'].includes(m.op)) { adm('convs'); if (OPS.peek) adm('peek', { convId: OPS.peek }); }
       break;
@@ -7513,10 +7528,11 @@ function paintUsers(){
     .map(u => `<tr>
       <td class="nm"><button data-who="${oEsc(u.name)}" style="color:inherit">${oEsc(u.name)}</button></td>
       <td class="num">${u.msgs}</td><td>${oDate(u.lastSeen)}</td>
-      <td>${u.isFounder ? '<span class="oflag own">server owner</span> ' : u.isAdmin ? '<span class="oflag adm">operator</span> ' : ''}${u.banned ? '<span class="oflag ban">banned</span>' : ''}</td>
+      <td>${u.isFounder ? '<span class="oflag own">server owner</span> ' : u.isAdmin ? '<span class="oflag adm">operator</span> ' : ''}${u.banned ? `<span class="oflag ban">${u.deviceBanned ? 'device banned' : 'banned'}</span>` : ''}</td>
       <td class="olive${u.live && u.live.strikes ? ' hot' : ''}" title="${u.live ? oEsc('client ' + (u.live.client || '?') + (u.live.last ? ' · last strike ' + u.live.last : '')) : ''}">${u.live ? `${u.live.sessions} on · ${u.live.client || '?'}${u.live.strikes ? ' · ' + u.live.strikes + ' strikes' : ''}` : ''}</td>
       <td style="text-align:right;white-space:nowrap">
         ${u.isAdmin ? '' : `<button class="obtn ${u.banned ? '' : 'bad'}" data-ban="${oEsc(u.name)}" data-on="${u.banned ? 0 : 1}">${u.banned ? 'Unban' : 'Ban'}</button>`}
+        ${u.isAdmin || u.deviceBanned ? '' : `<button class="obtn bad" data-dban="${oEsc(u.name)}" title="Ban the account AND every device (browser) it has used: no new accounts from them">Device ban</button>`}
         ${!u.isAdmin ? `<button class="obtn" data-rank="${oEsc(u.name)}" data-on="1">Promote</button>`
           : (u.isFounder || u.userId === OPS.me || !OPS.iAmFounder) ? ''
           : `<button class="obtn bad" data-rank="${oEsc(u.name)}" data-on="0">Demote</button>`}
@@ -7598,6 +7614,7 @@ $('#opsModal').addEventListener('click', e => {
   if (d.renamego) { const n = $('#oRenameName').value.trim(); if (n) adm('rename', { convId: d.renamego, name: n }); return; }
   if (d.who)    return adm('whois', { name: d.who });
   if (d.ban)    { if (armed()) adm(d.on === '1' ? 'ban' : 'unban', { name: d.ban }); return; }
+  if (d.dban)   { if (armed()) adm('deviceBan', { name: d.dban }); return; }
   if (d.rank)   { if (d.on === '1' || armed()) adm(d.on === '1' ? 'promote' : 'demote', { name: d.rank }); return; }
   if (d.rmcode) { if (armed()) adm('rminvite', { code: d.rmcode }); return; }
 });

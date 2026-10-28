@@ -122,7 +122,7 @@
     await st.kpP;                                   // derived while the network was connecting
     var sig = ED.hex(await ED.sign(st.kp, 'gv-login|' + archiveId + '|' + m.nonce + '|' + c.pid + '|' + st.cnonce));
     var hello = { type: 'hello', v: 12, userId: st.userId, pub: st.pub, sig: sig, cnonce: st.cnonce, signup: st.signup,
-      client: CFG.clientVersion, rl: 1, lite: 1 };
+      client: CFG.clientVersion, rl: 1, lite: 1, dev: devId() };
     if (st.signup) {
       hello.displayName = st.wanted || undefined;
       hello.invite = st.invite || undefined;
@@ -352,6 +352,16 @@
   function rpcDone(reply, m) { var w = (sy.waiters[reply] || []).shift(); if (w) { clearTimeout(w.t); w.resolve(m); } }
   function rpcFail(err) { Object.keys(sy.waiters).forEach(function (k) { var l = sy.waiters[k]; sy.waiters[k] = []; l.forEach(function (w) { clearTimeout(w.t); w.reject(err); }); }); }
 
+  // this browser's device id (see Grapevine's deviceId): lets an operator's Device ban stop new accounts from it
+  function devId() {
+    var ok = function (v) { return /^[A-Za-z0-9_-]{12,64}$/.test(v || ''); }, id = null;
+    try { id = localStorage.getItem('gv:dev'); } catch (e) {}
+    if (!ok(id)) { var c = /(?:^|;\s*)gvdev=([A-Za-z0-9_-]+)/.exec(document.cookie || ''); id = c && c[1]; }
+    if (!ok(id)) id = 'd' + randHex(16);
+    try { localStorage.setItem('gv:dev', id); } catch (e) {}
+    try { document.cookie = 'gvdev=' + id + '; max-age=' + 60 * 60 * 24 * 3650 + '; path=/; SameSite=Lax'; } catch (e) {}
+    return id;
+  }
   function syncRun(opts) {
     if (sy.running) return sy.running;
     if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
