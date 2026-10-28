@@ -1,4 +1,7 @@
-// Cloud saves when the database stops letting the server change rows mid-run (42501): it must move saves elsewhere and keep working. Same rig and setup as gv.mjs.
+// Cloud saves when the database will not let the server change rows (42501): it must move saves elsewhere and keep working.
+// PERM_MODE=midrun (default): updates on user_saves AND settings are refused mid-run.
+// PERM_MODE=rls: row-level security is on for both tables when the server starts (the archive is restarted).
+// Same rig and setup as gv.mjs.
 //   NODE_PATH=/opt/node22/lib/node_modules node tools/tests/gv-saves-perm.mjs   (reset the rig database first)
 import { chromium } from 'playwright';
 import fs from 'node:fs';
@@ -61,15 +64,20 @@ async function createAccount(page, name) {
 
 import { execSync } from 'node:child_process';
 const psql = sql => execSync(`PGPASSWORD=x psql -q -h 127.0.0.1 -p 55432 -U postgres -d grapevine_test -c "${sql}"`);
+const MODE = process.env.PERM_MODE || 'midrun';
+const restartArchive = () => execSync(`cd /home/user/grapevine && cat .archive-a.log >> /tmp/arch-hist.log 2>/dev/null; PGPASSWORD=x PGPORT=55432 test/up.sh stop a >/dev/null 2>&1; DATABASE_URL="postgres://grapevine_archive:rigpass123@127.0.0.1:55432/grapevine_test" PGPASSWORD=x PGPORT=55432 test/up.sh a POW_BITS=8 NEW_ACCOUNT_MS=0 GV_DIRECT_PORT=8787 GV_DIRECT_URL=ws://127.0.0.1:8787/gv >/dev/null; for i in $(seq 1 60); do grep -q "direct door reachable" .archive-a.log && break; sleep 0.5; done; sleep 2`);
+const restore = () => { psql('GRANT SELECT, INSERT, UPDATE, DELETE ON grapevine.user_saves TO grapevine_archive'); psql('GRANT SELECT, INSERT, UPDATE ON grapevine.settings TO grapevine_archive');
+  psql('ALTER TABLE grapevine.user_saves DISABLE ROW LEVEL SECURITY'); psql('ALTER TABLE grapevine.settings DISABLE ROW LEVEL SECURITY'); };
 try {
-  psql('GRANT SELECT, INSERT, UPDATE, DELETE ON grapevine.user_saves TO grapevine_archive');
+  restore();
+  if (MODE === 'rls') { psql('ALTER TABLE grapevine.user_saves ENABLE ROW LEVEL SECURITY'); psql('ALTER TABLE grapevine.settings ENABLE ROW LEVEL SECURITY'); restartArchive(); }
   const A = await device(await browser.newContext());
-  await createAccount(A, 'PermA');
+  await createAccount(A, 'Perm' + (Date.now() % 1e6));
   await until(async () => (await status(A)) === 'online', 60000);
   await A.evaluate(() => localStorage.setItem('td2_save', '{"wave":1}'));
   await A.evaluate(() => HGGrapevine.sync.run());
   check('first save stored', (await A.evaluate(() => HGGrapevine.sync.status().state)) === 'ok');
-  psql('REVOKE UPDATE ON grapevine.user_saves FROM grapevine_archive');   // the database now refuses changes
+  if (MODE === 'midrun') { psql('REVOKE UPDATE ON grapevine.user_saves FROM grapevine_archive'); psql('REVOKE UPDATE ON grapevine.settings FROM grapevine_archive'); }   // the database now refuses changes
   await A.evaluate(() => localStorage.setItem('td2_save', '{"wave":9}'));
   const r = await A.evaluate(() => HGGrapevine.sync.run().then(x => ({ ok: true, x }), e => ({ ok: false, e: e.message })));
   check('a changed save still syncs after the database refuses updates', r.ok && (await A.evaluate(() => HGGrapevine.sync.status().state)) === 'ok', JSON.stringify(r) + ' ' + await A.evaluate(() => HGGrapevine.sync.status().text));
@@ -78,7 +86,7 @@ try {
   await B.waitForSelector('#gate .gl .seg'); await B.fill('#gate #gl-key', key); await B.click('#gate #gl-go');
   check('another device gets the newest save', !!(await until(() => B.evaluate(() => /"wave":9/.test(localStorage.getItem('td2_save') || '')), 40000)));
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
-psql('GRANT SELECT, INSERT, UPDATE, DELETE ON grapevine.user_saves TO grapevine_archive');
+restore(); if (MODE === 'rls') restartArchive();
 await browser.close();
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');
 process.exit(failures ? 1 : 0);

@@ -3942,6 +3942,8 @@ function paintComposeLock(){
 function deliver(m){
   const c = conv(m.convId);
   if (!c) return;                       // not one of my conversations
+  if (m.kind !== 'image' && typeof m.text === 'string') m.text = GUARD.mask(m.text);
+  if (GUARD.badName(m.displayName)) m.displayName = 'Player-' + String(m.userId || '').slice(0, 6);
   const box = msgsOf(m.convId);
 
   if (m.seq && S.pending.has(m.msgId)) {   // archive receipt for my own send
@@ -4034,6 +4036,92 @@ function maybeNotify(c, m){
 // its own limit; this one exists so the human sees WHY nothing sent, and so
 // the text stays in the box instead of vanishing into a refusal.
 const SEND_RATE = { max:3, window:1000, stamps:[] };
+// ---- chat guard (identical in archive.js and client.html: keep the two in step) ----
+// SLUR: the one word this server will not carry, the n-word in its usual spellings (n1gga, n i g g e r, Cyrillic
+// look-alikes, ...). Nothing else is filtered: swearing stays. Names that contain it are refused; in text it is masked.
+// SPAM: a slowdown that only touches spam-like messages (the same or nearly the same as one of your recent ones, or
+// very short). Each one adds heat; past a little heat the next such message must wait, longer the hotter you are
+// (under a second at first, growing to a minute). Trying again too early adds more heat; heat cools by one every 6 s.
+// Typing different, real messages fast is never slowed.
+const GUARD = (() => {
+  const MAP = { '1': 'i', '!': 'i', '|': 'i', '¡': 'i', 'і': 'i', 'ı': 'i', 'ї': 'i', '3': 'e', 'е': 'e', 'є': 'e', 'ё': 'e', '4': 'a', '@': 'a', 'а': 'a',
+    '9': 'g', '6': 'g', 'ɡ': 'g', 'ԍ': 'g', 'ġ': 'g', 'п': 'n', 'ո': 'n', 'η': 'n', 'г': 'r', 'ʀ': 'r', '$': 's', '5': 's', 'ѕ': 's', 'у': 'y', 'ү': 'y' };
+  const INVIS = /[­͏؜ᅟᅠ឴឵᠎​-‏‪-‮⁠-⁯﻿]/;
+  // one output character per UTF-16 unit, so a match's position is its position in the original text
+  function fold(t) {
+    let o = '';
+    for (let i = 0; i < t.length;) {
+      const cp = t.codePointAt(i), w = cp > 0xffff ? 2 : 1, ch = String.fromCodePoint(cp);
+      let c = '\u0001';
+      if (!INVIS.test(ch)) {
+        const l = ch.toLowerCase();
+        c = MAP[l] || l.normalize('NFKD').charAt(0) || l;
+        c = MAP[c] || c;
+        if (c.length !== 1 || c.charCodeAt(0) > 0xffff) c = '\u0001';
+      }
+      o += c + (w === 2 ? '\u0001' : ''); i += w;
+    }
+    return o;
+  }
+  const S = '[^a-z]{0,3}';
+  const WORD = new RegExp(`(?<![a-z])n${S}[iy]+${S}(?:g${S}){2,}(?!l|ard)(?:e+${S}r+|a+h?|uh|r)?(?:${S}[sz])?`, 'g');
+  const NAME = /(?<!s)n[iy]+g{2,}(?!l)/;
+  const has = t => { WORD.lastIndex = 0; return WORD.test(fold(String(t || ''))); };
+  const badName = n => { const f = fold(String(n || '')).replace(/[^a-z]/g, ''); return NAME.test(f) || has(n); };
+  function mask(t) {
+    t = String(t ?? ''); if (!t) return t;
+    const f = fold(t); let out = '', at = 0, m; WORD.lastIndex = 0;
+    while ((m = WORD.exec(f))) { out += t.slice(at, m.index) + '*'.repeat(m[0].length); at = m.index + m[0].length; if (!m[0].length) WORD.lastIndex++; }
+    return at ? out + t.slice(at) : t;
+  }
+  // ---- spam heat ----
+  const norm = t => String(t || '').toLowerCase().normalize('NFKC').replace(/\s+/g, ' ').replace(/(.)\1{2,}/gu, '$1$1').trim();
+  const bigrams = t => { const b = new Map(); for (let i = 0; i < t.length - 1; i++) { const k = t.slice(i, i + 2); b.set(k, (b.get(k) || 0) + 1); } return b; };
+  function similar(a, b) {
+    if (a === b) return true;
+    if (a.length < 4 || b.length < 4) return false;
+    const A = bigrams(a), B = bigrams(b); let n = 0;
+    for (const [k, v] of A) n += Math.min(v, B.get(k) || 0);
+    return 2 * n / (a.length - 1 + b.length - 1) >= 0.8;
+  }
+  const gap = h => h < 1.5 ? 0 : Math.min(60000, Math.round(700 * Math.pow(1.6, h - 1.5)));
+  // st: per-account state, kept by the caller. Returns 0 (send it) or the milliseconds to wait. commit=false only asks.
+  function spam(st, text, now, commit = true) {
+    const heat = Math.max(0, (st.heat || 0) - (now - (st.at || now)) / 6000);
+    const t = norm(text), last = (st.last || []).filter(x => x.at > now - 120000);
+    const isSim = last.some(x => similar(x.t, t)), isShort = [...t.replace(/[\s\p{P}]/gu, '')].length <= 3;
+    const spammy = isSim || isShort;
+    let wait = 0, h = heat;
+    if (spammy && now < (st.nextAt || 0)) { wait = st.nextAt - now; h = Math.min(heat + 0.5, 12); }
+    else if (spammy) h = Math.min(heat + (isSim ? 1 : 0.6), 12);
+    if (!commit) return wait;
+    st.heat = h; st.at = now;
+    if (wait) { st.nextAt = Math.max(st.nextAt, now + gap(h)); return st.nextAt - now; }
+    if (spammy) st.nextAt = now + gap(h);
+    last.push({ t, at: now }); if (last.length > 8) last.shift(); st.last = last;
+    return 0;
+  }
+  return { has, badName, mask, spam, fold };
+})();
+// ---- end chat guard ----
+// the same slowdown the server applies, checked before sending, so a refused message never goes out to anyone
+function spamOk(text){
+  const w = GUARD.spam(S.spamSt || (S.spamSt = {}), text, Date.now());
+  if (!w) return true;
+  toast(`Slow down: you can send that in ${Math.ceil(w / 1000)}s.`, 'warn', Math.min(4000, w + 800));
+  return false;
+}
+// the server refused a message I sent (spam slowdown, repeats): take it back off the screen and out of the retry queue,
+// and give the words back to the composer
+function takeBack(m){
+  const p = S.pending.get(m.msgId);
+  S.pending.delete(m.msgId); savePending();
+  msgsOf(m.convId).delete(m.msgId);
+  const row = document.querySelector(`#log .msg[data-mid="${CSS.escape(m.msgId)}"]`);
+  if (row) { row.remove(); S.rows.delete(m.msgId); }
+  if (p && m.convId === S.active && !$('#text').value.trim()) { $('#text').value = p.text; growText(); }
+  if (m.wait) { const st = S.spamSt || (S.spamSt = {}); st.nextAt = Math.max(st.nextAt || 0, Date.now() + m.wait); }
+}
 function rateOk(){
   const now = Date.now(), st = SEND_RATE.stamps;
   while (st.length && now - st[0] >= SEND_RATE.window) st.shift();
@@ -4074,6 +4162,7 @@ function send(){
     return;
   }
   if (!rateOk()) return;
+  if (!S.editing && !spamOk(body)) return;
   if (S.editing) {
     tell({ type:'edit', targetId:S.editing, text });
     clearEdit(); $('#text').value = ''; growText();
@@ -5552,6 +5641,8 @@ function handleArchive(m){
     }
     case 'backlog': {
       const box = msgsOf(m.convId);
+      // #main starts fresh every day: what this device kept from before the reset goes too
+      if (m.since) for (const [id, msg] of box) if (msg.ts < m.since && !S.pending.has(id)) { box.delete(id); S.seen.delete(id); }
       for (const msg of m.msgs) { box.set(msg.msgId, msg); S.seen.add(msg.msgId); }
       trimBox(m.convId); trimSeen();   // a backlog is a bulk insert like any other
       if (m.convId !== S.active) break;
@@ -5611,7 +5702,7 @@ function handleArchive(m){
     }
     case 'edit': {
       const box = msgsOf(m.convId); const t = box.get(m.targetId);
-      if (t) { t.text = m.text; t.edited = true; if (m.convId === S.active) repaintMsg(t); cacheConv(m.convId); }
+      if (t) { t.text = GUARD.mask(m.text); t.edited = true; if (m.convId === S.active) repaintMsg(t); cacheConv(m.convId); }
       break;
     }
     case 'del': {
@@ -5631,12 +5722,12 @@ function handleArchive(m){
       // honest thing is to drop our copy rather than keep showing a log that
       // no longer exists anywhere else.
       const gone = msgsOf(m.convId);
-      for (const id of gone.keys()) S.seen.delete(id);   // seen is msgIds, not convs
-      gone.clear();
+      for (const [id, msg] of gone) if (!m.since || msg.ts < m.since) { S.seen.delete(id); gone.delete(id); }   // seen is msgIds, not convs
       cacheConv(m.convId);
       if (S.active === m.convId) {
-        S.rows.clear(); $('#log').textContent = '';
-        divider('History cleared by an operator', true);
+        S.rows.clear(); dropQueued(); $('#log').textContent = '';
+        divider(m.daily ? 'A new day: #main starts fresh' : 'History cleared by an operator', true);
+        for (const msg of [...gone.values()].sort((a, b) => (a.seq || 9e15) - (b.seq || 9e15))) renderMsg(msg);
       }
       break;
     }
@@ -5680,6 +5771,7 @@ function handleArchive(m){
       if (m.code === 'old-client') { backToJoin(m.text); return; }
       if (m.code === 'ops-pin') { opsPinPane(m.text); return; }
       if (m.code === 'flood' || m.code === 'sessions') { toast(m.text, 'bad', 6000); break; }
+      if ((m.code === 'slow' || m.code === 'repeat') && m.msgId) { takeBack(m); toast(m.text, 'warn', 3500); break; }
       if (m.code === 'no-account' && !S.joined) {
         backToJoin(m.text);
         $('#adoptBox').style.display = 'block';   // offer to adopt the key
@@ -8155,7 +8247,7 @@ window.GVEmbed = {
   read(id){ const c = conv(id); if (c && c.unread) { c.unread = 0; paintSidebar(); } },
   send(id, text){
     text = String(text || '').trim().slice(0, 2000);
-    if (!text || !conv(id) || S.guest || !rateOk()) return false;
+    if (!text || !conv(id) || S.guest || !rateOk() || !spamOk(text)) return false;
     const m = { type:'chat', convId:id, msgId:uid(), userId:S.userId, displayName:S.name, text, ts:Date.now(), kind:'text', replyTo:null };
     S.pending.set(m.msgId, m); savePending(); deliver(m); directSend(m); flushPending();
     return true;

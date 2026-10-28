@@ -180,13 +180,56 @@ body.chat { overflow: hidden; }
 #gate { position: fixed; inset: 0; z-index: 40; background: var(--ground); overflow-y: auto; display: flex; padding: 20px 16px; }
 #gate-box { margin: auto; width: 100%; max-width: 640px; }
 .credit { margin-top: 7px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--signal); }
+/* multiplayer hub + spectating */
+#view-mp { padding: 18px 12px 30px; max-width: 980px; margin: 0 auto; }
+.mp-hero { text-align: center; padding: 28px 12px; }
+.mp-hero h2 { margin: 0 0 8px; font-size: 26px; }
+.mp-hero .rdesc { max-width: 560px; margin: 0 auto; }
+.mp-codebox { display: flex; gap: 8px; justify-content: center; margin: 22px 0 10px; }
+#mp-code { width: 230px; font: 700 34px var(--mono); letter-spacing: .25em; text-align: center; padding: 10px 8px; border-radius: 4px; border: 1px solid var(--line); background: var(--raise); color: var(--text); }
+#mp-code:focus { outline: 2px solid var(--signal); }
+#mp-go, #mp-send { font: 700 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 0 22px; border-radius: 4px; border: 0; background: var(--signal); color: #000; cursor: pointer; }
+.mp-ghost { font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 8px 14px; border-radius: 3px; border: 1px solid var(--line); background: var(--raise); color: var(--text); cursor: pointer; }
+.mp-row { margin: 6px 0 12px; }
+#mp-status { min-height: 20px; margin-top: 6px; }
+.mp-roomtop { display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 14px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.mp-lbl { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+.mp-big { font: 700 34px var(--mono); letter-spacing: .22em; color: var(--signal); }
+.mp-cols { display: grid; grid-template-columns: 1fr 1.3fr; gap: 16px; }
+@media (max-width: 700px) { .mp-cols { grid-template-columns: 1fr; } }
+.mp-col { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 12px; min-width: 0; }
+.mp-person { padding: 5px 0; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+.mp-person .dot { width: 8px; height: 8px; border-radius: 50%; background: #3fd17a; }
+#mp-games { display: flex; flex-wrap: wrap; gap: 8px; }
+#mp-games button, #mp-plays button { font: 700 12px var(--mono); letter-spacing: .06em; padding: 8px 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raise); color: var(--text); cursor: pointer; }
+#mp-games button:hover, #mp-plays button:hover { border-color: var(--signal); }
+.mp-play { margin-top: 10px; padding: 8px 10px; border-left: 3px solid var(--signal); background: var(--raise); }
+#mp-plays button { margin-left: 8px; background: var(--signal); color: #000; border: 0; }
+.mp-chat { display: flex; flex-direction: column; }
+#mp-log { height: 300px; overflow-y: auto; font-size: 14px; line-height: 1.45; padding-right: 4px; }
+#mp-log .sys { color: var(--dim); font-style: italic; }
+.mp-say { display: flex; gap: 6px; margin-top: 8px; }
+#mp-msg { flex: 1; min-width: 0; padding: 9px 10px; border-radius: 3px; border: 1px solid var(--line); background: var(--raise); color: var(--text); font: inherit; }
+#livestat { font: 700 11px var(--mono); letter-spacing: .08em; color: #ff5a5a; }
+#livestat b { background: #e02424; color: #fff; padding: 2px 6px; border-radius: 2px; margin-right: 6px; }
+#golive.on { border-color: #e02424; color: #ff6b6b; }
+#watch { position: fixed; inset: 0; z-index: 8; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 10px; }
+#watch[hidden] { display: none; }
+#watch .box { width: min(1280px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+#watch .wtop { display: flex; gap: 12px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+#w-title { font-weight: 700; flex: 1; }
+#w-stat { font: 11px var(--mono); color: var(--dim); }
+#w-close { font: 700 11px var(--mono); text-transform: uppercase; padding: 6px 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raise); color: var(--text); cursor: pointer; }
+.wscreen { position: relative; aspect-ratio: 16 / 9; background: #000; }
+.wscreen video, .wscreen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+#w-wait { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--dim); font: 13px var(--mono); }
 </style>
 </head>
 <body>
 <div id="hub">
   <div id="topbar">
     <h1>HUNTINGTON GAMES LAUNCHER</h1>
-    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
+    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
     <button id="chip" title="Grapevine"><span class="cdot" id="chip-dot"></span><span class="nm" id="chip-nm"></span></button>
   </div>
   <div id="view-games">
@@ -196,7 +239,27 @@ body.chat { overflow: hidden; }
   <div class="note" id="note"></div>
   </div>
   <div id="view-acct" hidden></div>
+  <div id="view-mp" hidden>
+    <div id="mp-home">
+      <div class="mp-hero">
+        <h2>Play together</h2>
+        <div class="rdesc">Type <b>any</b> 6-digit code. Everyone who types the same code ends up in the same room, where you can chat and start a game together. A code from a friend's <b>Go live</b> button lets you watch their game.</div>
+        <div class="mp-codebox"><input id="mp-code" inputmode="numeric" maxlength="7" placeholder="123456" autocomplete="off" spellcheck="false"><button id="mp-go">Go</button></div>
+        <div class="mp-row"><button id="mp-new" class="mp-ghost">Make a room for me</button></div>
+        <div id="mp-status" class="rdesc"></div>
+      </div>
+    </div>
+    <div id="mp-room" hidden>
+      <div class="mp-roomtop"><div><div class="mp-lbl">Room</div><div id="mp-roomcode" class="mp-big"></div></div><button id="mp-leave" class="mp-ghost">Leave room</button></div>
+      <div class="mp-cols">
+        <div class="mp-col"><div class="mp-lbl">In this room</div><div id="mp-people"></div>
+          <div class="mp-lbl" style="margin-top:14px">Start a game for everyone</div><div id="mp-games"></div><div id="mp-plays"></div></div>
+        <div class="mp-col mp-chat"><div class="mp-lbl">Room chat</div><div id="mp-log"></div><div class="mp-say"><input id="mp-msg" maxlength="200" placeholder="Say something..." autocomplete="off"><button id="mp-send">Send</button></div></div>
+      </div>
+    </div>
+  </div>
 </div>
+<div id="watch" hidden><div class="box"><div class="wtop"><span id="w-title">Watching</span><span id="w-stat"></span><button id="w-close">Stop watching</button></div><div class="wscreen"><video id="w-video" autoplay playsinline muted></video><img id="w-img" alt=""><div id="w-wait">Connecting to the game...</div></div></div></div>
 <div id="view-chat" hidden><iframe id="gvapp" title="Grapevine" allow="clipboard-write"></iframe></div>
 <div id="gate" hidden><div id="gate-box"></div></div>
 <div id="tour" hidden><div class="box"></div></div>
@@ -204,7 +267,7 @@ body.chat { overflow: hidden; }
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
 <div id="player">
-  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><span id="chathint"></span><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
+  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><span id="chathint"></span><span id="livestat"></span><button id="golive" title="Let friends watch this game with a code">Go live</button><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
   <iframe id="frame" allow="fullscreen; pointer-lock; autoplay; gamepad" allowfullscreen></iframe>
 </div>
 <script>
@@ -247,6 +310,7 @@ var local = !BUNDLE && (location.protocol === 'file:' || /github\.io$/.test(loca
 var GAMES = [
   { dir: 'Sovereign', name: 'Sovereign 1.2', img: 'sovereign', tags: ['New', '3D', 'Strategy'], desc: 'NEW 1.2, the war update: conquer whole countries and rule them (their land, cities and tribute, but watch for uprisings), front lines that move every week and shift under air and missile strikes, a detailed war map when you zoom in, and World Domination. Leader portraits are gone. 1.1: wars now end when a country loses its will to fight, and you choose the surrender terms. About 100 new events and much more news and flavour text. Lead any of 197 real countries on a living 3D globe: run the economy, pass laws, win elections, deal with real world leaders.' },
   { dir: 'Frontline', chatShift: true, name: 'Frontline: Command 3.1', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: 'NEW 3.1: Resource Farms that grow money (more the longer they stand), and every side now gets 5 Upgrades per battle, so pick them well. 3.0: a second faction, the Iron Legion - 24 units with shields, their own upgrades and AI commander Kael (pick your side online too). 5 new maps, including 2 coastal ones with a Shipyard, Gunboats, Landing Craft and Destroyers. Night battles with rain, fog or snow, and a General perk tree with 18 perks. Plus new achievements and a Field Guide. Still here: Endless War, the 7-battle Campaign and online battles with a 6-digit code.' },
+  { dir: 'Lumi Lantern', name: "Lumi's Lantern", img: 'lumi', tags: ['New', 'Platformer'], desc: "NEW: a hand-crafted 2D platformer. Guide Lumi, a little spirit of light, through four glowing worlds (a dusk forest, crystal caves, sky temples and a fire forge) and relight the lanterns. Learn the double jump, wall jump and dash, find the 3 hidden star moths in every level, and face The Gloom. Real-time lighting, gamepad and touch support, 17 levels." },
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter 5.1', img: 'blocky', tags: ['New', '3D', 'Multiplayer'], desc: '5.1: the Zombie Hounds are gone, replaced by the slow, easy Shambler. Much smoother on Chromebooks. Big waves use about 40% less processor time, Low stays sharp (85%, never under 70%), and Auto now really adapts while you play. 5.0: a story Campaign, 3 chapters of missions (hold zones, rescue survivors, fix generators, escape before the timer) ending with Patient Zero. Realistic new gun models, upgraded zombies and bosses, better lighting that runs faster on Chromebooks, and a new start screen. New Subway map, the Shocker, the Vent Crawler, a Burst Carbine and a Lever Rifle. Power-ups are gone. Multiplayer finds games on your wifi, and you can invite friends from Grapevine.' },
   { dir: 'Tower Defense 2.0', name: 'Tower Defense 3.0', img: 'td', tags: ['New', 'Strategy'], desc: 'NEW 3.0: pick one of 6 heroes with 2 abilities each, 18 new towers including a whole Alien tab, 7 alien enemies and the Mothership boss. 12 new maps with terrain and stars, boss waves every 10, a Daily Challenge, and a Map Editor with share codes. Still two modes: Tower Mode or Troop Mode, 1900 to the future.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon 2.1', img: 'coffee', tags: ['New', 'Tycoon'], desc: 'NEW 2.1: every city has its own local specials and a local ingredient you can only buy there (Maple Lattes at home, Coconut Iced Coffee at the beach, Nitro Cold Brew downtown, Gold Leaf Hot Chocolate on the slopes...). 2.0: open shops in 5 new cities, invent drinks in the Recipe Lab, train staff with skill trees, and run a franchise chain with managers. Random events with choices, decorations, seasons and holidays, an 8-chapter career story and a latte art mini-game. Build, staff and grow a chain of coffee shops.' },
@@ -655,7 +719,7 @@ async function downloadOffline() {
   }
   btn.disabled = false; btn.textContent = old;
 }
-function play(g) { if (document.getElementById('gate').hidden === false) return; if (window.HGAch) window.HGAch.played(g.dir); gvBeforePlay(g, function () { playNow(g); }); }
+function play(g, fast) { if (document.getElementById('gate').hidden === false) return; if (window.HGAch) window.HGAch.played(g.dir); gvBeforePlay(g, function () { playNow(g); }, fast); }
 // an unlocked achievement, posted into a chat as a card
 window.HG_shareAch = function (id, convId) {
   var A = window.HGAch, a = A && A.byId(id), api = chatApi(), L = window.HGGrapevine, me = L && L.me();
@@ -689,6 +753,7 @@ function playNow(g) {
 }
 function closePlayer() {
   var wasOpen = !!current;
+  if (MP.live) liveStop();
   loadId++; current = null;
   document.getElementById('player').classList.remove('open');
   frame.removeAttribute('srcdoc'); frame.src = 'about:blank';
@@ -893,13 +958,14 @@ function startChat() {
   }, function (e) { chatLoaded = false; frm.srcdoc = '<body style="font:14px sans-serif;background:#0b0b0d;color:#e5484d;padding:30px">' + String(e.message).replace(/</g, '&lt;') + '</body>'; });
 }
 function showTab(which) {
-  if (guestMode && which !== 'games') { guestMode = false; onGvChange(); return; }   // those need an account: show the sign-in screen again
+  if (guestMode && which !== 'games' && which !== 'mp') { guestMode = false; onGvChange(); return; }   // those need an account: show the sign-in screen again
   var chat = which === 'chat';
   document.getElementById('view-games').hidden = which !== 'games';
   document.getElementById('view-acct').hidden = which !== 'acct';
+  document.getElementById('view-mp').hidden = which !== 'mp';
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
-  ['games', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  ['games', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
   if (chat) {
     document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
     if (chatLoaded !== true) loadGV().then(startChat, function () {});
@@ -1018,6 +1084,10 @@ window.HG_inviteTargets = function () {
 };
 window.HG_sendInvite = function (convId, o) {
   var api = chatApi(), g = o && inviteGame(o.game), code = o && String(o.code || '');
+  if (/^hub:/.test(String(convId))) {          // a game started from a hub room: tell the room
+    if (!g || !/^[A-Za-z0-9-]{4,40}$/.test(code) || !MP.net || 'hub:' + MP.code !== convId) return false;
+    MP.net.send('all', { t: 'play', game: o.game, code: code }); hubPlay(mpName(), o.game, code, true); return true;
+  }
   if (!api || !g || !/^[A-Za-z0-9-]{4,40}$/.test(code)) return false;
   var what = g.name.replace(/ [\d.]+$/, '') + (o.mode ? ' (' + String(o.mode).replace(/[^\w -]/g, '').slice(0, 24) + ')' : '');
   return !!api.send(convId, 'Join my ' + what + ' game! Party code ' + code + ' - hg-invite:' + o.game + ':' + code);
@@ -1039,7 +1109,7 @@ window.HG_hostInvite = function (game, convId) {
   if (popup && !popup.closed && popupGame === g) wins.push(popup);
   for (var i = 0; i < wins.length; i++) { try { if (wins[i].__hgHost) { wins[i].__hgHost(convId); return true; } } catch (e) {} }
   pendingHost = { game: game, convId: convId, at: Date.now() };
-  play(g); return true;
+  play(g, true); return true;
 };
 window.HG_joinInvite = function (game, code) { joinInvite(game, code); };
 function joinInvite(game, code) {
@@ -1050,7 +1120,7 @@ function joinInvite(game, code) {
   if (current && current.game === g) { try { wins.push(frame.contentWindow); } catch (e) {} }
   if (popup && !popup.closed && popupGame === g) wins.push(popup);
   for (var i = 0; i < wins.length; i++) { try { if (wins[i].__hgJoin) { pendingJoin = null; wins[i].__hgJoin(code); return; } } catch (e) {} }
-  play(g);
+  play(g, true);
 }
 document.addEventListener('fullscreenchange', function () { var h = document.getElementById('hgt-host'); if (h) toastHost(document); });
 
@@ -1126,13 +1196,290 @@ document.getElementById('tab-chat').onclick = function () { showTab('chat'); };
 document.getElementById('tab-acct').onclick = function () { showTab('acct'); };
 document.getElementById('chip').onclick = function () { showTab('acct'); };
 window.addEventListener('resize', function () { if (document.body.className === 'chat') document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px'); });
+// ---- chat guard (identical in archive.js and client.html: keep the two in step) ----
+// SLUR: the one word this server will not carry, the n-word in its usual spellings (n1gga, n i g g e r, Cyrillic
+// look-alikes, ...). Nothing else is filtered: swearing stays. Names that contain it are refused; in text it is masked.
+// SPAM: a slowdown that only touches spam-like messages (the same or nearly the same as one of your recent ones, or
+// very short). Each one adds heat; past a little heat the next such message must wait, longer the hotter you are
+// (under a second at first, growing to a minute). Trying again too early adds more heat; heat cools by one every 6 s.
+// Typing different, real messages fast is never slowed.
+const GUARD = (() => {
+  const MAP = { '1': 'i', '!': 'i', '|': 'i', '¡': 'i', 'і': 'i', 'ı': 'i', 'ї': 'i', '3': 'e', 'е': 'e', 'є': 'e', 'ё': 'e', '4': 'a', '@': 'a', 'а': 'a',
+    '9': 'g', '6': 'g', 'ɡ': 'g', 'ԍ': 'g', 'ġ': 'g', 'п': 'n', 'ո': 'n', 'η': 'n', 'г': 'r', 'ʀ': 'r', '$': 's', '5': 's', 'ѕ': 's', 'у': 'y', 'ү': 'y' };
+  const INVIS = /[­͏؜ᅟᅠ឴឵᠎​-‏‪-‮⁠-⁯﻿]/;
+  // one output character per UTF-16 unit, so a match's position is its position in the original text
+  function fold(t) {
+    let o = '';
+    for (let i = 0; i < t.length;) {
+      const cp = t.codePointAt(i), w = cp > 0xffff ? 2 : 1, ch = String.fromCodePoint(cp);
+      let c = '\u0001';
+      if (!INVIS.test(ch)) {
+        const l = ch.toLowerCase();
+        c = MAP[l] || l.normalize('NFKD').charAt(0) || l;
+        c = MAP[c] || c;
+        if (c.length !== 1 || c.charCodeAt(0) > 0xffff) c = '\u0001';
+      }
+      o += c + (w === 2 ? '\u0001' : ''); i += w;
+    }
+    return o;
+  }
+  const S = '[^a-z]{0,3}';
+  const WORD = new RegExp(`(?<![a-z])n${S}[iy]+${S}(?:g${S}){2,}(?!l|ard)(?:e+${S}r+|a+h?|uh|r)?(?:${S}[sz])?`, 'g');
+  const NAME = /(?<!s)n[iy]+g{2,}(?!l)/;
+  const has = t => { WORD.lastIndex = 0; return WORD.test(fold(String(t || ''))); };
+  const badName = n => { const f = fold(String(n || '')).replace(/[^a-z]/g, ''); return NAME.test(f) || has(n); };
+  function mask(t) {
+    t = String(t ?? ''); if (!t) return t;
+    const f = fold(t); let out = '', at = 0, m; WORD.lastIndex = 0;
+    while ((m = WORD.exec(f))) { out += t.slice(at, m.index) + '*'.repeat(m[0].length); at = m.index + m[0].length; if (!m[0].length) WORD.lastIndex++; }
+    return at ? out + t.slice(at) : t;
+  }
+  // ---- spam heat ----
+  const norm = t => String(t || '').toLowerCase().normalize('NFKC').replace(/\s+/g, ' ').replace(/(.)\1{2,}/gu, '$1$1').trim();
+  const bigrams = t => { const b = new Map(); for (let i = 0; i < t.length - 1; i++) { const k = t.slice(i, i + 2); b.set(k, (b.get(k) || 0) + 1); } return b; };
+  function similar(a, b) {
+    if (a === b) return true;
+    if (a.length < 4 || b.length < 4) return false;
+    const A = bigrams(a), B = bigrams(b); let n = 0;
+    for (const [k, v] of A) n += Math.min(v, B.get(k) || 0);
+    return 2 * n / (a.length - 1 + b.length - 1) >= 0.8;
+  }
+  const gap = h => h < 1.5 ? 0 : Math.min(60000, Math.round(700 * Math.pow(1.6, h - 1.5)));
+  // st: per-account state, kept by the caller. Returns 0 (send it) or the milliseconds to wait. commit=false only asks.
+  function spam(st, text, now, commit = true) {
+    const heat = Math.max(0, (st.heat || 0) - (now - (st.at || now)) / 6000);
+    const t = norm(text), last = (st.last || []).filter(x => x.at > now - 120000);
+    const isSim = last.some(x => similar(x.t, t)), isShort = [...t.replace(/[\s\p{P}]/gu, '')].length <= 3;
+    const spammy = isSim || isShort;
+    let wait = 0, h = heat;
+    if (spammy && now < (st.nextAt || 0)) { wait = st.nextAt - now; h = Math.min(heat + 0.5, 12); }
+    else if (spammy) h = Math.min(heat + (isSim ? 1 : 0.6), 12);
+    if (!commit) return wait;
+    st.heat = h; st.at = now;
+    if (wait) { st.nextAt = Math.max(st.nextAt, now + gap(h)); return st.nextAt - now; }
+    if (spammy) st.nextAt = now + gap(h);
+    last.push({ t, at: now }); if (last.length > 8) last.shift(); st.last = last;
+    return 0;
+  }
+  return { has, badName, mask, spam, fold };
+})();
+// ---- end chat guard ----
+// ---- Multiplayer hub + Go live (spectating) ----------------------------------------------------------------------
+// Both run on HGNet, the relay network the games use (it comes with Grapevine's code, gv/account.js).
+//   Hub rooms (HGNet game 'hghub'): type ANY 6-digit code - you join that room, or open it if nobody has. Chat, who is
+//   here, and "start a game for everyone": the game hosts a party and its code goes to the room with a Join button.
+//   Go live (HGNet game 'hgspec'): the game being played is captured (its canvas, or the tab for page-based games) and
+//   sent as video over WebRTC; a viewer that gets no video asks for still frames through the relays instead.
+//   The same code box finds both: a live game with that code opens the viewer, otherwise you get the room.
+var MP = { net: null, code: '', plays: [], live: null, watch: null, spam: {}, tries: 0 };
+var MP_GAMES = ['blocky', 'frontline'];
+function mpName() { var L = window.HGGrapevine, me = null; try { me = L && L.me && L.me(); } catch (e) {} return String((me && me.name) || savedName() || 'Player ' + (100 + Math.floor(Math.random() * 900))).slice(0, 24); }
+function mpOpts(game) { var o = { game: game }; if (window.HG_TEST_RELAYS) o.relays = window.HG_TEST_RELAYS; if (window.HG_TEST_PEER !== undefined) o.peer = window.HG_TEST_PEER; return o; }
+function mpReady() { return loadGV().then(function () { if (!window.HGNet) throw new Error('Multiplayer could not load.'); return window.HGNet; }); }
+function mpStatus(t) { document.getElementById('mp-status').textContent = t || ''; }
+function mpEl(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+function mpGo(code, again) {
+  code = String(code || '').replace(/[\s.-]/g, '');
+  if (!/^\d{6}$/.test(code)) { mpStatus('Codes are 6 digits.'); return; }
+  if (!again) MP.tries = 0;
+  if (MP.net && MP.code === code) return hubShow(true);
+  hubLeave(true);
+  mpStatus('Looking for ' + code + '...');
+  mpReady().then(function (N) {
+    var spec = N.create(mpOpts('hgspec')), hub = N.create(mpOpts('hghub')), settled = false, name = mpName();
+    var wrap = function (p) { return p.then(function (r) { return { ok: true, r: r }; }, function (e) { return { ok: false, e: e }; }); };
+    var ps = wrap(spec.join(code, { name: name, info: { watch: 1 } })), ph = wrap(hub.join(code, { name: name }));
+    ps.then(function (x) { if (x.ok && !settled) { settled = true; hub.close(); mpStatus(''); watchStart(spec, x.r, code); } else if (!x.ok || settled) spec.close(); });
+    ph.then(function (x) {
+      if (x.ok && !settled) { settled = true; spec.close(); hubOpen(hub, code); return; }
+      hub.close();
+      if (x.ok) return;
+      if (x.e && x.e.code !== 'not-found') { if (!settled) { settled = true; spec.close(); mpStatus(x.e.message); } return; }
+      ps.then(function (y) { if (settled) return; settled = true; if (!y.ok) hubHost(N, code); });
+    });
+  }, function (e) { mpStatus(e.message); });
+}
+function hubHost(N, code) {
+  var net = N.create(mpOpts('hghub'));
+  mpStatus('Opening room ' + code + '...');
+  net.host({ name: mpName(), maxPlayers: 24, code: code }).then(function (r) {
+    if (r.code !== code) { net.close(); if (++MP.tries < 3) setTimeout(function () { mpGo(code, true); }, 400 + Math.random() * 600); else mpStatus('Could not open room ' + code + '. Try again.'); return; }
+    hubOpen(net, code);
+  }, function (e) { mpStatus(e.message); });
+}
+function hubOpen(net, code) {
+  MP.net = net; MP.code = code; MP.plays = []; mpStatus('');
+  document.getElementById('mp-roomcode').textContent = code;
+  document.getElementById('mp-log').innerHTML = '';
+  hubSys(net.isHost ? 'You opened room ' + code + '. Friends who type ' + code + ' come here.' : 'You joined room ' + code + '.');
+  net.on('join', function (p) { if (p.id !== net.id && !p.isHost || net.isHost) hubSys(p.name + ' joined.'); hubPeople(); });
+  net.on('leave', function (p) { hubSys(p.name + ' left.'); hubPeople(); });
+  net.on('message', function (p, m) {
+    if (!m || typeof m !== 'object') return;
+    if (m.t === 'chat') hubLine(p.name, String(m.text || '').slice(0, 200));
+    else if (m.t === 'play' && INVITE_GAMES[m.game] && /^[A-Za-z0-9-]{4,40}$/.test(String(m.code))) hubPlay(p.name, m.game, String(m.code), false);
+  });
+  net.on('closed', function (reason) {
+    if (MP.net !== net) return;
+    MP.net = null;
+    if (reason === 'closed') return;
+    hubSys('The room lost its host - reconnecting...');
+    setTimeout(function () { if (!MP.net && MP.code === code) mpGo(code, true); }, 300 + Math.random() * 1200);
+  });
+  hubPeople(); hubGames(); hubShow(true);
+}
+function hubShow(inRoom) { document.getElementById('mp-home').hidden = !!inRoom; document.getElementById('mp-room').hidden = !inRoom; if (inRoom) setTimeout(function () { document.getElementById('mp-msg').focus(); }, 30); }
+function hubLeave(quiet) { var n = MP.net; MP.net = null; if (!quiet) MP.code = ''; if (n) try { n.close(); } catch (e) {} hubShow(false); }
+function hubPeople() {
+  var box = document.getElementById('mp-people'); box.innerHTML = ''; if (!MP.net) return;
+  var me = { name: mpName() + ' (you)' }, list = [me].concat(MP.net.peers().filter(function (p) { return p.id !== MP.net.id; }));
+  list.forEach(function (p) { var d = mpEl('div', 'mp-person'); d.appendChild(mpEl('span', 'dot')); d.appendChild(mpEl('span', '', p.name + (p.state === 'reconnecting' ? ' (reconnecting)' : ''))); box.appendChild(d); });
+}
+function hubGames() {
+  var box = document.getElementById('mp-games'); box.innerHTML = '';
+  MP_GAMES.forEach(function (id) { var g = inviteGame(id); if (!g) return; var b = mpEl('button', '', g.name.replace(/ [\d.]+$/, '')); b.onclick = function () { hubStart(id); }; box.appendChild(b); });
+}
+function hubLog(node) { var log = document.getElementById('mp-log'); log.appendChild(node); while (log.children.length > 200) log.removeChild(log.firstChild); log.scrollTop = log.scrollHeight; }
+function hubSys(t) { hubLog(mpEl('div', 'sys', t)); }
+function hubLine(who, text) { var d = mpEl('div'); d.appendChild(mpEl('b', '', who + ': ')); d.appendChild(document.createTextNode(GUARD.mask(text))); hubLog(d); }
+function hubSay() {
+  var inp = document.getElementById('mp-msg'), t = inp.value.trim(); if (!t || !MP.net) return;
+  var w = GUARD.spam(MP.spam, t, Date.now()); if (w) { hubSys('Slow down: you can send that in ' + Math.ceil(w / 1000) + 's.'); return; }
+  t = GUARD.mask(t.slice(0, 200)); MP.net.send('all', { t: 'chat', text: t }); hubLine(mpName(), t); inp.value = '';
+}
+// start a game for the whole room: the game hosts a party and reports its code through HG_sendInvite('hub:<room>', ...)
+function hubStart(id) { if (!MP.net) return; hubSys('Starting ' + inviteGame(id).name.replace(/ [\d.]+$/, '') + '...'); window.HG_hostInvite(id, 'hub:' + MP.code); }
+function hubPlay(who, game, code, mine) {
+  var g = inviteGame(game); if (!g) return;
+  var d = mpEl('div', 'mp-play'); d.appendChild(document.createTextNode((mine ? 'You' : who) + ' started ' + g.name.replace(/ [\d.]+$/, '') + ' (party ' + code + ')'));
+  if (!mine) { var b = mpEl('button', '', 'Join'); b.onclick = function () { joinInvite(game, code); }; d.appendChild(b); }
+  var box = document.getElementById('mp-plays'); box.insertBefore(d, box.firstChild); while (box.children.length > 4) box.removeChild(box.lastChild);
+  hubSys((mine ? 'You' : who) + ' started a game.');
+  if (!mine && typeof window.HG_notify === 'function') window.HG_notify({ kind: 'invite', from: who, title: who + ' started a game in your room', text: g.name.replace(/ [\d.]+$/, '') + ' - press to join', game: game, code: code });
+}
+
+// ---- Go live ----
+function gameWin() { try { if (popup && !popup.closed && current && popupGame === current.game) return popup; } catch (e) {} try { return frame.contentWindow; } catch (e) { return null; } }
+function liveCapture(win) {
+  // the game's main canvas if it has one (no prompt), otherwise the tab itself (the browser asks)
+  var best = null, area = 0;
+  try {
+    var vw = win.innerWidth, vh = win.innerHeight;
+    Array.prototype.forEach.call(win.document.querySelectorAll('canvas'), function (c) { var r = c.getBoundingClientRect(), a = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0)) * Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0)); if (a > area) { area = a; best = c; } });
+    if (best && area > vw * vh * 0.3 && best.captureStream) return Promise.resolve({ stream: best.captureStream(15), kind: 'canvas' });
+  } catch (e) {}
+  var md = navigator.mediaDevices;
+  if (!md || !md.getDisplayMedia) return Promise.reject(new Error('This browser cannot share this game.'));
+  return md.getDisplayMedia({ video: { frameRate: 15 }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include' }).then(function (s) { return { stream: s, kind: 'tab' }; },
+    function () { throw new Error('Sharing was cancelled (or this page is not allowed to share the screen).'); });
+}
+function loadPeerJS() {
+  if (window.Peer) return Promise.resolve(window.Peer);
+  var urls = ((window.HGNet && HGNet.defaults && HGNet.defaults.libs && HGNet.defaults.libs.peerjs) || ['https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js']).slice();
+  return new Promise(function (res, rej) {
+    (function next() { var u = urls.shift(); if (!u) return rej(new Error('no PeerJS')); var s = document.createElement('script'); s.src = u; s.onload = function () { window.Peer ? res(window.Peer) : next(); }; s.onerror = next; document.head.appendChild(s); })();
+  });
+}
+function peerOpts() {
+  var o = { debug: 0, config: { iceServers: (window.HGNet && HGNet.defaults && HGNet.defaults.iceServers) || [] } }, t = window.HG_TEST_PEER;
+  if (t && typeof t === 'object') { if (t.host) o.host = t.host; if (t.port) o.port = t.port; if (t.path) o.path = t.path; if (t.secure !== undefined) o.secure = t.secure; }
+  return o;
+}
+function liveToggle() { if (MP.live) liveStop(); else liveStart(); }
+function liveStat(t) { document.getElementById('livestat').innerHTML = t || ''; document.getElementById('golive').classList.toggle('on', !!MP.live); document.getElementById('golive').textContent = MP.live ? 'Stop live' : 'Go live'; }
+function liveStart() {
+  var g = current && current.game, win = gameWin(); if (!g || !win) return;
+  var L = MP.live = { g: g, frames: [], net: null, peer: null, calls: [], timer: null, video: null, stream: null };
+  liveStat('Starting...');
+  liveCapture(win).then(function (cap) {
+    if (MP.live !== L) { cap.stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+    L.stream = cap.stream; L.kind = cap.kind;
+    cap.stream.getVideoTracks().forEach(function (t) { t.onended = function () { if (MP.live === L) liveStop(); }; });
+    var v = L.video = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = cap.stream; v.play().catch(function () {});
+    return mpReady().then(function (N) {
+      var net = L.net = N.create(mpOpts('hgspec'));
+      return net.host({ name: mpName(), maxPlayers: 40, info: { game: g.name, by: mpName() } }).then(function (r) {
+        if (MP.live !== L) { net.close(); return; }
+        L.code = r.code; liveCount();
+        net.on('join', liveCount); net.on('leave', function (p) { L.frames = L.frames.filter(function (id) { return id !== p.id; }); liveCount(); });
+        net.on('message', function (p, m) {
+          if (!m) return;
+          if (m.t === 'hi' && typeof m.pid === 'string' && L.peer) { try { var c = L.peer.call(m.pid, L.stream); if (c) L.calls.push(c); } catch (e) {} }
+          if (m.t === 'frames' && L.frames.indexOf(p.id) < 0) L.frames.push(p.id);
+        });
+        // still frames for viewers whose video never arrives: about 3 a second, small JPEGs, through the relays
+        var cv = document.createElement('canvas'); cv.width = 320; cv.height = 180; var cx = cv.getContext('2d');
+        L.timer = setInterval(function () {
+          if (!L.frames.length || !v.videoWidth) return;
+          var k = Math.min(320 / v.videoWidth, 180 / v.videoHeight), w = Math.round(v.videoWidth * k), h = Math.round(v.videoHeight * k);
+          if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+          try { cx.drawImage(v, 0, 0, w, h); var d = cv.toDataURL('image/jpeg', 0.45); if (d.length < 40000) net.send(L.frames, { t: 'f', d: d }, { fast: true }); } catch (e) {}
+        }, 330);
+        if (window.HG_TEST_PEER !== false) loadPeerJS().then(function (Peer) { if (MP.live !== L) return; try { L.peer = new Peer(peerOpts()); L.peer.on('error', function () {}); } catch (e) {} }, function () {});
+      });
+    });
+  }).catch(function (e) { if (MP.live === L) { MP.live = null; liveStat(''); } alert(e.message || 'Could not go live.'); });
+}
+function liveCount() { var L = MP.live; if (!L || !L.net || !L.code) return; var n = L.net.peers().filter(function (p) { return p.id !== L.net.id; }).length; liveStat('<b>LIVE</b>' + L.code + ' &middot; ' + n + ' watching'); }
+function liveStop() {
+  var L = MP.live; MP.live = null; if (!L) return liveStat('');
+  clearInterval(L.timer); L.calls.forEach(function (c) { try { c.close(); } catch (e) {} });
+  try { if (L.peer) L.peer.destroy(); } catch (e) {} try { if (L.net) L.net.close(); } catch (e) {}
+  if (L.stream && L.kind === 'tab') L.stream.getTracks().forEach(function (t) { t.stop(); });
+  liveStat('');
+}
+// ---- watching ----
+function watchStart(net, r, code) {
+  watchStop();
+  var W = MP.watch = { net: net, peer: null, got: false, frames: false }, info = (r.hostInfo && r.hostInfo.info) || {};
+  var box = document.getElementById('watch'), vid = document.getElementById('w-video'), img = document.getElementById('w-img'), wait = document.getElementById('w-wait');
+  document.getElementById('w-title').textContent = 'Watching ' + String(info.by || r.hostInfo.name || 'a friend').slice(0, 24) + ' play ' + String(info.game || 'a game').slice(0, 40);
+  document.getElementById('w-stat').textContent = 'code ' + code;
+  vid.srcObject = null; vid.hidden = true; img.hidden = true; img.removeAttribute('src'); wait.hidden = false; wait.textContent = 'Connecting to the game...';
+  box.hidden = false;
+  net.on('message', function (p, m) { if (m && m.t === 'f' && typeof m.d === 'string' && /^data:image\/jpeg;base64,/.test(m.d) && !W.got) { img.src = m.d; img.hidden = false; wait.hidden = true; document.getElementById('w-stat').textContent = 'code ' + code + ' · snapshots'; } });
+  net.on('closed', function () { if (MP.watch !== W) return; wait.hidden = false; wait.textContent = 'The stream has ended.'; vid.hidden = true; img.hidden = true; });
+  var askFrames = function () { if (MP.watch === W && !W.got && !W.frames) { W.frames = true; net.send('host', { t: 'frames' }); } };
+  W.fallback = setTimeout(askFrames, 7000);
+  if (window.HG_TEST_PEER === false) askFrames();
+  else loadPeerJS().then(function (Peer) {
+    if (MP.watch !== W) return;
+    try { W.peer = new Peer(peerOpts()); } catch (e) { return askFrames(); }
+    W.peer.on('open', function (id) { net.send('host', { t: 'hi', pid: id }); });
+    W.peer.on('error', function () { askFrames(); });
+    W.peer.on('call', function (c) {
+      c.answer();
+      c.on('stream', function (s) { if (MP.watch !== W) return; W.got = true; vid.srcObject = s; vid.hidden = false; img.hidden = true; wait.hidden = true; vid.play().catch(function () {}); document.getElementById('w-stat').textContent = 'code ' + code + ' · live video'; });
+      c.on('close', function () { if (MP.watch === W) { W.got = false; askFrames(); } });
+    });
+  }, askFrames);
+}
+function watchStop() {
+  var W = MP.watch; MP.watch = null; document.getElementById('watch').hidden = true; if (!W) return;
+  clearTimeout(W.fallback); try { if (W.peer) W.peer.destroy(); } catch (e) {} try { W.net.close(); } catch (e) {}
+  var v = document.getElementById('w-video'); v.srcObject = null;
+}
+document.getElementById('tab-mp').onclick = function () { showTab('mp'); };
+document.getElementById('mp-go').onclick = function () { mpGo(document.getElementById('mp-code').value); };
+document.getElementById('mp-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') mpGo(this.value); });
+document.getElementById('mp-new').onclick = function () { var c = String(100000 + Math.floor(Math.random() * 900000)); document.getElementById('mp-code').value = c; mpGo(c); };
+document.getElementById('mp-leave').onclick = function () { hubLeave(false); };
+document.getElementById('mp-send').onclick = hubSay;
+document.getElementById('mp-msg').addEventListener('keydown', function (e) { if (e.key === 'Enter') hubSay(); });
+document.getElementById('golive').onclick = liveToggle;
+document.getElementById('w-close').onclick = watchStop;
+window.HG_hub = { go: mpGo, leave: hubLeave, state: function () { return { room: MP.net ? MP.code : null, host: !!(MP.net && MP.net.isHost), people: MP.net ? MP.net.peers().length : 0, live: MP.live ? MP.live.code || 'starting' : null, watching: !!MP.watch, watchVideo: !!(MP.watch && MP.watch.got), plays: document.getElementById('mp-plays').children.length }; } };
+
 // Saves follow the account: before a game opens (so it starts from the newest save), and again after it closes.
 // A game reads its save the moment it starts, so the account's saves have to be on this device BEFORE that. The first time in a
 // visit this waits (up to 25 s, with a button to skip) for the sign-in and the first sync; afterwards it only refreshes if the last
 // sync is more than a minute old. Anything newer that arrives while a game is open waits until it closes.
-function gvBeforePlay(g, go) {
+function gvBeforePlay(g, go, fast) {
   var L = window.HGGrapevine;
   if (!(L && L.me())) return go();
+  // multiplayer (an invite, a hub room): straight in. Saves still sync in the background, and anything newer from the
+  // account waits until the game closes, the same as "Play without waiting".
+  if (fast) { L.sync.setGameOpen(true); if (L.online()) L.sync.run().catch(function () {}); return go(); }
   var s0 = L.sync.status(), recent = L.online() && s0.synced && Date.now() - (s0.at || 0) < 60000;
   if (recent) { L.sync.setGameOpen(true); return go(); }
   var id = ++loadId, done = false;

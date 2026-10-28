@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lumi's Lantern</title>
+<style>
+:root { --gold: #ffd36b; --amber: #ff9f45; --ink: #0b1026; --glass: rgba(14, 20, 48, .78); --line: rgba(255, 220, 140, .28); --txt: #f4f1ff; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #070a1a; color: var(--txt);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+#fade { position: fixed; inset: 0; background: #05060f; opacity: 0; pointer-events: none; transition: opacity .35s; z-index: 50; }
+#fade.on { opacity: 1; }
+
+/* buttons */
+.btn { font: inherit; font-weight: 800; letter-spacing: .04em; color: #2b1a05; cursor: pointer; border: 0; border-radius: 14px;
+  padding: 11px 22px; margin: 6px; min-width: 190px; font-size: 17px;
+  background: linear-gradient(180deg, #fff1c4 0%, var(--gold) 45%, #f0a43a 100%);
+  box-shadow: 0 5px 0 #a8611c, 0 8px 22px rgba(255, 170, 60, .35), inset 0 1px 0 rgba(255,255,255,.8); transition: transform .08s, filter .15s; }
+.btn:hover, .btn:focus-visible { filter: brightness(1.08); transform: translateY(-1px); outline: none; }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #a8611c, 0 4px 12px rgba(255, 170, 60, .3); }
+.btn.big { font-size: 22px; padding: 14px 30px; min-width: 240px; }
+.btn.small { min-width: 0; font-size: 14px; padding: 8px 14px; }
+.btn.ghost { background: rgba(255,255,255,.08); color: var(--txt); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* screens */
+.screen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.screen.dim { background: radial-gradient(ellipse at center, rgba(8,10,30,.55), rgba(3,4,14,.85)); backdrop-filter: blur(3px); }
+.card { background: var(--glass); border: 1px solid var(--line); border-radius: 24px; padding: 26px 34px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 0 60px rgba(255, 190, 90, .12), inset 0 1px 0 rgba(255,255,255,.08);
+  max-width: 92vw; max-height: 92vh; overflow: auto; display: flex; flex-direction: column; align-items: center; }
+.card.wide { min-width: min(560px, 92vw); }
+.card h2 { margin: 2px 0 14px; font-size: 34px; color: var(--gold); text-shadow: 0 0 18px rgba(255, 190, 90, .6); letter-spacing: .03em; }
+.row { display: flex; flex-wrap: wrap; justify-content: center; }
+
+/* title */
+#s-title { justify-content: flex-start; padding-top: 11vh; pointer-events: none; }
+#s-title .menu, #s-title button { pointer-events: auto; }
+.logo { display: flex; flex-direction: column; align-items: center; line-height: .9; filter: drop-shadow(0 0 30px rgba(255, 190, 90, .55)); animation: bob 4s ease-in-out infinite; }
+.logo .l1 { font-size: clamp(28px, 4.5vw, 54px); font-weight: 900; color: #ffe9b0; letter-spacing: .12em; text-transform: uppercase; }
+.logo .l2 { font-size: clamp(64px, 11vw, 150px); font-weight: 900; letter-spacing: .02em;
+  background: linear-gradient(180deg, #fffbe9 0%, #ffd36b 40%, #ff9f45 75%, #e8572a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  -webkit-text-stroke: 2px rgba(80, 30, 0, .35); }
+.tag { margin-top: 10px; font-size: 20px; color: #cfd6ff; letter-spacing: .25em; text-transform: uppercase; opacity: .85; }
+#s-title .menu { margin-top: 5vh; display: flex; flex-direction: column; align-items: center; }
+#s-title .foot { position: absolute; bottom: 18px; font-size: 14px; color: #aab3e6; opacity: .8; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* map */
+#s-map { justify-content: flex-start; background: linear-gradient(180deg, rgba(5,7,22,.35), rgba(5,7,22,.75)); overflow: auto; }
+.topbar { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; }
+.topbar .ttl { font-size: 26px; font-weight: 900; color: var(--gold); text-shadow: 0 0 14px rgba(255,190,90,.5); }
+#m-total { font-weight: 800; color: #e8ecff; min-width: 120px; text-align: right; }
+#worlds { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; padding: 6px 18px 30px; max-width: 1400px; }
+.world { width: 300px; border-radius: 22px; overflow: hidden; border: 1px solid var(--line); background: var(--glass);
+  box-shadow: 0 14px 40px rgba(0,0,0,.45); }
+.world .wart { height: 120px; position: relative; }
+.world .wart canvas { width: 100%; height: 100%; display: block; }
+.world .wname { position: absolute; left: 14px; bottom: 10px; font-size: 22px; font-weight: 900; text-shadow: 0 2px 8px #000; }
+.world .wsub { position: absolute; right: 12px; bottom: 12px; font-size: 13px; font-weight: 800; color: #ffe3a1; text-shadow: 0 2px 6px #000; }
+.world.locked { filter: grayscale(.85) brightness(.6); }
+.lvls { padding: 10px; display: grid; grid-template-columns: 1fr; gap: 7px; }
+.lvl { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,.05);
+  cursor: pointer; border: 1px solid transparent; font: inherit; color: inherit; text-align: left; width: 100%; }
+.lvl:hover:not([disabled]), .lvl:focus-visible { border-color: var(--gold); background: rgba(255, 211, 107, .1); outline: none; }
+.lvl[disabled] { opacity: .45; cursor: default; }
+.lvl .num { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 900;
+  background: radial-gradient(circle at 35% 35%, #fff4c8, #ffb34a 60%, #b8601a); color: #3a1d02; box-shadow: 0 0 14px rgba(255,180,80,.5); flex: none; }
+.lvl.boss .num { background: radial-gradient(circle at 35% 35%, #e9d4ff, #8a4dff 60%, #3a1580); color: #fff; box-shadow: 0 0 14px rgba(150,90,255,.6); }
+.lvl .nm { flex: 1; font-weight: 800; }
+.lvl .nm small { display: block; font-weight: 600; opacity: .7; font-size: 12px; }
+.lvl .moths { letter-spacing: 2px; font-size: 15px; }
+.moth-on { color: #9ff5ff; text-shadow: 0 0 8px #59e6ff; }
+.moth-off { color: rgba(255,255,255,.22); }
+
+/* HUD */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 20; display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 18px; }
+.hud-l { display: flex; flex-direction: column; gap: 8px; }
+.hud-c { text-align: center; }
+#h-level { font-weight: 900; font-size: 18px; color: #ffe7a8; text-shadow: 0 2px 8px rgba(0,0,0,.7); letter-spacing: .05em; }
+#h-time { font-variant-numeric: tabular-nums; font-size: 15px; opacity: .85; text-shadow: 0 2px 6px #000; }
+.hud-pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px 5px 8px; border-radius: 999px; background: rgba(8, 10, 30, .55);
+  border: 1px solid rgba(255,255,255,.12); font-size: 18px; text-shadow: 0 1px 4px #000; width: fit-content; }
+.hud-pill small { opacity: .6; font-size: 13px; }
+.ico.spark { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle, #fff 0 20%, #ffd36b 45%, rgba(255,160,40,0) 72%); box-shadow: 0 0 10px #ffc34d; }
+#hearts { display: flex; gap: 4px; }
+.heart { width: 26px; height: 24px; position: relative; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
+.heart svg { width: 100%; height: 100%; }
+.hud-btn { pointer-events: auto; font: inherit; font-weight: 900; font-size: 16px; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+  background: rgba(8,10,30,.55); color: var(--gold); cursor: pointer; }
+#toast { position: fixed; left: 50%; top: 78px; transform: translateX(-50%); z-index: 25; pointer-events: none; padding: 8px 18px; border-radius: 999px;
+  background: rgba(8,10,30,.7); border: 1px solid var(--line); font-weight: 800; opacity: 0; transition: opacity .25s; }
+#toast.on { opacity: 1; }
+#banner { position: fixed; left: 0; right: 0; top: 34%; z-index: 24; text-align: center; pointer-events: none; opacity: 0; transition: opacity .5s; }
+#banner.on { opacity: 1; }
+#banner .b1 { font-size: 15px; letter-spacing: .4em; text-transform: uppercase; color: #cdd5ff; }
+#banner .b2 { font-size: clamp(34px, 6vw, 70px); font-weight: 900; color: #fff3cf; text-shadow: 0 0 30px rgba(255, 190, 90, .8), 0 4px 0 rgba(0,0,0,.35); }
+
+/* results / settings */
+#d-rows { width: 100%; margin: 4px 0 10px; }
+.drow { display: flex; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 18px; font-weight: 700; }
+.drow b { color: var(--gold); }
+.drow .new { color: #9ff5ff; font-size: 13px; margin-left: 8px; }
+#d-unlock { font-size: 18px; color: #bff7ff; margin: 6px 0 4px; min-height: 4px; font-weight: 800; text-shadow: 0 0 12px rgba(100, 230, 255, .6); }
+.setrow { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: 100%; padding: 9px 2px; border-bottom: 1px solid rgba(255,255,255,.08); font-weight: 700; }
+.setrow small { display: block; font-weight: 500; opacity: .65; font-size: 12px; }
+.seg { display: flex; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); flex: none; }
+.seg button { font: inherit; font-weight: 800; font-size: 13px; padding: 7px 11px; border: 0; background: transparent; color: var(--txt); cursor: pointer; }
+.seg button.on { background: var(--gold); color: #3a1d02; }
+.how { text-align: left; font-size: 17px; line-height: 1.75; max-width: 520px; }
+.how p { line-height: 1.5; opacity: .9; }
+kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; border-radius: 7px; background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.25); border-bottom-width: 3px; font: inherit; font-weight: 800; font-size: 14px; text-align: center; }
+
+/* touch */
+#touch { position: fixed; inset: auto 0 0 0; z-index: 22; display: flex; justify-content: space-between; padding: 18px; pointer-events: none; }
+#touch div { display: flex; gap: 14px; pointer-events: auto; }
+#touch button { width: 78px; height: 78px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); background: rgba(10, 14, 40, .45); color: #fff4cf;
+  font-size: 28px; touch-action: none; }
+#touch button.on { background: rgba(255, 211, 107, .45); }
+
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="fade"></div>
+
+<!-- in-level HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-l">
+    <div id="hearts"></div>
+    <div class="hud-pill"><span class="ico spark"></span><b id="h-sparks">0</b><small id="h-sparks-of">/0</small></div>
+    <div class="hud-pill" id="h-moths"></div>
+  </div>
+  <div class="hud-c"><div id="h-level"></div><div id="h-time">0:00.0</div></div>
+  <div class="hud-r"><button class="hud-btn" id="b-pause" title="Pause (Esc)">II</button></div>
+</div>
+<div id="toast"></div>
+<div id="banner"><div class="b1"></div><div class="b2"></div></div>
+
+<!-- title -->
+<div id="s-title" class="screen">
+  <div class="logo"><span class="l1">Lumi's</span><span class="l2">Lantern</span></div>
+  <div class="tag">Relight the four worlds</div>
+  <div class="menu">
+    <button class="btn big" id="t-play">Play</button>
+    <button class="btn" id="t-settings">Settings</button>
+    <button class="btn" id="t-how">How to play</button>
+  </div>
+  <div class="foot" id="t-stats"></div>
+</div>
+
+<!-- world map -->
+<div id="s-map" class="screen hidden">
+  <div class="topbar"><button class="btn small" id="m-back">&larr; Back</button><div class="ttl">Choose a level</div><div id="m-total"></div></div>
+  <div id="worlds"></div>
+</div>
+
+<!-- pause -->
+<div id="s-pause" class="screen dim hidden">
+  <div class="card">
+    <h2>Paused</h2>
+    <div id="p-info"></div>
+    <button class="btn big" id="p-resume">Resume</button>
+    <button class="btn" id="p-restart">Restart level</button>
+    <button class="btn" id="p-settings">Settings</button>
+    <button class="btn" id="p-map">Level map</button>
+  </div>
+</div>
+
+<!-- results -->
+<div id="s-done" class="screen dim hidden">
+  <div class="card wide">
+    <h2 id="d-title">Level complete!</h2>
+    <div id="d-rows"></div>
+    <div id="d-unlock"></div>
+    <div class="row">
+      <button class="btn" id="d-retry">Play again</button>
+      <button class="btn big" id="d-next">Next level</button>
+    </div>
+    <button class="btn small" id="d-map">Level map</button>
+  </div>
+</div>
+
+<!-- settings -->
+<div id="s-settings" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Settings</h2>
+    <div id="set-rows"></div>
+    <button class="btn big" id="set-done">Done</button>
+  </div>
+</div>
+
+<!-- how to play -->
+<div id="s-how" class="screen dim hidden">
+  <div class="card wide">
+    <h2>How to play</h2>
+    <div class="how">
+      <div><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> move</div>
+      <div><kbd>Space</kbd>, <kbd>W</kbd>, <kbd>&uarr;</kbd> or <kbd>Z</kbd> jump (hold to jump higher)</div>
+      <div><kbd>Shift</kbd> or <kbd>X</kbd> dash (once you have found it)</div>
+      <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
+      <div>Gamepads and touch screens work too.</div>
+      <p>Touch a <b>lantern</b> to light it: it is where you come back to. Collect <b>sparks</b>, find the
+      three hidden <b>star moths</b> in every level, and reach the <b>gate</b>. Shrines at the end of each world teach
+      you something new.</p>
+    </div>
+    <button class="btn big" id="how-done">Got it</button>
+  </div>
+</div>
+
+<!-- touch controls -->
+<div id="touch" class="hidden">
+  <div class="tl"><button data-k="left">&#9664;</button><button data-k="right">&#9654;</button></div>
+  <div class="tr"><button data-k="dash">&#10148;</button><button data-k="jump">&#9650;</button></div>
+</div>
+<script type="module">
+// ---- 00-core.js ----
+// ==========================================
+// LUMI'S LANTERN - core: helpers, saves, settings, input, sound
+// ==========================================
+const TS = 32;                                   // one tile, in world pixels
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a = 1, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
+const sign = v => v < 0 ? -1 : v > 0 ? 1 : 0;
+const approach = (v, t, d) => v < t ? Math.min(v + d, t) : Math.max(v - d, t);
+const ease = { out: t => 1 - (1 - t) * (1 - t), inOut: t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2, back: t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2) };
+// a small seeded random, so a level's decoration is the same every time
+function seeded(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; }; }
+const $ = id => document.getElementById(String(id).replace(/^#/, ''));
+const fmtTime = t => { const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); };
+
+// ---------- save (one key, so the launcher's cloud saves carry it) ----------
+const SAVE_KEY = 'lumi_save';
+const SAVE = (() => {
+    const blank = () => ({ v: 1, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
+    let d;
+    try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
+    d.abilities = Object.assign(blank().abilities, d.abilities || {});
+    return { d, write() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(d)); } catch (e) {} } };
+})();
+
+// ---------- settings ----------
+const SET_KEY = 'lumi_settings';
+const settings = Object.assign({ music: 0.6, sfx: 0.8, quality: 'auto', hard: false, shake: true, touch: 'auto', timer: true },
+    (() => { try { return JSON.parse(localStorage.getItem(SET_KEY) || '{}'); } catch (e) { return {}; } })());
+const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch (e) {} };
+
+// ---------- input: keyboard, gamepad, touch -> one set of actions ----------
+const Input = (() => {
+    const down = new Set(), pressed = new Set(), touch = new Set();
+    const MAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
+        Space: 'jump', KeyZ: 'jump', KeyK: 'jump', ShiftLeft: 'dash', ShiftRight: 'dash', KeyX: 'dash', KeyJ: 'dash', KeyC: 'dash',
+        Escape: 'pause', KeyP: 'pause', KeyR: 'retry', Enter: 'ok' };
+    const JUMP_TOO = { up: 1 };                            // W / Up also jump
+    addEventListener('keydown', e => {
+        const a = MAP[e.code]; if (!a) return;
+        if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+        if (['left', 'right', 'up', 'down', 'jump'].includes(a)) e.preventDefault();
+        if (e.repeat) return;
+        down.add(a); pressed.add(a); if (JUMP_TOO[a]) { down.add('jump'); pressed.add('jump'); }
+    });
+    addEventListener('keyup', e => { const a = MAP[e.code]; if (!a) return; down.delete(a); if (JUMP_TOO[a]) down.delete('jump'); });
+    addEventListener('blur', () => { down.clear(); touch.clear(); });
+    let padPrev = {};
+    function pollPad() {
+        const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+        const p = pads && [...pads].find(x => x && x.connected); if (!p) return {};
+        const b = i => !!(p.buttons[i] && p.buttons[i].pressed), ax = p.axes[0] || 0;
+        const st = { left: ax < -0.4 || b(14), right: ax > 0.4 || b(15), up: (p.axes[1] || 0) < -0.6 || b(12), down: (p.axes[1] || 0) > 0.6 || b(13),
+            jump: b(0) || b(3), dash: b(2) || b(1) || b(5) || b(7), pause: b(9), retry: b(8) };
+        for (const k in st) if (st[k] && !padPrev[k]) pressed.add(k);
+        padPrev = st; return st;
+    }
+    let pad = {};
+    return {
+        poll() { pad = pollPad(); },
+        held: a => down.has(a) || touch.has(a) || !!pad[a],
+        hit: a => pressed.has(a),
+        endFrame() { pressed.clear(); },
+        touchSet(a, on) { if (on) { if (!touch.has(a)) pressed.add(a); touch.add(a); } else touch.delete(a); },
+        clear() { down.clear(); pressed.clear(); touch.clear(); }
+    };
+})();
+
+// ---------- sound: everything is synthesized (no files to download) ----------
+const Sound = (() => {
+    let ac = null, master, sfxBus, musBus, noiseBuf;
+    function init() {
+        if (ac) return ac.state === 'suspended' ? ac.resume() : null;
+        try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+        master = ac.createGain(); master.connect(ac.destination);
+        const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 4; comp.connect(master);
+        sfxBus = ac.createGain(); sfxBus.connect(comp); musBus = ac.createGain(); musBus.connect(comp);
+        noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const ch = noiseBuf.getChannelData(0); for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+        volumes();
+    }
+    function volumes() { if (!ac) return; sfxBus.gain.value = settings.sfx * 0.7; musBus.gain.value = settings.music * 0.32; }
+    function tone(f0, f1, dur, type = 'square', vol = 0.25, when = 0, bus) {
+        if (!ac) return; const t = ac.currentTime + when;
+        const o = ac.createOscillator(), g = ac.createGain(); o.type = type;
+        o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(bus || sfxBus); o.start(t); o.stop(t + dur + 0.02);
+    }
+    function noise(dur, f0, f1, vol = 0.3, when = 0, q = 1) {
+        if (!ac) return; const t = ac.currentTime + when;
+        const s = ac.createBufferSource(); s.buffer = noiseBuf; const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
+        bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + dur);
+        const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        s.connect(bp); bp.connect(g); g.connect(sfxBus); s.start(t); s.stop(t + dur + 0.02);
+    }
+    const SFX = {
+        jump: () => { tone(330, 620, 0.12, 'square', 0.12); tone(660, 1240, 0.08, 'triangle', 0.08); },
+        djump: () => { tone(520, 1050, 0.14, 'triangle', 0.16); tone(780, 1560, 0.1, 'sine', 0.1, 0.03); noise(0.15, 3000, 800, 0.08); },
+        walljump: () => { tone(280, 700, 0.12, 'square', 0.12); noise(0.08, 2000, 600, 0.12); },
+        land: () => noise(0.07, 900, 200, 0.12),
+        dash: () => { noise(0.22, 4000, 400, 0.25, 0, 0.7); tone(900, 300, 0.18, 'sawtooth', 0.06); },
+        spark: (n = 0) => { const f = 880 * Math.pow(2, (n % 8) / 12); tone(f, f, 0.09, 'sine', 0.12); tone(f * 2, f * 2, 0.07, 'triangle', 0.06, 0.04); },
+        moth: () => [0, 4, 7, 12, 16].forEach((s, i) => tone(660 * Math.pow(2, s / 12), 660 * Math.pow(2, s / 12), 0.25, 'sine', 0.12, i * 0.07)),
+        stomp: () => { tone(220, 60, 0.18, 'square', 0.18); noise(0.12, 1500, 300, 0.2); },
+        hurt: () => { tone(300, 80, 0.3, 'sawtooth', 0.2); noise(0.25, 2500, 200, 0.2); },
+        die: () => { tone(500, 60, 0.6, 'sawtooth', 0.18); noise(0.5, 3000, 100, 0.2); },
+        spring: () => { tone(200, 900, 0.25, 'sine', 0.2); tone(400, 1800, 0.2, 'triangle', 0.06); },
+        lantern: () => [0, 7, 12, 19].forEach((s, i) => tone(523 * Math.pow(2, s / 12), 523 * Math.pow(2, s / 12), 0.5, 'triangle', 0.1, i * 0.08)),
+        crumble: () => noise(0.35, 700, 120, 0.22, 0, 0.6),
+        shoot: () => { tone(500, 200, 0.15, 'square', 0.08); },
+        key: () => [0, 12].forEach((s, i) => tone(988 * Math.pow(2, s / 12), 988 * Math.pow(2, s / 12), 0.18, 'square', 0.08, i * 0.08)),
+        door: () => { noise(0.4, 500, 120, 0.25); tone(110, 80, 0.4, 'square', 0.1); },
+        gate: () => [0, 4, 7, 11, 14, 19, 24].forEach((s, i) => tone(440 * Math.pow(2, s / 12), 440 * Math.pow(2, s / 12), 0.6, 'triangle', 0.1, i * 0.06)),
+        shrine: () => [0, 5, 9, 12, 17, 21, 24].forEach((s, i) => { tone(392 * Math.pow(2, s / 12), 392 * Math.pow(2, s / 12), 0.9, 'sine', 0.1, i * 0.1); }),
+        boss: () => { tone(80, 40, 0.8, 'sawtooth', 0.25); noise(0.8, 400, 60, 0.3); },
+        click: () => tone(1200, 900, 0.05, 'square', 0.06),
+        bounce: () => tone(400, 700, 0.1, 'sine', 0.12)
+    };
+    // music: a soft generative pad + plucked arpeggio per world, scheduled a bar at a time
+    const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10]];
+    const ROOTS = [57, 50, 62, 52, 45];
+    const PROG = [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 5, 3], [0, 1, 0, 5], [0, 1, 3, 2]];
+    let mus = null;
+    const mf = n => 440 * Math.pow(2, (n - 69) / 12);
+    function musicFor(world) {
+        if (!ac) return;
+        if (mus && mus.world === world) return;
+        stopMusic();
+        mus = { world, bar: 0, next: ac.currentTime + 0.1, timer: null };
+        const bar = 2.4, sc = SCALES[world % SCALES.length], root = ROOTS[world % ROOTS.length], prog = PROG[world % PROG.length];
+        const step = () => {
+            if (!mus || mus.world !== world) return;
+            while (mus.next < ac.currentTime + 1.2) {
+                const t0 = mus.next, ch = prog[mus.bar % prog.length], deg = n => root + sc[(ch + n) % sc.length] + 12 * Math.floor((ch + n) / sc.length);
+                [0, 2, 4].forEach(n => tone(mf(deg(n)), mf(deg(n)), bar * 1.05, 'sine', 0.05, t0 - ac.currentTime, musBus));
+                tone(mf(deg(0) - 12), mf(deg(0) - 12), bar, 'triangle', 0.07, t0 - ac.currentTime, musBus);
+                const r = seeded(mus.bar * 31 + world * 7);
+                for (let i = 0; i < 8; i++) if (r() < 0.72) {
+                    const n = deg(Math.floor(r() * 5)) + 12;
+                    tone(mf(n), mf(n), 0.35, world === 4 ? 'square' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
+                }
+                mus.next += bar; mus.bar++;
+            }
+            mus.timer = setTimeout(step, 400);
+        };
+        step();
+    }
+    function stopMusic() { if (mus && mus.timer) clearTimeout(mus.timer); mus = null; }
+    return { init, volumes, play: (k, a) => { if (ac && SFX[k]) SFX[k](a); }, musicFor, stopMusic, get ok() { return !!ac; } };
+})();
+
+// ---- 10-art.js ----
+// ==========================================
+// ART: world themes, backgrounds, auto-tiled terrain, sprites. Everything is drawn with canvas paths and gradients,
+// at the screen's real resolution, so it stays crisp at any size. Terrain is cached in chunks; backgrounds in strips.
+// ==========================================
+const WORLDS = [
+    { name: 'Glowwood', sub: 'A forest at dusk', sky: ['#0c1a3a', '#2a3f73', '#c8728a', '#ffc58a'], dark: 'rgba(8, 12, 40,', ambient: 0.32,
+      body: ['#4a2f3a', '#2e1c2a'], top: '#4fd06a', top2: '#2e9a52', rim: '#1a0f18', detail: '#6b4452', accent: '#ffd36b', fog: 'rgba(255,190,150,', plat: '#8a5a3c',
+      slime: ['#7be36b', '#3fa64a'], deco: 'forest', mote: '#ffe49a' },
+    { name: 'Hollow Caves', sub: 'Crystal-lit darkness', sky: ['#04060f', '#0a1230', '#0f1e45', '#132a5a'], dark: 'rgba(2, 4, 14,', ambient: 0.86,
+      body: ['#2c3550', '#161c30'], top: '#5e7aa8', top2: '#3c5280', rim: '#0a0e1c', detail: '#40507a', accent: '#7ff0ff', fog: 'rgba(80,140,255,', plat: '#5a6a8a',
+      slime: ['#6fd6ff', '#2f86c7'], deco: 'cave', mote: '#8ff3ff' },
+    { name: 'Sky Ruins', sub: 'Temples above the clouds', sky: ['#3d8be0', '#7cbcf2', '#cbe7ff', '#fff3dc'], dark: 'rgba(30, 40, 90,', ambient: 0.04,
+      body: ['#efe7d6', '#c9bda4'], top: '#ffffff', top2: '#e6d6a8', rim: '#8f8064', detail: '#d8c9a8', accent: '#ffcf4a', fog: 'rgba(255,255,255,', plat: '#e8d8b0',
+      slime: ['#ff9bd2', '#d65a9e'], deco: 'ruins', mote: '#ffffff' },
+    { name: 'Ember Forge', sub: 'Where the fire sleeps', sky: ['#0d0507', '#2a0a0c', '#5a1a10', '#a03a12'], dark: 'rgba(20, 4, 4,', ambient: 0.62,
+      body: ['#3a2a2a', '#1c1214'], top: '#ff7a2a', top2: '#7a2a14', rim: '#0c0606', detail: '#4a3434', accent: '#ff8a3a', fog: 'rgba(255,100,40,', plat: '#6a4a3a',
+      slime: ['#ffb04a', '#d0561c'], deco: 'forge', mote: '#ffb35a' },
+    { name: 'The Gloom', sub: 'The last lantern', sky: ['#050010', '#120428', '#2a0a4a', '#40125e'], dark: 'rgba(6, 0, 18,', ambient: 0.8,
+      body: ['#2a1a40', '#140a24'], top: '#b98aff', top2: '#5a2a9a', rim: '#08040f', detail: '#3a2856', accent: '#c9a0ff', fog: 'rgba(170,110,255,', plat: '#4a3a6a',
+      slime: ['#c9a0ff', '#7a3ad0'], deco: 'gloom', mote: '#d8b8ff' }
+];
+
+// ---------- background strips (one per parallax layer, tiled sideways) ----------
+function paintBackground(w, W, H) {
+    const T = WORLDS[w], layers = [], r = seeded(1000 + w);
+    const mk = (h) => { const c = document.createElement('canvas'); c.width = W; c.height = h; return [c, c.getContext('2d')]; };
+    // sky
+    const [sky, s] = mk(H);
+    const g = s.createLinearGradient(0, 0, 0, H); T.sky.forEach((c, i) => g.addColorStop(i / (T.sky.length - 1), c)); s.fillStyle = g; s.fillRect(0, 0, W, H);
+    if (w === 0 || w === 4 || w === 1) for (let i = 0; i < (w === 1 ? 60 : 160); i++) { s.globalAlpha = rand(0.2, 0.9) * (w === 1 ? 0.35 : 1); s.fillStyle = '#fff'; s.beginPath(); s.arc(r() * W, r() * H * 0.6, r() * 1.4 + 0.3, 0, 7); s.fill(); }
+    s.globalAlpha = 1;
+    if (w === 0) { const m = s.createRadialGradient(W * 0.72, H * 0.62, 0, W * 0.72, H * 0.62, H * 0.5); m.addColorStop(0, 'rgba(255,220,170,.9)'); m.addColorStop(0.08, 'rgba(255,200,150,.6)'); m.addColorStop(1, 'rgba(255,160,120,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
+    if (w === 2) { const m = s.createRadialGradient(W * 0.25, H * 0.2, 0, W * 0.25, H * 0.2, H * 0.7); m.addColorStop(0, 'rgba(255,255,230,.95)'); m.addColorStop(0.06, 'rgba(255,250,210,.7)'); m.addColorStop(1, 'rgba(255,240,200,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
+    if (w === 4) { const m = s.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, H * 0.6); m.addColorStop(0, 'rgba(200,140,255,.35)'); m.addColorStop(1, 'rgba(120,60,200,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
+    layers.push({ c: sky, k: 0, y: 0, fixed: true });
+    // far, mid and near silhouettes
+    const shapes = [
+        { k: 0.12, base: 0.62, amp: 0.16, col: T.sky[1], fog: 0.55 },
+        { k: 0.3, base: 0.72, amp: 0.14, col: T.sky[0], fog: 0.35 },
+        { k: 0.55, base: 0.84, amp: 0.1, col: T.rim, fog: 0.15 }
+    ];
+    shapes.forEach((L, li) => {
+        const [c, x] = mk(H);
+        x.fillStyle = L.col;
+        const hAt = (px) => { let v = 0; for (let o = 1; o <= 4; o++) v += Math.sin(px / W * Math.PI * 2 * (o * (li + 2)) + o * 1.7 + w) / o; return H * (L.base - L.amp * 0.5 * v); };
+        if (T.deco === 'forest') {
+            x.beginPath(); x.moveTo(0, H);
+            for (let px = 0; px <= W; px += 6) x.lineTo(px, hAt(px)); x.lineTo(W, H); x.fill();
+            const n = 24 + li * 14;                         // pine trees along the ridge
+            for (let i = 0; i < n; i++) { const px = (i + r() * 0.8) * W / n, base = hAt(px) + 8, th = (40 + r() * 60) * (0.6 + li * 0.45), tw = th * 0.42;
+                for (let k = 0; k < 3; k++) { x.beginPath(); x.moveTo(px - tw * (1 - k * 0.22), base - th * k * 0.28); x.lineTo(px, base - th * (0.45 + k * 0.28)); x.lineTo(px + tw * (1 - k * 0.22), base - th * k * 0.28); x.fill(); } }
+        } else if (T.deco === 'cave') {
+            x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 6) x.lineTo(px, hAt(px)); x.lineTo(W, H); x.fill();
+            x.beginPath(); x.moveTo(0, 0); for (let px = 0; px <= W; px += 6) x.lineTo(px, H - hAt(px) * 0.9); x.lineTo(W, 0); x.fill();
+            for (let i = 0; i < 30 + li * 10; i++) { const px = r() * W, len = (30 + r() * 120) * (0.6 + li * 0.4), top = H - hAt(px) * 0.9 - 4; x.beginPath(); x.moveTo(px - len * 0.12, top); x.lineTo(px, top + len); x.lineTo(px + len * 0.12, top); x.fill(); }
+            if (li < 2) for (let i = 0; i < 14; i++) { const px = r() * W, py = hAt(px) - 6; x.save(); x.globalAlpha = 0.5 - li * 0.15; x.fillStyle = T.accent; x.beginPath(); x.moveTo(px - 5, py); x.lineTo(px, py - 18 - r() * 20); x.lineTo(px + 5, py); x.fill(); x.restore(); }
+        } else if (T.deco === 'ruins') {
+            x.globalAlpha = 0.75 - li * 0.1;
+            for (let i = 0; i < 6 + li * 2; i++) {          // floating islands with temples
+                const cx = (i + 0.5 + (r() - 0.5) * 0.6) * W / (6 + li * 2), cy = H * (0.35 + li * 0.17 + (r() - 0.5) * 0.12), iw = (90 + r() * 120) * (0.6 + li * 0.35);
+                x.fillStyle = L.col === T.rim ? '#b8c8e8' : (li === 0 ? '#cfe0f8' : '#a8bce0');
+                x.beginPath(); x.moveTo(cx - iw / 2, cy); x.quadraticCurveTo(cx, cy + iw * 0.9, cx + iw / 2, cy); x.closePath(); x.fill();
+                x.fillRect(cx - iw / 2, cy - 6, iw, 8);
+                const cols = 3 + Math.floor(r() * 4), ch = iw * 0.5;
+                for (let k = 0; k < cols; k++) x.fillRect(cx - iw * 0.35 + k * iw * 0.7 / (cols - 1) - 3, cy - ch, 6, ch);
+                x.beginPath(); x.moveTo(cx - iw * 0.42, cy - ch); x.lineTo(cx, cy - ch - iw * 0.16); x.lineTo(cx + iw * 0.42, cy - ch); x.fill();
+            }
+            x.globalAlpha = 1;
+            for (let i = 0; i < 9; i++) {                     // clouds
+                const cx = r() * W, cy = H * (0.55 + li * 0.14 + r() * 0.1); x.fillStyle = `rgba(255,255,255,${0.55 + li * 0.15})`;
+                for (let k = 0; k < 6; k++) { x.beginPath(); x.arc(cx + (k - 3) * 26 + r() * 10, cy - Math.sin(k / 5 * Math.PI) * 18, 22 + r() * 18, 0, 7); x.fill(); }
+            }
+        } else if (T.deco === 'forge') {
+            x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 6) x.lineTo(px, hAt(px)); x.lineTo(W, H); x.fill();
+            for (let i = 0; i < 10 + li * 4; i++) { const px = r() * W, cw = 18 + r() * 26, chh = 60 + r() * 140 * (0.6 + li * 0.4), base = hAt(px) + 10;   // chimneys
+                x.fillRect(px - cw / 2, base - chh, cw, chh); x.fillRect(px - cw * 0.7, base - chh, cw * 1.4, 8);
+                if (li < 2) { x.save(); x.globalAlpha = 0.35; x.fillStyle = '#ff7a2a'; x.fillRect(px - cw * 0.3, base - chh * 0.6, cw * 0.6, 4); x.restore(); } }
+            const lg = x.createLinearGradient(0, H * 0.8, 0, H); lg.addColorStop(0, 'rgba(255,90,20,0)'); lg.addColorStop(1, `rgba(255,90,20,${0.35 - li * 0.08})`); x.fillStyle = lg; x.fillRect(0, H * 0.8, W, H * 0.2);
+        } else {
+            x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 6) x.lineTo(px, hAt(px) + Math.sin(px * 0.05) * 6); x.lineTo(W, H); x.fill();
+            for (let i = 0; i < 20; i++) { const px = r() * W, py = hAt(px); x.save(); x.globalAlpha = 0.4; x.strokeStyle = T.accent; x.lineWidth = 2; x.beginPath(); x.moveTo(px, py); x.bezierCurveTo(px + 20, py - 60, px - 20, py - 120, px + 10, py - 170 - r() * 80); x.stroke(); x.restore(); }
+        }
+        // atmospheric haze over each layer, thicker far away
+        const fg = x.createLinearGradient(0, 0, 0, H); fg.addColorStop(0, T.fog + '0)'); fg.addColorStop(1, T.fog + L.fog * 0.6 + ')');
+        x.globalCompositeOperation = 'source-atop'; x.fillStyle = fg; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'source-over';
+        layers.push({ c, k: L.k, y: 0 });
+    });
+    return layers;
+}
+
+// ---------- terrain tiles ----------
+// A solid tile is drawn by looking at its 8 neighbours: exposed edges get a cap (grass, moss, marble trim, glowing seams),
+// a darker rim and a highlight; corners that stick out are rounded.
+function drawTile(x, T, tx, ty, solid, w, seed) {
+    const s = TS, up = !solid(tx, ty - 1), dn = !solid(tx, ty + 1), lf = !solid(tx - 1, ty), rt = !solid(tx + 1, ty);
+    const r = seeded(seed), R = 9;
+    const rTL = up && lf ? R : 0, rTR = up && rt ? R : 0, rBL = dn && lf ? R : 0, rBR = dn && rt ? R : 0;
+    x.save(); x.translate(tx * s, ty * s);
+    x.beginPath();
+    x.moveTo(rTL, 0); x.lineTo(s - rTR, 0); if (rTR) x.quadraticCurveTo(s, 0, s, rTR); else x.lineTo(s, 0);
+    x.lineTo(s, s - rBR); if (rBR) x.quadraticCurveTo(s, s, s - rBR, s); else x.lineTo(s, s);
+    x.lineTo(rBL, s); if (rBL) x.quadraticCurveTo(0, s, 0, s - rBL); else x.lineTo(0, s);
+    x.lineTo(0, rTL); if (rTL) x.quadraticCurveTo(0, 0, rTL, 0); else x.lineTo(0, 0);
+    x.closePath();
+    // shade by depth below the surface (not per tile), so deep ground darkens smoothly instead of in stripes
+    let d = 0; while (d < 4 && solid(tx, ty - d - 1)) d++;
+    const mix = (k) => { const a = parseInt(T.body[0].slice(1), 16), c = parseInt(T.body[1].slice(1), 16), m = (sh) => Math.round(((a >> sh) & 255) * (1 - k) + ((c >> sh) & 255) * k); return `rgb(${m(16)},${m(8)},${m(0)})`; };
+    const g = x.createLinearGradient(0, 0, 0, s); g.addColorStop(0, mix(d / 4)); g.addColorStop(1, mix(Math.min(1, (d + 1) / 4)));
+    x.fillStyle = g; x.fill();
+    x.save(); x.clip();
+    // texture
+    if (T.deco === 'ruins') {
+        x.strokeStyle = 'rgba(120,100,70,.35)'; x.lineWidth = 1.2;
+        const off = (ty % 2) * 16; x.beginPath(); x.moveTo(0, 16); x.lineTo(s, 16); x.moveTo(off, 0); x.lineTo(off, 16); x.moveTo((off + 16) % 32, 16); x.lineTo((off + 16) % 32, 32); x.stroke();
+        if (r() < 0.25) { x.strokeStyle = 'rgba(70,140,60,.55)'; x.lineWidth = 2; x.beginPath(); x.moveTo(r() * s, 0); x.bezierCurveTo(r() * s, 10, r() * s, 20, r() * s, s); x.stroke(); }
+    } else if (T.deco === 'forge') {
+        x.fillStyle = T.detail; for (let i = 0; i < 3; i++) { x.globalAlpha = 0.6; x.fillRect(r() * s, r() * s, 6 + r() * 8, 3 + r() * 4); }
+        if (r() < 0.35) { x.globalAlpha = 0.9; x.strokeStyle = '#ff6a1a'; x.lineWidth = 1.5; x.shadowColor = '#ff6a1a'; x.shadowBlur = 6; x.beginPath(); let px = r() * s, py = 0; x.moveTo(px, py); for (let k = 0; k < 4; k++) { px += (r() - 0.5) * 14; py += 8; x.lineTo(px, py); } x.stroke(); x.shadowBlur = 0; }
+        x.globalAlpha = 1;
+    } else {
+        for (let i = 0; i < 4; i++) { x.fillStyle = r() < 0.5 ? T.detail : T.rim; x.globalAlpha = 0.35 + r() * 0.3; x.beginPath(); x.ellipse(r() * s, r() * s, 1.5 + r() * 3.5, 1 + r() * 2.5, r() * 3, 0, 7); x.fill(); }
+        x.globalAlpha = 1;
+        if (T.deco === 'cave' && r() < 0.18) {                   // a crystal grows out of the rock
+            const cx = 6 + r() * 20, cy = 8 + r() * 20; x.fillStyle = T.accent; x.shadowColor = T.accent; x.shadowBlur = 10;
+            x.beginPath(); x.moveTo(cx - 4, cy + 5); x.lineTo(cx - 1, cy - 8); x.lineTo(cx + 4, cy + 5); x.closePath(); x.fill(); x.shadowBlur = 0;
+        }
+    }
+    // depth: darker toward edges that meet air from below/sides
+    const shade = (x0, y0, x1, y1, a) => { const sg = x.createLinearGradient(x0, y0, x1, y1); sg.addColorStop(0, `rgba(0,0,0,${a})`); sg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = sg; x.fillRect(0, 0, s, s); };
+    if (dn) shade(0, s, 0, s - 10, 0.45);
+    if (lf) shade(0, 0, 8, 0, 0.3);
+    if (rt) shade(s, 0, s - 8, 0, 0.3);
+    x.restore();
+    // caps on exposed tops
+    if (up) {
+        if (T.deco === 'forest') {
+            x.fillStyle = T.top2; x.beginPath(); x.moveTo(rTL ? 2 : 0, 2); x.lineTo(s - (rTR ? 2 : 0), 2); x.lineTo(s - (rTR ? 3 : 0), 10);
+            for (let k = 6; k >= 0; k--) x.lineTo(k * s / 6, 8 + r() * 6); x.closePath(); x.fill();
+            x.fillStyle = T.top; x.beginPath(); x.moveTo(rTL ? 3 : 0, 0); x.lineTo(s - (rTR ? 3 : 0), 0); x.lineTo(s - (rTR ? 3 : 0), 5);
+            for (let k = 6; k >= 0; k--) x.lineTo(k * s / 6, 4 + r() * 4); x.closePath(); x.fill();
+            x.strokeStyle = T.top; x.lineWidth = 1.6; x.lineCap = 'round';
+            for (let k = 0; k < 5; k++) { const bx = 3 + r() * 26; x.beginPath(); x.moveTo(bx, 1); x.lineTo(bx + (r() - 0.5) * 5, -3 - r() * 6); x.stroke(); }
+            if (r() < 0.22) { const fx = 6 + r() * 20; x.strokeStyle = '#2e9a52'; x.beginPath(); x.moveTo(fx, 0); x.lineTo(fx, -9); x.stroke(); x.fillStyle = ['#ffd36b', '#ff8ac6', '#9fd8ff'][Math.floor(r() * 3)]; x.beginPath(); x.arc(fx, -10, 2.6, 0, 7); x.fill(); }
+        } else if (T.deco === 'cave') {
+            x.fillStyle = T.top2; x.fillRect(rTL ? 4 : 0, 0, s - (rTL ? 4 : 0) - (rTR ? 4 : 0), 5);
+            x.fillStyle = T.top; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 2);
+            if (r() < 0.2) { x.fillStyle = 'rgba(140,255,200,.6)'; for (let k = 0; k < 3; k++) { x.beginPath(); x.arc(4 + r() * 24, 0, 1.6, 0, 7); x.fill(); } }
+        } else if (T.deco === 'ruins') {
+            x.fillStyle = T.top2; x.fillRect(rTL ? 2 : 0, 0, s - (rTL ? 2 : 0) - (rTR ? 2 : 0), 6);
+            x.fillStyle = '#fff'; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 2);
+            x.fillStyle = 'rgba(200,160,60,.8)'; x.fillRect(0, 6, s, 1.5);
+            if (r() < 0.25) { x.fillStyle = '#5cb85a'; for (let k = 0; k < 4; k++) { x.beginPath(); x.ellipse(4 + r() * 24, 1, 3, 1.6, r(), 0, 7); x.fill(); } }
+        } else if (T.deco === 'forge') {
+            x.fillStyle = '#2a1414'; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 5);
+            x.fillStyle = T.top; x.shadowColor = T.top; x.shadowBlur = 8; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 1.6); x.shadowBlur = 0;
+        } else {
+            x.fillStyle = T.top2; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 4);
+            x.fillStyle = T.top; x.shadowColor = T.top; x.shadowBlur = 6; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 1.5); x.shadowBlur = 0;
+        }
+    }
+    if (dn && T.deco === 'cave' && r() < 0.35) { x.fillStyle = T.body[1]; const sx = 6 + r() * 20, sl = 6 + r() * 10; x.beginPath(); x.moveTo(sx - 4, s); x.lineTo(sx, s + sl); x.lineTo(sx + 4, s); x.fill(); }
+    if (dn && T.deco === 'forest' && r() < 0.3) { x.strokeStyle = '#3a7a3a'; x.lineWidth = 1.4; const vx = 4 + r() * 24, vl = 8 + r() * 18; x.beginPath(); x.moveTo(vx, s); x.quadraticCurveTo(vx + 4, s + vl / 2, vx, s + vl); x.stroke(); }
+    x.restore();
+}
+// background (decorative) wall tile: darker, no collision
+function drawBackTile(x, T, tx, ty, seed) {
+    const r = seeded(seed);
+    x.save(); x.translate(tx * TS, ty * TS);
+    x.fillStyle = T.body[1]; x.globalAlpha = 0.55; x.fillRect(0, 0, TS, TS);
+    x.globalAlpha = 0.25; x.fillStyle = '#000'; if (r() < 0.5) x.fillRect(r() * 24, r() * 24, 8, 8);
+    x.restore();
+}
+function drawOneWay(x, T, tx, ty) {
+    x.save(); x.translate(tx * TS, ty * TS);
+    const g = x.createLinearGradient(0, 0, 0, 10); g.addColorStop(0, T.plat); g.addColorStop(1, T.rim);
+    x.fillStyle = g; x.beginPath(); x.roundRect ? x.roundRect(0, 0, TS, 9, 3) : x.rect(0, 0, TS, 9); x.fill();
+    x.fillStyle = 'rgba(255,255,255,.25)'; x.fillRect(2, 1, TS - 4, 2);
+    x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 1; x.beginPath(); x.moveTo(TS / 2, 2); x.lineTo(TS / 2, 8); x.stroke();
+    x.restore();
+}
+
+// ---------- glow sprites (pre-rendered, drawn with 'lighter') ----------
+const GLOW = {};
+function glowSprite(color, size = 128) {
+    const k = color + size; if (GLOW[k]) return GLOW[k];
+    const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
+    const g = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, color); g.addColorStop(0.25, color.replace(/[\d.]+\)$/, m => (parseFloat(m) * 0.45) + ')')); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, size, size); return (GLOW[k] = c);
+}
+const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+
+// ---------- sprites ----------
+const Sprites = {
+    lumi(x, p, t) {
+        const sx = p.sx, sy = p.sy, f = p.face;
+        x.save(); x.translate(p.x, p.y + 13 - 13 * sy + 1); x.scale(sx, sy);
+        // flame tuft
+        const fl = Math.sin(t * 14) * 2, fl2 = Math.cos(t * 11) * 2;
+        x.fillStyle = '#ffb347';
+        x.beginPath(); x.moveTo(-7, -6); x.quadraticCurveTo(-8 + fl, -20, -1 - f * 3 + fl2, -27 - Math.abs(p.vy) * 0.008); x.quadraticCurveTo(3 + fl, -16, 7, -6); x.closePath(); x.fill();
+        x.fillStyle = '#ffe9a8'; x.beginPath(); x.moveTo(-4, -6); x.quadraticCurveTo(-4 + fl2, -15, -f * 2, -20); x.quadraticCurveTo(2 + fl, -12, 4, -6); x.closePath(); x.fill();
+        // body
+        const g = x.createRadialGradient(-3, -3, 1, 0, 0, 13); g.addColorStop(0, '#fffdf0'); g.addColorStop(0.55, '#ffe29a'); g.addColorStop(1, '#ffae42');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, 0, 12, 12.5, 0, 0, 7); x.fill();
+        x.fillStyle = 'rgba(255,140,40,.35)'; x.beginPath(); x.ellipse(0, 6, 9, 5, 0, 0, Math.PI); x.fill();
+        // eyes look where Lumi is going
+        const blink = (Math.sin(t * 0.9 + p.blinkSeed) > 0.985) ? 0.15 : 1, lx = f * 3 + clamp(p.vx / 140, -1.5, 1.5), ly = clamp(p.vy / 500, -2, 2);
+        x.fillStyle = '#2a1a3a';
+        x.beginPath(); x.ellipse(-4.2 + lx, -1 + ly, 2.3, 3.4 * blink, 0, 0, 7); x.fill();
+        x.beginPath(); x.ellipse(4.2 + lx, -1 + ly, 2.3, 3.4 * blink, 0, 0, 7); x.fill();
+        if (blink > 0.5) { x.fillStyle = '#fff'; x.beginPath(); x.arc(-3.4 + lx, -2.4 + ly, 0.9, 0, 7); x.arc(5 + lx, -2.4 + ly, 0.9, 0, 7); x.fill(); }
+        x.fillStyle = 'rgba(255,120,120,.45)'; x.beginPath(); x.ellipse(-7.5 + lx * 0.6, 3, 2.4, 1.3, 0, 0, 7); x.ellipse(7.5 + lx * 0.6, 3, 2.4, 1.3, 0, 0, 7); x.fill();
+        if (p.hurtT > 0 && Math.floor(t * 20) % 2) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(-14, -30, 28, 44); }
+        x.restore();
+    },
+    slime(x, e, t, T) {
+        const wob = Math.sin(t * 8 + e.seed) * 1.5, squish = e.squash || 0;
+        x.save(); x.translate(e.x, e.y + 10);
+        const w = 15 + wob * 0.5 + squish * 6, h = 15 - wob * 0.5 - squish * 8;
+        const g = x.createLinearGradient(0, -h, 0, 0); g.addColorStop(0, T.slime[0]); g.addColorStop(1, T.slime[1]);
+        x.fillStyle = g; x.beginPath(); x.moveTo(-w, 0); x.bezierCurveTo(-w, -h * 1.2, w, -h * 1.2, w, 0); x.closePath(); x.fill();
+        x.fillStyle = 'rgba(255,255,255,.45)'; x.beginPath(); x.ellipse(-w * 0.4, -h * 0.6, 3, 2, -0.5, 0, 7); x.fill();
+        x.fillStyle = '#1c1028'; const ex = e.dir * 3;
+        x.beginPath(); x.ellipse(-4 + ex, -h * 0.45, 1.8, 2.6, 0, 0, 7); x.ellipse(4 + ex, -h * 0.45, 1.8, 2.6, 0, 0, 7); x.fill();
+        x.restore();
+    },
+    bat(x, e, t) {
+        const fl = Math.sin(t * 18 + e.seed);
+        x.save(); x.translate(e.x, e.y);
+        x.fillStyle = '#3a2452';
+        for (const s of [-1, 1]) { x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(s * 10, -10 - fl * 8, s * 20, -4 - fl * 10); x.quadraticCurveTo(s * 14, 0, s * 18, 4 - fl * 4); x.quadraticCurveTo(s * 9, 2, 0, 4); x.fill(); }
+        x.fillStyle = '#5a3a7a'; x.beginPath(); x.ellipse(0, 0, 8, 7, 0, 0, 7); x.fill();
+        x.beginPath(); x.moveTo(-6, -4); x.lineTo(-5, -11); x.lineTo(-2, -5); x.moveTo(6, -4); x.lineTo(5, -11); x.lineTo(2, -5); x.fill();
+        x.fillStyle = '#ff5a6a'; x.beginPath(); x.arc(-3, -1, 1.6, 0, 7); x.arc(3, -1, 1.6, 0, 7); x.fill();
+        x.restore();
+    },
+    thorn(x, e, t, T) {
+        x.save(); x.translate(e.x, e.y + 12);
+        const step = Math.sin(t * 10 + e.seed) * 1.2;
+        x.fillStyle = '#2a1a1a'; x.fillRect(-10, -3 + step, 4, 3); x.fillRect(6, -3 - step, 4, 3);
+        x.fillStyle = T.deco === 'forge' ? '#b8481c' : '#6a5a8a';
+        for (let i = -4; i <= 4; i++) { const a = -Math.PI / 2 + i * 0.32; x.beginPath(); x.moveTo(Math.cos(a - 0.12) * 11, -4 + Math.sin(a - 0.12) * 11); x.lineTo(Math.cos(a) * 20, -4 + Math.sin(a) * 20); x.lineTo(Math.cos(a + 0.12) * 11, -4 + Math.sin(a + 0.12) * 11); x.fill(); }
+        const g = x.createRadialGradient(-3, -10, 1, 0, -4, 14); g.addColorStop(0, T.deco === 'forge' ? '#ff9a4a' : '#9a8ac0'); g.addColorStop(1, T.deco === 'forge' ? '#7a2a10' : '#3a2a5a');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, -4, 13, 10, 0, Math.PI, 0); x.fill(); x.fillRect(-13, -5, 26, 3);
+        x.fillStyle = '#fff2a0'; x.beginPath(); x.arc(e.dir * 8, -7, 2, 0, 7); x.fill();
+        x.restore();
+    },
+    turret(x, e, t, T) {
+        x.save(); x.translate(e.x, e.y + 16);
+        const open = e.charge || 0;
+        x.fillStyle = '#2e6a3a'; x.fillRect(-3, -14, 6, 14);
+        x.fillStyle = '#3f8a4a'; x.beginPath(); x.ellipse(-8, -6, 7, 3, -0.4, 0, 7); x.ellipse(8, -6, 7, 3, 0.4, 0, 7); x.fill();
+        x.translate(0, -18); x.rotate(e.aim || 0);
+        const g = x.createRadialGradient(0, 0, 1, 0, 0, 11); g.addColorStop(0, '#ff9ad0'); g.addColorStop(1, '#a8306a'); x.fillStyle = g;
+        x.beginPath(); x.ellipse(0, 0, 10, 9, 0, 0, 7); x.fill();
+        x.fillStyle = '#2a0a1a'; x.beginPath(); x.ellipse(8, 0, 2 + open * 4, 2 + open * 4, 0, 0, 7); x.fill();
+        if (open > 0.3) { x.fillStyle = `rgba(255,220,120,${open})`; x.beginPath(); x.arc(8, 0, open * 3, 0, 7); x.fill(); }
+        x.restore();
+    },
+    orb(x, b, t) { x.save(); x.translate(b.x, b.y); x.fillStyle = '#ffd36b'; x.beginPath(); x.arc(0, 0, 5, 0, 7); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(-1.5, -1.5, 2, 0, 7); x.fill(); x.restore(); },
+    shadowOrb(x, b, t) { x.save(); x.translate(b.x, b.y); const g = x.createRadialGradient(0, 0, 1, 0, 0, 10); g.addColorStop(0, '#1a0a2a'); g.addColorStop(0.7, '#5a2a9a'); g.addColorStop(1, 'rgba(160,100,255,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 10, 0, 7); x.fill(); x.restore(); },
+    lantern(x, e, t, T) {
+        x.save(); x.translate(e.x, e.y + 16);
+        x.fillStyle = '#2a1e2a'; x.fillRect(-2, -40, 4, 40); x.fillRect(-7, -2, 14, 3);
+        x.strokeStyle = '#2a1e2a'; x.lineWidth = 2.5; x.beginPath(); x.moveTo(0, -40); x.quadraticCurveTo(10, -44, 12, -36); x.stroke();
+        x.translate(12, -30);
+        const lit = e.lit, fl = lit ? 1 + Math.sin(t * 9 + e.seed) * 0.08 : 0;
+        x.fillStyle = '#3a2a3a'; x.fillRect(-7, -9, 14, 3); x.fillRect(-6, 8, 12, 3);
+        x.fillStyle = lit ? '#ffe9a8' : 'rgba(140,140,170,.35)'; x.fillRect(-5.5, -6, 11, 14);
+        if (lit) { x.fillStyle = '#ff9f45'; x.beginPath(); x.ellipse(0, 3, 2.6 * fl, 5 * fl, 0, 0, 7); x.fill(); x.fillStyle = '#fffbe6'; x.beginPath(); x.ellipse(0, 4, 1.2, 2.4, 0, 0, 7); x.fill(); }
+        x.strokeStyle = '#3a2a3a'; x.lineWidth = 1.5; x.strokeRect(-5.5, -6, 11, 14); x.beginPath(); x.moveTo(0, -6); x.lineTo(0, 8); x.stroke();
+        x.restore();
+    },
+    gate(x, e, t, T) {
+        x.save(); x.translate(e.x, e.y + 16);
+        x.fillStyle = T.rim; x.beginPath(); x.moveTo(-26, 0); x.lineTo(-26, -46); x.arc(0, -46, 26, Math.PI, 0); x.lineTo(26, 0); x.lineTo(18, 0); x.lineTo(18, -46); x.arc(0, -46, 18, 0, Math.PI, true); x.lineTo(-18, 0); x.closePath(); x.fill();
+        x.fillStyle = T.accent; x.globalAlpha = 0.9; for (let i = 0; i < 7; i++) { const a = Math.PI + i * Math.PI / 6; x.beginPath(); x.arc(Math.cos(a) * 22, -46 + Math.sin(a) * 22, 2, 0, 7); x.fill(); } x.globalAlpha = 1;
+        x.save(); x.beginPath(); x.moveTo(-18, 0); x.lineTo(-18, -46); x.arc(0, -46, 18, Math.PI, 0); x.lineTo(18, 0); x.closePath(); x.clip();
+        const g = x.createRadialGradient(0, -30, 2, 0, -30, 40); g.addColorStop(0, '#ffffff'); g.addColorStop(0.3, rgba(T.accent, 0.9)); g.addColorStop(1, rgba(T.accent, 0.15)); x.fillStyle = g; x.fillRect(-20, -70, 40, 72);
+        x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 1.5;
+        for (let i = 0; i < 4; i++) { x.beginPath(); for (let a = 0; a < 7; a += 0.2) { const rr = a * 2.6 + i * 3, px = Math.cos(a + t * 2 + i) * rr, py = -30 + Math.sin(a + t * 2 + i) * rr; a === 0 ? x.moveTo(px, py) : x.lineTo(px, py); } x.stroke(); }
+        x.restore(); x.restore();
+    },
+    spark(x, e, t) {
+        const b = Math.sin(t * 3 + e.seed) * 2.5, s = 1 + Math.sin(t * 6 + e.seed) * 0.1;
+        x.save(); x.translate(e.x, e.y + b); x.rotate(t * 1.5 + e.seed); x.scale(s, s);
+        x.fillStyle = '#ffd36b'; x.beginPath(); x.moveTo(0, -7); x.lineTo(5, 0); x.lineTo(0, 7); x.lineTo(-5, 0); x.closePath(); x.fill();
+        x.fillStyle = '#fffbe6'; x.beginPath(); x.moveTo(0, -4); x.lineTo(2.5, 0); x.lineTo(0, 4); x.lineTo(-2.5, 0); x.closePath(); x.fill();
+        x.restore();
+    },
+    moth(x, e, t) {
+        const fl = Math.abs(Math.sin(t * 12 + e.seed)), by = Math.sin(t * 2 + e.seed) * 4;
+        x.save(); x.translate(e.x, e.y + by);
+        x.fillStyle = 'rgba(160,240,255,.85)';
+        for (const s of [-1, 1]) { x.save(); x.scale(s * (0.3 + fl * 0.7), 1); x.beginPath(); x.moveTo(0, 0); x.bezierCurveTo(6, -14, 16, -10, 13, 0); x.bezierCurveTo(16, 8, 6, 10, 0, 2); x.fill(); x.restore(); }
+        x.fillStyle = '#fff'; x.beginPath(); x.ellipse(0, 0, 2, 6, 0, 0, 7); x.fill();
+        x.strokeStyle = '#d8fbff'; x.lineWidth = 1; x.beginPath(); x.moveTo(-1, -5); x.quadraticCurveTo(-4, -10, -6, -10); x.moveTo(1, -5); x.quadraticCurveTo(4, -10, 6, -10); x.stroke();
+        x.restore();
+    },
+    spring(x, e, t, T) {
+        const k = e.boing || 0;
+        x.save(); x.translate(e.x, e.y + 16);
+        x.fillStyle = '#e8d8c0'; x.fillRect(-4, -8 + k * 4, 8, 8 - k * 4);
+        const g = x.createLinearGradient(0, -20, 0, -8); g.addColorStop(0, '#ff7ab8'); g.addColorStop(1, '#c03a7a');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, -10 + k * 5, 14 + k * 3, 8 - k * 3, 0, Math.PI, 0); x.fill(); x.fillRect(-14 - k * 3, -11 + k * 5, 28 + k * 6, 2);
+        x.fillStyle = '#ffe0f0'; for (const dx of [-7, 0, 7]) { x.beginPath(); x.arc(dx, -14 + k * 6, 1.8, 0, 7); x.fill(); }
+        x.restore();
+    },
+    key(x, e, t) {
+        x.save(); x.translate(e.x, e.y + Math.sin(t * 3) * 3); x.rotate(Math.sin(t * 2) * 0.2);
+        x.strokeStyle = '#ffd36b'; x.lineWidth = 3; x.beginPath(); x.arc(-5, 0, 5, 0, 7); x.moveTo(0, 0); x.lineTo(11, 0); x.moveTo(8, 0); x.lineTo(8, 4); x.moveTo(11, 0); x.lineTo(11, 5); x.stroke();
+        x.restore();
+    },
+    door(x, d, t, T) {
+        x.save(); x.translate(d.x, d.y);
+        const g = x.createLinearGradient(0, 0, TS, 0); g.addColorStop(0, '#6a4a2a'); g.addColorStop(0.5, '#8a6a3a'); g.addColorStop(1, '#5a3a1a');
+        x.fillStyle = g; x.fillRect(2, 0, TS - 4, d.h * TS);
+        x.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < d.h; i++) x.fillRect(2, i * TS + TS - 3, TS - 4, 3);
+        x.fillStyle = '#ffd36b'; x.beginPath(); x.arc(TS / 2, d.h * TS / 2, 5, 0, 7); x.fill(); x.fillStyle = '#3a2a1a'; x.fillRect(TS / 2 - 1.2, d.h * TS / 2 - 1, 2.4, 6);
+        x.restore();
+    },
+    shrine(x, e, t, T) {
+        x.save(); x.translate(e.x, e.y + 16);
+        x.fillStyle = T.rim; x.fillRect(-16, -10, 32, 10); x.fillRect(-11, -16, 22, 6);
+        const glow = e.used ? 0.25 : 1, by = Math.sin(t * 2) * 4;
+        x.globalAlpha = glow; x.fillStyle = '#bff7ff'; x.translate(0, -34 + by); x.rotate(t * 0.8);
+        x.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? 5 : 12; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } x.closePath(); x.fill();
+        x.restore();
+    },
+    crumble(x, c, t, T) {
+        x.save(); x.translate(c.x + (c.shake ? (Math.random() - 0.5) * 3 : 0), c.y);
+        const g = x.createLinearGradient(0, 0, 0, TS); g.addColorStop(0, T.plat); g.addColorStop(1, T.rim);
+        x.globalAlpha = c.alpha; x.fillStyle = g; x.fillRect(1, 0, TS - 2, TS - 4);
+        x.strokeStyle = 'rgba(0,0,0,.45)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(6, 0); x.lineTo(12, 12); x.lineTo(8, 22); x.moveTo(22, 0); x.lineTo(18, 10); x.lineTo(26, 20); x.stroke();
+        x.fillStyle = 'rgba(255,255,255,.2)'; x.fillRect(2, 1, TS - 4, 2);
+        x.restore();
+    },
+    mover(x, m, t, T) {
+        x.save(); x.translate(m.x, m.y);
+        const g = x.createLinearGradient(0, 0, 0, 14); g.addColorStop(0, T.plat); g.addColorStop(1, T.rim);
+        x.fillStyle = g; x.beginPath(); x.roundRect ? x.roundRect(0, 0, m.w, 14, 5) : x.rect(0, 0, m.w, 14); x.fill();
+        x.fillStyle = 'rgba(255,255,255,.3)'; x.fillRect(4, 2, m.w - 8, 2);
+        x.fillStyle = T.accent; for (let i = 0; i < m.w / TS; i++) { x.globalAlpha = 0.6 + Math.sin(t * 4 + i) * 0.3; x.beginPath(); x.arc(TS / 2 + i * TS, 9, 2.2, 0, 7); x.fill(); }
+        x.restore();
+    },
+    spikes(x, s, T) {
+        x.save(); x.translate(s.tx * TS + TS / 2, s.ty * TS + TS / 2); x.rotate(s.rot);
+        const g = x.createLinearGradient(0, 16, 0, 0); g.addColorStop(0, T.deco === 'ruins' ? '#9a8a6a' : '#5a5a7a'); g.addColorStop(1, T.deco === 'forge' ? '#ffb07a' : '#f0f0ff');
+        x.fillStyle = g;
+        for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(-16 + i * 8, 16); x.lineTo(-12 + i * 8, 2); x.lineTo(-8 + i * 8, 16); x.fill(); }
+        x.restore();
+    },
+    lava(x, l, t) {
+        x.save(); x.translate(l.tx * TS, l.ty * TS);
+        const g = x.createLinearGradient(0, 0, 0, TS); g.addColorStop(0, '#ffcf5a'); g.addColorStop(0.3, '#ff6a1a'); g.addColorStop(1, '#a01a0a');
+        x.fillStyle = g;
+        if (l.top) { x.beginPath(); x.moveTo(0, TS); x.lineTo(0, 6); for (let i = 0; i <= 8; i++) x.lineTo(i * 4, 5 + Math.sin(t * 3 + i * 0.9 + l.tx * 2) * 2.5); x.lineTo(TS, TS); x.fill(); }
+        else x.fillRect(0, 0, TS, TS);
+        x.restore();
+    }
+};
+
+// ---- 20-level.js ----
+// ==========================================
+// LEVELS: the ASCII maps in 70-levels.js become a tile grid plus things that move.
+//   #  ground          =  one-way ledge        ^  spikes (they point away from the ground they sit on)
+//   l  lava            B  dark wall behind you C  crumbling block      D  door (opens with a key)
+//   P  start           E  exit gate            L  lantern (checkpoint) o  spark   *  star moth (3 per level)
+//   S  spring          k  key                  u  shrine (teaches the world's new move)
+//   g  slime           b  bat                  t  flower turret        h  thornback (spiky: do not stomp)
+//   M  moving ledge, left/right (runs between walls or '|' markers)    N  moving ledge, up/down (between '|' markers)
+//   G  The Gloom (the last boss)
+// ==========================================
+const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
+
+function parseLevel(def) {
+    const rows = def.map.slice(), h = rows.length, w = Math.max(...rows.map(r => r.length));
+    const L = { def, w, h, world: def.world, tiles: new Uint8Array(w * h), spikes: [], lava: [], ents: [], crumbles: [], doors: [], movers: [],
+        sparks: 0, moths: 0, start: null, marks: new Set() };
+    const at = (x, y) => (rows[y] || '')[x] || ' ';
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const c = at(x, y), px = x * TS + TS / 2, py = y * TS + TS / 2;
+        const set = v => { L.tiles[y * w + x] = v; };
+        switch (c) {
+            case '#': set(T_SOLID); break;
+            case '=': set(T_ONEWAY); break;
+            case '^': set(T_SPIKE); break;
+            case 'l': set(T_LAVA); break;
+            case 'B': set(T_BACK); break;
+            case '|': L.marks.add(y * w + x); break;
+            case 'P': L.start = { x: px, y: py }; break;
+            case 'C': L.crumbles.push({ tx: x, ty: y, x: x * TS, y: y * TS, state: 0, t: 0, alpha: 1 }); break;
+            case 'D': {
+                const above = L.doors.find(d => d.tx === x && d.ty + d.h === y);
+                if (above) above.h++; else L.doors.push({ tx: x, ty: y, x: x * TS, y: y * TS, h: 1, open: false, slide: 0 });
+                break;
+            }
+            case 'M': case 'N': {
+                // a run of M's is one ledge
+                if (at(x - 1, y) === c) break;
+                let n = 1; while (at(x + n, y) === c) n++;
+                L.movers.push({ kind: c, tx: x, ty: y, x: x * TS, y: y * TS, w: n * TS, h: 14, vx: 0, vy: 0, dx: 0, dy: 0, dir: 1, speed: c === 'M' ? 70 : 60 });
+                break;
+            }
+            default:
+                if ('oEL*Skubgthg G'.includes(c) && c !== ' ') {
+                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss' }[c];
+                    L.ents.push({ kind, x: px, y: py, sx: px, sy: py, seed: (x * 7919 + y * 104729) % 1000 / 100 });
+                    if (c === 'o') L.sparks++;
+                    if (c === '*') L.moths++;
+                }
+        }
+    }
+    if (!L.start) L.start = { x: TS * 2, y: TS * 2 };
+    // moving ledges: work out how far each one travels
+    for (const m of L.movers) {
+        if (m.kind === 'M') {
+            let a = m.tx, b = m.tx + m.w / TS - 1;
+            while (a > 0 && !L.marks.has(m.ty * w + a - 1) && tileAt(L, a - 1, m.ty) === T_AIR) a--;
+            while (b < w - 1 && !L.marks.has(m.ty * w + b + 1) && tileAt(L, b + 1, m.ty) === T_AIR) b++;
+            m.min = a * TS; m.max = (b + 1) * TS - m.w;
+        } else {
+            let a = m.ty, b = m.ty;
+            while (a > 0 && !L.marks.has((a - 1) * w + m.tx) && tileAt(L, m.tx, a - 1) === T_AIR) a--;
+            while (b < h - 1 && !L.marks.has((b + 1) * w + m.tx) && tileAt(L, m.tx, b + 1) === T_AIR) b++;
+            m.min = a * TS; m.max = b * TS;
+        }
+    }
+    // spikes point away from the ground they are fixed to
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const t = L.tiles[y * w + x];
+        if (t === T_SPIKE) {
+            const s = isSolidT(L, x, y + 1) ? 0 : isSolidT(L, x, y - 1) ? Math.PI : isSolidT(L, x - 1, y) ? Math.PI / 2 : isSolidT(L, x + 1, y) ? -Math.PI / 2 : 0;
+            L.spikes.push({ tx: x, ty: y, rot: s });
+        } else if (t === T_LAVA) L.lava.push({ tx: x, ty: y, top: tileAt(L, x, y - 1) !== T_LAVA });
+    }
+    return L;
+}
+const tileAt = (L, x, y) => (x < 0 || x >= L.w) ? T_SOLID : (y < 0) ? T_AIR : (y >= L.h) ? T_AIR : L.tiles[y * L.w + x];
+const isSolidT = (L, x, y) => tileAt(L, x, y) === T_SOLID;
+// what counts as ground for drawing (the level's edges look like solid rock)
+const solidForArt = L => (x, y) => x < 0 || x >= L.w || (y >= 0 && y < L.h && L.tiles[y * L.w + x] === T_SOLID);
+
+// ---------- collision against tiles + doors + crumbling blocks ----------
+function solidAtPx(L, px, py) {
+    const tx = Math.floor(px / TS), ty = Math.floor(py / TS);
+    if (tileAt(L, tx, ty) === T_SOLID) return true;
+    for (const c of L.crumbles) if (c.state < 3 && c.tx === tx && c.ty === ty) return true;
+    for (const d of L.doors) if (!d.open && d.tx === tx && ty >= d.ty && ty < d.ty + d.h) return true;
+    return false;
+}
+// does the box overlap anything solid?
+function boxSolid(L, x, y, w, h) {
+    const x0 = Math.floor(x / TS), x1 = Math.floor((x + w - 0.01) / TS), y0 = Math.floor(y / TS), y1 = Math.floor((y + h - 0.01) / TS);
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) if (solidAtPx(L, tx * TS + 1, ty * TS + 1)) return true;
+    return false;
+}
+// one-way ledges and moving ledges only hold you from above
+function ledgeBelow(L, x, w, yOld, yNew) {
+    let best = null;
+    const x0 = Math.floor(x / TS), x1 = Math.floor((x + w - 0.01) / TS);
+    const ty0 = Math.floor(yOld / TS), ty1 = Math.floor(yNew / TS);
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = x0; tx <= x1; tx++)
+        if (tileAt(L, tx, ty) === T_ONEWAY) { const top = ty * TS; if (yOld <= top + 0.01 && yNew >= top && (best === null || top < best.y)) best = { y: top }; }
+    for (const m of L.movers) if (x + w > m.x && x < m.x + m.w && yOld <= m.y + 0.01 && yNew >= m.y && (best === null || m.y < best.y)) best = { y: m.y, mover: m };
+    return best;
+}
+
+// ---- 30-entities.js ----
+// ==========================================
+// PLAYER + EVERYTHING ELSE THAT MOVES
+// Feel: coyote time, jump buffering, variable jump height, corner nudges, squash and stretch.
+// ==========================================
+const PH = { g: 2050, fall: 880, run: 270, accG: 2900, accA: 1900, fricG: 3000, fricA: 700, jump: 690, djump: 610,
+    wallFall: 140, wallJumpX: 320, wallJumpY: 650, dash: 760, dashT: 0.17, spring: 1080, coyote: 0.1, buffer: 0.13, stomp: 470 };
+
+function makePlayer(x, y) {
+    return { x, y, w: 18, h: 24, vx: 0, vy: 0, face: 1, ground: false, coyote: 0, buffer: 0, air: 0, wall: 0, wallT: 0, wallLock: 0,
+        dashT: 0, dashDir: 0, dashDY: 0, canDash: true, cut: false, sx: 1, sy: 1, hurtT: 0, hearts: 3, dead: false, deadT: 0,
+        on: null, safe: { x, y }, safeT: 0, keys: 0, blinkSeed: Math.random() * 9, trailT: 0, runDust: 0, landV: 0 };
+}
+const pBox = p => ({ x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h });
+const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+function updatePlayer(G, dt) {
+    const p = G.p, L = G.L, A = SAVE.d.abilities;
+    if (p.dead) { p.deadT -= dt; if (p.deadT <= 0) respawn(G, false); return; }
+    const dir = (Input.held('right') ? 1 : 0) - (Input.held('left') ? 1 : 0);
+    if (Input.hit('jump')) p.buffer = PH.buffer;
+    p.buffer = Math.max(0, p.buffer - dt); p.coyote = Math.max(0, p.coyote - dt); p.wallT = Math.max(0, p.wallT - dt);
+    p.wallLock = Math.max(0, p.wallLock - dt); p.hurtT = Math.max(0, p.hurtT - dt);
+    // dash
+    if (Input.hit('dash') && A.dash && p.canDash && p.dashT <= 0) {
+        p.dashT = PH.dashT; p.canDash = false; p.dashDir = dir || p.face; p.dashDY = Input.held('up') ? -1 : 0;
+        p.vy = 0; p.sx = 1.35; p.sy = 0.7; G.shake(4); Sound.play('dash'); G.stats.dashes++;
+        burst(G, p.x, p.y, '#ffe9a8', 14, 220);
+    }
+    if (p.dashT > 0) {
+        p.dashT -= dt;
+        p.vx = p.dashDir * PH.dash * (p.dashDY ? 0.72 : 1); p.vy = p.dashDY * PH.dash * 0.72;
+        if (Math.random() < 0.9) G.ghosts.push({ x: p.x, y: p.y, face: p.face, sx: p.sx, sy: p.sy, life: 0.22 });
+        if (p.dashT <= 0) { p.vx *= 0.45; if (p.dashDY) p.vy *= 0.4; }
+    } else {
+        // run
+        const target = dir * PH.run;
+        if (p.wallLock <= 0) {
+            if (dir) { p.vx = approach(p.vx, target, (p.ground ? PH.accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? 1.6 : 1)); p.face = dir; }
+            else p.vx = approach(p.vx, 0, (p.ground ? PH.fricG : PH.fricA) * dt);
+        }
+        // gravity, wall slide
+        p.vy = Math.min(p.vy + PH.g * dt * (p.vy > 0 ? 1.18 : 1), PH.fall);
+        p.wall = 0;
+        if (!p.ground && A.wall) {
+            const b = pBox(p);
+            if (boxSolid(L, b.x - 2, b.y + 4, 2, b.h - 8)) p.wall = -1; else if (boxSolid(L, b.x + b.w, b.y + 4, 2, b.h - 8)) p.wall = 1;
+            if (p.wall) { p.wallT = 0.12; p.wallDir = p.wall; p.canDash = true; }
+            if (p.wall && dir === p.wall && p.vy > PH.wallFall) { p.vy = PH.wallFall; if (Math.random() < 0.3) dust(G, p.x + p.wall * 9, p.y + 4, 1); }
+        }
+        // jump: from the ground (or just after leaving it), off a wall, or in the air
+        if (p.buffer > 0) {
+            if (p.ground || p.coyote > 0) {
+                p.vy = -PH.jump; p.ground = false; p.coyote = 0; p.buffer = 0; p.cut = false; p.on = null;
+                p.sx = 0.72; p.sy = 1.32; Sound.play('jump'); dust(G, p.x, p.y + 12, 6); G.stats.jumps++;
+            } else if (A.wall && p.wallT > 0) {
+                p.vy = -PH.wallJumpY; p.vx = -p.wallDir * PH.wallJumpX; p.face = -p.wallDir; p.wallLock = 0.15; p.buffer = 0; p.cut = false; p.wallT = 0;
+                p.sx = 0.75; p.sy = 1.28; Sound.play('walljump'); dust(G, p.x + p.wallDir * 10, p.y, 6);
+            } else if (A.double && p.air > 0) {
+                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump');
+                ring(G, p.x, p.y + 10, '#bff7ff');
+            }
+        }
+        if (!Input.held('jump') && p.vy < -220 && !p.cut && !p.springing) { p.vy *= 0.5; p.cut = true; }
+    }
+    // move: x then y, against the level
+    const wasGround = p.ground, vyBefore = p.vy;
+    moveX(G, p.vx * dt);
+    moveY(G, p.vy * dt);
+    if (p.on) { const m = p.on; moveX(G, m.dx); p.y = m.y - p.h / 2 - 0.01; if (!(p.x + p.w / 2 > m.x && p.x - p.w / 2 < m.x + m.w)) { p.on = null; p.ground = false; } }
+    if (p.ground) {
+        p.coyote = PH.coyote; p.air = A.double ? 1 : 0; p.springing = false; if (p.dashT <= 0) p.canDash = true;
+        if (!wasGround) { const k = clamp(vyBefore / 900, 0.15, 0.6); p.sx = 1 + k; p.sy = 1 - k * 0.8; if (vyBefore > 400) { dust(G, p.x, p.y + 12, 8); Sound.play('land'); } }
+        if (Math.abs(p.vx) > 120) { p.runDust -= dt; if (p.runDust <= 0) { p.runDust = 0.12; dust(G, p.x - p.face * 6, p.y + 12, 1); } }
+        // remember a safe spot to come back to after a fall into spikes or a pit
+        p.safeT += dt;
+        if (p.safeT > 0.3 && !p.on && isSolidT(L, Math.floor((p.x - 8) / TS), Math.floor((p.y + 14) / TS)) && isSolidT(L, Math.floor((p.x + 8) / TS), Math.floor((p.y + 14) / TS))) p.safe = { x: p.x, y: p.y };
+    } else p.safeT = 0;
+    // squash and stretch settle back
+    p.sx = lerp(p.sx, 1, Math.min(1, dt * 14)); p.sy = lerp(p.sy, 1, Math.min(1, dt * 14));
+    if (!p.ground && p.dashT <= 0) { const st = clamp(Math.abs(p.vy) / 2600, 0, 0.18); p.sy = Math.max(p.sy, 1 + st * 0.5); p.sx = Math.min(p.sx, 1 - st * 0.4); }
+    // trail of light when moving fast
+    p.trailT -= dt;
+    if (p.trailT <= 0 && (Math.abs(p.vx) > 150 || Math.abs(p.vy) > 300)) { p.trailT = 0.03; G.parts.push({ x: p.x + rand(-4, 4), y: p.y + rand(-2, 6), vx: -p.vx * 0.05, vy: rand(-20, 10), life: 0.45, max: 0.45, size: rand(2, 4), color: '#ffd98a', add: true }); }
+    // hazards
+    if (p.hurtT <= 0 || true) hazards(G);
+    if (p.y > L.h * TS + 80) hurt(G, 'pit');
+}
+function moveX(G, d) {
+    const p = G.p, L = G.L; if (!d) return;
+    const steps = Math.ceil(Math.abs(d) / 10), s = d / steps;
+    for (let i = 0; i < steps; i++) {
+        p.x += s; const b = pBox(p);
+        if (boxSolid(L, b.x, b.y, b.w, b.h)) {
+            // corner nudge: clipping a ledge by a few pixels while rising/falling slips past it instead of stopping dead
+            for (const ny of [-4, -8, 4]) { if (!boxSolid(L, b.x, b.y + ny, b.w, b.h) && Math.abs(p.vy) > 60 && (ny < 0 ? p.vy < 0 || p.ground : p.vy > 0)) { p.y += ny; return; } }
+            if (s > 0) p.x = Math.floor((b.x + b.w) / TS) * TS - p.w / 2 - 0.01; else p.x = (Math.floor(b.x / TS) + 1) * TS + p.w / 2 + 0.01;
+            if (p.dashT > 0 && Math.abs(p.vx) > 400) { G.shake(3); }
+            p.vx = 0; return;
+        }
+    }
+}
+function moveY(G, d) {
+    const p = G.p, L = G.L;
+    p.ground = false;
+    const steps = Math.max(1, Math.ceil(Math.abs(d) / 10)), s = d / steps;
+    for (let i = 0; i < steps; i++) {
+        const oldBottom = p.y + p.h / 2;
+        p.y += s; const b = pBox(p);
+        if (boxSolid(L, b.x, b.y, b.w, b.h)) {
+            if (s > 0) { p.y = Math.floor((b.y + b.h) / TS) * TS - p.h / 2 - 0.01; p.ground = true; landedOn(G); }
+            else {
+                // bumping a corner with the head: nudge sideways instead of stopping
+                for (const nx of [-5, 5, -9, 9]) if (!boxSolid(L, b.x + nx, b.y, b.w, b.h)) { p.x += nx; return; }
+                p.y = (Math.floor(b.y / TS) + 1) * TS + p.h / 2 + 0.01; p.cut = true;
+            }
+            p.vy = 0; return;
+        }
+        if (s >= 0 && !(Input.held('down') && Input.held('jump'))) {
+            const led = ledgeBelow(L, b.x, b.w, oldBottom, b.y + b.h);
+            if (led) { p.y = led.y - p.h / 2 - 0.01; p.vy = 0; p.ground = true; p.on = led.mover || null; landedOn(G); return; }
+        }
+    }
+    // standing still on a moving ledge or a one-way: keep the ground flag
+    if (d === 0 || p.on) { const b = pBox(p); if (boxSolid(L, b.x, b.y + 1, b.w, b.h)) p.ground = true; }
+}
+function landedOn(G) {
+    const p = G.p;
+    // crumbling blocks start to shake when stood on
+    const ty = Math.floor((p.y + p.h / 2 + 2) / TS);
+    for (const c of G.L.crumbles) if (c.state === 0 && c.ty === ty && p.x + p.w / 2 > c.x && p.x - p.w / 2 < c.x + TS) { c.state = 1; c.t = 0.45; }
+}
+function hazards(G) {
+    const p = G.p, L = G.L, b = pBox(p), hb = { x: b.x + 3, y: b.y + 4, w: b.w - 6, h: b.h - 6 };
+    const x0 = Math.floor(hb.x / TS), x1 = Math.floor((hb.x + hb.w) / TS), y0 = Math.floor(hb.y / TS), y1 = Math.floor((hb.y + hb.h) / TS);
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+        const t = tileAt(L, tx, ty);
+        if (t === T_SPIKE) {
+            const s = L.spikes.find(q => q.tx === tx && q.ty === ty); const r = s ? s.rot : 0;
+            const box = r === 0 ? { x: tx * TS + 3, y: ty * TS + 14, w: TS - 6, h: 18 } : Math.abs(r - Math.PI) < 0.1 ? { x: tx * TS + 3, y: ty * TS, w: TS - 6, h: 18 }
+                : r > 0 ? { x: tx * TS, y: ty * TS + 3, w: 18, h: TS - 6 } : { x: tx * TS + 14, y: ty * TS + 3, w: 18, h: TS - 6 };
+            if (overlap(hb, box)) return hurt(G, 'spike');
+        } else if (t === T_LAVA && overlap(hb, { x: tx * TS, y: ty * TS + 10, w: TS, h: TS - 10 })) return hurt(G, 'lava');
+    }
+}
+// hazards send you back to the last safe ground; enemies knock you back. No hearts left: back to the last lantern.
+function hurt(G, why, from) {
+    const p = G.p;
+    if (p.dead || G.done) return;
+    if (p.hurtT > 0 && why !== 'pit' && why !== 'lava' && why !== 'spike') return;
+    p.hearts--; G.stats.hits++;
+    G.shake(why === 'enemy' ? 6 : 9); G.flash = 0.35;
+    if (p.hearts <= 0) {
+        p.dead = true; p.deadT = 0.75; G.stats.deaths++; SAVE.d.deaths++;
+        Sound.play('die'); burst(G, p.x, p.y, '#ffd36b', 40, 340); burst(G, p.x, p.y, '#ffffff', 16, 200);
+        return;
+    }
+    Sound.play('hurt'); p.hurtT = 1.3;
+    if (why === 'enemy' && from) { p.vx = sign(p.x - from.x || 1) * 280; p.vy = -380; p.dashT = 0; }
+    else {
+        burst(G, p.x, p.y, '#ffd36b', 16, 220);
+        p.x = p.safe.x; p.y = p.safe.y; p.vx = 0; p.vy = 0; p.dashT = 0; p.on = null;
+        G.cam.snap = 0.15;
+    }
+    G.hud();
+}
+function respawn(G, full = true) {
+    const p = G.p, c = G.checkpoint;
+    Object.assign(p, makePlayer(c.x, c.y), { keys: p.keys, hearts: G.maxHearts() });
+    G.cam.snap = 0.2; G.hud();
+    burst(G, p.x, p.y, '#fff2c4', 22, 180);
+}
+
+// ---------- enemies, items, moving bits ----------
+function updateWorld(G, dt) {
+    const p = G.p, L = G.L, t = G.t, pb = pBox(p);
+    for (const m of L.movers) {
+        const ox = m.x, oy = m.y;
+        if (m.kind === 'M') { m.x += m.dir * m.speed * dt; if (m.x <= m.min) { m.x = m.min; m.dir = 1; } else if (m.x >= m.max) { m.x = m.max; m.dir = -1; } }
+        else { m.y += m.dir * m.speed * dt; if (m.y <= m.min) { m.y = m.min; m.dir = 1; } else if (m.y >= m.max) { m.y = m.max; m.dir = -1; } }
+        m.dx = m.x - ox; m.dy = m.y - oy;
+    }
+    for (const c of L.crumbles) {
+        if (c.state === 1) { c.shake = true; c.t -= dt; if (c.t <= 0) { c.state = 3; c.t = 3; c.shake = false; Sound.play('crumble'); for (let i = 0; i < 8; i++) G.parts.push({ x: c.x + rand(TS), y: c.y + rand(TS), vx: rand(-60, 60), vy: rand(-80, 40), life: 0.8, max: 0.8, size: rand(3, 6), color: WORLDS[G.world].plat, g: 900, sq: true }); } }
+        else if (c.state === 3) { c.alpha = 0; c.t -= dt; if (c.t <= 0 && !overlap(pb, { x: c.x, y: c.y, w: TS, h: TS })) { c.state = 0; c.alpha = 1; } }
+        else c.alpha = Math.min(1, c.alpha + dt * 3);
+    }
+    for (const d of L.doors) if (d.open) d.slide = Math.min(1, d.slide + dt * 2);
+    for (const e of L.ents) {
+        if (e.gone) continue;
+        switch (e.kind) {
+            case 'spark': if (near(p, e, 20)) { e.gone = true; G.got.sparks++; SAVE.d.sparks++; Sound.play('spark', G.got.sparks); burst(G, e.x, e.y, '#ffd36b', 8, 120, true); G.hud(); } break;
+            case 'moth': if (near(p, e, 22)) { e.gone = true; G.got.moths[e.idx] = true; Sound.play('moth'); burst(G, e.x, e.y, '#bff7ff', 24, 180, true); G.toast('Star moth ' + (G.got.moths.filter(Boolean).length) + ' of ' + G.L.moths); G.hud(); } break;
+            case 'key': if (near(p, e, 20)) { e.gone = true; p.keys++; Sound.play('key'); burst(G, e.x, e.y, '#ffd36b', 12, 140, true); G.toast('A key! It opens a door.'); } break;
+            case 'lantern':
+                if (!e.lit && Math.abs(p.x - e.x) < 26 && Math.abs(p.y - e.y) < 40) {
+                    e.lit = true; G.checkpoint = { x: e.x, y: e.y }; p.hearts = G.maxHearts(); Sound.play('lantern'); burst(G, e.x + 12, e.y - 14, '#ffe9a8', 26, 160, true); G.hud();
+                    for (const o of L.ents) if (o.kind === 'lantern' && o !== e && o.lit && o.x < e.x) o.lit = true;
+                }
+                break;
+            case 'spring':
+                e.boing = Math.max(0, (e.boing || 0) - dt * 4);
+                if (p.vy >= 0 && Math.abs(p.x - e.x) < 18 && p.y + p.h / 2 > e.y + 2 && p.y + p.h / 2 < e.y + 18) {
+                    p.vy = -PH.spring; p.y = e.y + 2 - p.h / 2; p.ground = false; p.on = null; p.springing = true; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true;
+                    e.boing = 1; p.sx = 0.65; p.sy = 1.45; Sound.play('spring'); dust(G, e.x, e.y + 10, 6);
+                }
+                break;
+            case 'gate': if (near(p, e, 24) && !G.done && !G.bossAlive()) G.finish(); break;
+            case 'shrine': if (!e.used && near(p, e, 26)) G.shrine(e); break;
+            case 'slime': case 'thorn': walker(G, e, dt); break;
+            case 'bat': e.x = e.sx + Math.sin(t * 0.9 + e.seed) * 46; e.y = e.sy + Math.sin(t * 1.8 + e.seed) * 18; e.dir = Math.cos(t * 0.9 + e.seed) > 0 ? 1 : -1; contact(G, e, 13); break;
+            case 'turret': turret(G, e, dt); contact(G, e, 14); break;
+        }
+    }
+    // turret orbs
+    for (const b of G.shots) {
+        b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+        if (solidAtPx(L, b.x, b.y) || b.life <= 0) { b.dead = true; burst(G, b.x, b.y, b.shadow ? '#a070ff' : '#ffd36b', 6, 90); continue; }
+        if (!p.dead && Math.hypot(p.x - b.x, p.y - b.y) < 13) { b.dead = true; if (p.dashT > 0) continue; hurt(G, 'enemy', b); }
+    }
+    G.shots = G.shots.filter(b => !b.dead);
+    for (const k of L.doors) if (!k.open && p.keys > 0 && Math.abs(p.x - (k.x + TS / 2)) < TS && p.y > k.y - TS && p.y < k.y + k.h * TS + TS) { k.open = true; p.keys--; Sound.play('door'); G.shake(5); }
+}
+const near = (p, e, r) => Math.abs(p.x - e.x) < r && Math.abs(p.y - e.y) < r + 4;
+function walker(G, e, dt) {
+    const L = G.L, sp = e.kind === 'thorn' ? 72 : 46;
+    if (e.dir === undefined) e.dir = Math.random() < 0.5 ? -1 : 1;
+    if (e.dead) return;
+    e.squash = Math.max(0, (e.squash || 0) - dt * 4);
+    const ahead = e.x + e.dir * 14, foot = e.y + 18;
+    if (solidAtPx(L, ahead, e.y) || !(solidAtPx(L, ahead, foot) || tileAt(L, Math.floor(ahead / TS), Math.floor(foot / TS)) === T_ONEWAY)) e.dir *= -1;
+    else e.x += e.dir * sp * dt;
+    contact(G, e, 14);
+}
+function turret(G, e, dt) {
+    const p = G.p, dx = p.x - e.x, dy = p.y - (e.y - 2), d = Math.hypot(dx, dy);
+    e.aim = lerp(e.aim || 0, Math.atan2(dy, dx), Math.min(1, dt * 4));
+    e.cool = (e.cool ?? (1 + e.seed % 1.5)) - dt;
+    if (d < TS * 10 && !p.dead) {
+        if (e.cool < 0.5) e.charge = Math.min(1, (e.charge || 0) + dt * 2);
+        if (e.cool <= 0) { e.cool = 2.3; e.charge = 0; const a = e.aim; G.shots.push({ x: e.x + Math.cos(a) * 14, y: e.y - 2 + Math.sin(a) * 14, vx: Math.cos(a) * 165, vy: Math.sin(a) * 165, life: 5 }); Sound.play('shoot'); }
+    } else e.charge = Math.max(0, (e.charge || 0) - dt);
+}
+// touching an enemy: from above it is a stomp (not the spiky ones), a dash goes straight through anything, else it hurts
+function contact(G, e, r) {
+    const p = G.p; if (p.dead || e.dead) return;
+    if (Math.abs(p.x - e.x) > r + 8 || Math.abs(p.y - e.y) > r + 12) return;
+    if (p.dashT > 0) return kill(G, e);
+    const fromAbove = p.vy > 60 && p.y + p.h / 2 < e.y + 2;
+    if (fromAbove && e.kind !== 'thorn') { kill(G, e); p.vy = Input.held('jump') ? -PH.stomp * 1.25 : -PH.stomp; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true; p.cut = false; p.sx = 1.3; p.sy = 0.75; return; }
+    if (p.hurtT <= 0) hurt(G, 'enemy', e);
+}
+function kill(G, e) {
+    e.dead = true; e.gone = true; G.stats.stomps++;
+    Sound.play('stomp'); G.shake(3);
+    const T = WORLDS[G.world], col = e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
+    for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });
+    burst(G, e.x, e.y, '#fff3c4', 10, 160, true);
+}
+
+// ---------- particles ----------
+function dust(G, x, y, n) { for (let i = 0; i < n; i++) G.parts.push({ x: x + rand(-6, 6), y, vx: rand(-60, 60), vy: rand(-60, -10), life: 0.45, max: 0.45, size: rand(3, 6), color: 'rgba(255,255,255,.55)', drag: 3 }); }
+function burst(G, x, y, color, n, sp, add) { for (let i = 0; i < n; i++) { const a = rand(Math.PI * 2), v = rand(sp * 0.3, sp); G.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rand(0.35, 0.8), max: 0.8, size: rand(2, 5), color, add: add !== false, drag: 2.5 }); } }
+function ring(G, x, y, color) { G.rings.push({ x, y, r: 6, life: 0.35, color }); }
+function updateParts(G, dt) {
+    for (const q of G.parts) { q.life -= dt; q.vy += (q.g || 0) * dt; if (q.drag) { q.vx *= 1 - q.drag * dt; q.vy *= 1 - q.drag * dt; } q.x += q.vx * dt; q.y += q.vy * dt; }
+    if (G.parts.length > 900) G.parts.splice(0, G.parts.length - 900);
+    G.parts = G.parts.filter(q => q.life > 0);
+    for (const g of G.ghosts) g.life -= dt; G.ghosts = G.ghosts.filter(g => g.life > 0);
+    for (const r of G.rings) { r.life -= dt; r.r += dt * 120; } G.rings = G.rings.filter(r => r.life > 0);
+}
+
+// ---- 40-render.js ----
+// ==========================================
+// RENDER: camera, parallax, cached terrain chunks, things, particles, then the light pass (darkness with holes cut by
+// every light, at half resolution) and additive glows on top.
+// ==========================================
+const R = {
+    cv: null, x: null, W: 0, H: 0, dpr: 1, z: 1, chunks: new Map(), chunkOrder: [], bg: null, bgFor: '', light: null, lx: null, q: 1,
+    resize() {
+        const q = this.q;
+        this.dpr = Math.min(window.devicePixelRatio || 1, 2) * q;
+        this.W = Math.round(innerWidth * this.dpr); this.H = Math.round(innerHeight * this.dpr);
+        this.cv.width = this.W; this.cv.height = this.H;
+        // show about 26 tiles across (fewer on a tall narrow screen), at least 14 tall
+        const z = Math.min(this.W / (26 * TS), this.H / (14 * TS)); this.z = Math.max(0.5, z);
+        this.chunks.clear(); this.chunkOrder = []; this.bgFor = '';
+        this.light = document.createElement('canvas'); this.light.width = Math.ceil(this.W / 2); this.light.height = Math.ceil(this.H / 2); this.lx = this.light.getContext('2d');
+    }
+};
+const CH = 8;           // tiles per chunk side
+function chunkCanvas(G, cx, cy) {
+    const key = G.levelKey + ':' + cx + ':' + cy + ':' + R.z.toFixed(3);
+    let c = R.chunks.get(key);
+    if (c) return c;
+    const L = G.L, T = WORLDS[G.world], px = Math.ceil(CH * TS * R.z);
+    c = document.createElement('canvas'); c.width = c.height = px + 2;
+    const x = c.getContext('2d'); x.scale(R.z, R.z); x.translate(-cx * CH * TS, -cy * CH * TS);
+    const solid = solidForArt(L);
+    for (let ty = cy * CH - 1; ty < cy * CH + CH + 1; ty++) for (let tx = cx * CH - 1; tx < cx * CH + CH + 1; tx++) {
+        const t = tileAt(L, tx, ty);
+        if (t === T_BACK) drawBackTile(x, T, tx, ty, tx * 31 + ty * 17);
+    }
+    for (let ty = cy * CH - 1; ty < cy * CH + CH + 1; ty++) for (let tx = cx * CH - 1; tx < cx * CH + CH + 1; tx++) {
+        const t = (tx < 0 || tx >= L.w || ty < 0 || ty >= L.h) ? (tx < 0 || tx >= L.w ? T_SOLID : T_AIR) : L.tiles[ty * L.w + tx];
+        if (t === T_SOLID) drawTile(x, T, tx, ty, solid, G.world, (tx * 73856093) ^ (ty * 19349663) ^ G.world);
+        else if (t === T_ONEWAY) drawOneWay(x, T, tx, ty);
+    }
+    R.chunks.set(key, c); R.chunkOrder.push(key);
+    while (R.chunkOrder.length > 40) R.chunks.delete(R.chunkOrder.shift());
+    return c;
+}
+
+function render(G) {
+    const x = R.x, W = R.W, H = R.H, z = R.z, cam = G.cam, T = WORLDS[G.world], t = G.t;
+    const vw = W / z, vh = H / z;
+    const sx = (G.shakeT > 0 ? (Math.random() - 0.5) * G.shakeA : 0), sy = (G.shakeT > 0 ? (Math.random() - 0.5) * G.shakeA : 0);
+    const cx = cam.x - vw / 2 + sx, cy = cam.y - vh / 2 + sy;
+    // background
+    const bgKey = G.world + ':' + W + 'x' + H;
+    if (R.bgFor !== bgKey) { R.bg = paintBackground(G.world, Math.round(W * 1.5), H); R.bgFor = bgKey; }
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    for (const l of R.bg) {
+        if (l.fixed) { x.drawImage(l.c, 0, 0); continue; }
+        const bw = l.c.width, off = ((cx * z * l.k) % bw + bw) % bw, oy = clamp(-(cy - (G.L.h * TS - vh)) * z * l.k * 0.25, -H * 0.15, H * 0.25);
+        x.drawImage(l.c, -off, oy); x.drawImage(l.c, bw - off, oy);
+    }
+    // god rays in the bright worlds
+    if (G.world === 0 || G.world === 2) {
+        x.save(); x.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 4; i++) { const rx = ((i * 0.31 + 0.1) * W - cx * z * 0.08) % (W * 1.3); x.globalAlpha = 0.05 + 0.03 * Math.sin(t * 0.4 + i);
+            const g = x.createLinearGradient(rx, 0, rx - H * 0.4, H); g.addColorStop(0, G.world === 2 ? '#fffbe0' : '#ffc890'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g;
+            x.beginPath(); x.moveTo(rx - 30, 0); x.lineTo(rx + 60, 0); x.lineTo(rx - H * 0.4 + 140, H); x.lineTo(rx - H * 0.4 - 80, H); x.fill(); }
+        x.restore();
+    }
+    // world
+    x.setTransform(z, 0, 0, z, -cx * z, -cy * z);
+    const c0 = Math.floor(cx / (CH * TS)), c1 = Math.floor((cx + vw) / (CH * TS)), r0 = Math.floor(cy / (CH * TS)), r1 = Math.floor((cy + vh) / (CH * TS));
+    // lava glows behind
+    for (const l of G.L.lava) if (l.tx * TS > cx - TS && l.tx * TS < cx + vw + TS && l.ty * TS > cy - TS && l.ty * TS < cy + vh + TS) Sprites.lava(x, l, t);
+    for (let cy2 = r0; cy2 <= r1; cy2++) for (let cx2 = c0; cx2 <= c1; cx2++) {
+        if (cx2 < -1 || cy2 < -1 || cx2 * CH > G.L.w + 1 || cy2 * CH > G.L.h + 1) continue;
+        x.drawImage(chunkCanvas(G, cx2, cy2), cx2 * CH * TS, cy2 * CH * TS, (CH * TS * z + 2) / z, (CH * TS * z + 2) / z);
+    }
+    const vis = (px, py, m = 64) => px > cx - m && px < cx + vw + m && py > cy - m && py < cy + vh + m;
+    for (const s of G.L.spikes) if (vis(s.tx * TS, s.ty * TS)) Sprites.spikes(x, s, T);
+    for (const c of G.L.crumbles) if (c.state !== 3 && vis(c.x, c.y)) Sprites.crumble(x, c, t, T);
+    for (const d of G.L.doors) if (vis(d.x, d.y, 200)) { x.save(); x.translate(0, -d.slide * d.h * TS); x.beginPath(); x.rect(d.x, d.y + d.slide * d.h * TS, TS, d.h * TS); x.clip(); Sprites.door(x, d, t, T); x.restore(); }
+    for (const m of G.L.movers) if (vis(m.x, m.y, 200)) Sprites.mover(x, m, t, T);
+    for (const e of G.L.ents) {
+        if (e.gone || !vis(e.x, e.y)) continue;
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn' }[e.kind];
+        if (!f) continue;
+        if (e.ghost) { x.save(); x.globalAlpha = 0.4; Sprites[f](x, e, t, T); x.restore(); } else Sprites[f](x, e, t, T);
+    }
+    if (G.boss) drawBoss(x, G, t);
+    for (const b of G.shots) b.shadow ? Sprites.shadowOrb(x, b, t) : Sprites.orb(x, b, t);
+    // dash after-images
+    for (const g of G.ghosts) { x.save(); x.globalAlpha = g.life / 0.22 * 0.45; x.globalCompositeOperation = 'lighter'; Sprites.lumi(x, { x: g.x, y: g.y, sx: g.sx, sy: g.sy, face: g.face, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0 }, t); x.restore(); }
+    if (!G.p.dead && !(G.p.hurtT > 0 && Math.floor(t * 16) % 2 && G.p.hurtT < 1.1)) Sprites.lumi(x, G.p, t);
+    // particles
+    for (const q of G.parts) {
+        if (!vis(q.x, q.y, 20)) continue;
+        const a = clamp(q.life / q.max, 0, 1);
+        x.globalAlpha = a; x.fillStyle = q.color;
+        if (q.add) { x.globalCompositeOperation = 'lighter'; }
+        if (q.sq) x.fillRect(q.x - q.size / 2, q.y - q.size / 2, q.size, q.size);
+        else { x.beginPath(); x.arc(q.x, q.y, q.size * (q.add ? a * 0.6 + 0.4 : 1), 0, 7); x.fill(); }
+        x.globalCompositeOperation = 'source-over';
+    }
+    x.globalAlpha = 1;
+    for (const r of G.rings) { x.strokeStyle = r.color; x.globalAlpha = r.life / 0.35; x.lineWidth = 3; x.beginPath(); x.ellipse(r.x, r.y, r.r, r.r * 0.4, 0, 0, 7); x.stroke(); }
+    x.globalAlpha = 1;
+    // ambient motes drifting in the air
+    for (const m of G.motes) { const mx = ((m.x - cx * m.k) % vw + vw) % vw + cx, my = ((m.y + Math.sin(t * m.s + m.p) * 20 - cy * m.k) % vh + vh) % vh + cy;
+        x.globalAlpha = 0.35 + 0.35 * Math.sin(t * m.s * 2 + m.p); x.fillStyle = T.mote; x.beginPath(); x.arc(mx, my, m.r, 0, 7); x.fill(); }
+    x.globalAlpha = 1;
+    // lights
+    lightPass(G, cx, cy, vw, vh);
+    // flashes, vignette
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    if (G.flash > 0) { x.fillStyle = `rgba(255,80,80,${G.flash * 0.5})`; x.fillRect(0, 0, W, H); }
+    if (G.white > 0) { x.fillStyle = `rgba(255,250,230,${G.white})`; x.fillRect(0, 0, W, H); }
+    if (!R.vig || R.vig.width !== W || R.vig.height !== H) {
+        R.vig = document.createElement('canvas'); R.vig.width = W; R.vig.height = H; const v = R.vig.getContext('2d');
+        const g = v.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,10,.55)');
+        v.fillStyle = g; v.fillRect(0, 0, W, H);
+    }
+    x.drawImage(R.vig, 0, 0);
+}
+
+function lightPass(G, cx, cy, vw, vh) {
+    const T = WORLDS[G.world], z = R.z, lx = R.lx, LW = R.light.width, LH = R.light.height, k = LW / R.W, t = G.t;
+    const amb = G.ambient ?? T.ambient;
+    const lights = [], sparkL = [];
+    const add = (x, y, r, a = 1, color) => { if (x > cx - r && x < cx + vw + r && y > cy - r && y < cy + vh + r) lights.push({ x, y, r, a, color }); };
+    const p = G.p;
+    if (!p.dead) add(p.x, p.y, (amb > 0.5 ? 210 : 150) * (1 + Math.sin(t * 7) * 0.03 + (p.dashT > 0 ? 0.25 : 0)), 1, '255,200,120');
+    for (const e of G.L.ents) {
+        if (e.gone) continue;
+        if (e.kind === 'lantern') add(e.x + 12, e.y - 14, e.lit ? 240 + Math.sin(t * 9 + e.seed) * 8 : 40, e.lit ? 1 : 0.5, '255,190,100');
+        else if (e.kind === 'gate') add(e.x, e.y - 14, 190, 1, '255,230,160');
+        else if (e.kind === 'spark') { if (amb > 0.5) sparkL.push([e.x, e.y]); }
+        else if (e.kind === 'moth') add(e.x, e.y, 80, 0.9, '140,240,255');
+        else if (e.kind === 'shrine' && !e.used) add(e.x, e.y - 30, 140, 1, '160,240,255');
+        else if (e.kind === 'key') add(e.x, e.y, 60, 0.7, '255,210,120');
+        else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');
+    }
+    // small lights: only the nearest dozen (each one costs a draw)
+    const near = (a, b) => Math.abs(a[0] - p.x) + Math.abs(a[1] - p.y) - Math.abs(b[0] - p.x) - Math.abs(b[1] - p.y);
+    sparkL.sort(near).slice(0, 12).forEach(([sx, sy]) => add(sx, sy, 46, 0.6, '255,210,120'));
+    const lavaL = []; let lastTx = -9;
+    for (const l of G.L.lava) if (l.top && l.tx * TS > cx - 80 && l.tx * TS < cx + vw + 80 && l.tx - lastTx >= 2) { lavaL.push([l.tx * TS + 16, l.ty * TS + 8]); lastTx = l.tx; }
+    lavaL.sort(near).slice(0, 12).forEach(([lx2, ly2]) => add(lx2, ly2, 110, 0.9, '255,110,30'));
+    for (const b of G.shots) add(b.x, b.y, b.shadow ? 40 : 60, 0.8, b.shadow ? '170,110,255' : '255,210,120');
+    if (G.boss) add(G.boss.x, G.boss.y, G.boss.stun > 0 ? 260 : 140, 1, G.boss.stun > 0 ? '255,240,200' : '170,110,255');
+    if (amb > 0.02) {
+        lx.globalCompositeOperation = 'source-over'; lx.clearRect(0, 0, LW, LH);
+        lx.fillStyle = T.dark + amb + ')'; lx.fillRect(0, 0, LW, LH);
+        lx.globalCompositeOperation = 'destination-out';
+        const hole = holeSprite();
+        for (const L of lights) {
+            const sx = (L.x - cx) * z * k, sy = (L.y - cy) * z * k, r = L.r * z * k;
+            lx.globalAlpha = L.a; lx.drawImage(hole, sx - r, sy - r, r * 2, r * 2);
+        }
+        lx.globalAlpha = 1;
+        R.x.setTransform(1, 0, 0, 1, 0, 0); R.x.drawImage(R.light, 0, 0, R.W, R.H);
+    }
+    // soft coloured glow on top (the "bloom")
+    const x = R.x; x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'lighter';
+    for (const L of lights) {
+        if (L.r < 45) continue;
+        const spr = glowSprite(`rgba(${L.color},0.5)`), s = L.r * z * 0.9 * (0.5 + amb * 0.6);
+        x.globalAlpha = 0.28 + amb * 0.3; x.drawImage(spr, (L.x - cx) * z - s / 2, (L.y - cy) * z - s / 2, s, s);
+    }
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+}
+
+// one soft disc, stamped for every light (much cheaper than a new gradient per light per frame)
+let _hole = null;
+function holeSprite() {
+    if (_hole) return _hole;
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.5, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 128, 128); return (_hole = c);
+}
+
+// ---- 45-boss.js ----
+// ==========================================
+// THE GLOOM: the last boss. A cloud of shadow with a light trapped inside.
+//   float: drifts above the arena and throws shadow orbs that curve toward you
+//   slam:  rises, hangs over you (a shadow marks the spot), crashes down and sends shockwaves along the floor (jump them)
+//   stunned: after a slam its core glows - stomp it or dash into it. Six hits; it gets faster and calls bats after each pair.
+// ==========================================
+function makeBoss(e) { return { x: e.x, y: e.y - 60, hx: e.x, hy: e.y - 60, r: 46, hp: 6, max: 6, state: 'intro', t: 2.2, stun: 0, hitT: 0, phase: 0, waves: [], fireT: 1.5, wob: 0 }; }
+function bossUpdate(G, dt) {
+    const B = G.boss, p = G.p; if (!B) return;
+    B.wob += dt; B.hitT = Math.max(0, B.hitT - dt);
+    const L = G.L, floorY = B.floor || (B.floor = findFloor(L, B.hx)), speed = 1 + B.phase * 0.25;
+    B.t -= dt;
+    switch (B.state) {
+        case 'intro': B.y = lerp(B.y, B.hy, dt * 2); if (B.t <= 0) { B.state = 'float'; B.t = 4.5 / speed; } break;
+        case 'float': {
+            const tx = clamp(p.x, TS * 4, L.w * TS - TS * 4) + Math.sin(B.wob * 0.9) * 120;
+            B.x = lerp(B.x, tx, dt * 0.9 * speed); B.y = lerp(B.y, B.hy + Math.sin(B.wob * 1.6) * 30, dt * 2);
+            B.fireT -= dt;
+            if (B.fireT <= 0) {
+                B.fireT = 1.5 / speed; const n = 2 + B.phase;
+                for (let i = 0; i < n; i++) { const a = Math.atan2(p.y - B.y, p.x - B.x) + (i - (n - 1) / 2) * 0.35; G.shots.push({ x: B.x, y: B.y, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, life: 6, shadow: true, home: 0.9 }); }
+                Sound.play('shoot');
+            }
+            if (B.t <= 0) { B.state = 'rise'; B.t = 0.9; Sound.play('boss'); }
+            break;
+        }
+        case 'rise': B.y = lerp(B.y, B.hy - 90, dt * 4); B.x = lerp(B.x, p.x, dt * 3); if (B.t <= 0) { B.state = 'hang'; B.t = 0.65 / Math.sqrt(speed); B.tx = p.x; } break;
+        case 'hang': B.x = lerp(B.x, B.tx, dt * 6); if (B.t <= 0) { B.state = 'drop'; B.vy = 0; } break;
+        case 'drop':
+            B.vy = (B.vy || 0) + 3200 * dt; B.y += B.vy * dt;
+            if (B.y + B.r * 0.75 >= floorY) {
+                B.y = floorY - B.r * 0.75; B.state = 'stunned'; B.stun = 2.6; G.shake(14); Sound.play('boss');
+                for (const d of [-1, 1]) B.waves.push({ x: B.x + d * B.r, dir: d, life: 2.6 });
+                burst(G, B.x, floorY, '#b98aff', 30, 300);
+            }
+            break;
+        case 'stunned':
+            B.stun -= dt;
+            if (B.stun <= 0) { B.state = 'float'; B.t = 4.5 / speed; B.fireT = 0.8; }
+            break;
+        case 'hurt': B.y = lerp(B.y, B.hy, dt * 3); if (B.t <= 0) { B.state = 'float'; B.t = 4 / speed; } break;
+        case 'dying':
+            B.r = Math.max(0, B.r - dt * 18); G.white = Math.min(1, G.white + dt * 0.35);
+            if (Math.random() < 0.6) burst(G, B.x + rand(-40, 40), B.y + rand(-40, 40), '#fff2c4', 6, 260);
+            if (B.t <= 0) { G.boss = null; G.white = 1; G.ambient = 0.15; G.toast('The Gloom is gone. The lanterns are lit!'); G.revealGate(); }
+            return;
+    }
+    // shockwaves along the floor
+    for (const w of B.waves) {
+        w.x += w.dir * 300 * dt; w.life -= dt;
+        if (Math.random() < 0.7) G.parts.push({ x: w.x, y: floorY - 4, vx: rand(-30, 30), vy: rand(-160, -60), life: 0.4, max: 0.4, size: rand(3, 6), color: '#b98aff', add: true, g: 500 });
+        if (!p.dead && Math.abs(p.x - w.x) < 14 && p.y + p.h / 2 > floorY - 22) hurt(G, 'enemy', { x: w.x - w.dir * 20, y: p.y });
+    }
+    B.waves = B.waves.filter(w => w.life > 0 && w.x > 0 && w.x < L.w * TS);
+    // shadow orbs curve toward you a little
+    for (const s of G.shots) if (s.home) { const a = Math.atan2(p.y - s.y, p.x - s.x), v = Math.hypot(s.vx, s.vy); s.vx = lerp(s.vx, Math.cos(a) * v, dt * s.home); s.vy = lerp(s.vy, Math.sin(a) * v, dt * s.home); }
+    // touching it
+    if (p.dead || B.state === 'dying') return;
+    const d = Math.hypot(p.x - B.x, p.y - B.y);
+    if (d < B.r + 8) {
+        const open = B.state === 'stunned';
+        if (open && (p.dashT > 0 || (p.vy > 0 && p.y < B.y - B.r * 0.3))) {
+            B.hp--; B.hitT = 0.4; G.shake(10); Sound.play('stomp'); burst(G, B.x, B.y - 20, '#fff2c4', 30, 300);
+            p.vy = -PH.stomp * 1.2; p.vx = sign(p.x - B.x || 1) * 260; p.air = 1; p.canDash = true;
+            if (B.hp <= 0) { B.state = 'dying'; B.t = 2.4; Sound.play('gate'); G.stats.boss = true; return; }
+            if (B.hp % 2 === 0) {
+                B.phase++; G.toast(B.phase === 1 ? 'It is getting angry...' : 'One last push!');
+                for (let i = 0; i < 1 + B.phase; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.hy, sx: TS * (6 + i * 9) % (G.L.w * TS - TS * 8) + TS * 4, sy: B.hy + 40, seed: rand(9) });
+            }
+            B.state = 'hurt'; B.t = 0.8; B.stun = 0; B.waves = [];
+        } else if (p.hurtT <= 0 && p.dashT <= 0) hurt(G, 'enemy', B);
+    }
+}
+function findFloor(L, x) { const tx = Math.floor(x / TS); for (let y = 2; y < L.h; y++) if (isSolidT(L, tx, y)) return y * TS; return L.h * TS; }
+function drawBoss(x, G, t) {
+    const B = G.boss; if (!B) return;
+    x.save(); x.translate(B.x, B.y);
+    if (B.state === 'hang' || B.state === 'rise') {         // where it will land
+        x.save(); x.translate(0, (B.floor || 0) - B.y); x.globalAlpha = 0.35 + 0.25 * Math.sin(t * 20); x.fillStyle = '#000'; x.beginPath(); x.ellipse(0, 0, B.r * 1.1, 8, 0, 0, 7); x.fill(); x.restore();
+    }
+    const r = B.r, open = B.state === 'stunned', hit = B.hitT > 0;
+    // tendrils
+    x.strokeStyle = 'rgba(60,20,110,.75)'; x.lineWidth = 6; x.lineCap = 'round';
+    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2 + t * 0.6; x.beginPath(); x.moveTo(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6); x.quadraticCurveTo(Math.cos(a + 0.5) * r * 1.3, Math.sin(a + 0.5) * r * 1.3, Math.cos(a + Math.sin(t * 2 + i)) * r * 1.5, Math.sin(a + Math.sin(t * 2 + i)) * r * 1.5); x.stroke(); }
+    // body: overlapping dark blobs
+    for (let i = 0; i < 7; i++) {
+        const a = i / 7 * Math.PI * 2 + t * 0.8, bx = Math.cos(a) * r * 0.35, by = Math.sin(a) * r * 0.3, br = r * (0.65 + 0.12 * Math.sin(t * 3 + i));
+        const g = x.createRadialGradient(bx, by, 2, bx, by, br); g.addColorStop(0, hit ? '#ffffff' : '#2a0e4a'); g.addColorStop(0.7, hit ? '#c9a0ff' : '#1a0630'); g.addColorStop(1, 'rgba(20,4,40,0)');
+        x.fillStyle = g; x.beginPath(); x.arc(bx, by, br, 0, 7); x.fill();
+    }
+    // the trapped light: an eye that opens when it is stunned
+    const eo = open ? 1 : 0.25 + 0.1 * Math.sin(t * 5);
+    const g = x.createRadialGradient(0, -4, 1, 0, -4, 22); g.addColorStop(0, '#fffbe6'); g.addColorStop(0.4, open ? '#ffd36b' : '#c9a0ff'); g.addColorStop(1, 'rgba(255,200,120,0)');
+    x.fillStyle = g; x.beginPath(); x.ellipse(0, -4, 22, 22 * eo, 0, 0, 7); x.fill();
+    x.fillStyle = '#12021e'; x.beginPath(); x.ellipse(sign(G.p.x - B.x) * 5, -4, 5, 9 * eo, 0, 0, 7); x.fill();
+    if (open) { x.fillStyle = '#fff'; x.font = 'bold 16px sans-serif'; x.textAlign = 'center'; x.globalAlpha = 0.6 + 0.4 * Math.sin(t * 10); x.fillText('!', 0, -r - 10); }
+    x.restore();
+    // health bar under the boss
+    x.save(); const bw = 140; x.translate(B.x - bw / 2, B.y + r + 18);
+    x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(0, 0, bw, 7); x.fillStyle = '#c9a0ff'; x.fillRect(0, 0, bw * B.hp / B.max, 7); x.restore();
+}
+
+// ---- 50-game.js ----
+// ==========================================
+// GAME: one level at a time. Fixed 120 Hz physics, camera, HUD, finishing and saving.
+// ==========================================
+const G = {
+    state: 'title', L: null, p: null, world: 0, t: 0, time: 0, parts: [], ghosts: [], rings: [], shots: [], motes: [],
+    cam: { x: 0, y: 0, snap: 0 }, shakeT: 0, shakeA: 0, flash: 0, white: 0, done: false, levelKey: '', boss: null, ambient: null,
+    got: { sparks: 0, moths: [] }, stats: {}, checkpoint: null, idx: -1,
+    maxHearts: () => settings.hard ? 1 : 3,
+    shake(a) { if (!settings.shake) return; this.shakeA = Math.max(this.shakeA * (this.shakeT > 0 ? 1 : 0), a); this.shakeT = 0.25; },
+    bossAlive() { return !!this.boss; },
+    start(idx) {
+        const def = LEVELS[idx]; if (!def) return;
+        this.idx = idx; this.L = parseLevel(def); this.world = def.world; this.levelKey = def.id + ':' + Date.now();
+        this.p = makePlayer(this.L.start.x, this.L.start.y); this.p.hearts = this.maxHearts();
+        this.checkpoint = { x: this.L.start.x, y: this.L.start.y };
+        this.parts = []; this.ghosts = []; this.rings = []; this.shots = []; this.t = 0; this.time = 0; this.done = false; this.flash = 0; this.white = 0; this.ambient = null;
+        this.got = { sparks: 0, moths: [false, false, false] }; this.stats = { deaths: 0, hits: 0, jumps: 0, stomps: 0, dashes: 0 };
+        let mi = 0; for (const e of this.L.ents) if (e.kind === 'moth') e.idx = mi++;
+        // moths already found stay found (shown faint) so a replay is about what is still missing
+        const rec = SAVE.d.levels[def.id];
+        for (const e of this.L.ents) if (e.kind === 'moth' && rec && rec.moths && rec.moths[e.idx]) e.ghost = true;
+        const be = this.L.ents.find(e => e.kind === 'boss'); this.boss = be ? makeBoss(be) : null;
+        if (this.boss) { const gt = this.L.ents.find(e => e.kind === 'gate'); if (gt) { gt.gone = true; gt.hidden = true; } }
+        const r = seeded(def.id.length * 977 + idx);
+        this.motes = Array.from({ length: 40 }, () => ({ x: r() * 2000, y: r() * 1200, r: 0.8 + r() * 2.2, s: 0.3 + r() * 0.8, p: r() * 9, k: 0.3 + r() * 0.6 }));
+        this.cam.x = this.p.x; this.cam.y = this.p.y - 40; this.cam.snap = 0;
+        this.state = 'play';
+        Sound.musicFor(this.world);
+        UI.show(null); $('#hud').classList.remove('hidden');
+        this.hud();
+        UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
+    },
+    update(dt) {
+        if (this.state !== 'play') return;
+        this.t += dt;
+        if (!this.done) this.time += dt;
+        updatePlayer(this, dt);
+        updateWorld(this, dt);
+        if (this.boss) bossUpdate(this, dt);
+        updateParts(this, dt);
+        this.flash = Math.max(0, this.flash - dt * 1.5);
+        if (this.white > 0 && !(this.boss && this.boss.state === 'dying')) this.white = Math.max(0, this.white - dt * 0.6);
+        if (this.shakeT > 0) { this.shakeT -= dt; if (this.shakeT <= 0) this.shakeA = 0; }
+        // camera: leads in the direction you are going, a little above you
+        const p = this.p, L = this.L, vw = R.W / R.z, vh = R.H / R.z;
+        let tx = p.x + p.face * 46 + p.vx * 0.18, ty = p.y - 30 + (p.vy > 300 ? p.vy * 0.12 : 0);
+        if (this.boss) { tx = lerp(tx, this.boss.x, 0.35); }
+        tx = clamp(tx, vw / 2, Math.max(vw / 2, L.w * TS - vw / 2)); ty = clamp(ty, vh / 2, Math.max(vh / 2, L.h * TS - vh / 2));
+        if (L.w * TS < vw) tx = L.w * TS / 2; if (L.h * TS < vh) ty = L.h * TS / 2;
+        if (this.cam.snap > 0) { this.cam.snap -= dt; this.cam.x = tx; this.cam.y = ty; }
+        else { this.cam.x = lerp(this.cam.x, tx, Math.min(1, dt * 6)); this.cam.y = lerp(this.cam.y, ty, Math.min(1, dt * 5)); }
+        if (Input.hit('retry') && !p.dead) { p.hearts = 1; hurt(this, 'pit'); }
+    },
+    revealGate() { const g = this.L.ents.find(e => e.kind === 'gate'); if (g) { g.gone = false; g.hidden = false; burst(this, g.x, g.y, '#fff2c4', 40, 260); } },
+    shrine(e) {
+        e.used = true;
+        const what = { double: ['Double jump', 'Press jump again in the air'], wall: ['Wall jump', 'Slide down a wall and jump off it'], dash: ['Dash', 'Press Shift or X to dash (hold up to dash upward)'] }[this.L.def.gives];
+        if (!what) return;
+        const first = !SAVE.d.abilities[this.L.def.gives];
+        SAVE.d.abilities[this.L.def.gives] = true; SAVE.write();
+        Sound.play('shrine'); this.white = 0.6; burst(this, e.x, e.y - 30, '#bff7ff', 50, 300);
+        UI.banner(first ? 'You learned' : 'Shrine', what[0], what[1]);
+    },
+    finish() {
+        this.done = true; Sound.play('gate');
+        const def = this.L.def, rec = SAVE.d.levels[def.id] || { best: null, moths: [false, false, false], sparks: 0, clears: 0 };
+        const best = rec.best == null || this.time < rec.best, mothsBefore = rec.moths.filter(Boolean).length;
+        rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);
+        rec.sparks = Math.max(rec.sparks || 0, this.got.sparks); rec.clears = (rec.clears || 0) + 1; if (best) rec.best = +this.time.toFixed(2);
+        SAVE.d.levels[def.id] = rec; SAVE.d.playTime += this.time; SAVE.write();
+        this.p.vx = 0;
+        setTimeout(() => {
+            this.state = 'done';
+            UI.results({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
+        }, 900);
+    },
+    hud() {
+        if (!this.p) return;
+        const H = this.maxHearts(), hs = [];
+        for (let i = 0; i < H; i++) hs.push(`<div class="heart"><svg viewBox="0 0 26 24"><path d="M13 22 C2 14 1 8 4 4.5 C7 1 11 2 13 5.5 C15 2 19 1 22 4.5 C25 8 24 14 13 22Z" fill="${i < this.p.hearts ? '#ff6b8b' : 'rgba(255,255,255,.18)'}" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/></svg></div>`);
+        $('#hearts').innerHTML = hs.join('');
+        $('#h-sparks').textContent = this.got.sparks; $('#h-sparks-of').textContent = '/' + this.L.sparks;
+        $('#h-moths').innerHTML = this.got.moths.slice(0, this.L.moths).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">✦</span>`).join(' ') || '<span class="moth-off">✦</span>';
+        $('#h-moths').style.display = this.L.moths ? '' : 'none';
+        $('#h-level').textContent = this.L.def.id + ' · ' + this.L.def.name;
+    },
+    toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(this._tt); this._tt = setTimeout(() => el.classList.remove('on'), 2200); }
+};
+
+// ---- 60-ui.js ----
+// ==========================================
+// MENUS: title (a living scene behind it), world map, pause, results, settings, how to play, touch buttons
+// ==========================================
+const UI = {
+    cur: 'title',
+    show(id) {
+        for (const s of document.querySelectorAll('.screen')) s.classList.add('hidden');
+        this.cur = id;
+        if (id) $('s-' + id) ? $('s-' + id).classList.remove('hidden') : 0;
+        const focus = id && $('s-' + id) && $('s-' + id).querySelector('.btn.big, .lvl:not([disabled]), .btn');
+        if (focus) setTimeout(() => focus.focus({ preventScroll: true }), 30);
+    },
+    banner(a, b, c) {
+        const el = $('#banner'); el.querySelector('.b1').textContent = a; el.querySelector('.b2').textContent = b;
+        let sub = el.querySelector('.b3'); if (!sub) { sub = document.createElement('div'); sub.className = 'b1 b3'; sub.style.marginTop = '8px'; sub.style.letterSpacing = '.08em'; sub.style.textTransform = 'none'; sub.style.fontSize = '18px'; el.appendChild(sub); }
+        sub.textContent = c || '';
+        el.classList.add('on'); clearTimeout(this._bt); this._bt = setTimeout(() => el.classList.remove('on'), c ? 3600 : 2200);
+    },
+    unlocked(i) {
+        if (i === 0) return true;
+        const prev = LEVELS[i - 1]; return !!SAVE.d.levels[prev.id];
+    },
+    map() {
+        G.state = 'map'; $('#hud').classList.add('hidden'); Sound.musicFor(0);
+        const box = $('#worlds'); box.innerHTML = '';
+        let moths = 0, mothsOf = 0;
+        WORLDS.forEach((W, wi) => {
+            const lv = LEVELS.map((l, i) => ({ l, i })).filter(o => o.l.world === wi); if (!lv.length) return;
+            const card = document.createElement('div'); card.className = 'world' + (this.unlocked(lv[0].i) ? '' : ' locked');
+            const art = document.createElement('div'); art.className = 'wart'; const cv = document.createElement('canvas'); cv.width = 600; cv.height = 240; art.appendChild(cv);
+            const layers = paintBackground(wi, 600, 240), cx = cv.getContext('2d'); layers.forEach(l => cx.drawImage(l.c, 0, l.fixed ? 0 : 20 * (1 - l.k)));
+            const done = lv.filter(o => SAVE.d.levels[o.l.id]).length;
+            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}</div>`);
+            card.appendChild(art);
+            const list = document.createElement('div'); list.className = 'lvls';
+            lv.forEach(({ l, i }) => {
+                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : ''); b.disabled = !this.unlocked(i);
+                const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
+                moths += m.filter(Boolean).length; mothsOf += n;
+                b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
+                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">✦</span>`).join('')}</span>` : '');
+                b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
+                list.appendChild(b);
+            });
+            card.appendChild(list); box.appendChild(card);
+        });
+        $('#m-total').innerHTML = `<span class="moth-on">✦</span> ${moths}/${mothsOf}`;
+        this.show('map');
+    },
+    pause() {
+        if (G.state !== 'play' || G.done) return;
+        G.state = 'paused'; Input.clear();
+        const rec = SAVE.d.levels[G.L.def.id];
+        $('#p-info').innerHTML = `<div class="drow"><span>${G.L.def.id} · ${G.L.def.name}</span><b>${fmtTime(G.time)}</b></div>` + (rec && rec.best != null ? `<div class="drow"><span>Best</span><b>${fmtTime(rec.best)}</b></div>` : '');
+        this.show('pause');
+    },
+    resume() { if (G.state !== 'paused') return; G.state = 'play'; this.show(null); Input.clear(); },
+    results(r) {
+        const rows = [
+            ['Time', fmtTime(r.time) + (r.best ? '<span class="new">NEW BEST</span>' : '')],
+            ['Sparks', r.sparks + ' / ' + r.sparksOf],
+            ['Star moths', r.moths.slice(0, LEVELS[G.idx].map.join('').split('*').length - 1).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">✦</span>`).join(' ') + (r.mothsNew > 0 ? '<span class="new">+' + r.mothsNew + ' NEW</span>' : '')],
+            ['Falls', r.deaths]
+        ];
+        $('#d-title').textContent = r.def.world === 4 ? 'You relit the world!' : 'Level complete!';
+        $('#d-rows').innerHTML = rows.map(([a, b]) => `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
+        const next = LEVELS[G.idx + 1];
+        $('#d-unlock').textContent = r.def.gives && SAVE.d.abilities[r.def.gives] && r.rec.clears === 1 ? 'New world unlocked: ' + (next ? WORLDS[next.world].name : '') : (next && next.world !== r.def.world && r.rec.clears === 1 ? 'New world unlocked: ' + WORLDS[next.world].name : '');
+        $('#d-next').classList.toggle('hidden', !next);
+        $('#d-next').textContent = next ? 'Next: ' + next.name : 'Next';
+        $('#hud').classList.add('hidden');
+        this.show('done');
+    },
+    settings(back) {
+        this._back = back;
+        const rows = [
+            ['Music', 'music', [[0, 'Off'], [0.3, 'Low'], [0.6, 'Mid'], [1, 'High']]],
+            ['Sound effects', 'sfx', [[0, 'Off'], [0.4, 'Low'], [0.8, 'Mid'], [1, 'High']]],
+            ['Graphics', 'quality', [['auto', 'Auto'], ['low', 'Fast'], ['high', 'Sharp']], 'Fast draws fewer pixels; Auto picks for you'],
+            ['Screen shake', 'shake', [[true, 'On'], [false, 'Off']]],
+            ['Hearts', 'hard', [[false, '3 hearts'], [true, 'One-hit (hard)']]],
+            ['Touch buttons', 'touch', [['auto', 'Auto'], ['on', 'On'], ['off', 'Off']]]
+        ];
+        $('#set-rows').innerHTML = rows.map(([label, k, opts, sub]) => `<div class="setrow"><span>${label}${sub ? '<small>' + sub + '</small>' : ''}</span><div class="seg">${opts.map(([v, n]) => `<button data-k="${k}" data-v='${JSON.stringify(v)}' class="${settings[k] === v ? 'on' : ''}">${n}</button>`).join('')}</div></div>`).join('');
+        for (const b of $('#set-rows').querySelectorAll('button')) b.onclick = () => {
+            settings[b.dataset.k] = JSON.parse(b.dataset.v); saveSettings(); Sound.volumes(); Sound.play('click');
+            if (b.dataset.k === 'quality') applyQuality();
+            if (b.dataset.k === 'touch') touchControls();
+            if (b.dataset.k === 'hard' && G.p) { G.p.hearts = Math.min(G.p.hearts, G.maxHearts()); G.hud(); }
+            this.settings(back);
+        };
+        this.show('settings');
+    }
+};
+function fadeTo(fn) { const f = $('#fade'); f.classList.add('on'); setTimeout(() => { fn(); setTimeout(() => f.classList.remove('on'), 60); }, 330); }
+
+// title scene: the first world's sky, Lumi floating over a hill of lanterns
+function renderTitle(t) {
+    const x = R.x, W = R.W, H = R.H;
+    const key = 'title:' + W + 'x' + H;
+    if (R.bgFor !== key) { R.bg = paintBackground(0, Math.round(W * 1.5), H); R.bgFor = key; }
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    // sky and the two far ridges only: the near trees would bury the hill
+    R.bg.slice(0, 3).forEach((l, i) => { if (l.fixed) { x.drawImage(l.c, 0, 0); return; } const bw = l.c.width, off = ((t * 14 * l.k * 3) % bw + bw) % bw, oy = H * 0.12 * i; x.drawImage(l.c, -off, oy); x.drawImage(l.c, bw - off, oy); });
+    const s = Math.min(W / 900, H / 520);
+    // a soft hill along the bottom with a grass rim
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    const hy = H * 0.86;
+    const hill = (dy, col) => { x.fillStyle = col; x.beginPath(); x.moveTo(-10, H); x.lineTo(-10, hy + dy + 60 * s); x.quadraticCurveTo(W / 2, hy + dy - 70 * s, W + 10, hy + dy + 60 * s); x.lineTo(W + 10, H); x.fill(); };
+    hill(-6 * s, '#2e9a52'); hill(-2 * s, '#4fd06a'); hill(2 * s, '#3a2430');
+    const T = WORLDS[0];
+    x.setTransform(s * 1.5, 0, 0, s * 1.5, 0, 0);
+    [[0.3, -0.5], [0.7, 0.4]].forEach(([fx, ph], i) => { const lxp = W * fx / (s * 1.5), lyp = (hy - 24 * s + Math.abs(fx - 0.5) * 120 * s) / (s * 1.5) - 18; Sprites.lantern(x, { x: lxp, y: lyp, lit: true, seed: i + ph }, t, T); });
+    const ly = H * 0.62 + Math.sin(t * 1.6) * 12 * s;
+    x.setTransform(s * 2.6, 0, 0, s * 2.6, W / 2, ly);
+    Sprites.lumi(x, { x: 0, y: 0, sx: 1 + Math.sin(t * 3.2) * 0.03, sy: 1 - Math.sin(t * 3.2) * 0.03, face: Math.sin(t * 0.5) > 0 ? 1 : -1, vx: 0, vy: Math.cos(t * 1.6) * 60, blinkSeed: 1, hurtT: 0 }, t);
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'lighter';
+    const spr = glowSprite('rgba(255,200,120,0.5)'), gs = 520 * s;
+    x.globalAlpha = 0.7; x.drawImage(spr, W / 2 - gs / 2, ly - gs / 2, gs, gs);
+    [[0.3], [0.7]].forEach(([fx]) => { const g2 = 260 * s; x.globalAlpha = 0.5; x.drawImage(spr, W * fx - g2 / 2 + 18 * s * 1.5, hy - 24 * s + Math.abs(fx - 0.5) * 120 * s - 45 * s * 1.5 - g2 / 2, g2, g2); });
+    for (let i = 0; i < 40; i++) { const fx = (Math.sin(i * 12.9898) * 0.5 + 0.5) * W, fy = ((Math.sin(i * 78.233) * 0.5 + 0.5) * H * 0.85 + Math.sin(t * 0.7 + i) * 30) % H;
+        x.globalAlpha = 0.3 + 0.3 * Math.sin(t * 2 + i); x.fillStyle = '#ffe49a'; x.beginPath(); x.arc(fx + Math.sin(t * 0.5 + i) * 20, fy, 2.2 * Math.max(1, s), 0, 7); x.fill(); }
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+}
+function touchControls() {
+    const on = settings.touch === 'on' || (settings.touch === 'auto' && ('ontouchstart' in window || navigator.maxTouchPoints > 0) && matchMedia('(pointer: coarse)').matches);
+    $('#touch').classList.toggle('hidden', !on || G.state !== 'play');
+}
+function applyQuality() {
+    // Sharp: full device resolution. Fast: 70%. Auto: Fast on small/slow devices, otherwise full but capped at 1x.
+    const slow = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 8) <= 4;
+    R.q = settings.quality === 'high' ? 1 : settings.quality === 'low' ? 0.7 : (slow ? 0.8 : 1);
+    if (settings.quality === 'auto' && (window.devicePixelRatio || 1) > 1) R.q = Math.min(R.q, 1 / Math.min(window.devicePixelRatio, 2) * 1.25);
+    R.resize();
+}
+
+// ---- 70-levels.js ----
+// ==========================================
+// LEVELS (generated by tools/levels.py - edit that, then run it)
+// ==========================================
+const LEVELS = [
+{
+"id": "1-1",
+"name": "First Light",
+"world": 0,
+"gives": null,
+"hint": "Arrows or A/D to run, Space to jump",
+"map": [
+"",
+"",
+"",
+"",
+"                                                    *",
+"                                                  ====             o o o o *",
+"                                                                  ##########",
+"                                              ooo",
+"                                              ===                                          oo   oo",
+"                                                               ooo                    oo  o  o o  o",
+"           oooo    ooo                    ooo            ooo   ooo                   o  o",
+"         oo    oo                         ===           o   o o   o                          ##    g",
+"              ##  o   o       o o o o o                     ###                         ##        ##",
+"   P      ##  ##           L      g                     ^^^^###^S^^             L                                      E",
+"###################   ###############################################################                   ## ######### #######",
+"###################   ###############################################################                   ##     *     #######",
+"###################   ###############################################################                   ####################",
+"###################   ###############################################################                   ####################"
+]
+},
+{
+"id": "1-2",
+"name": "Mossy Steps",
+"world": 0,
+"gives": null,
+"hint": "",
+"map": [
+"",
+"",
+"                                                     *",
+"                                                     ##              o o o oLo         *",
+"                                                                    #################===",
+"                                                 ===",
+"                                            oo                                                                      ## ===",
+"                                oo          ==                        ===    ===                                    ##",
+"                                   L    oo          g     g             ooo     ooo                             ##  ##",
+"                                ######  ==     ##############          o   o   o   o                            ##  ##",
+"                           ooo  ######         ##############                               oo          g     g ##  ##        E",
+"                                ######         ##############   S       ^^^  g  ^^^ L      o  o  ##################### ###########",
+"                          ############         ##############  ##   #######################      #####################     #######",
+"                    ooo   ############         ##############  ##   #######################  ##  #####################  *  #######",
+"                          ############         ##############  ##   #######################  ##  #################################",
+"                   ###################         ##############  ##   #######################  ##  #################################",
+"                   ###################         ##############  ##   #######################  ##  #################################",
+"   P               ###################         ##############  ##   #######################  ##  #################################",
+"######################################         ##############  ##   #######################  ##  #################################",
+"######################################         ##############  ##   #######################  ##  #################################",
+"######################################         ##############  ##   #######################  ##  #################################",
+"######################################         ##############  ##   #######################  ##  #################################"
+]
+},
+{
+"id": "1-3",
+"name": "Firefly Hollow",
+"world": 0,
+"gives": null,
+"hint": "",
+"map": [
+"                                                                                                             #",
+"                                                                                                *            #",
+"                                                                                               ###           #",
+"                                                                                                             #",
+"                                                                                            ==               #",
+"                                                                                      o o o o o              #",
+"                                                                                            k                #",
+"                                                                                     ############            #",
+"                                                                                     ############            #",
+"                                                 *                                   ############            #",
+"                                                                                   ##############===         D",
+"                                                                                   ##############            D",
+"                        b                       ===                                ##############            D   L oooo         g   E",
+"                                           ooo       ooo                         ################   #####    # #########################",
+"                  o o o o o o o            ===       ===                         ################   #####    #   #######################",
+"         ooo                      L                       ===     L     g     t  ################   ##### g  # * #######################",
+"             ####CCCCCCCCCCCCCC##########                      ##################################   ####################################",
+"   P         ####              ##########                      ##################################   ####################################",
+"#################              ##########                      ##################################   ####################################",
+"#################              ##########                      ##################################   ####################################",
+"#################              ##########^^^^^^^^^^^^^^^^^^^^^^##################################   ####################################",
+"#################              ##################################################################   ####################################"
+]
+},
+{
+"id": "1-4",
+"name": "The Old Root",
+"world": 0,
+"gives": "double",
+"hint": "",
+"map": [
+"",
+"",
+"",
+"",
+"",
+"                                                              *              ooo  oo",
+"                                                                            o   oo  o       b",
+"                                                      oooooo        g     L",
+"                                                     ########   #############                     t   L      ooo               *",
+"                                                                                    ######################  o   o             ###",
+"                *                                                               ##  ######################",
+"                            b                                                   ##  ######################   ^^^      g     g      u    E",
+"                            oo   oo        oooo                                 ##  ########################################################",
+"               ===     oo  o  o o  o                                            ##  ########################################################",
+"                      o  o                                                      ##  ########################################################",
+"          ===                 ##         L    h     S ^^^^^^^^^^^^^^^^^^^^^^    ##  ########################################################",
+"                         ##   ##   ## #######################################   ##  ########################################################",
+"   P                     ##   ##   ## #######################################   ##  ########################################################",
+"#######################  ##   ##   ## #######################################   ##  ########################################################",
+"#######################  ##   ##   ## #######################################   ##  ########################################################",
+"#######################  ##   ##   ## #######################################   ##  ########################################################",
+"#######################  ##   ##   ## #######################################   ##  ########################################################"
+]
+},
+{
+"id": "2-1",
+"name": "Into the Dark",
+"world": 1,
+"gives": null,
+"hint": "",
+"map": [
+"###############################              ####################################            #####################################",
+"###############################              ####################################            #####################################",
+"                                                                                                                  #   #",
+"                                                                                                                  #   #",
+"                                       *                                                  *                       #   #",
+"                                                             oooo                      oo                         #   #",
+"                                                                                                                  # * #",
+"                                                             ####                 oo  o  o                         ===",
+"                                      ooo                    ####",
+"                 ooo                  ===            b       ####                o  o",
+"                                 ooo                         ####  oo                   ##",
+"                                 ===      ===                #### o  o                  ##",
+"                         g  L                   L        g   ####o    o            ##   ##        g     t     L              E",
+"                ###############              ####################                  ##   ##   #####################################",
+"                ###############              ####################     g     L      ##   ##   #####################################",
+"                ###############              ####################################  ##   ##   #####################################",
+"                ###############              ####################################  ##   ##   #####################################",
+"   P            ###############              ####################################  ##   ##   #####################################",
+"###############################              ####################################  ##   ##   #####################################",
+"###############################              ####################################  ##   ##   #####################################",
+"###############################^^^^^^^^^^^^^^####################################  ##   ##   #####################################",
+"#################################################################################  ##   ##   #####################################"
+]
+},
+{
+"id": "2-2",
+"name": "Crystal Stair",
+"world": 1,
+"gives": null,
+"hint": "",
+"map": [
+"########################################################################################################################",
+"########################################################################################################################",
+"                                                           ooo",
+"                                                             *",
+"                                            b             o   o",
+"                                         #            ooo       ooo",
+"                                         #                  ===",
+"                                         #           o   o     o   o",
+"                   L             g       #                                                          o o o o o o",
+"                  ====     ###############=====        ===       ===",
+"                           #                                              t    L                      h             E",
+"                           #                      L                    ############     ===    #########################",
+"                      oooo #                   ######                  ############            #########################",
+"               ooo     ====#                   ######             b    ############            #########################",
+"                           #                   ######                  ############            #########################",
+"              o   o        #                   ######                  ############ ===     ===#########################",
+"                           #                   ######                  ############            #########################",
+"                #####      #         ===       ######                  ############            #########################",
+"         ooo    #####      #                   ######                  ############            #########################",
+"                #####      #                   ######                  ############      ===   #########################",
+"        o   o   #####      #     *             ######                  ############            #########################",
+"                #####      #    ===            ######                  ############   *        #########################",
+"         #####  #####      #                   ######                  ############  ===       #########################",
+"         #####  #####      #                   ######                  ############            #########################",
+"         #####  #####      #                   ######                  ############            #########################",
+"         #####  #####      #                   ######                  ############            #########################",
+"   P     #####  #####      #^^^^^^^^^^^^^^^^^^^######                  ############^^^^^^^^^^^^#########################",
+"#####################################################                  #################################################",
+"#####################################################                  #################################################",
+"#####################################################                  #################################################"
+]
+},
+{
+"id": "2-3",
+"name": "Drip Tunnels",
+"world": 1,
+"gives": null,
+"hint": "",
+"map": [
+"######################################################################################################################################################",
+"######################################################################################################################################################",
+"######################################################################################################################################################",
+"          ###                                      ##                                      ##                                                 *",
+"          ###                                      ##                                      ##                                                ###",
+"          ###                                      ##          *                           ##",
+"          ###                                      ##       ======                         ##        *           o o o o o",
+"          ###                                      ##                                      ##  |    ===",
+"          ###                                      ##                                      ##                                             ==",
+"          ###                                      ##         b                            ##                   L     g   g",
+"          ### oo                                   ##                                      ##           ===  #################",
+"          ###                                                                              ##                #################",
+"          ###o  o                                             ==                                             #################    ^^^^ b ^^^^     E",
+"                          o o o o o o       L   g                          L    h     t                      #########################################",
+"                #######                  ##########   #  ==        ==  ####################                  #########################################",
+"                #######|  MM           | ##########   #                ####################                  #########################################",
+"                #######                  ##########   #                ####################    NN            #########################################",
+"   P            #######                  ##########   #^^^^^^^^^^^^^^^^####################    |             #########################################",
+"#######################                  ##############                ####################                  #########################################",
+"#######################                  ##############                ####################                  #########################################",
+"#######################                  ##############                ####################                  #########################################",
+"#######################                  ##############                ####################                  #########################################"
+]
+},
+{
+"id": "2-4",
+"name": "The Deep Bell",
+"world": 1,
+"gives": "wall",
+"hint": "",
+"map": [
+"##############################################################################################################################",
+"##############################################################################################################################",
+"                                                                 ##",
+"                                                                 ##",
+"                                        *                        ##",
+"                                       ===                       DD                 *",
+"                                         b                       DD                ===",
+"                                                                 DD",
+"                                                                 DD               b",
+"                                 o o o o o o o oC     L    h   k DD   g",
+"                                      CC           ##############  ######",
+"                            L                      ##############  ######                       L    t      g         u   E",
+"                    ooo   ####   CC        CC      ##############  ###### | MM             | ####################   ##########",
+"                          ####                     ##############  ######                    ###################     #########",
+"                   o   o  ####                     ##############  #######                   ###################     #########",
+"                          ####                     ##############  #######                   ###################     #########",
+"              ooo   ####  ####                     ##############  #######                   ###################     #########",
+"                    ####  ####                     ##############  #######                   ###################     #########",
+"             o   o  ####  ####                     ##############  #######                   ###################     #########",
+"                    ####  ####                     ##############  #######                   ###################     #########",
+"        ooo   ####  ####  ####                     ##############  #######                   ###################  *  #########",
+"              ####  ####  ####                     ##############  #######                   #################################",
+"       o   o  ####  ####  ####                     ##############  #######                   #################################",
+"              ####  ####  ####                     ##############  #######                   #################################",
+"        ####  ####  ####  ####                     ##############  #######                   #################################",
+"        ####  ####  ####  ####                     ##############  #######                   #################################",
+"        ####  ####  ####  ####                     ##############  #######                   #################################",
+"   P    ####  ####  ####  ####^^^^^^^^^^^^^^^^^^^^^##############  #######^^^^^^^^^^^^^^^^^^^#################################",
+"##############################                     #######################                   #################################",
+"##############################                     #######################                   #################################",
+"##############################                     #######################                   #################################",
+"##############################                     #######################                   #################################"
+]
+},
+{
+"id": "3-1",
+"name": "Cloud Steps",
+"world": 2,
+"gives": null,
+"hint": "",
+"map": [
+"",
+"",
+"                                                                                                                   #",
+"                                                                                                                   #",
+"                                                                                       *                           #",
+"                                                                                                                   #            g       E",
+"                                       *                            b                                              #   #####################",
+"                                                                          L   oo  oo   oo                          #   #",
+"                                                             ################o  oo  o o  o       t      h     L    #   #",
+"               #                            g  ^^^   L       #                               ##################### #   #",
+"               #        L   g            #################   #                 CC   CC   CC                        #   #",
+"               #   ############       ===                #   #                                                     #   #",
+"               #   #                                     #   #                                                     #ooo#",
+"               #   #             ===                     #   #                                                     #   #",
+"               #ooo#                                     #   #                                                     #   #",
+"               #   #                                     #   #                                                         #",
+"               #   #                                     #   #                                                         #",
+"               #   #                                     #   #                                                         #",
+"               #   #                                     #ooo#                                                         #",
+"               #   #                                     #   #                                                         #",
+"               #ooo#                                     #   #                                                    ######",
+"               #   #                                     #   #                                                    #####",
+"               #   #                                     #   #                                                    #####",
+"                   #                                     #   #                                                    #####",
+"                   #                                     # * #                                                    #####",
+"   P               #                                      ###                                                     #####",
+"#######################                                                                                           #####",
+"#######################                                                                                           #####",
+"#######################                                                                                           #####",
+"#######################                                                                                           #####"
+]
+},
+{
+"id": "3-2",
+"name": "Bell Towers",
+"world": 2,
+"gives": null,
+"hint": "",
+"map": [
+"",
+"                   o o o o o",
+"",
+"                  L     g                                                             *",
+"              #################",
+"              #                                                   h     t    L         b",
+"          #   #                                              ####################",
+"          #   #                                              #                                  E",
+"          #   #                                          #   #                   | MM      |########",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #ooo#                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          # * #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          # * #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #   #",
+"          #   #                                          #ooo#",
+"          #   #                                          #   #",
+"          #ooo#                                          #   #",
+"          #   #                      oooo      oooo      #   #",
+"          #   #                    oo    oo  oo    oo    #   #",
+"          #   #                       CC        CC       #   #",
+"              #                                              #",
+"              #                                              #",
+"   P          #                  L  ^^^^^^  g ^^^^^^  g      #",
+"####################################################################################################",
+"####################################################################################################",
+"####################################################################################################"
+]
+},
+{
+"id": "3-3",
+"name": "Wind Temple",
+"world": 2,
+"gives": null,
+"hint": "",
+"map": [
+"                                                                                                #",
+"                                                                                                #",
+"                                         #                b                                     #",
+"                                         #                                                      #                        *",
+"                                         #       L    h                                         #     *              #######",
+"                                         #   ################                                   #    ===",
+"                                         #   #                 oo        oo                     D",
+"                                         #   #                o  o   *  o  o                    D                           b      h    E",
+"                                         #ooo#                                                  D                             ##############",
+"                                         #   #                 ===       ===      L     t    k  D       g   L                 ##############",
+"                                         #   #                                 ################# ##############               ##############",
+"                                         #   #                                 ################# ##############               ##############",
+"                                         #   #                      ===        ################# ##############  S            ##############",
+"                                         #ooo#                                 ################# ############## ###           ##############",
+"                                         #   #                                 ################# ############## ###           ##############",
+"                                         #   #                                 ################# ############## ###           ##############",
+"                                             #                                 ################# ############## ###           ##############",
+"                               L    g        #                                 ################# ############## ###           ##############",
+"               o o o o o o  #################                                  ################# ############## ###           ##############",
+"                            #################                                  ################# ############## ###           ##############",
+"                            #################                                  ################# ############## ###           ##############",
+"             | MM          |#################                                  ################# ############## ###           ##############",
+"                            #################                                  ################# ############## ###           ##############",
+"   P                        #################                                  ################# ############## ###           ##############",
+"#############               #################                                  ################# ############## ###           ##############",
+"#############               #################                                  ################# ############## ###           ##############",
+"#############               #################                ^^^^^^^^^^^^^^^^^^################# ############## ###           ##############",
+"#############               #################                ################################### ############## ###           ##############"
+]
+},
+{
+"id": "3-4",
+"name": "The Sun Shrine",
+"world": 2,
+"gives": "dash",
+"hint": "",
+"map": [
+"",
+"",
+"",
+"",
+"                                               *",
+"                                             =====                                                   |",
+"                                                                                                         *",
+"                                                 b                                                      ===",
+"                                                                                                                L      u      E",
+"                   #                                                                                       #######################",
+"                   #       L     h       o o o o o o o o      L     t                                      #######################",
+"                   #   ################       CC        CC #################         g     h   L           #######################",
+"                   #   #                                                    #   ##################         #######################",
+"                   #   #                 CC        CC                       #   #                    NN    #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #ooo#                                                    #   #                          #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #   #                                                    #   #                    |     #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #   #                                                    #ooo#                          #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #ooo#                                                    #   #                          #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #   #                                                    #   #                          #######################",
+"                   #   #                                                    # * #                          #######################",
+"                       #                                                     ###                           #######################",
+"                       #                                                                                   #######################",
+"   P     L             #                                                                                   #######################",
+"#######################                                                                                    #######################",
+"#######################                                                                                    #######################",
+"#######################                                                                                    #######################",
+"#######################                                                                                    #######################"
+]
+},
+{
+"id": "4-1",
+"name": "Furnace Gate",
+"world": 3,
+"gives": null,
+"hint": "",
+"map": [
+"############################################################################################################################################",
+"############################################################################################################################################",
+"",
+"",
+"",
+"                                                      *",
+"                                                    =====",
+"",
+"                                                     b                                   *",
+"                                                   oo   oo",
+"                                                  o  o o  o",
+"                                                                                                                                *",
+"                                              oo     ##                                                                        ===",
+"                                             o  o    ##",
+"                  o o o o o                          ##                               ==    ==                        o o o o",
+"                                                ##   ##   ##",
+"                                                ##   ##   ##",
+"   P      L                    g        L       ##   ##   ##      h     h    L      llllllllllll       t    L     g   lllllll           E",
+"#################          ##################   ##   ##   ## ###############################################################################",
+"#################llllllllll##################lll##lll##lll##l###############################################################################",
+"#################llllllllll##################lll##lll##lll##l###############################################################################",
+"#################llllllllll##################lll##lll##lll##l###############################################################################"
+]
+},
+{
+"id": "4-2",
+"name": "Cooling Pipes",
+"world": 3,
+"gives": null,
+"hint": "",
+"map": [
+"##############################################################################################################################",
+"##############################################################################################################################",
+"",
+"                                                      b",
+"                                                                                          *",
+"                                           h     L",
+"                                      #####################        t     L           b                        ooo",
+"                                      #                   #   #################",
+"                                  #   #                   #   #",
+"                                  #   #                   #   #                | MM             |    h     g  lll         E",
+"                                  #   #                   #   #                                  ################ ############",
+"                                  #ooo#                   #   #                                  ################      #######",
+"                                  #   #                   #   #                                  ################      #######",
+"                                  #   #                   #   #                                  ################   *  #######",
+"                                  #   #                   #   #                                  #############################",
+"                                  #   #                   #   #                                  #############################",
+"                                  #   #                   #   #                                  #############################",
+"                                  #ooo#                   #   #                                  #############################",
+"                                  #   #                   #   #                                  #############################",
+"                                  #   #                   # * #                                  #############################",
+"                                  #   #                    ###                                   #############################",
+"                                      #                                                          #############################",
+"                                      #                                                          #############################",
+"                             ##########                                                          #############################",
+"                             #########                                                           #############################",
+"                             #########                                                           #############################",
+"                      ####   #########                                                           #############################",
+"                      ####   #########                                                           #############################",
+"                      ####   #########                                                           #############################",
+"               ####   ####   #########                                                           #############################",
+"               ####   ####   #########                                                           #############################",
+"   P    L      ####   ####   #########                                                           #############################",
+"###################   ####   #########                                                           #############################",
+"###################lll####lll#########lllllllllllllllllllllllllllllllllllllllllllllllllllllllllll#############################",
+"###################lll####lll#########lllllllllllllllllllllllllllllllllllllllllllllllllllllllllll#############################",
+"###################lll####lll#########lllllllllllllllllllllllllllllllllllllllllllllllllllllllllll#############################"
+]
+},
+{
+"id": "4-3",
+"name": "The Crucible",
+"world": 3,
+"gives": null,
+"hint": "",
+"map": [
+"######################################################################################################################################################",
+"######################################################################################################################################################",
+"",
+"                                                               *                 *",
+"                                                                                    b",
+"                                                  |",
+"                                                          t    g    L   o o o o o o o o o",
+"                                                       ################         ===                                                   ooo",
+"                                                       ################",
+"                                                       ################  ===           ===     L    h   h",
+"                                                       ################                     ################          L     t     g   lllll       E",
+"                                                      b################                     ################   #######################################",
+"                                                       ################                     ################   #######################################",
+"                                                       ################                     ################   #######################################",
+"               o o o o o o o o o      L    h           ################                     ################   #######################################",
+"                               CC  ############        ################                     ################ooo#######################################",
+"                     CC            ############        ################                     ################   #######################################",
+"                                   ############        ################                     ################   #######################################",
+"                CC        CC       ############   NN   ################                     ################   #######################################",
+"                                   ############        ################                     ################   #######################################",
+"                                   ############   |    ################                     ################   #######################################",
+"   P     L                         ############        ################                     ################ * #######################################",
+"#############                      ############        ################                     ################### ######################################",
+"#############                      ############        ################                     ################    ######################################",
+"#############llllllllllllllllllllll############llllllll################lllllllllllllllllllll################llll######################################",
+"#############llllllllllllllllllllll############llllllll################lllllllllllllllllllll################llll######################################"
+]
+},
+{
+"id": "4-4",
+"name": "Heart of Embers",
+"world": 3,
+"gives": null,
+"hint": "",
+"map": [
+"######################################################################################################################################################",
+"######################################################################################################################################################",
+"                                                                D",
+"                                              #                 D",
+"                                              #                 D                                 *",
+"                                              #        L    t   D      h     L                                                *",
+"                                              #   ###############################",
+"                                              #   #                                        b",
+"                                              #   #",
+"                                              #   #                                ===           ===     L    g   h                       L       E",
+"                                              # * #                                                   ###############        CC       ################",
+"                                              #   #                                                   ###############                 ################",
+"                                              #   #                                       ===         ###############   CC        CC  ################",
+"                                              #   #                                                   ###############                 ################",
+"                                              #ooo#                                                   ###############                 ################",
+"                                              #   #                                                   ###############                 ################",
+"                                                  #                                                   ###############                 ################",
+"                        b                         #                                                   ###############                 ################",
+"                                  L    h   k      #                                                   ###############                 ################",
+"                 o o o o o o o ###################                                                    ###############                 ################",
+"                               ###################                                                    ###############                 ################",
+"                               ###################                                                    ###############                 ################",
+"               | MM           |###################                                                    ###############                 ################",
+"                               ###################                                                    ###############                 ################",
+"                               ###################                                                    ###############                 ################",
+"   P      L                    ###################                                                    ###############                 ################",
+"###############                ###################                                                    ###############                 ################",
+"###############                ###################                                                    ###############                 ################",
+"###############llllllllllllllll###################llllllllllllllllllllllllllllllllllllllllllllllllllll###############lllllllllllllllll################",
+"###############llllllllllllllll###################llllllllllllllllllllllllllllllllllllllllllllllllllll###############lllllllllllllllll################"
+]
+},
+{
+"id": "5-1",
+"name": "The Gloom",
+"world": 4,
+"gives": null,
+"hint": "",
+"map": [
+"##############################################",
+"##############################################",
+"#                                            #",
+"#                                            #",
+"#                                            #",
+"#                                            #",
+"#                                            #",
+"#                   ======                   #",
+"#                                            #",
+"#                                            #",
+"#                                            #",
+"#       =====                    =====       #",
+"#                      G                     #",
+"#                                            #",
+"#                                            #",
+"#   P   L                               E    #",
+"##############################################",
+"##############################################",
+"##############################################",
+"##############################################"
+]
+}
+];
+
+// ---- 90-main.js ----
+// ==========================================
+// BOOT + MAIN LOOP
+// ==========================================
+R.cv = $('view'); R.x = R.cv.getContext('2d', { alpha: false });
+applyQuality();
+addEventListener('resize', () => R.resize());
+
+// buttons
+const on = (id, fn) => { const el = $(id); if (el) el.onclick = () => { Sound.init(); Sound.play('click'); fn(); }; };
+on('t-play', () => fadeTo(() => UI.map()));
+on('t-settings', () => UI.settings('title'));
+on('t-how', () => UI.show('how'));
+on('how-done', () => UI.show(G.state === 'paused' ? 'pause' : 'title'));
+on('m-back', () => { G.state = 'title'; UI.show('title'); titleStats(); });
+on('b-pause', () => UI.pause());
+on('p-resume', () => UI.resume());
+on('p-restart', () => fadeTo(() => G.start(G.idx)));
+on('p-settings', () => UI.settings('pause'));
+on('p-map', () => fadeTo(() => UI.map()));
+on('d-retry', () => fadeTo(() => G.start(G.idx)));
+on('d-next', () => fadeTo(() => G.start(G.idx + 1)));
+on('d-map', () => fadeTo(() => UI.map()));
+on('set-done', () => UI.show(UI._back === 'pause' ? 'pause' : 'title'));
+addEventListener('pointerdown', () => Sound.init(), { once: true });
+addEventListener('keydown', () => Sound.init(), { once: true });
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') UI.pause(); });
+
+// touch buttons
+for (const b of document.querySelectorAll('#touch button')) {
+    const k = b.dataset.k, set = v => { Input.touchSet(k, v); b.classList.toggle('on', v); };
+    b.addEventListener('touchstart', e => { e.preventDefault(); Sound.init(); set(true); }, { passive: false });
+    b.addEventListener('touchend', e => { e.preventDefault(); set(false); }, { passive: false });
+    b.addEventListener('touchcancel', () => set(false));
+}
+
+function titleStats() {
+    const done = Object.keys(SAVE.d.levels).length, moths = Object.values(SAVE.d.levels).reduce((n, r) => n + (r.moths || []).filter(Boolean).length, 0);
+    $('#t-stats').textContent = done ? `${done} of ${LEVELS.length} levels · ${moths} star moths · ${SAVE.d.sparks} sparks` : 'A tiny light in a big dark world';
+    $('#t-play').textContent = done ? 'Continue' : 'Play';
+}
+titleStats();
+
+// fixed-step loop: physics at 120 Hz, drawing once per screen refresh
+let last = performance.now(), acc = 0, titleT = 0, fpsT = 0, fpsN = 0, slowFrames = 0;
+const STEP = 1 / 120;
+function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    Input.poll();
+    if (Input.hit('pause')) { if (G.state === 'play') UI.pause(); else if (G.state === 'paused') UI.resume(); }
+    if (G.state === 'play') {
+        acc += dt;
+        let n = 0; while (acc >= STEP && n < 12) { G.update(STEP); acc -= STEP; n++; Input.endFrame(); }
+        if (G.state === 'play' && settings.timer !== false) $('#h-time').textContent = fmtTime(G.time);
+        render(G);
+    } else if (G.state === 'paused' || G.state === 'done') {
+        render(G); Input.endFrame();
+    } else {
+        titleT += dt; renderTitle(titleT); Input.endFrame();
+    }
+    touchControls();
+    // Auto graphics: if frames keep coming slowly, draw fewer pixels
+    if (settings.quality === 'auto' && G.state === 'play') {
+        fpsT += dt; fpsN++;
+        if (fpsT > 2) { const fps = fpsN / fpsT; fpsT = 0; fpsN = 0; if (fps < 45 && R.q > 0.6) { slowFrames++; if (slowFrames >= 2) { R.q = Math.max(0.6, R.q - 0.15); R.resize(); slowFrames = 0; } } else slowFrames = 0; }
+    }
+}
+requestAnimationFrame(frame);
+
+// test hook (used by the launcher's automated tests)
+window.__lumi = {
+    get G() { return G; }, LEVELS, SAVE, R,
+    start: i => G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i),
+    step(sec, keys = {}) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { for (const k in keys) Input.touchSet(k, !!keys[k]); G.update(STEP); Input.endFrame(); } for (const k in keys) Input.touchSet(k, false); },
+    key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
+    tick(sec, watch) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { G.update(STEP); Input.endFrame(); if (watch) watch(G); } },
+    tp(x, y) { G.p.x = x * TS + TS / 2; G.p.y = y * TS + TS / 2; G.p.vx = G.p.vy = 0; },
+    ability(k, v = true) { SAVE.d.abilities[k] = v; },
+    render: () => render(G)
+};
+
+</script>
+</body>
+</html>

@@ -131,6 +131,32 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   `blocky_autotier_fps` so the next launch only tries a better tier if fights held 58+. FPS overlay shows cpu ms.
 - Probes (not in the repo): CDP `Emulation.setCPUThrottlingRate` 5 + a 480x270 viewport approximates a Chromebook CPU.
 
+## Lumi's Lantern (new 2D platformer, r49, 2026-10-28)
+- `Lumi Lantern/src/` (shell.html, css/10-ui.css, js/00-core ... 90-main), built with `node tools/build-game.js "Lumi Lantern" --check`.
+  Canvas 2D, everything drawn procedurally at screen resolution: terrain auto-tiled into cached 8x8-tile chunks, parallax
+  strips per world, a half-resolution light pass (darkness with light discs stamped out) plus additive glow.
+- Levels are NOT typed: `python3 "Lumi Lantern/tools/levels.py"` builds them with helpers (ground/pit/ledge/rect/put) and writes
+  `src/js/70-levels.js`, after a reachability check with each world's moves (world 1 jump; 2 +double; 3 +wall; 4 +dash). Wall
+  climbing needs a shaft (walls 3 tiles apart). `--show 2-3` prints a level with what is reachable.
+- Save key `lumi_save` (cloud-synced: `lumi_` is in GAME_KEYS), 9 achievements in gv/ach.js (`g: 'lumi'`). Debug hook `window.__lumi`
+  (start, key, tick, tp, ability). Real jump: 3.7 tiles up, 5.5 across; double 6.6 up; dash 4.6 across.
+
+## Launcher: Multiplayer tab (hub rooms) + Go live (r49)
+- In the hub `index.html` ("Multiplayer hub + Go live" block), on HGNet (comes with gv/account.js): HGNet game 'hghub' = rooms
+  for ANY 6-digit code (join, or host if not found); 'hgspec' = Go live streams. One code box tries both at once.
+- Start a game for the room: HG_hostInvite(game, 'hub:<code>'); the game's HG_sendInvite('hub:...') is routed to the room as a
+  Join card. Joins/hosting from invites or rooms skip the save-sync wait (`play(g, true)`).
+- Go live: the game's biggest canvas (`captureStream`) or the tab (`getDisplayMedia`); video by PeerJS calls, and a viewer
+  with no video after 7 s asks for ~3 JPEG frames/s through the relays. Test hooks: window.HG_TEST_RELAYS / HG_TEST_PEER.
+- Test: `tools/tests/gv-hub.mjs`. The hub chat uses the same GUARD block as Grapevine (word filter + spam slowdown).
+
+## Grapevine server changes (2026-10-28)
+- Cloud saves: three stores tried in order (user_saves, settings, conversations kind 'save'); production fell through to the
+  conversations table (RLS on the newer tables). Every conversation query skips kind 'save'.
+- GUARD (archive.js and client.html, identical): the n-word only (names refused/renamed, text masked); spam heat for repeats
+  and very short lines. #main serves nothing older than the last 09:00 UTC reset. `migrate-v14.sql` (owner, optional) deletes
+  the old #main rows for real (gv_purge_main) and turns RLS off.
+
 ## Sovereign (grand strategy, released in r36)
 Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
 - Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE

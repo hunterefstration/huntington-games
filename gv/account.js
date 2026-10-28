@@ -643,7 +643,7 @@ const GVLink = (() => {
   //  * signing out saves first and then clears the device.
   // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
   // must be added here: it is the list of prefixes the games write.
-  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|hgach|gv:set:)/;
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|lumi_|hgach|gv:set:)/;
   var SAVE_MAX = 400000;
   var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {}, synced: false };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
@@ -864,7 +864,7 @@ const GVLink = (() => {
   // To add one: { id, g (game id), i (icon), n (name), d (how to get it), p (points: 10 / 25 / 50 / 100), t: fn }.
   var AG = { spikes: '100 Levels of Spikes', tetris: 'Tetris Surge', clicker: 'Brown E Clicker', coffee: 'Bean & Brew Tycoon',
     market: 'Market & Life', td: 'Tower Defense', frontline: 'Frontline: Command', blocky: 'Blocky Shooter', neon: 'Neon Dash',
-    sov: 'Sovereign', hub: 'Huntington Games' };
+    sov: 'Sovereign', lumi: "Lumi's Lantern", hub: 'Huntington Games' };
   function rd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function cnt(x) { return !x ? 0 : Array.isArray(x) ? x.length : typeof x === 'object' ? Object.keys(x).filter(function (k) { return x[k]; }).length : 0; }
@@ -873,7 +873,9 @@ const GVLink = (() => {
       BE = function () { return rd('brownEClickerSave') || {}; }, BB = function () { return rd('beanBrewSaveV2') || {}; },
       ML = function () { var s = rd('marketLifeSave'); return (s && s.life) || {}; }, TDR = function () { return rd('td2_records') || {}; },
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
-      SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; };
+      SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; },
+      LU = function () { return rd('lumi_save') || {}; };
+  var luDone = function (id) { return !!((LU().levels || {})[id]); }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
   var ACH = [
     // 100 Levels of Spikes
@@ -955,6 +957,16 @@ const GVLink = (() => {
     { id: 'sovach', g: 'sov', i: '🏅', n: 'Statesman', d: 'Earn 15 of Sovereign\'s own achievements.', p: 50, t: function () { return cnt(rd('sov.ach')) >= 15; } },
     { id: 'sovworld', g: 'sov', i: '🌍', n: 'World Domination', d: 'Control every country on Earth.', p: 100, t: function () { return !!SV().domination; } },
     // the launcher itself
+    // Lumi's Lantern
+    { id: 'lu11', g: 'lumi', i: '🏮', n: 'First Light', d: "Finish the first level of Lumi's Lantern.", p: 10, t: function () { return luDone('1-1'); } },
+    { id: 'luw1', g: 'lumi', i: '🌲', n: 'Glowwood Glowing', d: 'Finish Glowwood (and learn the double jump).', p: 25, t: function () { return luDone('1-4'); } },
+    { id: 'luw2', g: 'lumi', i: '💎', n: 'Crystal Clear', d: 'Finish the Hollow Caves.', p: 25, t: function () { return luDone('2-4'); } },
+    { id: 'luw3', g: 'lumi', i: '☁️', n: 'Head in the Clouds', d: 'Finish the Sky Ruins.', p: 25, t: function () { return luDone('3-4'); } },
+    { id: 'luw4', g: 'lumi', i: '🔥', n: 'Forged in Fire', d: 'Finish the Ember Forge.', p: 50, t: function () { return luDone('4-4'); } },
+    { id: 'luboss', g: 'lumi', i: '🌟', n: 'Lightbringer', d: 'Defeat The Gloom.', p: 100, t: function () { return luDone('5-1'); } },
+    { id: 'lumoth24', g: 'lumi', i: '🦋', n: 'Moth Catcher', d: 'Find 24 star moths.', p: 25, t: function () { return luMoths() >= 24; } },
+    { id: 'lumoth48', g: 'lumi', i: '✨', n: 'Every Last Moth', d: 'Find all 48 star moths.', p: 100, t: function () { return luMoths() >= 48; } },
+    { id: 'luspark', g: 'lumi', i: '💛', n: 'Spark Hoarder', d: 'Collect 500 sparks.', p: 25, t: function () { return num(LU().sparks) >= 500; } },
     { id: 'hubgames', g: 'hub', i: '🎮', n: 'Game Hopper', d: 'Play 5 different games.', p: 10, t: function () { return cnt(PL()) >= 5; } },
     { id: 'huball', g: 'hub', i: '🕹️', n: 'Completionist', d: 'Play 10 different games.', p: 25, t: function () { return cnt(PL()) >= 10; } },
     { id: 'hubfriend', g: 'hub', i: '🤝', n: 'Making Friends', d: 'Have a friend on Grapevine.', p: 10, t: function () { var L = window.HGGrapevine; return !!(L && L.friends().friends.length >= 1); } },

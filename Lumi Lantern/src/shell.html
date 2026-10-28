@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lumi's Lantern</title>
+<!--@css-->
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="fade"></div>
+
+<!-- in-level HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-l">
+    <div id="hearts"></div>
+    <div class="hud-pill"><span class="ico spark"></span><b id="h-sparks">0</b><small id="h-sparks-of">/0</small></div>
+    <div class="hud-pill" id="h-moths"></div>
+  </div>
+  <div class="hud-c"><div id="h-level"></div><div id="h-time">0:00.0</div></div>
+  <div class="hud-r"><button class="hud-btn" id="b-pause" title="Pause (Esc)">II</button></div>
+</div>
+<div id="toast"></div>
+<div id="banner"><div class="b1"></div><div class="b2"></div></div>
+
+<!-- title -->
+<div id="s-title" class="screen">
+  <div class="logo"><span class="l1">Lumi's</span><span class="l2">Lantern</span></div>
+  <div class="tag">Relight the four worlds</div>
+  <div class="menu">
+    <button class="btn big" id="t-play">Play</button>
+    <button class="btn" id="t-settings">Settings</button>
+    <button class="btn" id="t-how">How to play</button>
+  </div>
+  <div class="foot" id="t-stats"></div>
+</div>
+
+<!-- world map -->
+<div id="s-map" class="screen hidden">
+  <div class="topbar"><button class="btn small" id="m-back">&larr; Back</button><div class="ttl">Choose a level</div><div id="m-total"></div></div>
+  <div id="worlds"></div>
+</div>
+
+<!-- pause -->
+<div id="s-pause" class="screen dim hidden">
+  <div class="card">
+    <h2>Paused</h2>
+    <div id="p-info"></div>
+    <button class="btn big" id="p-resume">Resume</button>
+    <button class="btn" id="p-restart">Restart level</button>
+    <button class="btn" id="p-settings">Settings</button>
+    <button class="btn" id="p-map">Level map</button>
+  </div>
+</div>
+
+<!-- results -->
+<div id="s-done" class="screen dim hidden">
+  <div class="card wide">
+    <h2 id="d-title">Level complete!</h2>
+    <div id="d-rows"></div>
+    <div id="d-unlock"></div>
+    <div class="row">
+      <button class="btn" id="d-retry">Play again</button>
+      <button class="btn big" id="d-next">Next level</button>
+    </div>
+    <button class="btn small" id="d-map">Level map</button>
+  </div>
+</div>
+
+<!-- settings -->
+<div id="s-settings" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Settings</h2>
+    <div id="set-rows"></div>
+    <button class="btn big" id="set-done">Done</button>
+  </div>
+</div>
+
+<!-- how to play -->
+<div id="s-how" class="screen dim hidden">
+  <div class="card wide">
+    <h2>How to play</h2>
+    <div class="how">
+      <div><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> move</div>
+      <div><kbd>Space</kbd>, <kbd>W</kbd>, <kbd>&uarr;</kbd> or <kbd>Z</kbd> jump (hold to jump higher)</div>
+      <div><kbd>Shift</kbd> or <kbd>X</kbd> dash (once you have found it)</div>
+      <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
+      <div>Gamepads and touch screens work too.</div>
+      <p>Touch a <b>lantern</b> to light it: it is where you come back to. Collect <b>sparks</b>, find the
+      three hidden <b>star moths</b> in every level, and reach the <b>gate</b>. Shrines at the end of each world teach
+      you something new.</p>
+    </div>
+    <button class="btn big" id="how-done">Got it</button>
+  </div>
+</div>
+
+<!-- touch controls -->
+<div id="touch" class="hidden">
+  <div class="tl"><button data-k="left">&#9664;</button><button data-k="right">&#9654;</button></div>
+  <div class="tr"><button data-k="dash">&#10148;</button><button data-k="jump">&#9650;</button></div>
+</div>
+<!--@js-->
+</body>
+</html>
