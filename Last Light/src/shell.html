@@ -38,7 +38,7 @@
     <button class="btn big" id="t-play">Play</button>
     <button class="btn" id="t-settings">Settings</button>
     <button class="btn" id="t-stats-btn">Stats</button>
-    <button class="btn" id="t-lore-btn">Memories</button>
+    <button class="btn" id="t-lore-btn">People</button>
     <button class="btn" id="t-how">How to play</button>
   </div>
   <div class="foot" id="t-stats"></div>
@@ -87,20 +87,16 @@
   <div class="dead-key">Space / Enter: try again</div>
 </div>
 
-<!-- a memory, read where you found it -->
-<div id="s-read" class="screen readscr hidden">
-  <div class="rd-card">
-    <div id="rd-n"></div>
-    <h2 id="rd-t"></h2>
-    <p id="rd-x"></p>
-    <button class="btn big" id="rd-go">Continue</button>
-  </div>
+<!-- somebody talking: portrait, name, words -->
+<div id="talk" class="hidden">
+  <canvas id="tk-face" width="96" height="96"></canvas>
+  <div class="tk-body"><div id="tk-name"></div><div id="tk-text"></div><div class="tk-next">&#9660;</div></div>
 </div>
 
-<!-- the journal of memories -->
+<!-- everyone you met and what they told you -->
 <div id="s-lore" class="screen dim hidden">
   <div class="card wide">
-    <h2>Memories</h2>
+    <h2>People</h2>
     <div id="lo-n"></div>
     <div id="lo-list"></div>
     <button class="btn big" id="lo-done">Back</button>
@@ -145,7 +141,7 @@
       <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
       <div>Gamepads and touch screens work too.</div>
       <p>Touch a <b>lantern</b> to light it: it is where you come back to. Collect <b>sparks</b>, find the
-      three hidden <b>stars</b> and a <b>memory</b> in every level, and reach the <b>gate</b>. Shrines at the end of each world teach
+      three hidden <b>stars</b> in every level, <b>talk</b> to the people you meet (each knows part of the story), and reach the <b>gate</b>. Shrines at the end of each world teach
       you something new, and a <b>guardian</b> waits: when it shows <b>!</b>, stomp it or dash into it.</p>
     </div>
     <button class="btn big" id="how-done">Got it</button>

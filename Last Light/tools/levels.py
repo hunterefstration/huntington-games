@@ -428,8 +428,8 @@ def check(v, ab, doors_open=False):
     for y in range(H):
         for x in range(W):
             c = g[y][x]
-            if c in 'E*oLkuGr' and (x, y) not in air and (x, y) not in seen:
-                probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'star', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss', 'r': 'memory'}[c], x, y))
+            if c in 'E*oLkuGn' and (x, y) not in air and (x, y) not in seen:
+                probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'star', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss', 'n': 'person'}[c], x, y))
     # traps: places you can get to but never get out of to the gate (falling into a pit is fine: that is a death and a
     # respawn, but a box with no way out leaves you stuck). Walk backwards from the gate over the same moves.
     gate = [(x, y) for y in range(H) for x in range(W) if g[y][x] == 'E']
@@ -521,17 +521,30 @@ for lid, kind in (('1-4', 'moss'), ('2-4', 'shard'), ('3-4', 'bell'), ('4-4', 'c
     arena(next(v for v in LEVELS if v.id == lid), kind)
 
 ABIL = [dict(double=False, wall=False, dash=False), dict(double=True, wall=False, dash=False), dict(double=True, wall=True, dash=False), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True)]
-def memory(v):
-    if v.world == 4: return                      # the last memory is what The Gloom leaves behind
-    check(v, ABIL[v.world]); g, rnd = v.g, random.Random('memory' + v.id)
-    hi = getattr(v, 'w0', v.w)
-    def spots(r, ok):
-        return [(x, y) for (x, y) in v.seen if hi * 0.2 < x < hi * 0.85 and y > 1 and g[y][x] == ' ' and g[y - 1][x] == ' ' and
-                not any(g[yy][xx] not in ok for yy in range(max(0, y - 3), min(v.h, y + 2)) for xx in range(max(0, x - r), min(v.w, x + r + 1)))]
-    c = spots(4, ' #=^C') or spots(2, ' #=^Co')
-    c.sort(key=lambda q: (q[1], q[0])); c = c[:max(1, len(c) // 3)]
-    x, y = rnd.choice(c); v.put(x, y, 'r')
-for v in LEVELS: memory(v)
+def npc(v):
+    """Somebody to talk to in every level (not the last): standing by a lantern, the safe places on the way. Before a
+    guardian, right by the lantern at the arena door. Enemies too close to them are moved out of the way (removed)."""
+    if v.world == 4: return
+    g, hi = v.g, getattr(v, 'w0', v.w)
+    lan = [(x, y) for y in range(v.h) for x in range(hi) if g[y][x] == 'L']
+    if hasattr(v, 'w0'): lan.sort(key=lambda q: -q[0])
+    else: lan.sort(key=lambda q: abs(q[0] - hi * 0.4))
+    spot = None
+    for lx, ly in lan:
+        for dx in (-3, 3, -4, 4, -2, 2, -5, 5):
+            x, y = lx + dx, ly
+            if 2 < x < hi - 2 and g[y][x] == ' ' and g[y - 1][x] == ' ' and g[y + 1][x] in '#=' and g[y][x - 1] != '#' and g[y][x + 1] != '#':
+                spot = (x, y); break
+        if spot: break
+    if not spot:
+        check(v, ABIL[v.world])
+        c = sorted((q for q in v.seen if hi * 0.15 < q[0] < hi * 0.6 and g[q[1]][q[0]] == ' ' and g[q[1] + 1][q[0]] == '#'), key=lambda q: q[0])
+        spot = c[len(c) // 2]
+    x, y = spot; v.put(x, y, 'n')
+    for yy in range(max(0, y - 6), min(v.h, y + 6)):
+        for xx in range(max(0, x - 7), min(v.w, x + 8)):
+            if g[yy][xx] in 'gbht': g[yy][xx] = ' '
+for v in LEVELS: npc(v)
 
 bad = 0
 for v in LEVELS:

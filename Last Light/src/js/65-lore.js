@@ -1,58 +1,205 @@
 // ==========================================
-// LORE: one memory hidden in every level (The Gloom leaves the last one). Read in order they tell what happened to the
-// valley: who took the lanterns, what The Gloom is, and who you are. The journal on the title screen keeps them.
+// THE PEOPLE OF THE VALLEY: somebody waits by a lantern in every level. Walk up and they talk (E / Enter to hear them
+// again). Each one only knows their own part; put together, what they say tells what happened to the valley, what The
+// Gloom is, and who you are. The guardians and The Gloom talk too. "People" on the title keeps everything you heard.
 // ==========================================
-const LORE = {
-    '1-1': ['A lamplighter’s list', 'Dusk round, Glowwood path: forty lanterns, all lit. Wren walked the whole way with me tonight and named every one of them. She says lanterns get lonely in the daytime. — O.'],
-    '1-2': ['Carved into a tree', 'WREN + THE BIG LANTERN, in a child’s careful letters. Below it, newer and deeper, as if cut by a grown hand: I WILL FIX THIS.'],
-    '1-3': ['A torn page', 'The healer says Wren’s light is fading, the way a candle gutters near the end. She is not afraid. I am. — O.'],
-    '1-4': ['A notice nailed to a post', 'BY ORDER OF THE LAMPLIGHTER: every lantern in the valley is to be carried to the Forge. They will be returned. — Orin'],
-    '2-1': ['Scratched into the rock', 'We followed the lanterns down into the caves. Nobody brought them back. The forest went dark behind us, one light at a time.'],
-    '2-2': ['A miner’s tally', 'Ninth day without light. The crystals still glow a little if you sing to them. The great bat in the bell cave has stopped singing back.'],
-    '2-3': ['A child’s drawing', 'A tall man carrying a lantern bigger than he is, with a tiny star on top. Underneath: PAPA IS MAKING A LIGHT THAT NEVER GOES OUT. FOR ME.'],
-    '2-4': ['Words on the Deep Bell', 'Ring me when the dark comes, and the guardians will wake. — No one rang it. The dark came quietly, carried in a lantern.'],
-    '3-1': ['A temple tablet', 'The first light came up from the Forge as a gift, and a gift must be shared. Whoever keeps all the light keeps none of it.'],
-    '3-2': ['A priest’s warning', 'Orin climbed the towers to ask how a flame could be held forever. We told him the truth. Light that is hoarded turns to shadow. He did not like it.'],
-    '3-3': ['Orin’s journal', 'Then I will hoard it carefully. One flame, every light in the valley poured into it, too bright to ever go out. Wren has three days.'],
-    '3-4': ['Scratched by the Bellkeeper’s door', 'At the last hour of the last night, a small light went down the mountain alone, toward the Forge. It did not look back.'],
-    '4-1': ['The Forge ledger', 'Lanterns received: 4,211. Lanterns returned: none. The Heart of Embers is hungry, and the Lamplighter feeds it with his own hands.'],
-    '4-2': ['Orin’s last page', 'It is done. Every light in the valley, in one flame, and the flame in her lantern. But it is not light that pours out of it. Wren, forgive me.'],
-    '4-3': ['A note in small handwriting', 'Papa, you didn’t need all the lights. You only ever needed one. I’m giving you mine. Light them all again for me. — W'],
-    '4-4': ['Burned into the great anvil', 'The flame he made became the Gloom, and the Gloom became him. Every light was taken. Only one got away: the one that was given, not taken.'],
-    '5-1': ['What the Gloom left behind', '“Little light. You came all this way. I know you now: you were the one I could not take, because she gave you away. Take them home, Wren. Light them all.”']
+const CAST = {
+    bram: { name: 'Old Bram', col: '#e0b070', about: 'A woodcutter from the Glowwood. Old friend of the Lamplighter.' },
+    pip: { name: 'Pip', col: '#8fd0ff', about: 'A kid from the village, looking for a best friend who left without saying goodbye.' },
+    marta: { name: 'Marta', col: '#ffb38a', about: 'A crystal miner who stayed in the caves when everybody else turned back.' },
+    ilse: { name: 'Sister Ilse', col: '#e8d8ff', about: 'Keeper of the sky temples. She told the Lamplighter the truth, and was afraid of him.' },
+    hob: { name: 'Hob', col: '#ff9a5a', about: 'The smith of the Ember Forge. He built the great lantern.' },
+    moss: { name: 'Mossback', col: '#8fe07a' }, shard: { name: 'Shardwing', col: '#8ff0ff' }, bell: { name: 'The Bellkeeper', col: '#ffe08a' },
+    cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' }
 };
-const loreCount = () => Object.keys(SAVE.d.lore || {}).filter(k => LORE[k]).length;
-UI.memory = function (id) {
-    const m = LORE[id]; if (!m) return;
-    const fresh = !SAVE.d.lore[id]; SAVE.d.lore[id] = true; if (fresh) ST('memories'); SAVE.write();
-    G.state = 'read'; Input.clear(); $('#touch').classList.add('hidden');
-    $('#rd-n').textContent = 'Memory ' + (Object.keys(LORE).indexOf(id) + 1) + ' of ' + Object.keys(LORE).length + (fresh ? '' : ' (found before)');
-    $('#rd-t').textContent = m[0]; $('#rd-x').textContent = m[1];
-    this.show('read');
+const TALKS = {
+    '1-1': ['bram', ['Well, I’ll be. A light! A real one, walking about on its own.',
+        'Haven’t seen one of those since the Lamplighter’s men came round with their carts. Took every lantern in the Glowwood. Said they’d bring them back.',
+        'That was a long time ago, little light. The dark’s been creeping in ever since.',
+        'Go on, then. Light the old lanterns as you pass. They remember what they’re for.']],
+    '1-2': ['pip', ['Hey! HEY! Are you a firefly? No, too bright. ...Are you a ghost?',
+        'I’m Pip. I’m looking for my friend Wren. She’s the Lamplighter’s daughter. She’s been sick, but she still beats me at everything.',
+        'She left in the middle of the night. Didn’t even say goodbye. Her papa left first, though. Weeks ago.',
+        'If you see a girl with a red ribbon, tell her Pip is mad at her. And that I miss her. Mostly the second one.']],
+    '1-3': ['bram', ['You again! Getting around, aren’t you.',
+        'Orin, the Lamplighter: he and I go way back. Best man in the valley, once. Lit every lantern by hand, every night, rain or snow.',
+        'Then his girl got sick. Her light was fading, the healer said. Like a candle near the end.',
+        'Something went out in him too, I think. He stopped talking to anyone. Just stared at the lanterns, like they owed him something.']],
+    '1-4': ['pip', ['You made it this far? Me too! Well. I hid a lot.',
+        'Careful up ahead. That’s Mossback’s clearing. He used to let us ride on his back, me and Wren. He guards the forest.',
+        'But he’s... wrong now. All dark and twitchy. Like something crawled inside him.',
+        'Wren would know what to do. Wren always knew what to do.']],
+    '2-1': ['marta', ['Stop right there. Oh. You’re a light. Sorry, I’ve been talking to rocks for days.',
+        'Name’s Marta. I mine crystal down here. Or I did, before the carts.',
+        'Hundreds of them rolled through, full of lanterns, all the way down to the Forge. We followed. Thought the Lamplighter had gone mad.',
+        'Most turned back when the lights went out behind us. I stayed. Somebody has to keep the crystals singing.']],
+    '2-2': ['pip', ['Don’t tell anyone I’m down here. I’m supposed to be home.',
+        'Look what I found, though. A ribbon. A RED ribbon. Wren did come this way!',
+        'Why would she go to the Forge? She can barely walk to the well without getting tired.',
+        '...Unless she was going after her papa.']],
+    '2-3': ['marta', ['Still glowing! Good. You’d be surprised how many things down here stop glowing.',
+        'That bell back there is the Deep Bell. Ring it when the dark comes, and the guardians wake. Old rule.',
+        'Nobody rang it. The dark didn’t come with drums. It came quiet, rolling down the tunnels in a lantern.',
+        'Strangest thing, though. A few nights back a girl came by. Small, pale, red ribbon gone. Walking down. Alone. Wouldn’t stop to rest.']],
+    '2-4': ['marta', ['Shardwing’s cave is just ahead. That bat kept the Deep Bell. Used to sing to it.',
+        'It doesn’t sing anymore. It screams.',
+        'Wake it up, the old way, and there’s a path out of here. Up. Toward the sky temples.']],
+    '3-1': ['ilse', ['Welcome, little flame. Mind the wind. It is all we have left up here.',
+        'I am Ilse. I keep the temple, or what remains of it.',
+        'We teach one thing here: the first light came up from the Forge as a gift, and a gift must be shared.',
+        'Whoever keeps all the light keeps none of it. An old saying. I used to think it was only a saying.']],
+    '3-2': ['pip', ['Okay. I’m officially lost. And cold. And it’s REALLY high up.',
+        'Can I tell you something weird? Wren used to say lanterns get lonely in the daytime.',
+        'And when you flicker like that... you look just like she does when she laughs.',
+        'That’s dumb. Forget I said it. Go on, I’ll catch up.']],
+    '3-3': ['ilse', ['Orin climbed these towers too, before the dark. He asked me how a flame could be held forever.',
+        'I told him the truth. Light that is hoarded turns to shadow. It cannot be kept, only passed on.',
+        'He said: then I will hoard it carefully. And he went down to the Forge with every lantern in the valley.',
+        'I should have stopped him. I was afraid of him. That is a hard thing to say about a friend.']],
+    '3-4': ['ilse', ['The Bellkeeper waits beyond. It rings the hours of the valley. It rang the last hour the night the girl came through.',
+        'She asked me if her papa could be saved. I said: not by taking. Only by giving.',
+        'She smiled at that. I did not understand why until much later.']],
+    '4-1': ['hob', ['Hot enough for you? Ha. Sorry. Bad joke. I’m Hob. This is my forge. Was.',
+        'Four thousand two hundred and eleven lanterns. I counted every one off the carts. Orin fed them to the Heart of Embers, one by one.',
+        'He wanted one flame that could never go out. For his girl. I built him the lantern to hold it.',
+        'Best work I ever did. Worst thing I ever made.']],
+    '4-2': ['bram', ['Little light! Thank the stars. These old legs got me all the way down here.',
+        'I came to talk sense into Orin. Old friends, you know. But what I found at the Heart wasn’t him.',
+        'Just dark, pouring out of that great lantern like smoke. And in the middle of it his voice, saying her name over and over.',
+        'Don’t go near him alone. ...Ah, who am I kidding. You’re the only light down here.']],
+    '4-3': ['hob', ['You want the rest of it? Fine. You’ve earned it.',
+        'The girl came. Wren. Barely standing. She walked straight up to her papa, into the dark around him.',
+        'She said: you don’t need all the lights, Papa. You only ever needed one. And she put her own light in his lantern.',
+        'The whole thing went black. That’s when the Gloom was born. But one spark flew out of it. Small. Bright. Up and out, toward home.',
+        '...It looked a lot like you.']],
+    '4-4': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
+        'You’re her. Aren’t you? You’re Wren. The light of her. The part she gave away.',
+        'You can’t talk. That’s okay. You always talked enough for both of us.',
+        'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']]
 };
-UI.readDone = function () { if (G.state !== 'read') return; G.state = 'play'; this.show(null); Input.clear(); };
-UI.journal = function () {
-    const ids = Object.keys(LORE), n = loreCount();
-    $('#lo-n').textContent = n + ' of ' + ids.length + ' memories found' + (n === ids.length ? ': the whole story.' : '');
-    $('#lo-list').innerHTML = ids.map((id, i) => SAVE.d.lore[id]
-        ? `<div class="lore"><span>${i + 1}. ${LORE[id][0]}</span><p>${LORE[id][1]}</p></div>`
-        : `<div class="lore lost"><span>${i + 1}. ???</span><p>Hidden somewhere in ${id === '5-1' ? 'the last fight' : 'level ' + id}.</p></div>`).join('');
+// the guardians: before the fight, during it (one line each time it is hit), and once the dark is out of them
+const GUARD_TALK = {
+    moss: { pre: ['Lanterns... gone. Forest... so cold.', 'YOU. Bright thing. Give... me... your LIGHT!'],
+        mid: ['Cold... so cold...', 'MINE!', 'Stop... squirming!', 'Little... light...?', 'The dark... it itches...'],
+        free: ['Ohh... my head. The dark is gone. Thank you, little light.', 'He came through here with a hundred carts. The Lamplighter. Took our lanterns and left something cold behind.',
+            'Go down into the caves. The carts went that way. And... you smell like the little girl who used to ride on my back. Strange.'] },
+    shard: { pre: ['SKREEEE... the bell... the bell is SILENT...', 'Light-thief! You will not take more!'],
+        mid: ['Silent... SILENT!', 'Hurts... the dark hurts...', 'You cannot hide from me!', 'Ring... the bell...'],
+        free: ['...I can hear the bell again. Oh, how I missed it.', 'Forgive me, little one. The cold got into my wings. I could not tell a friend from a thief.',
+            'The girl passed here. She asked me the way to the Forge. I told her: up, through the temples. She was so very tired.'] },
+    bell: { pre: ['DONG. The hour... is DARK.', 'No more hours. No more mornings. Only the TOLL.'],
+        mid: ['TOLL!', 'The hour grows late...', 'You ring... out of time!', 'Who... rings me...?'],
+        free: ['...The hour returns. Morning, I think. It has been so long since morning.', 'I rang for the girl, little flame. The last hour of the last night. She went down the mountain alone.',
+            'The Forge lies below. He waits there. And so, I think, does she.'] },
+    cinder: { pre: ['GRRRAAH. Another lantern for the Heart?', 'No... you are no lantern. You are HER. He will want you back.'],
+        mid: ['BURN!', 'The Heart is hungry...', 'Hold STILL!', 'Stop... hitting...!'],
+        free: ['Hrrm. The fire in me is my own again. You hit hard, for a spark.', 'I guarded the Forge for a thousand years. I let him in because he was the Lamplighter. I trusted him.',
+            'Your father is past that gate. What is left of him. Go, Wren. Bring him back to the light.'] }
+};
+const GLOOM_TALK = {
+    pre: [['gloom', 'Who... is there? Another light. Come closer. Come INTO the lantern.'], ['gloom', 'I need every one. Every one. She is fading. She is...'],
+        ['gloom', '...Wren?'], ['gloom', 'NO. Wren is gone. Wren is IN HERE. And you will be too!']],
+    mid: ['Give it BACK!', 'I only wanted to keep her...', 'Why do you burn so bright...', 'Not again... not you too...', 'The light is MINE!', 'Wren... is that you?', 'Please... stay...', 'Let me hold on...'],
+    end: [['orin', '...The dark is lifting. I can see again.'], ['orin', 'Little light. I know you now. You were the one I could not take, because she gave you away.'],
+        ['orin', 'I am so sorry, my girl. I held on so tight that I put out everything I loved.'], ['orin', 'Take them home, Wren. All of them. Light them all.']]
+};
+const talkCount = () => Object.keys(SAVE.d.talks || {}).filter(k => TALKS[k]).length;
+const TALK_N = Object.keys(TALKS).length;
+
+// ---------- the dialogue box: a portrait, a name, the words typing out; jump / Enter / click goes on ----------
+const TK = { lines: null, i: 0, shown: 0, done: null, back: 'play' };
+UI.talk = function (lines, done) {
+    if (!lines || !lines.length) { if (done) done(); return; }
+    TK.lines = lines; TK.i = 0; TK.shown = 0; TK.done = done || null; TK.back = G.state === 'talk' ? TK.back : G.state;
+    G.state = 'talk'; Input.clear(); $('#touch').classList.add('hidden');
+    $('#talk').classList.remove('hidden'); talkLine();
+};
+function talkLine() {
+    const [who, text] = TK.lines[TK.i], c = CAST[who] || { name: who, col: '#fff' };
+    $('#tk-name').textContent = c.name; $('#tk-name').style.color = c.col; $('#tk-text').textContent = ''; TK.shown = 0;
+    $('#talk').style.setProperty('--tk', c.col); drawPortrait(who);
+    Sound.play('blip');
+}
+UI.talkTick = function (dt) {
+    if (G.state !== 'talk' || !TK.lines) return;
+    const text = TK.lines[TK.i][1];
+    if (TK.shown < text.length) {
+        const before = Math.floor(TK.shown); TK.shown = Math.min(text.length, TK.shown + dt * 48);
+        if (Math.floor(TK.shown) !== before) { $('#tk-text').textContent = text.slice(0, Math.floor(TK.shown)); if (Math.floor(TK.shown) % 3 === 0 && text[Math.floor(TK.shown) - 1] !== ' ') Sound.play('talk', TK.lines[TK.i][0]); }
+    }
+    $('#talk').classList.toggle('more', TK.shown >= text.length);
+    drawPortrait(TK.lines[TK.i][0], G.t + performance.now() / 1000, TK.shown < text.length);
+};
+UI.talkNext = function () {
+    if (G.state !== 'talk' || !TK.lines) return;
+    const text = TK.lines[TK.i][1];
+    if (TK.shown < text.length) { TK.shown = text.length; $('#tk-text').textContent = text; return; }
+    TK.i++;
+    if (TK.i < TK.lines.length) return talkLine();
+    $('#talk').classList.add('hidden'); TK.lines = null; G.state = TK.back; Input.clear();
+    const d = TK.done; TK.done = null; if (d) d();
+};
+// a person in a level: the first time you come close they talk; afterwards E / Enter hears them again
+function meet(G, e, again) {
+    const t = TALKS[G.L.def.id]; if (!t) return;
+    const [who, lines] = t, first = !SAVE.d.talks[G.L.def.id];
+    e.talked = true; e.who = who;
+    SAVE.d.talks[G.L.def.id] = true; if (first) ST('talks'); SAVE.write();
+    UI.talk(lines.map(l => [who, l]));
+}
+function drawPortrait(who, t = 0, speaking = false) {
+    const cv = $('#tk-face'), x = cv.getContext('2d'), c = CAST[who] || { col: '#fff' };
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, 96, 96);
+    const g = x.createRadialGradient(48, 52, 4, 48, 52, 60); g.addColorStop(0, c.col + '55'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 96, 96);
+    if (PEOPLE[who]) { x.translate(48, 108); x.scale(1.9, 1.9); PEOPLE[who](x, t, 1, speaking); }
+    else if (GUARD_ART[who]) {
+        const base = { moss: 38, shard: 30, bell: 36, cinder: 36 }[who];
+        x.translate(48, 54); x.scale(0.95, 0.95);
+        GUARD_ART[who](x, { D: { r: base }, state: 'idle', face: 1, vx: 0, vy: 0, squat: speaking ? Math.abs(Math.sin(t * 12)) * 0.3 : 0, land: 0, glow: speaking ? 0.6 : 0, open: false, spit: speaking ? 1 : 0, clean: !!(G.guard && G.guard.state === 'free') }, t, false);
+    } else if (who === 'gloom') {
+        x.translate(48, 50);
+        for (let i = 0; i < 6; i++) { const a = i / 6 * 7 + t; x.fillStyle = 'rgba(40,10,70,.8)'; x.beginPath(); x.arc(Math.cos(a) * 12, Math.sin(a) * 10, 24, 0, 7); x.fill(); }
+        const e = x.createRadialGradient(0, 0, 1, 0, 0, 16); e.addColorStop(0, '#fffbe6'); e.addColorStop(0.5, '#c9a0ff'); e.addColorStop(1, 'rgba(200,160,255,0)');
+        x.fillStyle = e; x.beginPath(); x.ellipse(0, 0, 16, speaking ? 12 : 8, 0, 0, 7); x.fill(); x.fillStyle = '#12021e'; x.beginPath(); x.ellipse(0, 0, 4, 7, 0, 0, 7); x.fill();
+    }
+}
+
+// ---------- People: everyone you met and everything they told you ----------
+UI.people = function () {
+    const order = ['bram', 'pip', 'marta', 'ilse', 'hob'], heard = SAVE.d.talks || {};
+    $('#lo-n').textContent = talkCount() + ' of ' + TALK_N + ' conversations heard' + (talkCount() === TALK_N ? ': the whole story.' : '');
+    $('#lo-list').innerHTML = order.map(who => {
+        const ids = Object.keys(TALKS).filter(id => TALKS[id][0] === who), got = ids.filter(id => heard[id]);
+        if (!got.length) return `<div class="lore lost"><span>???</span><p>Somebody is waiting somewhere in world ${ids[0].split('-')[0]}.</p></div>`;
+        return `<div class="lore"><span style="color:${CAST[who].col}">${CAST[who].name}</span> <em>${got.length} of ${ids.length} talks</em><p class="ab">${CAST[who].about}</p>`
+            + ids.map(id => heard[id] ? `<p><b>${id}</b> ${TALKS[id][1].join(' ')}</p>` : `<p class="miss"><b>${id}</b> (not heard yet)</p>`).join('') + '</div>';
+    }).join('');
     this.show('lore');
 };
 // the end of the game: the epilogue, then the usual results
 UI.ending = function (r) {
-    const n = loreCount(), all = n === Object.keys(LORE).length;
-    const lines = ['The Gloom came apart like smoke in the wind.', 'Four thousand lights flew home across the valley, and one by one the lanterns woke.',
-        'In the morning they found an old lamplighter’s lantern at the Heart of Embers, still warm.',
-        all ? 'Inside it, very softly, a small light was singing. Wren had come home.' : 'Some say there is more to the story. (' + n + ' of ' + Object.keys(LORE).length + ' memories found)'];
+    const n = talkCount(), all = n === TALK_N;
+    const lines = ['The Gloom came apart like smoke in the wind.', 'Four thousand two hundred and eleven lights flew home across the valley, and one by one the lanterns woke.',
+        'At the edge of the Forge a boy with a red ribbon in his fist was waiting, exactly where he said he would be.',
+        all ? 'And in the morning, in the Lamplighter’s house, a girl opened her eyes, and laughed, and asked why everyone was crying.' : 'Some say there is more to the story. (' + n + ' of ' + TALK_N + ' conversations heard)'];
     $('#en-lines').innerHTML = lines.map((l, i) => `<p style="animation-delay:${0.6 + i * 1.6}s">${l}</p>`).join('');
-    $('#en-stats').innerHTML = `<span>${fmtTime(SAVE.d.playTime || 0)} played</span><span>${SAVE.d.deaths} falls</span><span>${n} memories</span>`;
+    $('#en-stats').innerHTML = `<span>${fmtTime(SAVE.d.playTime || 0)} played</span><span>${SAVE.d.deaths} falls</span><span>${n} of ${TALK_N} stories</span>`;
     $('#en-go').onclick = () => { Sound.play('click'); UI.results(r); };
     $('#hud').classList.add('hidden'); UI.bossbar(null); this.show('end');
 };
 UI.bossbar = function (B) {
     const el = $('#bossbar'); if (!el) return;
     if (!B) { el.classList.add('hidden'); return; }
-    el.classList.remove('hidden'); $('#bb-name').textContent = B.D.name; $('#bb-fill').style.width = (100 * Math.max(0, B.hp) / B.max) + '%';
-    $('#bb-fill').style.background = B.D.col;
+    el.classList.remove('hidden'); $('#bb-name').textContent = B.D ? B.D.name : 'The Gloom'; $('#bb-fill').style.width = (100 * Math.max(0, B.hp) / B.max) + '%';
+    $('#bb-fill').style.background = B.D ? B.D.col : '#b98aff';
 };
+// a speech bubble over a guardian or The Gloom while it fights
+function drawSay(x, sx, sy, say) {
+    if (!say || say.t <= 0) return;
+    x.save(); x.font = 'bold 15px system-ui, sans-serif'; const w = x.measureText(say.text).width + 22, h = 28, a = Math.min(1, say.t * 3, (2.6 - say.t) * 6);
+    x.globalAlpha = Math.max(0, a); x.translate(sx - w / 2, sy - h);
+    x.fillStyle = 'rgba(14,8,30,.88)'; x.strokeStyle = 'rgba(255,255,255,.55)'; x.lineWidth = 1.5;
+    x.beginPath(); x.roundRect ? x.roundRect(0, 0, w, h, 10) : x.rect(0, 0, w, h); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(w / 2 - 7, h); x.lineTo(w / 2, h + 9); x.lineTo(w / 2 + 7, h); x.fill();
+    x.fillStyle = '#fff'; x.textBaseline = 'middle'; x.fillText(say.text, 11, h / 2 + 1); x.restore();
+}

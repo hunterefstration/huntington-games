@@ -20,7 +20,7 @@ const SAVE = (() => {
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
-    d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {};
+    d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {}; d.talks = d.talks || {};
     // The launcher's chat caches messages in this same storage, and a full storage used to make saves fail silently
     // (progress looked fine, then was gone the next time). If a save is refused: drop the biggest chat caches (only a
     // cache, the chat server keeps the history) and try again; if it still fails, say so.
@@ -55,7 +55,7 @@ const Input = (() => {
     const down = new Set(), pressed = new Set(), touch = new Set();
     const MAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
         Space: 'jump', KeyZ: 'jump', KeyK: 'jump', ShiftLeft: 'dash', ShiftRight: 'dash', KeyX: 'dash', KeyJ: 'dash', KeyC: 'dash',
-        Escape: 'pause', KeyP: 'pause', KeyR: 'retry', Enter: 'ok' };
+        Escape: 'pause', KeyP: 'pause', KeyR: 'retry', Enter: 'ok', KeyE: 'ok' };
     const JUMP_TOO = { up: 1 };                            // W / Up also jump
     addEventListener('keydown', e => {
         const a = MAP[e.code]; if (!a) return;
@@ -141,7 +141,10 @@ const Sound = (() => {
         screech: () => { tone(1800, 900, 0.35, 'sawtooth', 0.07); tone(2400, 1300, 0.3, 'square', 0.04, 0.05); noise(0.3, 6000, 3000, 0.08); },
         gong: () => { [1, 2.76, 5.4].forEach((m, i) => tone(110 * m, 110 * m * 0.99, 1.4 - i * 0.3, 'sine', 0.16 / (i + 1))); noise(0.15, 1200, 300, 0.1); },
         roar: () => { tone(120, 60, 0.7, 'sawtooth', 0.2); noise(0.7, 900, 150, 0.25, 0, 0.5); },
-        memory: () => [0, 3, 7, 10, 14].forEach((s, i) => tone(392 * Math.pow(2, s / 12), 392 * Math.pow(2, s / 12), 1.2, 'sine', 0.08, i * 0.12))
+        blip: () => tone(880, 1100, 0.05, 'sine', 0.05),
+        // a little voice per speaker while the words type out
+        talk: who => { const f = { bram: 150, pip: 520, marta: 300, ilse: 380, hob: 120, orin: 200, gloom: 90, moss: 110, shard: 700, bell: 160, cinder: 95 }[who] || 300; const k = f * (0.9 + Math.random() * 0.25);
+            tone(k, k * 1.05, 0.045, who === 'gloom' || who === 'cinder' ? 'sawtooth' : 'triangle', 0.045); }
     };
     // music: a soft generative pad + plucked arpeggio per world, scheduled a bar at a time
     const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10]];

@@ -16,13 +16,14 @@ const G = {
         this.parts = []; this.ghosts = []; this.rings = []; this.shots = []; this.t = 0; this.time = 0; this.done = false; this.flash = 0; this.white = 0; this.ambient = null;
         this.got = { sparks: 0, moths: [false, false, false] }; this.deathShown = false; this.cause = ''; this.stats = { deaths: 0, hits: 0, jumps: 0, stomps: 0, dashes: 0 };
         let mi = 0; for (const e of this.L.ents) if (e.kind === 'moth') e.idx = mi++;
+        for (const e of this.L.ents) if (e.kind === 'npc') { const tk = TALKS[def.id]; e.who = tk ? tk[0] : 'bram'; e.talked = !!SAVE.d.talks[def.id]; }
         // moths already found stay found (shown faint) so a replay is about what is still missing
         const rec = SAVE.d.levels[def.id];
         for (const e of this.L.ents) if (e.kind === 'moth' && rec && rec.moths && rec.moths[e.idx]) e.ghost = true;
         const be = this.L.ents.find(e => e.kind === 'boss'); this.boss = be ? makeBoss(be) : null;
         const ge = this.L.ents.find(e => e.kind === 'guard'); this.guard = ge ? makeGuard(this, ge) : null; UI.bossbar(null);
         if (this.boss || this.guard) { const gt = this.L.ents.find(e => e.kind === 'gate'); if (gt) { gt.gone = true; gt.hidden = true; } }
-        this.iris = 0; this.outro = null; this.hitstop = 0; this.p.spawnT = 0.75; Sound.play('lantern');
+        this.iris = 0; this.outro = null; this.hitstop = 0; this.guardSpoke = false; this.gloomSpoke = false; this.p.spawnT = 0.75; Sound.play('lantern');
         const r = seeded(def.id.length * 977 + idx);
         this.motes = Array.from({ length: 40 }, () => ({ x: r() * 2000, y: r() * 1200, r: 0.8 + r() * 2.2, s: 0.3 + r() * 0.8, p: r() * 9, k: 0.3 + r() * 0.6 }));
         this.cam.x = this.p.x; this.cam.y = this.p.y - 40; this.cam.snap = 0; this.cam.look = 0;

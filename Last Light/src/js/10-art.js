@@ -310,19 +310,11 @@ const Sprites = {
         if (!got) for (let i = 0; i < 2; i++) { const k = (t * 0.8 + i * 0.5 + e.seed) % 1, a = i * 2.4 + e.seed; x.globalAlpha = Math.sin(k * Math.PI); x.fillStyle = '#fff';
             x.save(); x.translate(e.x + Math.cos(a) * 18, e.y + by + Math.sin(a) * 14); x.fillRect(-0.75, -4, 1.5, 8); x.fillRect(-4, -0.75, 8, 1.5); x.restore(); x.globalAlpha = 1; }
     },
-    // a memory: a small floating rune stone that hums with violet light
-    memory(x, e, t) {
-        const by = Math.sin(t * 1.7 + e.seed) * 5;
-        x.save(); x.translate(e.x, e.y + by);
-        const h = x.createRadialGradient(0, 0, 2, 0, 0, 30); h.addColorStop(0, 'rgba(210,180,255,.5)'); h.addColorStop(1, 'rgba(160,110,255,0)');
-        x.fillStyle = h; x.beginPath(); x.arc(0, 0, 30, 0, 7); x.fill();
-        for (let i = 0; i < 3; i++) { const a = t * 1.6 + i * 2.1; x.fillStyle = '#e8dcff'; x.globalAlpha = 0.8; x.beginPath(); x.arc(Math.cos(a) * 17, Math.sin(a) * 6 - 2, 1.8, 0, 7); x.fill(); }
-        x.globalAlpha = 1; x.rotate(Math.sin(t * 1.1 + e.seed) * 0.12);
-        const g = x.createLinearGradient(0, -14, 0, 14); g.addColorStop(0, '#6a5a8a'); g.addColorStop(1, '#2e2448');
-        x.fillStyle = g; x.beginPath(); x.moveTo(-9, -12); x.quadraticCurveTo(0, -17, 9, -12); x.lineTo(10, 11); x.quadraticCurveTo(0, 14, -10, 11); x.closePath(); x.fill();
-        x.strokeStyle = `rgba(220,195,255,${0.65 + 0.35 * Math.sin(t * 3 + e.seed)})`; x.lineWidth = 1.6; x.lineCap = 'round';
-        x.beginPath(); x.moveTo(-4, -8); x.lineTo(0, -4); x.lineTo(4, -8); x.moveTo(0, -4); x.lineTo(0, 3); x.moveTo(-4, 1); x.lineTo(4, 1); x.moveTo(-3, 7); x.lineTo(3, 7); x.stroke();
-        x.restore();
+    // a person: drawn by PEOPLE (12-people.js), with a speech bubble until you have talked to them
+    npc(x, e, t) {
+        x.save(); x.translate(e.x, e.y + 16); PEOPLE[e.who || 'bram'](x, t + (e.seed || 0), e.face || 1, false); x.restore();
+        if (!e.talked) { const b = Math.abs(Math.sin(t * 3)) * 4; x.save(); x.translate(e.x, e.y + 16 - ({ bram: 62, pip: 54, marta: 62, ilse: 70, hob: 60 }[e.who] || 62) - b); x.fillStyle = 'rgba(255,255,255,.92)'; x.beginPath(); x.ellipse(0, 0, 13, 9, 0, 0, 7); x.fill(); x.beginPath(); x.moveTo(-3, 7); x.lineTo(-6, 13); x.lineTo(3, 8); x.fill(); x.fillStyle = '#2a2040'; for (const d of [-5, 0, 5]) { x.beginPath(); x.arc(d, 0, 1.6 + (Math.floor(t * 3) % 3 === (d + 5) / 5 ? 0.8 : 0), 0, 7); x.fill(); } x.restore(); }
+        else if (e.near) { x.save(); x.translate(e.x, e.y + 16 - ({ bram: 64, pip: 56, marta: 64, ilse: 72, hob: 62 }[e.who] || 64)); x.fillStyle = 'rgba(14,8,30,.85)'; x.strokeStyle = 'rgba(255,255,255,.6)'; x.lineWidth = 1.2; x.beginPath(); x.rect(-9, -9, 18, 18); x.fill(); x.stroke(); x.fillStyle = '#fff'; x.font = 'bold 12px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('E', 0, 1); x.restore(); }
     },
     spring(x, e, t, T) {
         const k = e.boing || 0;

@@ -76,7 +76,7 @@ function render(G) {
     for (const m of G.L.movers) if (vis(m.x, m.y, 200)) Sprites.mover(x, m, t, T);
     for (const e of G.L.ents) {
         if (e.gone || !vis(e.x, e.y)) continue;
-        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', memory: 'memory' }[e.kind];
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc' }[e.kind];
         if (!f) continue;
         if (e.dying !== undefined) {          // stomped: flattened into the ground, then it pops
             const k = clamp(e.dying / 0.22, 0, 1), fy = e.y + 14;
@@ -153,7 +153,7 @@ function lightPass(G, cx, cy, vw, vh) {
         else if (e.kind === 'gate') add(e.x, e.y - 14, 190, 1, '255,230,160');
         else if (e.kind === 'spark') { if (amb > 0.5) sparkL.push([e.x, e.y]); }
         else if (e.kind === 'moth') add(e.x, e.y, e.got !== undefined ? 200 : 90, 0.9, '255,230,150');
-        else if (e.kind === 'memory') add(e.x, e.y, 100, 0.9, '200,170,255');
+        else if (e.kind === 'npc') add(e.x, e.y - 8, 90, 0.7, '255,225,180');
         else if (e.kind === 'shrine' && !e.used) add(e.x, e.y - 30, 140, 1, '160,240,255');
         else if (e.kind === 'key') add(e.x, e.y, 60, 0.7, '255,210,120');
         else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');

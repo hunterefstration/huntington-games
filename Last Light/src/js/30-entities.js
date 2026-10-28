@@ -73,7 +73,9 @@ function updatePlayer(G, dt) {
     const wasGround = p.ground, vyBefore = p.vy;
     moveX(G, p.vx * dt);
     moveY(G, p.vy * dt);
-    if (p.on) { const m = p.on; moveX(G, m.dx); p.y = m.y - p.h / 2 - 0.01; if (!(p.x + p.w / 2 > m.x && p.x - p.w / 2 < m.x + m.w)) { p.on = null; p.ground = false; } }
+    // riding a moving ledge: it carries you, and you are standing on it (a rising ledge used to leave you "in the air",
+    // so after the first instant the jump button did nothing)
+    if (p.on) { const m = p.on; moveX(G, m.dx); p.y = m.y - p.h / 2 - 0.01; if (!(p.x + p.w / 2 > m.x && p.x - p.w / 2 < m.x + m.w)) { p.on = null; p.ground = false; } else { p.ground = true; if (p.vy > 0) p.vy = 0; } }
     if (p.ground) {
         p.coyote = PH.coyote; p.air = A.double ? 1 : 0; p.springing = false; if (p.dashT <= 0) p.canDash = true;
         if (!wasGround) { const k = clamp(vyBefore / 900, 0.15, 0.6); p.sx = 1 + k; p.sy = 1 - k * 0.8; if (vyBefore > 400) { dust(G, p.x, p.y + 12, 8); Sound.play('land'); } }
@@ -205,7 +207,12 @@ function updateWorld(G, dt) {
                 if (e.got !== undefined) { e.got -= dt; if (e.got <= 0) { e.gone = true; burst(G, e.x, e.y - 20, '#fff6c0', 30, 260, true); } }
                 else if (near(p, e, 22)) { e.got = 0.55; G.got.moths[e.idx] = true; ST('mothsCaught'); Sound.play('moth'); burst(G, e.x, e.y, '#ffe9a0', 16, 160, true); G.toast('Star ' + (G.got.moths.filter(Boolean).length) + ' of ' + G.L.moths); G.hud(); }
                 break;
-            case 'memory': if (near(p, e, 22) && !p.dead) { e.gone = true; Sound.play('memory'); burst(G, e.x, e.y, '#d8c0ff', 30, 200, true); UI.memory(e.lid || G.L.def.id); } break;
+            case 'npc':          // somebody to talk to: the first time you come close they start; E / Enter to hear them again
+                e.face = p.x < e.x ? -1 : 1;
+                e.near = !p.dead && Math.abs(p.x - e.x) < 46 && Math.abs(p.y - e.y) < 34;
+                if (e.near && !e.talked && p.ground && !G.done) { p.vx = 0; meet(G, e); }
+                else if (e.near && Input.hit('ok')) meet(G, e);
+                break;
             case 'key': if (near(p, e, 20)) { e.gone = true; p.keys++; Sound.play('key'); burst(G, e.x, e.y, '#ffd36b', 12, 140, true); G.toast('A key! It opens a door.'); } break;
             case 'lantern':
                 if (!e.lit && Math.abs(p.x - e.x) < 26 && Math.abs(p.y - e.y) < 40) {

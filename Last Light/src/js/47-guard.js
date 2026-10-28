@@ -8,13 +8,13 @@
 // A "!" means it is open: stomp it or dash into it.
 // ==========================================
 const GUARDS = {
-    moss: { name: 'Mossback', sub: 'Guardian of the Glowwood', hp: 4, r: 46, col: '#8fe07a', light: '170,255,150',
+    moss: { name: 'Mossback', sub: 'Guardian of the Glowwood', hp: 6, r: 46, col: '#8fe07a', light: '170,255,150',
         free: 'Thank you, little light. He took our lanterns too.' },
-    shard: { name: 'Shardwing', sub: 'Guardian of the Hollow Caves', hp: 3, r: 34, col: '#8ff0ff', light: '140,240,255',
+    shard: { name: 'Shardwing', sub: 'Guardian of the Hollow Caves', hp: 5, r: 34, col: '#8ff0ff', light: '140,240,255',
         free: 'The Deep Bell can ring again. Go on, little one.' },
-    bell: { name: 'The Bellkeeper', sub: 'Guardian of the Sky Ruins', hp: 3, r: 42, col: '#ffe08a', light: '255,230,150',
+    bell: { name: 'The Bellkeeper', sub: 'Guardian of the Sky Ruins', hp: 5, r: 42, col: '#ffe08a', light: '255,230,150',
         free: 'The hour is late. He is waiting at the Forge.' },
-    cinder: { name: 'Cinderjaw', sub: 'Guardian of the Ember Forge', hp: 3, r: 44, col: '#ff8a3a', light: '255,140,60',
+    cinder: { name: 'Cinderjaw', sub: 'Guardian of the Ember Forge', hp: 5, r: 44, col: '#ff8a3a', light: '255,140,60',
         free: 'You carry her light. He will know it.' }
 };
 function makeGuard(G, e) {
@@ -27,7 +27,7 @@ function makeGuard(G, e) {
 function guardWake(G, B) {
     const L = G.L;
     L.doors.push({ tx: B.doorTx, ty: B.doorTy, x: B.doorTx * TS, y: B.doorTy * TS, h: B.doorH, open: false, slide: 1, boss: true });
-    B.state = 'intro'; B.t = 1.7; G.shake(10); Sound.play('door'); Sound.play('boss');
+    B.state = 'intro'; B.t = 1.1; G.shake(10); Sound.play('door'); Sound.play('boss');
     UI.banner(B.D.sub, B.D.name); UI.bossbar(B); Sound.musicFor(10 + G.world);
 }
 // back to the start of the fight (you fell): the door opens again and the guardian goes back to sleep
@@ -43,23 +43,28 @@ function guardHit(G, B) {
     burst(G, B.x, B.y - 10, '#fff2c4', 26, 280, true); burst(G, B.x, B.y, B.D.col, 18, 240); ring(G, B.x, B.y + B.D.r * 0.6, B.D.col);
     p.vy = -PH.stomp * 1.15; p.vx = sign(p.x - B.x || 1) * 240; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true; p.cut = false; p.sx = 1.3; p.sy = 0.75;
     UI.bossbar(B);
-    if (B.hp <= 0) { B.state = 'dying'; B.t = 1.8; B.fx = []; Sound.play('boss'); return; }
+    if (B.hp <= 0) { B.state = 'dying'; B.t = 1.8; B.fx = []; B.say = null; Sound.play('boss'); return; }
     B.phase = B.max - B.hp; B.n = 0;
-    if (B.kind === 'moss') {          // slimes shake loose from its back
-        for (let i = 0; i < (B.phase >= 2 ? 2 : 1); i++) G.L.ents.push({ kind: 'slime', x: B.x + (i ? 40 : -40), y: B.floor - TS / 2, sx: B.x, sy: B.floor - TS / 2, seed: rand(9), dir: i ? 1 : -1, spawned: true });
-        B.state = 'idle'; B.t = 0.6; B.vx = B.vy = 0; B.y = B.floor - B.D.r;
-    } else if (B.kind === 'shard') { B.state = 'rise'; B.t = 0.9; }
+    const mid = GUARD_TALK[B.kind].mid; B.say = { text: mid[(B.phase - 1) % mid.length], t: 2.6 };
+    const alive = G.L.ents.filter(e => e.spawned && !e.gone).length;
+    if (B.kind === 'shard' && B.phase >= 3 && alive < 3) for (let i = 0; i < 2; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.top + 60, sx: B.x0 + 120 + i * (B.x1 - B.x0 - 240), sy: B.top + 70 + i * 30, seed: rand(9), spawned: true });
+    if (B.kind === 'moss' && alive < 4) {          // slimes shake loose from its back
+        for (let i = 0; i < (B.phase >= 3 ? 2 : 1); i++) G.L.ents.push({ kind: 'slime', x: B.x + (i ? 40 : -40), y: B.floor - TS / 2, sx: B.x, sy: B.floor - TS / 2, seed: rand(9), dir: i ? 1 : -1, spawned: true });
+    }
+    if (B.kind === 'moss') { B.state = 'idle'; B.t = 0.6; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
+    else if (B.kind === 'shard') { B.state = 'rise'; B.t = 0.9; }
     else if (B.kind === 'bell') { B.state = 'lift'; B.t = 0.8; }
     else { B.state = 'stalk'; B.t = 1.2; }
     if (B.phase === B.max - 1) G.toast(B.D.name + ' is furious!');
+    B.bounced = false;
 }
 function guardFree(G, B) {
     B.state = 'free'; B.t = 2.2; G.white = 0.55; Sound.play('shrine');
     for (const d of G.L.doors) if (d.boss) d.open = true;
     G.L.ents = G.L.ents.filter(e => !e.spawned); G.shots = G.shots.filter(s => !s.guard);
     SAVE.d.guards = SAVE.d.guards || {}; SAVE.d.guards[B.kind] = true; ST('guardians'); SAVE.write();
-    UI.bossbar(null); UI.banner(B.D.name + ' is free', '“' + B.D.free + '”'); Sound.musicFor(G.world);
-    G.revealGate();
+    UI.bossbar(null); Sound.musicFor(G.world); B.clean = true;
+    UI.talk(GUARD_TALK[B.kind].free.map(l => [B.kind, l]), () => { UI.banner(B.D.name + ' is free', 'The way is open'); G.revealGate(); });
 }
 // waves along the floor, warning glints, lava geysers
 function guardFx(G, B, dt) {
@@ -99,7 +104,9 @@ const GUARD_AI = {
             B.vy += g * dt; B.x += B.vx * dt; B.y += B.vy * dt;
             if (B.x < B.x0 + B.D.r) { B.x = B.x0 + B.D.r; B.vx = Math.abs(B.vx); } if (B.x > B.x1 - B.D.r) { B.x = B.x1 - B.D.r; B.vx = -Math.abs(B.vx); }
             if (B.vy > 0 && B.y >= B.floor - B.D.r) {
-                B.y = B.floor - B.D.r; B.state = 'idle'; B.t = 0.75 / sp; B.land = 1; G.shake(8); dust(G, B.x, B.floor - 2, 14); Sound.play('land');
+                B.y = B.floor - B.D.r; B.state = 'idle'; B.land = 1; G.shake(8); dust(G, B.x, B.floor - 2, 14); Sound.play('land');
+                B.hops = (B.hops || 0) + 1; B.t = B.phase >= 2 && B.hops % 2 ? 0.14 : 0.75 / sp;        // hurt enough, it hops twice in a row
+                if (B.phase >= 3 && !(B.hops % 2)) for (let i = 0; i < 3; i++) B.fx.push({ type: 'rock', x: B.x0 + 40 + rand(B.x1 - B.x0 - 80), t: 0.3 + i * 0.2 });
                 if (B.phase >= 1) for (const d of [-1, 1]) B.fx.push({ type: 'wave', x: B.x + d * B.D.r, dir: d, sp: 260, t: 1.6 });
             }
         }
@@ -110,12 +117,12 @@ const GUARD_AI = {
         switch (B.state) {
             case 'hover':
                 B.x = lerp(B.x, clamp(p.x, B.x0 + 60, B.x1 - 60), dt * 1.3); B.y = lerp(B.y, hy + Math.sin(B.wob * 3) * 10, dt * 3);
-                B.drop -= dt; if (B.drop <= 0) { B.drop = 0.75 / sp; B.fx.push({ type: 'glint', x: clamp(p.x + rand(-50, 50), B.x0 + 20, B.x1 - 20), t: 0.5 }); }
+                B.drop -= dt; if (B.drop <= 0) { B.drop = 0.75 / sp; for (const o of B.phase >= 2 ? [-70, 0, 70] : [0]) B.fx.push({ type: 'glint', x: clamp(p.x + o + rand(-30, 30), B.x0 + 20, B.x1 - 20), t: 0.5 }); }
                 if (B.t <= 0) { B.state = 'screech'; B.t = 0.6; Sound.play('screech'); G.shake(4); }
                 break;
             case 'screech': B.y = lerp(B.y, hy - 20, dt * 4); if (B.t <= 0) {
                 B.n++;
-                if (B.n % 2) { B.state = 'swoop'; B.u = 0; B.sx = B.x; B.ex = B.x < (B.x0 + B.x1) / 2 ? B.x1 - 70 : B.x0 + 70; B.sy = B.y; }
+                if (B.n % (B.phase >= 2 ? 3 : 2)) { B.state = 'swoop'; B.u = 0; B.sx = B.x; B.ex = B.x < (B.x0 + B.x1) / 2 ? B.x1 - 70 : B.x0 + 70; B.sy = B.y; }
                 else { B.state = 'dive'; B.tx = clamp(p.x, B.x0 + 40, B.x1 - 40); }
             } break;
             case 'swoop': {          // skims the floor from one side to the other: jump it
@@ -127,7 +134,7 @@ const GUARD_AI = {
             case 'dive': {           // straight at where you were, into the floor
                 const dx = B.tx - B.x, dy = B.floor - B.D.r - B.y, d = Math.hypot(dx, dy), v = 760 * sp * dt;
                 B.face = sign(dx) || B.face;
-                if (d <= v) { B.x = B.tx; B.y = B.floor - B.D.r; B.state = 'dazed'; B.t = 2.2; B.open = true; G.shake(12); Sound.play('crumble'); burst(G, B.x, B.floor, '#bff7ff', 24, 260); }
+                if (d <= v) { B.x = B.tx; B.y = B.floor - B.D.r; B.state = 'dazed'; B.t = 1.8; B.open = true; G.shake(12); Sound.play('crumble'); burst(G, B.x, B.floor, '#bff7ff', 24, 260); }
                 else { B.x += dx / d * v; B.y += dy / d * v; }
                 break;
             }
@@ -143,7 +150,7 @@ const GUARD_AI = {
                 if (B.t <= 0) { B.state = 'volley'; B.t = 1.5; B.k = 0; } break;
             case 'volley':           // three rings of light, each turned a little
                 B.y = lerp(B.y, hy + Math.sin(B.wob * 2) * 8, dt * 3);
-                if (B.t < 1.4 - B.k * 0.45 && B.k < 3) {
+                if (B.t < 1.4 - B.k * 0.4 && B.k < (B.phase >= 2 ? 4 : 3)) {
                     const n = 10 + B.phase * 2;
                     for (let i = 0; i < n; i++) { const a = (i + B.k * 0.5) / n * Math.PI * 2; G.shots.push({ x: B.x, y: B.y + 10, vx: Math.cos(a) * 150 * sp, vy: Math.sin(a) * 150 * sp, life: 5, guard: true, kind: B.kind }); }
                     B.k++; Sound.play('gong'); B.glow = 1;
@@ -154,7 +161,9 @@ const GUARD_AI = {
             case 'drop':
                 B.vy += 3600 * dt; B.y += B.vy * dt;
                 if (B.y >= B.floor - B.D.r) {
-                    B.y = B.floor - B.D.r; B.state = 'stuck'; B.t = 2.1; B.open = true; G.shake(14); Sound.play('gong'); Sound.play('boss');
+                    B.y = B.floor - B.D.r; B.state = 'stuck'; B.t = 1.8; B.open = true; G.shake(14); Sound.play('gong'); Sound.play('boss');
+                    if (B.phase >= 3 && !B.bounced) { B.bounced = true; B.state = 'toll'; B.t = 0.5; B.open = false; }      // hurt enough, it tolls twice
+                    else B.bounced = false;
                     for (const d of [-1, 1]) B.fx.push({ type: 'wave', x: B.x + d * B.D.r, dir: d, sp: 300, t: 2.2 });
                     burst(G, B.x, B.floor, B.D.col, 30, 300);
                 }
@@ -174,7 +183,7 @@ const GUARD_AI = {
                 B.spit -= dt;
                 if (B.spit <= 0) {
                     B.spit = 1 / sp; const air = 0.85;
-                    G.shots.push({ x: B.x + B.face * 30, y: B.y - 14, vx: clamp((p.x - B.x) / air, -420, 420), vy: -520, g: 1200, life: 3, style: 'lava', guard: true, kind: B.kind, col: '#ff7a2a', light: '255,120,40' });
+                    for (const o of B.phase >= 3 ? [-120, 0, 120] : [0]) G.shots.push({ x: B.x + B.face * 30, y: B.y - 14, vx: clamp((p.x - B.x) / air + o, -480, 480), vy: -520, g: 1200, life: 3, style: 'lava', guard: true, kind: B.kind, col: '#ff7a2a', light: '255,120,40' });
                     Sound.play('shoot');
                     if (B.phase >= 1) B.fx.push({ type: 'geyser', x: clamp(p.x, B.x0 + 20, B.x1 - 20), t: 1.4 });
                 }
@@ -185,7 +194,9 @@ const GUARD_AI = {
             case 'charge':
                 B.x += B.vx * dt; if (Math.random() < 0.6) dust(G, B.x - B.face * 24, B.floor - 2, 2);
                 if (B.x <= B.x0 + B.D.r || B.x >= B.x1 - B.D.r) {
-                    B.x = clamp(B.x, B.x0 + B.D.r, B.x1 - B.D.r); B.state = 'stunned'; B.t = 2.2; B.open = true; B.glow = 0;
+                    B.x = clamp(B.x, B.x0 + B.D.r, B.x1 - B.D.r);
+                    if (B.phase >= 2 && !B.bounced) { B.bounced = true; B.face = -B.face; B.vx = -B.vx * 1.1; G.shake(10); Sound.play('stomp'); burst(G, B.x - B.face * B.D.r, B.y, '#ffb040', 16, 220); break; }   // off the wall and back
+                    B.bounced = false; B.state = 'stunned'; B.t = 1.9; B.open = true; B.glow = 0;
                     G.shake(16); Sound.play('boss'); burst(G, B.x + B.face * B.D.r, B.y, '#ffb040', 24, 260);
                     for (let i = 0; i < 2 + B.phase; i++) B.fx.push({ type: 'rock', x: B.x0 + 40 + rand(B.x1 - B.x0 - 80), t: 0.4 + i * 0.25 });
                 }
@@ -201,7 +212,12 @@ function guardUpdate(G, dt) {
     if (B.state === 'gone') return;
     if (B.state === 'free') { B.y -= dt * 40; if (Math.random() < 0.5) burst(G, B.x + rand(-30, 30), B.y + rand(-30, 30), '#fff6d0', 2, 120, true); if (B.t <= 0) B.state = 'gone'; return; }
     if (B.state === 'wait') { if (!p.dead && p.x > B.x0 + TS * 2 && p.y > B.floor - TS * 12) guardWake(G, B); return; }
-    if (B.state === 'intro') { if (B.t <= 0) B.state = 'go'; return; }
+    if (B.say) B.say.t -= dt;
+    if (B.state === 'intro') {
+        if (B.t <= 0) { if (G.guardSpoke) B.state = 'go'; else { G.guardSpoke = true; B.state = 'talking'; UI.talk(GUARD_TALK[B.kind].pre.map(l => [B.kind, l]), () => { B.state = 'go'; }); } }
+        return;
+    }
+    if (B.state === 'talking') return;
     if (B.state === 'dying') {
         if (Math.random() < 0.6) burst(G, B.x + rand(-40, 40), B.y + rand(-30, 30), Math.random() < 0.5 ? '#fff2c4' : B.D.col, 5, 240, true);
         if (B.t <= 0) guardFree(G, B);
@@ -234,6 +250,7 @@ function drawGuard(x, G, t) {
     // the sprites are drawn at a reference size and scaled up to the guardian's real size
     const base = { moss: 38, shard: 30, bell: 36, cinder: 36 }[B.kind], k = B.D.r / base;
     x.save(); x.scale(k, k); GUARD_ART[B.kind](x, Object.assign({}, B, { D: Object.assign({}, B.D, { r: base }) }), t, lit); x.restore();
+    if (B.say && B.say.t > 0) { x.restore(); drawSay(x, B.x, B.y - B.D.r - 30, B.say); x.save(); x.translate(B.x, B.y); }
     if (B.open && !free) { x.fillStyle = '#fff'; x.font = 'bold 22px sans-serif'; x.textAlign = 'center'; x.globalAlpha = 0.6 + 0.4 * Math.sin(t * 10); x.fillText('!', 0, -B.D.r - 14); x.globalAlpha = 1;
         // dizzy stars
         for (let i = 0; i < 3; i++) { const a = t * 4 + i * 2.1; x.fillStyle = '#ffe08a'; star5(x, Math.cos(a) * 22, -B.D.r - 4 + Math.sin(a) * 6, 4); } }
@@ -250,7 +267,7 @@ const GUARD_ART = {
     moss(x, B, t, lit) {
         const r = B.D.r, sq = B.state === 'hop' ? clamp(-B.vy / 1400, -0.15, 0.25) : -(B.squat || 0) * 0.18 - B.land * 0.2;
         x.scale(B.face < 0 ? -1 : 1, 1); x.scale(1 - sq * 0.6, 1 + sq);
-        if (!lit) darkWisps(x, r, t);
+        if (!lit && !B.clean) darkWisps(x, r, t);
         // legs
         x.fillStyle = '#3a2a1a'; for (const lx of [-24, -8, 10, 26]) { x.fillRect(lx - 3, r * 0.55, 6, 12 + Math.sin(t * 10 + lx) * (B.state === 'hop' ? 0 : 1.5)); }
         // shell
@@ -267,7 +284,7 @@ const GUARD_ART = {
     shard(x, B, t, lit) {
         const r = B.D.r, down = B.state === 'dazed', flap = down ? 0.15 : Math.sin(t * (B.state === 'swoop' || B.state === 'dive' ? 22 : 12));
         x.scale(B.face < 0 ? -1 : 1, 1);
-        if (!lit) darkWisps(x, r, t);
+        if (!lit && !B.clean) darkWisps(x, r, t);
         // crystal wings: faceted, catching the light
         for (const s of [-1, 1]) {
             x.save(); x.scale(s, 1); x.rotate(-0.25 + flap * 0.45);
@@ -285,7 +302,7 @@ const GUARD_ART = {
     bell(x, B, t, lit) {
         const r = B.D.r, sw = B.state === 'stuck' ? 0 : Math.sin(t * 2.2) * 0.12;
         x.rotate(sw);
-        if (!lit) darkWisps(x, r, t);
+        if (!lit && !B.clean) darkWisps(x, r, t);
         // the clapper: the trapped light
         const cg = x.createRadialGradient(0, r * 0.75, 1, 0, r * 0.75, 18 + B.glow * 14); cg.addColorStop(0, '#fffbe6'); cg.addColorStop(0.5, B.open ? '#ffd36b' : '#c9a0ff'); cg.addColorStop(1, 'rgba(255,220,140,0)');
         x.fillStyle = cg; x.beginPath(); x.arc(0, r * 0.75, 18 + B.glow * 14, 0, 7); x.fill();
@@ -306,7 +323,7 @@ const GUARD_ART = {
     cinder(x, B, t, lit) {
         const r = B.D.r, run = B.state === 'charge' || B.state === 'stalk', bob = run ? Math.abs(Math.sin(t * (B.state === 'charge' ? 24 : 8))) * 4 : 0;
         x.scale(B.face < 0 ? -1 : 1, 1); x.translate(0, -bob);
-        if (!lit) darkWisps(x, r, t);
+        if (!lit && !B.clean) darkWisps(x, r, t);
         // legs
         x.fillStyle = lit ? '#fff' : '#2a1a18'; for (const [lx, ph] of [[-26, 0], [-10, 1], [12, 0], [28, 1]]) x.fillRect(lx - 5, r * 0.5, 10, 14 + (run ? Math.sin(t * 20 + ph * 3) * 4 : 0));
         // rock body with lava cracks that glow hotter as it revs

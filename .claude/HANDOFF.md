@@ -153,6 +153,12 @@ Real cross-network test (two Chromebooks, different states) still needed before 
   in/out, stomp hit-stop + squash, spawn beam. levels.py `spice()`/`bats()` add seeded enemies.
 
 ## Launcher: Multiplayer tab (hub rooms) + Go live (r49)
+- r54: lore is PEOPLE now, not memory stones: `n` in a level (levels.py `npc()` puts one by a lantern; before a guardian,
+  at the arena door) -> kind 'npc'; art in `src/js/12-people.js` (bram, pip, marta, ilse, hob, orin); words in
+  `src/js/65-lore.js` (CAST, TALKS per level, GUARD_TALK pre/mid/free, GLOOM_TALK pre/mid/end). Dialogue = `UI.talk(lines, done)`
+  (state 'talk', #talk box, typing, jump/E/Enter/click). First meeting starts by itself; E/Enter again. `SAVE.d.talks`.
+  Guardians: 6/5/5/5 hp, extra attacks from phase 2-3 (double hops + rocks, shard showers + bats, double toll, wall bounce
+  + triple spit). The Gloom: 9 hp. Moving ledges: you count as standing on one (rising ledges ate jumps).
 - r53: saves lost on reopen = localStorage FULL (Grapevine's gv:log:* chat cache shares the launcher origin), so game
   saves failed silently. Launcher `roomForSaves()` keeps ~1 MB free (drops biggest gv:log caches, then hgv:bak backups) at
   start, every minute and before play; Last Light's SAVE.write also frees chat cache and toasts if it still cannot save.

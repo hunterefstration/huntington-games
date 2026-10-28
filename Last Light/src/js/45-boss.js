@@ -2,16 +2,24 @@
 // THE GLOOM: the last boss. A cloud of shadow with a light trapped inside.
 //   float: drifts above the arena and throws shadow orbs that curve toward you
 //   slam:  rises, hangs over you (a shadow marks the spot), crashes down and sends shockwaves along the floor (jump them)
-//   stunned: after a slam its core glows - stomp it or dash into it. Six hits; it gets faster and calls bats after each pair.
+//   stunned: after a slam its core glows - stomp it or dash into it. Nine hits; it gets faster and calls bats every third.
+//   It talks before the fight (once per try of the level) and says something every time it is hit.
 // ==========================================
-function makeBoss(e) { return { x: e.x, y: e.y - 60, hx: e.x, hy: e.y - 60, r: 46, hp: 6, max: 6, state: 'intro', t: 2.2, stun: 0, hitT: 0, phase: 0, waves: [], fireT: 1.5, wob: 0 }; }
+function makeBoss(e) { return { x: e.x, y: e.y - 60, hx: e.x, hy: e.y - 60, r: 46, hp: 9, max: 9, state: 'intro', t: 2.2, stun: 0, hitT: 0, phase: 0, waves: [], fireT: 1.5, wob: 0 }; }
 function bossUpdate(G, dt) {
     const B = G.boss, p = G.p; if (!B) return;
-    B.wob += dt; B.hitT = Math.max(0, B.hitT - dt);
+    B.wob += dt; B.hitT = Math.max(0, B.hitT - dt); if (B.say) B.say.t -= dt;
     const L = G.L, floorY = B.floor || (B.floor = findFloor(L, B.hx)), speed = 1 + B.phase * 0.25;
     B.t -= dt;
     switch (B.state) {
-        case 'intro': B.y = lerp(B.y, B.hy, dt * 2); if (B.t <= 0) { B.state = 'float'; B.t = 4.5 / speed; } break;
+        case 'intro': B.y = lerp(B.y, B.hy, dt * 2);
+            if (B.t <= 0) {
+                UI.bossbar(B);
+                if (G.gloomSpoke) { B.state = 'float'; B.t = 4.5 / speed; }
+                else { G.gloomSpoke = true; B.state = 'talking'; UI.talk(GLOOM_TALK.pre, () => { B.state = 'float'; B.t = 4.5 / speed; }); }
+            }
+            break;
+        case 'talking': break;
         case 'float': {
             const tx = clamp(p.x, TS * 4, L.w * TS - TS * 4) + Math.sin(B.wob * 0.9) * 120;
             B.x = lerp(B.x, tx, dt * 0.9 * speed); B.y = lerp(B.y, B.hy + Math.sin(B.wob * 1.6) * 30, dt * 2);
@@ -43,8 +51,8 @@ function bossUpdate(G, dt) {
             B.r = Math.max(0, B.r - dt * 18); G.white = Math.min(1, G.white + dt * 0.35);
             if (Math.random() < 0.6) burst(G, B.x + rand(-40, 40), B.y + rand(-40, 40), '#fff2c4', 6, 260);
             if (B.t <= 0) {
-                G.boss = null; G.white = 1; G.ambient = 0.15; G.toast('The Gloom is gone. Something was left behind...'); G.revealGate();
-                G.L.ents.push({ kind: 'memory', x: B.x, y: floorY - 50, sx: B.x, sy: floorY - 50, seed: 3, lid: '5-1' });
+                G.boss = null; G.white = 1; G.ambient = 0.15; UI.bossbar(null);
+                UI.talk(GLOOM_TALK.end, () => { G.toast('The lanterns are lit!'); G.revealGate(); });
             }
             return;
     }
@@ -65,8 +73,9 @@ function bossUpdate(G, dt) {
         if (open && (p.dashT > 0 || (p.vy > 0 && p.y < B.y - B.r * 0.3))) {
             B.hp--; B.hitT = 0.4; G.shake(10); Sound.play('stomp'); burst(G, B.x, B.y - 20, '#fff2c4', 30, 300);
             p.vy = -PH.stomp * 1.2; p.vx = sign(p.x - B.x || 1) * 260; p.air = 1; p.canDash = true;
-            if (B.hp <= 0) { B.state = 'dying'; B.t = 2.4; Sound.play('gate'); G.stats.boss = true; return; }
-            if (B.hp % 2 === 0) {
+            if (B.hp <= 0) { B.state = 'dying'; B.t = 2.4; B.say = null; Sound.play('gate'); G.stats.boss = true; return; }
+            B.say = { text: GLOOM_TALK.mid[(B.max - B.hp - 1) % GLOOM_TALK.mid.length], t: 2.6 }; UI.bossbar(B);
+            if (B.hp % 3 === 0) {
                 B.phase++; G.toast(B.phase === 1 ? 'It is getting angry...' : 'One last push!');
                 for (let i = 0; i < 1 + B.phase; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.hy, sx: TS * (6 + i * 9) % (G.L.w * TS - TS * 8) + TS * 4, sy: B.hy + 40, seed: rand(9) });
             }
@@ -101,4 +110,5 @@ function drawBoss(x, G, t) {
     // health bar under the boss
     x.save(); const bw = 140; x.translate(B.x - bw / 2, B.y + r + 18);
     x.fillStyle = 'rgba(0,0,0,.5)'; x.fillRect(0, 0, bw, 7); x.fillStyle = '#c9a0ff'; x.fillRect(0, 0, bw * B.hp / B.max, 7); x.restore();
+    drawSay(x, B.x, B.y - r - 34, B.say);
 }

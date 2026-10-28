@@ -11,9 +11,9 @@ on('t-play', () => fadeTo(() => UI.map()));
 on('t-settings', () => UI.settings('title'));
 on('t-how', () => UI.show('how'));
 on('t-stats-btn', () => UI.stats());
-on('t-lore-btn', () => UI.journal());
+on('t-lore-btn', () => UI.people());
 on('lo-done', () => UI.show('title'));
-on('rd-go', () => UI.readDone());
+$('#talk').addEventListener('pointerdown', e => { e.preventDefault(); UI.talkNext(); });
 on('st-done', () => UI.show('title'));
 on('dd-retry', () => UI.retry());
 on('dd-restart', () => fadeTo(() => G.start(G.idx)));
@@ -57,13 +57,14 @@ function frame(now) {
     Input.poll();
     if (Input.hit('pause')) { if (G.state === 'play') UI.pause(); else if (G.state === 'paused') UI.resume(); }
     if (G.state === 'dead' && (Input.hit('jump') || Input.hit('ok') || Input.hit('retry'))) UI.retry();
-    if (G.state === 'read' && (Input.hit('jump') || Input.hit('ok') || Input.hit('pause'))) UI.readDone();
+    if (G.state === 'talk' && (Input.hit('jump') || Input.hit('ok') || Input.hit('dash'))) UI.talkNext();
     if (G.state === 'play') {
         acc += dt;
         let n = 0; while (acc >= STEP && n < 12) { G.update(STEP); acc -= STEP; n++; Input.endFrame(); }
         if (G.state === 'play' && settings.timer !== false) $('#h-time').textContent = fmtTime(G.time);
         render(G);
-    } else if (G.state === 'paused' || G.state === 'done' || G.state === 'dead' || G.state === 'read') {
+    } else if (G.state === 'paused' || G.state === 'done' || G.state === 'dead' || G.state === 'talk') {
+        if (G.state === 'talk') UI.talkTick(dt);
         render(G); Input.endFrame();
     } else {
         titleT += dt; renderTitle(titleT); Input.endFrame();
