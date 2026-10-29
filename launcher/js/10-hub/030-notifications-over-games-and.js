@@ -78,7 +78,7 @@ window.HG_notify = function (n) {
 // A game asks for the chats it can invite into (HG_inviteTargets) and sends an invite (HG_sendInvite): a normal chat
 // message ending in "hg-invite:<game>:<party code>", so it reads fine in the Grapevine app too. When one arrives the
 // pop-up shows a JOIN button: it opens the game (or tells the open one) and the game collects the code with HG_takeJoin.
-var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline', imposter: 'Imposter', lumi: 'Last Light' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
+var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline', imposter: 'Imposter', lumi: 'Last Light', spikes: '50 Levels Of Spikes 1.2' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
 function inviteGame(id) { var d = INVITE_GAMES[id]; return d ? GAMES.filter(function (g) { return g.dir === d; })[0] || null : null; }
 window.HG_inviteTargets = function () {
   var api = chatApi(); if (!api) return [];

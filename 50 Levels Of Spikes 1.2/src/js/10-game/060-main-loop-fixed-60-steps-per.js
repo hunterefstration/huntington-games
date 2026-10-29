@@ -12,7 +12,8 @@ function gameLoop(timestamp) {
         stepAcc -= STEP_MS;
         steps++;
         if (gameState === 'PAUSED' || gameState === 'EDITOR' || gameState === 'MENU') continue;
-        if (gameState === 'PLAYING') {
+        if (gameState === 'PLAYING' && mpActive()) mpStep();
+        else if (gameState === 'PLAYING') {
             if (autoplay) runAutoplay();
             const r = updatePhysics();
             if (r === 1) triggerDeath();

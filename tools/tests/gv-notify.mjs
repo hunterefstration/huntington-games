@@ -126,18 +126,19 @@ try {
   await A.evaluate(() => document.getElementById('frame').contentWindow.focus());
   await A.evaluate(() => { const w = document.getElementById('frame').contentWindow; w.__keys = []; w.addEventListener('keydown', e => w.__keys.push(e.key), true); });
   await A.keyboard.press('t');
-  check('pressing T opens the chat window over the game', !!(await until(() => A.evaluate(() => !!document.getElementById('frame').contentDocument.getElementById('hgc-box')), 8000)));
-  check('...and the typed t did not land in the box', await A.evaluate(() => document.getElementById('frame').contentDocument.getElementById('hgc-box').contentDocument.querySelector('input').value === ''));
-  check('...it lists the conversation and its messages', !!(await until(() => A.evaluate(() => /toast test hello/.test(document.getElementById('frame').contentDocument.getElementById('hgc-box').contentDocument.querySelector('.ls').textContent)), 10000)));
+  const dockOn = () => A.evaluate(() => document.getElementById('chatdock').classList.contains('on'));
+  check('pressing T opens the chat dock beside the game', !!(await until(dockOn, 8000)));
+  check('...and the typed t did not land in the box', await A.evaluate(() => document.getElementById('dk-in').value === ''));
+  check('...it lists the conversation and its messages', !!(await until(() => A.evaluate(() => /toast test hello/.test(document.getElementById('dk-ls').textContent)), 10000)));
   await A.keyboard.type('sent from inside tetris'); await A.keyboard.press('Enter');
   check('a message sent from the game reaches the other player', !!(await until(() => appB.$eval('#log', e => e.innerText.includes('sent from inside tetris')), 30000)));
   check('the game never saw the keys typed into the chat', await A.evaluate(() => document.getElementById('frame').contentWindow.__keys.filter(k => k !== 't').length === 0), await A.evaluate(() => document.getElementById('frame').contentWindow.__keys.join('')));
   await A.keyboard.press('Escape'); await A.waitForTimeout(300);
-  check('Escape closes it', await A.evaluate(() => !document.getElementById('frame').contentDocument.getElementById('hgc-box')));
+  check('Escape closes it', !(await dockOn()));
   // a live message while the box is open appears in it, without a pop-up for that conversation
   await A.keyboard.press('t');
   await say(appB, 'live line');
-  check('a message that arrives while the window is open shows up in it', !!(await until(() => A.evaluate(() => /live line/.test(document.getElementById('frame').contentDocument.getElementById('hgc-box').contentDocument.querySelector('.ls').textContent)), 20000)));
+  check('a message that arrives while the window is open shows up in it', !!(await until(() => A.evaluate(() => /live line/.test(document.getElementById('dk-ls').textContent)), 20000)));
   await A.keyboard.press('Escape');
 
   const [pop] = await Promise.all([A.context().waitForEvent('page', { timeout: 15000 }).catch(() => null), A.click('#newtab')]);

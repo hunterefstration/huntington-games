@@ -14,7 +14,10 @@ function dockOpen(convId) {
   try { var gd = frame.contentDocument; gd && gd.exitPointerLock && gd.exitPointerLock(); } catch (e) {}
   if (!chatApi()) gvStartApp();
   dockPaint(true);
-  setTimeout(function () { var i = document.getElementById('dk-in'); if (i) i.focus(); }, 60);
+  // take the keyboard away from the game (T is pressed inside its frame, which has focus): the frame's own
+  // blur is not enough in Chrome, so focus the launcher window first, then the box, and again a moment later
+  var grab = function () { var i = document.getElementById('dk-in'); if (!i || !DOCK.open) return; try { window.focus(); } catch (e) {} i.focus(); };
+  grab(); setTimeout(grab, 60); setTimeout(grab, 250);
   clearInterval(DOCK.timer); DOCK.timer = setInterval(function () { if (DOCK.open) dockPaint(); }, 1500);
 }
 function dockClose() {

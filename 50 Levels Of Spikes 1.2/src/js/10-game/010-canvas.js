@@ -22,7 +22,7 @@ const editorBar = document.getElementById('editorBar');
 const pauseBtn = document.getElementById('pauseBtn');
 const modal = document.getElementById('modal');
 const toastEl = document.getElementById('toast');
-const ALL_SCREENS = [startScreen, deathScreen, victoryScreen, pauseScreen, clearScreen, levelSelectScreen, customScreen, whatsNewScreen];
+const ALL_SCREENS = [startScreen, deathScreen, victoryScreen, pauseScreen, clearScreen, levelSelectScreen, customScreen, whatsNewScreen, document.getElementById('mpScreen'), document.getElementById('mpResults')];
 
 
 const GRAVITY = 0.6;
@@ -33,7 +33,7 @@ let MAX_SPEED = 6;          // only ever changed by the window.__spikes.setPhys 
 let JUMP_FORCE = -11.5;     // (same)
 const MAX_LEVELS = 100;
 const GENERATED_LEVELS = 50; // levels 1-50 get a fresh layout every try; 51-100 are hand-built (HAND_LEVELS)
-const GAME_VERSION = '2.1';
+const GAME_VERSION = '2.2';
 
 // Hand-built levels and the editor use a tile grid: 30px tiles, 18 rows (= the 540px screen height)
 const TILE = 30;

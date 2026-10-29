@@ -334,3 +334,17 @@
             button.ed-btn { padding: 0 5px; font-size: 0.65rem; }
         }
     
+/* multiplayer */
+#mpJoinCode { width: 140px; font: 700 1.1rem "Segoe UI", sans-serif; text-align: center; letter-spacing: .15em; padding: 8px; border-radius: 10px; border: 2px solid #334155; background: #0f172a; color: #fff; }
+.mp-code { font-size: 1.1rem; margin: 6px 0; } .mp-code b { color: #facc15; font-size: 1.8rem; letter-spacing: .2em; }
+.mp-set { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: center; margin: 8px 0; }
+.mp-set label { display: flex; flex-direction: column; font-size: .8rem; color: #94a3b8; gap: 3px; }
+.mp-set select { background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 6px; font-size: .95rem; }
+#mpPeople { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; max-width: 560px; }
+.mp-chip { background: rgba(255,255,255,.08); border-radius: 999px; padding: 4px 10px; font-size: .9rem; display: inline-flex; align-items: center; gap: 6px; }
+.mp-chip i, .mp-row i, #mpBoard i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; }
+.mp-chip small, .mp-row small { color: #94a3b8; }
+#mpResRows { min-width: min(420px, 90vw); }
+.mp-row { display: flex; justify-content: space-between; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.1); font-size: 1.1rem; font-weight: 700; } .mp-row b { color: #facc15; }
+#mpBoard { position: fixed; top: 54px; right: 10px; z-index: 20; background: rgba(15, 23, 42, .78); border: 1px solid #334155; border-radius: 10px; padding: 6px 10px; font: 600 12px "Segoe UI", sans-serif; color: #e2e8f0; pointer-events: none; min-width: 150px; }
+#mpBoard div { display: flex; align-items: center; gap: 2px; } #mpBoard div b { margin-left: auto; padding-left: 10px; color: #facc15; }

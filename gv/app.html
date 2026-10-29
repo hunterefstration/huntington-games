@@ -4030,9 +4030,9 @@ const lastNotify = new Map();      // convId -> when we last popped a desktop no
 function maybeNotify(c, m){
   if (m.userId === S.userId || SET.muteAll) return;
   const now = Date.now();
-  if (now - (lastNotify.get(m.convId) || 0) < 4000) return;   // one per conv per 4s
   if (S.mutes.has(m.displayName) || S.blocks.has(m.displayName)) return;
   const mention = namesMe(m) || c.kind === 'dm';
+  if (!mention && now - (lastNotify.get(m.convId) || 0) < 4000) return;   // one per conv per 4s (your name / a DM always gets through)
   const level = c.notify || 'all';
   if (level === 'silent') return;
   if (level === 'mentions' && !mention) return;

@@ -14,7 +14,7 @@ function collideX(dx) {
         const list = platBuckets[b];
         for (let i = 0; i < list.length; i++) {
             const p = list[i];
-            if (!p.active || !overlapsPlayer(p)) continue;
+            if (!p.active || (player.od && player.od[p.group]) || !overlapsPlayer(p)) continue;
             if (p.type === T_DOOR && player.keys > 0) { openDoor(p); continue; }
             if (dx > 0) player.x = p.x - player.w;
             else player.x = p.x + p.w;
@@ -29,7 +29,7 @@ function collideY() {
         const list = platBuckets[b];
         for (let i = 0; i < list.length; i++) {
             const p = list[i];
-            if (!p.active || !overlapsPlayer(p)) continue;
+            if (!p.active || (player.od && player.od[p.group]) || !overlapsPlayer(p)) continue;
             if (p.type === T_DOOR && player.keys > 0) { openDoor(p); continue; }
             if (player.vy > 0) {
                 player.y = p.y - player.h;
@@ -119,12 +119,15 @@ function checkZones() {
 
 
 // One fixed 60Hz step. Returns 0 = keep playing, 1 = died, 2 = reached the goal.
-function updatePhysics() {
+function updatePhysics() { worldStep(); return bodyStep(); }
+// the world moves once a frame; bodyStep moves whoever `player` is (in multiplayer the bots take turns being it)
+function worldStep() {
     levelTick++;
     if (movers.length) updateMovers();
     if (saws.length) updateSaws();
     if (crumbles.length) updateCrumbles();
-
+}
+function bodyStep() {
     let carryX = 0;
     if (player.groundKind === 2) {
         const m = movers[player.groundIdx];
@@ -215,18 +218,18 @@ function updatePhysics() {
     }
     for (let i = 0; i < keyItems.length; i++) {
         const k = keyItems[i];
-        if (!k.taken && overlapsPlayer(k)) {
-            k.taken = true;
+        const tk = player.tk;           // a bot keeps its own list of keys, so it does not take yours
+        if (!(tk ? tk[i] : k.taken) && overlapsPlayer(k)) {
+            if (tk) tk[i] = 1; else k.taken = true;
             player.keys++;
-            updateKeyHud();
+            if (!tk) updateKeyHud();
             createParticles(k.x + 9, k.y + 11, 16, '#facc15');
         }
     }
     if (checkCollision(player, goal)) return 2;
 
 
-    const targetCamX = clampCam(player.x - canvas.width / 3);
-    camera.x += (targetCamX - camera.x) * 0.1;
+    if (!player.tk) { const targetCamX = clampCam(player.x - canvas.width / 3); camera.x += (targetCamX - camera.x) * 0.1; }
     return 0;
 }
 
@@ -297,7 +300,22 @@ const INSULTS = {
         "That landing was more of a suggestion.",
         "Spikes: famously hard to see. Wait, no, they are bright red.",
         "You died so fast the music did not notice.",
-        "Hint: the floor is the part without spikes."
+        "Hint: the floor is the part without spikes.",
+        "That spike has a 100% win rate against you. Respect it.",
+        "You jumped like the floor owed you money.",
+        "Bold of you to assume the spike would move.",
+        "The level designer is laughing. So is the spike.",
+        "Fun fact: spikes are pointy. Now you know.",
+        "You were doing so well. For about a second.",
+        "Your reaction time is buffering.",
+        "Did you blink? You blinked.",
+        "Nice try. Well. A try.",
+        "Gravity checked your homework and found errors.",
+        "That was a speedrun, just in the wrong direction.",
+        "Your cube has left the chat.",
+        "Plot armor not included.",
+        "Skill issue detected. Scanning for skill... none found.",
+        "That jump had main character energy and side character results."
     ],
     again: [
         "Death {n}. The spikes are starting a fan club.",
@@ -317,7 +335,22 @@ const INSULTS = {
         "Your reflexes called. They are on vacation.",
         "Bro really said 'what if I jump INTO it this time'.",
         "Do you want the level to just move the spikes for you?",
-        "Achievement unlocked: Spike Magnet."
+        "Achievement unlocked: Spike Magnet.",
+        "Death {n}. Your character is now on a first-name basis with that spike.",
+        "{n} times. The spike has started charging you admission.",
+        "You keep coming back. The spikes call it loyalty.",
+        "Your deaths have their own leaderboard now. You're winning it.",
+        "Have you tried jumping a little bit earlier? Or later? Or at all?",
+        "Level {lv} has seen things. Mostly you, dying.",
+        "At this rate you'll clear it by graduation.",
+        "{n} deaths. Your keyboard is filing for emotional damages.",
+        "The spikes are taking notes. On how to beat you faster.",
+        "Respawn speedrun: going great. Actual level: not so much.",
+        "That spike is not even trying anymore.",
+        "Somebody get this player a map. And a helmet.",
+        "Plan B was also bad. Try plan C.",
+        "{n} deaths and the goal is still right there. Waiting. Patiently.",
+        "You're not stuck. You're just exploring every way to fail."
     ],
     many: [
         "{n} deaths. I'm not mad, I'm just disappointed.",
@@ -331,7 +364,22 @@ const INSULTS = {
         "At {n} deaths, you are basically part of the level design.",
         "I would say 'so close', but I have seen the replay.",
         "You know you can stop, right? ...Fine. Try again.",
-        "{n} deaths. The game would like to remind you it is free and you are choosing this."
+        "{n} deaths. The game would like to remind you it is free and you are choosing this.",
+        "{n} deaths. The spikes have built you a little memorial.",
+        "Your death count is higher than your grade in this class.",
+        "{n}. The game is considering a restraining order.",
+        "I've seen bots with more hope than this.",
+        "Death {n}. The level is now legally a part of your daily routine.",
+        "{n} deaths. Teachers have finished grading faster than this.",
+        "The spike has retired. Its son took over. You died to him too.",
+        "Your future kids will hear about level {lv}.",
+        "{n} deaths. Scientists want to study you.",
+        "Even the loading screen feels bad for you.",
+        "Honestly? Iconic. {n} deaths and still going.",
+        "The goal has moved on emotionally. You have not.",
+        "{n} deaths: that's not a number, that's a lifestyle.",
+        "You are now the reason they add an Easy Mode.",
+        "The spikes have started cheering for you. Out of pity."
     ]
 };
 let insultLevelKey = '', insultDeaths = 0, lastInsult = '';

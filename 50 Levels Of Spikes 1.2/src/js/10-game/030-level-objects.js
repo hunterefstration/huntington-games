@@ -370,6 +370,7 @@ function updateCrumbles() {
 }
 
 function openDoor(p) {
+    if (player.od) { player.od[p.group] = 1; player.keys--; return; }     // a bot opens it only for itself
     const grp = doorGroups[p.group];
     for (let i = 0; i < grp.length; i++) grp[i].active = false;
     player.keys--;

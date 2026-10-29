@@ -26,7 +26,7 @@
 
     <div id="startScreen" class="overlay">
         <h1>100 Levels of Spikes</h1>
-        <div class="version-badge">v2.0 (100 Levels)</div>
+        <div class="version-badge">v2.2 · Multiplayer</div>
         <p class="subtitle">A precision platformer that gets harder every level.</p>
 
         <div class="mode-selection">
@@ -50,9 +50,44 @@
             <button class="btn-small btn-alt" id="editorMenuBtn" onclick="openCustomScreen()">Level Editor &amp; Codes</button>
             <button class="btn-small btn-grey" id="whatsNewBtn" onclick="openWhatsNew()">What's New</button>
         </div>
+        <div class="menu-row">
+            <button class="btn-small btn-green" id="mpMenuBtn">Multiplayer (people + bots)</button>
+        </div>
         <div id="statsLine" class="stats-line"></div>
     </div>
 
+
+    <div id="mpScreen" class="overlay hidden">
+        <h1 class="screen-title">Multiplayer</h1>
+        <p class="screen-note">Race your friends (and bots) through the same levels, or beat them together in Co-op.</p>
+        <div class="menu-row">
+            <button class="btn-small btn-green" id="mpHostBtn">Open a room</button>
+            <input id="mpJoinCode" maxlength="7" inputmode="numeric" placeholder="6-digit code" autocomplete="off">
+            <button class="btn-small" id="mpJoinBtn">Join</button>
+        </div>
+        <div id="mpStatus" class="screen-note"></div>
+        <div id="mpLobby" class="hidden">
+            <div class="mp-code">Room code <b id="mpCode"></b></div>
+            <div class="mp-set">
+                <label>Mode <select id="mpMode"><option value="race">Race (competitive)</option><option value="coop">Co-op</option></select></label>
+                <label>People <select id="mpPeopleN"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option></select></label>
+                <label>Bots <select id="mpBotsN"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>9</option></select></label>
+                <label>First level <select id="mpStartLv"></select></label>
+                <label>Rounds <select id="mpRounds"><option>3</option><option>5</option><option>10</option><option>20</option></select></label>
+            </div>
+            <div id="mpPeople"></div>
+            <button id="mpStartBtn" class="hidden">Start</button>
+            <p id="mpWaitNote" class="screen-note hidden">Waiting for the host to start...</p>
+        </div>
+        <div class="menu-row"><button class="btn-small btn-grey" id="mpBackBtn">Back</button></div>
+    </div>
+
+    <div id="mpResults" class="overlay hidden">
+        <h1 class="screen-title" id="mpResTitle">Game over</h1>
+        <div id="mpResRows"></div>
+        <div class="menu-row"><button class="btn-small btn-green hidden" id="mpAgainBtn">Back to the room</button><button class="btn-small btn-grey" id="mpResLeaveBtn">Leave</button></div>
+    </div>
+    <div id="mpBoard" class="hidden"></div>
 
     <div id="deathScreen" class="overlay hidden">
         <h1 id="deathHeader" style="color: var(--danger-color); text-shadow: 0 0 15px var(--danger-color);">You Died</h1>
@@ -117,9 +152,16 @@
 
 
     <div id="whatsNewScreen" class="overlay hidden">
-        <h1 class="screen-title">What's New in v2.0</h1>
+        <h1 class="screen-title">What's New</h1>
         <div class="news-box">
-            <h3>100 Levels!</h3>
+            <h3>v2.2: Multiplayer</h3>
+            <ul>
+                <li><b>Race</b> your friends to the goal (5, 3, 2 and 1 points), or play <b>Co-op</b> and get everyone through.</li>
+                <li><b>Bots</b> fill the room: the host picks how many people can join and how many bots play.</li>
+                <li><b>Music</b> (press M to turn it on or off) and a <b>new world every 20 levels</b>: Midnight Grid, Sunset Dunes, Deep Sea, Toxic Lab and Inferno.</li>
+                <li>Dozens of new roasts when you die.</li>
+            </ul>
+            <h3>v2.0: 100 Levels!</h3>
             <ul>
                 <li>50 brand-new hand-built levels (51-100) after the original 50.</li>
                 <li>7 new mechanics, introduced one at a time: <b>moving platforms</b>, <b>bounce pads</b>, <b>crumbling blocks</b>, <b>conveyor belts</b>, <b>rotating saws</b>, <b>keys &amp; doors</b> and <b>gravity-flip zones</b> - then mixed together for the final stretch.</li>

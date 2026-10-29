@@ -176,6 +176,7 @@ html[data-base] { --dim: color-mix(in srgb, var(--text) 62%, var(--ground)); }
 #gvapp { width: 100%; height: 100%; border: 0; display: block; background: var(--ground); }
 body.chat #hub { position: relative; z-index: 6; pointer-events: none; padding-bottom: 0; }
 body.chat #topbar { pointer-events: auto; }
+@media (max-width: 1100px) { #tabs { order: 3; flex: 1 1 100%; } #chip { margin-left: auto; } }
 @media (max-width: 760px) { #topbar { gap: 0 12px; } #tabs { order: 3; flex: 1 1 100%; overflow-x: auto; } .tab { padding: 10px 10px; letter-spacing: .1em; } #chip { margin-left: auto; } }
 body.chat #hub > #view-games, body.chat #hub > #view-acct { display: none; }
 body.chat { overflow: hidden; }
@@ -338,6 +339,8 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
 .shot img { transition: transform .35s ease; } .game:hover .shot img { transform: scale(1.06); }
 .playov { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.9); background: rgba(0,0,0,.6); color: #fff; font-weight: 900; padding: 10px 18px; border-radius: 999px; opacity: 0; transition: opacity .15s, transform .15s; pointer-events: none; letter-spacing: .05em; }
 .game:hover .playov { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+@media (max-width: 560px) { #tabs { flex-wrap: wrap; overflow: visible; } .tab { padding: 9px 8px; letter-spacing: .06em; } }
 </style>
 </head>
 <body>
@@ -439,7 +442,7 @@ var GAMES = [
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon 2.1', img: 'coffee', tags: ['New', 'Tycoon'], desc: 'NEW 2.1: every city has its own local specials and a local ingredient you can only buy there (Maple Lattes at home, Coconut Iced Coffee at the beach, Nitro Cold Brew downtown, Gold Leaf Hot Chocolate on the slopes...). 2.0: open shops in 5 new cities, invent drinks in the Recipe Lab, train staff with skill trees, and run a franchise chain with managers. Random events with choices, decorations, seasons and holidays, an 8-chapter career story and a latte art mini-game. Build, staff and grow a chain of coffee shops.' },
   { dir: 'Tetris', name: 'Tetris Surge 2.0', img: 'tetris', tags: ['New', 'Puzzle'], desc: 'NEW 2.0: climb the rank ladder in Surge, Sprint, Ultra and Marathon. 14 new perks, 5 new bosses, a Daily Challenge with streaks, 55 achievements, and a 70-puzzle Puzzle mode with stars, undo and hints. Plus 12 block skins, 8 backgrounds and Hold and T-Spin tutorials. Still a rogue-lite run with power blocks, plus Marathon, Sprint, Ultra and Zen.' },
   { dir: 'Market Life 1.9', name: 'Market & Life 2.1', img: 'market', tags: ['New', 'Sim'], desc: 'NEW 2.1: join the military (enlist, or become an officer through the Academy, ROTC or Officer Training School), transfer from community college, stay for a master\'s, and 14 new life events. 2.0: live a whole life, from school and 22 degree programs to careers, homes, cars, family and retirement, then see your Life Score in the Hall of Lives. Trade 42 stocks and cryptos with charts, news, dividends and limit orders, save in bonds, and run 10 kinds of business. Plus 33 achievements and a Stats page.', credit: 'Original game by Robbie' },
-  { dir: '50 Levels Of Spikes 1.2', name: '100 Levels of Spikes 2.1', img: 'spikes', tags: ['New', 'Platformer'], desc: 'NEW 2.1: the game now roasts you every time you die, and gets meaner the more you die on the same level. 2.0: 50 new levels (51-100) with moving platforms, bounce pads, saws, keys and doors, conveyors and gravity flips, plus a Level Editor with share codes, saved progress and level select.' },
+  { dir: '50 Levels Of Spikes 1.2', name: '100 Levels of Spikes 2.2', img: 'spikes', tags: ['New', 'Platformer', 'Multiplayer'], desc: 'NEW 2.2: Multiplayer! Race your friends or beat levels together in Co-op, and fill the room with bots (the host picks how many people and bots). Plus music, a new world every 20 levels (sunset dunes, deep sea, toxic lab, inferno) and a lot more roasts when you die.' },
   { dir: 'Brown E Clicker', name: 'Brown E Clicker 2.0', img: 'clicker', tags: ['New', 'Clicker'], desc: 'NEW 2.0: 24 new buildings, 287 upgrades, Golden E bonuses and seasonal events, 158 achievements and offline earnings. Ascend for Heavenly Chips and spend them in a 45-node Prestige Tree, take on Challenge Runs, and play the E Garden and E-Goods Market minigames. Plus 28 skins and backgrounds and a news ticker. Click the E. Buy upgrades. Ascend.' },
   { dir: 'Coffee Shop Tycoon Legacy', name: 'Bean & Brew Classic', img: 'legacy', tags: ['Tycoon'], desc: 'The original coffee shop tycoon.', credit: 'Made by Robbie' },
   { dir: 'Levi Dash By Levi 2.0', noChat: true, name: 'Neon Dash 2.0', img: 'neondash', tags: ['Platformer'], desc: 'Neon Dash: Ultimate Edition. Jump the neon spikes, keep your streak going, beat your score and sign the Hall of Fame.', credit: 'Made by Levi' }
@@ -1218,7 +1221,7 @@ window.HG_notify = function (n) {
 // A game asks for the chats it can invite into (HG_inviteTargets) and sends an invite (HG_sendInvite): a normal chat
 // message ending in "hg-invite:<game>:<party code>", so it reads fine in the Grapevine app too. When one arrives the
 // pop-up shows a JOIN button: it opens the game (or tells the open one) and the game collects the code with HG_takeJoin.
-var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline', imposter: 'Imposter', lumi: 'Last Light' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
+var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline', imposter: 'Imposter', lumi: 'Last Light', spikes: '50 Levels Of Spikes 1.2' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
 function inviteGame(id) { var d = INVITE_GAMES[id]; return d ? GAMES.filter(function (g) { return g.dir === d; })[0] || null : null; }
 window.HG_inviteTargets = function () {
   var api = chatApi(); if (!api) return [];
@@ -2020,7 +2023,10 @@ function dockOpen(convId) {
   try { var gd = frame.contentDocument; gd && gd.exitPointerLock && gd.exitPointerLock(); } catch (e) {}
   if (!chatApi()) gvStartApp();
   dockPaint(true);
-  setTimeout(function () { var i = document.getElementById('dk-in'); if (i) i.focus(); }, 60);
+  // take the keyboard away from the game (T is pressed inside its frame, which has focus): the frame's own
+  // blur is not enough in Chrome, so focus the launcher window first, then the box, and again a moment later
+  var grab = function () { var i = document.getElementById('dk-in'); if (!i || !DOCK.open) return; try { window.focus(); } catch (e) {} i.focus(); };
+  grab(); setTimeout(grab, 60); setTimeout(grab, 250);
   clearInterval(DOCK.timer); DOCK.timer = setInterval(function () { if (DOCK.open) dockPaint(); }, 1500);
 }
 function dockClose() {

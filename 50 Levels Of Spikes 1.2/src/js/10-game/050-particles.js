@@ -212,8 +212,8 @@ function drawGoalShape(g, x, y) {
     g.fillRect(x + 10, y + 10, goal.w - 20, goal.h - 20);
 }
 
-function drawPlayerShape(g, x, y, w, h, grav, vx) {
-    g.fillStyle = '#38bdf8';
+function drawPlayerShape(g, x, y, w, h, grav, vx, col) {
+    g.fillStyle = col || '#38bdf8';
     g.fillRect(x, y, w, h);
     g.fillStyle = '#fff';
     const eyeOffsetX = vx > 0 ? 4 : (vx < 0 ? -4 : 0);
@@ -243,29 +243,7 @@ function drawZoneRect(g, x, y, w, h, tick) {
 
 
 function draw() {
-    if (!bgGradient) {
-        bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        bgGradient.addColorStop(0, '#0f172a');
-        bgGradient.addColorStop(1, '#1e1b4b');
-    }
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-    ctx.save();
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)';
-    ctx.lineWidth = 1;
-    let bgOffsetX1 = -(camera.x * 0.1) % 100;
-    ctx.beginPath();
-    for (let x = bgOffsetX1; x < canvas.width; x += 100) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
-    let bgOffsetX2 = -(camera.x * 0.3) % 60;
-    ctx.beginPath();
-    for (let x = bgOffsetX2; x < canvas.width; x += 60) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
-    ctx.stroke();
-    ctx.restore();
-
+    drawThemeBg();     // the background changes every 20 levels (085-themes-music.js)
 
     ctx.save();
     const camX = Math.floor(camera.x);
@@ -367,6 +345,7 @@ function draw() {
 
 
     if (gameState !== 'DEAD') {
+        if (typeof mpDrawOthers === 'function') mpDrawOthers(ctx);
         const g = player.grav;
         ctx.fillStyle = '#38bdf8';
         ctx.shadowColor = '#38bdf8';

@@ -126,7 +126,7 @@ try {
   const tf = await (async () => { await B.evaluate(() => { [...document.querySelectorAll('.game')].find(g => /Tetris Surge/.test(g.textContent)).click(); }); return until(() => B.frames().find(f => /Tetris/.test(f.url())), 60000); })();
   await B.waitForTimeout(1500);
   await B.evaluate(() => document.getElementById('frame').contentWindow.focus()); await B.keyboard.press('t');
-  check('an invite in the T chat window has a Join button', !!(await until(() => B.evaluate(() => { const box = document.getElementById('frame').contentDocument.getElementById('hgc-box'); return box && [...box.contentDocument.querySelectorAll('.ls button')].some(b => b.textContent === 'Join'); }), 15000)));
+  check('an invite in the chat dock has a Join button', !!(await until(() => B.evaluate(() => document.getElementById('chatdock').classList.contains('on') && [...document.querySelectorAll('#dk-ls button')].some(b => b.textContent === 'Join')), 15000)));
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 await browser.close();
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');
