@@ -38,6 +38,7 @@
     <button class="btn big" id="t-play">Play</button>
     <button class="btn" id="t-settings">Settings</button>
     <button class="btn" id="t-onelife">One Life run</button>
+    <button class="btn" id="t-mp">Play together</button>
     <button class="btn" id="t-stats-btn">Stats</button>
     <button class="btn" id="t-lore-btn">People</button>
     <button class="btn" id="t-how">How to play</button>
@@ -74,6 +75,35 @@
       <button class="btn big" id="d-next">Next level</button>
     </div>
     <button class="btn small" id="d-map">Level map</button>
+  </div>
+</div>
+
+<!-- play together -->
+<div id="s-mp" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Play together</h2>
+    <p class="mpsub">Up to 6 lights in one level. Bump into people to push them, press <b>F</b> to shove.</p>
+    <div class="row">
+      <button class="btn big" id="mp-host">Open a room</button>
+      <input id="mp-join-code" maxlength="7" inputmode="numeric" placeholder="6-digit code" autocomplete="off">
+      <button class="btn" id="mp-join">Join</button>
+    </div>
+    <div id="mp-st"></div>
+    <div id="mp-lobby" class="hidden">
+      <div class="mpcode">Code <b id="mp-code"></b></div>
+      <div id="mp-people"></div>
+      <div class="row"><div id="mp-mode"></div><select id="mp-level"></select></div>
+      <button class="btn big hidden" id="mp-start">Start</button>
+      <div id="mp-wait" class="mpsub hidden">Waiting for the host to start...</div>
+    </div>
+    <button class="btn small" id="mp-back">Back</button>
+  </div>
+</div>
+<div id="s-mpres" class="screen dim hidden">
+  <div class="card wide">
+    <h2 id="mpr-t">Results</h2>
+    <div id="mpr-rows"></div>
+    <div class="row"><button class="btn big hidden" id="mpr-again">Back to the room</button><button class="btn" id="mpr-leave">Leave</button></div>
   </div>
 </div>
 

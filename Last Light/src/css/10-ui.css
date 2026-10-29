@@ -202,3 +202,13 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
 #s-done .moth-on:nth-child(1) { animation-delay: .5s; } #s-done .moth-on:nth-child(2) { animation-delay: .7s; } #s-done .moth-on:nth-child(3) { animation-delay: .9s; }
 @keyframes starpop { from { transform: scale(0) rotate(-90deg); opacity: 0; } }
 #s-done .new { animation: starpop .5s 1s both; }
+
+/* play together */
+.mpsub { opacity: .8; margin: 4px 0 12px; }
+#mp-join-code { width: 130px; font: 700 18px system-ui, sans-serif; text-align: center; letter-spacing: .15em; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: #fff; }
+#mp-st { min-height: 22px; margin: 8px 0; color: #bfe6ff; } #mp-st.bad { color: #ff9a8a; }
+.mpcode { font-size: 18px; margin: 6px 0; } .mpcode b { color: var(--gold); font-size: 28px; letter-spacing: .2em; }
+#mp-people { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 10px 0; }
+.mpp { display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: 13px; min-width: 64px; } .mpp small { color: var(--gold); }
+#mp-mode { display: flex; gap: 6px; } #mp-mode .btn.on { background: var(--gold); color: #1b1404; }
+#mp-level { padding: 8px; border-radius: 10px; background: rgba(0,0,0,.35); color: #fff; border: 1px solid var(--line); max-width: 220px; }

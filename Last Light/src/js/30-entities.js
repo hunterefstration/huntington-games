@@ -14,8 +14,8 @@ const pBox = p => ({ x: p.x - p.w / 2, y: p.y - p.h / 2, w: p.w, h: p.h });
 const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
 function updatePlayer(G, dt) {
-    const p = G.p, L = G.L, A = SAVE.d.abilities;
-    if (p.dead) { p.deadT -= dt; if (p.deadT <= 0 && !G.deathShown) { G.deathShown = true; UI.died(); } return; }
+    const p = G.p, L = G.L, A = G.mp ? MP_ABIL : SAVE.d.abilities;
+    if (p.dead) { p.deadT -= dt; if (G.mp) { if (p.deadT <= -0.6) { respawn(G); Input.clear(); } return; } if (p.deadT <= 0 && !G.deathShown) { G.deathShown = true; UI.died(); } return; }
     if (G.outro) { const o = G.outro; o.t += dt; p.x = lerp(p.x, o.x, Math.min(1, dt * 5)); p.y = lerp(p.y, o.y, Math.min(1, dt * 5)); p.vx = p.vy = 0;
         if (Math.random() < 0.5) burst(G, p.x + rand(-20, 20), p.y + rand(-20, 20), '#fff2c4', 1, 80, true); return; }
     ST('dist', Math.abs(p.vx) * dt / TS);
@@ -224,7 +224,7 @@ function updateWorld(G, dt) {
             case 'spring':
                 e.boing = Math.max(0, (e.boing || 0) - dt * 4);
                 if (p.vy >= 0 && Math.abs(p.x - e.x) < 18 && p.y + p.h / 2 > e.y + 2 && p.y + p.h / 2 < e.y + 18) {
-                    p.vy = -PH.spring; p.y = e.y + 2 - p.h / 2; p.ground = false; p.on = null; p.springing = true; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true;
+                    p.vy = -PH.spring; p.y = e.y + 2 - p.h / 2; p.ground = false; p.on = null; p.springing = true; p.air = (G.mp || SAVE.d.abilities.double) ? 1 : 0; p.canDash = true;
                     e.boing = 1; p.sx = 0.65; p.sy = 1.45; Sound.play('spring'); dust(G, e.x, e.y + 10, 6);
                 }
                 break;
@@ -276,7 +276,7 @@ function contact(G, e, r) {
     if (Math.abs(p.x - e.x) > r + 8 || Math.abs(p.y - e.y) > r + 12) return;
     if (p.dashT > 0) return kill(G, e);
     const fromAbove = p.vy > 60 && p.y + p.h / 2 < e.y + 2;
-    if (fromAbove && e.kind !== 'thorn') { kill(G, e); p.vy = Input.held('jump') ? -PH.stomp * 1.25 : -PH.stomp; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true; p.cut = false; p.sx = 1.3; p.sy = 0.75; return; }
+    if (fromAbove && e.kind !== 'thorn') { kill(G, e); p.vy = Input.held('jump') ? -PH.stomp * 1.25 : -PH.stomp; p.air = (G.mp || SAVE.d.abilities.double) ? 1 : 0; p.canDash = true; p.cut = false; p.sx = 1.3; p.sy = 0.75; return; }
     if (p.hurtT <= 0) hurt(G, 'enemy', e);
 }
 // a stomp: a tiny freeze, the enemy squashes flat for a moment, then pops

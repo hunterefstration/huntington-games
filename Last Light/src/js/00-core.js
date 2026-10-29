@@ -55,7 +55,7 @@ const Input = (() => {
     const down = new Set(), pressed = new Set(), touch = new Set();
     const MAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
         Space: 'jump', KeyZ: 'jump', KeyK: 'jump', ShiftLeft: 'dash', ShiftRight: 'dash', KeyX: 'dash', KeyJ: 'dash', KeyC: 'dash',
-        Escape: 'pause', KeyP: 'pause', KeyR: 'retry', Enter: 'ok', KeyE: 'ok' };
+        KeyF: 'shove', KeyV: 'shove', Escape: 'pause', KeyP: 'pause', KeyR: 'retry', Enter: 'ok', KeyE: 'ok' };
     const JUMP_TOO = { up: 1 };                            // W / Up also jump
     addEventListener('keydown', e => {
         const a = MAP[e.code]; if (!a) return;

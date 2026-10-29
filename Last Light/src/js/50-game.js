@@ -40,6 +40,7 @@ const G = {
         this.t += dt; this.iris = Math.min(1, (this.iris ?? 1) + dt * 1.5); if (this.p.spawnT > 0) this.p.spawnT -= dt;
         if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } }
         updatePlayer(this, dt);
+        if (this.mp) mpUpdate(this, dt);
         updateWorld(this, dt);
         if (this.boss) bossUpdate(this, dt);
         if (this.guard) guardUpdate(this, dt);
@@ -78,6 +79,7 @@ const G = {
         // the gate takes you: you spin into it as the light closes in, then the results
         const gt = this.L.ents.find(e => e.kind === 'gate'); this.outro = { t: 0, x: gt ? gt.x : this.p.x, y: gt ? gt.y - 10 : this.p.y };
         burst(this, this.outro.x, this.outro.y, '#fff2c4', 40, 260, true);
+        if (this.mp) { this.p.vx = 0; mpFinished(this.time); return; }       // playing together: no records, the host collects the finish order
         const def = this.L.def, rec = SAVE.d.levels[def.id] || { best: null, moths: [false, false, false], sparks: 0, clears: 0 };
         const best = rec.best == null || this.time < rec.best, mothsBefore = rec.moths.filter(Boolean).length;
         rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);

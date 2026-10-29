@@ -191,17 +191,25 @@ function glowSprite(color, size = 128) {
 const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
 
 // ---------- sprites ----------
+// light colours for multiplayer: flame, flame core, body, body edge (0 = Last Light's own gold)
+const LUMI_PALS = [['#ffb347', '#ffe9a8', '#ffe29a', '#ffae42'], ['#4fd2ff', '#c9f4ff', '#b6ecff', '#3aa8e0'], ['#ff6fb5', '#ffd1ea', '#ffc0df', '#e8509a'],
+  ['#7ee06b', '#dcffd2', '#c8f5b8', '#4fb83c'], ['#b48cff', '#e6dbff', '#d6c4ff', '#8a5ce0'], ['#ff6b5a', '#ffd6cf', '#ffc0b5', '#e04a3a']];
 const Sprites = {
+    // p.pal / p.shape: in multiplayer every player is a different light (a colour and a flame shape, see 48-mp.js)
     lumi(x, p, t) {
-        const sx = p.sx, sy = p.sy, f = p.face;
+        const sx = p.sx, sy = p.sy, f = p.face, P = LUMI_PALS[p.pal || 0], shape = p.shape || 0;
         x.save(); x.translate(p.x, p.y + 13 - 13 * sy + 1); x.scale(sx, sy);
-        // flame tuft
-        const fl = Math.sin(t * 14) * 2, fl2 = Math.cos(t * 11) * 2;
-        x.fillStyle = '#ffb347';
-        x.beginPath(); x.moveTo(-7, -6); x.quadraticCurveTo(-8 + fl, -20, -1 - f * 3 + fl2, -27 - Math.abs(p.vy) * 0.008); x.quadraticCurveTo(3 + fl, -16, 7, -6); x.closePath(); x.fill();
-        x.fillStyle = '#ffe9a8'; x.beginPath(); x.moveTo(-4, -6); x.quadraticCurveTo(-4 + fl2, -15, -f * 2, -20); x.quadraticCurveTo(2 + fl, -12, 4, -6); x.closePath(); x.fill();
+        // flame tuft (one, two, a crown of three, or a curl)
+        const fl = Math.sin(t * 14) * 2, fl2 = Math.cos(t * 11) * 2, tip = -27 - Math.abs(p.vy) * 0.008;
+        x.fillStyle = P[0];
+        const tuft = (dx, h, w) => { x.beginPath(); x.moveTo(dx - w, -6); x.quadraticCurveTo(dx - w - 1 + fl, -6 + (tip + 6) * 0.55 * h, dx - 1 - f * 3 + fl2, -6 + (tip + 6) * h); x.quadraticCurveTo(dx + 3 + fl, -6 + (tip + 6) * 0.4 * h, dx + w, -6); x.closePath(); x.fill(); };
+        if (shape === 1) { tuft(-4, 0.8, 5); tuft(4, 0.95, 5); }
+        else if (shape === 2) { tuft(-6, 0.6, 4); tuft(0, 1, 5); tuft(6, 0.6, 4); }
+        else if (shape === 3) { x.beginPath(); x.moveTo(-7, -6); x.bezierCurveTo(-10, -22, 10 - f * 4 + fl, -30, 2 + fl2, -18); x.quadraticCurveTo(6, -12, 7, -6); x.closePath(); x.fill(); }
+        else tuft(0, 1, 7);
+        x.fillStyle = P[1]; x.beginPath(); x.moveTo(-4, -6); x.quadraticCurveTo(-4 + fl2, -15, -f * 2, -20); x.quadraticCurveTo(2 + fl, -12, 4, -6); x.closePath(); x.fill();
         // body
-        const g = x.createRadialGradient(-3, -3, 1, 0, 0, 13); g.addColorStop(0, '#fffdf0'); g.addColorStop(0.55, '#ffe29a'); g.addColorStop(1, '#ffae42');
+        const g = x.createRadialGradient(-3, -3, 1, 0, 0, 13); g.addColorStop(0, '#fffdf0'); g.addColorStop(0.55, P[2]); g.addColorStop(1, P[3]);
         x.fillStyle = g; x.beginPath(); x.ellipse(0, 0, 12, 12.5, 0, 0, 7); x.fill();
         x.fillStyle = 'rgba(255,140,40,.35)'; x.beginPath(); x.ellipse(0, 6, 9, 5, 0, 0, Math.PI); x.fill();
         // eyes look where Lumi is going

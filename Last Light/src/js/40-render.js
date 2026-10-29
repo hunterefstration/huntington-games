@@ -88,6 +88,7 @@ function render(G) {
     for (const b of G.shots) b.shadow ? Sprites.shadowOrb(x, b, t) : b.style ? drawGShot(x, b, t) : Sprites.orb(x, b, t);
     // dash after-images
     for (const g of G.ghosts) { x.save(); x.globalAlpha = g.life / 0.22 * 0.45; x.globalCompositeOperation = 'lighter'; Sprites.lumi(x, { x: g.x, y: g.y, sx: g.sx, sy: g.sy, face: g.face, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0 }, t); x.restore(); }
+    mpDraw(x, t);
     const P = G.p;
     if (P.spawnT > 0) {      // arriving: a beam of light and you pop into being
         const a = clamp(P.spawnT / 0.75, 0, 1), g = x.createLinearGradient(0, P.y - 400, 0, P.y + 16); g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(1, `rgba(255,240,200,${a * 0.7})`);

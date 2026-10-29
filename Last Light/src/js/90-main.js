@@ -23,9 +23,9 @@ on('how-done', () => UI.show(G.state === 'paused' ? 'pause' : 'title'));
 on('m-back', () => { G.run = null; G.state = 'title'; UI.show('title'); titleStats(); });
 on('b-pause', () => UI.pause());
 on('p-resume', () => UI.resume());
-on('p-restart', () => { G.run = null; fadeTo(() => G.start(G.idx)); });      // (ends a One Life run: no free retries)
+on('p-restart', () => { G.run = null; if (G.mp) mpReset(); fadeTo(() => G.start(G.idx)); });      // (ends a One Life run: no free retries)
 on('p-settings', () => UI.settings('pause'));
-on('p-map', () => { G.run = null; fadeTo(() => UI.map()); });
+on('p-map', () => { G.run = null; if (G.mp) mpReset(); fadeTo(() => UI.map()); });
 on('d-retry', () => fadeTo(() => G.start(G.idx)));
 on('d-next', () => fadeTo(() => G.start(G.idx + 1)));
 on('d-map', () => fadeTo(() => UI.map()));
@@ -48,6 +48,7 @@ function titleStats() {
     $('#t-play').textContent = done ? 'Continue' : 'Play';
 }
 titleStats();
+mpBind();
 
 // fixed-step loop: physics at 120 Hz, drawing once per screen refresh
 let last = performance.now(), acc = 0, titleT = 0, fpsT = 0, fpsN = 0, slowFrames = 0;
@@ -83,7 +84,7 @@ setTimeout(() => { const s = $('#splash'); if (!s) return; s.classList.add('out'
 
 // test hook (used by the launcher's automated tests)
 window.__lumi = {
-    get G() { return G; }, LEVELS, SAVE, R,
+    get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R,
     start: i => G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i),
     step(sec, keys = {}) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { for (const k in keys) Input.touchSet(k, !!keys[k]); G.update(STEP); Input.endFrame(); } for (const k in keys) Input.touchSet(k, false); },
     key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
