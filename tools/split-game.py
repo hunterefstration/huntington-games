@@ -12,7 +12,8 @@ import os, re, sys, subprocess
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 GAME = sys.argv[1]
-DIR = os.path.join(ROOT, GAME); SRC = os.path.join(DIR, 'src'); OUT = os.path.join(DIR, 'index.html')
+SRCNAME = sys.argv[sys.argv.index('--src') + 1] if '--src' in sys.argv else 'src'      # the launcher: --src launcher
+DIR = os.path.join(ROOT, GAME); SRC = os.path.join(DIR, SRCNAME); OUT = os.path.join(DIR, 'index.html')
 orig = open(OUT, encoding='utf-8', newline='').read()
 hg = re.search(r'\n<!--HG-->[\s\S]*?<!--/HG-->', orig)
 html = orig[:hg.start()] + orig[hg.end():] if hg else orig
@@ -87,7 +88,7 @@ open(os.path.join(SRC, 'shell.html'), 'w', encoding='utf-8', newline='').write('
 if not os.listdir(os.path.join(SRC, 'css')): os.rmdir(os.path.join(SRC, 'css'))
 
 # the proof: rebuild and compare with the original, byte for byte
-subprocess.run(['node', os.path.join(ROOT, 'tools', 'build-game.js'), GAME, '--check'], check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
+subprocess.run(['node', os.path.join(ROOT, 'tools', 'build-game.js'), GAME, '--check'] + (['--src', SRCNAME] if SRCNAME != 'src' else []), check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
 new = open(OUT, encoding='utf-8', newline='').read()
 if new != orig:
     open(OUT, 'w', encoding='utf-8', newline='').write(orig)

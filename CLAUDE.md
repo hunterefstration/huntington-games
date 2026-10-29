@@ -25,6 +25,8 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
   `node tools/build-game.js "<game dir>" --check` and commit the sources and the rebuilt `index.html` together.
   Sovereign, Blocky Shooter V2 and Last Light join `src/js/*.js` into one module (`<!--@js-->`); the older games were split
   by `tools/split-game.py` and paste their pieces back in verbatim (`<!--@inline js/10-game/-->`), plain scripts and all.
+- The launcher hub too: edit `launcher/` (shell.html, css/, js/10-hub/ pieces), then `node tools/build-game.js . --src launcher --check`.
+  Grapevine: edit `grapevine/src/`, then `node tools/build.mjs --check` there (see grapevine/CLAUDE.md), then `bash tools/sync-grapevine.sh` here.
 - `tools/setup-tools.sh` once per container (obfuscator, offline three.js and Tailwind for tests, in `/tmp/hg-tools`).
 - `tools/release.sh prepare|finish` for releases; licence tests in `tools/tests/gate.js` and `gate2.js`.
 - Playwright: `NODE_PATH=/opt/node22/lib/node_modules`, launch Chromium with

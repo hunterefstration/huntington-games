@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-base="dark" data-flavor="amber">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huntington Games Launcher</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style><!--@inline css/10-style.css--></style>
+</head>
+<body>
+<div id="hub">
+  <div id="topbar">
+    <h1>HUNTINGTON GAMES LAUNCHER</h1>
+    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
+    <button id="chip" title="Grapevine"><span class="cdot" id="chip-dot"></span><span class="nm" id="chip-nm"></span></button>
+  </div>
+  <div id="view-games">
+  <div class="sub">Pick a game.</div>
+  <div class="grid" id="grid"></div>
+  <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
+  <div class="note" id="note"></div>
+  </div>
+  <div id="view-acct" hidden></div>
+  <div id="view-mp" hidden>
+    <div id="mp-home">
+      <div class="mp-hero">
+        <h2>Play together</h2>
+        <div class="rdesc">Type <b>any</b> 6-digit code. Everyone who types the same code ends up in the same room, where you can chat and start a game together. A code from a friend's <b>Go live</b> button lets you watch their game.</div>
+        <div class="mp-codebox"><input id="mp-code" inputmode="numeric" maxlength="7" placeholder="123456" autocomplete="off" spellcheck="false"><button id="mp-go">Go</button></div>
+        <div class="mp-row"><button id="mp-new" class="mp-ghost">Make a room for me</button></div>
+        <div id="mp-status" class="rdesc"></div>
+      </div>
+    </div>
+    <div id="mp-room" hidden>
+      <div class="mp-roomtop"><div><div class="mp-lbl">Room</div><div id="mp-roomcode" class="mp-big"></div></div><button id="mp-leave" class="mp-ghost">Leave room</button></div>
+      <div class="mp-cols">
+        <div class="mp-col"><div class="mp-lbl">In this room</div><div id="mp-people"></div>
+          <div class="mp-lbl" style="margin-top:14px">Start a game for everyone</div><div id="mp-games"></div><div id="mp-plays"></div></div>
+        <div class="mp-col mp-chat"><div class="mp-lbl">Room chat</div><div id="mp-log"></div><div class="mp-say"><input id="mp-msg" maxlength="200" placeholder="Say something..." autocomplete="off"><button id="mp-send">Send</button></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="watch" hidden><div class="box"><div class="wtop"><span id="w-title">Watching</span><span id="w-stat"></span><button id="w-close">Stop watching</button></div><div class="wscreen"><video id="w-video" autoplay playsinline muted></video><img id="w-img" alt=""><div id="w-wait">Connecting to the game...</div></div></div></div>
+<div id="view-chat" hidden><iframe id="gvapp" title="Grapevine" allow="clipboard-write"></iframe></div>
+<div id="gate" hidden><div id="gate-box"></div></div>
+<div id="tour" hidden><div class="box"></div></div>
+<div id="offdlg"><div class="box"><h2 id="offdlg-title">Offline copy</h2><div id="offdlg-text"></div><div class="btns"><button id="offdlg-again">Download again</button><button id="offdlg-tab">Open in a new tab</button><button id="offdlg-close">Close</button></div></div></div>
+<button id="exp-btn" title="Prototypes and older games">experimental</button>
+<div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
+<div id="player">
+  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><span id="chathint"></span><span id="livestat"></span><button id="golive" title="Let friends watch this game with a code">Go live</button><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
+  <iframe id="frame" allow="fullscreen; pointer-lock; autoplay; gamepad" allowfullscreen></iframe>
+</div>
+<script><!--@inline js/10-hub/--></script>
+</body>
+</html>

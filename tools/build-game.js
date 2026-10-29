@@ -11,9 +11,10 @@
 // --check then syntax-checks each inlined script on its own (as a module if its tag is type="module").
 // Games built this way: all of them (Sovereign, Blocky Shooter V2 and Last Light use the joined <!--@js--> module).
 const fs = require('fs'), path = require('path'), cp = require('child_process'), os = require('os');
-const GAME = process.argv.slice(2).find(a => !a.startsWith('--'));
+const SRCNAME = process.argv.includes('--src') ? process.argv[process.argv.indexOf('--src') + 1] : 'src';     // the launcher: . --src launcher
+const GAME = process.argv.slice(2).find((a, i, all) => !a.startsWith('--') && all[i - 1] !== '--src');
 if (!GAME) { console.error('usage: node tools/build-game.js "<game dir>" [--check]'); process.exit(1); }
-const DIR = path.join(__dirname, '..', GAME), SRC = path.join(DIR, 'src'), OUT = path.join(DIR, 'index.html');
+const DIR = path.join(__dirname, '..', GAME), SRC = path.join(DIR, SRCNAME), OUT = path.join(DIR, 'index.html');
 const DATA_PREFIX = { Sovereign: 'sov' }[GAME] || GAME.toLowerCase().replace(/[^a-z0-9]+/g, '');
 const list = (d, ext) => fs.existsSync(d) ? fs.readdirSync(d).filter(f => f.endsWith(ext)).sort().map(f => path.join(d, f)) : [];
 const read = f => fs.readFileSync(f, 'utf8');
