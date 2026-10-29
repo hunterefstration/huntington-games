@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Element Lab</title>
+<style>
+:root { --bg: #0b0e17; --panel: #121827; --panel2: #1a2236; --line: #2a3550; --txt: #e8edf8; --dim: #8b97b5; --acc: #ff9d3c; --acc2: #ffd36b; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--txt);
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; font-size: 14px; user-select: none; -webkit-user-select: none; }
+.hidden { display: none !important; }
+#app { display: flex; flex-direction: column; height: 100%; }
+#top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
+#brand { font-weight: 800; letter-spacing: .06em; font-size: 17px; text-transform: uppercase; color: var(--txt); }
+#brand b { color: var(--acc); }
+.grp { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.tb { font: inherit; font-weight: 700; font-size: 13px; color: var(--txt); background: var(--panel2); border: 1px solid var(--line); border-radius: 7px;
+  padding: 5px 9px; cursor: pointer; }
+.tb:hover { border-color: var(--acc); }
+.tb.on { background: var(--acc); color: #1b1004; border-color: var(--acc2); }
+#size label { color: var(--dim); font-size: 12px; }
+#size input { width: 90px; accent-color: var(--acc); }
+#size-v { min-width: 18px; color: var(--acc2); font-weight: 700; }
+#main { flex: 1; display: flex; min-height: 0; }
+#stage { flex: 1; min-width: 0; position: relative; display: flex; align-items: center; justify-content: center; padding: 4px; }
+#wrap { position: relative; background: #0e121e; box-shadow: 0 0 0 1px var(--line), 0 8px 30px rgba(0,0,0,.5); touch-action: none; cursor: crosshair; }
+#wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
+#glow { image-rendering: auto !important; mix-blend-mode: screen; opacity: .85; }
+#cursor { position: absolute; border: 1px solid rgba(255,255,255,.75); border-radius: 50%; pointer-events: none; display: none; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+#hover { position: absolute; left: 8px; bottom: 6px; padding: 3px 9px; font-size: 12px; background: rgba(10,14,24,.78); border: 1px solid var(--line); border-radius: 6px; color: var(--txt); pointer-events: none; }
+#side { width: 276px; flex: none; display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--line); padding: 6px; gap: 6px; min-height: 0; }
+#cats { display: flex; flex-wrap: wrap; gap: 3px; }
+#cats .tb { padding: 3px 7px; font-size: 12px; }
+#search { font: inherit; padding: 6px 8px; background: #0d1220; color: var(--txt); border: 1px solid var(--line); border-radius: 7px; user-select: text; -webkit-user-select: text; }
+#els { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; align-content: start; padding-right: 2px; }
+.el { font: inherit; font-weight: 800; font-size: 12px; border: 2px solid rgba(0,0,0,.35); border-radius: 8px; padding: 9px 2px; cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0,0,0,.45); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.el:hover { filter: brightness(1.15); }
+.el.sel { border-color: #fff; box-shadow: 0 0 0 2px var(--acc), 0 0 12px rgba(255,157,60,.6); }
+#toast { position: fixed; left: 50%; top: 64px; transform: translateX(-50%); background: rgba(12,16,28,.95); border: 1px solid var(--acc); color: var(--txt);
+  padding: 8px 16px; border-radius: 10px; font-weight: 700; pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 80; max-width: 90vw; text-align: center; }
+#toast.on { opacity: 1; }
+
+.screen { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#title { background: radial-gradient(ellipse at 50% 100%, rgba(255,120,30,.35), rgba(8,10,20,.82) 60%), rgba(8,10,20,.55); }
+.tbg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.tbg i { position: absolute; bottom: -10px; width: 6px; height: 6px; background: var(--acc); border-radius: 1px; opacity: 0; animation: rise 4s linear infinite; }
+@keyframes rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-80vh) translateX(30px); opacity: 0; } }
+.logo { position: relative; text-align: center; line-height: .9; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.logo .l1 { display: block; font-size: min(11vw, 84px); color: #f4f7ff; text-shadow: 0 4px 0 #2a3550, 0 0 30px rgba(120,170,255,.4); }
+.logo .l2 { display: block; font-size: min(14vw, 110px); background: linear-gradient(180deg, #fff1c4, #ff9d3c 55%, #e5421b); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #6b2a0c); }
+.tag { position: relative; margin: 10px 14px 18px; color: var(--dim); font-size: 16px; text-align: center; }
+.menu { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 560px; }
+.foot { position: absolute; bottom: 10px; color: var(--dim); font-size: 12px; letter-spacing: .1em; }
+.btn { font: inherit; font-weight: 800; color: #2b1a05; cursor: pointer; border: 0; border-radius: 12px; padding: 10px 20px; min-width: 150px; font-size: 16px;
+  background: linear-gradient(180deg, #fff1c4, #ffd36b 45%, #f0a43a); box-shadow: 0 4px 0 #a8611c, 0 6px 16px rgba(255,170,60,.3); }
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #a8611c; }
+.btn.big { font-size: 22px; padding: 14px 40px; min-width: 100%; }
+.btn.small { min-width: 0; font-size: 13px; padding: 7px 14px; }
+.dim { background: rgba(5,7,14,.78); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; width: min(94vw, 640px); max-height: 88vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.card h2 { margin: 0 0 10px; color: var(--acc2); letter-spacing: .05em; text-transform: uppercase; font-size: 18px; }
+.card p, .card li { color: var(--txt); line-height: 1.45; margin: 4px 0; }
+.card ul { padding-left: 18px; margin: 6px 0; }
+.card kbd { background: #0d1220; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+.row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+.opt { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line); gap: 10px; }
+.opt span { color: var(--dim); font-size: 12px; display: block; }
+.scn, .chal { display: block; width: 100%; text-align: left; padding: 10px 12px; margin: 6px 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; color: var(--txt); font: inherit; cursor: pointer; }
+.scn:hover { border-color: var(--acc); }
+.scn b, .chal b { color: var(--acc2); } .scn span, .chal span { display: block; color: var(--dim); font-size: 12px; margin-top: 2px; }
+.chal { cursor: default; } .chal.done { border-color: #4fcf6a; } .chal.done b::after { content: "  done"; color: #4fcf6a; font-size: 12px; }
+textarea { width: 100%; min-height: 90px; background: #0d1220; color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 12px monospace; user-select: text; -webkit-user-select: text; resize: vertical; }
+
+@media (max-width: 760px) {
+  #main { flex-direction: column; }
+  #side { width: 100%; height: 38%; border-left: 0; border-top: 1px solid var(--line); }
+  #els { grid-template-columns: repeat(4, 1fr); }
+  #brand { display: none; }
+  .tb { padding: 5px 7px; font-size: 12px; }
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div id="brand">Element <b>Lab</b></div>
+    <div id="tools" class="grp"></div>
+    <div id="size" class="grp"><label for="size-r">Size</label><input id="size-r" type="range" min="0" max="20" value="4"><span id="size-v">4</span></div>
+    <div id="sim" class="grp"></div>
+    <div id="acts" class="grp"></div>
+  </header>
+  <main id="main">
+    <section id="stage">
+      <div id="wrap">
+        <canvas id="view"></canvas><canvas id="glow"></canvas><canvas id="ov"></canvas><div id="cursor"></div>
+      </div>
+      <div id="hover">Move the mouse over the lab</div>
+    </section>
+    <aside id="side">
+      <div id="cats"></div>
+      <input id="search" type="search" placeholder="Search elements..." autocomplete="off">
+      <div id="els"></div>
+    </aside>
+  </main>
+</div>
+<div id="toast"></div>
+
+<div id="title" class="screen">
+  <div class="tbg" id="tbg"></div>
+  <div class="logo"><span class="l1">Element</span><span class="l2">Lab</span></div>
+  <div class="tag">Mix, melt, burn and blow things up. Everything reacts.</div>
+  <div class="menu">
+    <button class="btn big" id="t-play">Play</button>
+    <button class="btn" id="t-scenes">Scenes</button>
+    <button class="btn" id="t-cont">Continue</button>
+    <button class="btn" id="t-chal">Challenges</button>
+    <button class="btn" id="t-how">How to play</button>
+    <button class="btn" id="t-set">Settings</button>
+  </div>
+  <div class="foot">Huntington Games</div>
+</div>
+
+<div id="dlg" class="screen dim hidden">
+  <div class="card"><h2 id="dlg-t"></h2><div id="dlg-b"></div><div class="row"><button class="btn small" id="dlg-x">Close</button></div></div>
+</div>
+
+<script type="application/json" id="elementlab-data-reactions">[{"a":"lava","b":"water","p":0.9,"ra":"obsidian","rb":"steam","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"lava","b":"saltwater","p":0.9,"ra":"obsidian","rb":"steam","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"lava","b":"ice","p":0.4,"ra":"obsidian","rb":"water","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"lava","b":"snow","p":0.5,"ra":"obsidian","rb":"steam","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"lava","b":"lnitro","p":0.6,"ra":"obsidian","rb":"nitrogen","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"moltenmetal","b":"water","p":0.3,"ra":"metal","rb":"steam","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"moltenglass","b":"water","p":0.3,"ra":"glass","rb":"steam","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"quench"},{"a":"salt","b":"water","p":0.05,"ra":"saltwater","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"dissolve"},{"a":"salt","b":"ice","p":0.03,"ra":"empty","rb":"saltwater","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"brine_melt"},{"a":"salt","b":"snow","p":0.05,"ra":"empty","rb":"saltwater","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"brine_melt"},{"a":"salt","b":"plant","p":0.01,"ra":"empty","rb":"empty","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"wilt"},{"a":"saltwater","b":"plant","p":0.01,"ra":"","rb":"empty","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"wilt"},{"a":"sand","b":"water","p":0.004,"ra":"wetsand","rb":"empty","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"soak"},{"a":"dirt","b":"water","p":0.01,"ra":"mud","rb":"empty","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"soak"},{"a":"wetsand","b":"sand","p":0.003,"ra":"wetsand","rb":"wetsand","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"wick"},{"a":"acid","b":"metal","p":0.04,"ra":"hydrogen","rb":"empty","heat":"","pa":0.25,"pb":"","tmin":"","boom":"","note":"fizz"},{"a":"acid","b":"stone","p":0.03,"ra":"empty","rb":"empty","heat":"","pa":0.2,"pb":"","tmin":"","boom":"","note":"dissolve"},{"a":"acid","b":"obsidian","p":0.02,"ra":"empty","rb":"empty","heat":"","pa":0.2,"pb":"","tmin":"","boom":"","note":"dissolve"},{"a":"acid","b":"sodium","p":0.4,"ra":"fire","rb":"fire","heat":400,"pa":"","pb":"","tmin":"","boom":4,"note":"alkali"},{"a":"acid","b":"potassium","p":0.5,"ra":"fire","rb":"fire","heat":500,"pa":"","pb":"","tmin":"","boom":6,"note":"alkali"},{"a":"acid","b":"#diss","p":0.08,"ra":"empty","rb":"empty","heat":"","pa":0.15,"pb":"","tmin":"","boom":"","note":"dissolve"},{"a":"acid","b":"water","p":0.004,"ra":"water","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"dilute"},{"a":"metal","b":"water","p":0.0006,"ra":"rust","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"rust"},{"a":"metal","b":"saltwater","p":0.003,"ra":"rust","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"rust"},{"a":"fire","b":"water","p":0.3,"ra":"empty","rb":"steam","heat":"","pa":"","pb":0.1,"tmin":"","boom":"","note":"douse"},{"a":"fire","b":"saltwater","p":0.3,"ra":"empty","rb":"steam","heat":"","pa":"","pb":0.1,"tmin":"","boom":"","note":"douse"},{"a":"fire","b":"snow","p":0.4,"ra":"empty","rb":"water","heat":"","pa":"","pb":0.4,"tmin":"","boom":"","note":"douse"},{"a":"fire","b":"ice","p":0.2,"ra":"empty","rb":"water","heat":"","pa":"","pb":0.1,"tmin":"","boom":"","note":"douse"},{"a":"fire","b":"lnitro","p":0.5,"ra":"empty","rb":"nitrogen","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"douse"},{"a":"fire","b":"oxygen","p":0.25,"ra":"","rb":"fire","heat":200,"pa":"","pb":"","tmin":"","boom":"","note":"flare"},{"a":"hydrogen","b":"oxygen","p":0.35,"ra":"steam","rb":"steam","heat":120,"pa":"","pb":"","tmin":250,"boom":2,"note":"oxyhydrogen"},{"a":"sodium","b":"water","p":0.25,"ra":"fire","rb":"hydrogen","heat":300,"pa":"","pb":"","tmin":"","boom":3,"note":"alkali"},{"a":"sodium","b":"saltwater","p":0.25,"ra":"fire","rb":"hydrogen","heat":300,"pa":"","pb":"","tmin":"","boom":3,"note":"alkali"},{"a":"sodium","b":"ice","p":0.08,"ra":"fire","rb":"hydrogen","heat":150,"pa":"","pb":"","tmin":"","boom":2,"note":"alkali"},{"a":"sodium","b":"snow","p":0.1,"ra":"fire","rb":"hydrogen","heat":150,"pa":"","pb":"","tmin":"","boom":2,"note":"alkali"},{"a":"potassium","b":"water","p":0.5,"ra":"fire","rb":"hydrogen","heat":400,"pa":"","pb":"","tmin":"","boom":5,"note":"alkali"},{"a":"potassium","b":"saltwater","p":0.5,"ra":"fire","rb":"hydrogen","heat":400,"pa":"","pb":"","tmin":"","boom":5,"note":"alkali"},{"a":"potassium","b":"ice","p":0.2,"ra":"fire","rb":"hydrogen","heat":300,"pa":"","pb":"","tmin":"","boom":3,"note":"alkali"},{"a":"potassium","b":"snow","p":0.25,"ra":"fire","rb":"hydrogen","heat":300,"pa":"","pb":"","tmin":"","boom":3,"note":"alkali"},{"a":"virus","b":"#organic","p":0.06,"ra":"virus","rb":"virus","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"infect"},{"a":"virus","b":"salt","p":0.05,"ra":"empty","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"salted"},{"a":"virus","b":"acid","p":0.5,"ra":"empty","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"burned"},{"a":"virus","b":"fire","p":0.3,"ra":"empty","rb":"","heat":"","pa":"","pb":"","tmin":"","boom":"","note":"burned"},{"a":"lnitro","b":"water","p":0.4,"ra":"nitrogen","rb":"ice","heat":-90,"pa":"","pb":"","tmin":"","boom":"","note":"freeze"},{"a":"lnitro","b":"saltwater","p":0.4,"ra":"nitrogen","rb":"ice","heat":-90,"pa":"","pb":"","tmin":"","boom":"","note":"freeze"}]</script>
+<script type="module">
+// ---- 00-core.js ----
+// ==========================================
+// ELEMENT LAB - core: helpers, saves, settings, sound
+// ==========================================
+const AMB = 20;                                   // room temperature, degrees C
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const $ = id => document.getElementById(id);
+
+// small xorshift random: fast and (with seedRnd) repeatable for tests
+let rs = 2463534242;
+function rnd() { rs ^= rs << 13; rs ^= rs >>> 17; rs ^= rs << 5; return (rs >>> 0) / 4294967296; }
+const rndi = n => (rnd() * n) | 0;
+function seedRnd(s) { rs = (s | 0) || 1; }
+
+// ---------- saves (every key starts with elementlab_) ----------
+const LS = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+};
+const QUAL = [{ n: 'Low', w: 160, h: 90 }, { n: 'Medium', w: 240, h: 135 }, { n: 'High', w: 320, h: 180 }];
+const SETTINGS = Object.assign({ quality: 1, sound: true, overlay: false, glow: true, fx: true, replace: false, seenHelp: false },
+    LS.get('elementlab_settings', {}) || {});
+if (!(SETTINGS.quality >= 0 && SETTINGS.quality < QUAL.length)) SETTINGS.quality = 1;
+function saveSettings() { LS.set('elementlab_settings', SETTINGS); }
+
+// ---------- sound (WebAudio, short synthesized effects; silent until the first click) ----------
+let AC = null, NOISE = null;
+const SFX_GAP = { sizzle: 140, boom: 60, splash: 160, zap: 120, pop: 80, ding: 200 };
+const sfxLast = {};
+function audioUnlock() {
+    try {
+        if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; AC = new C(); }
+        if (AC.state === 'suspended') AC.resume();
+    } catch (e) { AC = null; }
+}
+function noiseBuffer() {
+    if (NOISE) return NOISE;
+    NOISE = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+    const d = NOISE.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    return NOISE;
+}
+function sfx(kind, vol) {
+    if (!AC || !SETTINGS.sound || AC.state !== 'running') return;
+    vol = vol === undefined ? 1 : vol;
+    const now = performance.now();
+    if (now - (sfxLast[kind] || 0) < (SFX_GAP[kind] || 80)) return;
+    sfxLast[kind] = now;
+    try {
+        const t = AC.currentTime, g = AC.createGain();
+        g.connect(AC.destination);
+        const env = (peak, dur, atk) => {
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak * vol), t + (atk || 0.01));
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        };
+        const noise = (dur, type, f0, f1, q) => {
+            const s = AC.createBufferSource(); s.buffer = noiseBuffer(); s.loop = true;
+            const f = AC.createBiquadFilter(); f.type = type; f.Q.value = q || 1;
+            f.frequency.setValueAtTime(f0, t);
+            if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+            s.connect(f); f.connect(g); s.start(t); s.stop(t + dur + 0.05);
+        };
+        const tone = (type, f0, f1, dur) => {
+            const o = AC.createOscillator(); o.type = type;
+            o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+            o.connect(g); o.start(t); o.stop(t + dur + 0.05);
+        };
+        if (kind === 'sizzle') { env(0.09, 0.4, 0.03); noise(0.4, 'highpass', 3200, 5000, 0.7); }
+        else if (kind === 'boom') { env(0.5, 0.7, 0.005); noise(0.7, 'lowpass', 900, 70, 0.8); tone('sine', 110, 28, 0.6); }
+        else if (kind === 'splash') { env(0.14, 0.28, 0.02); noise(0.28, 'bandpass', 700, 1800, 1.2); }
+        else if (kind === 'zap') { env(0.12, 0.18, 0.003); tone('sawtooth', 1400, 90, 0.18); }
+        else if (kind === 'pop') { env(0.12, 0.1, 0.002); tone('square', 420, 120, 0.09); }
+        else if (kind === 'ding') { env(0.12, 0.5, 0.01); tone('triangle', 660, 990, 0.35); }
+    } catch (e) { /* audio is optional */ }
+}
+
+// ---- 10-elements.js ----
+// ==========================================
+// ELEMENT LAB - the element table. One line per element; everything else is derived from it.
+// def(name, label, category, kind, [r,g,b], props)
+//   props: dens (air = 100), ti start temp, cond heat conduction (0..0.5), cool loss to the air, var colour variation,
+//   hi/lo [temp, into, alt?, altChance?] phase change above / below a temperature, ign ignition temp, ip ignite chance,
+//   burn [ticks, temp, leaves], flam chance a flame lights it, boom blast radius, bd blast delay, hard (0..1),
+//   rub what pieces turn into when blown up, unb unbreakable, g groups, mv move chance, disp flow reach, slide pile slipperiness,
+//   life [min,max] start timer, aux0 start extra byte, self (do not tint when hot), glow [r,g,b,strength], alpha, awake, leak
+// Reactions between elements live in data/reactions.tsv.
+// ==========================================
+const K = { EMPTY: 0, SOLID: 1, POWDER: 2, LIQUID: 3, GAS: 4, CREATURE: 5 };
+const CATS = ['Powders', 'Liquids', 'Gases', 'Solids', 'Energy', 'Explosives', 'Life', 'Special'];
+const DEFS = [{ name: 'empty', label: 'Empty', cat: '', kind: 0, col: [0, 0, 0] }];
+function def(name, label, cat, kind, col, o) { DEFS.push(Object.assign({ name, label, cat, kind, col }, o || {})); }
+const P_ = K.POWDER, L_ = K.LIQUID, G_ = K.GAS, S_ = K.SOLID, C_ = K.CREATURE;
+
+// ---- Powders
+def('sand', 'Sand', 'Powders', P_, [222, 190, 105], { dens: 1600, var: .12, cond: .12, hi: [1100, 'moltenglass'], g: ['diss'] });
+def('wetsand', 'Wet Sand', 'Powders', P_, [150, 122, 70], { dens: 1900, slide: .25, var: .1, cond: .15, hi: [105, 'sand'], g: ['diss'] });
+def('dirt', 'Dirt', 'Powders', P_, [112, 74, 42], { dens: 1500, slide: .45, var: .14, cond: .08, g: ['diss'] });
+def('salt', 'Salt', 'Powders', P_, [236, 236, 242], { dens: 1400, slide: .9, var: .08, g: ['diss'] });
+def('snow', 'Snow', 'Powders', P_, [244, 249, 255], { dens: 300, slide: .6, ti: -8, cond: .05, cool: .006, hi: [1, 'water'], g: ['douse'] });
+def('ash', 'Ash', 'Powders', P_, [125, 125, 132], { dens: 400, slide: .85, g: ['diss'] });
+def('rust', 'Rust', 'Powders', P_, [166, 76, 34], { dens: 1800, slide: .8, g: ['diss'] });
+def('coal', 'Coal', 'Powders', P_, [38, 38, 44], { dens: 1300, slide: .8, ign: 350, ip: .1, burn: [255, 800, 'ash'], flam: .08, g: ['diss'] });
+def('gravel', 'Gravel', 'Powders', P_, [132, 127, 122], { dens: 2000, slide: .9, var: .14, hi: [1100, 'lava'], g: ['diss'] });
+// ---- Liquids
+def('water', 'Water', 'Liquids', L_, [48, 118, 232], { dens: 1000, disp: 5, cond: .25, var: .05, lo: [0, 'ice'], hi: [100, 'steam'], g: ['douse'] });
+def('saltwater', 'Salt Water', 'Liquids', L_, [70, 150, 205], { dens: 1100, disp: 5, cond: .25, var: .05, lo: [-4, 'ice'], hi: [100, 'steam', 'salt', .35], g: ['douse'] });
+def('oil', 'Oil', 'Liquids', L_, [98, 62, 26], { dens: 800, disp: 4, mv: .85, cond: .1, ign: 200, burn: [90, 750, 'smoke'], flam: .35 });
+def('lava', 'Lava', 'Liquids', L_, [255, 96, 12], { dens: 2500, disp: 3, mv: .45, ti: 1300, cond: .035, cool: .002, lo: [500, 'stone'], self: 1, glow: [255, 90, 20, 3], awake: 1 });
+def('acid', 'Acid', 'Liquids', L_, [140, 255, 50], { dens: 1200, disp: 4, hi: [300, 'steam'], var: .05 });
+def('mercury', 'Mercury', 'Liquids', L_, [196, 200, 210], { dens: 13500, disp: 4, var: .03, cond: .3 });
+def('mud', 'Mud', 'Liquids', L_, [92, 62, 36], { dens: 1700, disp: 1, mv: .12, hi: [105, 'dirt'], g: ['diss', 'douse'] });
+def('lnitro', 'Liquid N2', 'Liquids', L_, [168, 228, 255], { dens: 800, disp: 4, ti: -196, cond: .2, cool: .008, hi: [-150, 'nitrogen'], g: ['douse'] });
+def('moltenmetal', 'Molten Metal', 'Liquids', L_, [255, 160, 70], { dens: 6000, disp: 3, mv: .3, ti: 1500, cond: .35, cool: .01, lo: [1300, 'metal'], self: 1, glow: [255, 140, 50, 3], awake: 1 });
+def('moltenglass', 'Molten Glass', 'Liquids', L_, [255, 176, 80], { dens: 2300, disp: 2, mv: .3, ti: 1150, cond: .15, cool: .01, lo: [1000, 'glass'], self: 1, glow: [255, 150, 60, 2], awake: 1 });
+// ---- Gases
+def('steam', 'Steam', 'Gases', G_, [214, 222, 235], { dens: 60, ti: 110, alpha: .5, cool: .12 });
+def('smoke', 'Smoke', 'Gases', G_, [88, 88, 96], { dens: 90, ti: 80, alpha: .55, life: [100, 260] });
+def('methane', 'Methane', 'Gases', G_, [150, 205, 120], { dens: 55, alpha: .4, ign: 260, ip: .9, burn: [4, 1000, 'smoke'], flam: .9 });
+def('hydrogen', 'Hydrogen', 'Gases', G_, [220, 235, 255], { dens: 7, alpha: .35, ign: 240, ip: .95, burn: [3, 1100, 'steam'], flam: .95 });
+def('oxygen', 'Oxygen', 'Gases', G_, [150, 205, 255], { dens: 110, alpha: .35 });
+def('nitrogen', 'Nitrogen', 'Gases', G_, [180, 190, 240], { dens: 101, ti: -150, alpha: .3, cool: .2 });
+def('cloud', 'Cloud', 'Gases', G_, [238, 242, 250], { dens: 100, mv: .12, alpha: .85, aux0: 60, leak: 0, hi: [100, 'steam'], var: .05 });
+// ---- Solids
+def('stone', 'Stone', 'Solids', S_, [112, 112, 118], { hard: .6, rub: 'gravel', cond: .08, hi: [1100, 'lava'], g: ['diss'] });
+def('wall', 'Wall', 'Solids', S_, [58, 60, 72], { hard: 1, unb: 1, cond: .01, var: .03 });
+def('wood', 'Wood', 'Solids', S_, [132, 86, 40], { hard: .35, rub: 'ash', cond: .04, ign: 280, ip: .12, burn: [150, 650, 'ash'], flam: .12, var: .1, g: ['diss'] });
+def('metal', 'Metal', 'Solids', S_, [162, 168, 180], { hard: .85, cond: .45, cool: .01, hi: [1400, 'moltenmetal'], g: ['diss', 'conduct'] });
+def('glass', 'Glass', 'Solids', S_, [175, 220, 235], { hard: .1, rub: 'sand', hi: [1100, 'moltenglass'], var: .04 });
+def('ice', 'Ice', 'Solids', S_, [172, 226, 255], { hard: .2, rub: 'snow', ti: -10, cond: .2, cool: .01, hi: [1, 'water'], g: ['diss', 'douse'] });
+def('obsidian', 'Obsidian', 'Solids', S_, [34, 22, 50], { hard: .7, rub: 'gravel', ti: 300, hi: [1200, 'lava'], g: ['diss'] });
+// ---- Energy
+def('fire', 'Fire', 'Energy', G_, [255, 150, 30], { dens: 20, ti: 700, cond: .3, life: [12, 30], mv: .55, self: 1, glow: [255, 140, 30, 2], awake: 1, leak: 0 });
+def('spark', 'Spark', 'Energy', G_, [255, 250, 140], { dens: 100, ti: 100, life: [6, 12], self: 1, glow: [255, 240, 150, 3], awake: 1, leak: 0 });
+def('battery', 'Battery', 'Energy', S_, [60, 200, 100], { hard: .5, awake: 1, g: ['diss'] });
+def('lamp', 'Lamp', 'Energy', S_, [185, 170, 110], { hard: .1, glow: [255, 240, 160, 0], g: ['diss', 'conduct'] });
+def('heater', 'Heater', 'Energy', S_, [210, 70, 45], { hard: .6, ti: 900, cond: .3, awake: 1, glow: [255, 80, 30, 1] });
+def('freezer', 'Freezer', 'Energy', S_, [70, 130, 215], { hard: .6, ti: -80, cond: .3, awake: 1 });
+// ---- Explosives
+def('gunpowder', 'Gunpowder', 'Explosives', P_, [75, 75, 82], { dens: 1300, slide: .9, boom: 2, bd: 1, ign: 230, flam: .9, g: ['diss'] });
+def('tnt', 'TNT', 'Explosives', S_, [205, 45, 45], { hard: .3, boom: 4, bd: 3, ign: 300, flam: .7, g: ['diss'] });
+def('c4', 'C4', 'Explosives', S_, [222, 218, 190], { hard: .3, boom: 6, bd: 4, ign: 700, flam: 0, g: ['diss'] });
+def('nitro', 'Nitro', 'Explosives', L_, [196, 232, 70], { dens: 1500, disp: 4, boom: 4, bd: 2, ign: 190, flam: .8, g: ['diss'] });
+def('thermite', 'Thermite', 'Explosives', P_, [178, 92, 72], { dens: 2400, slide: .9, ign: 650, ip: .15, burn: [90, 2600, 'moltenmetal'], flam: .15, g: ['diss'] });
+def('fuse', 'Fuse', 'Explosives', S_, [150, 125, 85], { hard: .2, ign: 190, ip: .6, burn: [12, 700, 'ash'], flam: .6, g: ['diss'] });
+// ---- Life
+def('plant', 'Plant', 'Life', S_, [50, 172, 62], { hard: .1, rub: 'ash', var: .15, ign: 230, ip: .2, burn: [50, 600, 'ash'], flam: .25, awake: 1, g: ['organic', 'diss'] });
+def('seed', 'Seed', 'Life', P_, [160, 120, 60], { dens: 1100, slide: .7, ign: 220, ip: .2, burn: [20, 500, 'ash'], flam: .3, awake: 1, g: ['organic', 'diss'] });
+def('ant', 'Ant', 'Life', C_, [175, 45, 35], { hi: [75, 'ash'], awake: 1, g: ['organic', 'diss'] });
+def('firefly', 'Firefly', 'Life', C_, [220, 255, 90], { hi: [75, 'ash'], awake: 1, glow: [200, 255, 90, 1], g: ['organic', 'diss'] });
+def('fish', 'Fish', 'Life', C_, [255, 152, 52], { hi: [55, 'ash'], awake: 1, g: ['organic', 'diss'] });
+def('virus', 'Virus', 'Life', L_, [184, 64, 224], { dens: 1100, disp: 2, mv: .4, hi: [75, 'smoke'], awake: 1, var: .1 });
+// ---- Special
+def('clone', 'Clone', 'Special', S_, [226, 206, 48], { unb: 1, hard: 1, awake: 1 });
+def('void', 'Void', 'Special', S_, [45, 8, 64], { unb: 1, hard: 1, awake: 1 });
+def('sodium', 'Sodium', 'Special', P_, [232, 226, 170], { dens: 970, slide: .3, ign: 115, ip: .3, burn: [40, 900, 'ash'], flam: .4, g: ['diss'] });
+def('potassium', 'Potassium', 'Special', P_, [215, 170, 205], { dens: 860, slide: .3, ign: 70, ip: .4, burn: [40, 900, 'ash'], flam: .5, g: ['diss'] });
+
+// ---------- derived arrays ----------
+const NE = DEFS.length;
+const ID = {};
+DEFS.forEach((d, i) => { ID[d.name] = i; });
+const KIND = new Uint8Array(NE), FLUID = new Uint8Array(NE), DENS = new Float32Array(NE);
+const HI = new Int16Array(NE).fill(32767), HIE = new Uint8Array(NE), HIA = new Uint8Array(NE), HIAP = new Float32Array(NE);
+const LO = new Int16Array(NE).fill(-32768), LOE = new Uint8Array(NE), LOA = new Uint8Array(NE), LOAP = new Float32Array(NE);
+const TINIT = new Int16Array(NE).fill(AMB), COND = new Float32Array(NE), COOL = new Float32Array(NE);
+const IGN = new Int16Array(NE), BIGN = new Float32Array(NE), BLIFE = new Uint8Array(NE), BTEMP = new Int16Array(NE), BPROD = new Uint8Array(NE);
+const FLAM = new Float32Array(NE), BOOM = new Uint8Array(NE), BDELAY = new Uint8Array(NE), HARD = new Float32Array(NE);
+const RUB = new Uint8Array(NE), UNB = new Uint8Array(NE), MOVEP = new Float32Array(NE), DISP = new Uint8Array(NE), SLIDE = new Float32Array(NE);
+const L0 = new Uint8Array(NE), L1 = new Uint8Array(NE), AUX0 = new Uint8Array(NE), AWAKE = new Uint8Array(NE), LEAK = new Uint8Array(NE);
+const SELF = new Uint8Array(NE), GLR = new Uint8Array(NE), GLG = new Uint8Array(NE), GLB = new Uint8Array(NE), GLS = new Uint8Array(NE);
+const CONDUCT = new Uint8Array(NE), DOUSE = new Uint8Array(NE), ALPHA = new Float32Array(NE), VARY = new Float32Array(NE);
+const GROUPS = {};
+const nm = n => { if (!(n in ID)) throw new Error('unknown element ' + n); return ID[n]; };
+DEFS.forEach((d, e) => {
+    KIND[e] = d.kind; FLUID[e] = d.kind === K.LIQUID || d.kind === K.GAS ? 1 : 0;
+    DENS[e] = d.dens !== undefined ? d.dens : 5000;
+    if (d.hi) { HI[e] = d.hi[0]; HIE[e] = nm(d.hi[1]); if (d.hi[2]) { HIA[e] = nm(d.hi[2]); HIAP[e] = d.hi[3]; } }
+    if (d.lo) { LO[e] = d.lo[0]; LOE[e] = nm(d.lo[1]); if (d.lo[2]) { LOA[e] = nm(d.lo[2]); LOAP[e] = d.lo[3]; } }
+    if (d.ti !== undefined) TINIT[e] = d.ti;
+    const gas = d.kind === K.GAS;
+    COND[e] = d.cond !== undefined ? d.cond : gas ? .12 : .1;
+    COOL[e] = d.cool !== undefined ? d.cool : gas ? .1 : .03;
+    if (d.ign) { IGN[e] = d.ign; BIGN[e] = d.ip !== undefined ? d.ip : .3; }
+    if (d.burn) { BLIFE[e] = d.burn[0]; BTEMP[e] = d.burn[1]; BPROD[e] = d.burn[2] === 'empty' ? 0 : nm(d.burn[2]); }
+    FLAM[e] = d.flam || 0; BOOM[e] = d.boom || 0; BDELAY[e] = d.bd || 1; HARD[e] = d.hard || 0;
+    RUB[e] = d.rub ? nm(d.rub) : 0; UNB[e] = d.unb ? 1 : 0;
+    MOVEP[e] = d.mv !== undefined ? d.mv : gas ? .85 : 1;
+    DISP[e] = d.disp || 3; SLIDE[e] = d.slide !== undefined ? d.slide : 1;
+    if (d.life) { L0[e] = d.life[0]; L1[e] = d.life[1]; }
+    AUX0[e] = d.aux0 || 0;
+    AWAKE[e] = d.awake || gas ? 1 : 0; LEAK[e] = d.leak !== undefined ? d.leak : 1;
+    SELF[e] = d.self ? 1 : 0;
+    if (d.glow) { GLR[e] = d.glow[0]; GLG[e] = d.glow[1]; GLB[e] = d.glow[2]; GLS[e] = d.glow[3]; }
+    ALPHA[e] = d.alpha !== undefined ? d.alpha : gas ? .45 : 1;
+    VARY[e] = d.var !== undefined ? d.var : .06;
+    (d.g || []).forEach(g => { (GROUPS[g] = GROUPS[g] || []).push(e); });
+});
+(GROUPS.conduct || []).forEach(e => { CONDUCT[e] = 1; });
+(GROUPS.douse || []).forEach(e => { DOUSE[e] = 1; });
+const WALL = ID.wall;
+
+// ---- 20-sim.js ----
+// ==========================================
+// ELEMENT LAB - the simulation: grid, chunk sleeping, movement, heat
+// The grid has a one cell wall border (stride P = W + 2) so neighbours never need bounds checks.
+// ==========================================
+let W = 0, H = 0, P = 0, NP = 0, CW = 0, CH = 0;
+let el, tp, life, aux, vr, st, act, run;
+const OFF = new Int32Array(4), DX = [1, -1, 0, 0], DY = [0, 0, 1, -1];
+let tickN = 0, stamp = 1;
+const CNT = new Int32Array(256);                  // cells per element (recount())
+const MADE = new Uint8Array(256);                 // elements the simulation itself has made (challenges)
+const STAT = { grown: 0, rain: 0, lamp: 0, infected: 0, ate: 0, alk: 0, boomN: 0, chain: 0 };
+const ix = (x, y) => (y + 1) * P + x + 1;
+const CHUNK = 16;
+
+function allocGrid(w, h) {
+    W = w; H = h; P = w + 2; NP = P * (h + 2); CW = (w + CHUNK - 1) >> 4; CH = (h + CHUNK - 1) >> 4;
+    el = new Uint8Array(NP); tp = new Int16Array(NP).fill(AMB); life = new Uint8Array(NP); aux = new Uint8Array(NP);
+    vr = new Uint8Array(NP); st = new Uint8Array(NP);
+    act = new Uint8Array(CW * CH).fill(3); run = new Uint8Array(CW * CH);
+    OFF[0] = 1; OFF[1] = -1; OFF[2] = P; OFF[3] = -P;
+    for (let x = -1; x <= w; x++) { el[ix(x, -1)] = WALL; el[ix(x, h)] = WALL; }
+    for (let y = -1; y <= h; y++) { el[ix(-1, y)] = WALL; el[ix(w, y)] = WALL; }
+}
+
+// wake the chunk holding (x, y) and any neighbour chunk it touches
+function wk(x, y) {
+    const cx = x >> 4, cy = y >> 4, lx = x & 15, ly = y & 15;
+    const x0 = lx === 0 && cx > 0 ? cx - 1 : cx, x1 = lx === 15 && cx < CW - 1 ? cx + 1 : cx;
+    const y0 = ly === 0 && cy > 0 ? cy - 1 : cy, y1 = ly === 15 && cy < CH - 1 ? cy + 1 : cy;
+    for (let b = y0; b <= y1; b++) for (let a = x0; a <= x1; a++) act[b * CW + a] = 3;
+}
+function wakeAll() { act.fill(3); }
+
+function swap(i, j) {
+    let t = el[i]; el[i] = el[j]; el[j] = t;
+    t = tp[i]; tp[i] = tp[j]; tp[j] = t;
+    t = life[i]; life[i] = life[j]; life[j] = t;
+    t = aux[i]; aux[i] = aux[j]; aux[j] = t;
+    t = vr[i]; vr[i] = vr[j]; vr[j] = t;
+    st[i] = st[j] = stamp;
+}
+function clr(i) { el[i] = 0; tp[i] = AMB; life[i] = 0; aux[i] = 0; }
+
+// a cell the simulation makes (reactions, burning, phase changes). `silent` skips the challenge bookkeeping.
+function put(i, e, heat, silent) {
+    el[i] = e; tp[i] = TINIT[e] + (heat || 0); vr[i] = (rnd() * 16) | 0;
+    const a = L0[e]; life[i] = a ? a + ((rnd() * (L1[e] - a + 1)) | 0) : 0;
+    aux[i] = AUX0[e]; st[i] = stamp;
+    if (!silent) MADE[e] = 1;
+}
+
+// ---------- movement ----------
+function movePowder(x, y, i, e) {
+    const dn = DENS[e];
+    let j = i + P, b = el[j];
+    if (b === 0 || (FLUID[b] && DENS[b] < dn && rnd() < 0.55)) { swap(i, j); wk(x, y); wk(x, y + 1); return; }
+    if (rnd() < SLIDE[e]) {
+        const s = rnd() < 0.5 ? -1 : 1;
+        j = i + P + s; b = el[j];
+        if (b === 0 || (FLUID[b] && DENS[b] < dn && rnd() < 0.4)) { swap(i, j); wk(x, y); wk(x + s, y + 1); return; }
+        j = i + P - s; b = el[j];
+        if (b === 0 || (FLUID[b] && DENS[b] < dn && rnd() < 0.4)) { swap(i, j); wk(x, y); wk(x - s, y + 1); return; }
+    }
+}
+function moveLiquid(x, y, i, e) {
+    const mv = MOVEP[e];
+    if (mv < 1 && rnd() > mv) {                    // thick liquids only act now and then; stay awake while they could move
+        if (el[i + P] === 0 || el[i + P - 1] === 0 || el[i + P + 1] === 0 || el[i + 1] === 0 || el[i - 1] === 0) wk(x, y);
+        return;
+    }
+    const dn = DENS[e];
+    let j = i + P, b = el[j];
+    if (b === 0 || (FLUID[b] && DENS[b] < dn && rnd() < 0.8)) { swap(i, j); wk(x, y); wk(x, y + 1); return; }
+    const s = rnd() < 0.5 ? -1 : 1;
+    if (el[i + P + s] === 0) { swap(i, i + P + s); wk(x, y); wk(x + s, y + 1); return; }
+    if (el[i + P - s] === 0) { swap(i, i + P - s); wk(x, y); wk(x - s, y + 1); return; }
+    const dsp = DISP[e];
+    let last = 0, kk = 0;
+    for (let k = 1; k <= dsp; k++) { if (el[i + s * k] === 0) { last = i + s * k; kk = k; } else break; }
+    if (last) { swap(i, last); wk(x, y); wk(x + s * kk, y); }
+}
+function moveGas(x, y, i, e) {
+    const mv = MOVEP[e];
+    wk(x, y);
+    if (mv < 1 && rnd() > mv) return;
+    const dn = DENS[e];
+    if (y === 0 && LEAK[e] && rnd() < 0.08) { clr(i); return; }
+    let dx = ((rnd() * 3) | 0) - 1, dy = 0;
+    if (rnd() < 0.6) dy = dn < 100 ? -1 : dn > 100 ? 1 : (rnd() < 0.5 ? -1 : 1);
+    if (dx === 0 && dy === 0) dx = rnd() < 0.5 ? -1 : 1;
+    const j = i + dx + dy * P, b = el[j];
+    if (b === 0) { swap(i, j); wk(x + dx, y + dy); }
+    else if (FLUID[b]) {
+        const db = DENS[b];
+        if (KIND[b] === K.GAS) { if (dy < 0 ? db > dn : dy > 0 ? db < dn : true) { swap(i, j); wk(x + dx, y + dy); } }
+        else if (dy < 0 && db > dn && rnd() < 0.5) { swap(i, j); wk(x + dx, y + dy); }   // a bubble rising through liquid
+    }
+}
+
+// ---------- phase changes ----------
+function phase(i, e, to, alt, altP, thr, x, y) {
+    if (alt && rnd() < altP) to = alt;
+    el[i] = to; vr[i] = (rnd() * 16) | 0;
+    const a = L0[to]; life[i] = a ? a + ((rnd() * (L1[to] - a + 1)) | 0) : 0;
+    aux[i] = AUX0[to]; MADE[to] = 1; st[i] = stamp;
+    tp[i] = thr;                                   // the excess heat is spent on the change (cheap latent heat)
+    if (to === ID.steam && rnd() < 0.03) sfx('sizzle', 0.5);
+    wk(x, y);
+}
+
+// ---------- burning ----------
+function flame(x, y, i) {
+    const d = (rnd() * 5) | 0;                     // up, up-left, up-right, left, right
+    const dx = d === 1 ? -1 : d === 2 ? 1 : d === 3 ? -1 : d === 4 ? 1 : 0, dy = d < 3 ? -1 : 0;
+    const j = i + dx + dy * P;
+    if (el[j] === 0) { put(j, ID.fire, 0, true); wk(x + dx, y + dy); }
+}
+function burnStep(x, y, i, e) {
+    const l = life[i] - 1;
+    if (tp[i] < BTEMP[e]) tp[i] = BTEMP[e];
+    wk(x, y);
+    if (l <= 0) {
+        const p = BPROD[e], t = tp[i];
+        if (p === 0) clr(i); else { put(i, p, 0, true); tp[i] = t < 200 ? t : 200; }
+        return true;
+    }
+    life[i] = l;
+    if (rnd() < 0.3) flame(x, y, i);
+    return false;
+}
+
+// ---------- one cell ----------
+const UPD = new Array(NE).fill(null);
+function cell(x, y, i, e) {
+    let t = tp[i];
+    if (t > HI[e]) { phase(i, e, HIE[e], HIA[e], HIAP[e], HI[e], x, y); return; }
+    if (t < LO[e]) { phase(i, e, LOE[e], LOA[e], LOAP[e], LO[e], x, y); return; }
+    const ig = IGN[e];
+    if (ig !== 0 && t >= ig) {
+        if (BOOM[e] !== 0) { detonate(x, y, i, e); return; }
+        if (life[i] === 0 && rnd() < BIGN[e]) life[i] = BLIFE[e];
+    }
+    if (BLIFE[e] !== 0 && life[i] !== 0 && burnStep(x, y, i, e)) return;
+
+    // heat and reactions with one random neighbour
+    const d = (rnd() * 4) | 0, j = i + OFF[d], e2 = el[j];
+    if (e2 !== 0) {
+        const ri = RXI[e * NE + e2];
+        if (ri >= 0) {
+            wk(x, y);
+            if (react(i, j, x, y, d, RXL[ri])) { e = el[i]; if (e === 0) return; t = tp[i]; }
+        }
+        if (DOUSE[e2] && BLIFE[e] !== 0 && life[i] !== 0) { life[i] = 0; tp[i] = 90; wk(x, y); }
+        const dt = tp[j] - t;
+        if (dt > 1 || dt < -1) {
+            const dd = dt * (COND[e] + COND[e2]) * 0.5, a = dd < 0 ? -dd : dd;
+            let n = a | 0; if (rnd() < a - n) n++;
+            if (n !== 0) { if (dd < 0) n = -n; tp[i] = t + n; tp[j] -= n; wk(x, y); }
+        }
+    } else {
+        const dt = AMB - t;
+        if (dt > 1 || dt < -1) {
+            const dd = dt * COOL[e], a = dd < 0 ? -dd : dd;
+            let n = a | 0; if (rnd() < a - n) n++;
+            if (n !== 0) { tp[i] = dd < 0 ? t - n : t + n; wk(x, y); }
+        }
+    }
+
+    if (AWAKE[e] !== 0) wk(x, y);
+    const u = UPD[e];
+    if (u !== null && u(i, x, y, e)) return;
+    const k = KIND[e];
+    if (k === K.POWDER) movePowder(x, y, i, e);
+    else if (k === K.LIQUID) moveLiquid(x, y, i, e);
+    else if (k === K.GAS) moveGas(x, y, i, e);
+}
+
+function step() {
+    tickN++; stamp = (stamp % 255) + 1;
+    const flip = tickN & 1;
+    for (let c = 0; c < act.length; c++) { if (act[c] > 0) { run[c] = 1; act[c]--; } else run[c] = 0; }
+    if (boomQ.length) runBooms();
+    if (nParts) stepParticles();
+    for (let y = H - 1; y >= 0; y--) {
+        const rowc = (y >> 4) * CW, base = (y + 1) * P + 1;
+        for (let k = 0; k < CW; k++) {
+            const cx = flip ? CW - 1 - k : k;
+            if (run[rowc + cx] === 0) continue;
+            const x0 = cx << 4, x1 = Math.min(W, x0 + CHUNK);
+            if (flip) {
+                for (let x = x1 - 1; x >= x0; x--) { const i = base + x, e = el[i]; if (e !== 0 && st[i] !== stamp) cell(x, y, i, e); }
+            } else {
+                for (let x = x0; x < x1; x++) { const i = base + x, e = el[i]; if (e !== 0 && st[i] !== stamp) cell(x, y, i, e); }
+            }
+        }
+    }
+}
+
+function recount() {
+    CNT.fill(0);
+    for (let y = 0; y < H; y++) { let i = (y + 1) * P + 1; for (let x = 0; x < W; x++, i++) CNT[el[i]]++; }
+    return CNT;
+}
+function activeChunks() { let n = 0; for (let c = 0; c < act.length; c++) if (act[c] > 0) n++; return n; }
+
+// ---- 22-react.js ----
+// ==========================================
+// ELEMENT LAB - reactions: built from data/reactions.tsv (columns: a b p ra rb heat pa pb tmin boom note)
+//   a, b   element names, or #group (all elements in that group, unless the pair has its own row)
+//   p      chance per contact; ra/rb  what a / b turn into (blank = unchanged, "empty" = gone)
+//   heat   added to the new cells; pa/pb chance each one actually changes; tmin needs one of them this hot; boom blast radius
+// Each row works in both directions, so "acid metal" also covers "metal acid".
+// ==========================================
+const RXI = new Int16Array(NE * NE).fill(-1);
+const RXL = [];
+const REACTIONS = [];
+(function buildReactions() {
+    let rows = [];
+    try { rows = JSON.parse(document.getElementById('elementlab-data-reactions').textContent); } catch (e) { rows = []; }
+    const members = s => s.charAt(0) === '#' ? (GROUPS[s.slice(1)] || []) : [nm(s)];
+    const prod = v => v === '' || v === undefined ? -1 : v === 'empty' ? 0 : nm(v);
+    const num = (v, d) => v === '' || v === undefined ? d : +v;
+    const specific = new Set();
+    rows.forEach(r => { if (r.a.charAt(0) !== '#' && r.b.charAt(0) !== '#') { specific.add(nm(r.a) * NE + nm(r.b)); specific.add(nm(r.b) * NE + nm(r.a)); } });
+    function add(a, b, r) {
+        const o = { p: +r.p, ra: prod(r.ra), rb: prod(r.rb), heat: num(r.heat, 0), pa: num(r.pa, 1), pb: num(r.pb, 1), tmin: num(r.tmin, -99999), boom: num(r.boom, 0), note: r.note };
+        const k = a * NE + b;
+        if (RXI[k] < 0) { RXI[k] = RXL.length; RXL.push([]); }
+        RXL[RXI[k]].push(o);
+    }
+    rows.forEach(r => {
+        const grp = r.a.charAt(0) === '#' || r.b.charAt(0) === '#';
+        REACTIONS.push(r);
+        members(r.a).forEach(a => members(r.b).forEach(b => {
+            if (grp && specific.has(a * NE + b)) return;
+            add(a, b, r);
+            if (a !== b) add(b, a, { p: r.p, ra: r.rb, rb: r.ra, heat: r.heat, pa: r.pb, pb: r.pa, tmin: r.tmin, boom: r.boom, note: r.note });
+        }));
+    });
+})();
+
+// returns true when something happened. i = this cell, j = the neighbour in direction d
+function react(i, j, x, y, d, list) {
+    for (let q = 0; q < list.length; q++) {
+        const r = list[q];
+        if (rnd() >= r.p) continue;
+        if (r.tmin > -99999 && (tp[i] > tp[j] ? tp[i] : tp[j]) < r.tmin) continue;
+        const h = r.heat, xj = x + DX[d], yj = y + DY[d];
+        if (r.ra >= 0 && (r.pa >= 1 || rnd() < r.pa)) { if (r.ra === 0) clr(i); else put(i, r.ra, h); } else if (h && el[i]) tp[i] += h;
+        if (r.rb >= 0 && (r.pb >= 1 || rnd() < r.pb)) { if (r.rb === 0) clr(j); else put(j, r.rb, h); } else if (h && el[j]) tp[j] += h;
+        if (tp[i] > 4000) tp[i] = 4000;
+        if (tp[j] > 4000) tp[j] = 4000;
+        if (tp[i] < -273) tp[i] = -273;
+        if (tp[j] < -273) tp[j] = -273;
+        wk(x, y); wk(xj, yj);
+        if (r.ra === ID.steam || r.rb === ID.steam) sfx('sizzle', 0.7);
+        if (r.note === 'infect') STAT.infected++;
+        if (r.boom) { if (r.note === 'alkali') STAT.alk++; queueBoom(x, y, r.boom, 1, -1); }
+        else if (r.note === 'alkali') STAT.alk++;
+        return true;
+    }
+    return false;
+}
+
+// ---- 25-behaviors.js ----
+// ==========================================
+// ELEMENT LAB - behaviours: fire, electricity, steam/cloud, special blocks
+// Each UPD function(i, x, y, e) returns true when the cell is gone/handled and must not move any more.
+// ==========================================
+function ignite(x, y, j, e2) {
+    if (BOOM[e2] !== 0) detonate(x, y, j, e2);
+    else if (BLIFE[e2] !== 0 && life[j] === 0) { life[j] = BLIFE[e2]; wk(x, y); }
+}
+function detonate(x, y, i, e) {
+    const r = BOOM[e], dl = BDELAY[e];
+    clr(i); wk(x, y);
+    queueBoom(x, y, r, dl, -1);
+}
+
+function updFire(i, x, y, e) {
+    const l = life[i] - 1;
+    if (l <= 0) { if (rnd() < 0.12) put(i, ID.smoke, 0, true); else clr(i); return true; }
+    life[i] = l;
+    tp[i] = 650 + ((rnd() * 350) | 0);
+    for (let d = 0; d < 4; d++) {
+        const j = i + OFF[d], e2 = el[j];
+        if (e2 !== 0) { const f = FLAM[e2]; if (f > 0 && rnd() < f) ignite(x + DX[d], y + DY[d], j, e2); }
+    }
+    return false;
+}
+
+// what a live wire / spark does to the thing next to it
+function zapCell(x, y, j, e2) {
+    if (CONDUCT[e2] === 1) {
+        if (life[j] === 0) { life[j] = 4; st[j] = stamp; wk(x, y); if (e2 === ID.lamp) STAT.lamp++; }
+        return;
+    }
+    if (e2 === ID.water || e2 === ID.saltwater) { if (rnd() < 0.06) { put(j, rnd() < 0.67 ? ID.hydrogen : ID.oxygen); wk(x, y); } return; }
+    if (BOOM[e2] !== 0) { detonate(x, y, j, e2); return; }
+    if (FLAM[e2] > 0 && rnd() < 0.5) { ignite(x, y, j, e2); return; }
+    if (KIND[e2] === K.CREATURE && rnd() < 0.2) { put(j, ID.ash); wk(x, y); }
+}
+function updSpark(i, x, y, e) {
+    const l = life[i] - 1;
+    if (l <= 0) { clr(i); return true; }
+    life[i] = l;
+    for (let d = 0; d < 4; d++) { const j = i + OFF[d], e2 = el[j]; if (e2 !== 0 && e2 !== ID.spark) zapCell(x + DX[d], y + DY[d], j, e2); }
+    return false;
+}
+// metal / lamp: 0 idle, 4 just charged (passes it on), 3..1 resting
+function updConduct(i, x, y, e) {
+    const l = life[i];
+    if (l === 0) return false;
+    wk(x, y);
+    if (l === 4) for (let d = 0; d < 4; d++) { const j = i + OFF[d], e2 = el[j]; if (e2 !== 0) zapCell(x + DX[d], y + DY[d], j, e2); }
+    life[i] = l - 1;
+    return false;
+}
+function updBattery(i, x, y, e) {
+    if ((tickN & 7) === 0) for (let d = 0; d < 4; d++) { const j = i + OFF[d], e2 = el[j]; if (e2 !== 0 && e2 !== e) zapCell(x + DX[d], y + DY[d], j, e2); }
+    return false;
+}
+function updHeater(i, x, y, e) { tp[i] = 900; return false; }
+function updFreezer(i, x, y, e) { tp[i] = -80; return false; }
+function updVoid(i, x, y, e) {
+    for (let d = 0; d < 4; d++) { const j = i + OFF[d], e2 = el[j]; if (e2 !== 0 && e2 !== e && e2 !== WALL) { clr(j); wk(x + DX[d], y + DY[d]); } }
+    return false;
+}
+function updClone(i, x, y, e) {
+    let c = aux[i];
+    if (c === 0) {
+        for (let d = 0; d < 4; d++) {              // copy what it touches; loose things (liquids, powders) win over solid walls
+            const e2 = el[i + OFF[d]];
+            if (e2 !== 0 && e2 !== e && e2 !== ID.void && e2 !== WALL && (c === 0 || (KIND[c] === K.SOLID && KIND[e2] !== K.SOLID))) c = e2;
+        }
+        aux[i] = c;
+        return false;
+    }
+    if (rnd() < 0.6) {
+        const d = (rnd() * 4) | 0, j = i + OFF[d];
+        if (el[j] === 0) { put(j, c, 0, true); wk(x + DX[d], y + DY[d]); }
+    }
+    return false;
+}
+function updNitro(i, x, y, e) {
+    const b = el[i + P];
+    if (b === 0 || (FLUID[b] && DENS[b] < DENS[e])) { if (aux[i] < 30) aux[i]++; }
+    else { if (aux[i] > 3) { detonate(x, y, i, e); return true; } aux[i] = 0; }
+    return false;
+}
+function updSmoke(i, x, y, e) {
+    if (--life[i] <= 0) { clr(i); return true; }
+    return false;
+}
+function updSteam(i, x, y, e) {
+    if (tp[i] < 98) {
+        if (y < H * 0.3 && rnd() < 0.4) put(i, ID.cloud, 0, false), aux[i] = 25;
+        else put(i, ID.water);
+        tp[i] = 90;
+        return true;
+    }
+    return false;
+}
+function updCloud(i, x, y, e) {
+    const a = aux[i];
+    if (a > 0) {
+        if (rnd() < 0.006) {
+            const j = i + P;
+            if (el[j] === 0) { put(j, tp[i] < 0 ? ID.snow : ID.water, 0, true); tp[j] = tp[i] < 0 ? -5 : 15; aux[i] = a - 1; STAT.rain++; wk(x, y + 1); }
+        }
+    } else if (rnd() < 0.01) { clr(i); return true; }
+    return false;
+}
+
+UPD[ID.fire] = updFire;
+UPD[ID.spark] = updSpark;
+UPD[ID.metal] = updConduct;
+UPD[ID.lamp] = updConduct;
+UPD[ID.battery] = updBattery;
+UPD[ID.heater] = updHeater;
+UPD[ID.freezer] = updFreezer;
+UPD[ID.void] = updVoid;
+UPD[ID.clone] = updClone;
+UPD[ID.nitro] = updNitro;
+UPD[ID.smoke] = updSmoke;
+UPD[ID.steam] = updSteam;
+UPD[ID.cloud] = updCloud;
+
+// ---- 26-life.js ----
+// ==========================================
+// ELEMENT LAB - life: plants, seeds, ants, fireflies, fish, viruses
+// ==========================================
+
+function plantAround(j) {                          // plant cells touching cell j (4 neighbours)
+    return (el[j + 1] === ID.plant) + (el[j - 1] === ID.plant) + (el[j + P] === ID.plant) + (el[j - P] === ID.plant);
+}
+function growTo(x, y, i, a, dx, dy) {              // try to put a new plant cell at (dx, dy) from here
+    const j = i + dx + dy * P;
+    if (el[j] !== 0 || plantAround(j) > 2) return false;
+    put(j, ID.plant, 0, true); aux[j] = a; vr[j] = 10 + ((rnd() * 6) | 0);
+    MADE[ID.plant] = 1; STAT.grown++; wk(x + dx, y + dy);
+    return true;
+}
+function updPlant(i, x, y, e) {
+    let a = aux[i];
+    const d = (rnd() * 4) | 0, j = i + OFF[d], e2 = el[j];
+    if (e2 === ID.water) { wk(x, y); if (rnd() < 0.12) { clr(j); a = aux[i] = a + 7 > 40 ? 40 : a + 7; } }
+    else if (e2 === ID.mud) { wk(x, y); if (rnd() < 0.05) { put(j, ID.dirt, 0, true); a = aux[i] = a + 5 > 40 ? 40 : a + 5; } }
+    if (a > 0 && rnd() < 0.09) {
+        const r = rnd(), na = a - 1;
+        let ok;
+        if (r < 0.62) ok = growTo(x, y, i, na, 0, -1);
+        else if (r < 0.81) ok = growTo(x, y, i, na, -1, -1);
+        else if (r < 0.96) ok = growTo(x, y, i, na, 1, -1);
+        else ok = growTo(x, y, i, na, rnd() < 0.5 ? -1 : 1, 0);
+        if (ok) {
+            aux[i] = 0; vr[i] = (rnd() * 8) | 0;
+            if (na > 6 && rnd() < 0.12) growTo(x, y, i, na >> 1, rnd() < 0.5 ? -1 : 1, -1);   // a branch
+        } else if (rnd() < 0.2) aux[i] = a - 1;
+    }
+    return false;
+}
+function updSeed(i, x, y, e) {
+    const b = el[i + P];
+    if (b === 0 || KIND[b] === K.LIQUID || KIND[b] === K.GAS) return false;
+    const d = (rnd() * 4) | 0, j = i + OFF[d], e2 = el[j];
+    if (e2 === ID.water || (b === ID.mud && rnd() < 0.05)) {
+        if (e2 === ID.water) clr(j);
+        put(i, ID.plant, 0, true); aux[i] = 14 + ((rnd() * 16) | 0); MADE[ID.plant] = 1; wk(x, y);
+        return true;
+    }
+    return false;
+}
+function updAnt(i, x, y, e) {
+    wk(x, y);
+    const below = i + P, eb = el[below];
+    if (eb === 0) { swap(i, below); return true; }
+    if (KIND[eb] === K.LIQUID && eb !== ID.mud) { if (rnd() < 0.003) { put(i, ID.ash); return true; } if (rnd() < 0.3 && DENS[eb] < 1500) swap(i, below); return true; }
+    if (rnd() < 0.03) aux[i] ^= 1;
+    if (rnd() < 0.5) return true;
+    const dir = aux[i] ? 1 : -1, f = i + dir, ef = el[f];
+    if (ef === 0) { swap(i, f); }
+    else if (ef === ID.plant) {
+        clr(f); wk(x + dir, y); STAT.ate++;
+        if (rnd() < 0.3 && CNT[ID.ant] < 150) { const b2 = i - dir; if (el[b2] === 0) put(b2, ID.ant, 0, true); }
+    } else if (KIND[ef] === K.LIQUID || KIND[ef] === K.GAS) aux[i] ^= 1;
+    else if (el[i - P] === 0 && el[i - P + dir] === 0) swap(i, i - P + dir);
+    else if (el[i - P] === 0 && rnd() < 0.3) swap(i, i - P);
+    else aux[i] ^= 1;
+    return true;
+}
+function updFirefly(i, x, y, e) {
+    wk(x, y);
+    if (rnd() < 0.4) return true;
+    const dx = ((rnd() * 3) | 0) - 1, dy = ((rnd() * 3) | 0) - 1 - (rnd() < 0.1 ? 1 : 0);
+    const j = i + dx + dy * P;
+    if (el[j] === 0) { swap(i, j); wk(x + dx, y + dy); }
+    return true;
+}
+function updFish(i, x, y, e) {
+    wk(x, y);
+    let w = 0;
+    for (let d = 0; d < 4; d++) { const q = el[i + OFF[d]]; if (q === ID.water || q === ID.saltwater) w++; }
+    if (w === 0) {                                 // out of water: fall, then slowly give up
+        if (el[i + P] === 0) { swap(i, i + P); return true; }
+        if (++life[i] > 200) put(i, ID.ash);
+        return true;
+    }
+    life[i] = 0;
+    if (rnd() < 0.5) return true;
+    if (rnd() < 0.03) aux[i] ^= 1;
+    const dir = aux[i] ? 1 : -1, dy = rnd() < 0.25 ? (rnd() < 0.5 ? -1 : 1) : 0;
+    const j = i + dir + dy * P, q = el[j];
+    if (q === ID.water || q === ID.saltwater) { swap(i, j); wk(x + dir, y + dy); } else aux[i] ^= 1;
+    return true;
+}
+function updVirus(i, x, y, e) {
+    if (rnd() < 0.0008) { clr(i); return true; }
+    return false;
+}
+UPD[ID.plant] = updPlant;
+UPD[ID.seed] = updSeed;
+UPD[ID.ant] = updAnt;
+UPD[ID.firefly] = updFirefly;
+UPD[ID.fish] = updFish;
+UPD[ID.virus] = updVirus;
+
+// ---- 30-blast.js ----
+// ==========================================
+// ELEMENT LAB - explosions, flying debris/sparks (particles), lightning
+// ==========================================
+const boomQ = [];                                  // {x, y, r, t (ticks to go), d (chain depth of whatever set it off)}
+let lastBoomTick = -9999, curDepth = 0, chainMax = 0;
+const NPART = 700;
+const PX = new Float32Array(NPART), PY = new Float32Array(NPART), PVX = new Float32Array(NPART), PVY = new Float32Array(NPART);
+const PE = new Uint8Array(NPART), PL = new Int16Array(NPART), PT = new Int16Array(NPART);
+let nParts = 0;
+const flashes = [];                                // {x, y, r, t, max} drawn by the renderer
+const bolts = [];                                  // {pts:[[x,y]...], t}
+let shakeT = 0;
+
+// d = -1: work it out (a blast soon after another one counts as part of its chain)
+function queueBoom(x, y, r, delay, d) {
+    if (d < 0) d = (tickN - lastBoomTick < 90) ? curDepth : 0;
+    boomQ.push({ x, y, r, t: delay < 1 ? 1 : delay, d });
+}
+function runBooms() {
+    for (let q = boomQ.length - 1; q >= 0; q--) {
+        const b = boomQ[q];
+        if (--b.t > 0) continue;
+        boomQ.splice(q, 1);
+        explode(b.x, b.y, b.r, b.d + (b.r >= 4 ? 1 : 0));
+    }
+}
+function addPart(x, y, vx, vy, e, life0, temp) {
+    if (nParts >= NPART) return false;
+    const n = nParts++;
+    PX[n] = x; PY[n] = y; PVX[n] = vx; PVY[n] = vy; PE[n] = e; PL[n] = life0; PT[n] = temp;
+    return true;
+}
+function spark(x, y, power) {                      // purely visual ember
+    const a = rnd() * 6.283, s = (0.3 + rnd()) * power;
+    addPart(x, y, Math.cos(a) * s, Math.sin(a) * s - 0.5, 0, 12 + ((rnd() * 22) | 0), 0);
+}
+function deposit(x, y, e, temp) {                  // a flying bit lands: put it in the nearest free cell above/around
+    for (let k = 0; k < 8; k++) {
+        const yy = y - k;
+        if (yy < 0 || yy >= H || x < 0 || x >= W) continue;
+        for (let s = 0; s < 3; s++) {
+            const xx = x + (s === 0 ? 0 : s === 1 ? -1 : 1);
+            if (xx < 0 || xx >= W) continue;
+            const i = ix(xx, yy);
+            if (el[i] === 0) { put(i, e, 0, true); tp[i] = temp; wk(xx, yy); return true; }
+        }
+    }
+    return false;
+}
+function stepParticles() {
+    for (let n = nParts - 1; n >= 0; n--) {
+        const e = PE[n], x = PX[n], y = PY[n];
+        PVY[n] += e ? 0.14 : 0.05; PVX[n] *= 0.995;
+        let nx = x + PVX[n], ny = y + PVY[n], dead = false;
+        const gx = nx | 0, gy = ny | 0;
+        if (e === 0) {                             // visual ember
+            if (--PL[n] <= 0 || gx < 0 || gx >= W || gy >= H) dead = true;
+            else if (gy >= 0 && el[ix(gx, gy)] !== 0 && KIND[el[ix(gx, gy)]] !== K.GAS) dead = true;
+        } else {                                   // a flying bit of material: lands on the first solid thing
+            if (gx < 0 || gx >= W) { PVX[n] = -PVX[n]; nx = x; }
+            else if (gy >= H) { deposit(x | 0, H - 1, e, PT[n]); dead = true; }
+            else if (gy >= 0 && el[ix(gx, gy)] !== 0 && KIND[el[ix(gx, gy)]] !== K.GAS) { deposit(x | 0, y | 0, e, PT[n]); dead = true; }
+            else if (--PL[n] <= 0) { deposit(gx, gy < 0 ? 0 : gy, e, PT[n]); dead = true; }
+        }
+        if (dead) { const l = --nParts; PX[n] = PX[l]; PY[n] = PY[l]; PVX[n] = PVX[l]; PVY[n] = PVY[l]; PE[n] = PE[l]; PL[n] = PL[l]; PT[n] = PT[l]; }
+        else { PX[n] = nx; PY[n] = ny; }
+    }
+}
+
+function explode(cx, cy, r, depth) {
+    lastBoomTick = tickN; curDepth = depth; if (depth > chainMax) chainMax = depth;
+    STAT.boomN++; STAT.chain = chainMax;
+    flashes.push({ x: cx, y: cy, r, t: 0, max: 8 + r });
+    shakeT = Math.min(14, 4 + r);
+    sfx('boom', Math.min(1, 0.3 + r / 12));
+    for (let q = 0; q < 6 + r * 2; q++) spark(cx, cy, 1.2 + r * 0.22);
+    const r2 = r * r, R = Math.ceil(r * 1.4), R2 = R * R;
+    for (let dy = -R; dy <= R; dy++) {
+        const yy = cy + dy; if (yy < 0 || yy >= H) continue;
+        for (let dx = -R; dx <= R; dx++) {
+            const xx = cx + dx; if (xx < 0 || xx >= W) continue;
+            const d2 = dx * dx + dy * dy; if (d2 > R2) continue;
+            const i = ix(xx, yy), e = el[i];
+            if (d2 > r2) {                         // the heat wave outside the blast lights flammable things
+                if (e !== 0 && IGN[e] !== 0 && !UNB[e] && tp[i] < IGN[e] + 40) tp[i] = IGN[e] + 40;
+                continue;
+            }
+            const dist = Math.sqrt(d2) / r;
+            if (e === 0) {
+                if (rnd() < 0.5 * (1 - dist)) put(i, ID.fire, 0, true);
+                else if (dist > 0.6 && rnd() < 0.08) put(i, ID.smoke, 0, true);
+                continue;
+            }
+            if (UNB[e]) continue;
+            if (BOOM[e] !== 0) { clr(i); queueBoom(xx, yy, BOOM[e], 2 + ((dist * r * 0.7) | 0), depth); continue; }
+            const hit = (1 - dist) * 1.6 - HARD[e];
+            if (rnd() < hit) {                     // broken: thrown out as debris
+                const k = KIND[e];
+                let pe = 0;
+                if (k === K.SOLID) pe = RUB[e];
+                else if (k !== K.GAS && e !== ID.fire && e !== ID.spark) pe = e;
+                const t = tp[i];
+                clr(i);
+                if (pe && rnd() < 0.75) {
+                    const L = Math.sqrt(d2) || 1, sp = (1 - dist) * 3.4 * (0.6 + rnd() * 0.8) + 0.4;
+                    if (!addPart(xx, yy, dx / L * sp + (rnd() - 0.5) * 0.6, dy / L * sp - 0.7, pe, 90, t > 300 ? 300 : t)) put(i, ID.fire, 0, true);
+                } else if (rnd() < 0.5) put(i, ID.fire, 0, true);
+            } else {
+                const heat = (1 - dist) * 500;
+                tp[i] = Math.min(4000, tp[i] + heat);
+                if (IGN[e] !== 0 && tp[i] < IGN[e] + 40 && BOOM[e] === 0 && (1 - dist) > 0.35) tp[i] = IGN[e] + 40;
+            }
+        }
+    }
+    for (let yy = Math.max(0, cy - R); yy <= Math.min(H - 1, cy + R); yy += 8) for (let xx = Math.max(0, cx - R); xx <= Math.min(W - 1, cx + R); xx += 8) wk(xx, yy);
+    wk(cx, cy); wk(Math.min(W - 1, cx + R), Math.min(H - 1, cy + R)); wk(Math.max(0, cx - R), Math.max(0, cy - R));
+}
+
+// lightning: a jagged bolt from the sky to (gx, gy); it stops at the first thing it hits
+function lightning(gx, gy) {
+    let x = clamp(gx + ((rnd() * 25) | 0) - 12, 1, W - 2);
+    const pts = [[x, 0]];
+    let hitY = gy;
+    for (let y = 0; y <= gy; y++) {
+        x += rnd() < 0.5 ? 0 : rnd() < 0.5 ? -1 : 1;
+        x += (gx - x) * 0.04 > 0.5 ? 1 : (gx - x) * 0.04 < -0.5 ? -1 : 0;
+        x = clamp(x, 0, W - 1);
+        const i = ix(x, y);
+        pts.push([x, y]);
+        if (el[i] !== 0 && !(el[i] === ID.spark)) { hitY = y; break; }
+        put(i, ID.spark, 0, true); life[i] = 5; tp[i] = 1000; wk(x, y);
+        hitY = y;
+    }
+    const hx = pts[pts.length - 1][0];
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const xx = hx + dx, yy = hitY + dy;
+        if (xx < 0 || xx >= W || yy < 0 || yy >= H || dx * dx + dy * dy > 5) continue;
+        const i = ix(xx, yy);
+        if (el[i] !== 0 && !UNB[el[i]]) {
+            tp[i] = clamp(tp[i] + 2600, -273, 4000);
+            if (CONDUCT[el[i]] === 1 && life[i] === 0) life[i] = 4;
+            if (BOOM[el[i]] !== 0) detonate(xx, yy, i, el[i]);
+        }
+        wk(xx, yy);
+    }
+    for (let q = 0; q < 10; q++) spark(hx, hitY, 1.4);
+    bolts.push({ pts, t: 7 });
+    flashes.push({ x: hx, y: hitY, r: 5, t: 0, max: 6 });
+    sfx('zap', 1);
+}
+
+// ---- 35-tools.js ----
+// ==========================================
+// ELEMENT LAB - tools: painting, heat gun, wind, undo, resizing the grid
+// ==========================================
+const TOOLS = { brush: 'Brush', line: 'Line', rect: 'Rectangle', erase: 'Eraser', heat: 'Heat gun', cool: 'Cooler', wind: 'Wind', zap: 'Lightning' };
+let tool = 'brush', curEl = 1, brushR = 4;
+const PAINT_DENS = [1, 1, 0.55, 0.7, 0.14, 0.05];   // by element kind (empty, solid, powder, liquid, gas, creature)
+
+function setUser(i, e) {                           // an element placed by the player (not "made" by the simulation)
+    el[i] = e; tp[i] = TINIT[e]; vr[i] = (rnd() * 16) | 0;
+    const a = L0[e]; life[i] = a ? a + ((rnd() * (L1[e] - a + 1)) | 0) : 0;
+    aux[i] = AUX0[e]; st[i] = 0;
+}
+function inb(x, y) { return x >= 0 && y >= 0 && x < W && y < H; }
+function circleCells(cx, cy, r, fn) {
+    const r2 = r * r + r * 0.6 + 0.3;
+    for (let dy = -r; dy <= r; dy++) {
+        const y = cy + dy; if (y < 0 || y >= H) continue;
+        for (let dx = -r; dx <= r; dx++) {
+            const x = cx + dx; if (x < 0 || x >= W || dx * dx + dy * dy > r2) continue;
+            fn(x, y, ix(x, y));
+        }
+    }
+}
+function paintCircle(cx, cy, r, e, dens) {
+    if (e === ID.fire && dens < 0.3) dens = 0.3;
+    if (r <= 1 && dens < 0.6 && KIND[e] !== K.GAS && KIND[e] !== K.CREATURE) dens = 0.6;
+    const rep = SETTINGS.replace;
+    circleCells(cx, cy, r, (x, y, i) => {
+        if (e === 0) { if (el[i] !== 0) { clr(i); wk(x, y); } return; }
+        if (el[i] !== 0 && !rep) return;
+        if (dens < 1 && rnd() > dens) return;
+        setUser(i, e); wk(x, y);
+    });
+}
+function paintAt(cx, cy) {
+    const e = tool === 'erase' ? 0 : curEl;
+    paintCircle(cx, cy, brushR, e, e === 0 ? 1 : PAINT_DENS[KIND[e]]);
+}
+function lineCells(x0, y0, x1, y1, fn) {
+    let dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx + dy;
+    for (let n = 0; n < 2000; n++) {
+        fn(x0, y0);
+        if (x0 === x1 && y0 === y1) break;
+        const e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+function strokeTo(x0, y0, x1, y1) {                // freehand: paint along the segment, no gaps
+    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    const every = Math.max(1, brushR >> 1);
+    let n = 0;
+    lineCells(x0, y0, x1, y1, (x, y) => { if ((n++ % every) === 0 || (x === x1 && y === y1)) paintAt(x, y); });
+}
+function drawLine(x0, y0, x1, y1) {
+    const e = tool === 'erase' ? 0 : curEl;
+    lineCells(x0, y0, x1, y1, (x, y) => paintCircle(x, y, brushR, e, 1));
+}
+function fillRect(x0, y0, x1, y1, e, force) {
+    const a = Math.max(0, Math.min(x0, x1)), b = Math.min(W - 1, Math.max(x0, x1));
+    const c = Math.max(0, Math.min(y0, y1)), d = Math.min(H - 1, Math.max(y0, y1));
+    const rep = SETTINGS.replace || force;
+    for (let y = c; y <= d; y++) for (let x = a; x <= b; x++) {
+        const i = ix(x, y);
+        if (e === 0) { if (el[i]) clr(i); continue; }
+        if (el[i] !== 0 && !rep) continue;
+        setUser(i, e);
+    }
+    for (let y = c; y <= d; y += 8) for (let x = a; x <= b; x += 8) wk(x, y);
+    wk(b, d);
+}
+function heatAt(cx, cy, delta) {
+    circleCells(cx, cy, brushR, (x, y, i) => {
+        if (el[i] === 0) return;
+        const t = tp[i] + delta;
+        tp[i] = t > 4000 ? 4000 : t < -273 ? -273 : t;
+        wk(x, y);
+    });
+}
+function windAt(cx, cy, vx, vy) {
+    const sx = vx > 0.3 ? 1 : vx < -0.3 ? -1 : 0, sy = vy > 0.3 ? 1 : vy < -0.3 ? -1 : 0;
+    if (!sx && !sy) return;
+    const pr = Math.min(1, (Math.abs(vx) + Math.abs(vy)) / 2);
+    circleCells(cx, cy, brushR + 1, (x, y, i) => {
+        const e = el[i], k = KIND[e];
+        if (e === 0 || k < K.POWDER || k > K.GAS || rnd() > pr) return;
+        const j = i + sx + sy * P;
+        if (el[j] === 0) { swap(i, j); wk(x, y); wk(x + sx, y + sy); }
+    });
+}
+function zapAt(cx, cy) { lightning(cx, cy); }
+
+// ---------- undo (a few steps) ----------
+const undoStack = [];
+function snapshot() { return { w: W, h: H, el: el.slice(), tp: tp.slice(), life: life.slice(), aux: aux.slice(), vr: vr.slice() }; }
+function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 6) undoStack.shift(); }
+function undo() {
+    const s = undoStack.pop();
+    if (!s || s.w !== W || s.h !== H) return false;
+    el.set(s.el); tp.set(s.tp); life.set(s.life); aux.set(s.aux); vr.set(s.vr); st.fill(0);
+    boomQ.length = 0; nParts = 0; wakeAll();
+    return true;
+}
+function clearGrid() {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) clr(ix(x, y));
+    boomQ.length = 0; nParts = 0; wakeAll();
+}
+
+// ---------- resize (quality change): keep the scene, nearest-cell resampled ----------
+function resizeGrid(w, h) {
+    if (w === W && h === H) return;
+    const old = { w: W, h: H, P, el, tp, life, aux, vr };
+    allocGrid(w, h);
+    if (old.w) for (let y = 0; y < h; y++) {
+        const oy = Math.min(old.h - 1, Math.floor(y * old.h / h));
+        for (let x = 0; x < w; x++) {
+            const ox = Math.min(old.w - 1, Math.floor(x * old.w / w)), o = (oy + 1) * old.P + ox + 1, i = ix(x, y);
+            el[i] = old.el[o]; tp[i] = old.tp[o]; life[i] = old.life[o]; aux[i] = old.aux[o]; vr[i] = old.vr[o];
+        }
+    }
+    undoStack.length = 0; boomQ.length = 0; nParts = 0;
+}
+
+// ---- 40-render.js ----
+// ==========================================
+// ELEMENT LAB - drawing: ImageData per frame, glow layer, particles, overlay effects
+// ==========================================
+const pack = (r, g, b) => (255 << 24) | (b << 16) | (g << 8) | r;
+const BG_RGB = [14, 18, 30], BGC = pack(14, 18, 30);
+const PAL = new Uint32Array(NE * 16);
+const DYN = new Uint8Array(NE);
+(function buildPalette() {
+    for (let e = 1; e < NE; e++) {
+        const c = DEFS[e].col, a = ALPHA[e];
+        for (let s = 0; s < 16; s++) {
+            const f = 1 + (s - 7.5) / 7.5 * VARY[e];
+            const ch = k => { const v = Math.max(0, Math.min(255, c[k] * f)); return Math.round(BG_RGB[k] + (v - BG_RGB[k]) * a); };
+            PAL[e * 16 + s] = pack(ch(0), ch(1), ch(2));
+        }
+    }
+    DYN[ID.fire] = 1; DYN[ID.spark] = 2; DYN[ID.metal] = 3; DYN[ID.lamp] = 4; DYN[ID.lava] = 5; DYN[ID.firefly] = 6;
+    DYN[ID.battery] = 7; DYN[ID.moltenmetal] = 5; DYN[ID.moltenglass] = 5;
+})();
+const HEATLUT = new Uint32Array(256);
+(function () {
+    const stops = [[-100, 50, 90, 255], [20, 25, 60, 70], [100, 220, 200, 40], [400, 255, 110, 20], [900, 255, 50, 50], [1500, 255, 255, 230]];
+    for (let k = 0; k < 256; k++) {
+        const t = -100 + k * 1600 / 255;
+        let a = stops[0], b = stops[1];
+        for (let s = 1; s < stops.length; s++) { if (t <= stops[s][0]) { a = stops[s - 1]; b = stops[s]; break; } a = stops[s - 1]; b = stops[s]; }
+        const f = clamp((t - a[0]) / (b[0] - a[0]), 0, 1);
+        HEATLUT[k] = pack((a[1] + (b[1] - a[1]) * f) | 0, (a[2] + (b[2] - a[2]) * f) | 0, (a[3] + (b[3] - a[3]) * f) | 0);
+    }
+})();
+const heatColor = t => HEATLUT[clamp(((t + 100) * 255 / 1600) | 0, 0, 255)];
+
+let cv, ctx, img, buf, gcv, gctx, gimg, gbuf, GWID = 0, GHEI = 0, gacc, ocv, octx, fr = 0;
+let preview = null;                                // {type: 'line' | 'rect', x0, y0, x1, y1} drawn while dragging
+
+function initRender() {
+    cv = $('view'); cv.width = W; cv.height = H;
+    ctx = cv.getContext('2d', { alpha: false });
+    img = ctx.createImageData(W, H); buf = new Uint32Array(img.data.buffer);
+    GWID = Math.max(2, W >> 2); GHEI = Math.max(2, H >> 2);
+    gcv = $('glow'); gcv.width = GWID; gcv.height = GHEI; gctx = gcv.getContext('2d');
+    gimg = gctx.createImageData(GWID, GHEI); gbuf = new Uint32Array(gimg.data.buffer); gacc = new Int32Array(GWID * GHEI * 3);
+    ocv = $('ov'); ocv.width = W; ocv.height = H; octx = ocv.getContext('2d');
+    layoutStage();
+}
+function layoutStage() {
+    const st_ = $('stage'), wrap = $('wrap');
+    if (!st_ || !W) return;
+    const aw = st_.clientWidth - 8, ah = st_.clientHeight - 8;
+    let s = Math.min(aw / W, ah / H);
+    if (s >= 2) s = Math.floor(s * 2) / 2;
+    wrap.style.width = Math.max(40, Math.floor(W * s)) + 'px'; wrap.style.height = Math.max(40, Math.floor(H * s)) + 'px';
+}
+
+function heatTint(c, t) {
+    const f = Math.min(1, (t - 420) / 800);
+    let r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255;
+    r += (255 - r) * f; g += (110 + 100 * f * f - g) * f * 0.8; b *= 1 - f * 0.75;
+    if (t > 1400) { const w = Math.min(0.6, (t - 1400) / 2400); r += (255 - r) * w; g += (255 - g) * w; b += (255 - b) * w; }
+    return pack(r | 0, g | 0, b | 0);
+}
+function coldTint(c, t) {
+    const f = Math.min(0.4, (-20 - t) / 250);
+    const r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255;
+    return pack((r + (150 - r) * f) | 0, (g + (210 - g) * f) | 0, (b + (255 - b) * f) | 0);
+}
+function dynColor(code, e, i, c, x, y) {
+    switch (code) {
+        case 1: { const l = life[i]; return pack(255, Math.min(255, 70 + l * 4 + ((rnd() * 60) | 0)), l > 18 ? 90 + ((rnd() * 60) | 0) : 20 + ((rnd() * 30) | 0)); }
+        case 2: return pack(255, 255, 150 + ((rnd() * 105) | 0));
+        case 3: { const l = life[i]; if (l === 0) return c; const f = l / 4; const r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255; return pack((r + (130 - r) * f) | 0, (g + (225 - g) * f) | 0, (b + (255 - b) * f) | 0); }
+        case 4: return life[i] > 0 ? pack(255, 246, 170) : c;
+        case 5: return PAL[(e << 4) | ((vr[i] + (fr >> 3)) & 15)];
+        case 6: return ((fr + vr[i] * 7) >> 4) & 1 ? pack(235, 255, 110) : c;
+        case 7: return ((x + y) & 1) ? c : pack(40, 150, 80);
+    }
+    return c;
+}
+
+function render() {
+    fr++;
+    const ovl = SETTINGS.overlay, glow = SETTINGS.glow;
+    if (glow) gacc.fill(0);
+    for (let y = 0; y < H; y++) {
+        let i = (y + 1) * P + 1, o = y * W;
+        const grow = (y >> 2) * GWID;
+        for (let x = 0; x < W; x++, i++, o++) {
+            const e = el[i];
+            if (e === 0) { buf[o] = BGC; continue; }
+            const t = tp[i];
+            let c = PAL[(e << 4) | (vr[i] & 15)];
+            const dc = DYN[e];
+            if (dc !== 0) c = dynColor(dc, e, i, c, x, y);
+            if (ovl) c = heatColor(t);
+            else if (SELF[e] === 0) { if (t > 420) c = heatTint(c, t); else if (t < -20) c = coldTint(c, t); }
+            buf[o] = c;
+            if (glow) {
+                let s = GLS[e], gr = GLR[e], gg = GLG[e], gb = GLB[e];
+                if (e === ID.lamp) { if (life[i] > 0) { s = 4; gr = 255; gg = 240; gb = 160; } }
+                else if (s === 0 && t > 800) { s = t > 1400 ? 3 : 2; gr = 255; gg = 110; gb = 30; }
+                if (s !== 0) { const gi = (grow + (x >> 2)) * 3; gacc[gi] += gr * s; gacc[gi + 1] += gg * s; gacc[gi + 2] += gb * s; }
+            }
+        }
+    }
+    for (let n = 0; n < nParts; n++) {             // flying debris and embers
+        const x = PX[n] | 0, y = PY[n] | 0;
+        if (x < 0 || x >= W || y < 0 || y >= H) continue;
+        buf[y * W + x] = PE[n] ? PAL[(PE[n] << 4) | 8] : (PL[n] > 8 ? pack(255, 225, 130) : pack(255, 120, 40));
+    }
+    ctx.putImageData(img, 0, 0);
+    if (glow) {
+        for (let k = 0, n = GWID * GHEI; k < n; k++) {
+            const r = Math.min(255, gacc[k * 3] >> 4), g = Math.min(255, gacc[k * 3 + 1] >> 4), b = Math.min(255, gacc[k * 3 + 2] >> 4);
+            gbuf[k] = pack(r, g, b);
+        }
+        gctx.putImageData(gimg, 0, 0);
+    }
+    gcv.style.display = glow ? '' : 'none';
+    drawOverlay();
+}
+
+function drawOverlay() {
+    const g = octx;
+    g.clearRect(0, 0, W, H);
+    if (preview) {
+        g.fillStyle = 'rgba(255,255,255,0.55)'; g.strokeStyle = 'rgba(255,255,255,0.8)'; g.lineWidth = 1;
+        if (preview.type === 'line') lineCells(preview.x0, preview.y0, preview.x1, preview.y1, (x, y) => g.fillRect(x, y, 1, 1));
+        else {
+            const a = Math.min(preview.x0, preview.x1), b = Math.min(preview.y0, preview.y1);
+            g.strokeRect(a + 0.5, b + 0.5, Math.abs(preview.x1 - preview.x0), Math.abs(preview.y1 - preview.y0));
+        }
+    }
+    if (SETTINGS.fx) for (let q = flashes.length - 1; q >= 0; q--) {
+        const f = flashes[q], p = f.t / f.max;
+        if (p >= 1) { flashes.splice(q, 1); continue; }
+        const rad = f.r * (0.6 + p * 1.1);
+        const gr = g.createRadialGradient(f.x, f.y, 0, f.x, f.y, rad);
+        gr.addColorStop(0, 'rgba(255,240,200,' + (0.85 * (1 - p)).toFixed(2) + ')');
+        gr.addColorStop(0.5, 'rgba(255,170,60,' + (0.45 * (1 - p)).toFixed(2) + ')');
+        gr.addColorStop(1, 'rgba(255,100,20,0)');
+        g.fillStyle = gr; g.beginPath(); g.arc(f.x, f.y, rad, 0, 6.283); g.fill();
+        f.t++;
+    } else flashes.length = 0;
+    for (let q = bolts.length - 1; q >= 0; q--) {
+        const b = bolts[q];
+        if (--b.t <= 0) { bolts.splice(q, 1); continue; }
+        g.strokeStyle = 'rgba(230,240,255,' + (b.t / 7).toFixed(2) + ')'; g.lineWidth = 1.4;
+        g.beginPath(); b.pts.forEach((p, k) => k ? g.lineTo(p[0] + 0.5, p[1] + 0.5) : g.moveTo(p[0] + 0.5, p[1] + 0.5)); g.stroke();
+    }
+    const stg = $('wrap');
+    if (shakeT > 0 && SETTINGS.fx) { shakeT--; stg.style.transform = 'translate(' + ((rnd() - 0.5) * shakeT * 0.8).toFixed(1) + 'px,' + ((rnd() - 0.5) * shakeT * 0.8).toFixed(1) + 'px)'; }
+    else if (stg.style.transform) stg.style.transform = '';
+}
+
+// ---- 50-input.js ----
+// ==========================================
+// ELEMENT LAB - mouse / touch input and keyboard shortcuts
+// ==========================================
+const ptr = { gx: -1, gy: -1, inside: false };
+let drag = null, holdFrames = 0;
+let paused = false, speed = 1;
+let onToolChange = null, onUiRefresh = null;
+
+function toGrid(ev) {
+    const r = $('wrap').getBoundingClientRect();
+    return { x: Math.floor((ev.clientX - r.left) / r.width * W), y: Math.floor((ev.clientY - r.top) / r.height * H) };
+}
+function placeCursor() {
+    const c = $('cursor'), wrap = $('wrap');
+    if (!c) return;
+    if (!ptr.inside || tool === 'zap' || (drag && (tool === 'line' || tool === 'rect'))) { c.style.display = 'none'; return; }
+    const cell = wrap.clientWidth / W, d = (brushR * 2 + 1) * cell;
+    c.style.display = 'block'; c.style.width = c.style.height = d + 'px';
+    c.style.left = ((ptr.gx + 0.5) * cell - d / 2) + 'px'; c.style.top = ((ptr.gy + 0.5) * cell - d / 2) + 'px';
+}
+function applyHold() {                             // runs every frame while the button is down
+    if (!drag) return;
+    holdFrames++;
+    const x = drag.lx, y = drag.ly;
+    if (tool === 'brush' || tool === 'erase') paintAt(x, y);
+    else if (tool === 'heat') heatAt(x, y, 45);
+    else if (tool === 'cool') heatAt(x, y, -45);
+    else if (tool === 'zap' && holdFrames % 14 === 0) zapAt(x, y);
+    dirtySave = true;
+}
+function pDown(ev) {
+    if (drag) return;
+    audioUnlock();
+    if (ev.button !== undefined && ev.button > 0 && ev.pointerType === 'mouse') return;
+    ev.preventDefault();
+    try { $('wrap').setPointerCapture(ev.pointerId); } catch (e) { }
+    const g = toGrid(ev);
+    ptr.gx = g.x; ptr.gy = g.y; ptr.inside = true;
+    drag = { id: ev.pointerId, x0: g.x, y0: g.y, lx: g.x, ly: g.y };
+    holdFrames = 0;
+    if (tool !== 'zap') pushUndo();
+    if (tool === 'brush' || tool === 'erase') { paintAt(g.x, g.y); if (curEl === ID.water && tool === 'brush') sfx('splash', 0.6); }
+    else if (tool === 'zap') { zapAt(g.x, g.y); holdFrames = 1; }
+    else if (tool === 'line' || tool === 'rect') preview = { type: tool, x0: g.x, y0: g.y, x1: g.x, y1: g.y };
+    dirtySave = true; placeCursor();
+}
+function pMove(ev) {
+    const g = toGrid(ev);
+    ptr.gx = g.x; ptr.gy = g.y; ptr.inside = g.x >= 0 && g.y >= 0 && g.x < W && g.y < H;
+    if (drag && ev.pointerId === drag.id) {
+        const px = drag.lx, py = drag.ly;
+        if (tool === 'brush' || tool === 'erase') strokeTo(px, py, g.x, g.y);
+        else if (tool === 'heat') heatAt(g.x, g.y, 30);
+        else if (tool === 'cool') heatAt(g.x, g.y, -30);
+        else if (tool === 'wind') windAt(g.x, g.y, (g.x - px) * 1.2, (g.y - py) * 1.2);
+        else if (preview) { preview.x1 = g.x; preview.y1 = g.y; }
+        drag.lx = g.x; drag.ly = g.y;
+        dirtySave = true;
+    }
+    placeCursor();
+}
+function pUp(ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    if (preview) {
+        if (preview.type === 'line') drawLine(preview.x0, preview.y0, preview.x1, preview.y1);
+        else fillRect(preview.x0, preview.y0, preview.x1, preview.y1, tool === 'erase' ? 0 : curEl);
+        preview = null;
+    }
+    drag = null; placeCursor();
+}
+function pLeave() { if (!drag) { ptr.inside = false; placeCursor(); } }
+function setTool(t) { tool = t; preview = null; if (onToolChange) onToolChange(); placeCursor(); }
+function setBrush(r) { brushR = clamp(r | 0, 0, 30); if (onToolChange) onToolChange(); placeCursor(); }
+function togglePause() { paused = !paused; if (onUiRefresh) onUiRefresh(); }
+function doUndo() { if (undo()) toast('Undone'); else toast('Nothing to undo'); }
+
+function initInput() {
+    const w = $('wrap');
+    w.addEventListener('pointerdown', pDown);
+    w.addEventListener('pointermove', pMove);
+    w.addEventListener('pointerup', pUp);
+    w.addEventListener('pointercancel', pUp);
+    w.addEventListener('pointerleave', pLeave);
+    w.addEventListener('contextmenu', e => e.preventDefault());
+    w.addEventListener('wheel', e => { e.preventDefault(); setBrush(brushR + (e.deltaY < 0 ? 1 : -1)); }, { passive: false });
+    window.addEventListener('keydown', ev => {
+        if (ev.target && /INPUT|TEXTAREA|SELECT/.test(ev.target.tagName) && ev.key !== 'Escape') return;
+        if (!$('title').classList.contains('hidden') || !$('dlg').classList.contains('hidden')) { if (ev.key === 'Escape') closeDlg(); return; }
+        const k = ev.key.toLowerCase();
+        if (ev.ctrlKey || ev.metaKey) { if (k === 'z') { ev.preventDefault(); doUndo(); } return; }
+        const map = { b: 'brush', l: 'line', r: 'rect', e: 'erase', h: 'heat', c: 'cool', w: 'wind', z: 'zap' };
+        if (map[k]) setTool(map[k]);
+        else if (k === ' ') { ev.preventDefault(); togglePause(); }
+        else if (k === '.') stepOnce();
+        else if (k === '[') setBrush(brushR - 1);
+        else if (k === ']') setBrush(brushR + 1);
+        else if (k === 'u') doUndo();
+    });
+}
+
+// ---- 60-ui.js ----
+// ==========================================
+// ELEMENT LAB - interface: toolbar, element palette, dialogs, title screen
+// ==========================================
+let curCat = 'Powders', searchQ = '';
+const SPEEDS = [0.5, 1, 2];
+let toastTimer = 0;
+function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
+}
+function openDlg(title, html, mount) {
+    $('dlg-t').textContent = title; $('dlg-b').innerHTML = html;
+    $('dlg').classList.remove('hidden');
+    if (mount) mount($('dlg-b'));
+}
+function closeDlg() { $('dlg').classList.add('hidden'); }
+
+function mkBtn(parent, id, label, title, fn, cls) {
+    const b = document.createElement('button');
+    b.className = 'tb' + (cls ? ' ' + cls : ''); b.id = id; b.textContent = label; b.title = title || label;
+    b.addEventListener('click', () => { audioUnlock(); fn(); });
+    parent.appendChild(b); return b;
+}
+function stepOnce() { if (paused) { step(); } }
+function cycleSpeed() { const k = (SPEEDS.indexOf(speed) + 1) % SPEEDS.length; speed = SPEEDS[k]; refreshUi(); }
+
+function buildTop() {
+    const tl = $('tools');
+    Object.keys(TOOLS).forEach(k => mkBtn(tl, 'tool-' + k, TOOLS[k], TOOLS[k] + ' (' + (k === 'erase' ? 'E' : k === 'zap' ? 'Z' : k === 'heat' ? 'H' : k === 'cool' ? 'C' : k === 'wind' ? 'W' : k === 'rect' ? 'R' : k === 'line' ? 'L' : 'B') + ')', () => setTool(k)));
+    const sm = $('sim');
+    mkBtn(sm, 'b-pause', 'Pause', 'Pause / play (Space)', togglePause);
+    mkBtn(sm, 'b-step', 'Step', 'Advance one tick while paused (.)', stepOnce);
+    mkBtn(sm, 'b-speed', '1x', 'Simulation speed', cycleSpeed);
+    mkBtn(sm, 'b-undo', 'Undo', 'Undo (Ctrl+Z)', doUndo);
+    mkBtn(sm, 'b-clear', 'Clear', 'Clear everything', () => { pushUndo(); clearGrid(); toast('Cleared (Undo brings it back)'); });
+    const ac = $('acts');
+    mkBtn(ac, 'b-scenes', 'Scenes', 'Load a preset scene', showScenes);
+    mkBtn(ac, 'b-chal', 'Challenges', 'Challenges', showChallenges);
+    mkBtn(ac, 'b-share', 'Share', 'Share code', showShare);
+    mkBtn(ac, 'b-shot', 'Photo', 'Save a PNG screenshot', () => { screenshot(); toast('Screenshot saved'); });
+    mkBtn(ac, 'b-set', 'Settings', 'Settings', showSettings);
+    mkBtn(ac, 'b-help', '?', 'How to play', showHelp);
+    $('size-r').addEventListener('input', e => setBrush(+e.target.value));
+    onToolChange = refreshUi; onUiRefresh = refreshUi;
+}
+function refreshUi() {
+    for (const k in TOOLS) $('tool-' + k).classList.toggle('on', tool === k);
+    $('b-pause').textContent = paused ? 'Play' : 'Pause'; $('b-pause').classList.toggle('on', paused);
+    $('b-speed').textContent = speed + 'x';
+    $('size-r').value = brushR; $('size-v').textContent = brushR;
+    document.querySelectorAll('.el').forEach(b => b.classList.toggle('sel', +b.dataset.e === curEl));
+    document.querySelectorAll('#cats .tb').forEach(b => b.classList.toggle('on', !searchQ && b.dataset.c === curCat));
+}
+function textOn(c) { return (c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11) > 140 ? '#14161c' : '#fff'; }
+function buildPalette() {
+    const cats = $('cats'); cats.innerHTML = '';
+    CATS.forEach(c => { const b = mkBtn(cats, '', c, c, () => { curCat = c; searchQ = ''; $('search').value = ''; fillPalette(); refreshUi(); }); b.dataset.c = c; });
+    $('search').addEventListener('input', e => { searchQ = e.target.value.trim().toLowerCase(); fillPalette(); refreshUi(); });
+    fillPalette();
+}
+function fillPalette() {
+    const box = $('els'); box.innerHTML = '';
+    for (let e = 1; e < NE; e++) {
+        const d = DEFS[e];
+        if (searchQ ? !(d.label.toLowerCase().includes(searchQ) || d.name.includes(searchQ) || d.cat.toLowerCase().includes(searchQ)) : d.cat !== curCat) continue;
+        const b = document.createElement('button');
+        b.className = 'el'; b.dataset.e = e; b.textContent = d.label;
+        const c = d.col;
+        b.style.background = 'linear-gradient(180deg, rgb(' + Math.min(255, c[0] + 28) + ',' + Math.min(255, c[1] + 28) + ',' + Math.min(255, c[2] + 28) + '), rgb(' + c[0] + ',' + c[1] + ',' + c[2] + '))';
+        b.style.color = textOn(c);
+        b.title = d.label + ' (' + d.cat + ')';
+        b.addEventListener('click', () => { audioUnlock(); selectElement(e); });
+        box.appendChild(b);
+    }
+    if (!box.children.length) box.innerHTML = '<div style="grid-column:1/-1;color:var(--dim);padding:8px">No element matches.</div>';
+}
+function selectElement(e) {
+    curEl = e;
+    if (tool !== 'brush' && tool !== 'line' && tool !== 'rect') setTool('brush');
+    refreshUi();
+}
+function updateHover() {
+    const h = $('hover');
+    if (!ptr.inside || !inb(ptr.gx, ptr.gy)) { h.textContent = DEFS[curEl].label + ' selected  |  ' + TOOLS[tool]; return; }
+    const i = ix(ptr.gx, ptr.gy), e = el[i];
+    h.textContent = (e ? DEFS[e].label : 'Empty') + '  ' + (e ? tp[i] : AMB) + ' C   (' + ptr.gx + ', ' + ptr.gy + ')  |  ' + DEFS[curEl].label + ' - ' + TOOLS[tool];
+}
+
+// ---------- dialogs ----------
+function showHelp() {
+    openDlg('How to play', '<p>Pick an element on the right, then click or drag on the lab to pour it. Everything reacts: fire burns wood, water cools lava into obsidian, acid eats stone, sodium explodes in water.</p>' +
+        '<ul><li><b>Tools</b>: Brush, Line, Rectangle, Eraser, Heat gun, Cooler, Wind (drag to push things), Lightning (click).</li>' +
+        '<li><b>Size</b>: the slider, mouse wheel, or <kbd>[</kbd> <kbd>]</kbd>.</li><li><b>Pause</b> <kbd>Space</kbd>, step <kbd>.</kbd>, undo <kbd>Ctrl+Z</kbd>.</li>' +
+        '<li>Hover over anything to see what it is and how hot it is. Turn on the temperature view in Settings.</li>' +
+        '<li>Electricity: touch a Battery to Metal wire; the charge runs along it and lights Lamps. Sparks light fires and set off TNT.</li>' +
+        '<li>Life: Seeds grow into Plants when they touch water. Ants eat plants. Viruses spread through living things.</li>' +
+        '<li>Try <b>Scenes</b> for ready made worlds, and <b>Challenges</b> for goals. <b>Share</b> turns your scene into a code you can paste to a friend.</li></ul>' +
+        '<p style="color:var(--dim)">On a touch screen: tap or drag to paint.</p>');
+}
+function showScenes() {
+    openDlg('Scenes', Object.keys(SCENES).map(k => '<button class="scn" data-s="' + k + '"><b>' + SCENES[k].label + '</b><span>' + SCENES[k].desc + '</span></button>').join(''), box => {
+        box.querySelectorAll('.scn').forEach(b => b.addEventListener('click', () => { loadScene(b.dataset.s); closeDlg(); startPlay(); toast(SCENES[b.dataset.s].label + ' loaded'); }));
+    });
+}
+function showChallenges() {
+    openDlg('Challenges  ' + challengeCount() + '/' + CHALLENGES.length, CHALLENGES.map(c => '<div class="chal' + (DONE[c.id] ? ' done' : '') + '"><b>' + c.name + '</b><span>' + c.hint + '</span></div>').join(''));
+}
+function showShare() {
+    const code = encodeScene();
+    openDlg('Share a scene', '<p>Copy this code and send it to a friend. To load one, paste it below and press Load.</p><textarea id="sh-code" spellcheck="false"></textarea>' +
+        '<div class="row"><button class="btn small" id="sh-copy">Copy</button><button class="btn small" id="sh-load">Load</button></div>', box => {
+        const ta = box.querySelector('#sh-code'); ta.value = code;
+        box.querySelector('#sh-copy').addEventListener('click', () => { ta.select(); try { document.execCommand('copy'); toast('Copied'); } catch (e) { toast('Press Ctrl+C to copy'); } });
+        box.querySelector('#sh-load').addEventListener('click', () => { if (decodeScene(ta.value)) { closeDlg(); startPlay(); toast('Scene loaded'); } else toast('That code does not look right'); });
+    });
+}
+function changeQuality(q) {
+    SETTINGS.quality = q; saveSettings();
+    resizeGrid(QUAL[q].w, QUAL[q].h); initRender(); wakeAll();
+}
+function showSettings() {
+    const opt = (k, name, sub) => '<div class="opt"><div>' + name + '<span>' + sub + '</span></div><input type="checkbox" data-k="' + k + '"' + (SETTINGS[k] ? ' checked' : '') + '></div>';
+    openDlg('Settings', '<div class="opt"><div>Quality<span>Grid size. Lower is faster on slow computers.</span></div><div class="grp" id="q-btns"></div></div>' +
+        opt('sound', 'Sound', 'Sizzle, boom and splash') + opt('overlay', 'Temperature view', 'Colour every cell by how hot it is') +
+        opt('glow', 'Glow', 'Light from fire, lava and electricity') + opt('fx', 'Effects', 'Explosion flashes and screen shake') +
+        opt('replace', 'Brush replaces', 'Paint over existing cells instead of only empty space'), box => {
+        const qb = box.querySelector('#q-btns');
+        QUAL.forEach((q, k) => { const b = document.createElement('button'); b.className = 'tb' + (SETTINGS.quality === k ? ' on' : ''); b.textContent = q.n + ' ' + q.w + 'x' + q.h;
+            b.addEventListener('click', () => { changeQuality(k); qb.querySelectorAll('.tb').forEach((x, n) => x.classList.toggle('on', n === k)); }); qb.appendChild(b); });
+        box.querySelectorAll('input[data-k]').forEach(inp => inp.addEventListener('change', () => { SETTINGS[inp.dataset.k] = inp.checked; saveSettings(); if (inp.dataset.k === 'sound' && inp.checked) { audioUnlock(); sfx('pop'); } }));
+    });
+}
+
+// ---------- title screen ----------
+function startPlay() { $('title').classList.add('hidden'); audioUnlock(); layoutStage(); if (!SETTINGS.seenHelp) { SETTINGS.seenHelp = true; saveSettings(); toast('Pick an element and drag on the lab. Press ? for help.'); } }
+function initTitle() {
+    const bg = $('tbg');
+    for (let k = 0; k < 26; k++) { const i = document.createElement('i'); i.style.left = (rnd() * 100) + '%'; i.style.animationDelay = (rnd() * 4) + 's'; i.style.animationDuration = (3 + rnd() * 3) + 's'; i.style.background = ['#ff9d3c', '#ffd36b', '#7ec8ff', '#9cff7e'][k & 3]; bg.appendChild(i); }
+    $('t-play').addEventListener('click', startPlay);
+    $('t-scenes').addEventListener('click', showScenes);
+    $('t-chal').addEventListener('click', showChallenges);
+    $('t-how').addEventListener('click', showHelp);
+    $('t-set').addEventListener('click', showSettings);
+    const sv = LS.get('elementlab_autosave', null);
+    if (sv && sv.code) $('t-cont').addEventListener('click', () => { if (decodeScene(sv.code)) { startPlay(); toast('Welcome back'); } });
+    else $('t-cont').classList.add('hidden');
+    $('dlg-x').addEventListener('click', closeDlg);
+    $('dlg').addEventListener('pointerdown', e => { if (e.target === $('dlg')) closeDlg(); });
+}
+
+// ---- 65-meta.js ----
+// ==========================================
+// ELEMENT LAB - challenges, share codes, screenshots, autosave
+// ==========================================
+const CHALLENGES = [
+    { id: 'obsidian', name: 'Make obsidian', hint: 'Pour water onto lava.', test: () => MADE[ID.obsidian] },
+    { id: 'glass', name: 'Make glass', hint: 'Melt sand with the heat gun or lava, then let it cool.', test: () => MADE[ID.glass] },
+    { id: 'saltwater', name: 'Make salt water', hint: 'Drop salt into water.', test: () => MADE[ID.saltwater] },
+    { id: 'rain', name: 'Make it rain', hint: 'Place a cloud, or boil water so steam rises and cools.', test: () => STAT.rain > 0 },
+    { id: 'forest', name: 'Grow a forest', hint: 'Plant seeds in dirt and give them water.', test: () => STAT.grown >= 150 },
+    { id: 'chain', name: 'Chain reaction', hint: 'Set off TNT or C4 so each blast sets off the next one, at least 5 in a row. A long line of TNT (20 blocks) works well.', test: () => chainMax >= 5 },
+    { id: 'rust', name: 'Make rust', hint: 'Leave metal in salt water for a while.', test: () => MADE[ID.rust] },
+    { id: 'ice', name: 'Freeze water', hint: 'Cool water with the Cooler, a Freezer block or liquid nitrogen.', test: () => MADE[ID.ice] },
+    { id: 'lamp', name: 'Light a lamp', hint: 'Touch a battery to metal wire that reaches a lamp.', test: () => STAT.lamp > 0 },
+    { id: 'molten', name: 'Melt metal', hint: 'The heat gun gets metal hot enough.', test: () => MADE[ID.moltenmetal] },
+    { id: 'alkali', name: 'Sodium splash', hint: 'Drop sodium or potassium into water. Stand back.', test: () => STAT.alk > 0 },
+    { id: 'virus', name: 'Spread a virus', hint: 'Put virus next to plants or ants.', test: () => STAT.infected >= 20 },
+    { id: 'ants', name: 'Ant feast', hint: 'Ants eat plants. Give them some.', test: () => STAT.ate >= 10 }
+];
+const DONE = LS.get('elementlab_challenges', {}) || {};
+let onChallenge = null;
+function checkChallenges() {
+    for (const c of CHALLENGES) {
+        if (DONE[c.id]) continue;
+        let ok = false; try { ok = !!c.test(); } catch (e) { }
+        if (ok) { DONE[c.id] = Date.now(); LS.set('elementlab_challenges', DONE); sfx('ding', 1); if (onChallenge) onChallenge(c); }
+    }
+}
+const challengeCount = () => CHALLENGES.filter(c => DONE[c.id]).length;
+
+// ---------- share code: run-length encoded element ids, base64. "EL1.<w>x<h>.<data>" ----------
+function encodeScene() {
+    const out = [];
+    let run = 0, prev = -1;
+    const flush = () => { if (run) { out.push(prev); let r = run; while (r >= 128) { out.push((r & 127) | 128); r >>= 7; } out.push(r); } };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const e = el[ix(x, y)];
+        if (e === prev) run++; else { flush(); prev = e; run = 1; }
+    }
+    flush();
+    let s = ''; for (let i = 0; i < out.length; i++) s += String.fromCharCode(out[i]);
+    return 'EL1.' + W + 'x' + H + '.' + btoa(s).replace(/=+$/, '');
+}
+function decodeScene(code) {
+    const m = /^EL1\.(\d+)x(\d+)\.([A-Za-z0-9+/]*)$/.exec(String(code).replace(/\s+/g, ''));
+    if (!m) return false;
+    const w = +m[1], h = +m[2];
+    if (w < 8 || h < 8 || w > 1000 || h > 1000) return false;
+    let bin; try { bin = atob(m[3]); } catch (e) { return false; }
+    const cells = new Uint8Array(w * h);
+    let n = 0, p = 0;
+    while (p < bin.length && n < cells.length) {
+        const e = bin.charCodeAt(p++);
+        let r = 0, sh = 0, b;
+        do { if (p >= bin.length) return false; b = bin.charCodeAt(p++); r |= (b & 127) << sh; sh += 7; } while (b & 128);
+        if (e >= NE) return false;
+        for (let k = 0; k < r && n < cells.length; k++) cells[n++] = e;
+    }
+    if (n !== cells.length) return false;
+    pushUndo(); clearGrid();
+    for (let y = 0; y < H; y++) {
+        const sy = Math.min(h - 1, Math.floor(y * h / H));
+        for (let x = 0; x < W; x++) {
+            const e = cells[sy * w + Math.min(w - 1, Math.floor(x * w / W))];
+            if (e) setUser(ix(x, y), e);
+        }
+    }
+    wakeAll();
+    return true;
+}
+
+// ---------- screenshot: the scene, glow included, scaled up 4x, saved as a PNG ----------
+function screenshot() {
+    const s = 4, c = document.createElement('canvas');
+    c.width = W * s; c.height = H * s;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false; g.drawImage(cv, 0, 0, c.width, c.height);
+    if (SETTINGS.glow) { g.imageSmoothingEnabled = true; g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.8; g.drawImage(gcv, 0, 0, c.width, c.height); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    g.imageSmoothingEnabled = false; g.drawImage(ocv, 0, 0, c.width, c.height);
+    const url = c.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = 'element-lab.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    return url.length;
+}
+
+// ---------- autosave (the last scene, as a share code) ----------
+let dirtySave = false;
+function autosave() {
+    if (!dirtySave || !W) return;
+    dirtySave = false;
+    LS.set('elementlab_autosave', { code: encodeScene(), t: Date.now() });
+}
+
+// ---- 70-scenes.js ----
+// ==========================================
+// ELEMENT LAB - preset scenes (all positions are fractions of the grid, so every quality level looks the same)
+// ==========================================
+const fx_ = f => Math.round(f * (W - 1)), fy_ = f => Math.round(f * (H - 1));
+function Rf(x0, y0, x1, y1, name) { fillRect(fx_(x0), fy_(y0), fx_(x1), fy_(y1), ID[name], true); }
+function Sc(x0, y0, x1, y1, name, prob, aux0) {      // scatter
+    for (let y = fy_(y0); y <= fy_(y1); y++) for (let x = fx_(x0); x <= fx_(x1); x++) {
+        if (rnd() > prob) continue;
+        const i = ix(x, y); if (el[i] !== 0) continue;
+        setUser(i, ID[name]); if (aux0) aux[i] = aux0;
+    }
+}
+function Pt(x, y, name) { const i = ix(fx_(x), fy_(y)); setUser(i, ID[name]); }
+const SCENES = {
+    volcano: {
+        label: 'Volcano', desc: 'A lava fountain, an ocean and some plants.', build() {
+            Rf(0, 0.9, 1, 1, 'stone'); Rf(0, 0.86, 1, 0.9, 'dirt');
+            for (let x = 0; x < W; x++) {
+                const u = x / (W - 1);
+                if (u > 0.26 && u < 0.74) { const h = (1 - Math.abs(u - 0.5) / 0.24) * 0.46; fillRect(x, fy_(0.9 - h), x, fy_(0.9), ID.stone, true); }
+            }
+            const top = fy_(0.9 - 0.46) - 1;            // the peak: lava faucets sit on it and run down the sides
+            for (let k = -2; k <= 2; k += 2) { const i = ix(fx_(0.5) + k, top); setUser(i, ID.clone); aux[i] = ID.lava; setUser(i - P, ID.lava); }
+            Rf(0, 0.78, 0.19, 0.86, 'water'); Rf(0.19, 0.78, 0.215, 0.86, 'stone'); Rf(0, 0.74, 0.19, 0.78, 'empty');
+            Sc(0.78, 0.8, 0.98, 0.86, 'seed', 0.15);
+        }
+    },
+    forest: {
+        label: 'Rain Forest', desc: 'Clouds, rain, seeds and a few ants and fish.', build() {
+            Rf(0, 0.84, 1, 1, 'dirt'); Rf(0.35, 0.8, 0.55, 0.9, 'empty'); Rf(0.35, 0.86, 0.55, 0.9, 'water'); Rf(0.36, 0.82, 0.54, 0.86, 'water');
+            Rf(0.35, 0.9, 0.55, 0.92, 'stone');
+            Sc(0.02, 0.83, 0.33, 0.83, 'seed', 0.2); Sc(0.57, 0.83, 0.98, 0.83, 'seed', 0.2);
+            Sc(0.1, 0.05, 0.9, 0.08, 'cloud', 0.4, 6);
+            for (let k = 0; k < 6; k++) { Pt(0.05 + k * 0.05, 0.82, 'ant'); Pt(0.6 + k * 0.05, 0.82, 'ant'); }
+            for (let k = 0; k < 14; k++) Pt(0.05 + rnd() * 0.9, 0.5 + rnd() * 0.3, 'firefly');
+            Pt(0.4, 0.86, 'fish'); Pt(0.46, 0.84, 'fish'); Pt(0.5, 0.88, 'fish');
+        }
+    },
+    factory: {
+        label: 'Factory', desc: 'Wires, a lamp, TNT, C4, nitro and oil. Trigger it with fire or a spark.', build() {
+            Rf(0, 0.93, 1, 1, 'stone'); Rf(0, 0.92, 1, 0.93, 'metal');
+            Rf(0.06, 0.8, 0.1, 0.91, 'battery'); Rf(0.1, 0.85, 0.5, 0.855, 'metal'); Rf(0.28, 0.82, 0.31, 0.85, 'lamp');
+            Rf(0.5, 0.78, 0.62, 0.92, 'tnt'); Rf(0.62, 0.84, 0.68, 0.92, 'c4');
+            Rf(0.7, 0.62, 0.71, 0.92, 'metal'); Rf(0.84, 0.62, 0.85, 0.92, 'metal'); Rf(0.7, 0.92, 0.85, 0.93, 'metal');
+            Rf(0.71, 0.7, 0.84, 0.92, 'oil'); Rf(0.71, 0.62, 0.84, 0.64, 'gunpowder');
+            Rf(0.85, 0.915, 0.97, 0.92, 'fuse'); Rf(0.86, 0.9, 0.97, 0.915, 'gunpowder');
+            Rf(0.2, 0.62, 0.45, 0.635, 'metal'); Rf(0.28, 0.5, 0.36, 0.62, 'nitro'); Rf(0.27, 0.5, 0.275, 0.62, 'glass'); Rf(0.365, 0.5, 0.37, 0.62, 'glass');
+            Rf(0.28, 0.495, 0.36, 0.5, 'glass');
+            Rf(0.88, 0.6, 0.96, 0.75, 'wood');
+            Rf(0.1, 0.62, 0.14, 0.78, 'methane');
+        }
+    },
+    lab: {
+        label: 'Lab', desc: 'Beakers of acid, water, oil and mercury, a heater and a lump of sodium.', build() {
+            Rf(0, 0.9, 1, 1, 'stone'); Rf(0.03, 0.78, 0.97, 0.82, 'metal'); Rf(0.06, 0.82, 0.08, 0.9, 'metal'); Rf(0.92, 0.82, 0.94, 0.9, 'metal');
+            Rf(0.28, 0.76, 0.4, 0.78, 'heater');
+            const wl = (x0, liquid) => { Rf(x0, 0.58, x0 + 0.015, 0.76, 'glass'); Rf(x0 + 0.1, 0.58, x0 + 0.115, 0.76, 'glass'); Rf(x0, 0.75, x0 + 0.115, 0.76, 'glass'); Rf(x0 + 0.015, 0.64, x0 + 0.1, 0.75, liquid); };
+            wl(0.1, 'acid'); wl(0.27, 'water'); wl(0.46, 'oil'); wl(0.63, 'mercury');
+            Rf(0.3, 0.64, 0.33, 0.67, 'ice');
+            Rf(0.82, 0.74, 0.88, 0.78, 'freezer');
+            Rf(0.28, 0.5, 0.31, 0.53, 'sodium'); Rf(0.49, 0.5, 0.52, 0.53, 'potassium');
+            Rf(0.12, 0.7, 0.14, 0.73, 'stone');
+            Sc(0.1, 0.45, 0.18, 0.55, 'hydrogen', 0.2); Rf(0.74, 0.7, 0.78, 0.78, 'wood');
+        }
+    }
+};
+function loadScene(name) {
+    const s = SCENES[name]; if (!s) return false;
+    pushUndo(); clearGrid(); flashes.length = 0; s.build(); wakeAll();
+    return true;
+}
+
+// ---- 90-main.js ----
+// ==========================================
+// ELEMENT LAB - start up, main loop, debug hook (window.__elementlab)
+// ==========================================
+let lastT = 0, acc = 0, simMs = 0, drawMs = 0, frameCount = 0, slowFrames = 0, hintShown = false;
+const frameLog = [];
+
+function frame(t) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(100, t - lastT || 16); lastT = t;
+    const f0 = performance.now();
+    const title = !$('title').classList.contains('hidden');
+    if (!paused) {
+        acc += dt * speed * 0.06;
+        let n = Math.floor(acc); acc -= n;
+        if (n > 3) n = 3;
+        if (simMs > 12 && n > 1) n = 1;            // a slow machine: slow the simulation down instead of freezing the page
+        const s0 = performance.now();
+        for (let k = 0; k < n; k++) step();
+        simMs = simMs * 0.8 + (performance.now() - s0) * 0.2;
+    }
+    if (!title) applyHold();
+    const r0 = performance.now();
+    render();
+    drawMs = drawMs * 0.8 + (performance.now() - r0) * 0.2;
+    if (!title) updateHover();
+    frameCount++;
+    if (frameCount % 20 === 0) { recount(); checkChallenges(); }
+    if (frameCount % 600 === 0) autosave();
+    frameLog.push(dt); if (frameLog.length > 120) frameLog.shift();
+    if (!title && !hintShown && frameLog.length >= 100 && SETTINGS.quality > 0) {
+        const avg = frameLog.reduce((a, b) => a + b, 0) / frameLog.length;
+        if (avg > 30) { hintShown = true; toast('Running slowly? Try Low quality in Settings.'); }
+    }
+}
+
+function init() {
+    allocGrid(QUAL[SETTINGS.quality].w, QUAL[SETTINGS.quality].h);
+    initRender(); buildTop(); buildPalette(); initInput(); initTitle();
+    curEl = ID.sand;
+    SCENES.lab.build();                            // something to watch behind the title screen
+    wakeAll(); refreshUi();
+    onChallenge = c => toast('Challenge complete: ' + c.name);
+    window.addEventListener('resize', layoutStage);
+    window.addEventListener('pagehide', () => { dirtySave = true; autosave(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { dirtySave = true; autosave(); } });
+    requestAnimationFrame(frame);
+}
+
+window.__elementlab = {
+    ID, DEFS, STAT, MADE, SETTINGS,
+    get W() { return W; }, get H() { return H; }, get tick() { return tickN; },
+    get el() { return el; }, get tp() { return tp; }, get life() { return life; }, get aux() { return aux; },
+    get chainMax() { return chainMax; }, get particles() { return nParts; },
+    start() { startPlay(); },
+    seed(n) { seedRnd(n); },
+    clear() { clearGrid(); },
+    idx: (x, y) => ix(x, y),
+    place(x, y, name, temp) { if (!inb(x, y)) return false; const i = ix(x, y); if (name === 'empty') clr(i); else setUser(i, ID[name]); if (temp !== undefined) tp[i] = temp; wk(x, y); return true; },
+    fill(x0, y0, x1, y1, name, temp) { fillRect(x0, y0, x1, y1, ID[name], true); if (temp !== undefined) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (el[ix(x, y)]) tp[ix(x, y)] = temp; },
+    paint(name, x, y, r) { paintCircle(x, y, r === undefined ? brushR : r, ID[name], 1); },
+    get(x, y) { const i = ix(x, y); return { el: DEFS[el[i]].name, t: tp[i], life: life[i], aux: aux[i] }; },
+    heat(x, y, r, d) { const o = brushR; brushR = r; heatAt(x, y, d); brushR = o; },
+    step(n) { const t0 = performance.now(); for (let k = 0; k < (n || 1); k++) step(); return performance.now() - t0; },
+    render() { const t0 = performance.now(); render(); return performance.now() - t0; },
+    count(name) { recount(); if (name) return CNT[ID[name]]; const o = {}; for (let e = 1; e < NE; e++) if (CNT[e]) o[DEFS[e].name] = CNT[e]; return o; },
+    total() { recount(); let n = 0; for (let e = 1; e < NE; e++) n += CNT[e]; return n; },
+    scene(name) { return loadScene(name); },
+    scenes: () => Object.keys(SCENES),
+    setQuality(q) { changeQuality(q); },
+    explode(x, y, r) { queueBoom(x, y, r, 1, 0); },
+    lightning(x, y) { lightning(x, y); },
+    shareCode: () => encodeScene(), loadCode: c => decodeScene(c),
+    challenges: () => CHALLENGES.map(c => ({ id: c.id, done: !!DONE[c.id] })),
+    checkChallenges, undo: () => undo(), pushUndo, activeChunks,
+    setTool, setBrush, selectElement: n => selectElement(ID[n]),
+    pause(v) { paused = v === undefined ? !paused : v; refreshUi(); },
+    perf: () => ({ simMs, drawMs, frames: frameLog.slice(), active: activeChunks(), chunks: act.length })
+};
+
+init();
+
+</script>
+</body>
+</html>

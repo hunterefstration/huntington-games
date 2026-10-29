@@ -45,6 +45,7 @@ var LB_FEED = [
   ['blocky:xp', function () { var l = feedRd('blocky21_life') || {}; return [blockyXP(l), { prestige: feedNum(l.prestige), kills: feedNum(l.kills) }]; }],
   ['blocky:wave', function () { var l = feedRd('blocky21_life') || {}, b = 0, k = ''; for (var x in (l.best || {})) if (feedNum(l.best[x]) > b) { b = feedNum(l.best[x]); k = x; } return [b, k ? { mode: k } : null]; }],
   ['blocky:kills', function () { var l = feedRd('blocky21_life') || {}; return [feedNum(l.kills), { headshots: feedNum(l.headshots) }]; }],
+  ['elementlab:ch', function () { var d = feedRd('elementlab_challenges') || {}; return [Object.keys(d).length]; }],
   ['imposter:wins', function () { var s = feedRd('imposter_save') || {}, st = s.stats || s; return [feedNum(st.wins) || (feedNum(st.crewWins) + feedNum(st.impWins))]; }],
   // Last Light: every level's best time, and the full game = all of them added up (only once all 17 are done)
   ['lumi:*', function () {

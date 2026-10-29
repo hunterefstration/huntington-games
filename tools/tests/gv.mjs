@@ -48,6 +48,7 @@ async function device(ctx) {
   await page.addInitScript(a => { window.HG_GV_CONFIG = a; },
     { archives: [ARCHIVE], pinned: {}, shards: 2, relays: ['ws://127.0.0.1:9001'] });
   await page.goto(HUB);
+  if (!globalThis.__firstDevice) globalThis.__firstDevice = 1; else await page.evaluate(() => { try { localStorage.setItem('hgv:tour', '2'); } catch (e) {} });   // only the first device sees the tour
   return page;
 }
 const status = p => p.evaluate(() => HGGrapevine.status().status).catch(() => '');
@@ -81,9 +82,9 @@ try {
   check('signed in over the relay', !!(await until(async () => (await status(A)) === 'online', 60000)), await status(A));
   check('the gate is gone and the games show', await A.evaluate(() => document.getElementById('gate').hidden && !document.getElementById('view-games').hidden));
   check('the header chip shows the name', await A.$eval('#chip-nm', e => e.textContent) === 'GvAlice');
-  check('a short welcome tour is shown once, after the first sign-in', !!(await A.waitForSelector('#tour:not([hidden]) .box h2', { timeout: 10000 }).catch(() => null)));
-  for (let i = 0; i < 5; i++) await A.click('#tour .go');
-  check('...and it ends cleanly', !!(await A.waitForSelector('#tour[hidden]', { state: 'attached', timeout: 5000 }).catch(() => null)));
+  check('the welcome tour is shown once, after the first sign-in', !!(await A.waitForSelector('#htour.on #htT', { timeout: 10000 }).catch(() => null)));
+  await A.click('#htSkip');
+  check('...and it ends cleanly (skip)', !!(await until(() => A.evaluate(() => !document.getElementById('htour').classList.contains('on') && localStorage.getItem('hgv:tour') === '2'), 5000)));
 
   console.log('\n=== 3. the full app inside the launcher: chat and friends ===');
   const B = await device(await browser.newContext());

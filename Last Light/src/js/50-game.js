@@ -86,6 +86,16 @@ const G = {
         ST('clears'); if (!this.stats.hits) ST('flawless'); if (def.world === 4) ST('bossKills');
         SAVE.d.levels[def.id] = rec; SAVE.write();
         this.p.vx = 0;
+        // One Life run: no results screen, straight on to the next level (the run ends at the first fall)
+        if (this.run) {
+            this.run.cleared++; SAVE.d.runs = SAVE.d.runs || {}; SAVE.d.runs.onelife = Math.max(SAVE.d.runs.onelife || 0, this.run.cleared); SAVE.write();
+            const nx = this.idx + 1;
+            setTimeout(() => {
+                if (!LEVELS[nx]) { this.state = 'done'; UI.banner('One Life', 'You cleared the whole game!', 'Every level without falling once.'); this.run = null; setTimeout(() => UI.map(), 3500); return; }
+                fadeTo(() => { this.start(nx); UI.banner('One Life · ' + this.run.cleared + ' cleared', LEVELS[nx].name); });
+            }, 1300);
+            return;
+        }
         setTimeout(() => {
             this.state = 'done';
             (def.world === 4 ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });

@@ -405,6 +405,8 @@ function netLeave() {
     changeGameState('main');
 }
 function netReset() {
+    try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyClose && NET.host && NET.code) lp.HG_partyClose(NET.code); } catch (e) {}
+    NET.partyAt = 0;
     for (const p of netPlayers.values()) if (p.av) scene.remove(p.av.g);
     netPlayers.clear();
     for (const inv of NET.invites) try { inv.peer.pc.close(); } catch (e) {}

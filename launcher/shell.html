@@ -10,12 +10,13 @@
 <body>
 <div id="hub">
   <div id="topbar">
-    <h1>HUNTINGTON GAMES LAUNCHER</h1>
+    <h1>HUNTINGTON GAMES</h1>
     <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
     <button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
   </div>
   <div id="view-games">
-  <div class="sub">Pick a game.</div>
+  <div class="sub" id="hello">Pick a game.</div>
+  <div id="jump"></div>
   <div class="grid" id="grid"></div>
   <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
@@ -31,6 +32,10 @@
         <div class="mp-row"><button id="mp-new" class="mp-ghost">Make a room for me</button></div>
         <div id="mp-status" class="rdesc"></div>
       </div>
+      <div class="mp-sec"><div class="mp-lbl">Quick Match</div><div class="rdesc">Jump into an open party (yours to host if there is none).</div><div id="mp-quick"></div></div>
+      <div class="mp-sec"><div class="mp-lbl">Friends playing now</div><div id="mp-friends"></div></div>
+      <div class="mp-sec"><div class="mp-lbl">Open parties <span id="mp-pnote" class="rdesc"></span></div><div id="mp-parties"></div>
+        <label class="mp-pub"><input type="checkbox" id="mp-pub" checked> Let everyone find my parties (people on the same Wi-Fi always can)</label></div>
     </div>
     <div id="mp-room" hidden>
       <div class="mp-roomtop"><div><div class="mp-lbl">Room</div><div id="mp-roomcode" class="mp-big"></div></div><button id="mp-leave" class="mp-ghost">Leave room</button></div>

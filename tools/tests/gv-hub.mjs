@@ -46,6 +46,7 @@ async function device(ctx, noVideo) {
   await page.addInitScript(() => { window.HG_TEST_RELAYS = ['ws://127.0.0.1:9001']; window.HG_TEST_PEER = window.__noVideo ? false : { host: '127.0.0.1', port: 9000, path: '/gv', secure: false }; });
   if (noVideo) await page.addInitScript(() => { window.__noVideo = 1; window.HG_TEST_PEER = false; });
   await page.goto(HUB);
+  await page.evaluate(() => { try { localStorage.setItem('hgv:tour', '2'); } catch (e) {} });   // these tests are not about the tour (gv-tour.mjs is)
   return page;
 }
 const status = p => p.evaluate(() => HGGrapevine.status().status).catch(() => '');
@@ -96,8 +97,14 @@ try {
   check('the same code on another device joins that room', !!(await until(async () => { const s = await st(B); return s.room === CODE && !s.host; }, 30000)));
   check('both see two people', !!(await until(async () => (await A.evaluate(() => document.querySelectorAll('#mp-people .mp-person').length)) === 2 && (await B.evaluate(() => document.querySelectorAll('#mp-people .mp-person').length)) === 2, 15000)));
   await B.evaluate(w => { const i = document.getElementById('mp-msg'); i.value = 'hey ' + w + ' ready to play'; document.getElementById('mp-send').click(); }, W);
-  const line = await until(() => A.evaluate(() => [...document.querySelectorAll('#mp-log div')].map(d => d.textContent).find(t => /ready to play/.test(t))), 15000);
-  check('room chat arrives, with the blocked word masked', !!line && !line.includes(W) && line.includes('*****'), line);
+  // since the wheel (2026-10-29) the word is never sent: the server spins the wheel for that account instead
+  await sleep(3000);
+  const line = await A.evaluate(() => [...document.querySelectorAll('#mp-log div')].map(d => d.textContent).find(t => /ready to play/.test(t)));
+  check('a message with the blocked word never reaches the room (the wheel spins instead)', !line, line);
+  check('...and the sender sees the wheel', !!(await until(() => B.evaluate(() => !!document.querySelector('#hwheel .wdisc')), 8000)));
+  await B.evaluate(() => { const w = document.getElementById('hwheel'); if (w) w.remove(); });
+  await B.evaluate(() => { const i = document.getElementById('mp-msg'); i.value = 'clean hello ready'; document.getElementById('mp-send').click(); });
+  check('normal room chat still arrives', !!(await until(() => A.evaluate(() => [...document.querySelectorAll('#mp-log div')].some(d => /clean hello ready/.test(d.textContent))), 15000)));
 
   console.log('\n=== start a game for the room ===');
   // what Blocky does after hosting a party for the room (its PeerJS host needs the internet, so it is played by hand here)

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Element Lab</title>
+<!--@css-->
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div id="brand">Element <b>Lab</b></div>
+    <div id="tools" class="grp"></div>
+    <div id="size" class="grp"><label for="size-r">Size</label><input id="size-r" type="range" min="0" max="20" value="4"><span id="size-v">4</span></div>
+    <div id="sim" class="grp"></div>
+    <div id="acts" class="grp"></div>
+  </header>
+  <main id="main">
+    <section id="stage">
+      <div id="wrap">
+        <canvas id="view"></canvas><canvas id="glow"></canvas><canvas id="ov"></canvas><div id="cursor"></div>
+      </div>
+      <div id="hover">Move the mouse over the lab</div>
+    </section>
+    <aside id="side">
+      <div id="cats"></div>
+      <input id="search" type="search" placeholder="Search elements..." autocomplete="off">
+      <div id="els"></div>
+    </aside>
+  </main>
+</div>
+<div id="toast"></div>
+
+<div id="title" class="screen">
+  <div class="tbg" id="tbg"></div>
+  <div class="logo"><span class="l1">Element</span><span class="l2">Lab</span></div>
+  <div class="tag">Mix, melt, burn and blow things up. Everything reacts.</div>
+  <div class="menu">
+    <button class="btn big" id="t-play">Play</button>
+    <button class="btn" id="t-scenes">Scenes</button>
+    <button class="btn" id="t-cont">Continue</button>
+    <button class="btn" id="t-chal">Challenges</button>
+    <button class="btn" id="t-how">How to play</button>
+    <button class="btn" id="t-set">Settings</button>
+  </div>
+  <div class="foot">Huntington Games</div>
+</div>
+
+<div id="dlg" class="screen dim hidden">
+  <div class="card"><h2 id="dlg-t"></h2><div id="dlg-b"></div><div class="row"><button class="btn small" id="dlg-x">Close</button></div></div>
+</div>
+
+<!--@data-->
+<!--@js-->
+</body>
+</html>

@@ -105,13 +105,16 @@ const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump 
     'Hold down to drop through a thin ledge.'];
 UI.died = function () {
     G.state = 'dead'; Input.clear(); $('#banner').classList.remove('on'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden');
-    $('#dd-cause').textContent = CAUSE[G.cause] || 'The light went out.';
+    $('#dd-cause').textContent = (CAUSE[G.cause] || 'The light went out.') + (G.run ? '  One Life run over: ' + G.run.cleared + ' level' + (G.run.cleared === 1 ? '' : 's') + ' cleared (best ' + ((SAVE.d.runs || {}).onelife || 0) + ').' : '');
     const rec = SAVE.d.levels[G.L.def.id];
     $('#dd-rows').innerHTML = `<div><b>${G.stats.deaths}</b><span>this run</span></div><div><b>${SAVE.d.deaths}</b><span>all time</span></div><div><b>${fmtTime(G.time)}</b><span>time</span></div>` + (rec && rec.best != null ? `<div><b>${fmtTime(rec.best)}</b><span>best</span></div>` : '');
     $('#dd-tip').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
     SAVE.write(); this.show('dead');
 };
-UI.retry = function () { if (G.state !== 'dead') return; respawn(G); G.state = 'play'; this.show(null); $('#hud').classList.remove('hidden'); touchControls(); Input.clear(); };
+UI.retry = function () { if (G.state !== 'dead') return;
+    // One Life: a fall ends the run; try again = a new run
+    if (G.run) { G.run = { cleared: 0 }; fadeTo(() => G.start(0)); return; }
+    respawn(G); G.state = 'play'; this.show(null); $('#hud').classList.remove('hidden'); touchControls(); Input.clear(); };
 UI.stats = function () {
     const S = SAVE.d.stats, n = k => Math.round(S[k] || 0), lv = SAVE.d.levels;
     const moths = Object.keys(lv).reduce((t, k) => t + (lv[k].moths || []).filter(Boolean).length, 0), allMoths = LEVELS.reduce((t, l) => t + l.map.join('').split('*').length - 1, 0);

@@ -78,7 +78,7 @@ window.HG_notify = function (n) {
 // A game asks for the chats it can invite into (HG_inviteTargets) and sends an invite (HG_sendInvite): a normal chat
 // message ending in "hg-invite:<game>:<party code>", so it reads fine in the Grapevine app too. When one arrives the
 // pop-up shows a JOIN button: it opens the game (or tells the open one) and the game collects the code with HG_takeJoin.
-var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
+var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline', imposter: 'Imposter' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
 function inviteGame(id) { var d = INVITE_GAMES[id]; return d ? GAMES.filter(function (g) { return g.dir === d; })[0] || null : null; }
 window.HG_inviteTargets = function () {
   var api = chatApi(); if (!api) return [];
@@ -87,6 +87,10 @@ window.HG_inviteTargets = function () {
 };
 window.HG_sendInvite = function (convId, o) {
   var api = chatApi(), g = o && inviteGame(o.game), code = o && String(o.code || '');
+  if (/^party:/.test(String(convId))) {        // Quick Match hosted it: list it as an open party
+    if (!g || !/^[A-Za-z0-9-]{4,12}$/.test(code)) return false;
+    return window.HG_partyOpen({ game: o.game, code: code, mode: o.mode, n: 1, max: o.max || 10 });
+  }
   if (/^hub:/.test(String(convId))) {          // a game started from a hub room: tell the room
     if (!g || !/^[A-Za-z0-9-]{4,40}$/.test(code) || !MP.net || 'hub:' + MP.code !== convId) return false;
     MP.net.send('all', { t: 'play', game: o.game, code: code }); hubPlay(mpName(), o.game, code, true); return true;

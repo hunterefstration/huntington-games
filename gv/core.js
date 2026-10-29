@@ -190,6 +190,8 @@
         if (m.gained && m.gained.n > 0) emit('notify', { kind: 'goon', title: '+' + m.gained.n + ' goon' + (m.gained.n === 1 ? '' : 's'), text: m.gained.why });
         emit('eco', m); emit('change'); return;
       case 'lb': return rpcDone('lb:' + m.board, m);
+      case 'parties': return rpcDone('parties', m);
+      case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
       case 'spin': emit('spin', m); return;
       case 'saves': return rpcDone('saves', m);
@@ -561,6 +563,14 @@
     },
     timeline: function () { return { at: tl.at, archive: tl.archive, steps: tl.steps.slice(), total: tl.steps.length ? tl.steps[tl.steps.length - 1][1] : 0 }; },
     diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); },
+    // ---- open parties (public, or on your Wi-Fi), and what your friends are playing ----
+    party: {
+      open: function (o) { if (st.ready) send({ type: 'partyOpen', game: o.game, code: String(o.code), n: o.n || 1, max: o.max || 10, pub: o.pub !== false, net: o.net || null, mode: o.mode || null }); },
+      close: function (code) { if (st.ready) send({ type: 'partyClose', code: String(code) }); },
+      list: function (net, game) { return st.ready ? rpc({ type: 'partyList', net: net || null, game: game || null }, 'parties') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      activity: function (game, code, gid) { if (st.ready) send({ type: 'activity', game: game || null, code: code || null, gid: gid || null }); },
+      friends: function () { return st.ready ? rpc({ type: 'friendsActivity' }, 'factivity') : Promise.reject(new Error('Not connected to Grapevine.')); }
+    },
     // ---- goons, the shop, profiles on show, leaderboards ----
     eco: {
       state: function () { return st.eco || null; },

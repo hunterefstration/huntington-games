@@ -661,6 +661,9 @@ function netKeepAlive(now) {
     NET.pingAt = now;
     for (const p of netPlayers.values()) sendRel(p.peer, { t: 'pi', ts: now });
     netBroadcast({ t: 'rt', l: [...netPlayers.values()].map(p => [p.id, Math.round(p.rtt)]) });
+    // the launcher lists an open party (same Wi-Fi, or everyone): every 30 s while there is room
+    if (now - (NET.partyAt || 0) > 30000) { NET.partyAt = now; try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyOpen && /^\d{6}$/.test(NET.code || '') && allPlayers().length < 10)
+      lp.HG_partyOpen({ game: 'blocky', code: NET.code, n: allPlayers().length, max: 10, mode: (MP_MODES[NET.lobby.mode] || {}).name || NET.lobby.mode }); } catch (e) {} }
     if (!NET.inGame && !document.hidden) renderMPPlayers();
 }
 function myState() {

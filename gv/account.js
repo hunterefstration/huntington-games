@@ -502,6 +502,8 @@ const GVLink = (() => {
         if (m.gained && m.gained.n > 0) emit('notify', { kind: 'goon', title: '+' + m.gained.n + ' goon' + (m.gained.n === 1 ? '' : 's'), text: m.gained.why });
         emit('eco', m); emit('change'); return;
       case 'lb': return rpcDone('lb:' + m.board, m);
+      case 'parties': return rpcDone('parties', m);
+      case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
       case 'spin': emit('spin', m); return;
       case 'saves': return rpcDone('saves', m);
@@ -873,6 +875,14 @@ const GVLink = (() => {
     },
     timeline: function () { return { at: tl.at, archive: tl.archive, steps: tl.steps.slice(), total: tl.steps.length ? tl.steps[tl.steps.length - 1][1] : 0 }; },
     diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); },
+    // ---- open parties (public, or on your Wi-Fi), and what your friends are playing ----
+    party: {
+      open: function (o) { if (st.ready) send({ type: 'partyOpen', game: o.game, code: String(o.code), n: o.n || 1, max: o.max || 10, pub: o.pub !== false, net: o.net || null, mode: o.mode || null }); },
+      close: function (code) { if (st.ready) send({ type: 'partyClose', code: String(code) }); },
+      list: function (net, game) { return st.ready ? rpc({ type: 'partyList', net: net || null, game: game || null }, 'parties') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      activity: function (game, code, gid) { if (st.ready) send({ type: 'activity', game: game || null, code: code || null, gid: gid || null }); },
+      friends: function () { return st.ready ? rpc({ type: 'friendsActivity' }, 'factivity') : Promise.reject(new Error('Not connected to Grapevine.')); }
+    },
     // ---- goons, the shop, profiles on show, leaderboards ----
     eco: {
       state: function () { return st.eco || null; },
@@ -905,7 +915,7 @@ const GVLink = (() => {
   // To add one: { id, g (game id), i (icon), n (name), d (how to get it), p (points: 10 / 25 / 50 / 100), t: fn }.
   var AG = { spikes: '100 Levels of Spikes', tetris: 'Tetris Surge', clicker: 'Brown E Clicker', coffee: 'Bean & Brew Tycoon',
     market: 'Market & Life', td: 'Tower Defense', frontline: 'Frontline: Command', blocky: 'Blocky Shooter', neon: 'Neon Dash',
-    sov: 'Sovereign', lumi: 'Last Light', imposter: 'Imposter', hub: 'Huntington Games' };
+    sov: 'Sovereign', lumi: 'Last Light', imposter: 'Imposter', elementlab: 'Element Lab', hub: 'Huntington Games' };
   function rd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function cnt(x) { return !x ? 0 : Array.isArray(x) ? x.length : typeof x === 'object' ? Object.keys(x).filter(function (k) { return x[k]; }).length : 0; }
@@ -915,7 +925,7 @@ const GVLink = (() => {
       ML = function () { var s = rd('marketLifeSave'); return (s && s.life) || {}; }, TDR = function () { return rd('td2_records') || {}; },
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
       SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; },
-      LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; };
+      LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; }, EL = function () { return cnt(rd('elementlab_challenges')); };
   var luDone = function (id) { return !!((LU().levels || {})[id]); }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
   var ACH = [
@@ -999,6 +1009,10 @@ const GVLink = (() => {
     { id: 'sovworld', g: 'sov', i: '🌍', n: 'World Domination', d: 'Control every country on Earth.', p: 100, t: function () { return !!SV().domination; } },
     // the launcher itself
     // Last Light
+    // Element Lab
+    { id: 'el1', g: 'elementlab', i: '🧪', n: 'Mad Scientist', d: 'Finish a challenge in Element Lab.', p: 10, t: function () { return EL() >= 1; } },
+    { id: 'el6', g: 'elementlab', i: '⚗️', n: 'Lab Partner', d: 'Finish 6 Element Lab challenges.', p: 25, t: function () { return EL() >= 6; } },
+    { id: 'elall', g: 'elementlab', i: '🔬', n: 'Nobel Prize', d: 'Finish every Element Lab challenge.', p: 50, t: function () { return EL() >= 13; } },
     // Imposter
     { id: 'imp1', g: 'imposter', i: '🫘', n: 'Suspicious', d: 'Play a game of Imposter.', p: 10, t: function () { return num(IM().games) >= 1; } },
     { id: 'imp10', g: 'imposter', i: '🧑‍🚀', n: 'Crew Captain', d: 'Win 10 games as crew.', p: 25, t: function () { return num(IM().crewWins) >= 10; } },

@@ -86,9 +86,10 @@ function goodsMonth() {
   const W = G.world; W.prices = W.prices || { oil: 100, gas: 100, food: 100, metal: 100, rare: 100, chips: 100 };
   const shock = {};
   for (const k in GOODS) {
-    const prod = G.nations.filter(m => m && m.res.includes(k)), tot = prod.reduce((a, m) => a + gdpUsd(m), 0) || 1;
+    const safe = m => { const v = gdpUsd(m); return Number.isFinite(v) && v > 0 ? v : 0; };          // a hyperinflated economy can report Infinity
+    const prod = G.nations.filter(m => m && m.res.includes(k)), tot = prod.reduce((a, m) => a + safe(m), 0) || 1, wg = Number.isFinite(W.worldGdp) && W.worldGdp > 0 ? W.worldGdp : 1;
     let s = 0;
-    for (const m of prod) { const w = gdpUsd(m) / tot, emb = G.sanctions.filter(x => x.on === m.idx && x.level >= 2).reduce((a, x) => a + gdpUsd(G.nations[x.by]) / W.worldGdp, 0); s += w * (emb * 1.2 + (m.atWar ? 0.25 : 0) + (m.stability < 20 ? 0.1 : 0)); }
+    for (const m of prod) { const w = safe(m) / tot, emb = G.sanctions.filter(x => x.on === m.idx && x.level >= 2).reduce((a, x) => a + safe(G.nations[x.by]) / wg, 0); s += w * (emb * 1.2 + (m.atWar ? 0.25 : 0) + (m.stability < 20 ? 0.1 : 0)); }
     shock[k] = s;
     const target = 100 * (1 + s * 1.5);
     W.prices[k] = clamp(W.prices[k] + (target - W.prices[k]) * 0.15 + (G.rng() - 0.5) * 4, 40, 400);

@@ -24,6 +24,7 @@ function nextMonth() {
   const p = G.nations[G.player.idx], before = { approval: p.approval, gdp: gdpUsd(p), infl: p.infl, unemp: p.unemp, debt: debtPct(p) };
   worldMonth(true);
   for (const f of MONTHLY) f();
+  healNumbers();
   recordHistory(false);
   const d = (a, b, f) => (b - a >= 0 ? '+' : '') + f(b - a);
   inbox('report', 'Monthly report: ' + fmtMonth(G.day - 1),
@@ -34,6 +35,32 @@ function nextMonth() {
   Bus.emit('month');
 }
 
+// Late in a big game (dozens of conquests, hyperinflating economies) a number could turn into NaN or Infinity
+// (an infinite dollar GDP divided by another), and from there every stat of every country went NaN and the game
+// stopped working. After each month, and when a save loads, any number that is not a real number goes back to its
+// last good value (or a safe one), so one bad sum can never take the whole game down again.
+function healObj(o, keep, depth) {
+  let fixed = 0;
+  for (const k in o) {
+    const v = o[k];
+    if (typeof v === 'number') {
+      if (Number.isFinite(v)) { keep[k] = v; continue; }
+      o[k] = typeof keep[k] === 'number' ? keep[k] : 0; fixed++;
+    } else if (v && typeof v === 'object' && depth < 3 && k !== 'rng' && k[0] !== '_' && !Array.isArray(v)) {
+      fixed += healObj(v, keep[k] && typeof keep[k] === 'object' ? keep[k] : (keep[k] = {}), depth + 1);
+    }
+  }
+  return fixed;
+}
+function healNumbers() {
+  if (!G) return 0;
+  const K = healNumbers.keep || (healNumbers.keep = new WeakMap()), get = o => K.get(o) || (K.set(o, {}), K.get(o));
+  let fixed = healObj(G.world, get(G.world), 0) + healObj(G.player, get(G.player), 0);
+  for (const n of G.nations) if (n) fixed += healObj(n, get(n), 0);
+  for (const c in G.cur) fixed += healObj(G.cur[c], get(G.cur[c]), 0);
+  if (fixed) console.warn('[sovereign] repaired ' + fixed + ' broken number(s)');
+  return fixed;
+}
 function inbox(type, title, text) {
   if (!G) return;
   G.inbox.unshift({ id: (G.inboxN = (G.inboxN || 0) + 1), day: G.day, type, title, text, read: false });
@@ -139,11 +166,11 @@ async function saveTo(slot) {
 async function loadFrom(slot) {
   let raw = null; try { raw = localStorage.getItem('sov.save.' + slot); } catch (e) {}
   if (!raw) return false;
-  G = deserialize(raw.startsWith('gz:') ? await gunzip64(raw.slice(3)) : raw); for (const n of G.nations) if (n) n.budget = budgetOf(n);
+  G = deserialize(raw.startsWith('gz:') ? await gunzip64(raw.slice(3)) : raw); healNumbers.keep = null; healNumbers(); for (const n of G.nations) if (n) n.budget = budgetOf(n);
   return true;
 }
 function autosave() { return G && !G.over ? saveTo('auto') : Promise.resolve(); }
 async function exportSave() { return 'SOV1:' + await gzip64(serialize()); }
 async function importSave(code) {
-  G = deserialize(await gunzip64(code.trim().replace(/^SOV1:/, ''))); for (const n of G.nations) if (n) n.budget = budgetOf(n);
+  G = deserialize(await gunzip64(code.trim().replace(/^SOV1:/, ''))); healNumbers.keep = null; healNumbers(); for (const n of G.nations) if (n) n.budget = budgetOf(n);
 }

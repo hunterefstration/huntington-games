@@ -44,6 +44,7 @@ async function device(ctx) {
   await page.addInitScript(a => { window.HG_GV_CONFIG = a; },
     { archives: [ARCHIVE], pinned: {}, shards: 2, relays: ['ws://127.0.0.1:9001'] });
   await page.goto(HUB);
+  await page.evaluate(() => { try { localStorage.setItem('hgv:tour', '2'); } catch (e) {} });   // these tests are not about the tour (gv-tour.mjs is)
   return page;
 }
 const status = p => p.evaluate(() => HGGrapevine.status().status).catch(() => '');

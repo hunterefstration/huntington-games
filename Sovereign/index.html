@@ -2231,6 +2231,7 @@ function nextMonth() {
   const p = G.nations[G.player.idx], before = { approval: p.approval, gdp: gdpUsd(p), infl: p.infl, unemp: p.unemp, debt: debtPct(p) };
   worldMonth(true);
   for (const f of MONTHLY) f();
+  healNumbers();
   recordHistory(false);
   const d = (a, b, f) => (b - a >= 0 ? '+' : '') + f(b - a);
   inbox('report', 'Monthly report: ' + fmtMonth(G.day - 1),
@@ -2241,6 +2242,32 @@ function nextMonth() {
   Bus.emit('month');
 }
 
+// Late in a big game (dozens of conquests, hyperinflating economies) a number could turn into NaN or Infinity
+// (an infinite dollar GDP divided by another), and from there every stat of every country went NaN and the game
+// stopped working. After each month, and when a save loads, any number that is not a real number goes back to its
+// last good value (or a safe one), so one bad sum can never take the whole game down again.
+function healObj(o, keep, depth) {
+  let fixed = 0;
+  for (const k in o) {
+    const v = o[k];
+    if (typeof v === 'number') {
+      if (Number.isFinite(v)) { keep[k] = v; continue; }
+      o[k] = typeof keep[k] === 'number' ? keep[k] : 0; fixed++;
+    } else if (v && typeof v === 'object' && depth < 3 && k !== 'rng' && k[0] !== '_' && !Array.isArray(v)) {
+      fixed += healObj(v, keep[k] && typeof keep[k] === 'object' ? keep[k] : (keep[k] = {}), depth + 1);
+    }
+  }
+  return fixed;
+}
+function healNumbers() {
+  if (!G) return 0;
+  const K = healNumbers.keep || (healNumbers.keep = new WeakMap()), get = o => K.get(o) || (K.set(o, {}), K.get(o));
+  let fixed = healObj(G.world, get(G.world), 0) + healObj(G.player, get(G.player), 0);
+  for (const n of G.nations) if (n) fixed += healObj(n, get(n), 0);
+  for (const c in G.cur) fixed += healObj(G.cur[c], get(G.cur[c]), 0);
+  if (fixed) console.warn('[sovereign] repaired ' + fixed + ' broken number(s)');
+  return fixed;
+}
 function inbox(type, title, text) {
   if (!G) return;
   G.inbox.unshift({ id: (G.inboxN = (G.inboxN || 0) + 1), day: G.day, type, title, text, read: false });
@@ -2346,13 +2373,13 @@ async function saveTo(slot) {
 async function loadFrom(slot) {
   let raw = null; try { raw = localStorage.getItem('sov.save.' + slot); } catch (e) {}
   if (!raw) return false;
-  G = deserialize(raw.startsWith('gz:') ? await gunzip64(raw.slice(3)) : raw); for (const n of G.nations) if (n) n.budget = budgetOf(n);
+  G = deserialize(raw.startsWith('gz:') ? await gunzip64(raw.slice(3)) : raw); healNumbers.keep = null; healNumbers(); for (const n of G.nations) if (n) n.budget = budgetOf(n);
   return true;
 }
 function autosave() { return G && !G.over ? saveTo('auto') : Promise.resolve(); }
 async function exportSave() { return 'SOV1:' + await gzip64(serialize()); }
 async function importSave(code) {
-  G = deserialize(await gunzip64(code.trim().replace(/^SOV1:/, ''))); for (const n of G.nations) if (n) n.budget = budgetOf(n);
+  G = deserialize(await gunzip64(code.trim().replace(/^SOV1:/, ''))); healNumbers.keep = null; healNumbers(); for (const n of G.nations) if (n) n.budget = budgetOf(n);
 }
 
 // ---- 63-sim-politics.js ----
@@ -3288,9 +3315,10 @@ function goodsMonth() {
   const W = G.world; W.prices = W.prices || { oil: 100, gas: 100, food: 100, metal: 100, rare: 100, chips: 100 };
   const shock = {};
   for (const k in GOODS) {
-    const prod = G.nations.filter(m => m && m.res.includes(k)), tot = prod.reduce((a, m) => a + gdpUsd(m), 0) || 1;
+    const safe = m => { const v = gdpUsd(m); return Number.isFinite(v) && v > 0 ? v : 0; };          // a hyperinflated economy can report Infinity
+    const prod = G.nations.filter(m => m && m.res.includes(k)), tot = prod.reduce((a, m) => a + safe(m), 0) || 1, wg = Number.isFinite(W.worldGdp) && W.worldGdp > 0 ? W.worldGdp : 1;
     let s = 0;
-    for (const m of prod) { const w = gdpUsd(m) / tot, emb = G.sanctions.filter(x => x.on === m.idx && x.level >= 2).reduce((a, x) => a + gdpUsd(G.nations[x.by]) / W.worldGdp, 0); s += w * (emb * 1.2 + (m.atWar ? 0.25 : 0) + (m.stability < 20 ? 0.1 : 0)); }
+    for (const m of prod) { const w = safe(m) / tot, emb = G.sanctions.filter(x => x.on === m.idx && x.level >= 2).reduce((a, x) => a + safe(G.nations[x.by]) / wg, 0); s += w * (emb * 1.2 + (m.atWar ? 0.25 : 0) + (m.stability < 20 ? 0.1 : 0)); }
     shock[k] = s;
     const target = 100 * (1 + s * 1.5);
     W.prices[k] = clamp(W.prices[k] + (target - W.prices[k]) * 0.15 + (G.rng() - 0.5) * 4, 40, 400);
@@ -5259,6 +5287,8 @@ const Game = {
       const arrow = last == null || Math.abs(cur - last) < 1e-6 ? '' : (cur > last) === (s.good > 0) ? '<span class="up">▲</span>' : '<span class="down">▼</span>';
       return `<button class="stat" data-why="${s.why}" data-stat="${s.id}"><small>${s.name}</small><b>${s.v(n)}</b> ${arrow}</button>`;
     }).join('');
+    // political capital: what laws, campaigns and projects cost, always in view
+    $('#stats').insertAdjacentHTML('beforeend', `<button class="stat pc" title="Political capital: spent on laws, campaigns and big projects; it grows back every month"><small>Pol. capital</small><b>${Math.floor(n.pc || 0)}</b></button>`);
     const unread = G.inbox.filter(m => !m.read).length; $('#unread').textContent = unread ? unread : '';
   },
   open(id) {

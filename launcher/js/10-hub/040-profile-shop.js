@@ -55,6 +55,7 @@ function profItems(e, c, shop) {
   var h = '<div class="pcats">' + SLOTS.map(function (s) { return '<button data-pcat="' + s[0] + '" class="' + (PROF.cat === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('') + '</div>';
   if (groups.length > 1) h += '<div class="pgrps"><button data-pgrp="" class="' + (!PROF.grp ? 'on' : '') + '">All</button>' + groups.map(function (g) { return '<button data-pgrp="' + profEsc(g) + '" class="' + (PROF.grp === g ? 'on' : '') + '">' + profEsc(g || 'Other') + '</button>'; }).join('') + '</div>';
   if (PROF.grp) list = list.filter(function (i) { return (i.g || '') === PROF.grp; });
+  if (PROF.cat === 'music' && !shop) h += '<div class="pnote">The track you wear plays on the launcher (never over a game). <button class="pb" data-mtoggle="1">' + (window.HG_music && localStorage.getItem('hgv:music') === 'off' ? 'Music is off: turn on' : 'Music is on: turn off') + '</button></div>';
   if (!list.length) return h + '<div class="pempty">' + (shop ? 'You own everything here. Nice.' : 'Nothing here yet: the Goon Shop has plenty.') + '</div>';
   h += '<div class="pgrid">' + list.map(function (i) {
     var own = profOwns(e, i), on = eq[i.k] === i.id, locked = !own && i.x;
@@ -125,6 +126,7 @@ document.addEventListener('click', function (ev) {
   else if (d.buy) { var it = profItem(d.buy); if (it && confirm('Buy ' + it.n + ' for ' + it.p + ' goon' + (it.p === 1 ? '' : 's') + '?')) L.eco.buy(d.buy); return; }
   else if (d.equip) { L.eco.equip(profItem(d.equip).k, d.equip); return; }
   else if (d.unequip) { L.eco.equip(d.unequip, null); return; }
+  else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
   else return;
   profRender();
 });

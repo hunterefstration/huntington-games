@@ -79,6 +79,8 @@ const Game = {
       const arrow = last == null || Math.abs(cur - last) < 1e-6 ? '' : (cur > last) === (s.good > 0) ? '<span class="up">▲</span>' : '<span class="down">▼</span>';
       return `<button class="stat" data-why="${s.why}" data-stat="${s.id}"><small>${s.name}</small><b>${s.v(n)}</b> ${arrow}</button>`;
     }).join('');
+    // political capital: what laws, campaigns and projects cost, always in view
+    $('#stats').insertAdjacentHTML('beforeend', `<button class="stat pc" title="Political capital: spent on laws, campaigns and big projects; it grows back every month"><small>Pol. capital</small><b>${Math.floor(n.pc || 0)}</b></button>`);
     const unread = G.inbox.filter(m => !m.read).length; $('#unread').textContent = unread ? unread : '';
   },
   open(id) {

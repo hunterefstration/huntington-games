@@ -44,6 +44,7 @@ async function device(ctx) {
   await page.addInitScript(a => { window.HG_GV_CONFIG = a; },
     { archives: [ARCHIVE], pinned: {}, shards: 2, relays: ['ws://127.0.0.1:9001'] });
   await page.goto(HUB);
+  await page.evaluate(() => { try { localStorage.setItem('hgv:tour', '2'); } catch (e) {} });   // these tests are not about the tour (gv-tour.mjs is)
   return page;
 }
 const status = p => p.evaluate(() => HGGrapevine.status().status).catch(() => '');
@@ -95,7 +96,7 @@ try {
   const sb = await until(async () => { const s = await snapshot(B); return Object.keys(s).length >= Object.keys(sa).length ? s : null; }, 40000);
   check('every save from device A arrived on device B', !!sb, JSON.stringify(await snapshot(B)));
   if (sb) for (const k of Object.keys(sa)) check('  ' + k + ' has the same size', sb[k] === sa[k], `${sa[k]} vs ${sb[k]}`);
-  await B.click('#tour .skip', { timeout: 3000 }).catch(() => {}); await B.evaluate(() => document.getElementById('chip').click()); await B.waitForSelector('#gl-saves-show', { timeout: 10000 });
+  await B.click('#tour .skip', { timeout: 3000 }).catch(() => {}); await B.evaluate(() => document.getElementById('tab-acct').click()); await B.waitForSelector('#gl-saves-show', { timeout: 10000 });
   await B.evaluate(() => document.getElementById('gl-saves-show').click());
   const det = await until(() => B.$eval('#gl-saves-detail', e => /in account/.test(e.textContent) ? e.textContent : ''), 15000);
   check('the Saves tab can show what is saved, key by key', !!det && /brownEClickerSave/.test(det), (det || '').slice(0, 120));

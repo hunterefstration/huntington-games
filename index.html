@@ -316,17 +316,40 @@ body.chat { overflow: hidden; }
 #tabs { overflow-x: auto; scrollbar-width: none; } #tabs::-webkit-scrollbar { display: none; } .tab { white-space: nowrap; } #tourBtn, #chip { flex: none; }
 #player.docked #frame { align-self: flex-start; }
 html.playing #htour { display: none !important; }   /* the tour waits while a game is open */
+
+/* ---- open parties, quick match, friends playing ---- */
+.mp-sec { margin-top: 22px; } .mp-pub { display: block; margin-top: 10px; font-size: 12.5px; color: var(--dim); }
+#mp-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.mp-qm { background: var(--signal); color: #111; border: 0; border-radius: 8px; padding: 9px 16px; font-weight: 900; cursor: pointer; }
+.mp-party { display: flex; align-items: center; gap: 10px; background: var(--raise); border: 1px solid var(--line2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }
+.mp-pg { font-weight: 800; min-width: 120px; } .mp-ph { flex: 1; color: var(--dim); } .mp-pn { font-family: var(--mono, monospace); font-size: 12px; }
+.mp-near { font-size: 11px; color: #4ade80; border: 1px solid #4ade8066; border-radius: 4px; padding: 1px 5px; }
+.mp-party button { background: #22c55e; color: #111; border: 0; border-radius: 6px; padding: 5px 12px; font-weight: 800; cursor: pointer; }
+
+/* ---- the Games page refresh ---- */
+#topbar h1 { letter-spacing: .32em; }
+#hello { font-size: 15px; margin-bottom: 10px; } #hello b { color: var(--text); } #hello .hgoons { color: #fde68a; } #hello a { color: var(--signal); }
+#jump { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 18px; } #jump:empty { display: none; }
+.jlbl { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); margin-right: 4px; }
+.jcard { display: flex; align-items: center; gap: 10px; background: var(--raise); border: 1px solid var(--line2); border-radius: 10px; padding: 6px 14px 6px 6px; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; transition: transform .12s, border-color .12s; }
+.jcard:hover { transform: translateY(-2px); border-color: var(--signal); }
+.jimg { width: 64px; height: 36px; border-radius: 6px; background-size: cover; background-position: center; }
+.game .desc { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.shot img { transition: transform .35s ease; } .game:hover .shot img { transform: scale(1.06); }
+.playov { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(.9); background: rgba(0,0,0,.6); color: #fff; font-weight: 900; padding: 10px 18px; border-radius: 999px; opacity: 0; transition: opacity .15s, transform .15s; pointer-events: none; letter-spacing: .05em; }
+.game:hover .playov { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 </style>
 </head>
 <body>
 <div id="hub">
   <div id="topbar">
-    <h1>HUNTINGTON GAMES LAUNCHER</h1>
+    <h1>HUNTINGTON GAMES</h1>
     <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
     <button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
   </div>
   <div id="view-games">
-  <div class="sub">Pick a game.</div>
+  <div class="sub" id="hello">Pick a game.</div>
+  <div id="jump"></div>
   <div class="grid" id="grid"></div>
   <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
@@ -342,6 +365,10 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
         <div class="mp-row"><button id="mp-new" class="mp-ghost">Make a room for me</button></div>
         <div id="mp-status" class="rdesc"></div>
       </div>
+      <div class="mp-sec"><div class="mp-lbl">Quick Match</div><div class="rdesc">Jump into an open party (yours to host if there is none).</div><div id="mp-quick"></div></div>
+      <div class="mp-sec"><div class="mp-lbl">Friends playing now</div><div id="mp-friends"></div></div>
+      <div class="mp-sec"><div class="mp-lbl">Open parties <span id="mp-pnote" class="rdesc"></span></div><div id="mp-parties"></div>
+        <label class="mp-pub"><input type="checkbox" id="mp-pub" checked> Let everyone find my parties (people on the same Wi-Fi always can)</label></div>
     </div>
     <div id="mp-room" hidden>
       <div class="mp-roomtop"><div><div class="mp-lbl">Room</div><div id="mp-roomcode" class="mp-big"></div></div><button id="mp-leave" class="mp-ghost">Leave room</button></div>
@@ -406,6 +433,7 @@ var GAMES = [
   { dir: 'Frontline', chatShift: true, name: 'Frontline: Command 3.1', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: 'NEW 3.1: Resource Farms that grow money (more the longer they stand), and every side now gets 5 Upgrades per battle, so pick them well. 3.0: a second faction, the Iron Legion - 24 units with shields, their own upgrades and AI commander Kael (pick your side online too). 5 new maps, including 2 coastal ones with a Shipyard, Gunboats, Landing Craft and Destroyers. Night battles with rain, fog or snow, and a General perk tree with 18 perks. Plus new achievements and a Field Guide. Still here: Endless War, the 7-battle Campaign and online battles with a 6-digit code.' },
   { dir: 'Last Light', name: "Last Light", img: 'lastlight', tags: ['New', 'Platformer'], desc: "NEW: a hand-crafted 2D platformer. You are the last spark of light in a world gone dark: fight through four worlds (a dusk forest, crystal caves, sky temples and a fire forge) and relight the lanterns. Learn the double jump, wall jump and dash, find the 3 hidden stars in every level, beat a guardian at the end of each world, meet the people of the valley and piece together what happened from their stories, and face The Gloom. Real-time lighting, gamepad and touch support, 17 levels." },
   { dir: 'Imposter', name: 'Imposter', img: 'imposter', tags: ['New', 'Multiplayer', 'Party'], desc: "NEW: find the imposters before they get you. Up to 10 players with a 6-digit code (bots fill the empty seats), or play alone against 9 bots. 1, 2 or 3 imposters, tasks, sabotage, vents, meetings and votes, on two maps." },
+  { dir: 'Element Lab', name: 'Element Lab', img: 'elementlab', tags: ['New', 'Sandbox'], desc: "NEW: a falling-sand chemistry sandbox. 59 elements with real reactions: lava + water makes obsidian, sand melts into glass, sodium explodes in water, seeds grow, acid eats stone, TNT chains, lightning and batteries. Heat spreads, things melt, boil and freeze. Scenes, 13 challenges and share codes." },
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter 5.1', img: 'blocky', tags: ['New', '3D', 'Multiplayer'], desc: '5.1: the Zombie Hounds are gone, replaced by the slow, easy Shambler. Much smoother on Chromebooks. Big waves use about 40% less processor time, Low stays sharp (85%, never under 70%), and Auto now really adapts while you play. 5.0: a story Campaign, 3 chapters of missions (hold zones, rescue survivors, fix generators, escape before the timer) ending with Patient Zero. Realistic new gun models, upgraded zombies and bosses, better lighting that runs faster on Chromebooks, and a new start screen. New Subway map, the Shocker, the Vent Crawler, a Burst Carbine and a Lever Rifle. Power-ups are gone. Multiplayer finds games on your wifi, and you can invite friends from Grapevine.' },
   { dir: 'Tower Defense 2.0', name: 'Tower Defense 3.0', img: 'td', tags: ['New', 'Strategy'], desc: 'NEW 3.0: pick one of 6 heroes with 2 abilities each, 18 new towers including a whole Alien tab, 7 alien enemies and the Mothership boss. 12 new maps with terrain and stars, boss waves every 10, a Daily Challenge, and a Map Editor with share codes. Still two modes: Tower Mode or Troop Mode, 1900 to the future.' },
   { dir: 'Coffee Shop NEW', name: 'Bean & Brew Tycoon 2.1', img: 'coffee', tags: ['New', 'Tycoon'], desc: 'NEW 2.1: every city has its own local specials and a local ingredient you can only buy there (Maple Lattes at home, Coconut Iced Coffee at the beach, Nitro Cold Brew downtown, Gold Leaf Hot Chocolate on the slopes...). 2.0: open shops in 5 new cities, invent drinks in the Recipe Lab, train staff with skill trees, and run a franchise chain with managers. Random events with choices, decorations, seasons and holidays, an 8-chapter career story and a latte art mini-game. Build, staff and grow a chain of coffee shops.' },
@@ -448,9 +476,9 @@ function render() {
       }
       fallback();
     };
-    shot.appendChild(img); b.appendChild(shot);
+    shot.appendChild(img); shot.appendChild(el('div', 'playov', '&#9654; Play')); b.appendChild(shot); b.title = g.name + ' - ' + String(g.desc || '').replace(/<[^>]+>/g, '');
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
-    b.onclick = function () { play(g); };
+    b.onclick = function () { homeRecent(g); play(g); };
     grid.appendChild(b);
   });
   var list = document.getElementById('exp-list');
@@ -1190,7 +1218,7 @@ window.HG_notify = function (n) {
 // A game asks for the chats it can invite into (HG_inviteTargets) and sends an invite (HG_sendInvite): a normal chat
 // message ending in "hg-invite:<game>:<party code>", so it reads fine in the Grapevine app too. When one arrives the
 // pop-up shows a JOIN button: it opens the game (or tells the open one) and the game collects the code with HG_takeJoin.
-var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
+var INVITE_GAMES = { blocky: 'Blocky Shooter V2', frontline: 'Frontline', imposter: 'Imposter' }, INVITE_RE = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/, pendingJoin = null, pendingHost = null;
 function inviteGame(id) { var d = INVITE_GAMES[id]; return d ? GAMES.filter(function (g) { return g.dir === d; })[0] || null : null; }
 window.HG_inviteTargets = function () {
   var api = chatApi(); if (!api) return [];
@@ -1199,6 +1227,10 @@ window.HG_inviteTargets = function () {
 };
 window.HG_sendInvite = function (convId, o) {
   var api = chatApi(), g = o && inviteGame(o.game), code = o && String(o.code || '');
+  if (/^party:/.test(String(convId))) {        // Quick Match hosted it: list it as an open party
+    if (!g || !/^[A-Za-z0-9-]{4,12}$/.test(code)) return false;
+    return window.HG_partyOpen({ game: o.game, code: code, mode: o.mode, n: 1, max: o.max || 10 });
+  }
   if (/^hub:/.test(String(convId))) {          // a game started from a hub room: tell the room
     if (!g || !/^[A-Za-z0-9-]{4,40}$/.test(code) || !MP.net || 'hub:' + MP.code !== convId) return false;
     MP.net.send('all', { t: 'play', game: o.game, code: code }); hubPlay(mpName(), o.game, code, true); return true;
@@ -1679,6 +1711,7 @@ function profItems(e, c, shop) {
   var h = '<div class="pcats">' + SLOTS.map(function (s) { return '<button data-pcat="' + s[0] + '" class="' + (PROF.cat === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('') + '</div>';
   if (groups.length > 1) h += '<div class="pgrps"><button data-pgrp="" class="' + (!PROF.grp ? 'on' : '') + '">All</button>' + groups.map(function (g) { return '<button data-pgrp="' + profEsc(g) + '" class="' + (PROF.grp === g ? 'on' : '') + '">' + profEsc(g || 'Other') + '</button>'; }).join('') + '</div>';
   if (PROF.grp) list = list.filter(function (i) { return (i.g || '') === PROF.grp; });
+  if (PROF.cat === 'music' && !shop) h += '<div class="pnote">The track you wear plays on the launcher (never over a game). <button class="pb" data-mtoggle="1">' + (window.HG_music && localStorage.getItem('hgv:music') === 'off' ? 'Music is off: turn on' : 'Music is on: turn off') + '</button></div>';
   if (!list.length) return h + '<div class="pempty">' + (shop ? 'You own everything here. Nice.' : 'Nothing here yet: the Goon Shop has plenty.') + '</div>';
   h += '<div class="pgrid">' + list.map(function (i) {
     var own = profOwns(e, i), on = eq[i.k] === i.id, locked = !own && i.x;
@@ -1749,6 +1782,7 @@ document.addEventListener('click', function (ev) {
   else if (d.buy) { var it = profItem(d.buy); if (it && confirm('Buy ' + it.n + ' for ' + it.p + ' goon' + (it.p === 1 ? '' : 's') + '?')) L.eco.buy(d.buy); return; }
   else if (d.equip) { L.eco.equip(profItem(d.equip).k, d.equip); return; }
   else if (d.unequip) { L.eco.equip(d.unequip, null); return; }
+  else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
   else return;
   profRender();
 });
@@ -1806,6 +1840,7 @@ var LB_FEED = [
   ['blocky:xp', function () { var l = feedRd('blocky21_life') || {}; return [blockyXP(l), { prestige: feedNum(l.prestige), kills: feedNum(l.kills) }]; }],
   ['blocky:wave', function () { var l = feedRd('blocky21_life') || {}, b = 0, k = ''; for (var x in (l.best || {})) if (feedNum(l.best[x]) > b) { b = feedNum(l.best[x]); k = x; } return [b, k ? { mode: k } : null]; }],
   ['blocky:kills', function () { var l = feedRd('blocky21_life') || {}; return [feedNum(l.kills), { headshots: feedNum(l.headshots) }]; }],
+  ['elementlab:ch', function () { var d = feedRd('elementlab_challenges') || {}; return [Object.keys(d).length]; }],
   ['imposter:wins', function () { var s = feedRd('imposter_save') || {}, st = s.stats || s; return [feedNum(st.wins) || (feedNum(st.crewWins) + feedNum(st.impWins))]; }],
   // Last Light: every level's best time, and the full game = all of them added up (only once all 17 are done)
   ['lumi:*', function () {
@@ -2053,6 +2088,157 @@ function dockSend(text) {
   });
   setInterval(dockBadge, 3000);
 })();
+
+// ===== Launcher music: the track you wear (bought in the Goon Shop) plays on the launcher's pages =====
+// Original tracks made right here with Web Audio (no files): 'tidal' (fast, bright, 140 bpm) and 'nightdrive'
+// (synthwave, 100 bpm). Never over a game: it stops while one is open and comes back after. The first press anywhere
+// on the page starts it (browsers do not allow sound before that).
+var MUS = { ac: null, gain: null, track: '', next: 0, step: 0, timer: 0, on: false };
+var TRACKS = {
+  tidal: { bpm: 140, root: 52, prog: [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]],   // E minor: i VI III VII
+    lead: [12, -1, 15, -1, 19, 17, 15, -1, 12, -1, 10, 12, -1, 15, 14, -1] },
+  nightdrive: { bpm: 100, root: 57, prog: [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 7]],   // A minor: i VI III VII
+    lead: [7, -1, -1, 10, -1, 12, -1, -1, 15, -1, 14, -1, 12, -1, 10, -1] }
+};
+function musFreq(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+function musTone(t, f, dur, type, vol, cut) {
+  var ac = MUS.ac, o = ac.createOscillator(), g = ac.createGain(), fl = ac.createBiquadFilter();
+  o.type = type; o.frequency.value = f; fl.type = 'lowpass'; fl.frequency.value = cut || 4000;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(fl); fl.connect(g); g.connect(MUS.gain); o.start(t); o.stop(t + dur + 0.05);
+}
+function musNoise(t, dur, vol, hp) {
+  var ac = MUS.ac, b = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate), d = b.getChannelData(0);
+  for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = b; f.type = 'highpass'; f.frequency.value = hp;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f); f.connect(g); g.connect(MUS.gain); s.start(t);
+}
+function musKick(t) { var ac = MUS.ac, o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+  g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3); o.connect(g); g.connect(MUS.gain); o.start(t); o.stop(t + 0.32); }
+function musBeat(tr, s, t) {
+  var T = TRACKS[tr], sd = 60 / T.bpm / 4, bar = Math.floor(s / 16) % 4, i = s % 16, ch = T.prog[bar], r = T.root;
+  if (tr === 'tidal') {
+    if (i % 4 === 0) musKick(t); if (i % 4 === 2) musNoise(t, 0.05, 0.18, 7000); if (i === 4 || i === 12) musNoise(t, 0.16, 0.35, 1500);
+    if (i % 2 === 0) musTone(t, musFreq(r - 24 + ch[0]), sd * 1.8, 'sawtooth', 0.22, 600);
+    musTone(t, musFreq(r + 12 + ch[i % 3] + (i % 6 > 2 ? 12 : 0)), sd * 0.9, 'square', 0.05, 2600);
+    var l = T.lead[i]; if (l >= 0 && bar % 2 === 1) musTone(t, musFreq(r + l), sd * 1.8, 'triangle', 0.12, 5000);
+  } else {
+    if (i === 0 || i === 10) musKick(t); if (i === 4 || i === 12) musNoise(t, 0.22, 0.3, 1200); if (i % 2 === 1) musNoise(t, 0.04, 0.1, 8000);
+    if (i % 8 === 0) ch.forEach(function (n) { musTone(t, musFreq(r + n), sd * 7.5, 'sawtooth', 0.045, 1400); });
+    if (i % 2 === 0) musTone(t, musFreq(r - 24 + ch[0] + (i % 4 === 2 ? 12 : 0)), sd * 1.6, 'square', 0.12, 500);
+    var l2 = T.lead[i]; if (l2 >= 0 && bar >= 2) musTone(t, musFreq(r + 12 + l2), sd * 2.6, 'triangle', 0.1, 3500);
+  }
+}
+function musTick() {
+  if (!MUS.on || !MUS.track) return;
+  var T = TRACKS[MUS.track], sd = 60 / T.bpm / 4;
+  while (MUS.next < MUS.ac.currentTime + 0.25) { musBeat(MUS.track, MUS.step, MUS.next); MUS.next += sd; MUS.step++; }
+}
+function musWant() {
+  var L = window.HGGrapevine, e = L && L.eco && L.eco.state(), id = e && e.equip && e.equip.music;
+  var tr = id ? id.replace(/^music:/, '') : '';
+  return TRACKS[tr] && !document.documentElement.classList.contains('playing') && !document.hidden && musPref() ? tr : '';
+}
+function musPref() { try { return localStorage.getItem('hgv:music') !== 'off'; } catch (e) { return true; } }
+function musSync() {
+  var want = musWant();
+  if (want && !MUS.ac) { try { MUS.ac = new (window.AudioContext || window.webkitAudioContext)(); MUS.gain = MUS.ac.createGain(); MUS.gain.gain.value = 0.35; MUS.gain.connect(MUS.ac.destination); } catch (e) { return; } }
+  if (!MUS.ac) return;
+  if (want && (!MUS.on || MUS.track !== want)) { MUS.track = want; MUS.on = true; MUS.step = 0; MUS.next = MUS.ac.currentTime + 0.1; if (MUS.ac.state === 'suspended') MUS.ac.resume(); clearInterval(MUS.timer); MUS.timer = setInterval(musTick, 90); }
+  else if (!want && MUS.on) { MUS.on = false; clearInterval(MUS.timer); MUS.gain.gain.setTargetAtTime(0.0001, MUS.ac.currentTime, 0.1); setTimeout(function () { if (!MUS.on) MUS.gain.gain.value = 0.35; }, 600); }
+}
+setInterval(musSync, 1000);
+document.addEventListener('pointerdown', function () { if (MUS.ac && MUS.ac.state === 'suspended') MUS.ac.resume(); musSync(); }, { capture: true });
+window.HG_music = { toggle: function () { try { localStorage.setItem('hgv:music', musPref() ? 'off' : 'on'); } catch (e) {} musSync(); return musPref(); }, playing: function () { return MUS.on ? MUS.track : ''; } };
+
+// ===== Open parties, Quick Match, friends playing now =====
+// Games that host a party tell the launcher (HG_partyOpen, or a code they send with HG_sendInvite), and the launcher
+// tells Grapevine, which lists it for people on the same Wi-Fi and, if you allow it, for everyone (grapevine
+// src/archive/076-parties.js). "Same Wi-Fi" = the same public address, found and hashed here like Blocky's LAN scan.
+var PARTY = { net: null, netAsked: false, lastCode: '', lastGame: '', timer: 0 };
+function partyNet() {
+  if (PARTY.netAsked) return Promise.resolve(PARTY.net); PARTY.netAsked = true;
+  return new Promise(function (res) {
+    var done = false, fin = function (v) { if (done) return; done = true; PARTY.net = v; try { pc.close(); } catch (e) {} res(v); }, pc;
+    try {
+      pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }); pc.createDataChannel('x');
+      pc.onicecandidate = function (e) { var c = e.candidate && e.candidate.candidate; if (!c || c.indexOf(' typ srflx') < 0) return;
+        crypto.subtle.digest('SHA-256', new TextEncoder().encode(c.split(' ')[4] + 'hgparty')).then(function (b) { fin([].slice.call(new Uint8Array(b)).map(function (x) { return ('0' + x.toString(16)).slice(-2); }).join('').slice(0, 12)); }, function () { fin(null); }); };
+      pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).catch(function () { fin(null); });
+      setTimeout(function () { fin(null); }, 4500);
+    } catch (e) { fin(null); }
+  });
+}
+function partyPub() { var c = document.getElementById('mp-pub'); return !c || c.checked; }
+// a game hosting a party: { game: 'blocky', code: '123456', n: players, max, mode }
+window.HG_partyOpen = function (o) {
+  var L = window.HGGrapevine; if (!L || !L.party || !o || !/^[A-Za-z0-9-]{4,12}$/.test(String(o.code))) return false;
+  PARTY.lastCode = String(o.code); PARTY.lastGame = o.game;
+  partyNet().then(function (net) { L.party.open({ game: o.game, code: o.code, n: o.n, max: o.max, mode: o.mode, pub: o.pub !== false && partyPub(), net: net }); });
+  partyActivity(); return true;
+};
+window.HG_partyClose = function (code) { var L = window.HGGrapevine; if (L && L.party) L.party.close(code); if (PARTY.lastCode === String(code)) PARTY.lastCode = ''; partyActivity(); };
+function partyActivity() {
+  var L = window.HGGrapevine; if (!L || !L.party || !L.online()) return;
+  var g = typeof current !== 'undefined' && current && current.game;
+  var gid = g ? Object.keys(INVITE_GAMES).filter(function (k) { return INVITE_GAMES[k] === g.dir; })[0] : null;
+  L.party.activity(g ? g.name.replace(/ [\d.]+$/, '') : null, g && gid === PARTY.lastGame ? PARTY.lastCode : null, gid || null);
+}
+setInterval(partyActivity, 60000);
+function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }
+function partyJoin(game, code) { if (game === 'hub') { showTab('mp'); document.getElementById('mp-code').value = code; mpGo(); } else joinInvite(game, code); }
+function partyPaint() {
+  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden) return;
+  var qk = document.getElementById('mp-quick');
+  if (!qk.childElementCount) qk.innerHTML = Object.keys(INVITE_GAMES).map(function (id) { return inviteGame(id) ? '<button class="mp-qm" data-qm="' + id + '">' + profEsc(partyGameName(id)) + '</button>' : ''; }).join('');
+  if (!L || !L.party || !L.online()) { box.innerHTML = '<div class="rdesc">Sign in to see open parties.</div>'; return; }
+  partyNet().then(function (net) {
+    L.party.list(net).then(function (m) {
+      var row = function (p) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(partyGameName(p.game)) + '</span><span class="mp-ph">' + profEsc(p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span><span class="mp-pn">' + p.n + '/' + p.max + '</span>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + '<button data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div>'; };
+      var all = (m.near || []).concat(m.pub || []);
+      box.innerHTML = all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>';
+      document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public parties)';
+    }, function () {});
+    L.party.friends().then(function (m) {
+      var fr = L.friends().friends, nm = {}; fr.forEach(function (f) { nm[f.userId] = f.name; });
+      var fb = document.getElementById('mp-friends');
+      fb.innerHTML = (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
+        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>';
+    }, function () {});
+  });
+}
+function quickMatch(game) {
+  var L = window.HGGrapevine; if (!L || !L.party || !L.online()) { hubToast('Sign in for Quick Match.'); return; }
+  partyNet().then(function (net) {
+    L.party.list(net, game).then(function (m) {
+      var p = (m.near || [])[0] || (m.pub || [])[0];
+      if (p) { hubToast('Joining ' + p.host + "'s party..."); joinInvite(game, p.code); }
+      else { hubToast('No open party: hosting one for you. It shows up for others in a moment.'); window.HG_hostInvite(game, 'party:public'); }
+    }, function () {});
+  });
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('#view-mp button'); if (!b) return;
+  if (b.dataset.qm) quickMatch(b.dataset.qm);
+  else if (b.dataset.pj) { var x = b.dataset.pj.split('|'); partyJoin(x[0], x[1]); }
+});
+setInterval(partyPaint, 10000);
+document.getElementById('tab-mp').addEventListener('click', function () { setTimeout(partyPaint, 50); });
+
+// ===== The Games page: a hello, and the games you played last one press away =====
+function homeRecent(g) { try { var r = JSON.parse(localStorage.getItem('hgv:recent') || '[]').filter(function (d) { return d !== g.dir; }); r.unshift(g.dir); localStorage.setItem('hgv:recent', JSON.stringify(r.slice(0, 6))); } catch (e) {} homePaint(); }
+function homePaint() {
+  var L = window.HGGrapevine, me = L && L.me(), e = L && L.eco && L.eco.state(), h = document.getElementById('hello'), j = document.getElementById('jump');
+  if (!h || !j) return;
+  var hr = new Date().getHours(), part = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+  h.innerHTML = me ? part + ', <b>' + profEsc(me.name) + '</b>.' + (e ? ' You have <b class="hgoons">' + (e.dev ? '∞' : e.goons) + ' goons</b> to spend in your <a href="#" id="hello-prof">Profile</a>.' : '') + ' Pick a game.' : 'Pick a game.';
+  var hp = document.getElementById('hello-prof'); if (hp) hp.onclick = function (ev) { ev.preventDefault(); showTab('prof'); };
+  var r = []; try { r = JSON.parse(localStorage.getItem('hgv:recent') || '[]'); } catch (x) {}
+  var gs = r.map(function (d) { return GAMES.filter(function (g) { return g.dir === d; })[0]; }).filter(Boolean).slice(0, 4);
+  j.innerHTML = gs.length ? '<div class="jlbl">Jump back in</div>' + gs.map(function (g, i) { return '<button class="jcard" data-jg="' + i + '"><span class="jimg" style="background-image:url(' + (local ? '' : (MIRRORS[0] || '')) + 'hub/' + g.img + '.jpg)"></span><span>' + profEsc(g.name.replace(/ [\d.]+$/, '')) + '</span></button>'; }).join('') : '';
+  [].forEach.call(j.querySelectorAll('[data-jg]'), function (b) { b.onclick = function () { play(gs[+b.dataset.jg]); }; });
+}
+setTimeout(homePaint, 500); setInterval(homePaint, 15000);
 </script>
 </body>
 </html>
