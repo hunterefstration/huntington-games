@@ -6,7 +6,7 @@
   // To add one: { id, g (game id), i (icon), n (name), d (how to get it), p (points: 10 / 25 / 50 / 100), t: fn }.
   var AG = { spikes: '100 Levels of Spikes', tetris: 'Tetris Surge', clicker: 'Brown E Clicker', coffee: 'Bean & Brew Tycoon',
     market: 'Market & Life', td: 'Tower Defense', frontline: 'Frontline: Command', blocky: 'Blocky Shooter', neon: 'Neon Dash',
-    sov: 'Sovereign', lumi: 'Last Light', hub: 'Huntington Games' };
+    sov: 'Sovereign', lumi: 'Last Light', imposter: 'Imposter', hub: 'Huntington Games' };
   function rd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function cnt(x) { return !x ? 0 : Array.isArray(x) ? x.length : typeof x === 'object' ? Object.keys(x).filter(function (k) { return x[k]; }).length : 0; }
@@ -16,7 +16,7 @@
       ML = function () { var s = rd('marketLifeSave'); return (s && s.life) || {}; }, TDR = function () { return rd('td2_records') || {}; },
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
       SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; },
-      LU = function () { return rd('lumi_save') || {}; };
+      LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; };
   var luDone = function (id) { return !!((LU().levels || {})[id]); }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
   var ACH = [
@@ -100,6 +100,11 @@
     { id: 'sovworld', g: 'sov', i: '🌍', n: 'World Domination', d: 'Control every country on Earth.', p: 100, t: function () { return !!SV().domination; } },
     // the launcher itself
     // Last Light
+    // Imposter
+    { id: 'imp1', g: 'imposter', i: '🫘', n: 'Suspicious', d: 'Play a game of Imposter.', p: 10, t: function () { return num(IM().games) >= 1; } },
+    { id: 'imp10', g: 'imposter', i: '🧑‍🚀', n: 'Crew Captain', d: 'Win 10 games as crew.', p: 25, t: function () { return num(IM().crewWins) >= 10; } },
+    { id: 'imptask', g: 'imposter', i: '🔧', n: 'Busy Bean', d: 'Finish 100 tasks.', p: 25, t: function () { return num(IM().tasks) >= 100; } },
+    { id: 'imp25', g: 'imposter', i: '🔪', n: 'Imposter King', d: 'Win 25 games as the imposter.', p: 100, t: function () { return num(IM().impWins) >= 25; } },
     { id: 'lu11', g: 'lumi', i: '🏮', n: 'First Light', d: "Finish the first level of Last Light.", p: 10, t: function () { return luDone('1-1'); } },
     { id: 'luw1', g: 'lumi', i: '🌲', n: 'Glowwood Glowing', d: 'Finish Glowwood (and learn the double jump).', p: 25, t: function () { return luDone('1-4'); } },
     { id: 'luw2', g: 'lumi', i: '💎', n: 'Crystal Clear', d: 'Finish the Hollow Caves.', p: 25, t: function () { return luDone('2-4'); } },

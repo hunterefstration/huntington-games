@@ -105,22 +105,22 @@ html[data-bg]:not([data-bg="none"]) #bgfx{opacity:1}
 /* Aurora: three curtains of the flavor's colors, each on its own slow
    orbit, blurred into weather. They wander far enough that the picture is
    never the same twice. */
-html[data-bg="aurora"] #bgfx > i{filter:blur(46px);will-change:transform;inset:-15%}
+html[data-bg="aurora"] #bgfx > i{will-change:transform;inset:-15%}
 html[data-bg="aurora"] #bgfx > i:nth-child(1){
   background:
-    radial-gradient(48% 38% at 22% 18%, color-mix(in srgb, var(--signal) 34%, transparent), transparent 70%),
-    radial-gradient(40% 46% at 78% 78%, color-mix(in srgb, var(--signal2) 30%, transparent), transparent 70%);
+    radial-gradient(48% 38% at 22% 18%, color-mix(in srgb, var(--signal) 34%, transparent), transparent 100%),
+    radial-gradient(40% 46% at 78% 78%, color-mix(in srgb, var(--signal2) 30%, transparent), transparent 100%);
   animation:auroraA 27s ease-in-out infinite alternate;
 }
 html[data-bg="aurora"] #bgfx > i:nth-child(2){
   background:
-    radial-gradient(44% 34% at 80% 24%, color-mix(in srgb, var(--live) 26%, transparent), transparent 70%),
-    radial-gradient(52% 40% at 30% 88%, color-mix(in srgb, var(--signal) 22%, transparent), transparent 70%);
+    radial-gradient(44% 34% at 80% 24%, color-mix(in srgb, var(--live) 26%, transparent), transparent 100%),
+    radial-gradient(52% 40% at 30% 88%, color-mix(in srgb, var(--signal) 22%, transparent), transparent 100%);
   animation:auroraB 41s ease-in-out infinite alternate-reverse;
 }
 html[data-bg="aurora"] #bgfx > i:nth-child(3){
   background:
-    radial-gradient(60% 30% at 50% 50%, color-mix(in srgb, var(--signal2) 22%, transparent), transparent 72%);
+    radial-gradient(60% 30% at 50% 50%, color-mix(in srgb, var(--signal2) 22%, transparent), transparent 100%);
   animation:auroraC 53s ease-in-out infinite alternate, auroraBreathe 17s ease-in-out infinite;
 }
 @keyframes auroraA{
@@ -151,7 +151,7 @@ html[data-bg="drift"] #bgfx > i:nth-child(1){
     radial-gradient(1px 1px at 64% 12%, var(--signal) 50%, transparent 51%),
     radial-gradient(1px 1px at 41% 76%, var(--signal) 50%, transparent 51%);
   background-size:480px 480px, 360px 360px, 520px 520px;
-  animation:driftA 90s linear infinite;
+  animation:driftA 90s steps(900) infinite;
 }
 html[data-bg="drift"] #bgfx > i:nth-child(2){
   background-image:
@@ -159,14 +159,14 @@ html[data-bg="drift"] #bgfx > i:nth-child(2){
     radial-gradient(1px 1px at 8% 88%, var(--signal2) 50%, transparent 51%),
     radial-gradient(1px 1px at 52% 40%, var(--signal2) 50%, transparent 51%);
   background-size:600px 600px, 420px 420px, 560px 560px;
-  animation:driftB 120s linear infinite, driftBreathe 23s ease-in-out infinite;
+  animation:driftB 120s steps(1200) infinite, driftBreathe 23s ease-in-out infinite;
 }
 html[data-bg="drift"] #bgfx > i:nth-child(3){
   background-image:
     radial-gradient(1px 1px at 74% 92%, var(--live) 50%, transparent 51%),
     radial-gradient(1.5px 1.5px at 28% 60%, var(--live) 50%, transparent 51%);
   background-size:380px 380px, 640px 640px;
-  animation:driftC 75s linear infinite, driftBreathe 31s ease-in-out 9s infinite;
+  animation:driftC 75s steps(750) infinite, driftBreathe 31s ease-in-out 9s infinite;
 }
 html[data-bg="drift"] #bgfx::before{
   background-image:
@@ -174,7 +174,7 @@ html[data-bg="drift"] #bgfx::before{
     radial-gradient(2px 2px at 70% 66%, color-mix(in srgb, var(--signal2) 60%, #fff) 50%, transparent 51%);
   background-size:720px 720px, 820px 820px;
   opacity:.8;
-  animation:driftD 150s linear infinite;
+  animation:driftD 150s steps(1500) infinite;
 }
 @keyframes driftA{from{background-position:0 0,0 0,0 0} to{background-position:480px 480px,720px 720px,520px 1040px}}
 @keyframes driftB{from{background-position:0 0,0 0,0 0} to{background-position:600px 300px,840px 420px,560px 1120px}}
@@ -209,12 +209,12 @@ html[data-bg="rain2"] #bgfx::before{
 }
 @keyframes hiss{0%{transform:translateY(0)} 50%{transform:translateY(1px)} 100%{transform:translateY(-1px)}}
 @keyframes staticTint{0%,100%{opacity:0} 45%,60%{opacity:1}}
-@keyframes roll{from{top:-30%} to{top:110%}}
+@keyframes roll{from{transform:translateY(0)} to{transform:translateY(540%)}}
 
 /* Grid: the flavor's lines creeping by, and now and then the whole grid
    turns the flavor's second color for a while before settling back. */
 html[data-bg="grid"] #bgfx{mask-image:radial-gradient(70% 60% at 50% 40%, #000, transparent 75%)}
-html[data-bg="grid"] #bgfx > i{background-size:44px 44px;animation:creep 24s linear infinite}
+html[data-bg="grid"] #bgfx > i{background-size:44px 44px;animation:creep 24s steps(96) infinite}
 html[data-bg="grid"] #bgfx > i:nth-child(1){
   background-image:
     linear-gradient(to right, color-mix(in srgb, var(--signal) 32%, transparent) 1px, transparent 1px),
@@ -224,13 +224,13 @@ html[data-bg="grid"] #bgfx > i:nth-child(2){
   background-image:
     linear-gradient(to right, color-mix(in srgb, var(--signal2) 40%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in srgb, var(--signal2) 40%, transparent) 1px, transparent 1px);
-  animation:creep 24s linear infinite, gridSwap 47s ease-in-out infinite;
+  animation:creep 24s steps(96) infinite, gridSwap 47s ease-in-out infinite;
 }
 html[data-bg="grid"] #bgfx > i:nth-child(3){
   background-image:
     linear-gradient(to right, color-mix(in srgb, var(--live) 40%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in srgb, var(--live) 40%, transparent) 1px, transparent 1px);
-  animation:creep 24s linear infinite, gridSwap 71s ease-in-out 29s infinite;
+  animation:creep 24s steps(96) infinite, gridSwap 71s ease-in-out 29s infinite;
 }
 @keyframes creep{to{background-position:44px 44px}}
 @keyframes gridSwap{0%,38%{opacity:0} 44%,58%{opacity:1} 64%,100%{opacity:0}}
@@ -699,7 +699,8 @@ html[data-density="comfortable"] .msg.run{margin-top:8px}
 #picker.on{display:block}
 #pkq{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);
   padding:9px 12px;font-size:13px;outline:none;font-family:inherit}
-#pkgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;padding:6px;max-height:190px;overflow-y:auto}
+#pkgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;padding:6px;max-height:230px;overflow-y:auto}
+#emojiBtn{font-size:16px;padding:2px 6px;background:none;border:0;cursor:pointer;opacity:.85}#emojiBtn:hover{opacity:1}
 #pkgrid button{font-size:18px;line-height:1;padding:5px 0;border-radius:4px}
 #pkgrid button:hover,#pkgrid button.on{background:var(--raise)}
 #pkgrid .pkempty{grid-column:1/-1;text-align:center;color:var(--dimmer);font-size:12px;padding:16px}
@@ -1266,6 +1267,29 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
   #ctitle{font-size:12px}
   #mempanel{width:min(280px,88vw)}
 }
+
+/* pictures, titles, ranks (from the launcher's goon shop and leaderboards) */
+.pfp{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;vertical-align:-4px;margin-right:5px;flex:none;overflow:hidden;line-height:1;box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+.pfp img{width:100%;height:100%;object-fit:cover}.pfp.team b{color:#fff;font-family:var(--mono);letter-spacing:-.04em;text-shadow:0 1px 0 rgba(0,0,0,.6)}
+.who .nk{font-size:10px;opacity:.55;margin-left:4px}.who .wn{vertical-align:baseline}
+.gtag{display:inline-block;font-family:var(--mono);font-size:9.5px;line-height:1;padding:3px 5px;border-radius:4px;margin-left:5px;vertical-align:2px;
+  background:rgba(255,255,255,.08);color:var(--text);border:1px solid rgba(255,255,255,.14);white-space:nowrap;letter-spacing:.02em}
+.gtag.r-uncommon{border-color:#4ade8055;color:#86efac}.gtag.r-rare{border-color:#60a5fa66;color:#93c5fd}.gtag.r-epic{border-color:#c084fc66;color:#d8b4fe}
+.gtag.r-legendary{border-color:#fbbf2466;color:#fde68a}.gtag.r-secret{border-color:#f472b688;color:#fbcfe8;background:linear-gradient(90deg,#f472b622,#fbbf2422)}
+.gtag.rec{border-color:#fbbf2488;color:#fde68a;background:#fbbf2418}.gtag.rank{font-weight:700}.gtag.rank.t1{color:#fde68a;border-color:#fbbf2488}
+.gtag.rank.t2{color:#e5e7eb}.gtag.rank.t3{color:#fdba74}.gtag.rank.t4,.gtag.rank.t5{opacity:.7}.gtag.big{font-size:12px;padding:5px 8px}
+#umCos{display:flex;gap:12px;align-items:center;border-radius:10px;margin:-2px 0 10px;min-height:0}
+#umCos.has{padding:14px 12px;min-height:74px}.umtags{display:flex;flex-wrap:wrap;gap:4px}.umtags .gtag{margin-left:0}
+/* the wheel */
+#wheel{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center}
+#wheel .wcard{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:22px 26px;text-align:center;max-width:360px}
+#wheel h2{margin:0 0 6px;font-size:20px}#wheel p{margin:0 0 14px;color:var(--dim);font-size:13px}
+#wheel .wwrap{position:relative;width:180px;height:180px;margin:0 auto 12px}
+#wheel .wptr{position:absolute;left:50%;top:-14px;transform:translateX(-50%);font-size:22px;z-index:2;color:#fff;text-shadow:0 2px 4px #000}
+#wheel .wdisc{width:180px;height:180px;border-radius:50%;position:relative;border:3px solid #fff;
+  background:conic-gradient(#dc2626 0 72deg,#16a34a 72deg 144deg,#15803d 144deg 216deg,#16a34a 216deg 288deg,#15803d 288deg 360deg);transition:transform 5s cubic-bezier(.12,.6,.12,1)}
+#wheel .wdisc span{position:absolute;left:50%;top:50%;width:60px;margin:-8px 0 0 -30px;font:900 13px/16px var(--mono);color:#fff;text-shadow:0 1px 2px #000}
+#wheel .wres{min-height:22px;font-weight:800}#wheel .wres.ban{color:#f87171}#wheel .wres.safe{color:#4ade80}
 </style>
 </head>
 <body>
@@ -1399,6 +1423,7 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
       <button class="hbtn hact" id="addBtn" title="add someone to this conversation" style="display:none">+ add</button>
       <button class="hbtn hact" id="gearBtn" title="room settings — roles, members, rooms inside" style="display:none">&#9881; room</button>
       <button class="hbtn" id="convMenuBtn" title="more — notifications, leave">&#8943; more</button>
+      <button class="hbtn" id="leaveBtn" style="display:none">⇥ leave</button>
       <button class="hbtn" id="memBtn">members</button>
     </header>
 
@@ -1442,6 +1467,7 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
         <div class="box">
           <button id="actBtn" title="polls, dice, countdowns and more" aria-label="Actions">+</button>
           <button id="attach" title="attach an image">img</button>
+          <button id="emojiBtn" title="emoji" aria-label="Emoji">😊</button>
           <textarea id="text" placeholder="Type a message" maxlength="2000" rows="1" autocomplete="off" spellcheck="true"></textarea>
           <button id="send">Send</button>
         </div>
@@ -2905,6 +2931,7 @@ function paintSidebarNow(){
   const children = new Map();          // parentId -> [child convs]
   for (const c of S.convs.values()) {
     if (c.hidden) continue;                 // a role override took this off your wall
+    if (c.kind === 'dm' && c.id !== S.active && closedDms().has(c.id)) continue;   // you closed it (until they write)
     if (q && !convTitle(c).replace(/^#/, '').toLowerCase().includes(q)) continue;
     if (c.kind === 'dm') { groups.dm.push(c); continue; }
     if (c.parentId) {
@@ -2926,7 +2953,7 @@ function paintSidebarNow(){
   const saveExpand = () => { try { store.setItem(expKey, JSON.stringify([...expand])); } catch {} };
   const row = (c, sub, o = {}) => {
     const b = document.createElement('button');
-    b.className = 'citem' + (c.id === S.active ? ' on' : '') + (sub ? ' subroom' : '');
+    b.className = 'citem' + (c.id === S.active ? ' on' : '') + (sub ? ' subroom' : ''); b.dataset.conv = c.id;
     const online = c.members.some(m => m.userId !== S.userId && m.online);
     const nm = sub ? c.name : convTitle(c);
     const un = (c.unread || 0) + (o.rolled || 0);
@@ -3397,7 +3424,7 @@ function renderMsg(m){
                && (m.ts - prevMsg.ts) < RUN_GAP && !m.replyTo;
 
   const row = document.createElement('div');
-  row.dataset.mid = m.msgId;
+  row.dataset.mid = m.msgId; if (m.userId) row.dataset.uid = m.userId;
   row.className = 'msg' + (m.userId === S.userId ? ' self' : '') +
     (S.mutes.has(m.displayName) && m.userId !== S.userId ? ' mutedu' : '') +
     (namesMe(m) ? ' hasme' : '') + (cont ? ' cont' : ' run');
@@ -3409,8 +3436,8 @@ function renderMsg(m){
 
   who.title = role === 'owner' ? 'owner of this conversation' : '';
   who.textContent = m.displayName;
-  if (role !== 'self' && S.friends.some(f => f.userId === m.userId))
-    who.innerHTML = esc(m.displayName) + '<span class="fh">\u2661</span>';
+  who.dataset.name = m.displayName;
+  decorateWho(who, m.userId, m.displayName, role !== 'self' && S.friends.some(f => f.userId === m.userId));   // picture, nickname, title, rank
   who.onclick = () => openUser(m.displayName, m.userId);
   if (S.stars.has(m.msgId)) row.classList.add('starred');   // the ★ is drawn by CSS
   const body = document.createElement('div'); body.className = 'body';
@@ -3865,7 +3892,7 @@ function openConv(id){
   $('#convMenuBtn').style.display = '';
   $('#memBtn').style.display = '';
   paintHeaderActs(c);
-  S.active = id;
+  S.active = id; paintLeave();
   store.setItem('gv:active:' + S.userId, id);
   S.rows.clear();
   dropQueued();
@@ -3943,6 +3970,7 @@ function paintComposeLock(){
 
 // ---- delivery -------------------------------------------------------------
 function deliver(m){
+  if (m && m.convId && m.userId !== S.userId && closedDms().delete(m.convId)) { saveClosed(); paintSidebar(); }   // a closed DM opens again when they write
   const c = conv(m.convId);
   if (!c) return;                       // not one of my conversations
   if (m.kind !== 'image' && typeof m.text === 'string') m.text = GUARD.mask(m.text);
@@ -4185,6 +4213,8 @@ function send(){
     clearEdit(); $('#text').value = ''; growText();
     return;
   }
+  // the word goes only to the server (never straight to the others): it is not sent, the server spins the wheel
+  if (GUARD.has(body)) { tell({ type:'chat', convId:S.active, msgId:uid(), text: body, ts:Date.now(), kind:'text' }); $('#text').value = ''; growText(); return; }
   const m = { type:'chat', convId:S.active, msgId:uid(), userId:S.userId, displayName:S.name,
               text: body, ts:Date.now(), kind:'text', replyTo:S.reply?.msgId || null };
   S.pending.set(m.msgId, m);
@@ -5779,6 +5809,12 @@ function handleArchive(m){
     case 'rooms': paintRoomDir(m.rooms); paintSidebar(); break;
     case 'friends': onFriends(m); break;
     case 'profile': paintUserProfile(m); break;
+    case 'spin': showWheel(m); break;
+    case 'cos': cosArrived(m.map); break;
+    case 'eco':
+      if (m.cat) catalogArrived(m.cat);
+      if (m.gained && m.gained.n > 0) toast(`+${m.gained.n} goon${m.gained.n === 1 ? '' : 's'}: ${m.gained.why}`, 'good', 4000);
+      break;
     case 'blocked': m.on ? S.blocks.add(m.name) : S.blocks.delete(m.name); toast((m.on ? 'Blocked ' : 'Unblocked ') + m.name, 'good'); if ($('#setModal').classList.contains('on')) openAcct('privacy'); break;
     case 'muted': m.on ? S.mutes.add(m.name) : S.mutes.delete(m.name); toast((m.on ? 'Muted ' : 'Unmuted ') + m.name, 'good'); if ($('#setModal').classList.contains('on')) openAcct('privacy'); break;
     case 'error': {
@@ -6448,8 +6484,16 @@ function actPaint(){
   } else if (ACT.view === 'timer') {
     const q = field('what for (optional)', '', 80); el.append(q);
     const l = document.createElement('div'); l.className = 'k'; l.style.marginTop = '8px'; l.textContent = 'minutes'; el.append(l);
-    el.append(seg([1, 2, 5, 10, 15, 30, 60], ACT.mins, v => ACT.mins = v));
-    const b = go('Start', () => actSend('⏳ ' + (q.value.trim() || ACT.mins + ' minute' + (ACT.mins === 1 ? '' : 's')) + '\nends ' + (Date.now() + ACT.mins * 60000)));
+    el.append(seg([1, 2, 5, 10, 15, 30, 60], ACT.mins, v => { ACT.mins = v; for (const i of cu) i.value = ''; }));
+    // or any length you like: days, hours, minutes, seconds (up to a week)
+    const cl = document.createElement('div'); cl.className = 'k'; cl.style.marginTop = '8px'; cl.textContent = 'or a custom time'; el.append(cl);
+    const cr = document.createElement('div'); cr.className = 'actrow tcustom';
+    const cu = ['days', 'hours', 'min', 'sec'].map((u, i) => { const f = document.createElement('input'); f.type = 'number'; f.min = '0'; f.max = ['7', '23', '59', '59'][i]; f.placeholder = u; f.style.width = '64px'; f.className = 'field'; cr.append(f); return f; });
+    el.append(cr);
+    const customMs = () => { const [d, h, m, sx] = cu.map(f => Math.max(0, Number(f.value) || 0)); return Math.min(7 * 86_400_000, ((d * 24 + h) * 60 + m) * 60_000 + sx * 1000); };
+    const human = ms => { const s2 = Math.round(ms / 1000), parts = [[86400, 'day'], [3600, 'hour'], [60, 'minute'], [1, 'second']].map(([k, w]) => [Math.floor(s2 % (k === 86400 ? 1e9 : k * (k === 3600 ? 24 : 60)) / k), w]).filter(([n]) => n);
+      return parts.map(([n, w]) => n + ' ' + w + (n === 1 ? '' : 's')).join(' ') || '0 seconds'; };
+    const b = go('Start', () => { const ms = customMs() || ACT.mins * 60000; actSend('⏳ ' + (q.value.trim() || human(ms)) + '\nends ' + (Date.now() + ms)); });
     submitOn(q, b); const row = document.createElement('div'); row.className = 'actrow'; row.append(b); el.append(row);
     el.append(note('Everybody sees the same clock counting down, and a flash when it lands.'));
   } else if (ACT.view === 'party') {
@@ -6530,7 +6574,8 @@ function tickOne(c, now){
     return;
   }
   const s = Math.ceil(left / 1000);
-  b.textContent = s >= 3600 ? Math.floor(s / 3600) + 'h ' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + 'm'
+  b.textContent = s >= 86400 ? Math.floor(s / 86400) + 'd ' + Math.floor(s % 86400 / 3600) + 'h'
+    : s >= 3600 ? Math.floor(s / 3600) + 'h ' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + 'm'
     : Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
 function tickTimers(){
@@ -6576,7 +6621,10 @@ function tourSteps(){
     { title: 'That is the lot.', text: 'Enter sends, Shift+Enter is a new line, <code>/help</code> lists the commands, <kbd>?</kbd> lists the keys, and <code>/guide</code> replays this.', center: true, next: 'Done' }
   ];
 }
-function tutorial(){ tourStart(); }
+// Inside the Huntington Games launcher there is ONE tour, the launcher's: it walks through the games, your profile and
+// then into this app. So there, /guide and the offer hand over to it, and the app reports what you do (sent, closed…).
+const LAUNCHER_TOUR = () => { try { return window.parent !== window && window.parent.HG_tour ? window.parent.HG_tour : null; } catch (e) { return null; } };
+function tutorial(){ const T = LAUNCHER_TOUR(); if (T) { markGuideSeen(); T.start('chat'); return; } tourStart(); }
 function tourStart(){
   closeModals(); palClose(); actClose();
   markGuideSeen(); paintRetake();
@@ -6686,6 +6734,7 @@ function tourPlace(){
 }
 // The app tells the tour what just happened; the tour decides if it cares.
 function tourEvent(name){
+  try { const T = LAUNCHER_TOUR(); if (T) T.event(name); } catch (e) {}
   if (!TOUR.on) return;
   const step = TOUR.steps[TOUR.i];
   if (!step || step.wait !== name) return;
@@ -6727,6 +6776,7 @@ function maybeGuide(){
   const box = $('#guideOffer');
   if (!box) return;
   if (store.getItem('gv:guide:' + S.userId)) { paintRetake(); return; }
+  if (LAUNCHER_TOUR()) { markGuideSeen(); paintRetake(); return; }      // the launcher's tour covers this app
   // A minute-old account has nothing behind the offer worth reading, so it
   // takes the whole screen. A returning one gets a popup it can wave away.
   const brandNew = !!S.fresh;
@@ -6831,8 +6881,88 @@ const EMOJI = [
   ['⏰','clock time alarm late'], ['☕','coffee tea break'], ['🍕','pizza food'], ['🍺','beer drink'],
   ['💀','skull dead rip'], ['👻','ghost boo spooky'], ['🤖','robot bot ai'], ['🧠','brain smart'],
   ['✨','sparkles shiny nice'], ['🌈','rainbow color'], ['⭐','star favorite'], ['🎯','target bullseye'],
-  ['💤','sleep zzz tired'], ['🫠','melt melting hot'], ['🧊','ice cold'], ['🪫','battery low dead']
+  ['💤','sleep zzz tired'], ['🫠','melt melting hot'], ['🧊','ice cold'], ['🪫','battery low dead'],
+  ['😀','grin happy'], ['😃','smile big'], ['😄','smile eyes'], ['😁','beam grin'], ['😆','laughing xd'],
+  ['😅','sweat nervous'], ['🤣','rofl rolling laugh'], ['😊','blush happy'], ['😇','angel innocent'], ['🥰','love hearts'],
+  ['😍','heart eyes love'], ['🤩','star struck wow'], ['😘','kiss'], ['😋','yum tasty'], ['😛','tongue'],
+  ['😜','wink tongue'], ['🤪','zany crazy'], ['😝','squint tongue'], ['🤑','money rich'], ['🤗','hug'],
+  ['🤭','oops giggle'], ['🤫','shush quiet'], ['🤐','zip secret'], ['😐','neutral meh'], ['😑','expressionless'],
+  ['😶','speechless'], ['😏','smirk'], ['😒','unamused'], ['🙄','eyeroll'], ['😬','grimace awkward'],
+  ['🤥','lie liar'], ['😌','relieved'], ['😔','pensive'], ['😪','sleepy'], ['🤤','drool'],
+  ['😴','sleeping'], ['😷','mask sick'], ['🤒','thermometer sick'], ['🤕','hurt bandage'], ['🤢','nauseous gross'],
+  ['🤮','vomit'], ['🤧','sneeze'], ['🥵','hot sweating'], ['🥶','cold freezing'], ['🥴','woozy'],
+  ['😵','dizzy'], ['🤯','mind blown'], ['🤠','cowboy'], ['🥳','party celebrate'], ['😎','cool sunglasses'],
+  ['🤓','nerd'], ['🧐','monocle hmm'], ['😕','confused'], ['😟','worried'], ['🙁','frown'],
+  ['😯','hushed'], ['😲','astonished'], ['😳','flushed embarrassed'], ['🥺','pleading puppy'], ['😦','frowning'],
+  ['😧','anguished'], ['😨','fearful scared'], ['😰','anxious'], ['😥','disappointed'], ['😭','sob crying'],
+  ['😱','scream'], ['😖','confounded'], ['😣','persevere'], ['😞','disappointed'], ['😓','downcast'],
+  ['😩','weary'], ['😫','tired'], ['🥱','yawn bored'], ['😤','triumph huff'], ['😠','angry'],
+  ['🤬','cursing swear'], ['😈','devil smile'], ['👿','devil angry'], ['☠️','skull crossbones'], ['💩','poop'],
+  ['🤡','clown'], ['👹','ogre'], ['👺','goblin'], ['👽','alien'], ['👾','invader game'],
+  ['😺','cat smile'], ['😹','cat joy'], ['😻','cat love'], ['🙈','see no evil'], ['🙉','hear no evil'],
+  ['🙊','speak no evil'], ['💋','kiss'], ['💌','love letter'], ['💘','cupid'], ['💝','gift heart'],
+  ['💖','sparkling heart'], ['💗','growing heart'], ['💓','beating heart'], ['💔','broken heart'], ['🧡','orange heart'],
+  ['💛','yellow heart'], ['💚','green heart'], ['💙','blue heart'], ['💜','purple heart'], ['🖤','black heart'],
+  ['🤍','white heart'], ['💢','anger'], ['💥','boom explosion'], ['💫','dizzy star'], ['💦','sweat drops'],
+  ['💨','dash fast'], ['🕳️','hole'], ['💬','speech chat'], ['🗨️','speech left'], ['💭','thought'],
+  ['👋','wave hi bye'], ['🤚','raised back'], ['✋','hand stop high five'], ['🖖','vulcan'], ['👌','ok perfect'],
+  ['🤌','pinched italian'], ['✌️','peace victory'], ['🤞','fingers crossed luck'], ['🤟','love you'], ['🤘','rock on'],
+  ['🤙','call me'], ['👈','left'], ['👉','right'], ['👆','up'], ['👇','down'],
+  ['☝️','point up'], ['👊','fist bump'], ['✊','fist'], ['🤛','left fist'], ['🤜','right fist'],
+  ['🙌','raise hands yay'], ['👐','open hands'], ['🤲','palms'], ['💪','muscle strong flex'], ['🦾','robot arm'],
+  ['🫡','salute'], ['🫶','heart hands'], ['✍️','writing'], ['💅','nails sassy'], ['🤳','selfie'],
+  ['🧑‍💻','coder computer'], ['🕺','dance'], ['💃','dancer'], ['🏃','run running'], ['🧍','standing'],
+  ['🗿','moai stone'], ['🎮','game controller gaming'], ['🕹️','joystick arcade'], ['🎲','dice'], ['♟️','chess'],
+  ['🧩','puzzle'], ['🏆','trophy win'], ['🥇','gold first'], ['🥈','silver second'], ['🥉','bronze third'],
+  ['🏅','medal'], ['⚽','soccer football'], ['🏀','basketball'], ['🏈','football'], ['⚾','baseball'],
+  ['🥎','softball'], ['🎾','tennis'], ['🏐','volleyball'], ['🏉','rugby'], ['🏒','hockey'],
+  ['🏓','ping pong'], ['🏸','badminton'], ['⛳','golf'], ['🎳','bowling'], ['🥊','boxing'],
+  ['🛹','skateboard'], ['🎸','guitar'], ['🎹','piano'], ['🎺','trumpet'], ['🎷','sax'],
+  ['🥁','drum'], ['🎻','violin'], ['🎤','mic sing'], ['🎧','headphones music'], ['🎵','note music'],
+  ['🎶','notes'], ['🎬','movie clapper'], ['📸','camera photo'], ['📱','phone'], ['💻','laptop'],
+  ['⌨️','keyboard'], ['🖱️','mouse'], ['🔋','battery'], ['🔌','plug'], ['💾','save floppy'],
+  ['📚','books study'], ['📖','book read'], ['✏️','pencil'], ['📝','memo notes'], ['📎','paperclip'],
+  ['🔒','lock'], ['🔑','key'], ['🔨','hammer'], ['🛠️','tools'], ['⚙️','gear settings'],
+  ['🧲','magnet'], ['🧪','test tube science'], ['🔭','telescope'], ['💊','pill'], ['🩹','bandage'],
+  ['🧸','teddy'], ['🎁','gift present'], ['🎈','balloon'], ['🎊','confetti'], ['🎂','cake birthday'],
+  ['🍰','cake slice'], ['🍩','donut'], ['🍪','cookie'], ['🍫','chocolate'], ['🍬','candy'],
+  ['🍭','lollipop'], ['🍦','ice cream'], ['🍿','popcorn'], ['🍔','burger'], ['🍟','fries'],
+  ['🌭','hotdog'], ['🌮','taco'], ['🌯','burrito'], ['🥪','sandwich'], ['🍝','pasta'],
+  ['🍜','ramen noodles'], ['🍣','sushi'], ['🍗','chicken leg'], ['🥓','bacon'], ['🥚','egg'],
+  ['🧀','cheese'], ['🍎','apple'], ['🍌','banana'], ['🍉','watermelon'], ['🍇','grapes vine'],
+  ['🍓','strawberry'], ['🍒','cherries'], ['🍑','peach'], ['🥭','mango'], ['🍍','pineapple'],
+  ['🥑','avocado'], ['🌽','corn'], ['🥕','carrot'], ['🌶️','pepper spicy'], ['🥤','soda cup'],
+  ['🧃','juice box'], ['🧋','boba tea'], ['🍵','tea'], ['🥛','milk'], ['🐶','dog puppy'],
+  ['🐱','cat kitty'], ['🐭','mouse'], ['🐹','hamster'], ['🐰','bunny rabbit'], ['🦊','fox'],
+  ['🐻','bear'], ['🐼','panda'], ['🐨','koala'], ['🐯','tiger'], ['🦁','lion'],
+  ['🐮','cow'], ['🐷','pig'], ['🐸','frog'], ['🐵','monkey'], ['🐔','chicken'],
+  ['🐧','penguin'], ['🐦','bird'], ['🦆','duck'], ['🦅','eagle'], ['🦉','owl'],
+  ['🦇','bat'], ['🐺','wolf'], ['🐴','horse'], ['🦄','unicorn'], ['🐝','bee'],
+  ['🦋','butterfly'], ['🐌','snail'], ['🐞','ladybug'], ['🐢','turtle'], ['🐍','snake'],
+  ['🦖','dinosaur trex'], ['🐙','octopus'], ['🦈','shark'], ['🐬','dolphin'], ['🐳','whale'],
+  ['🦀','crab'], ['🌵','cactus'], ['🌲','tree pine'], ['🌴','palm'], ['🍀','clover lucky'],
+  ['🍁','leaf maple'], ['🌸','blossom flower'], ['🌹','rose'], ['🌻','sunflower'], ['🌙','moon night'],
+  ['☀️','sun sunny'], ['⛅','cloudy'], ['🌧️','rain'], ['⛈️','storm'], ['❄️','snow'],
+  ['☃️','snowman'], ['🌊','wave ocean water'], ['🌋','volcano'], ['🏔️','mountain'], ['🏝️','island'],
+  ['🌍','earth world globe'], ['🪐','planet'], ['☄️','comet'], ['🌟','glowing star'], ['⚡','lightning zap'],
+  ['💧','drop water'], ['🚗','car'], ['🏎️','race car'], ['🚓','police'], ['🚑','ambulance'],
+  ['🚒','fire truck'], ['✈️','plane'], ['🚁','helicopter'], ['🛸','ufo'], ['🚢','ship'],
+  ['⛵','sailboat'], ['🚲','bike'], ['🛴','scooter'], ['🏠','house home'], ['🏫','school'],
+  ['🏰','castle'], ['🗽','statue liberty'], ['🎡','ferris wheel'], ['🎢','roller coaster'], ['🧭','compass'],
+  ['⏳','hourglass'], ['⌛','time up'], ['📅','calendar'], ['🔔','bell'], ['📢','loudspeaker'],
+  ['📣','megaphone'], ['🔊','loud'], ['🔇','mute'], ['🆗','ok button'], ['🆒','cool button'],
+  ['🆕','new'], ['🆓','free'], ['🔝','top'], ['🔜','soon'], ['➡️','arrow right'],
+  ['⬅️','arrow left'], ['⬆️','arrow up'], ['⬇️','arrow down'], ['🔄','repeat'], ['➕','plus'],
+  ['➖','minus'], ['✖️','multiply'], ['➗','divide'], ['❓','question'], ['❗','exclamation'],
+  ['‼️','double exclamation'], ['⁉️','interrobang'], ['🔴','red circle'], ['🟢','green circle'], ['🔵','blue circle'],
+  ['🟡','yellow circle'], ['🟣','purple circle'], ['⚫','black circle'], ['⚪','white circle'], ['🟥','red square'],
+  ['🟩','green square'], ['🟦','blue square'], ['🏳️','white flag'], ['🏴‍☠️','pirate flag'], ['🚩','red flag'],
+  ['🏁','checkered finish race'], ['🇺🇸','usa america flag'], ['🎃','pumpkin halloween'], ['🎄','christmas tree'], ['🦃','turkey thanksgiving'],
+  ['👑','crown king queen'], ['💎','gem diamond'], ['💰','money bag'], ['💵','dollar cash'], ['🪙','coin'],
+  ['📈','chart up stonks'], ['📉','chart down'], ['🧾','receipt'], ['🎫','ticket']
 ];
+// no emoji twice (the long list repeats a few animals)
+{ const seen = new Set(), keep = EMOJI.filter(([e]) => !seen.has(e) && seen.add(e)); EMOJI.length = 0; EMOJI.push(...keep); }
 const PICK = { for:null, list:EMOJI, idx:0 };
 function pickerOpen(msgId, anchorEl){
   PICK.for = msgId; PICK.idx = 0;
@@ -6859,10 +6989,16 @@ function pickerSearch(){
   pickerPaint(q ? EMOJI.filter(([e, words]) => words.includes(q) || words.split(' ').some(w => w.startsWith(q))) : EMOJI);
 }
 function pickerChoose(emoji){
+  if (PICK.for === '__compose') {           // the 😊 button in the message box: put it where you are typing
+    const t = $('#text'), a = t.selectionStart ?? t.value.length, z = t.selectionEnd ?? a;
+    t.value = t.value.slice(0, a) + emoji + t.value.slice(z); t.focus(); t.setSelectionRange(a + emoji.length, a + emoji.length);
+    t.dispatchEvent(new Event('input')); pickerClose(); return;
+  }
   if (PICK.for) tell({ type:'react', targetId:PICK.for, emoji, on:true });
   pickerClose();
 }
 $('#pkq').addEventListener('input', pickerSearch);
+$('#emojiBtn').onclick = e => { e.preventDefault(); $('#picker').classList.contains('on') && PICK.for === '__compose' ? pickerClose() : pickerOpen('__compose', $('#emojiBtn')); };
 $('#pkq').addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.preventDefault(); pickerClose(); }
   if (e.key === 'Enter' && PICK.list[PICK.idx]) { e.preventDefault(); pickerChoose(PICK.list[PICK.idx][0]); }
@@ -8280,12 +8416,13 @@ window.GVEmbed = {
   },
   msgs(id, n){
     return [...msgsOf(id).values()].filter(m => m.kind !== 'system').sort((a, b) => a.ts - b.ts).slice(-(n || 30))
-      .map(m => ({ id:m.msgId, from:m.displayName, mine:m.userId === S.userId, ts:m.ts, text:m.kind === 'image' ? '[image]' : (m.text || '') }));
+      .map(m => ({ id:m.msgId, from:m.displayName, uid:m.userId, nick:nickOf(m.userId), mine:m.userId === S.userId, ts:m.ts, text:m.kind === 'image' ? '[image]' : (m.text || '') }));
   },
   read(id){ const c = conv(id); if (c && c.unread) { c.unread = 0; paintSidebar(); } },
   send(id, text){
     text = String(text || '').trim().slice(0, 2000);
     if (!text || !conv(id) || S.guest || !rateOk() || !spamOk(text)) return false;
+    if (GUARD.has(text)) { tell({ type:'chat', convId:id, msgId:uid(), text, ts:Date.now(), kind:'text' }); return true; }   // the wheel, not a message
     const m = { type:'chat', convId:id, msgId:uid(), userId:S.userId, displayName:S.name, text, ts:Date.now(), kind:'text', replyTo:null };
     S.pending.set(m.msgId, m); savePending(); deliver(m); directSend(m); flushPending();
     return true;
@@ -8308,6 +8445,142 @@ window.GV = { send, openConv, deliver, sendImage, join, signIn, signUp, showStar
               get pal(){ return PAL; },
               sideEnter, toast, tell, setOnline, flushOutbox, localConv, mergeLocal,
               openAcct, applySettings, get settings(){ return SET; } };
+
+// ---- pictures, titles, ranks and nicknames next to names; the wheel; leaving a chat ----------------------------
+// What people wear (picture, banner, title: bought with goons in the Huntington Games launcher, or earned) comes
+// from the server in batches (cosGet) for whoever is on screen, with the shop catalog once per visit to draw it.
+// Ranks are 1-5 per game (1 is best) from the global leaderboards; first place on any board is a Record Holder.
+// Nicknames are yours alone: kept in this browser, shown instead of the name (the real one is in the tooltip).
+const COS = new Map(), cosWant = new Set();
+let cosT = 0, CATALOG = null, catAsked = false, NICKS = null;
+function nicks(){ if (!NICKS) { try { NICKS = JSON.parse(store.getItem('gv:nicks:' + S.userId) || '{}'); } catch (e) { NICKS = {}; } } return NICKS; }
+function nickOf(uid){ return (uid && nicks()[uid]) || ''; }
+function setNick(uid, name, v){
+  const n = nicks(); v = String(v || '').replace(/[<>]/g, '').trim().slice(0, 24);
+  if (v) n[uid] = v; else delete n[uid];
+  store.setItem('gv:nicks:' + S.userId, JSON.stringify(n)); repaintNames(uid);
+  toast(v ? `${name} is "${v}" for you now (only you see it)` : `Nickname for ${name} removed`, 'good');
+}
+function cosNeed(uid){
+  if (!uid || S.guest) return;
+  const c = COS.get(uid); if (c && Date.now() - c.at < 600_000) return;
+  cosWant.add(uid); if (!cosT) cosT = setTimeout(cosFetch, 250);
+}
+function cosFetch(){
+  cosT = 0; if (!S.archive?.open) { if (cosWant.size) cosT = setTimeout(cosFetch, 2000); return; }
+  if (!CATALOG && !catAsked) { catAsked = true; tell({ type:'eco', cat:true }, { transient:true }); }
+  const ids = [...cosWant].slice(0, 60); for (const id of ids) cosWant.delete(id);
+  if (ids.length) tell({ type:'cosGet', ids }, { transient:true });
+  if (cosWant.size) cosT = setTimeout(cosFetch, 300);
+}
+function cosArrived(map){ for (const [uid, c] of Object.entries(map || {})) { c.at = Date.now(); COS.set(uid, c); repaintNames(uid); } }
+function catalogArrived(cat){
+  CATALOG = { byId: new Map(cat.items.map(i => [i.id, i])), boards: cat.boards || {} };
+  for (const uid of COS.keys()) repaintNames(uid);
+}
+const RARE_COL = { common: '#9aa5b1', uncommon: '#4ade80', rare: '#60a5fa', epic: '#c084fc', legendary: '#fbbf24', secret: '#f472b6' };
+// a picture: a round badge in its colours with its emoji (or a team's letters); developers may have their own image
+function pfpHtml(c, px){
+  const s = px || 20;
+  if (c && c.img) return `<span class="pfp" style="width:${s}px;height:${s}px"><img src="${esc(c.img)}" alt=""></span>`;
+  const it = c && c.p && CATALOG && CATALOG.byId.get(c.p);
+  if (!it) return '';
+  const bg = `linear-gradient(135deg,${it.c[0]},${it.c[1]})`;
+  const inner = it.t ? `<b style="font-size:${Math.round(s * (it.t.length > 2 ? 0.34 : 0.42))}px">${esc(it.t)}</b>` : esc(it.e || '');
+  return `<span class="pfp${it.t ? ' team' : ''}" title="${esc(it.n)}" style="width:${s}px;height:${s}px;font-size:${Math.round(s * 0.62)}px;background:${bg}">${inner}</span>`;
+}
+function badgesHtml(c){
+  if (!c) return '';
+  let h = '';
+  const t = c.t && CATALOG && CATALOG.byId.get(c.t);
+  if (t) h += `<span class="gtag r-${t.r}" title="title">${esc(t.n)}</span>`;
+  if (c.rec && c.rec.length) {
+    const b = CATALOG && CATALOG.boards[c.rec[0]];
+    h += `<span class="gtag rec" title="${esc('Record holder: ' + (b ? b.g + ' — ' + b.n : c.rec[0]))}">🏆 Record Holder</span>`;
+  }
+  const r = Object.entries(c.ranks || {}).sort((a, b) => a[1] - b[1])[0];
+  if (r) h += `<span class="gtag rank t${r[1]}" title="${esc('Rank ' + r[1] + ' in ' + r[0] + ' (1 is the best, 5 the lowest)')}">R${r[1]}</span>`;
+  return h;
+}
+// the name button on a message row (and anywhere else a name is shown that way)
+function decorateWho(btn, uid, name, heart){
+  cosNeed(uid);
+  const c = COS.get(uid), nk = nickOf(uid);
+  btn.innerHTML = pfpHtml(c, 18) + `<span class="wn">${esc(nk || name)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
+    + (heart ? '<span class="fh">♡</span>' : '') + badgesHtml(c);
+  if (nk) btn.title = name + ' (your nickname for them: ' + nk + ')';
+}
+function repaintNames(uid){
+  for (const row of document.querySelectorAll(`#log .msg[data-uid="${CSS.escape(uid)}"]`)) {
+    const who = row.querySelector(':scope > .who'); if (!who) continue;
+    decorateWho(who, uid, who.dataset.name || who.textContent, !!who.querySelector('.fh'));
+  }
+  if ($('#userModal').classList.contains('on') && $('#umName').dataset.uid === uid) paintUserCos(uid);
+}
+// the profile card: banner, picture, title, ranks, record boards, and your nickname for them
+function paintUserCos(uid){
+  const c = COS.get(uid), box = $('#umCos'); if (!box) return;
+  const b = c && c.b && CATALOG && CATALOG.byId.get(c.b);
+  box.style.background = b ? `linear-gradient(120deg,${b.c.join(',')})` : '';
+  box.classList.toggle('has', !!b);
+  const ranks = Object.entries((c && c.ranks) || {}).sort((a, b2) => a[1] - b2[1]).slice(0, 6)
+    .map(([g, t]) => `<span class="gtag rank t${t}">R${t} · ${esc(g)}</span>`).join('');
+  const recs = ((c && c.rec) || []).map(k => { const d = CATALOG && CATALOG.boards[k]; return `<span class="gtag rec">🏆 ${esc(d ? d.g + ': ' + d.n : k)}</span>`; }).join('');
+  const t = c && c.t && CATALOG && CATALOG.byId.get(c.t);
+  box.innerHTML = `<div class="umpfp">${pfpHtml(c, 56) || ''}</div><div class="umtags">${t ? `<span class="gtag big r-${t.r}">${esc(t.n)}</span>` : ''}${recs}${ranks}</div>`;
+}
+const _openUser = openUser;
+openUser = function (name, userId){
+  _openUser(name, userId);
+  if (name === S.name || !userId) return;
+  $('#umName').dataset.uid = userId;
+  const nk = nickOf(userId);
+  if (nk) $('#umName').textContent = nk + ' (' + name + ')';
+  const box = document.createElement('div'); box.id = 'umCos'; $('#umBody').prepend(box);
+  cosNeed(userId); paintUserCos(userId);
+  const b = document.createElement('button'); b.className = 'rowbtn';
+  b.textContent = nk ? `Nickname: "${nk}" — change or remove` : 'Give them a nickname (only you see it)';
+  b.onclick = () => { const v = prompt(`Your nickname for ${name} (empty removes it):`, nk || ''); if (v !== null) setNick(userId, name, v); closeModals(); };
+  $('#umBody').querySelector('.rowbtn')?.after(b);
+};
+
+// ---- the wheel: the n-word is never sent; the server spins this and we show where it landed ----
+function showWheel(m){
+  if (m.msgId) takeBack({ msgId: m.msgId, convId: m.convId || S.active });
+  $('#text').value = ''; growText();
+  document.getElementById('wheel')?.remove();
+  const w = document.createElement('div'); w.id = 'wheel';
+  const labels = ['BAN', 'SAFE', 'SAFE', 'SAFE', 'SAFE'];
+  w.innerHTML = `<div class="wcard"><h2>You said the word.</h2><p>Spin the wheel. One slot in five bans you for good.</p>
+    <div class="wwrap"><div class="wptr">▼</div><div class="wdisc">${labels.map((l, i) => `<span style="transform:rotate(${i * 72 + 36}deg) translateY(-62px)" class="${l === 'BAN' ? 'ban' : ''}">${l}</span>`).join('')}</div></div>
+    <div class="wres"></div><button class="btn wok" style="display:none">Got it</button></div>`;
+  document.body.append(w);
+  const disc = w.querySelector('.wdisc'), turn = 360 * 6 - (m.seg * 72 + 36) + (Math.random() * 40 - 20);
+  requestAnimationFrame(() => requestAnimationFrame(() => { disc.style.transform = `rotate(${turn}deg)`; }));
+  setTimeout(() => {
+    const r = w.querySelector('.wres');
+    if (m.ban) { r.className = 'wres ban'; r.textContent = 'BAN. You are banned for good.'; }
+    else { r.className = 'wres safe'; r.textContent = 'Safe. That was your other chance: the next one spins again.'; const ok = w.querySelector('.wok'); ok.style.display = ''; ok.onclick = () => w.remove(); }
+  }, 5200);
+}
+
+// ---- leaving a chat: rooms and groups you leave for real; a direct message you can close (it comes back if they write) ----
+let CLOSED = null;
+function closedDms(){ if (!CLOSED) { try { CLOSED = new Set(JSON.parse(store.getItem('gv:closed:' + S.userId) || '[]')); } catch (e) { CLOSED = new Set(); } } return CLOSED; }
+function saveClosed(){ store.setItem('gv:closed:' + S.userId, JSON.stringify([...closedDms()])); }
+function paintLeave(){
+  const c = conv(S.active), b = $('#leaveBtn'); if (!b) return;
+  b.style.display = c && c.id !== MAIN ? '' : 'none';
+  b.textContent = c && c.kind === 'dm' ? '✕ close' : '⇥ leave';
+  b.title = c && c.kind === 'dm' ? 'close this conversation (it comes back if they write)' : 'leave this conversation';
+}
+function leaveActive(){
+  const c = conv(S.active); if (!c || c.id === MAIN) return;
+  if (c.kind === 'dm') { closedDms().add(c.id); saveClosed(); openConv(MAIN); paintSidebar(); toast('Closed. It comes back if they write to you.', 'good'); return; }
+  if (!confirm(`Leave ${convTitle(c)}?` + (c.role === 'owner' ? ' You own it: whoever has been there longest takes over.' : ''))) return;
+  tell({ type:'leave', convId:c.id });
+}
+$('#leaveBtn').onclick = leaveActive;
 </script>
 </body>
 </html>

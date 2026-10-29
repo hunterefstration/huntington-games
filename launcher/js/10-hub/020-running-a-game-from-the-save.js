@@ -171,6 +171,8 @@ function playNow(g) {
   });
 }
 function closePlayer() {
+  if (typeof DOCK !== 'undefined' && DOCK && DOCK.open) dockClose();      // (closePlayer also runs while the page is still loading)
+  setTimeout(function () { if (typeof feedNow === 'function') feedNow(); }, 4000);      // new bests and achievements -> goons and leaderboards
   var wasOpen = !!current;
   if (MP.live) liveStop();
   loadId++; current = null;
@@ -290,29 +292,13 @@ function applyGvTheme() {
 window.addEventListener('storage', function (e) { if (!e.key || e.key.indexOf('gv:set:') === 0) applyGvTheme(); });
 setInterval(applyGvTheme, 2500);   // the Grapevine frame is a different document in this page: a safety net for the event above
 applyGvTheme();
-// A first look around, once, after the first sign-in.
-var TOUR = [
-  ['Welcome', 'You are in.', 'This launcher has free games and one account that goes with you. Here is a 30-second look around.'],
-  ['Games', 'Pick a game and play.', 'The Games tab has everything. Blocky Shooter and Frontline have online multiplayer: host a game, share the 6-digit code, and your friend joins. The New tab button in a game opens it in its own blank page.'],
-  ['Saves', 'Your progress is saved to your account.', 'Every game saves to it automatically. On another computer, sign in with your recovery key and everything is there. You can check on it in the Account tab, under Saves.'],
-  ['Grapevine', 'Chat and friends.', 'The Grapevine tab is a full chat app with rooms and direct messages. Meet someone in a game and tap + Friend, and you will find them there. Change its look in its settings, and the whole launcher follows.'],
-  ['Keep your key', 'Your recovery key is your account.', 'Nobody can reset it. If you have not saved it, open the Account tab and use Copy or Download now.']
-];
+// A first look around, once, after the first sign-in: the one tour (launcher/js/10-hub/060-tour.js), which also covers
+// Grapevine. 'hgv:tour' remembers it (the old slideshow wrote '1', so people who saw only that get the new one once).
 function maybeTour() {
-  var seen = false; try { seen = !!localStorage.getItem('hgv:tour'); } catch (e) {}
-  if (seen || window.__tourOpen || BUNDLE) return;
-  window.__tourOpen = true; var step = 0, root = document.getElementById('tour'), box = root.querySelector('.box');
-  function done() { try { localStorage.setItem('hgv:tour', '1'); } catch (e) {} root.hidden = true; }
-  function draw() {
-    var t = TOUR[step], last = step === TOUR.length - 1;
-    box.innerHTML = '<div class="k"></div><h2></h2><p></p><div class="dots"></div><div class="btns"><button class="skip">Skip</button><button class="go"></button></div>';
-    box.querySelector('.k').textContent = t[0]; box.querySelector('h2').textContent = t[1]; box.querySelector('p').textContent = t[2];
-    TOUR.forEach(function (x, i) { var d = document.createElement('i'); if (i === step) d.className = 'on'; box.querySelector('.dots').appendChild(d); });
-    var go = box.querySelector('.go'); go.textContent = last ? 'Start playing' : 'Next';
-    go.onclick = function () { if (last) done(); else { step++; draw(); } };
-    box.querySelector('.skip').onclick = done;
-  }
-  draw(); root.hidden = false;
+  var seen = ''; try { seen = localStorage.getItem('hgv:tour') || ''; } catch (e) {}
+  if (seen === '2' || window.__tourOpen || BUNDLE) return;
+  window.__tourOpen = true;
+  setTimeout(function () { if (window.HG_tour && !HG_tour.on() && document.getElementById('player').className.indexOf('open') < 0) HG_tour.start(); }, 1200);
 }
 function paintChip() {
   var L = window.HGGrapevine, me = L && L.me(), name = me ? me.name : (hasSavedKey() ? savedName() : '');
@@ -322,10 +308,15 @@ function paintChip() {
   document.getElementById('chip-nm').textContent = name;
   var s = L ? L.status().status : 'connecting';
   document.getElementById('chip-dot').className = 'cdot' + (s === 'online' ? ' on' : s === 'signed-out' || s === 'error' ? '' : ' wait');
+  // your picture and goons on the chip: the way into your profile and the shop
+  var e = L && L.eco && L.eco.state();
+  document.getElementById('chip-pfp').innerHTML = e && e.equip && e.equip.pfp && typeof profPfp === 'function' ? profPfp(e.equip.pfp, 22) : '';
+  document.getElementById('chip-goons').textContent = e ? (e.dev ? '∞' : e.goons) + ' goons' : '';
 }
 function onGvChange() {
   paintChip(); applyGvTheme();
   var L = window.HGGrapevine, signedIn = !!(L && L.me());
+  if (L && L.eco) { profMount(); feedMount(); }
   if (signedIn && !guestMode) maybeTour();
   if (signedIn && L.online() && !window.__cacheKicked) { window.__cacheKicked = 1; startCacheLater(5000); }
   document.getElementById('gate').hidden = signedIn || guestMode || BUNDLE;
@@ -386,10 +377,12 @@ function showTab(which) {
   var chat = which === 'chat';
   document.getElementById('view-games').hidden = which !== 'games';
   document.getElementById('view-acct').hidden = which !== 'acct';
+  document.getElementById('view-prof').hidden = which !== 'prof';
+  if (which === 'prof') loadGV().then(function () { profMount(); profRender(); }, function () {});
   document.getElementById('view-mp').hidden = which !== 'mp';
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
-  ['games', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  ['games', 'prof', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
   if (chat) {
     document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
     if (chatLoaded !== true) loadGV().then(startChat, function () {});

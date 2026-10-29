@@ -38,7 +38,7 @@
   var newKey = function () { return btoa(String.fromCharCode.apply(null, crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 
   // ---- state ----
-  var st = {
+  var st = { cos: {},
     key: '', userId: '', name: '', pub: '', kp: null, conn: null, ready: false,
     status: 'signed-out', text: '', friends: [], incoming: [], outgoing: [], haveFriends: false,
     signup: false, wanted: '', invite: '', sendKey: false, cnonce: '', welcomeOk: false,
@@ -159,6 +159,7 @@
         send({ type: 'friendsList' });
         startSync();
         if (st.ach) send({ type: 'achSet', ach: st.ach });   // the achievements showcase, after every (re)connect
+        send({ type: 'eco', cat: !st.cat });                  // goons, what you own and wear (and the shop catalog, once)
         var a = st.auth; st.auth = null; if (a) a.resolve({ name: st.name, userId: st.userId });
         return;
       }
@@ -183,6 +184,14 @@
         if (cb) { delete st.lookups[m.name]; cb.forEach(function (f) { f(m); }); }
         return;
       }
+      // goons and the shop (see grapevine 075-economy.js): your wallet, the catalog, what others wear, leaderboards, the wheel
+      case 'eco':
+        st.eco = m.eco; if (m.cat) st.cat = m.cat; if (m.buys) { st.buys = st.buys || {}; for (var bk in m.buys) st.buys[bk] = m.buys[bk]; }
+        if (m.gained && m.gained.n > 0) emit('notify', { kind: 'goon', title: '+' + m.gained.n + ' goon' + (m.gained.n === 1 ? '' : 's'), text: m.gained.why });
+        emit('eco', m); emit('change'); return;
+      case 'lb': return rpcDone('lb:' + m.board, m);
+      case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
+      case 'spin': emit('spin', m); return;
       case 'saves': return rpcDone('saves', m);
       case 'savesData': return rpcDone('savesData', m);
       case 'ok': if (m.op === 'savesPut') return rpcDone('savesPut', m); return;
@@ -193,6 +202,7 @@
 
   function onError(c, m) {
     var code = m.code || '';
+    if (/^(goons|not-owned|not-for-sale|owned|not-admin)$/.test(code)) { emit('ecoError', m); return; }
     if (code === 'rate') { rpcFail(new Error('Slow down a little.')); settlePending(new Error('Slow down a little.')); return; }
     if (code === 'rebind' && !st.sendKey && st.auth) { st.sendKey = true; try { c.close(); } catch (e) {} return; }   // retry once, sending the key to bind it
     if (code === 'full') { st.idx++; try { c.close(); } catch (e) {} return; }
@@ -331,7 +341,7 @@
   //  * signing out saves first and then clears the device.
   // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
   // must be added here: it is the list of prefixes the games write.
-  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|lumi_|hgach|gv:set:)/;
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|lumi_|imposter_|elementlab_|hgach|gv:set:)/;
   var SAVE_MAX = 400000;
   var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {}, synced: false };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
@@ -550,7 +560,28 @@
       setGameOpen: function (open) { sy.open = !!open; if (!open && st.ready) syncRun().catch(function () {}); }
     },
     timeline: function () { return { at: tl.at, archive: tl.archive, steps: tl.steps.slice(), total: tl.steps.length ? tl.steps[tl.steps.length - 1][1] : 0 }; },
-    diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); }
+    diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); },
+    // ---- goons, the shop, profiles on show, leaderboards ----
+    eco: {
+      state: function () { return st.eco || null; },
+      catalog: function () { return st.cat || null; },
+      buys: function () { return st.buys || {}; },
+      refresh: function (cat) { if (st.ready) send({ type: 'eco', cat: !!cat || !st.cat }); },
+      buy: function (id) { if (st.ready) send({ type: 'ecoBuy', id: id }); },
+      equip: function (slot, id, img) { if (st.ready) send({ type: 'ecoEquip', slot: slot, id: id || null, img: img || null }); },
+      claim: function (kind, id, n) { if (st.ready) send({ type: 'ecoClaim', kind: kind, id: id || null, n: n || 0 }); },
+      play: function (game, active) { if (st.ready) send({ type: 'play', game: String(game || '').slice(0, 40), active: !!active }); },
+      slur: function () { if (st.ready) send({ type: 'slur' }); },
+      admin: function (op, name, id, n) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0 }); },
+      lbSubmit: function (board, s, d) { if (st.ready && isFinite(s)) send({ type: 'lbSubmit', board: board, s: s, d: d || null }); },
+      lbGet: function (board) { return st.ready ? rpc({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // what other people wear: cached for 10 minutes, fetched in one batch
+      cos: function (ids) {
+        var want = (ids || []).filter(function (u) { var c = st.cos[u]; return u && !(c && Date.now() - c.at < 600000); });
+        if (want.length && st.ready) send({ type: 'cosGet', ids: want.slice(0, 60) });
+        var out = {}; (ids || []).forEach(function (u) { if (st.cos[u]) out[u] = st.cos[u]; }); return out;
+      }
+    }
   };
   var readyP = Promise.resolve();
 })();

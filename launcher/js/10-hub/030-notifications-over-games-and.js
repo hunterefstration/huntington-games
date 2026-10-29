@@ -130,6 +130,8 @@ document.addEventListener('fullscreenchange', function () { var h = document.get
 // The chat window. `gdoc` is the page the game is in (the launcher's game frame, or the New-tab copy). The window is a small frame of
 // its own, so keys typed in it never reach the game (a game that listens to every key would otherwise react to what is being typed).
 function openChatBox(gdoc, convId) {
+  // a game in the launcher gets the chat dock beside it (070-chat-dock.js); this box is only for games in a new tab
+  try { if (gdoc === frame.contentDocument && typeof dockOpen === 'function') { dockOpen(convId); return; } } catch (e) {}
   var fr = gdoc.getElementById('hgc-box');
   if (fr) { if (convId && fr.__pick) fr.__pick(convId); try { fr.contentWindow.focus(); fr.contentDocument.querySelector('input').focus(); } catch (e) {} return; }
   try { gdoc.exitPointerLock && gdoc.exitPointerLock(); } catch (e) {}
@@ -197,7 +199,8 @@ frame.addEventListener('load', function () {
 document.getElementById('tab-games').onclick = function () { showTab('games'); };
 document.getElementById('tab-chat').onclick = function () { showTab('chat'); };
 document.getElementById('tab-acct').onclick = function () { showTab('acct'); };
-document.getElementById('chip').onclick = function () { showTab('acct'); };
+document.getElementById('chip').onclick = function () { showTab('prof'); };
+document.getElementById('tab-prof').onclick = function () { showTab('prof'); };
 window.addEventListener('resize', function () { if (document.body.className === 'chat') document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px'); });
 // ---- chat guard (identical in archive.js and client.html: keep the two in step) ----
 // SLUR: the one word this server will not carry, the n-word in its usual spellings (n1gga, n i g g e r, Cyrillic
@@ -348,6 +351,8 @@ function hubLine(who, text) { var d = mpEl('div'); d.appendChild(mpEl('b', '', w
 function hubSay() {
   var inp = document.getElementById('mp-msg'), t = inp.value.trim(); if (!t || !MP.net) return;
   var w = GUARD.spam(MP.spam, t, Date.now()); if (w) { hubSys('Slow down: you can send that in ' + Math.ceil(w / 1000) + 's.'); return; }
+  // the word is never sent: the server spins the wheel for your account (one slot in five is a permanent ban)
+  if (GUARD.has(t)) { inp.value = ''; var GL = window.HGGrapevine; if (GL && GL.eco && GL.online()) GL.eco.slur(); else hubSys('That word is not allowed here.'); return; }
   t = GUARD.mask(t.slice(0, 200)); MP.net.send('all', { t: 'chat', text: t }); hubLine(mpName(), t); inp.value = '';
 }
 // start a game for the whole room: the game hosts a party and reports its code through HG_sendInvite('hub:<room>', ...)

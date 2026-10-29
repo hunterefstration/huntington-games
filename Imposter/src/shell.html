@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Imposter</title>
+<!--@css-->
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<!-- in-match HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-tl">
+    <div id="tbar"><i id="tbar-f"></i><span id="tbar-t">TASKS</span></div>
+    <div id="tlist"></div>
+  </div>
+  <div class="hud-tc"><div id="role-tag"></div><div id="alert"></div></div>
+  <div class="hud-tr">
+    <button class="hbtn" id="b-map" title="Map (M)">MAP</button>
+    <button class="hbtn" id="b-menu" title="Menu (Esc)">II</button>
+  </div>
+  <div id="spec-bar" class="hidden"><button class="hbtn" id="sp-prev">&lt;</button><span id="sp-name">Spectating</span><button class="hbtn" id="sp-next">&gt;</button></div>
+  <div id="acts">
+    <button class="act" id="a-sab"><b>SABOTAGE</b><small>X</small></button>
+    <button class="act" id="a-vent"><b>VENT</b><small>V</small></button>
+    <button class="act" id="a-kill"><b>KILL</b><small>Q</small></button>
+    <button class="act" id="a-rep"><b>REPORT</b><small>R</small></button>
+    <button class="act" id="a-use"><b>USE</b><small>E</small></button>
+  </div>
+  <div id="vent-nav" class="hidden"><button class="hbtn" id="vn-prev">&lt; Prev vent</button><button class="hbtn" id="vn-next">Next vent &gt;</button></div>
+  <div id="joy" class="hidden"><i></i></div>
+</div>
+<div id="vign"></div>
+<div id="toast"></div>
+<div id="netbar" class="hidden"></div>
+
+<!-- sabotage menu -->
+<div id="sabm" class="overlay dim hidden"><div class="card">
+  <h3>Sabotage</h3>
+  <button class="btn" id="sb-lights">Lights out</button>
+  <button class="btn" id="sb-reactor">Reactor meltdown</button>
+  <button class="btn ghost" id="sb-close">Cancel</button>
+</div></div>
+
+<!-- map overlay -->
+<div id="mapov" class="overlay dim hidden"><div class="card"><canvas id="mapcv" width="640" height="440"></canvas><button class="btn ghost small" id="map-close">Close</button></div></div>
+
+<!-- task mini-game -->
+<div id="mini" class="overlay dim hidden"><div class="card mini-card">
+  <div class="mini-t"><span id="mini-title">Task</span><button class="hbtn" id="mini-x">X</button></div>
+  <canvas id="minicv" width="520" height="380"></canvas>
+  <div id="mini-hint"></div>
+</div></div>
+
+<!-- role intro -->
+<div id="intro" class="overlay hidden"><div id="in-role"></div><div id="in-sub"></div><div id="in-team"></div></div>
+
+<!-- meeting -->
+<div id="meet" class="overlay hidden">
+  <div class="meet-box">
+    <div class="meet-head"><div id="mt-title">Who is the Imposter?</div><div id="mt-time"></div></div>
+    <div class="meet-main">
+      <div id="mt-grid"></div>
+      <div class="meet-chat">
+        <div id="mt-log"></div>
+        <div class="mt-in"><input id="mt-input" maxlength="80" placeholder="Type a message..." autocomplete="off"><button class="btn small" id="mt-send">Send</button></div>
+        <div id="mt-note"></div>
+      </div>
+    </div>
+    <div class="meet-foot"><button class="btn small" id="mt-skip">Skip vote</button><span id="mt-skipv"></span></div>
+  </div>
+</div>
+
+<!-- ejection -->
+<div id="eject" class="overlay hidden"><canvas id="ejcv"></canvas><div id="ej-t1"></div><div id="ej-t2"></div></div>
+
+<!-- end -->
+<div id="end" class="overlay hidden"><div class="card wide">
+  <div id="en-title"></div><div id="en-why"></div>
+  <div id="en-roster"></div>
+  <div class="row"><button class="btn big" id="en-again">Play again</button><button class="btn ghost" id="en-menu">Menu</button></div>
+  <div id="en-wait"></div>
+</div></div>
+
+<!-- title -->
+<div id="s-title" class="screen">
+  <div class="logo"><canvas id="logocv" width="260" height="110"></canvas><div class="l1">IMPOSTER</div><div class="l2">Huntington Games</div></div>
+  <div class="menu">
+    <button class="btn big" id="t-off">Play vs Bots</button>
+    <button class="btn" id="t-host">Host Online Game</button>
+    <button class="btn" id="t-join">Join with Code</button>
+    <div class="row"><button class="btn ghost small" id="t-how">How to play</button><button class="btn ghost small" id="t-set">Settings</button><button class="btn ghost small" id="t-stats">Stats</button></div>
+  </div>
+  <div class="foot" id="t-foot"></div>
+</div>
+
+<!-- join -->
+<div id="s-join" class="screen dim hidden"><div class="card">
+  <h2>Join a game</h2>
+  <div class="muted">Ask the host for the 6-digit code</div>
+  <input id="j-code" class="codein" maxlength="7" inputmode="numeric" placeholder="000000" autocomplete="off">
+  <div id="j-status" class="status"></div>
+  <div class="row"><button class="btn" id="j-go">Join</button><button class="btn ghost" id="j-back">Back</button></div>
+  <button class="btn ghost small" id="j-test">Test my connection</button><div id="j-diag"></div>
+</div></div>
+
+<!-- lobby -->
+<div id="s-lobby" class="screen dim hidden"><div class="card lobby">
+  <div class="lob-top">
+    <div><div class="muted">Room code</div><div id="l-code" class="bigcode">------</div></div>
+    <button class="btn small" id="l-copy">Copy</button>
+    <div id="l-status" class="status"></div>
+  </div>
+  <div class="lob-cols">
+    <div class="lob-pl"><h3>Players <span id="l-count"></span></h3><div id="l-list"></div><div class="muted small">Empty seats are filled with bots when the game starts.</div></div>
+    <div class="lob-set"><h3>Game settings</h3><div id="l-set"></div></div>
+  </div>
+  <div class="row"><button class="btn big" id="l-start">Start game</button><button class="btn ghost" id="l-leave">Leave</button></div>
+  <div id="l-wait" class="muted"></div>
+</div></div>
+
+<!-- how to play -->
+<div id="s-how" class="screen dim hidden"><div class="card wide">
+  <h2>How to play</h2>
+  <div class="how">
+    <p><b class="cr">Crewmates</b> do tasks around the ship. Fill the task bar, or vote out every Imposter, to win.</p>
+    <p><b class="im">Imposters</b> blend in, kill crewmates and sabotage. They win when they equal the crew, or when the reactor melts down.</p>
+    <p><kbd>WASD</kbd> / arrows move. <kbd>E</kbd> or <kbd>Space</kbd> use (tasks, emergency button, fix panels). <kbd>R</kbd> report a body. Imposters: <kbd>Q</kbd> kill, <kbd>V</kbd> vent, <kbd>X</kbd> sabotage. <kbd>M</kbd> map. Touch: use the big buttons and drag the left side to walk.</p>
+    <p><b>Sabotage:</b> lights shrink crew vision (fix at the Electrical panel). Reactor: two players must hold the two panels at once before the timer ends.</p>
+    <p><b>Meetings:</b> find a body (R) or press the table button. Talk, then vote. Ties or skips eject nobody. Dead players become ghosts: they still finish tasks and chat, but only with other ghosts.</p>
+  </div>
+  <button class="btn big" id="how-done">Back</button>
+</div></div>
+
+<!-- settings -->
+<div id="s-set" class="screen dim hidden"><div class="card wide">
+  <h2>Settings</h2>
+  <div class="setrow"><label for="o-name">Name</label><input id="o-name" maxlength="12" placeholder="Your name" autocomplete="off"></div>
+  <div class="setrow"><label for="o-vol">Volume</label><input id="o-vol" type="range" min="0" max="100"></div>
+  <div class="setrow"><label for="o-touch">Touch controls</label><select id="o-touch"><option value="auto">Auto</option><option value="on">Always on</option><option value="off">Off</option></select></div>
+  <button class="btn big" id="set-done">Done</button>
+</div></div>
+
+<!-- stats -->
+<div id="s-stats" class="screen dim hidden"><div class="card wide">
+  <h2>Stats</h2>
+  <div id="st-rows"></div>
+  <button class="btn big" id="st-done">Back</button>
+</div></div>
+
+<!-- pause -->
+<div id="s-pause" class="screen dim hidden"><div class="card">
+  <h2>Menu</h2>
+  <div class="setrow"><label for="p-vol">Volume</label><input id="p-vol" type="range" min="0" max="100"></div>
+  <button class="btn big" id="p-resume">Resume</button>
+  <button class="btn ghost" id="p-leave">Leave game</button>
+</div></div>
+
+<!--@js-->
+</body>
+</html>
