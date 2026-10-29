@@ -422,7 +422,10 @@ header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:
 /* log */
 #log{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   padding:18px 20px;display:flex;flex-direction:column;gap:var(--gap)}
-.msg{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;position:relative;
+/* a flex row, not a grid: a grid row with baseline alignment could not be cached, so every key typed in the box
+   re-laid out every visible message (8x slower typing on a Chromebook in a busy room) */
+.msg>.who{flex:none}.msg>.body{flex:1 1 0;min-width:0}
+.msg{display:flex;gap:12px;align-items:baseline;position:relative;
   padding:2px 6px;margin:0 -6px;border-radius:3px}
 .msg:hover{background:var(--raise)}
 .who{font-family:var(--mono);font-size:12px;color:var(--signal);white-space:nowrap}
@@ -4318,7 +4321,7 @@ document.addEventListener('paste', e => {
 
 // ---- typing ---------------------------------------------------------------
 $('#text').addEventListener('input', () => {
-  saveDraft();
+  saveDraftSoon();
   mentionScan();
   slashScan();
   const now = Date.now();
@@ -6122,6 +6125,10 @@ function saveDraft(){
   if (v) drafts.set(S.active, v); else drafts.delete(S.active);
   try { store.setItem('gv:drafts:' + S.userId, JSON.stringify([...drafts])); } catch (e) {}
 }
+// drafts are written a moment after you stop typing (and when you switch rooms or leave), not on every key
+let draftT = 0;
+function saveDraftSoon(){ clearTimeout(draftT); draftT = setTimeout(saveDraft, 600); }
+addEventListener('pagehide', () => { clearTimeout(draftT); saveDraft(); });
 function loadDrafts(){
   try { drafts.clear(); for (const [k, v] of JSON.parse(store.getItem('gv:drafts:' + S.userId) || '[]')) drafts.set(k, v); }
   catch (e) {}
@@ -8152,10 +8159,24 @@ $('#text').addEventListener('keydown', e => {
 });
 // A one-line box that becomes a several-line box as you write, and goes back
 // down again when you send. Capped so a pasted essay cannot eat the log.
+// Grow the box with what you type. This used to set height:auto and read scrollHeight on every key, which made
+// the browser lay out the whole page (every message in the log) twice per keystroke: on a Chromebook in a busy
+// room the letters fell seconds behind. A box that sizes itself (field-sizing) costs nothing; older browsers measure
+// at most once a frame, and only fall back to 'auto' when the text got shorter.
+const FIELD_SIZING = !!(window.CSS && CSS.supports && CSS.supports('field-sizing', 'content'));
+if (FIELD_SIZING) Object.assign($('#text').style, { fieldSizing: 'content', maxHeight: '180px', minWidth: '0', overflowY: 'auto' });
+let growQ = false, growLen = 0;
 function growText(){
-  const t = $('#text');
-  t.style.height = 'auto';
-  t.style.height = Math.min(t.scrollHeight, 180) + 'px';
+  if (FIELD_SIZING || growQ) return;
+  growQ = true;
+  requestAnimationFrame(() => {
+    growQ = false;
+    const t = $('#text'), len = t.value.length;
+    if (len < growLen || !len) t.style.height = 'auto';
+    growLen = len;
+    const h = Math.min(t.scrollHeight, 180) + 'px';
+    if (t.style.height !== h) t.style.height = h;
+  });
 }
 $('#text').addEventListener('input', growText);
 

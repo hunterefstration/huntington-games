@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Brown E Clicker 2.0</title>
+   <script src="https://cdn.tailwindcss.com"></script>
+   <style><!--@inline css/10-style.css--></style>
+</head>
+<body class="bg-stone-900 text-stone-100 h-screen w-screen font-sans overflow-hidden">
+
+
+   <!-- MAIN MENU -->
+   <div id="main-menu" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-stone-900">
+       <h1 class="text-6xl md:text-8xl font-black text-[#5C4033] tracking-widest mb-2 drop-shadow-lg text-center relative">
+           <span class="absolute inset-0 bg-white blur-3xl opacity-60 rounded-full -z-10"></span>
+           BROWN E
+       </h1>
+       <p class="text-stone-400 text-xl tracking-widest uppercase mb-4">Clicker</p>
+       <div id="main-menu-wins" class="text-[#8B4513] font-black text-2xl mb-4 hidden tracking-widest bg-[#F3E8E0] px-4 py-2 rounded-2xl shadow-inner border-2 border-[#8B4513] flex flex-col items-center justify-center">
+           <div>WINS: <span id="main-menu-wins-count">0</span></div>
+           <div id="main-menu-win-buff" class="text-green-600 font-bold text-sm tracking-normal"></div>
+       </div>
+       <div id="main-menu-ach" class="text-yellow-400 font-bold text-sm mb-8 hidden">🏆 <span id="main-menu-ach-count">0</span> achievements</div>
+       <button id="start-btn" class="bg-[#5C4033] hover:bg-[#4A332A] text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transition-transform active:scale-95 hover:scale-105 border-4 border-[#8B4513]">
+           START
+       </button>
+       <div class="mt-8 text-stone-500 text-xs font-bold tracking-widest uppercase">Version 2.0 &middot; <button id="news-btn" class="text-yellow-500 hover:text-yellow-300 underline uppercase tracking-widest font-bold">What's new in 2.0</button></div>
+   </div>
+
+
+   <!-- WHAT'S NEW MODAL -->
+   <div id="news-modal" class="fixed inset-0 z-[85] bg-black/80 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-2 border-[#8B4513] rounded-2xl w-full max-w-3xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex items-center justify-between px-5 py-3 border-b border-stone-700 shrink-0">
+               <h3 class="text-2xl font-black text-white">📰 What's new in 2.0</h3>
+               <button id="news-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div id="news-body" class="p-5 overflow-y-auto text-sm text-stone-300 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1"></div>
+       </div>
+   </div>
+
+
+   <!-- SETTINGS MODAL -->
+   <div id="settings-modal" class="fixed inset-0 z-[85] bg-black/80 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-2 border-[#8B4513] rounded-2xl w-full max-w-xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex items-center justify-between px-5 py-3 border-b border-stone-700 shrink-0">
+               <h3 class="text-2xl font-black text-white">⚙️ Settings</h3>
+               <button id="settings-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div class="p-5 overflow-y-auto space-y-4 text-sm">
+               <div>
+                   <div class="font-black text-white mb-1">Number format</div>
+                   <div class="flex flex-wrap gap-2" id="set-numfmt">
+                       <button class="opt-btn" data-val="short">Short (1.23B)</button>
+                       <button class="opt-btn" data-val="words">Words (1.23 billion)</button>
+                       <button class="opt-btn" data-val="sci">Scientific (1.23e9)</button>
+                   </div>
+               </div>
+               <div class="flex items-center justify-between gap-4">
+                   <div><div class="font-black text-white">Reduced effects</div><div class="text-stone-400 text-xs">Fewer animations and floating numbers. Good for slower Chromebooks.</div></div>
+                   <div class="flex gap-1 shrink-0" id="set-reduced"><button class="opt-btn" data-val="0">Off</button><button class="opt-btn" data-val="1">On</button></div>
+               </div>
+               <div class="flex items-center justify-between gap-4">
+                   <div><div class="font-black text-white">News ticker</div><div class="text-stone-400 text-xs">The scrolling headlines above the E.</div></div>
+                   <div class="flex gap-1 shrink-0" id="set-ticker"><button class="opt-btn" data-val="0">Off</button><button class="opt-btn" data-val="1">On</button></div>
+               </div>
+               <div class="flex items-center justify-between gap-4">
+                   <div><div class="font-black text-white">Seasonal events</div><div class="text-stone-400 text-xs">Holiday themes and special Golden E's at certain times of year.</div></div>
+                   <div class="flex gap-1 shrink-0" id="set-events"><button class="opt-btn" data-val="0">Off</button><button class="opt-btn" data-val="1">On</button></div>
+               </div>
+               <div class="border-t border-stone-700 pt-3">
+                   <div class="font-black text-white mb-1">Save code</div>
+                   <div class="text-stone-400 text-xs mb-2">Copy your save code to move your progress to another computer, then paste it there and press Load.</div>
+                   <textarea id="save-code" class="w-full h-20 bg-stone-950 border border-stone-700 rounded-lg p-2 text-xs text-stone-300 font-mono select-text" style="user-select:text;-webkit-user-select:text" spellcheck="false" placeholder="Paste a save code here"></textarea>
+                   <div class="flex flex-wrap gap-2 mt-2 items-center">
+                       <button id="save-export" class="opt-btn">Show my save code</button>
+                       <button id="save-import" class="opt-btn">Load this code</button>
+                       <span id="save-code-msg" class="text-xs text-stone-400"></span>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- WIN MODAL -->
+   <div id="win-modal" class="fixed inset-0 z-[70] bg-white/10 backdrop-blur-md flex items-center justify-center hidden">
+       <div class="bg-stone-900 border-4 border-[#8B4513] p-10 rounded-3xl max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
+           <div class="absolute inset-0 bg-[#5C4033] blur-3xl opacity-20 -z-10"></div>
+           <h2 class="text-6xl mb-4">🏆</h2>
+           <h3 class="text-4xl font-black text-white mb-2 tracking-wide" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.5);">YOU WIN!</h3>
+           <p class="text-stone-300 mb-3 text-lg">You have purchased <span class="text-[#8B4513] font-bold bg-white px-2 py-0.5 rounded">The Final E</span> and conquered the game.</p>
+           <p class="text-stone-400 mb-8 text-sm">Ascending starts a new run with <span class="text-green-400 font-bold">+100% production</span> per win and <span id="win-chips" class="text-purple-300 font-bold">+0 Heavenly Chips</span>. Your achievements, chips and the Prestige Tree are kept.<br><span id="win-run-time" class="text-stone-300"></span></p>
+           <button id="play-again-btn" class="w-full py-4 rounded-xl bg-gradient-to-r from-[#5C4033] to-[#8B4513] hover:from-[#4A332A] hover:to-[#5C4033] text-white font-black text-xl transition-all active:scale-95 shadow-lg border border-[#8B4513]">
+               Ascend & Play Again
+           </button>
+       </div>
+   </div>
+
+
+   <!-- RESET MODAL -->
+   <div id="reset-modal" class="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center hidden">
+       <div class="bg-stone-900 border border-stone-700 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+           <h3 class="text-2xl font-bold text-red-500 mb-4">Wipe Save?</h3>
+           <p class="text-stone-300 mb-6">Are you sure you want to delete all your progress? This cannot be undone.</p>
+           <div class="flex gap-4 justify-center">
+               <button id="cancel-reset-btn" class="px-4 py-2 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-bold transition-colors">Cancel</button>
+               <button id="confirm-reset-btn" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition-colors">Yes, Delete It</button>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- ACHIEVEMENTS MODAL -->
+   <div id="ach-modal" class="fixed inset-0 z-[65] bg-black/80 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-2 border-[#8B4513] rounded-2xl w-full max-w-4xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex items-center justify-between px-5 py-3 border-b border-stone-700 shrink-0">
+               <div>
+                   <h3 class="text-2xl font-black text-white">🏆 Achievements</h3>
+                   <p class="text-sm text-stone-400"><span id="ach-modal-count" class="text-white font-bold">0 / 0</span> unlocked &middot; each one gives <span class="text-green-400 font-bold" id="ach-modal-each">+1%</span> production &middot; total <span class="text-green-400 font-bold" id="ach-modal-bonus">+0%</span></p>
+               </div>
+               <button id="ach-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div id="ach-grid" class="p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+       </div>
+   </div>
+
+
+   <!-- STATS MODAL -->
+   <div id="stats-modal" class="fixed inset-0 z-[65] bg-black/80 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-2 border-[#8B4513] rounded-2xl w-full max-w-3xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex items-center justify-between px-5 py-3 border-b border-stone-700 shrink-0">
+               <h3 class="text-2xl font-black text-white">📊 Stats</h3>
+               <button id="stats-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div id="stats-body" class="p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+       </div>
+   </div>
+
+
+   <!-- PRESTIGE TREE / HEAVEN (between runs) -->
+   <div id="tree-modal" class="fixed inset-0 z-[66] hidden flex flex-col">
+       <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 border-b border-purple-900/70 bg-stone-950/70 shrink-0">
+           <h3 class="text-xl md:text-2xl font-black text-white whitespace-nowrap" id="tree-title">👼 Prestige Tree</h3>
+           <div class="text-sm text-stone-300 whitespace-nowrap">Heavenly Chips: <span id="tree-chips" class="text-2xl font-black text-purple-300 align-middle">0</span></div>
+           <div class="text-xs text-stone-400" id="tree-total"></div>
+           <div class="flex-1"></div>
+           <button id="tree-ascend" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black border-2 border-purple-300 shadow-lg whitespace-nowrap">✨ Ascend</button>
+           <button id="tree-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+       </div>
+       <div class="flex-1 flex flex-col md:flex-row min-h-0">
+           <div id="tree-scroll" class="flex-1 overflow-auto min-h-0"><div id="tree-board" class="relative mx-auto my-3"></div></div>
+           <div id="tree-side" class="md:w-80 shrink-0 border-t md:border-t-0 md:border-l border-purple-900/70 bg-stone-950/60 overflow-y-auto p-3 max-h-[45%] md:max-h-none text-sm"></div>
+       </div>
+   </div>
+
+
+   <!-- ASCEND CONFIRM -->
+   <div id="ascend-modal" class="fixed inset-0 z-[68] bg-black/80 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-4 border-purple-500 p-6 rounded-3xl max-w-md w-full text-center shadow-2xl">
+           <div class="text-5xl mb-1">👼</div>
+           <h3 class="text-3xl font-black text-white mb-2">Ascend?</h3>
+           <p class="text-stone-300 mb-3">You will gain <span id="asc-gain" class="font-black text-purple-300 text-xl">0</span> Heavenly Chips.<br><span class="text-xs text-stone-400">Every chip you ever earn gives +1% production, and you spend them in the Prestige Tree.</span></p>
+           <div class="grid grid-cols-2 gap-2 text-left text-xs mb-5">
+               <div class="bg-red-950/50 border border-red-900 rounded-xl p-2"><div class="font-black text-red-300 mb-1">You lose</div>Brown E's, buildings, upgrades and active buffs from this run. Market goods are sold off.</div>
+               <div class="bg-green-950/50 border border-green-900 rounded-xl p-2"><div class="font-black text-green-300 mb-1">You keep</div>Chips, the Prestige Tree, wins, achievements, challenge rewards, your garden, skins and stats.</div>
+           </div>
+           <div class="flex gap-3">
+               <button id="asc-cancel" class="flex-1 py-3 rounded-xl bg-stone-700 hover:bg-stone-600 text-white font-bold">Not yet</button>
+               <button id="asc-confirm" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-black border-2 border-purple-300">✨ Ascend</button>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- E GARDEN -->
+   <div id="garden-modal" class="fixed inset-0 z-[65] bg-black/80 flex items-center justify-center hidden p-3">
+       <div class="bg-stone-900 border-2 border-green-700 rounded-2xl w-full max-w-4xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 border-b border-stone-700 shrink-0">
+               <h3 class="text-2xl font-black text-white">🌱 E Garden</h3>
+               <div id="garden-speed" class="text-xs text-stone-400"></div>
+               <div class="flex-1"></div>
+               <button id="garden-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div class="flex flex-col md:flex-row min-h-0 overflow-y-auto">
+               <div class="md:w-64 shrink-0 p-3 border-b md:border-b-0 md:border-r border-stone-700 flex flex-col min-h-0">
+                   <div class="flex gap-1 mb-2 flex-wrap">
+                       <button id="garden-shovel" class="opt-btn" title="Dig up a plant (no refund)">⛏️ Shovel</button>
+                       <button id="garden-harvest-all" class="opt-btn">🧺 Harvest all</button>
+                       <button id="garden-plant-all" class="opt-btn">🌱 Fill empty</button>
+                   </div>
+                   <div class="text-xs font-black uppercase tracking-widest text-stone-400 mb-1">Seeds <span id="garden-found" class="text-stone-500 normal-case tracking-normal"></span></div>
+                   <div id="garden-seeds" class="space-y-1 overflow-y-auto md:max-h-[420px] pr-1"></div>
+               </div>
+               <div class="flex-1 p-3 flex flex-col items-center">
+                   <div id="garden-grid" class="grid grid-cols-4 gap-2"></div>
+                   <div id="garden-info" class="text-sm text-stone-300 mt-3 text-center min-h-[40px] max-w-md"></div>
+                   <div id="garden-fx" class="text-xs text-green-300 mt-1 text-center max-w-md"></div>
+               </div>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- E-GOODS MARKET -->
+   <div id="market-modal" class="fixed inset-0 z-[65] bg-black/80 flex items-center justify-center hidden p-3">
+       <div class="bg-stone-900 border-2 border-sky-700 rounded-2xl w-full max-w-4xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 border-b border-stone-700 shrink-0">
+               <h3 class="text-2xl font-black text-white">📈 E-Goods Market</h3>
+               <div id="market-dollar" class="text-xs text-stone-400"></div>
+               <div class="flex-1"></div>
+               <div id="market-next" class="text-xs text-sky-300 font-bold"></div>
+               <button id="market-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div class="overflow-y-auto min-h-0">
+               <div class="px-4 pt-2">
+                   <div class="flex items-center justify-between text-sm"><span id="market-chart-title" class="font-black text-white"></span><span id="market-chart-sub" class="text-xs text-stone-400"></span></div>
+                   <canvas id="market-chart" width="840" height="120" class="w-full h-[110px] bg-stone-950 rounded-lg border border-stone-800 mt-1"></canvas>
+               </div>
+               <div id="market-rows" class="px-2 py-2"></div>
+               <div id="market-foot" class="px-4 pb-3 text-xs text-stone-400"></div>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- SKINS -->
+   <div id="skins-modal" class="fixed inset-0 z-[65] bg-black/80 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-2 border-[#8B4513] rounded-2xl w-full max-w-4xl max-h-full flex flex-col shadow-2xl">
+           <div class="flex items-center justify-between px-5 py-3 border-b border-stone-700 shrink-0">
+               <div><h3 class="text-2xl font-black text-white">🎨 Skins</h3><p class="text-xs text-stone-400">Unlock new looks with achievements. Click one to wear it.</p></div>
+               <button id="skins-close" class="w-10 h-10 rounded-lg bg-stone-700 hover:bg-stone-600 text-white font-black text-lg shrink-0">✕</button>
+           </div>
+           <div class="p-4 overflow-y-auto">
+               <div class="text-xs font-black uppercase tracking-widest text-stone-400 mb-2">The E <span id="skins-e-count" class="normal-case tracking-normal text-stone-500"></span></div>
+               <div id="skins-e" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4"></div>
+               <div class="text-xs font-black uppercase tracking-widest text-stone-400 mb-2">Backgrounds <span id="skins-bg-count" class="normal-case tracking-normal text-stone-500"></span></div>
+               <div id="skins-bg" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
+           </div>
+       </div>
+   </div>
+
+
+   <!-- WELCOME BACK (OFFLINE EARNINGS) MODAL -->
+   <div id="welcome-modal" class="fixed inset-0 z-[75] bg-black/70 flex items-center justify-center hidden p-4">
+       <div class="bg-stone-900 border-4 border-[#8B4513] p-8 rounded-3xl max-w-md w-full text-center shadow-2xl">
+           <div class="text-6xl mb-2">🌙</div>
+           <h3 class="text-3xl font-black text-white mb-2">Welcome Back!</h3>
+           <p class="text-stone-300 mb-1">You were away for <span id="welcome-away" class="font-bold text-white">0s</span>.</p>
+           <p class="text-stone-400 text-sm mb-4" id="welcome-detail"></p>
+           <div class="bg-white rounded-2xl py-3 px-4 mb-2">
+               <div class="text-4xl font-black text-[#5C4033]">+<span id="welcome-amount">0</span></div>
+               <div class="text-xs font-bold text-stone-500 uppercase tracking-wide">Brown E's earned while away</div>
+           </div>
+           <p class="text-stone-500 text-xs mb-5" id="welcome-tip"></p>
+           <button id="welcome-ok" class="w-full py-3 rounded-xl bg-[#5C4033] hover:bg-[#4A332A] text-white font-black text-xl transition-transform active:scale-95 border-2 border-[#8B4513]">Sweet!</button>
+       </div>
+   </div>
+
+
+   <!-- GAME SCREEN -->
+   <div id="game-screen" class="w-full h-full flex flex-col md:flex-row hidden">
+       <!-- LEFT SIDE: The Clicking Area -->
+       <div id="click-area" class="w-full md:w-1/2 h-1/2 md:h-full flex flex-col items-center justify-center border-b-4 md:border-b-0 md:border-r-4 border-stone-800 relative p-4 overflow-hidden">
+
+           <!-- NEWS TICKER -->
+           <div id="ticker" class="absolute top-0 left-0 right-0 z-30 bg-stone-950/70 border-b border-stone-800 overflow-hidden flex items-center cursor-pointer" title="Brown E News">
+               <span class="shrink-0 h-full flex items-center px-2 bg-[#5C4033] text-white text-[0.65rem] font-black tracking-widest uppercase z-10">E-News</span>
+               <div class="relative flex-1 overflow-hidden h-full flex items-center"><span id="ticker-text" class="text-xs font-semibold text-stone-300"></span></div>
+           </div>
+
+           <!-- SEASONAL EVENT PILL -->
+           <div id="event-pill" class="hidden absolute right-3 top-9 z-30 text-xs font-black px-2 py-1 rounded-lg bg-stone-900/90 border border-orange-500 text-orange-300 cursor-default"></div>
+
+           <!-- SIDE TOOLBAR -->
+           <div id="toolbar" class="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
+               <button id="tb-tree" class="tb-btn" data-tb="tree">👼<span id="tb-tree-badge" class="tb-badge hidden"></span></button>
+               <button id="tb-garden" class="tb-btn" data-tb="garden">🌱</button>
+               <button id="tb-market" class="tb-btn" data-tb="market">📈</button>
+               <button id="tb-skins" class="tb-btn" data-tb="skins">🎨</button>
+               <button id="tb-settings" class="tb-btn" data-tb="settings">⚙️</button>
+           </div>
+
+           <!-- (click-through, so it never swallows clicks meant for the big E) -->
+           <div class="absolute top-10 text-center w-full z-20 pointer-events-none">
+               <div id="in-game-wins" class="absolute left-4 top-0 text-[#8B4513] font-black text-sm hidden tracking-widest bg-stone-800 border border-[#8B4513] px-3 py-1 rounded-xl shadow-sm flex flex-col items-start z-20">
+                   <div>WINS: <span id="in-game-wins-count">0</span></div>
+                   <div id="in-game-win-buff" class="text-green-400 font-bold text-[0.65rem] tracking-normal"></div>
+               </div>
+               <h1 id="game-title" class="text-3xl font-black text-stone-500 uppercase tracking-widest mb-2 hidden md:block">Brown E Clicker</h1>
+               <!-- Challenge run banner (replaces the title while a challenge is on) -->
+               <div id="chal-banner" class="hidden pointer-events-auto mb-2 mx-auto w-fit flex items-center gap-2 bg-red-950/90 border-2 border-red-500 rounded-xl px-3 py-1 text-sm shadow-lg max-w-[92%]">
+                   <span id="chal-icon" class="text-xl leading-none">⚔️</span>
+                   <span class="text-left leading-tight min-w-0"><span id="chal-name" class="font-black text-red-200"></span><br><span id="chal-prog" class="text-stone-300 text-xs"></span></span>
+                   <button id="chal-quit" class="text-xs bg-stone-800 hover:bg-stone-700 border border-stone-600 rounded px-1.5 py-0.5 text-stone-300 shrink-0">Give up</button>
+               </div>
+
+               <!-- Main Score Counter -->
+               <div class="bg-stone-800/80 backdrop-blur-sm rounded-2xl py-3 px-8 inline-block shadow-sm border border-stone-700">
+                   <div class="text-5xl font-black text-[#5C4033] drop-shadow-sm" style="text-shadow: 2px 2px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;" id="score">0</div>
+                   <div class="text-sm font-bold text-stone-400 uppercase tracking-wide mt-1">Brown E's</div>
+               </div>
+
+               <!-- BPS Counter -->
+               <div>
+                   <div class="mt-3 text-stone-400 font-semibold bg-stone-800 py-1 px-4 rounded-full inline-block text-sm border border-stone-700">
+                       <span id="bps">0.0</span> E's per second <span id="bps-buff" class="text-yellow-400 font-bold"></span>
+                   </div>
+               </div>
+
+               <!-- Golden E buffs (timers) -->
+               <div id="buff-bar" class="mt-2 flex flex-wrap justify-center gap-2 px-16"></div>
+           </div>
+
+
+           <!-- THE BIG E -->
+           <div id="big-e-container" class="relative mt-24 md:mt-16 w-48 h-48 md:w-64 md:h-64 flex items-center justify-center cursor-pointer transition-transform duration-75 active:scale-90 hover:scale-105">
+               <!-- Drop shadow element (Now White for contrast) -->
+               <div class="absolute inset-0 bg-white rounded-full blur-2xl opacity-70 transform translate-y-2 scale-110"></div>
+               <!-- The E itself -->
+               <span id="big-e" class="e-skin-classic text-9xl md:text-[15rem] font-black relative z-10" style="line-height: 1;">E</span>
+           </div>
+
+           <!-- GOLDEN E (spawns at random spots in this panel) -->
+           <div id="golden-e" class="golden-e hidden" title="Click me!">E<span id="golden-ev" class="ev-badge pointer-events-none"></span></div>
+           <div id="golden-msg" class="golden-msg">
+               <div id="golden-msg-title" class="text-3xl md:text-4xl font-black text-yellow-300" style="text-shadow: 2px 2px 0 #78350F, 0 0 18px rgba(245,158,11,0.8);"></div>
+               <div id="golden-msg-sub" class="text-sm md:text-base font-bold text-white bg-stone-900/80 rounded-2xl px-3 py-1 mt-1 inline-block max-w-full"></div>
+           </div>
+
+           <div class="absolute bottom-6 text-stone-500 text-sm font-medium flex items-center gap-2 pointer-events-none">
+               Click Power: <span id="click-power" class="text-white font-bold text-base">1</span>
+           </div>
+       </div>
+
+
+       <!-- RIGHT SIDE: The Shop -->
+       <div id="shop-panel" class="w-full md:w-1/2 h-1/2 md:h-full bg-stone-900 flex flex-col overflow-y-auto md:overflow-hidden">
+           <div class="px-5 pt-4 pb-2 border-b border-stone-800 bg-stone-900 shadow-sm z-10 shrink-0">
+               <h2 class="text-2xl font-black text-[#5C4033] tracking-tight flex justify-between items-center" style="text-shadow: 1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff;">
+                   The E-Shop
+                   <div class="flex items-center gap-2" style="text-shadow: none;">
+                       <span id="save-status" class="text-xs text-stone-500 font-normal tracking-normal normal-case opacity-0 transition-opacity">Game Saved</span>
+                       <button id="ach-btn" class="text-xs bg-yellow-900/30 text-yellow-300 hover:bg-yellow-900/50 px-2 py-1 rounded border border-yellow-700/60 transition-colors font-bold tracking-normal">🏆 <span id="ach-count">0/0</span></button>
+                       <button id="stats-btn" class="text-xs bg-stone-800 text-stone-200 hover:bg-stone-700 px-2 py-1 rounded border border-stone-600 transition-colors font-bold tracking-normal">📊 Stats</button>
+                       <button id="reset-btn" class="text-xs bg-red-900/30 text-red-400 hover:bg-red-900/50 hover:text-red-300 px-2 py-1 rounded border border-red-900/50 transition-colors shadow-none font-normal tracking-normal">Reset Save</button>
+                   </div>
+               </h2>
+               <p class="text-sm text-stone-400 mt-1 mb-2 [@media(max-height:820px)]:hidden">Spend your Brown E's to get more Brown E's.</p>
+
+
+               <!-- GENERAL UPGRADES PANEL -->
+               <div class="bg-stone-800 rounded-xl p-2 border border-[#8B4513]/50 shadow-inner mb-2 flex-shrink-0">
+                   <h3 class="text-xs font-black text-stone-400 uppercase tracking-widest mb-1 text-center">General Upgrades (+10%)</h3>
+                   <div class="flex gap-2">
+                       <button id="upgrade-click-btn" class="flex-1 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 disabled:cursor-not-allowed border border-stone-600 rounded-lg px-2 py-1.5 text-left transition-colors active:scale-95 flex flex-col justify-between">
+                           <span class="text-white font-bold text-sm">Click Power <span class="text-green-400 text-xs ml-1" id="click-multi-display">x1.0</span></span>
+                           <span class="text-stone-400 text-xs font-medium mt-0.5">Cost: <span id="upgrade-click-cost" class="text-[#8B4513] bg-white px-1 rounded font-bold">10K</span></span>
+                       </button>
+                       <button id="upgrade-bps-btn" class="flex-1 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 disabled:cursor-not-allowed border border-stone-600 rounded-lg px-2 py-1.5 text-left transition-colors active:scale-95 flex flex-col justify-between">
+                           <span class="text-white font-bold text-sm">E's Per Sec <span class="text-green-400 text-xs ml-1" id="bps-multi-display">x1.0</span></span>
+                           <span class="text-stone-400 text-xs font-medium mt-0.5">Cost: <span id="upgrade-bps-cost" class="text-[#8B4513] bg-white px-1 rounded font-bold">10K</span></span>
+                       </button>
+                   </div>
+               </div>
+
+               <!-- UPGRADES PANEL (one-time upgrades, unlocked as you play) -->
+               <div class="bg-stone-800 rounded-xl p-2 border border-stone-700 shadow-inner mb-2">
+                   <div class="flex items-center justify-between mb-1">
+                       <h3 class="text-xs font-black text-stone-400 uppercase tracking-widest">Upgrades <span id="upg-avail" class="text-stone-500 normal-case tracking-normal font-bold"></span></h3>
+                       <button id="buy-all-upg" class="text-xs bg-[#5C4033] hover:bg-[#4A332A] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-2 py-0.5 rounded border border-stone-600 transition-colors">Buy All</button>
+                   </div>
+                   <!-- fixed height (two rows) so the building list never jumps when upgrades appear -->
+                   <div class="relative h-[98px]">
+                       <div id="upgrade-grid" class="flex flex-wrap content-start gap-1.5 h-full overflow-y-auto p-0.5"></div>
+                       <div id="upgrade-empty" class="absolute inset-0 flex items-center justify-center text-xs text-stone-500 text-center px-4">Keep making Brown E's to unlock upgrades!</div>
+                   </div>
+               </div>
+
+               <!-- BUY AMOUNT -->
+               <div class="flex items-center justify-between">
+                   <span class="text-xs font-black text-stone-400 uppercase tracking-widest">Buildings</span>
+                   <div id="buy-amount" class="flex gap-1">
+                       <button data-amt="1" class="buy-amt text-xs font-bold px-2 py-0.5 rounded border border-stone-600">x1</button>
+                       <button data-amt="10" class="buy-amt text-xs font-bold px-2 py-0.5 rounded border border-stone-600">x10</button>
+                       <button data-amt="100" class="buy-amt text-xs font-bold px-2 py-0.5 rounded border border-stone-600">x100</button>
+                   </div>
+               </div>
+           </div>
+
+
+           <!-- Shop Items Container -->
+           <div id="shop-container" class="md:flex-1 md:overflow-y-auto p-4 space-y-3">
+               <!-- Shop items will be injected here by JavaScript -->
+           </div>
+       </div>
+   </div>
+
+
+   <!-- ACHIEVEMENT TOASTS + TOOLTIP -->
+   <div id="toast-box" class="fixed bottom-3 left-3 z-[80] flex flex-col gap-1.5 pointer-events-none w-[215px]"></div>
+   <div id="tooltip" class="fixed z-[90] hidden pointer-events-none w-72 bg-stone-950 border-2 border-[#8B4513] rounded-xl p-3 shadow-2xl text-stone-200"></div>
+
+
+   <script><!--@inline js/10-game/--></script>
+</body>
+</html>

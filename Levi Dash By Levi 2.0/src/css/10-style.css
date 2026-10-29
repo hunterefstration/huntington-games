@@ -1,0 +1,9 @@
+
+       body { margin: 0; background: #020205; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Courier New', Courier, monospace; flex-direction: column; }
+       canvas { border: 3px solid #0ff; box-shadow: 0 0 30px #0ff; background: #000; cursor: pointer; border-radius: 8px; }
+       #ui { color: #0ff; font-size: 28px; text-shadow: 0 0 15px #0ff; margin-bottom: 10px; font-weight: bold; }
+       #leaderboard { position: absolute; right: 20px; color: #f0f; background: rgba(5,5,15,0.95); padding: 15px; border: 2px solid #f0f; box-shadow: 0 0 15px #f0f; pointer-events: none; width: 240px; border-radius: 10px; }
+       h3 { margin-top: 0; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-size: 18px; color: #fff; }
+       .score-entry { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #303; font-size: 14px; padding-bottom: 4px; }
+       #levelMsg { position: absolute; color: #fff; font-size: 50px; font-weight: bold; text-shadow: 0 0 25px #fff; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10; text-transform: uppercase; }
+   

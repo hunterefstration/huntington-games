@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bean & Brew Tycoon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style><!--@inline css/10-style.css--></style>
+</head>
+<body class="bg-amber-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+
+    <header class="bg-amber-900 text-amber-50 p-4 shadow-md sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <span>☕</span> Bean & Brew Tycoon
+            </h1>
+            <div class="text-xl font-bold bg-amber-800 px-4 py-2 rounded-lg border border-amber-700 shadow-inner">
+                Balance: <span id="ui-money" class="text-green-400">$50.00</span>
+            </div>
+        </div>
+    </header>
+
+
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="space-y-6">
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">📦 Inventory</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex flex-col items-center">
+                        <span class="text-2xl mb-1">🫘</span>
+                        <span id="ui-beans" class="text-xl font-bold">0</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex flex-col items-center">
+                        <span class="text-2xl mb-1">🥛</span>
+                        <span id="ui-milk" class="text-xl font-bold">0</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex flex-col items-center">
+                        <span class="text-2xl mb-1">🥤</span>
+                        <span id="ui-cups" class="text-xl font-bold">0</span>
+                    </div>
+                    <div class="bg-amber-100 p-3 rounded-lg border border-amber-200 flex flex-col items-center">
+                        <span class="text-2xl mb-1">☕</span>
+                        <span id="ui-brewed" class="text-xl font-bold text-amber-900">0</span>
+                    </div>
+                </div>
+            </section>
+
+
+            <section class="bg-white rounded-xl shadow-sm border border-blue-200 p-5">
+                <h2 class="text-lg font-bold text-blue-700 mb-4 border-b pb-2">🔨 Shift Work</h2>
+                <div class="space-y-3">
+                    <button id="btn-work" onclick="doWork()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md transition-all active:scale-95">
+                        Grind Beans for Tips
+                    </button>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                        <div id="work-bar" class="work-progress h-full bg-blue-400 w-0"></div>
+                    </div>
+                    <div class="text-center text-xs font-mono text-blue-600">Tip: +$<span id="ui-work-value">0.50</span></div>
+                </div>
+            </section>
+        </div>
+
+
+        <div class="space-y-6">
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">🛒 Supplies</h2>
+                <div class="space-y-3">
+                    <button id="btn-buy-beans" onclick="buyItem('beans')" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center disabled:opacity-50">
+                        <span class="font-bold">🫘 Beans x20</span>
+                        <span class="text-slate-600 font-mono">-$10.00</span>
+                    </button>
+                    <button id="btn-buy-milk" onclick="buyItem('milk')" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center disabled:opacity-50">
+                        <span class="font-bold">🥛 Milk x20</span>
+                        <span class="text-slate-600 font-mono">-$5.00</span>
+                    </button>
+                    <button id="btn-buy-cups" onclick="buyItem('cups')" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center disabled:opacity-50">
+                        <span class="font-bold">🥤 Cups x20</span>
+                        <span class="text-slate-600 font-mono">-$5.00</span>
+                    </button>
+                </div>
+            </section>
+
+
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">🧑‍🍳 Kitchen</h2>
+                <button id="btn-brew" onclick="brewCoffee()" class="w-full py-4 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl disabled:opacity-50">
+                    Brew Coffee (1 of each)
+                </button>
+            </section>
+        </div>
+
+
+        <div class="space-y-6">
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                <h2 class="text-lg font-bold text-slate-700 mb-4 border-b pb-2">📈 Upgrades</h2>
+                <div class="space-y-3">
+                    <button id="btn-upg-barista" onclick="buyUpgrade('barista')" class="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center disabled:opacity-50">
+                        <div class="text-left">
+                            <div class="font-bold">Hire Barista (<span id="ui-baristas">0</span>)</div>
+                            <div class="text-xs text-slate-500">Auto-brews</div>
+                        </div>
+                        <span id="cost-barista" class="font-bold text-red-600">-$100.00</span>
+                    </button>
+                    <button id="btn-upg-marketing" onclick="buyUpgrade('marketing')" class="w-full p-3 bg-purple-50 border border-purple-200 rounded-lg flex justify-between items-center disabled:opacity-50">
+                        <div class="text-left">
+                            <div class="font-bold">Marketing (Lvl <span id="ui-marketing">0</span>)</div>
+                            <div class="text-xs text-slate-500">Sell faster</div>
+                        </div>
+                        <span id="cost-marketing" class="font-bold text-red-600">-$75.00</span>
+                    </button>
+                    <button id="btn-upg-premium" onclick="buyUpgrade('premium')" class="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center disabled:opacity-50">
+                        <div class="text-left">
+                            <div class="font-bold">Premium (Lvl <span id="ui-premium">0</span>)</div>
+                            <div class="text-xs text-slate-500">Price: $<span id="ui-price">4.00</span></div>
+                        </div>
+                        <span id="cost-premium" class="font-bold text-red-600">-$150.00</span>
+                    </button>
+                </div>
+            </section>
+
+
+            <section class="bg-slate-800 rounded-xl p-5 text-slate-300 h-64 flex flex-col">
+                <h2 class="text-sm font-bold text-slate-400 mb-2 uppercase">Activity Log</h2>
+                <div id="log-container" class="flex-grow overflow-y-auto custom-scrollbar space-y-2 text-sm pr-2"></div>
+            </section>
+        </div>
+    </main>
+
+
+    <script><!--@inline js/10-state.js--></script>
+</body>
+</html>

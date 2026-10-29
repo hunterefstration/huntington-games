@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Frontline: Command</title>
+<style><!--@inline css/10-style.css--></style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="hud" class="hidden">
+ <div id="topbar">
+  <div class="tb-left">
+   <div class="stat" id="stMoney" data-tip="Money|Spend it on buildings and soldiers. You earn more by holding flags and building Supply Depots."><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6.3" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1.8"/></svg><span id="vSup">0</span><small id="vInc">+0/s</small></div>
+   <div class="stat army" id="stArmy" data-tip="Army size|How many troops you have, and the most you can have. Capture more flags to raise the limit."><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3.6"/><path d="M4.5 21c0-5 3.3-8.5 7.5-8.5s7.5 3.5 7.5 8.5z"/></svg><span id="vPop">0/40</span></div>
+  </div>
+  <div class="tb-mid"><div id="scoreRow"></div></div>
+  <div class="tb-right">
+   <div id="timer">0:00</div>
+   <button class="tbtn" id="btnMenu" data-tip="Menu (Esc)|Pause, settings and quit.">Menu</button>
+  </div>
+ </div>
+ <div id="goal"></div>
+ <div id="modebar" class="hidden"></div>
+ <div id="fps"></div>
+ <div id="alerts"></div>
+ <div id="netbar" class="hidden"></div>
+ <div id="touchbtns" class="hidden"></div>
+ <div id="camctl"><button class="tbtn" id="zIn" data-tip="Zoom in (+)">+</button><button class="tbtn" id="zOut" data-tip="Zoom out (-)">&#8211;</button><button class="tbtn" id="rL" data-tip="Turn camera left (Q)">&#8634;</button><button class="tbtn" id="rR" data-tip="Turn camera right (E)">&#8635;</button></div>
+ <div id="chatbox"></div>
+ <div id="sup" class="pop hidden"></div>
+ <div id="armystrip"></div>
+ <div id="squads"></div>
+ <div id="bottom">
+  <div id="mmwrap"><canvas id="mm" width="162" height="108"></canvas></div>
+  <div id="panel"></div>
+  <div id="quick"></div>
+ </div>
+</div>
+<div id="tut" class="hidden"></div>
+<div id="boxsel" class="hidden"></div>
+<div id="tip" class="hidden"></div>
+<div id="menus"></div>
+<div id="loading"><div>FRONTLINE: COMMAND</div><div class="bar"><i></i></div></div>
+<script type="module"><!--@inline js/10-game/--></script>
+</body>
+</html>

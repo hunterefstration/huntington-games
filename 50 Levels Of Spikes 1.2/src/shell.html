@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>100 Levels of Spikes - v2.0</title>
+    <style><!--@inline css/10-style.css--></style>
+</head>
+<body>
+
+
+<div id="gameWrapper">
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+    <div id="hud" class="hidden">
+        <div id="levelDisplay">Level: 1/100</div>
+        <div id="deathDisplay" class="stat-deaths">Deaths: 0</div>
+        <div id="keyDisplay" class="stat-keys hidden">Keys: 0</div>
+        <div id="modeDisplay" class="stat-mode"></div>
+    </div>
+    <div id="pauseBtn" class="hidden" title="Pause (Esc)">II</div>
+
+
+    <div id="startScreen" class="overlay">
+        <h1>100 Levels of Spikes</h1>
+        <div class="version-badge">v2.0 (100 Levels)</div>
+        <p class="subtitle">A precision platformer that gets harder every level.</p>
+
+        <div class="mode-selection">
+            <label>
+                <input type="checkbox" id="oneLifeToggle">
+                One Life Mode (Reset to Level 1 on death)
+            </label>
+            <label>
+                <input type="checkbox" id="endlessToggle">
+                Endless Mode (No level limit)
+            </label>
+        </div>
+
+
+        <div class="menu-row">
+            <button id="startBtn" onclick="startGame()">Start Game</button>
+            <button id="continueBtn" class="hidden" onclick="continueGame()">Continue</button>
+        </div>
+        <div class="menu-row">
+            <button class="btn-small btn-grey" id="levelSelectBtn" onclick="openLevelSelect()">Level Select</button>
+            <button class="btn-small btn-alt" id="editorMenuBtn" onclick="openCustomScreen()">Level Editor &amp; Codes</button>
+            <button class="btn-small btn-grey" id="whatsNewBtn" onclick="openWhatsNew()">What's New</button>
+        </div>
+        <div id="statsLine" class="stats-line"></div>
+    </div>
+
+
+    <div id="deathScreen" class="overlay hidden">
+        <h1 id="deathHeader" style="color: var(--danger-color); text-shadow: 0 0 15px var(--danger-color);">You Died</h1>
+        <p id="deathMessage">You hit a spike or fell into the void!</p>
+        <button id="retryBtn" onclick="retryLevel()" style="background-color: var(--danger-color); box-shadow: 0 5px 0 #be123c;">Try Again</button>
+        <div class="menu-row">
+            <button id="deathBackBtn" class="btn-small btn-grey" onclick="goBack()">Main Menu</button>
+        </div>
+        <p class="screen-note" style="margin-top:10px">Tip: press Enter or R to try again</p>
+    </div>
+
+
+    <div id="victoryScreen" class="overlay hidden">
+        <h1 style="color: var(--success-color); text-shadow: 0 0 15px var(--success-color);">You Survived!</h1>
+        <p>Congratulations! You have conquered all 100 levels.</p>
+        <p id="finalStats">Total Deaths: 0</p>
+        <button onclick="resetGame()" style="background-color: var(--success-color); box-shadow: 0 5px 0 #047857;">Play Again</button>
+    </div>
+
+
+    <div id="pauseScreen" class="overlay hidden">
+        <h1>Paused</h1>
+        <div class="menu-row">
+            <button onclick="resumeGame()">Resume</button>
+        </div>
+        <div class="menu-row">
+            <button id="pauseRestartBtn" class="btn-small btn-grey" onclick="restartFromPause()">Restart Level</button>
+            <button id="pauseBackBtn" class="btn-small btn-grey" onclick="goBack()">Main Menu</button>
+        </div>
+    </div>
+
+
+    <div id="clearScreen" class="overlay hidden">
+        <h1 style="color: var(--success-color); text-shadow: 0 0 15px var(--success-color);">Level Complete!</h1>
+        <p id="clearText"></p>
+        <div class="menu-row">
+            <button class="btn-green" onclick="replayCustom()">Play Again</button>
+            <button id="clearBackBtn" class="btn-grey" onclick="goBack()">Back</button>
+        </div>
+    </div>
+
+
+    <div id="levelSelectScreen" class="overlay hidden">
+        <h1 class="screen-title">Level Select</h1>
+        <p class="screen-note">Reach a level once to unlock it here. Level select plays in normal mode (One Life runs always start at Level 1).</p>
+        <div class="legend"><span>Levels 1-50: new layout every try</span><span class="hand">Levels 51-100: hand-built, new mechanics</span></div>
+        <div id="levelGrid" class="level-grid"></div>
+        <div class="menu-row"><button class="btn-small btn-grey" onclick="closeSubScreen()">Back</button></div>
+    </div>
+
+
+    <div id="customScreen" class="overlay hidden">
+        <h1 class="screen-title">Level Editor &amp; Codes</h1>
+        <p class="screen-note">Build your own levels, or paste a friend's share code to play theirs.</p>
+        <div class="menu-row" style="margin:0 0 10px">
+            <button class="btn-small btn-alt" id="newLevelBtn" onclick="openEditor(null)">+ New Level</button>
+            <button class="btn-small" id="enterCodeBtn" onclick="promptImportCode()">Enter Share Code</button>
+            <button class="btn-small btn-grey" onclick="closeSubScreen()">Back</button>
+        </div>
+        <div id="customList" class="custom-list"></div>
+    </div>
+
+
+    <div id="whatsNewScreen" class="overlay hidden">
+        <h1 class="screen-title">What's New in v2.0</h1>
+        <div class="news-box">
+            <h3>100 Levels!</h3>
+            <ul>
+                <li>50 brand-new hand-built levels (51-100) after the original 50.</li>
+                <li>7 new mechanics, introduced one at a time: <b>moving platforms</b>, <b>bounce pads</b>, <b>crumbling blocks</b>, <b>conveyor belts</b>, <b>rotating saws</b>, <b>keys &amp; doors</b> and <b>gravity-flip zones</b> - then mixed together for the final stretch.</li>
+            </ul>
+            <h3>Level Editor &amp; Share Codes</h3>
+            <ul>
+                <li>Build your own levels with every tile, hazard and mechanic, set the start and goal, and test-play instantly.</li>
+                <li>Save as many levels as you like in <b>My Levels</b>.</li>
+                <li>Every level has a short <b>share code</b> - send it to friends, or paste theirs to play their level.</li>
+            </ul>
+            <h3>Quality of life</h3>
+            <ul>
+                <li>Your progress saves: <b>Continue</b> and <b>Level Select</b> on the main menu.</li>
+                <li>Pause any time with Esc (or the II button), quick retry with Enter or R.</li>
+                <li>Same game speed on every screen, and smoother on Chromebooks.</li>
+            </ul>
+        </div>
+        <div class="menu-row"><button class="btn-small btn-grey" onclick="closeSubScreen()">Back</button></div>
+    </div>
+
+
+    <div id="editorBar" class="hidden">
+        <div class="ed-row" id="edTools"></div>
+        <div class="ed-row">
+            <input id="edName" maxlength="24" placeholder="Level name" spellcheck="false">
+            <button class="ed-btn" data-ed="narrow" title="Make the level shorter">- Width</button>
+            <span id="edWidth" class="ed-width">40</span>
+            <button class="ed-btn" data-ed="widen" title="Make the level longer">+ Width</button>
+            <button class="ed-btn" data-ed="undo" title="Undo (Ctrl+Z)">Undo</button>
+            <button class="ed-btn" data-ed="clear">Clear</button>
+            <span class="ed-spacer"></span>
+            <button class="ed-btn go" data-ed="test" title="Play your level">&#9654; Test</button>
+            <button class="ed-btn blue" data-ed="save">Save</button>
+            <button class="ed-btn blue" data-ed="share">Share Code</button>
+            <button class="ed-btn exit" data-ed="exit">Exit</button>
+        </div>
+    </div>
+
+
+    <div id="modal" class="overlay hidden">
+        <div class="modal-box">
+            <h2 id="modalTitle"></h2>
+            <p id="modalText"></p>
+            <textarea id="modalInput" class="hidden" spellcheck="false"></textarea>
+            <p id="modalError" class="modal-error hidden"></p>
+            <div id="modalButtons" class="menu-row"></div>
+        </div>
+    </div>
+    <div id="toast"></div>
+
+
+    <div id="mobileControls">
+        <div class="control-group">
+            <div class="touch-btn" id="btnLeft">←</div>
+            <div class="touch-btn" id="btnRight">→</div>
+        </div>
+        <div class="touch-btn" id="btnJump">↑</div>
+    </div>
+</div>
+
+
+<script><!--@inline js/10-game/--></script>
+</body>
+</html>

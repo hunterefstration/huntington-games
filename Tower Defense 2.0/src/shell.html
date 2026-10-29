@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tower Defense - Version 3.0</title>
+<style><!--@inline css/10-style.css--></style>
+</head>
+<body>
+<!-- ================= MENUS ================= -->
+<div id="menu-screen">
+  <div class="menu-card" id="menu-main">
+    <h1 class="title">TOWER DEFENSE</h1>
+    <p class="subtitle">Made by Huntington Games</p>
+    <div class="menu-buttons">
+      <button class="btn btn-green btn-big" id="btn-continue">&#9654; Continue</button>
+      <button class="btn btn-blue btn-big" id="btn-slots">Save Slots</button>
+      <button class="btn btn-gold btn-big" id="btn-new">New Game</button>
+      <button class="btn btn-purple btn-big" id="btn-daily">&#9733; Daily Challenge</button>
+      <button class="btn btn-teal btn-big" id="btn-maps">&#9998; Map Editor</button>
+      <button class="btn btn-big" data-open="codex">Codex</button>
+      <button class="btn btn-big" data-open="achievements">Achievements</button>
+      <button class="btn btn-big" data-open="settings">Settings</button>
+    </div>
+    <div id="continue-info" class="subtitle" style="margin-top:10px;font-style:normal"></div>
+    <div id="menu-note" class="subtitle" style="font-style:normal;color:#ffd54f"></div>
+    <div class="section-title">Your records</div>
+    <div id="records" class="subtitle" style="font-style:normal"></div>
+    <div class="version">VERSION 3.0 &middot; 1900 AND BEYOND &middot; <a id="btn-news">What's new in 3.0</a></div>
+  </div>
+
+  <div class="menu-card hidden" id="menu-slots" style="width:min(980px,100%)">
+    <h1 class="title" style="font-size:34px">SAVE SLOTS</h1>
+    <p class="subtitle">Three separate games. Each one autosaves to its own slot after every wave.</p>
+    <div class="slot-grid" id="slot-list"></div>
+    <div id="slot-note" class="subtitle" style="font-style:normal;color:#ffd54f;margin-top:12px"></div>
+    <div class="menu-buttons" style="margin-top:16px">
+      <button class="btn" id="btn-slots-back">&#8592; Back</button>
+    </div>
+  </div>
+
+  <div class="menu-card hidden" id="menu-new">
+    <h1 class="title" style="font-size:34px">NEW GAME</h1>
+    <div class="section-title">Save to slot</div>
+    <div class="slot-pick" id="slot-choices"></div>
+    <div class="section-title">Game mode</div>
+    <div class="gm-row" id="gm-choices"></div>
+    <div class="section-title">Difficulty</div>
+    <div class="choice-row" id="diff-choices"></div>
+    <div class="section-title">Length</div>
+    <div class="choice-row" id="mode-choices"></div>
+    <div class="section-title">Map variant</div>
+    <div class="choice-row" id="variant-choices"></div>
+    <div class="section-title">Map</div>
+    <div class="map-head" id="map-head"></div>
+    <div class="map-grid" id="map-choices"></div>
+    <div class="section-title" id="custom-title">Your custom maps</div>
+    <div class="map-grid" id="custom-choices"></div>
+    <div class="slot-warn hidden" id="slot-warn"></div>
+    <div class="menu-buttons" style="margin-top:16px">
+      <button class="btn" id="btn-new-back">&#8592; Back</button>
+    </div>
+  </div>
+
+  <div class="menu-card hidden" id="menu-maps" style="width:min(1000px,100%)">
+    <h1 class="title" style="font-size:34px">MAP EDITOR</h1>
+    <p class="subtitle" style="font-style:normal">Draw your own battlefield: roads, rivers, lava, scenery, theme, starting money and base health. Test it, save it, and share it with a short code.</p>
+    <div class="menu-buttons">
+      <button class="btn btn-teal btn-big" id="btn-maps-new">&#10010; New map</button>
+      <button class="btn btn-gold btn-big hidden" id="btn-maps-draft">&#9998; Continue editing</button>
+    </div>
+    <div id="maps-note" class="maps-msg"></div>
+    <div class="section-title">Your maps <span id="maps-count" style="letter-spacing:0;font-weight:600"></span></div>
+    <div class="map-grid" id="maps-list"></div>
+    <div class="section-title">Load a map from a share code</div>
+    <div class="maps-import"><textarea id="maps-code" spellcheck="false" placeholder="Paste a map code here. Codes start with TD-"></textarea><button class="btn btn-blue" id="btn-maps-load" style="align-self:stretch">Load code</button></div>
+    <div id="maps-msg" class="maps-msg"></div>
+    <div class="menu-buttons" style="margin-top:14px">
+      <button class="btn" id="btn-maps-back">&#8592; Back</button>
+    </div>
+  </div>
+
+  <div class="menu-card hidden" id="menu-daily" style="width:min(920px,100%)">
+    <h1 class="title" style="font-size:34px">DAILY CHALLENGE</h1>
+    <p class="subtitle" id="daily-date" style="font-style:normal"></p>
+    <div class="daily-wrap">
+      <div class="daily-map"><canvas id="daily-canvas" width="384" height="240"></canvas><div id="daily-mapinfo"></div></div>
+      <div class="daily-side">
+        <div class="section-title" style="margin-top:0">Today's orders</div>
+        <div id="daily-mods"></div>
+        <div class="section-title">Your record</div>
+        <div id="daily-rec"></div>
+      </div>
+    </div>
+    <div class="section-title">Command</div>
+    <div class="choice-row" id="daily-gm"></div>
+    <div id="daily-note" class="subtitle" style="font-style:normal;margin:10px 0 0;font-size:12px"></div>
+    <div class="menu-buttons" style="margin-top:14px">
+      <button class="btn" id="btn-daily-back">&#8592; Back</button>
+      <button class="btn btn-green btn-big hidden" id="btn-daily-resume">&#9654; Resume</button>
+      <button class="btn btn-gold btn-big" id="btn-daily-go">&#9654; Start today's challenge</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GAME ================= -->
+<div id="game-screen" class="hidden">
+  <div id="hud">
+    <div class="hud-stat" title="Money"><span style="color:var(--gold)">$</span><b id="h-money">0</b></div>
+    <div class="hud-stat" title="Base health"><span style="color:var(--red)">&#9829;</span><b id="h-lives">0</b></div>
+    <div class="hud-stat" id="hs-mode" title="Game mode"><b id="h-mode" style="font-size:12px;letter-spacing:1px"></b></div>
+    <div class="hud-stat" title="Wave"><span>Wave</span><b id="h-wave">0</b><span id="h-wavemax" style="color:var(--dim)"></span></div>
+    <div class="hud-stat" id="hs-type" title="This wave"><span id="h-wavetype" style="color:var(--blue);font-weight:800">-</span></div>
+    <div class="hud-stat hidden" id="hs-score" title="Daily Challenge score: 1,000 per wave cleared, 1,500 per boss, 5 per kill"><span style="color:#ffd54f">Score</span><b id="h-score">0</b></div>
+    <div id="wave-preview"></div>
+    <div class="hud-spacer"></div>
+    <button class="btn btn-green" id="b-wave" title="Start the next wave (Space)">&#9654; Start Wave</button>
+    <button class="btn btn-purple" id="b-auto" title="Start waves automatically">Auto: Off</button>
+    <button class="btn btn-gold" id="b-speed" title="Game speed (F)">1x</button>
+    <button class="btn" id="b-pause" title="Pause (P)">&#10073;&#10073;</button>
+    <button class="btn" data-open="codex" title="Codex: every tower and enemy">Codex</button>
+    <button class="btn" data-open="settings" title="Settings">&#9881;</button>
+  </div>
+  <div id="main">
+    <div id="stage">
+      <canvas id="game-canvas"></canvas>
+      <div id="toast"></div>
+      <div id="announce"></div>
+      <div id="fps" class="hidden"></div>
+      <div id="countdown" class="hidden"></div>
+      <div id="selpanel" class="hidden"></div>
+      <div id="tooltip" class="hidden"></div>
+    </div>
+    <div id="side">
+      <div class="side-head">
+        <button class="btn btn-red" id="b-deselect" style="flex:1" title="Deselect everything (Esc / right-click)">&#10005; Deselect</button>
+        <button class="btn" id="b-boxmode" title="What a drag-box selects: Auto (troops if it caught any, else towers), Towers only, or Troops only. Alt+drag also selects towers only.">Box: Auto</button>
+        <button class="btn" id="b-sellmode" title="Show every tower's range">Ranges</button>
+      </div>
+      <div class="tabs" id="shop-tabs"></div>
+      <div id="shop"></div>
+      <div id="herobar"></div>
+      <div id="abilities"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MAP EDITOR (3.0) ================= -->
+<div id="editor-screen" class="hidden">
+  <div id="ed-top">
+    <button class="btn" id="ed-back" title="Back to your maps (the editor keeps your work)">&#8592; My maps</button>
+    <span class="ed-title">MAP EDITOR</span>
+    <input type="text" class="ed-input" id="ed-name" maxlength="24" spellcheck="false" autocomplete="off" placeholder="Map name" title="Map name: letters, numbers, spaces and dashes">
+    <span id="ed-status"></span>
+    <button class="btn" id="ed-undo" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+    <button class="btn" id="ed-redo" title="Redo (Ctrl+Y)">&#8631; Redo</button>
+    <button class="btn btn-gold" id="ed-test" title="Play it now (Tower or Troop Mode: pick in the panel). Nothing is saved.">&#9654; Test</button>
+    <button class="btn btn-purple" id="ed-share" title="Get a code to share this map">Share code</button>
+    <button class="btn btn-green" id="ed-save" title="Save to your maps">&#10004; Save</button>
+  </div>
+  <div id="ed-main">
+    <div id="ed-stage"><canvas id="ed-canvas"></canvas><div id="ed-tip"><span></span></div></div>
+    <div id="ed-side"></div>
+  </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div class="modal hidden" id="modal-share"><div class="modal-card small">
+  <div class="modal-head"><h2 id="share-title">Share code</h2><button class="btn" data-close>&#10005;</button></div>
+  <div class="modal-body"><p id="share-note" style="color:var(--dim);font-size:13px;margin:0 0 8px"></p><textarea id="share-code" readonly spellcheck="false"></textarea><div id="share-msg" class="maps-msg"></div></div>
+  <div class="modal-foot"><button class="btn" data-close>Close</button><button class="btn btn-green" id="share-copy">Copy code</button></div>
+</div></div>
+
+<div class="modal hidden" id="modal-settings"><div class="modal-card">
+  <div class="modal-head"><h2>Settings</h2><button class="btn" data-close>&#10005;</button></div>
+  <div class="tabs" id="set-tabs" style="padding:8px 16px 0"></div>
+  <div class="modal-body" id="set-body"></div>
+  <div class="modal-foot"><button class="btn" id="set-reset">Reset to defaults</button><button class="btn btn-green" data-close>Done</button></div>
+</div></div>
+
+<div class="modal hidden" id="modal-codex"><div class="modal-card">
+  <div class="modal-head"><h2>Codex</h2><button class="btn" data-close>&#10005;</button></div>
+  <div class="tabs" id="codex-tabs" style="padding:8px 16px 0"></div>
+  <div class="modal-body"><div class="codex"><div class="codex-list" id="codex-list"></div><div class="codex-detail" id="codex-detail"></div></div></div>
+</div></div>
+
+<div class="modal hidden" id="modal-heroes"><div class="modal-card">
+  <div class="modal-head"><h2>Choose your hero</h2><button class="btn" data-close>&#10005;</button></div>
+  <div class="modal-body"><p id="hero-note" style="color:var(--dim);font-size:13px;margin:0 0 10px"></p><p id="hero-cash" class="hidden" style="color:#ff8a80;font-size:13px;font-weight:700;margin:0 0 10px"></p><div class="hero-grid" id="hero-grid"></div></div>
+</div></div>
+
+<div class="modal hidden" id="modal-achievements"><div class="modal-card small">
+  <div class="modal-head"><h2>Achievements</h2><button class="btn" data-close>&#10005;</button></div>
+  <div class="modal-body" id="ach-body"></div>
+</div></div>
+
+<div class="modal hidden" id="modal-pause"><div class="modal-card small">
+  <div class="modal-head"><h2>Paused</h2></div>
+  <div class="modal-body" id="pause-body"></div>
+  <div class="modal-foot">
+    <button class="btn" data-open="settings">Settings</button>
+    <button class="btn btn-red" id="b-quit">Save &amp; Quit</button>
+    <button class="btn btn-green" id="b-resume">Resume</button>
+  </div>
+</div></div>
+
+<div class="modal hidden" id="modal-end"><div class="modal-card small">
+  <div class="modal-head"><h2 id="end-title">Game Over</h2></div>
+  <div class="modal-body" id="end-body"></div>
+  <div class="modal-foot"><button class="btn" id="b-end-menu">Main Menu</button><button class="btn btn-gold" id="b-end-endless">Keep Going (Endless)</button><button class="btn btn-green" id="b-end-retry">Play Again</button><button class="btn btn-purple hidden" id="b-end-next">Next Map &#9654;</button></div>
+</div></div>
+
+<div class="modal hidden" id="modal-confirm"><div class="modal-card small">
+  <div class="modal-head"><h2 id="confirm-title">Are you sure?</h2></div>
+  <div class="modal-body" id="confirm-body"></div>
+  <div class="modal-foot"><button class="btn" id="confirm-no">Cancel</button><button class="btn btn-red" id="confirm-yes">Yes</button></div>
+</div></div>
+<script><!--@inline js/10-game/--></script>
+<script><!--@inline js/20-utilities/--></script>
+<script><!--@inline js/30-troops-mercenaries-walls-and/--></script>
+<script><!--@inline js/40-canvas/--></script>
+<script><!--@inline js/50-lookups/--></script>
+</body>
+</html>

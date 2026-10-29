@@ -199,3 +199,17 @@ Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: n
   Full-game check: start a game, call __sov.nextDay() in a loop and answer any #modal (see the play-through test idea in
   the plan). Release: `tools/release.sh prepare N Sovereign` now also copies Sovereign/src, data, tools and hub/sovereign.jpg.
 - In the Launcher since r36 (card + `hub/sovereign.jpg`, 'Sovereign' in `tools/build-release.py` GAMES).
+
+## r56 (2026-10-29): performance + every game split into src/
+- Grapevine typing lag: each key re-laid out every visible message (rows were `display:grid; align-items:baseline`,
+  which Chrome cannot cache). Rows are flex now; the box sizes itself (`field-sizing`), drafts save 0.6 s after typing.
+  Measured (busy room, CPU x4, 103 keys): 15.7 s -> 8.7 s, worst key 168 -> 40 ms, long tasks 109 -> 0; full storage
+  13.9 s -> 8.9 s. Probe: /home/user/tmp-tests/gvperf.mjs (FULL=1 fills storage, NOB=1 no live chat, FIX=n experiments).
+- Animated chat backgrounds: no 46px blur on aurora; slow background-position drifts step a few times a second; the
+  rain band moves by transform. Launcher: while a game is open the pages under it are `content-visibility:hidden`
+  (html.playing); the Grapevine app starts in the background when the page is idle (2.5 s + idle), roomForSaves is
+  cheap (300K probe, every 5 min when idle, never reads caches to size them).
+- All games now build from `src/` (CLAUDE.md). Older ones: `tools/split-game.py` + `<!--@inline path-->` in
+  build-game.js; their rebuilt index.html was byte-identical to the original at the split.
+- Known stale Grapevine test failures (same on the old code): e2e-polish (/help, /shrug, new-account offer x2) and
+  e2e-v2 (two image tests).

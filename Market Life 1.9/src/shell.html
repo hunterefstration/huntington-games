@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market & Life 2.1</title>
+    <style><!--@inline css/10-style.css--></style>
+</head>
+<body>
+
+<div class="app">
+    <header class="topbar">
+        <div class="who">
+            <div class="avatar" id="who-av">🧑</div>
+            <div>
+                <div class="who-name" id="who-name">Market & Life 2.0</div>
+                <div class="who-sub"><span id="age-display">Age 16</span> · <span id="day-display">Day 1</span></div>
+                <div class="yearbar" title="Progress to your next birthday"><i id="year-fill"></i></div>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Cash</div>
+                <div id="cash" class="stat-value" style="color: #10b981;">$1000.00</div>
+            </div>
+            <div class="stat-card" style="border: 1px solid #475569;">
+                <div class="stat-label">Net Worth</div>
+                <div id="net-worth" class="stat-value">$1000.00</div>
+                <div id="pb-money" class="pb-label">Best: $0</div>
+            </div>
+            <div class="stat-card" style="border: 1px solid #38bdf8;">
+                <div class="stat-label">Life Score</div>
+                <div id="life-score" class="stat-value" style="color: #38bdf8;">0</div>
+                <div id="pb-score" class="pb-label">Best: 0</div>
+            </div>
+            <div class="stat-card meters">
+                <div class="mrow"><span>❤️ Health</span><b id="health-num">80</b></div>
+                <div class="meter"><i id="health-bar" class="hb"></i></div>
+                <div class="mrow"><span>😊 Happiness</span><b id="happy-num">70</b></div>
+                <div class="meter"><i id="happy-bar" class="pb"></i></div>
+            </div>
+        </div>
+        <div class="ctrl">
+            <div class="speed" id="speed">
+                <button data-act="speed" data-arg="0" title="Pause">II</button>
+                <button data-act="speed" data-arg="1" title="Normal speed">1x</button>
+                <button data-act="speed" data-arg="2" title="Fast">2x</button>
+                <button data-act="speed" data-arg="4" title="Faster">4x</button>
+                <button data-act="speed" data-arg="8" title="Fastest">8x</button>
+            </div>
+            <div style="display:flex; gap:6px"><button class="btn-reset" data-act="whatsNew" title="What's new in version 2.1">✨ What's New</button><button class="btn-reset" data-act="reset">RESET DATA</button></div>
+        </div>
+    </header>
+
+    <nav class="tabs" id="tabs"></nav>
+
+    <main class="main">
+        <section class="panels" id="panels">
+            <div class="panel" id="p-life"></div>
+            <div class="panel" id="p-career"></div>
+            <div class="panel" id="p-school"></div>
+            <div class="panel" id="p-market"></div>
+            <div class="panel" id="p-biz"></div>
+            <div class="panel" id="p-home"></div>
+            <div class="panel" id="p-cars"></div>
+            <div class="panel" id="p-family"></div>
+            <div class="panel" id="p-shop"></div>
+            <div class="panel" id="p-stats"></div>
+        </section>
+
+        <aside class="side">
+            <div class="side-card" style="border-left: 4px solid #8b5cf6;">
+                <div class="flex-row" style="align-items:flex-start">
+                    <div style="min-width:0">
+                        <div id="job-title" style="font-weight:bold; color: #a855f7;">Intern</div>
+                        <div id="career-stats" style="font-size:0.7rem; color:#94a3b8">Salary: $100/wk</div>
+                    </div>
+                    <div style="text-align: right; flex:none">
+                        <div style="font-size: 0.62rem; color: #94a3b8;">Promotion Progress</div>
+                        <div id="next-rank-progress" style="font-size: 0.8rem; font-weight: bold; color: #fbbf24;">0 / 100</div>
+                    </div>
+                </div>
+                <div class="progress-bg"><div id="work-progress"></div></div>
+                <button class="btn-work" id="ot-btn" data-act="overtime">WORK OVERTIME</button>
+            </div>
+            <div class="side-card" id="study-card" style="border-left: 4px solid #0284c7; display:none">
+                <div class="flex-row">
+                    <div style="min-width:0"><div id="study-title" style="font-weight:bold; color:#38bdf8">High School</div><div id="study-sub" class="tiny muted">Year 1 of 2</div></div>
+                    <div style="text-align:right; flex:none"><div style="font-size: 0.62rem; color: #94a3b8;">GPA</div><div id="study-gpa" style="font-size: 0.8rem; font-weight: bold; color: #fbbf24;">3.00</div></div>
+                </div>
+                <div class="progress-bg"><div id="study-progress"></div></div>
+                <button class="btn-work study" data-act="study">STUDY</button>
+            </div>
+            <div class="side-card">
+                <div class="kv"><span>💰 Payday in <b id="flow-payday">7d</b></span><b id="flow-pay" class="ok">+$0</b></div>
+                <div class="kv"><span>🧾 Bills in <b id="flow-billday">30d</b></span><b id="flow-bills" class="bad">-$0</b></div>
+            </div>
+            <div id="log"></div>
+        </aside>
+    </main>
+</div>
+
+<div id="modal" class="modal hidden"><div class="modal-box" id="modal-box"></div></div>
+<div id="toasts"></div>
+
+<script><!--@inline js/10-game/--></script>
+</body>
+</html>
