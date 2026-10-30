@@ -112,36 +112,55 @@ function walkClear(x1, y1, x2, y2) {
 }
 const pathDist = (f, x, y) => { const v = f[Math.floor(y / TS) * MAP.W + Math.floor(x / TS)]; return v < 0 ? 9999 : v; };
 
-// ---- baked picture of the whole map (floor, walls, props, labels) ----
+// ---- baked picture of the whole map (plank floors, stone walls, foggy windows, lamplight, props, labels) ----
 function bakeMap() {
   const M = MAP, cv = document.createElement('canvas'); cv.width = M.pw; cv.height = M.ph; const c = cv.getContext('2d'), W = M.W, H = M.H;
-  c.fillStyle = '#04060d'; c.fillRect(0, 0, cv.width, cv.height);
-  const wk = (x, y) => walkAt(x, y), solidWall = (x, y) => opaqueAt(x, y);
+  c.fillStyle = '#070504'; c.fillRect(0, 0, cv.width, cv.height);
+  const wk = (x, y) => walkAt(x, y), solidWall = (x, y) => opaqueAt(x, y), hs = (a, b) => ((a * 73856093) ^ (b * 19349663)) >>> 0;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const k = y * W + x, px = x * TS, py = y * TS;
     if (M.walk[k] || M.prop[k]) {
-      const ri = M.room[k], r = ri >= 0 ? M.d.rooms[ri] : null;
-      c.fillStyle = r ? ((x + y) & 1 ? r[5] : r[6]) : ((x + y) & 1 ? '#2b3040' : '#272c3b'); c.fillRect(px, py, TS, TS);
-      c.fillStyle = 'rgba(255,255,255,.035)'; c.fillRect(px, py, TS, 1); c.fillRect(px, py, 1, TS);
-      if (!r && (((x >> 1) + (y >> 1)) & 3) === 0) { c.fillStyle = 'rgba(255,200,60,.07)'; c.fillRect(px + 4, py + 4, TS - 8, 3); }
-      if (solidWall(x, y - 1)) { c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(px, py, TS, 9); c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(px, py + 9, TS, 7); }
+      const ri = M.room[k], r = ri >= 0 ? M.d.rooms[ri] : null, h = hs(x, y);
+      if (r) { // dark wood planks, laid in rows, joints staggered per row
+        c.fillStyle = (y & 1) ? r[5] : r[6]; c.fillRect(px, py, TS, TS);
+        c.fillStyle = 'rgba(0,0,0,.28)'; c.fillRect(px, py, TS, 1.5); c.fillRect(px, py + 16, TS, 1.5);
+        const j = ((x * 11 + y * 7) % 3) * 8 + 6; c.fillRect(px + j, py, 1.5, 16); c.fillRect(px + ((j + 14) % 32), py + 16, 1.5, 16);
+        c.fillStyle = 'rgba(255,225,170,.05)'; c.fillRect(px, py + 2, TS, 4); c.fillRect(px, py + 18, TS, 4);
+        if (h % 5 === 0) { c.fillStyle = 'rgba(0,0,0,.14)'; c.fillRect(px + 3 + (h >> 4) % 18, py + 8, 7, 1.5); }
+      } else { // stone flagstones in the passages
+        c.fillStyle = (x + y) & 1 ? '#34302b' : '#2f2b27'; c.fillRect(px, py, TS, TS); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(px, py, TS, 1.5); c.fillRect(px, py, 1.5, TS);
+        c.fillStyle = 'rgba(255,255,255,.04)'; c.fillRect(px + 2, py + 2, TS - 4, 3);
+        if (h % 7 === 0) { c.fillStyle = 'rgba(120,150,110,.12)'; c.fillRect(px + 4, py + TS - 8, 12, 4); }
+      }
+      if (solidWall(x, y - 1)) { c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(px, py, TS, 9); c.fillStyle = 'rgba(0,0,0,.2)'; c.fillRect(px, py + 9, TS, 7); }
     }
   }
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (!solidWall(x, y)) continue; const px = x * TS, py = y * TS;
     let near = false; for (let n = 0; n < 8 && !near; n++) near = wk(x + NB[n][0], y + NB[n][1]) || (M.prop[(y + NB[n][1]) * W + x + NB[n][0]] === 1 && x + NB[n][0] >= 0 && x + NB[n][0] < W);
     if (!near) continue;
-    if (wk(x, y + 1)) { // wall face
-      const g = c.createLinearGradient(0, py, 0, py + TS); g.addColorStop(0, '#5d6f9c'); g.addColorStop(.12, '#46567f'); g.addColorStop(1, '#2a3558');
-      c.fillStyle = g; c.fillRect(px, py, TS, TS); c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(px, py, TS, 3);
-      c.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 2; i++) c.fillRect(px + 6 + i * 14, py + 10, 10, 2);
-    } else { c.fillStyle = '#1c2440'; c.fillRect(px, py, TS, TS); c.fillStyle = '#242f52'; c.fillRect(px + 2, py + 2, TS - 4, TS - 4); }
-    if (wk(x - 1, y)) { c.fillStyle = '#6f82b6'; c.fillRect(px + TS - 3, py, 3, TS); }
-    if (wk(x + 1, y)) { c.fillStyle = '#6f82b6'; c.fillRect(px, py, 3, TS); }
-    if (wk(x, y - 1)) { c.fillStyle = '#6f82b6'; c.fillRect(px, py + TS - 3, TS, 3); }
+    if (wk(x, y + 1)) { // wall face: stone blocks, now and then a foggy window
+      const g = c.createLinearGradient(0, py, 0, py + TS); g.addColorStop(0, '#6b5f52'); g.addColorStop(.12, '#554b40'); g.addColorStop(1, '#2f2822');
+      c.fillStyle = g; c.fillRect(px, py, TS, TS); c.fillStyle = 'rgba(255,230,180,.16)'; c.fillRect(px, py, TS, 3);
+      c.fillStyle = 'rgba(0,0,0,.3)'; const o = (x & 1) * 8; c.fillRect(px, py + 11, TS, 1.5); c.fillRect(px, py + 22, TS, 1.5); c.fillRect(px + 8 + o, py + 3, 1.5, 8); c.fillRect(px + 22 - o, py + 12, 1.5, 10); c.fillRect(px + 12 + o, py + 23, 1.5, 9);
+      if (hs(x, y) % 6 === 0 && wk(x, y + 1) && wk(x + 1, y + 1) !== undefined) {
+        const wg = c.createLinearGradient(0, py + 4, 0, py + 26); wg.addColorStop(0, '#9fb3b4'); wg.addColorStop(1, '#5d7274');
+        c.fillStyle = '#20170f'; rr(c, px + 5, py + 3, TS - 10, 23, 8); c.fill(); c.fillStyle = wg; rr(c, px + 7, py + 5, TS - 14, 19, 6); c.fill();
+        c.fillStyle = 'rgba(255,255,255,.28)'; c.beginPath(); c.ellipse(px + 13, py + 12, 5, 3, -.3, 0, TAU); c.fill(); c.fillRect(px + 7, py + 14, TS - 14, 6);
+        c.fillStyle = '#20170f'; c.fillRect(px + TS / 2 - 1, py + 5, 2, 19); c.fillRect(px + 7, py + 13, TS - 14, 2);
+      }
+    } else { c.fillStyle = '#16100c'; c.fillRect(px, py, TS, TS); c.fillStyle = '#1f1711'; c.fillRect(px + 2, py + 2, TS - 4, TS - 4); }
+    c.fillStyle = BRASS_D;
+    if (wk(x - 1, y)) c.fillRect(px + TS - 3, py, 3, TS);
+    if (wk(x + 1, y)) c.fillRect(px, py, 3, TS);
+    if (wk(x, y - 1)) c.fillRect(px, py + TS - 3, TS, 3);
+  }
+  for (const r of M.d.rooms) { // lamplight pooled in the middle of each room
+    const cx = (r[1] + r[3] / 2) * TS, cy = (r[2] + r[4] / 2) * TS, rad = Math.max(r[3], r[4]) * TS * .62, g = c.createRadialGradient(cx, cy, 10, cx, cy, rad);
+    g.addColorStop(0, 'rgba(255,196,100,.16)'); g.addColorStop(1, 'rgba(255,160,60,0)'); c.fillStyle = g; c.fillRect(r[1] * TS, r[2] * TS, r[3] * TS, r[4] * TS);
   }
   for (const p of M.d.props) drawProp(c, p[0] * TS, p[1] * TS, p[2] * TS, p[3] * TS, p[4]);
-  c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '900 26px "Trebuchet MS",sans-serif';
-  for (const r of M.d.rooms) { c.fillStyle = 'rgba(255,255,255,.1)'; c.fillText(r[0].toUpperCase(), (r[1] + r[3] / 2) * TS, (r[2] + r[4] - 1.2) * TS); }
+  c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = 'italic 700 25px Georgia,"Palatino Linotype",serif';
+  for (const r of M.d.rooms) { c.fillStyle = 'rgba(255,225,160,.13)'; c.fillText(r[0], (r[1] + r[3] / 2) * TS, (r[2] + r[4] - 1.2) * TS); }
   M.img = cv;
 }

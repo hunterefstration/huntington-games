@@ -176,7 +176,7 @@ function sabTick(dt) {
   if (S.reactor > 0) {
     for (let i = 0; i < 2; i++) { const h = S.hold[i] >= 0 && G.players[S.hold[i]]; if (h && (!h.alive || h.left || dist(h.x, h.y, MAP.reactor[i].x, MAP.reactor[i].y) > 130)) S.hold[i] = -1; }
     if (S.hold[0] >= 0 && S.hold[1] >= 0) { S.holdT += dt; if (S.holdT >= .7) { S.reactor = 0; S.hold = [-1, -1]; S.holdT = 0; S.cd = Math.max(S.cd, 25); emit({ t: 'sab', k: 'reactor', on: 0 }); return; } } else S.holdT = 0;
-    S.reactor -= dt; if (S.reactor <= 0) { S.reactor = 0; endGame('imp', 'The reactor melted down'); }
+    S.reactor -= dt; if (S.reactor <= 0) { S.reactor = 0; endGame('imp', 'The boiler burst and the lamp went dark'); }
   }
 }
 // ---- the tick ----
@@ -230,9 +230,9 @@ function startEject() {
   const impsLeft = G.players.filter(p => p.imp && p.alive && !p.left).length;
   if (ej >= 0) {
     const p = G.players[ej]; imp = p.imp;
-    if (G.set.confirm) { t1 = p.name + ' was ' + (p.imp ? 'an Imposter.' : 'not an Imposter.'); const left = impsLeft - (p.imp ? 1 : 0); t2 = left + (left === 1 ? ' Imposter remains.' : ' Imposters remain.'); }
-    else t1 = p.name + ' was ejected.';
-  } else t1 = why === 'tie' ? 'No one was ejected. (Tie)' : 'No one was ejected. (Skipped)';
+    if (G.set.confirm) { t1 = p.name + (p.imp ? ' was a Shade.' : ' was a Keeper, not a Shade.'); const left = impsLeft - (p.imp ? 1 : 0); t2 = left + (left === 1 ? ' Shade still lurks.' : ' Shades still lurk.'); }
+    else t1 = p.name + ' was cast into the fog.';
+  } else t1 = why === 'tie' ? 'No one was cast out. (Tie)' : 'No one was cast out. (Skipped)';
   G.phase = 'eject'; G.t = EJECT_T;
   emit({ t: 'ej', who: ej, t1, t2, imp: imp ? 1 : 0 });
 }
@@ -259,9 +259,9 @@ function postChat(p, text) {
 function checkWin() {
   if (!G || G.over) return !!G && !!G.over;
   const P = G.players.filter(p => p.alive && !p.left), I = P.filter(p => p.imp).length, C = P.length - I;
-  if (I === 0) { endGame('crew', 'Every Imposter was voted out'); return true; }
-  if (I >= C) { endGame('imp', 'The Imposters outnumber the crew'); return true; }
-  if (G.taskTotal > 0 && G.taskDone >= G.taskTotal) { endGame('crew', 'All tasks were completed'); return true; }
+  if (I === 0) { endGame('crew', 'Every Shade was cast out of the lighthouse'); return true; }
+  if (I >= C) { endGame('imp', 'The Shades outnumber the Keepers'); return true; }
+  if (G.taskTotal > 0 && G.taskDone >= G.taskTotal) { endGame('crew', 'Every chore was done and the lamp burns bright'); return true; }
   return false;
 }
 function endGame(w, why) {

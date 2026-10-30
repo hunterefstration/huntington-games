@@ -20,10 +20,10 @@ const PR = 10;                 // player collision radius
 const KILL_RANGE = 62, REPORT_RANGE = 96, USE_RANGE = 62, BTN_RANGE = 104;
 const VIS_CREW = 250, VIS_IMP = 390, VIS_DARK = 92;
 const COLORS = [
-  { n: 'Red', c: '#e8332e', d: '#8f1717' }, { n: 'Blue', c: '#2f55e0', d: '#17297f' }, { n: 'Green', c: '#1f9c3f', d: '#0c5a22' },
-  { n: 'Pink', c: '#f26ac0', d: '#a53a80' }, { n: 'Orange', c: '#f28a1d', d: '#9a4f08' }, { n: 'Yellow', c: '#f2dc3a', d: '#a08a10' },
-  { n: 'Black', c: '#3b4455', d: '#171b25' }, { n: 'White', c: '#e8edf5', d: '#8a93a8' }, { n: 'Purple', c: '#8a3fd8', d: '#4a1c86' },
-  { n: 'Cyan', c: '#3fd7e0', d: '#16808a' }, { n: 'Brown', c: '#8a5a33', d: '#4a2c14' }, { n: 'Lime', c: '#90e038', d: '#4a8a10' }];
+  { n: 'Ember', c: '#e8332e', d: '#8f1717' }, { n: 'Tide', c: '#2f55e0', d: '#17297f' }, { n: 'Moss', c: '#1f9c3f', d: '#0c5a22' },
+  { n: 'Rose', c: '#f26ac0', d: '#a53a80' }, { n: 'Amber', c: '#f28a1d', d: '#9a4f08' }, { n: 'Brass', c: '#f2dc3a', d: '#a08a10' },
+  { n: 'Soot', c: '#3b4455', d: '#171b25' }, { n: 'Pearl', c: '#e8edf5', d: '#8a93a8' }, { n: 'Dusk', c: '#8a3fd8', d: '#4a1c86' },
+  { n: 'Teal', c: '#3fd7e0', d: '#16808a' }, { n: 'Cedar', c: '#8a5a33', d: '#4a2c14' }, { n: 'Fern', c: '#90e038', d: '#4a8a10' }];
 const BOT_NAMES = ['Nova', 'Pip', 'Juno', 'Kit', 'Bolt', 'Zed', 'Mochi', 'Rex', 'Luna', 'Orbit', 'Fizz', 'Nugget', 'Echo', 'Sprout', 'Taffy', 'Comet', 'Pixel', 'Waffle', 'Ziggy', 'Tango', 'Biscuit', 'Gizmo', 'Poppy', 'Moose'];
 const DEFAULT_SET = { imps: 2, kcd: 25, speed: 1, tasks: 5, map: 'ship', disc: 15, vote: 30, confirm: 1, meet: 1 };
 

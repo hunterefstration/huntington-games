@@ -43,7 +43,7 @@ function onEvent(m) {
       if (guest) { v.alive = false; v.ghost = true; v.walk = false; G.bodies.push({ id: m.v, x: m.x, y: m.y }); if (k) { k.x = m.x; k.y = m.y; } }
       const mp = P[G.me]; if (mp && dist(mp.x, mp.y, m.x, m.y) < 420 || m.v === G.me || G.spec) sfx.kill();
       addFx('poof', m.x, m.y);
-      if (m.v === G.me) { stats.deaths++; saveStats(); toast((k ? k.name : 'Someone') + ' killed you. You are a ghost now: finish your tasks!', 4000); $('vign').classList.add('on'); setTimeout(() => $('vign').classList.remove('on'), 1600); buildTaskList(); updateRoleTag(); }
+      if (m.v === G.me) { stats.deaths++; saveStats(); toast((k ? k.name : 'Someone') + ' dimmed your lamp. You are a spirit now: finish your chores!', 4000); $('vign').classList.add('on'); setTimeout(() => $('vign').classList.remove('on'), 1600); buildTaskList(); updateRoleTag(); }
       if (m.k === G.me) { stats.kills++; saveStats(); }
       break;
     }
@@ -75,8 +75,8 @@ function onEvent(m) {
     }
     case 'sab': {
       if (guest) { if (m.k === 'lights') G.sab.lights = !!m.on; else G.sab.reactor = m.on ? REACTOR_T : 0; }
-      if (m.on) { sfx.sab(); toast(m.k === 'lights' ? 'Lights are out! Fix them at the Electrical panel.' : 'REACTOR MELTDOWN! Two players must hold the panels.', 3500); }
-      else { sfx.ok(); toast(m.k === 'lights' ? 'Lights are back on' : 'Reactor stable'); closeMini(); }
+      if (m.on) { sfx.sab(); toast(m.k === 'lights' ? 'The lamps are out! Relight them in the Lamp Room.' : 'BOILER OVERLOAD! Two Keepers must hold the valves.', 3500); }
+      else { sfx.ok(); toast(m.k === 'lights' ? 'The lamps are lit again' : 'The boiler is calm'); closeMini(); }
       break;
     }
     case 'vfx': { addFx('vent', m.x, m.y); const mp = P[G.me]; if (G.spec || (mp && dist(mp.x, mp.y, m.x, m.y) < 380)) sfx.vent(); break; }

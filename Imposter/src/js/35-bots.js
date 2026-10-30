@@ -182,17 +182,17 @@ function botMeetInit(p, caller, bodyId) {
   if (!p.alive) return;
   const roomOf = m.bpos ? roomAt(m.bpos.x, m.bpos.y) : '', nm = id => G.players[id].name;
   const others = G.players.filter(q => q.id !== p.id && q.alive && !q.left);
-  if (caller.id === p.id) a.chat.push({ at: 1 + rnd(0, 1.5), m: bodyId >= 0 ? pick(['Body in ' + roomOf + '!', 'Found a body in ' + roomOf, 'Dead body at ' + roomOf + ', who was near?']) : pick(['Emergency! We need to talk', 'I called this meeting, something is off', 'Meeting time. Who is acting weird?']) });
+  if (caller.id === p.id) a.chat.push({ at: 1 + rnd(0, 1.5), m: bodyId >= 0 ? pick(['A fallen keeper in ' + roomOf + '!', 'Found a broken bot in ' + roomOf, 'Someone is dimmed out at ' + roomOf + ', who was near?']) : pick(['I rang the bell, we need to talk', 'I called this Gathering, something is off', 'Gather round. Who is acting strange?']) });
   const top = Object.keys(a.sus).map(k => [+k, a.sus[k]]).filter(e => G.players[e[0]] && G.players[e[0]].alive && e[0] !== p.id).sort((x, y) => y[1] - x[1])[0];
   if (!p.imp) {
-    if (a.sawKill >= 0) a.chat.push({ at: 2 + rnd(0, 2), m: pick(['I SAW ' + nm(a.sawKill) + ' kill someone!', nm(a.sawKill) + ' is the Imposter, I saw the kill', 'Vote ' + nm(a.sawKill) + '! I watched them do it']) });
-    else if (a.sawVent >= 0) a.chat.push({ at: 2 + rnd(0, 2), m: pick([nm(a.sawVent) + ' vented, I saw it', nm(a.sawVent) + ' jumped into a vent!', 'Vent! It was ' + nm(a.sawVent)]) });
-    else if (top && top[1] >= 30) a.chat.push({ at: 3 + rnd(0, 4), m: pick([nm(top[0]) + ' was near the body, kinda sus', 'I saw ' + nm(top[0]) + ' close to there', 'I think ' + nm(top[0]) + ' is sus']) });
-    else a.chat.push({ at: 3 + rnd(0, 5), m: pick(['I was in ' + (a.lastRoom || 'a room') + ', saw nothing', 'No idea who did it, I was doing tasks', 'I was in ' + (a.lastRoom || 'the halls') + ' the whole time', 'Where was everyone?']) });
+    if (a.sawKill >= 0) a.chat.push({ at: 2 + rnd(0, 2), m: pick(['I SAW ' + nm(a.sawKill) + ' kill someone!', nm(a.sawKill) + ' is a Shade, I saw it happen', 'Vote ' + nm(a.sawKill) + '! I watched them do it']) });
+    else if (a.sawVent >= 0) a.chat.push({ at: 2 + rnd(0, 2), m: pick([nm(a.sawVent) + ' dropped through a trapdoor, I saw it', nm(a.sawVent) + ' vanished down a trapdoor!', 'Trapdoor! It was ' + nm(a.sawVent)]) });
+    else if (top && top[1] >= 30) a.chat.push({ at: 3 + rnd(0, 4), m: pick([nm(top[0]) + ' was near the fallen one, seems fishy', 'I saw ' + nm(top[0]) + ' close to there', 'I think ' + nm(top[0]) + ' is the Shade']) });
+    else a.chat.push({ at: 3 + rnd(0, 5), m: pick(['I was in ' + (a.lastRoom || 'a room') + ', saw nothing', 'No idea who did it, I was doing my chores', 'I was in ' + (a.lastRoom || 'the halls') + ' the whole time', 'Where was everyone?']) });
   } else {
     const crew = others.filter(q => !q.imp);
-    if (crew.length && Math.random() < .6) { const t = pick(crew); a.chat.push({ at: 3 + rnd(0, 4), m: pick([nm(t.id) + ' is sus', 'I think it was ' + nm(t.id), 'Anyone see ' + nm(t.id) + '? acting weird']) }); a.accuse = t.id; }
-    else a.chat.push({ at: 3 + rnd(0, 4), m: pick(['I was in ' + (a.lastRoom || 'a room') + ' doing tasks', 'I saw nothing, was busy with my tasks']) });
+    if (crew.length && Math.random() < .6) { const t = pick(crew); a.chat.push({ at: 3 + rnd(0, 4), m: pick([nm(t.id) + ' smells fishy', 'I think it was ' + nm(t.id), 'Anyone see ' + nm(t.id) + '? acting weird']) }); a.accuse = t.id; }
+    else a.chat.push({ at: 3 + rnd(0, 4), m: pick(['I was in ' + (a.lastRoom || 'a room') + ' doing chores', 'I saw nothing, was busy with my chores']) });
   }
 }
 function botMeetTick(p, dt) {

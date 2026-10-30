@@ -3,17 +3,17 @@
 // ==========================================
 let LMODE = 'off';          // 'off' (bots only) | 'host' | 'guest'
 const LSET = [
-  { k: 'imps', label: 'Imposters', opts: [1, 2, 3] },
-  { k: 'kcd', label: 'Kill cooldown', min: 10, max: 60, step: 5, fmt: v => v + 's' },
+  { k: 'imps', label: 'Shades', opts: [1, 2, 3] },
+  { k: 'kcd', label: 'Snuff cooldown', min: 10, max: 60, step: 5, fmt: v => v + 's' },
   { k: 'speed', label: 'Player speed', opts: [.75, 1, 1.25, 1.5], fmt: v => v + 'x' },
-  { k: 'tasks', label: 'Tasks per crewmate', min: 1, max: 8, step: 1 },
+  { k: 'tasks', label: 'Chores per Keeper', min: 1, max: 8, step: 1 },
   { k: 'map', label: 'Map', opts: MAP_KEYS, fmt: k => MAPS[k].name },
   { k: 'disc', label: 'Discussion time', min: 0, max: 60, step: 5, fmt: v => v + 's' },
   { k: 'vote', label: 'Voting time', min: 15, max: 90, step: 5, fmt: v => v + 's' },
-  { k: 'meet', label: 'Emergency meetings', min: 0, max: 3, step: 1 },
-  { k: 'confirm', label: 'Confirm ejects', opts: [1, 0], fmt: v => v ? 'On' : 'Off' }];
+  { k: 'meet', label: 'Bell rings per Keeper', min: 0, max: 3, step: 1 },
+  { k: 'confirm', label: 'Reveal who was cast out', opts: [1, 0], fmt: v => v ? 'On' : 'Off' }];
 function refreshTitle() {
-  const s = stats; $('t-foot').textContent = 'v' + VERSION + '   Games ' + s.games + '   Crew wins ' + s.crewWins + '   Imposter wins ' + s.impWins;
+  const s = stats; $('t-foot').textContent = 'v' + VERSION + '   Games ' + s.games + '   Keeper wins ' + s.crewWins + '   Shade wins ' + s.impWins;
   drawLogo();
 }
 function showLobbyScreen() { showScreen('s-lobby'); renderLobby(); }
@@ -81,7 +81,7 @@ function bindMenus() {
   on('l-copy', () => { const t = NET.code; try { navigator.clipboard.writeText(t).then(() => toast('Code copied')); } catch (e) { toast('Code: ' + t); } });
 }
 function showStats() {
-  const s = stats, rows = [['Games played', s.games], ['Played as crew', s.crewGames], ['Crew wins', s.crewWins], ['Played as imposter', s.impGames], ['Imposter wins', s.impWins], ['Kills', s.kills], ['Tasks done', s.tasks], ['Meetings called', s.meetings], ['Times killed', s.deaths]];
+  const s = stats, rows = [['Games played', s.games], ['Played as Keeper', s.crewGames], ['Keeper wins', s.crewWins], ['Played as Shade', s.impGames], ['Shade wins', s.impWins], ['Lamps snuffed', s.kills], ['Chores done', s.tasks], ['Gatherings called', s.meetings], ['Times dimmed', s.deaths]];
   const box = $('st-rows'); box.innerHTML = ''; for (const r of rows) { const d = document.createElement('div'); d.className = 'strow'; d.appendChild(document.createTextNode(r[0])); const b = document.createElement('b'); b.textContent = r[1]; d.appendChild(b); box.appendChild(d); }
   showScreen('s-stats');
 }

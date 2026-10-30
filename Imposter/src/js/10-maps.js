@@ -4,16 +4,16 @@
 // tasks [kind, x, y] (tile), vents [x, y, group], btn/spawn/fix in tile units (float = exact point)
 // ==========================================
 const KINDS = {
-  wires: { name: 'Fix Wiring', dur: 5 }, swipe: { name: 'Swipe Card', dur: 3 }, align: { name: 'Align Output', dur: 5 },
-  upload: { name: 'Upload Data', dur: 8 }, fuel: { name: 'Fuel Engines', dur: 6 }, rocks: { name: 'Clear Asteroids', dur: 7 }, simon: { name: 'Match Pattern', dur: 8 }
+  wires: { name: 'Re-string the Bell Cords', dur: 5 }, swipe: { name: 'Feed the Music Box', dur: 3 }, align: { name: 'Trim the Lamp Wick', dur: 5 },
+  upload: { name: 'Copy the Logbook', dur: 8 }, fuel: { name: 'Fill the Lamp Oil', dur: 6 }, rocks: { name: 'Shoo the Gulls', dur: 7 }, simon: { name: 'Ring the Chimes', dur: 8 }
 };
 const MAPS = {
   ship: {
-    name: 'Starship Alpha', w: 80, h: 54,
+    name: 'The Lighthouse', w: 80, h: 54,
     rooms: [
-      ['Cafeteria', 28, 3, 24, 14, '#3b4a63', '#34425a'], ['Weapons', 60, 4, 14, 10, '#4a3b45', '#43353f'], ['Navigation', 62, 22, 14, 10, '#33485a', '#2d4153'],
-      ['Shields', 58, 38, 14, 10, '#46405e', '#3e3955'], ['Storage', 34, 40, 18, 11, '#4a4638', '#423e32'], ['Electrical', 4, 38, 12, 10, '#4d4a30', '#45422b'],
-      ['Reactor', 2, 18, 12, 14, '#4f3a3a', '#463232'], ['Upper Engine', 6, 3, 14, 10, '#3d4a4a', '#364343'], ['MedBay', 24, 22, 10, 9, '#35504b', '#2e4742'], ['Admin', 44, 26, 12, 9, '#4b3f58', '#433851']],
+      ['Mess Hall', 28, 3, 24, 14, '#4a3322', '#432d1e'], ['Foghorn Room', 60, 4, 14, 10, '#3d2a1e', '#36251a'], ['Chart Room', 62, 22, 14, 10, '#3e3a34', '#37332d'],
+      ['Shutter Loft', 58, 38, 14, 10, '#4a3524', '#42301f'], ['Cellar', 34, 40, 18, 11, '#3b2d22', '#34281e'], ['Lamp Room', 4, 38, 12, 10, '#463a26', '#3e3322'],
+      ['Boiler Room', 2, 18, 12, 14, '#3a2f2a', '#332924'], ['Clockwork Loft', 6, 3, 14, 10, '#44301f', '#3c2a1b'], ['Infirmary', 24, 22, 10, 9, '#2f3a36', '#293330'], ['Records Office', 44, 26, 12, 9, '#41302c', '#392a26']],
     halls: [[20, 6, 8, 4], [52, 6, 8, 4], [46, 17, 4, 9], [30, 17, 4, 5], [8, 13, 4, 5], [6, 32, 4, 6], [16, 43, 18, 4], [48, 35, 4, 5], [52, 42, 6, 4], [56, 28, 6, 4], [66, 14, 4, 8], [68, 32, 4, 6], [34, 26, 10, 4], [14, 22, 10, 4]],
     props: [[38, 8, 4, 3, 'table'], [32, 12, 3, 2, 'table2'], [46, 12, 3, 2, 'table2'], [6, 23, 4, 4, 'core'], [38, 44, 3, 2, 'crate'], [44, 44, 3, 2, 'crate'], [40, 47, 2, 2, 'crate'],
       [26, 25, 3, 2, 'bed'], [30, 25, 3, 2, 'bed'], [48, 29, 4, 3, 'table'], [68, 25, 4, 2, 'console'], [67, 7, 3, 3, 'gun'], [63, 41, 4, 3, 'console'], [11, 6, 4, 4, 'engine'], [9, 43, 3, 3, 'panel']],
@@ -23,10 +23,10 @@ const MAPS = {
     btn: [40, 9.5], spawn: [40, 9.5, 4.3, 3.9], lights: [14.5, 39.5], reactor: [[3.5, 25.5], [18.5, 4.5]]
   },
   base: {
-    name: 'Moon Base', w: 64, h: 44,
+    name: 'Cliffside Station', w: 64, h: 44,
     rooms: [
-      ['Laboratory', 4, 3, 14, 10, '#3a4c5e', '#334556'], ['Greenhouse', 24, 2, 16, 8, '#2f5a43', '#2a503b'], ['Comms', 46, 3, 14, 10, '#4a3f5e', '#423856'], ['Hub', 24, 14, 16, 12, '#3f4560', '#383e58'],
-      ['Dorms', 4, 18, 14, 10, '#524344', '#4a3b3c'], ['Garage', 46, 18, 14, 10, '#4c4b3a', '#444333'], ['Power', 4, 32, 14, 9, '#5a4a30', '#524228'], ['Airlock', 26, 32, 12, 9, '#35525a', '#2e4a52'], ['Cargo', 46, 32, 14, 9, '#4a4038', '#42382f']],
+      ['Observatory', 4, 3, 14, 10, '#4a3322', '#432d1e'], ['Conservatory', 24, 2, 16, 8, '#3d2a1e', '#36251a'], ['Signal Room', 46, 3, 14, 10, '#3e3a34', '#37332d'], ['Great Hall', 24, 14, 16, 12, '#4a3524', '#42301f'],
+      ['Bunk Room', 4, 18, 14, 10, '#3b2d22', '#34281e'], ['Boathouse', 46, 18, 14, 10, '#463a26', '#3e3322'], ['Coal Store', 4, 32, 14, 9, '#3a2f2a', '#332924'], ['Landing Dock', 26, 32, 12, 9, '#44301f', '#3c2a1b'], ['Warehouse', 46, 32, 14, 9, '#2f3a36', '#293330']],
     halls: [[18, 5, 6, 4], [40, 5, 6, 4], [30, 10, 4, 4], [8, 13, 4, 5], [18, 19, 6, 4], [40, 19, 6, 4], [52, 13, 4, 5], [8, 28, 4, 4], [30, 26, 4, 6], [52, 28, 4, 4], [38, 35, 8, 4], [18, 35, 8, 4]],
     props: [[30, 19, 4, 3, 'table'], [8, 6, 6, 2, 'console'], [28, 5, 3, 2, 'planter'], [35, 5, 3, 2, 'planter'], [6, 21, 3, 2, 'bed'], [6, 24, 3, 2, 'bed'], [50, 21, 6, 3, 'console'], [8, 35, 6, 2, 'engine'], [30, 35, 4, 3, 'core'], [50, 35, 3, 2, 'crate'], [54, 36, 2, 2, 'crate']],
     tasks: [['simon', 5, 4], ['wires', 16, 11], ['fuel', 26, 3], ['wires', 38, 8], ['upload', 47, 4], ['simon', 58, 4], ['swipe', 25, 15], ['align', 39, 25], ['align', 5, 19], ['wires', 10, 26],

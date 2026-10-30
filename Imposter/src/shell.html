@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Imposter</title>
+<title>Imposter: Shades in the Lighthouse</title>
 <!--@css-->
 </head>
 <body>
@@ -12,7 +12,7 @@
 <!-- in-match HUD -->
 <div id="hud" class="hidden">
   <div class="hud-tl">
-    <div id="tbar"><i id="tbar-f"></i><span id="tbar-t">TASKS</span></div>
+    <div id="tbar"><i id="tbar-f"></i><span id="tbar-t">LAMPS TENDED</span></div>
     <div id="tlist"></div>
   </div>
   <div class="hud-tc"><div id="role-tag"></div><div id="alert"></div></div>
@@ -20,15 +20,15 @@
     <button class="hbtn" id="b-map" title="Map (M)">MAP</button>
     <button class="hbtn" id="b-menu" title="Menu (Esc)">II</button>
   </div>
-  <div id="spec-bar" class="hidden"><button class="hbtn" id="sp-prev">&lt;</button><span id="sp-name">Spectating</span><button class="hbtn" id="sp-next">&gt;</button></div>
+  <div id="spec-bar" class="hidden"><button class="hbtn" id="sp-prev">&lt;</button><span id="sp-name">Watching</span><button class="hbtn" id="sp-next">&gt;</button></div>
   <div id="acts">
-    <button class="act" id="a-sab"><b>SABOTAGE</b><small>X</small></button>
-    <button class="act" id="a-vent"><b>VENT</b><small>V</small></button>
-    <button class="act" id="a-kill"><b>KILL</b><small>Q</small></button>
-    <button class="act" id="a-rep"><b>REPORT</b><small>R</small></button>
+    <button class="act" id="a-sab"><b>MISCHIEF</b><small>X</small></button>
+    <button class="act" id="a-vent"><b>TRAPDOOR</b><small>V</small></button>
+    <button class="act" id="a-kill"><b>SNUFF</b><small>Q</small></button>
+    <button class="act" id="a-rep"><b>CALL OUT</b><small>R</small></button>
     <button class="act" id="a-use"><b>USE</b><small>E</small></button>
   </div>
-  <div id="vent-nav" class="hidden"><button class="hbtn" id="vn-prev">&lt; Prev vent</button><button class="hbtn" id="vn-next">Next vent &gt;</button></div>
+  <div id="vent-nav" class="hidden"><button class="hbtn" id="vn-prev">&lt; Prev trapdoor</button><button class="hbtn" id="vn-next">Next trapdoor &gt;</button></div>
   <div id="joy" class="hidden"><i></i></div>
 </div>
 <div id="vign"></div>
@@ -37,9 +37,9 @@
 
 <!-- sabotage menu -->
 <div id="sabm" class="overlay dim hidden"><div class="card">
-  <h3>Sabotage</h3>
-  <button class="btn" id="sb-lights">Lights out</button>
-  <button class="btn" id="sb-reactor">Reactor meltdown</button>
+  <h3>Mischief</h3>
+  <button class="btn" id="sb-lights">Snuff the lamps</button>
+  <button class="btn" id="sb-reactor">Overload the boiler</button>
   <button class="btn ghost" id="sb-close">Cancel</button>
 </div></div>
 
@@ -48,7 +48,7 @@
 
 <!-- task mini-game -->
 <div id="mini" class="overlay dim hidden"><div class="card mini-card">
-  <div class="mini-t"><span id="mini-title">Task</span><button class="hbtn" id="mini-x">X</button></div>
+  <div class="mini-t"><span id="mini-title">Chore</span><button class="hbtn" id="mini-x">X</button></div>
   <canvas id="minicv" width="520" height="380"></canvas>
   <div id="mini-hint"></div>
 </div></div>
@@ -59,16 +59,16 @@
 <!-- meeting -->
 <div id="meet" class="overlay hidden">
   <div class="meet-box">
-    <div class="meet-head"><div id="mt-title">Who is the Imposter?</div><div id="mt-time"></div></div>
+    <div class="meet-head"><div id="mt-title">Who is the Shade?</div><div id="mt-time"></div></div>
     <div class="meet-main">
       <div id="mt-grid"></div>
       <div class="meet-chat">
         <div id="mt-log"></div>
-        <div class="mt-in"><input id="mt-input" maxlength="80" placeholder="Type a message..." autocomplete="off"><button class="btn small" id="mt-send">Send</button></div>
+        <div class="mt-in"><input id="mt-input" maxlength="80" placeholder="Speak to the room..." autocomplete="off"><button class="btn small" id="mt-send">Send</button></div>
         <div id="mt-note"></div>
       </div>
     </div>
-    <div class="meet-foot"><button class="btn small" id="mt-skip">Skip vote</button><span id="mt-skipv"></span></div>
+    <div class="meet-foot"><button class="btn small" id="mt-skip">Hold your lamp</button><span id="mt-skipv"></span></div>
   </div>
 </div>
 
@@ -85,9 +85,9 @@
 
 <!-- title -->
 <div id="s-title" class="screen">
-  <div class="logo"><canvas id="logocv" width="260" height="110"></canvas><div class="l1">IMPOSTER</div><div class="l2">Huntington Games</div></div>
+  <div class="logo"><canvas id="logocv" width="260" height="110"></canvas><div class="l1">IMPOSTER</div><div class="l2">Shades in the Lighthouse</div></div>
   <div class="menu">
-    <button class="btn big" id="t-off">Play vs Bots</button>
+    <button class="btn big" id="t-off">Keep the Light (vs Bots)</button>
     <button class="btn" id="t-host">Host Online Game</button>
     <button class="btn" id="t-join">Join with Code</button>
     <div class="row"><button class="btn ghost small" id="t-how">How to play</button><button class="btn ghost small" id="t-set">Settings</button><button class="btn ghost small" id="t-stats">Stats</button></div>
@@ -124,11 +124,12 @@
 <div id="s-how" class="screen dim hidden"><div class="card wide">
   <h2>How to play</h2>
   <div class="how">
-    <p><b class="cr">Crewmates</b> do tasks around the ship. Fill the task bar, or vote out every Imposter, to win.</p>
-    <p><b class="im">Imposters</b> blend in, kill crewmates and sabotage. They win when they equal the crew, or when the reactor melts down.</p>
-    <p><kbd>WASD</kbd> / arrows move. <kbd>E</kbd> or <kbd>Space</kbd> use (tasks, emergency button, fix panels). <kbd>R</kbd> report a body. Imposters: <kbd>Q</kbd> kill, <kbd>V</kbd> vent, <kbd>X</kbd> sabotage. <kbd>M</kbd> map. Touch: use the big buttons and drag the left side to walk.</p>
-    <p><b>Sabotage:</b> lights shrink crew vision (fix at the Electrical panel). Reactor: two players must hold the two panels at once before the timer ends.</p>
-    <p><b>Meetings:</b> find a body (R) or press the table button. Talk, then vote. Ties or skips eject nobody. Dead players become ghosts: they still finish tasks and chat, but only with other ghosts.</p>
+    <p>The old lighthouse must never go dark. Most of you are <b class="cr">Keepers</b>, lantern-robots who tend the lamps. Hidden among you are one to three <b class="im">Shades</b>.</p>
+    <p><b class="cr">Keepers</b> do chores around the lighthouse (trim wicks, fill oil, copy the logbook...). Fill the lamp bar, or cast out every Shade, to win.</p>
+    <p><b class="im">Shades</b> blend in, snuff out Keepers, slip through trapdoors and cause mischief. They win when they equal the Keepers, or when the boiler bursts. Their chores are fake.</p>
+    <p><kbd>WASD</kbd> / arrows move. <kbd>E</kbd> or <kbd>Space</kbd> use (chores, the bell, valves). <kbd>R</kbd> call out a fallen keeper. Shades: <kbd>Q</kbd> snuff, <kbd>V</kbd> trapdoor, <kbd>X</kbd> mischief. <kbd>M</kbd> map. Touch: use the big buttons and drag the left side to walk.</p>
+    <p><b>Mischief:</b> snuff the lamps and everyone sees only a little way (relight them in the Lamp Room). Overload the boiler: two Keepers must hold the two valves at once before the timer ends.</p>
+    <p><b>Gatherings:</b> find a fallen keeper (R) or ring the bell in the middle of the lighthouse. Talk, then vote. A tie or a held lamp casts out no one. Whoever is cast out into the fog becomes a spirit: spirits still finish chores and whisper, but only to other spirits.</p>
   </div>
   <button class="btn big" id="how-done">Back</button>
 </div></div>
