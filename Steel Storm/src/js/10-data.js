@@ -58,7 +58,7 @@ NT('n3c', 3, 'Thunder', 'n2c', 1200, 70, 9, .3, 210, 6, 2, 330, { len: 42, w: 6.
 NT('n4a', 4, 'Leviathan', 'n3b', 1800, 100, 8.5, .27, 280, 7, 3, 340, { len: 52, w: 8, tur: [[16, 2, 3], [10, 2, 3], [-14, 2, 3]], br: [0, 3.2], fun: 2, c: [0x4f5f70, 0x38444f] }, 'Battleship.');
 NT('n4b', 4, 'Titan', 'n3c', 2400, 130, 7, .24, 360, 9, 3, 360, { len: 60, w: 9, tur: [[20, 2.2, 3], [13, 2.2, 3], [-14, 2.2, 3], [-22, 2.2, 3]], br: [0, 3.6], fun: 2, c: [0x46535f, 0x333d46] }, 'Super-battleship. A floating fortress.');
 // balance pass: jets are made of paper next to their guns, so they get a lot more hit points; tanks a little more.
-const HPK = { g: 1.45, a: 2.4, n: 1.5 };
+const HPK = { g: 1.6, a: 2.4, n: 1.5 };
 VEHS.forEach(v => { v.hp = Math.round(v.hp * HPK[v.ln]); });
 const VBY = {};
 VEHS.forEach((v, i) => {

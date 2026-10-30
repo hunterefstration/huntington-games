@@ -99,7 +99,7 @@ input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(
 #h-msg{position:absolute;top:24%;width:100%;text-align:center;font:900 italic 30px "Arial Black",sans-serif;text-shadow:0 3px 8px #000;opacity:0;transition:opacity .4s}#h-msg.on{opacity:1}
 #h-hint{position:absolute;right:14px;bottom:14px;max-width:330px;background:#000a;border:1px solid #fff3;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.5;color:#dfe6ff;transition:opacity 1s;text-align:left}#h-hint b{color:var(--y)}
 #h-dmg{position:absolute;inset:0;box-shadow:inset 0 0 140px 30px #ff1a1acc;opacity:0;transition:opacity .35s}
-#h-prot{position:absolute;left:0;width:100%;top:26%;text-align:center;font-weight:900;font-size:16px;letter-spacing:1px;color:#7fe3ff;text-shadow:0 0 6px #000,0 0 12px #1aa0ff;opacity:0;transition:opacity .2s}#h-prot.on{opacity:1}
+#h-prot{position:absolute;left:0;width:100%;top:36%;text-align:center;font-weight:900;font-size:16px;letter-spacing:1px;color:#7fe3ff;text-shadow:0 0 6px #000,0 0 12px #1aa0ff;opacity:0;transition:opacity .2s}#h-prot.on{opacity:1}
 #h-lock{position:absolute;bottom:90px;width:100%;text-align:center;font-weight:800;font-size:17px;text-shadow:0 2px 6px #000;color:var(--y)}
 #h-board{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#050818e8;border:2px solid #4457a5;border-radius:10px;padding:12px 16px;min-width:520px;font-size:13px}
 #h-board table{width:100%;border-collapse:collapse}#h-board th{color:var(--mut);text-align:left;font-size:11px}#h-board td,#h-board th{padding:2px 6px}
@@ -486,7 +486,7 @@ NT('n3c', 3, 'Thunder', 'n2c', 1200, 70, 9, .3, 210, 6, 2, 330, { len: 42, w: 6.
 NT('n4a', 4, 'Leviathan', 'n3b', 1800, 100, 8.5, .27, 280, 7, 3, 340, { len: 52, w: 8, tur: [[16, 2, 3], [10, 2, 3], [-14, 2, 3]], br: [0, 3.2], fun: 2, c: [0x4f5f70, 0x38444f] }, 'Battleship.');
 NT('n4b', 4, 'Titan', 'n3c', 2400, 130, 7, .24, 360, 9, 3, 360, { len: 60, w: 9, tur: [[20, 2.2, 3], [13, 2.2, 3], [-14, 2.2, 3], [-22, 2.2, 3]], br: [0, 3.6], fun: 2, c: [0x46535f, 0x333d46] }, 'Super-battleship. A floating fortress.');
 // balance pass: jets are made of paper next to their guns, so they get a lot more hit points; tanks a little more.
-const HPK = { g: 1.45, a: 2.4, n: 1.5 };
+const HPK = { g: 1.6, a: 2.4, n: 1.5 };
 VEHS.forEach(v => { v.hp = Math.round(v.hp * HPK[v.ln]); });
 const VBY = {};
 VEHS.forEach((v, i) => {
@@ -1262,7 +1262,7 @@ function aiSurface(e, dt, c) {
     // where to go: engage a visible surface enemy, otherwise the objective
     const surf = t && t.def.ln !== 'a' && (sea || compatLand(e, t));
     let gx, gz, spd = 1, hold = false;
-    if (surf && los && D < (sea ? 320 : 150 + a.skill * 60)) { hold = true; gx = t.x; gz = t.z; spd = D < (sea ? 150 : 70) ? -.4 : 0; }
+    if (surf && los && D < (sea ? rng * .85 : Math.min(150 + a.skill * 60, rng * .85))) { hold = true; gx = t.x; gz = t.z; spd = D < (sea ? 150 : 70) ? -.4 : 0; }
     else if (surf && D < 520 && (!M || M.mode !== 'conq' || D < 200 || !los)) { gx = t.x; gz = t.z; spd = 1; }
     else if (sea) {
         if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 70 || (a.wpT -= dt) < 0) { const zs = e.z < 0 ? -1 : 1; a.wp = { x: rnd(-300, 300), z: zs * rnd(470, 560) }; a.wpT = 40; }
@@ -1341,11 +1341,11 @@ let HQ = {}, hqT = 0, sendT = 0, bsT = 0, msT = 0;
 
 // Bots: "match" = fight what the humans fly/drive: pick a random human and use their branch (tank / jet / ship) and their tier or one lower,
 // so a solo player always meets his own branch and a party gets a mix weighted by what its members use. "mixed" = any branch.
-function pickBotDef(refs, mode) {
+function pickBotDef(refs, mode, k) {
     const maxTier = Math.max(1, ...refs.map(d => d.t));
     let ln, tier;
     if (mode === 'mixed') { const r = Math.random(); ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n'; tier = clamp(maxTier - (Math.random() < .45 ? 1 : 0), 1, 4); }
-    else { const ref = refs[Math.floor(Math.random() * refs.length)] || VBY.g1a; ln = ref.ln; tier = clamp(ref.t - (Math.random() < .5 ? 1 : 0), 1, 4); }
+    else { const ref = refs[k === undefined ? Math.floor(Math.random() * refs.length) : k % refs.length] || VBY.g1a; ln = ref.ln; tier = clamp(ref.t - (Math.random() < .5 ? 1 : 0), 1, 4); }
     const L = VEHS.filter(v => v.ln === ln && v.t === tier); return L[Math.floor(Math.random() * L.length)];
 }
 // Build the match description (host / solo). players = [{id,name,veh}], returns cfg that every client uses.
@@ -1354,9 +1354,9 @@ function makeConfig(players, opts) {
     const teams = [[], []], cfg = { mode, size, players: [], bots: [], seed: Date.now() & 0xffffff, limit: {} };
     players.forEach((p, i) => { const team = split ? i % 2 : 0; cfg.players.push({ id: p.id, name: p.name, veh: p.veh, team }); teams[team].push(p); });
     const bm = opts.bots || save.bots || 'match', refs = players.map(p => VBY[p.veh]).filter(Boolean);
-    cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
+    const off = Math.floor(Math.random() * Math.max(1, refs.length)); cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
     let bi = 0, names = BOT_NAMES.slice().sort(() => Math.random() - .5);
-    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(refs, bm); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
+    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(refs, bm, bi + off); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
     const mm = MODES[mode]; cfg.limit = { kills: opts.killLimit || mm.kills || 0, tickets: opts.tickets || mm.tickets || 0, time: opts.time || mm.time };
     return cfg;
 }
@@ -1413,7 +1413,7 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
         a.budget -= dmg;
     }
     let eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
-    if (a.ai) eff *= aiDiff().dmg;
+    if (a.ai) eff *= aiDiff().dmg * (a.def.ln === 'a' ? 1.4 : 1);      // jet guns do tiny damage per bullet and miss a lot; bots get a little help there
     eff = Math.min(eff, v.def.hp * (a.def.ln !== v.def.ln ? .3 : .5));      // no single hit takes more than 30% (50% in the same branch) of a full health bar
     v.hp -= eff;
     const dead = v.hp <= 0;
@@ -2221,7 +2221,7 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay,
     leave() { UI.leaveMatch(true); afterMatch(); },
     ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch() },
-    T: { PR, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
+    T: { PR, makeConfig, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };
 boot();

@@ -8,11 +8,11 @@ let HQ = {}, hqT = 0, sendT = 0, bsT = 0, msT = 0;
 
 // Bots: "match" = fight what the humans fly/drive: pick a random human and use their branch (tank / jet / ship) and their tier or one lower,
 // so a solo player always meets his own branch and a party gets a mix weighted by what its members use. "mixed" = any branch.
-function pickBotDef(refs, mode) {
+function pickBotDef(refs, mode, k) {
     const maxTier = Math.max(1, ...refs.map(d => d.t));
     let ln, tier;
     if (mode === 'mixed') { const r = Math.random(); ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n'; tier = clamp(maxTier - (Math.random() < .45 ? 1 : 0), 1, 4); }
-    else { const ref = refs[Math.floor(Math.random() * refs.length)] || VBY.g1a; ln = ref.ln; tier = clamp(ref.t - (Math.random() < .5 ? 1 : 0), 1, 4); }
+    else { const ref = refs[k === undefined ? Math.floor(Math.random() * refs.length) : k % refs.length] || VBY.g1a; ln = ref.ln; tier = clamp(ref.t - (Math.random() < .5 ? 1 : 0), 1, 4); }
     const L = VEHS.filter(v => v.ln === ln && v.t === tier); return L[Math.floor(Math.random() * L.length)];
 }
 // Build the match description (host / solo). players = [{id,name,veh}], returns cfg that every client uses.
@@ -21,9 +21,9 @@ function makeConfig(players, opts) {
     const teams = [[], []], cfg = { mode, size, players: [], bots: [], seed: Date.now() & 0xffffff, limit: {} };
     players.forEach((p, i) => { const team = split ? i % 2 : 0; cfg.players.push({ id: p.id, name: p.name, veh: p.veh, team }); teams[team].push(p); });
     const bm = opts.bots || save.bots || 'match', refs = players.map(p => VBY[p.veh]).filter(Boolean);
-    cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
+    const off = Math.floor(Math.random() * Math.max(1, refs.length)); cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
     let bi = 0, names = BOT_NAMES.slice().sort(() => Math.random() - .5);
-    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(refs, bm); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
+    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(refs, bm, bi + off); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
     const mm = MODES[mode]; cfg.limit = { kills: opts.killLimit || mm.kills || 0, tickets: opts.tickets || mm.tickets || 0, time: opts.time || mm.time };
     return cfg;
 }
@@ -80,7 +80,7 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
         a.budget -= dmg;
     }
     let eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
-    if (a.ai) eff *= aiDiff().dmg;
+    if (a.ai) eff *= aiDiff().dmg * (a.def.ln === 'a' ? 1.4 : 1);      // jet guns do tiny damage per bullet and miss a lot; bots get a little help there
     eff = Math.min(eff, v.def.hp * (a.def.ln !== v.def.ln ? .3 : .5));      // no single hit takes more than 30% (50% in the same branch) of a full health bar
     v.hp -= eff;
     const dead = v.hp <= 0;

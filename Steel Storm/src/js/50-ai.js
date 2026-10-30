@@ -94,7 +94,7 @@ function aiSurface(e, dt, c) {
     // where to go: engage a visible surface enemy, otherwise the objective
     const surf = t && t.def.ln !== 'a' && (sea || compatLand(e, t));
     let gx, gz, spd = 1, hold = false;
-    if (surf && los && D < (sea ? 320 : 150 + a.skill * 60)) { hold = true; gx = t.x; gz = t.z; spd = D < (sea ? 150 : 70) ? -.4 : 0; }
+    if (surf && los && D < (sea ? rng * .85 : Math.min(150 + a.skill * 60, rng * .85))) { hold = true; gx = t.x; gz = t.z; spd = D < (sea ? 150 : 70) ? -.4 : 0; }
     else if (surf && D < 520 && (!M || M.mode !== 'conq' || D < 200 || !los)) { gx = t.x; gz = t.z; spd = 1; }
     else if (sea) {
         if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 70 || (a.wpT -= dt) < 0) { const zs = e.z < 0 ? -1 : 1; a.wp = { x: rnd(-300, 300), z: zs * rnd(470, 560) }; a.wpT = 40; }
