@@ -18,7 +18,9 @@ const UI = {
     },
     unlocked(i) {
         if (i === 0) return true;
-        const prev = LEVELS[i - 1]; return !!SAVE.d.levels[prev.id];
+        if (SAVE.d.levels[LEVELS[i - 1].id]) return true;
+        for (let j = i + 1; j < LEVELS.length; j++) if (SAVE.d.levels[LEVELS[j].id]) return true;       // 1.2: saves from before the new levels keep everything they had
+        return false;
     },
     map() {
         G.state = 'map'; $('#hud').classList.add('hidden'); Sound.musicFor(0);
@@ -38,7 +40,7 @@ const UI = {
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
                 b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
-                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span></span>` : '');
+                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}${TALKS[l.id] ? `<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span>` : ''}</span>` : '');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
                 list.appendChild(b);
             });
@@ -98,7 +100,8 @@ const UI = {
 // the light went out: what got you, how it is going, and straight back in with one key
 const CAUSE = { pit: 'You fell into the dark.', spike: 'Spikes.', lava: 'The lava took you.', slime: 'A slime got you.', bat: 'A bat got you.',
     thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.',
-    moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.' };
+    moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.',
+    hopper: 'A hopper got you.', drip: 'A stalactite fell on you.', jet: 'A fire jet got you.' };
 const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump longer to jump higher.', 'You can still jump a moment after running off a ledge.',
     'Stomp slimes, bats and turrets from above. Never thornbacks.', 'A dash goes straight through enemies.', 'Press R to go back to the last lantern.',
     'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.', 'Guardians can only be hurt when they show a !. Watch what they do first.', 'Talk to everyone you meet. Each of them knows part of what happened.', 'Press E or Enter next to someone to hear them again.',
@@ -122,7 +125,7 @@ UI.stats = function () {
     const pt = SAVE.d.playTime || 0, tp = pt >= 3600 ? Math.floor(pt / 3600) + 'h ' + Math.floor(pt % 3600 / 60) + 'm' : Math.floor(pt / 60) + 'm ' + Math.floor(pt % 60) + 's';
     const enemy = n('death_enemy');
     const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
-        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'],
+        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
         ['Flawless clears', n('flawless')], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
         ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],

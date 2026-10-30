@@ -74,9 +74,10 @@ function render(G) {
     for (const c of G.L.crumbles) if (c.state !== 3 && vis(c.x, c.y)) Sprites.crumble(x, c, t, T);
     for (const d of G.L.doors) if (vis(d.x, d.y, 200)) { x.save(); x.translate(0, -d.slide * d.h * TS); x.beginPath(); x.rect(d.x, d.y + d.slide * d.h * TS, TS, d.h * TS); x.clip(); Sprites.door(x, d, t, T); x.restore(); }
     for (const m of G.L.movers) if (vis(m.x, m.y, 200)) Sprites.mover(x, m, t, T);
+    for (const v of G.L.vents) if (vis(v.x, v.y - v.h * TS / 2, v.h * TS)) Sprites.vent(x, v, t, T);
     for (const e of G.L.ents) {
         if (e.gone || !vis(e.x, e.y)) continue;
-        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc' }[e.kind];
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc', hopper: 'hopper', drip: 'drip', jet: 'jet', heart: 'heart', secret: 'secret' }[e.kind];
         if (!f) continue;
         if (e.dying !== undefined) {          // stomped: flattened into the ground, then it pops
             const k = clamp(e.dying / 0.22, 0, 1), fy = e.y + 14;
@@ -157,6 +158,9 @@ function lightPass(G, cx, cy, vw, vh) {
         else if (e.kind === 'npc') add(e.x, e.y - 8, 90, 0.7, '255,225,180');
         else if (e.kind === 'shrine' && !e.used) add(e.x, e.y - 30, 140, 1, '160,240,255');
         else if (e.kind === 'key') add(e.x, e.y, 60, 0.7, '255,210,120');
+        else if (e.kind === 'secret') add(e.x, e.y, 110, 0.9, '160,240,255');
+        else if (e.kind === 'heart') add(e.x, e.y, 80, 0.8, '255,150,170');
+        else if (e.kind === 'jet' && (e.fire || e.warn)) add(e.x, e.y - 30, e.fire ? 130 : 60, 0.8, '255,140,60');
         else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');
     }
     // small lights: only the nearest dozen (each one costs a draw)

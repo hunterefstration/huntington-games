@@ -6,6 +6,8 @@
 //   S  spring          k  key                  u  shrine (teaches the world's new move)
 //   g  slime           b  bat                  t  flower turret        h  thornback (spiky: do not stomp)
 //   M  moving ledge, left/right (runs between walls or '|' markers)    N  moving ledge, up/down (between '|' markers)
+//   (1.2) j  hopper (a frog that hops at you: stomp it)  v  stalactite (falls when you walk under it)  f  fire jet (timed: watch the flicker)
+//         W  updraft vent (a column of wind that lifts you)  z  a lost lantern (a hidden secret)  ! (nothing)
 //   G  The Gloom (the last boss)  Q  the world's guardian (mini boss: def.guard says which)  n  a person to talk to
 // ==========================================
 const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
@@ -13,7 +15,7 @@ const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
 function parseLevel(def) {
     const rows = def.map.slice(), h = rows.length, w = Math.max(...rows.map(r => r.length));
     const L = { def, w, h, world: def.world, tiles: new Uint8Array(w * h), spikes: [], lava: [], ents: [], crumbles: [], doors: [], movers: [],
-        sparks: 0, moths: 0, start: null, marks: new Set() };
+        sparks: 0, moths: 0, start: null, marks: new Set(), vents: [] };
     const at = (x, y) => (rows[y] || '')[x] || ' ';
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const c = at(x, y), px = x * TS + TS / 2, py = y * TS + TS / 2;
@@ -40,8 +42,9 @@ function parseLevel(def) {
                 break;
             }
             default:
-                if ('oEL*SkubgthGQn'.includes(c)) {
-                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc' }[c];
+                if (c === 'W') { L.vents.push({ tx: x, ty: y, x: x * TS, y: y * TS, h: 0, seed: (x * 31 + y * 17) % 10 }); break; }
+                if ('oEL*SkubgthGQnjvfz'.includes(c)) {
+                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc', j: 'hopper', v: 'drip', f: 'jet', z: 'secret' }[c];
                     L.ents.push({ kind, x: px, y: py, sx: px, sy: py, seed: (x * 7919 + y * 104729) % 1000 / 100 });
                     if (c === 'o') L.sparks++;
                     if (c === '*') L.moths++;
@@ -49,6 +52,8 @@ function parseLevel(def) {
         }
     }
     if (!L.start) L.start = { x: TS * 2, y: TS * 2 };
+    // updraft vents: the wind rises from the vent through open air, up to 9 tiles, and stops at the first solid tile
+    for (const v of L.vents) { let k = 0; while (k < 9 && v.ty - k - 1 >= 0 && [T_AIR, T_ONEWAY].includes(tileAt(L, v.tx, v.ty - k - 1))) k++; v.h = k + 1; }
     // moving ledges: work out how far each one travels
     for (const m of L.movers) {
         if (m.kind === 'M') {

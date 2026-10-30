@@ -15,11 +15,24 @@ const fmtTime = t => { const m = Math.floor(t / 60), s = t - m * 60; return m + 
 
 // ---------- save (one key, so the launcher's cloud saves carry it) ----------
 const SAVE_KEY = 'lumi_save';
+// Save version 2 (game 1.2): every world has 10 levels and the guardian level moved from w-4 to w-10. Progress, best times, stars and
+// the person you met move with it. Nothing is wiped: unknown fields (runs.onelife, mp, stats...) are left exactly as they are.
+const SAVE_VER = 2, LEVEL_MOVED = { '1-4': '1-10', '2-4': '2-10', '3-4': '3-10', '4-4': '4-10' };
+function migrateSave(d) {
+    if ((d.v || 1) >= SAVE_VER) return d;
+    for (const key of ['levels', 'talks']) {
+        const o = d[key]; if (!o || typeof o !== 'object') continue;
+        for (const a in LEVEL_MOVED) if (a in o) { if (!(LEVEL_MOVED[a] in o)) o[LEVEL_MOVED[a]] = o[a]; delete o[a]; }
+    }
+    d.v = SAVE_VER; return d;
+}
 const SAVE = (() => {
-    const blank = () => ({ v: 1, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
+    const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
+    if (typeof d.levels !== 'object' || !d.levels) d.levels = {};
+    d.talks = d.talks || {}; migrateSave(d); d.secrets = d.secrets || {};
     d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {}; d.talks = d.talks || {};
     // The launcher's chat caches messages in this same storage, and a full storage used to make saves fail silently
     // (progress looked fine, then was gone the next time). If a save is refused: drop the biggest chat caches (only a

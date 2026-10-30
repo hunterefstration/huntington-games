@@ -10,6 +10,8 @@ const CAST = {
     ilse: { name: 'Sister Ilse', col: '#e8d8ff', about: 'Keeper of the sky temples. She told the Lamplighter the truth, and was afraid of him.' },
     hob: { name: 'Hob', col: '#ff9a5a', about: 'The smith of the Ember Forge. He built the great lantern.' },
     moss: { name: 'Mossback', col: '#8fe07a' }, shard: { name: 'Shardwing', col: '#8ff0ff' }, bell: { name: 'The Bellkeeper', col: '#ffe08a' },
+    tam: { name: 'Tamsin', col: '#9fe0c8', about: 'A mapmaker who walks the whole valley and draws what is left of it. Always looking for places other people walked past.' },
+    quill: { name: 'Quill', col: '#d8b8ff', about: 'The last librarian of the sky temples. Took the best books down to the Forge so the fire could not have them.' },
     cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' }
 };
 const TALKS = {
@@ -25,10 +27,48 @@ const TALKS = {
         'Orin, the Lamplighter: he and I go way back. Best man in the valley, once. Lit every lantern by hand, every night, rain or snow.',
         'Then his girl got sick. Her light was fading, the healer said. Like a candle near the end.',
         'Something went out in him too, I think. He stopped talking to anyone. Just stared at the lanterns, like they owed him something.']],
-    '1-4': ['pip', ['You made it this far? Me too! Well. I hid a lot.',
+    '1-10': ['pip', ['You made it this far? Me too! Well. I hid a lot.',
         'Careful up ahead. That’s Mossback’s clearing. He used to let us ride on his back, me and Wren. He guards the forest.',
         'But he’s... wrong now. All dark and twitchy. Like something crawled inside him.',
         'Wren would know what to do. Wren always knew what to do.']],
+    // ---- 1.2: the new middle levels ----
+    '1-5': ['bram', ['Mind the old log. It is hollow, and the bridges inside it are older than I am.',
+        'Me and Orin carved our names in the inside, once. Somewhere up high, I think. He wrote "Orin" and I wrote "Bram", and the girl wrote "Wren" in the middle with a heart.']],
+    '1-6': ['tam', ['Shh, hold still, I am drawing you. A light in a mushroom field. Lovely.',
+        'Tamsin. Mapmaker. I mark where the valley used to be, and where it still is. There are little lanterns hidden all over, dropped by the carts.',
+        'The best ones are never on the path. If the path goes left, look up and right.']],
+    '1-9': ['pip', ['Whoa. You keep going. I would have turned around two lanterns ago.',
+        'Mossback is just past that gate. Be nice to him. He cannot help it, the dark makes his legs jump on their own.',
+        'Wait for him to squat down. That is when he is about to jump. Then slip under his back, okay?']],
+    '2-5': ['marta', ['Echo Chamber. Say something and it says it back, three times, a little sadder each time.',
+        'The old miners cut these steps so the lift would not be needed. I counted them once. I got tired around forty.']],
+    '2-6': ['tam', ['Down here too! I am so happy to see a face. Well. A glow.',
+        'There is a lantern hidden high up in this garden. The crystals grow in a ladder, if you stand just so. I mapped it. Do not tell Marta, she would have mined it.']],
+    '2-7': ['pip', ['There is a river down here. Under the rock. I did not know that.',
+        'The ledges ride it like little boats. Do not look down. I looked down. Do not.']],
+    '2-9': ['marta', ['The pool ahead is as black as the sky between stars. Do not try to wade.',
+        'Light your lantern here, little spark. Shardwing guards the Bell just beyond. It will not hurt you if you keep your head.',
+        'And if it does, you are very, very quick.']],
+    '3-5': ['ilse', ['The pillars were a bridge, once. Then the wind took the middle out of it.',
+        'Push against a wall and jump away from it. The stone remembers being climbed. It likes it.']],
+    '3-6': ['tam', ['Oh! You made it up here! Careful, the wind is rude.',
+        'It rises from the old windmills. Nobody has fed them in years but they are still breathing. Stand in it and let it carry you.',
+        'I left a lantern on a ledge in the east wing. Take it. It is lonely.']],
+    '3-8': ['quill', ['Quiet, please. This is a library. Was a library.',
+        'I carried the good books to the Forge before the dark came. Not that fire is any kinder to paper. But it is warmer than the dark.',
+        'One bookcase is a lie. It opens a little way, if you know where to press.']],
+    '3-9': ['ilse', ['The storm gate. Beyond it, the Bellkeeper.',
+        'Do not fear him. He is only a bell that forgot what it was for. Remind him, if you can.']],
+    '4-5': ['hob', ['Rivets! I put every one of those in by hand. Do you know how many rivets are in a world? A lot.',
+        'You can dash over the long gaps, little light. Jump first, then dash. The dash is faster than falling.']],
+    '4-6': ['tam', ['I knew I would find you. I followed the glow. Also the heat.',
+        'The lifts here still run. They were made to carry lanterns, not people, but they carry people fine.',
+        'There is a map in my pack that I never finished. It stops right where the Forge begins. I think I know why. I think nobody came back to draw it.']],
+    '4-8': ['hob', ['The long run. I built it to carry molten iron, so it is wide, and it is hot, and it is a very long way down.',
+        'Whatever you do, do not stop to rest on the molten bits.']],
+    '4-9': ['quill', ['Oh, the books are fine! A little singed. They are all the way at the back.',
+        'You will meet Cinderjaw next. He is a good guard who got a bad boss. Be firm, and be quick.',
+        'A lost lantern is hidden in this hall, on the wind ledge. Tamsin told me. She tells everyone.']],
     '2-1': ['marta', ['Stop right there. Oh. You’re a light. Sorry, I’ve been talking to rocks for days.',
         'Name’s Marta. I mine crystal down here. Or I did, before the carts.',
         'Hundreds of them rolled through, full of lanterns, all the way down to the Forge. We followed. Thought the Lamplighter had gone mad.',
@@ -41,7 +81,7 @@ const TALKS = {
         'That bell back there is the Deep Bell. Ring it when the dark comes, and the guardians wake. Old rule.',
         'Nobody rang it. The dark didn’t come with drums. It came quiet, rolling down the tunnels in a lantern.',
         'Strangest thing, though. A few nights back a girl came by. Small, pale, red ribbon gone. Walking down. Alone. Wouldn’t stop to rest.']],
-    '2-4': ['marta', ['Shardwing’s cave is just ahead. That bat kept the Deep Bell. Used to sing to it.',
+    '2-10': ['marta', ['Shardwing’s cave is just ahead. That bat kept the Deep Bell. Used to sing to it.',
         'It doesn’t sing anymore. It screams.',
         'Wake it up, the old way, and there’s a path out of here. Up. Toward the sky temples.']],
     '3-1': ['ilse', ['Welcome, little flame. Mind the wind. It is all we have left up here.',
@@ -56,7 +96,7 @@ const TALKS = {
         'I told him the truth. Light that is hoarded turns to shadow. It cannot be kept, only passed on.',
         'He said: then I will hoard it carefully. And he went down to the Forge with every lantern in the valley.',
         'I should have stopped him. I was afraid of him. That is a hard thing to say about a friend.']],
-    '3-4': ['ilse', ['The Bellkeeper waits beyond. It rings the hours of the valley. It rang the last hour the night the girl came through.',
+    '3-10': ['ilse', ['The Bellkeeper waits beyond. It rings the hours of the valley. It rang the last hour the night the girl came through.',
         'She asked me if her papa could be saved. I said: not by taking. Only by giving.',
         'She smiled at that. I did not understand why until much later.']],
     '4-1': ['hob', ['Hot enough for you? Ha. Sorry. Bad joke. I’m Hob. This is my forge. Was.',
@@ -72,7 +112,7 @@ const TALKS = {
         'She said: you don’t need all the lights, Papa. You only ever needed one. And she put her own light in his lantern.',
         'The whole thing went black. That’s when the Gloom was born. But one spark flew out of it. Small. Bright. Up and out, toward home.',
         '...It looked a lot like you.']],
-    '4-4': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
+    '4-10': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
         'You’re her. Aren’t you? You’re Wren. The light of her. The part she gave away.',
         'You can’t talk. That’s okay. You always talked enough for both of us.',
         'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']]
@@ -166,7 +206,7 @@ function drawPortrait(who, t = 0, speaking = false) {
 
 // ---------- People: everyone you met and everything they told you ----------
 UI.people = function () {
-    const order = ['bram', 'pip', 'marta', 'ilse', 'hob'], heard = SAVE.d.talks || {};
+    const order = ['bram', 'pip', 'marta', 'ilse', 'hob', 'tam', 'quill'], heard = SAVE.d.talks || {};
     $('#lo-n').textContent = talkCount() + ' of ' + TALK_N + ' conversations heard' + (talkCount() === TALK_N ? ': the whole story.' : '');
     $('#lo-list').innerHTML = order.map(who => {
         const ids = Object.keys(TALKS).filter(id => TALKS[id][0] === who), got = ids.filter(id => heard[id]);

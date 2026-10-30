@@ -89,5 +89,34 @@ const PEOPLE = {
         x.fillStyle = '#fffbe6'; x.beginPath(); x.moveTo(-7, -46); x.quadraticCurveTo(0, -30, 7, -46); x.fill();
         x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; eyesP(x, 1.5, -48, blink, '#a07040');
         x.strokeStyle = '#ffe6a8'; x.lineWidth = 2; x.beginPath(); x.moveTo(15, 0); x.lineTo(15, -66); x.stroke();
+    },
+    // Tamsin (1.2): a mapmaker: green scarf, big satchel, a rolled map and a pencil behind her ear
+    tam(x, t, face = 1, speaking = false) {
+        const { br, blink } = personBase(x, t, face, speaking);
+        x.fillStyle = '#3a2a22'; x.fillRect(-8, -8, 6, 8); x.fillRect(2, -8, 6, 8);
+        x.fillStyle = '#5a7a68'; x.beginPath(); x.ellipse(0, -19, 11, 13 + br * 0.4, 0, 0, 7); x.fill();
+        x.fillStyle = '#9a6a3a'; x.fillRect(-12, -22, 7, 12); x.fillStyle = '#6a4424'; x.fillRect(-12, -22, 7, 3);                       // satchel
+        x.fillStyle = '#e8d8a8'; x.save(); x.translate(10, -22); x.rotate(-0.5); x.fillRect(-2, -10, 4, 20); x.restore();             // rolled map
+        x.fillStyle = '#e0b890'; x.beginPath(); x.arc(0, -36, 9.5, 0, 7); x.fill();
+        x.fillStyle = '#3a2418'; x.beginPath(); x.ellipse(0, -41, 11, 7, 0, Math.PI, 0); x.fill(); x.fillRect(-11, -42, 4, 12);      // hair
+        x.fillStyle = '#7ad0b0'; x.fillRect(-9, -29, 18, 4);                                                                         // scarf
+        x.fillStyle = '#d8c040'; x.fillRect(6, -43, 1.6, 8);                                                                         // pencil
+        eyesP(x, 1.5, -37, blink);
+        if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(2, -32, 2, 1.5 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+        darkLantern(x, -16, -10);
+    },
+    // Quill (1.2): the librarian: round glasses, a long lilac robe, a stack of books
+    quill(x, t, face = 1, speaking = false) {
+        const { br, blink } = personBase(x, t, face, speaking);
+        x.fillStyle = '#2a2230'; x.fillRect(-7, -6, 5, 6); x.fillRect(2, -6, 5, 6);
+        x.fillStyle = '#7a5aa8'; x.beginPath(); x.moveTo(-12, -4); x.lineTo(-8, -34 - br); x.lineTo(8, -34 - br); x.lineTo(12, -4); x.closePath(); x.fill();
+        x.fillStyle = '#5a3a86'; x.fillRect(-1, -32, 2, 28);
+        x.fillStyle = '#c04a3a'; x.fillRect(5, -22, 11, 4); x.fillStyle = '#3a6a9a'; x.fillRect(6, -26, 10, 4); x.fillStyle = '#e0c060'; x.fillRect(5, -30, 11, 4);   // books
+        x.fillStyle = '#f0d4b0'; x.beginPath(); x.arc(0, -41, 9, 0, 7); x.fill();
+        x.fillStyle = '#d8d0e0'; x.beginPath(); x.ellipse(0, -46, 10, 6, 0, Math.PI, 0); x.fill();                                   // white hair
+        x.strokeStyle = '#3a3040'; x.lineWidth = 1.2; for (const dx of [-3.4, 3.4]) { x.beginPath(); x.arc(dx + 1, -41, 3.4, 0, 7); x.stroke(); }
+        eyesP(x, 1.5, -41, blink);
+        if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(1.5, -36, 2, 1.2 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+        darkLantern(x, -16, -12);
     }
 };

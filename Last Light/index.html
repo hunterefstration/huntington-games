@@ -47,6 +47,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070a1a; col
 .tag { margin-top: 10px; font-size: clamp(11px, 1.9vw, 20px); color: #cfd6ff; letter-spacing: .22em; text-transform: uppercase; opacity: .85; text-align: center; max-width: 92vw; }
 #s-title .menu { margin-top: 5vh; display: flex; flex-direction: column; align-items: center; }
 #s-title .foot { position: absolute; bottom: 18px; font-size: 14px; color: #aab3e6; opacity: .8; }
+#s-title .ver { position: absolute; bottom: 42px; font-size: 12px; color: #ffd9a0; opacity: .75; letter-spacing: .04em; text-align: center; padding: 0 16px; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 /* map */
@@ -261,6 +262,7 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
     <button class="btn" id="t-how">How to play</button>
   </div>
   <div class="foot" id="t-stats"></div>
+  <div class="ver" id="t-ver" title="What's new in 1.2">Version 1.2 · 10 levels in every world · new hazards · a fairer first guardian</div>
 </div>
 
 <!-- world map -->
@@ -420,11 +422,24 @@ const fmtTime = t => { const m = Math.floor(t / 60), s = t - m * 60; return m + 
 
 // ---------- save (one key, so the launcher's cloud saves carry it) ----------
 const SAVE_KEY = 'lumi_save';
+// Save version 2 (game 1.2): every world has 10 levels and the guardian level moved from w-4 to w-10. Progress, best times, stars and
+// the person you met move with it. Nothing is wiped: unknown fields (runs.onelife, mp, stats...) are left exactly as they are.
+const SAVE_VER = 2, LEVEL_MOVED = { '1-4': '1-10', '2-4': '2-10', '3-4': '3-10', '4-4': '4-10' };
+function migrateSave(d) {
+    if ((d.v || 1) >= SAVE_VER) return d;
+    for (const key of ['levels', 'talks']) {
+        const o = d[key]; if (!o || typeof o !== 'object') continue;
+        for (const a in LEVEL_MOVED) if (a in o) { if (!(LEVEL_MOVED[a] in o)) o[LEVEL_MOVED[a]] = o[a]; delete o[a]; }
+    }
+    d.v = SAVE_VER; return d;
+}
 const SAVE = (() => {
-    const blank = () => ({ v: 1, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
+    const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
+    if (typeof d.levels !== 'object' || !d.levels) d.levels = {};
+    d.talks = d.talks || {}; migrateSave(d); d.secrets = d.secrets || {};
     d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {}; d.talks = d.talks || {};
     // The launcher's chat caches messages in this same storage, and a full storage used to make saves fail silently
     // (progress looked fine, then was gone the next time). If a save is refused: drop the biggest chat caches (only a
@@ -879,6 +894,64 @@ const Sprites = {
         for (let i = 0; i < 4; i++) { x.beginPath(); for (let a = 0; a < 7; a += 0.2) { const rr = a * 2.6 + i * 3, px = Math.cos(a + t * 2 + i) * rr, py = -30 + Math.sin(a + t * 2 + i) * rr; a === 0 ? x.moveTo(px, py) : x.lineTo(px, py); } x.stroke(); }
         x.restore(); x.restore();
     },
+    // ---- 1.2 ----
+    hopper(x, e, t, T) {
+        const air = e.u > 0, sq = air ? 0 : Math.max(e.sq || 0, clamp(1 - (e.rest || 0) / 0.5, 0, 1) * 0.9), stretch = air ? 1.2 : 1 - sq * 0.28;
+        x.save(); x.translate(e.x, e.y + 11); x.scale((e.dir || 1) * (1 + sq * 0.2), stretch);
+        const g = x.createLinearGradient(0, -16, 0, 0); g.addColorStop(0, '#a6ef7a'); g.addColorStop(1, '#4c9a3c');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, -8, 13, 9, 0, 0, 7); x.fill();
+        x.fillStyle = '#3c7e30'; x.beginPath(); x.ellipse(-9, -2, 5, 3, 0.3, 0, 7); x.ellipse(9, -2, 5, 3, -0.3, 0, 7); x.fill();
+        for (const dx of [2, 9]) { x.fillStyle = '#fff'; x.beginPath(); x.arc(dx, -15, 4, 0, 7); x.fill(); x.fillStyle = '#1c1028'; x.beginPath(); x.arc(dx + 1, -15, 2, 0, 7); x.fill(); }
+        x.strokeStyle = '#1c3a18'; x.lineWidth = 1.2; x.beginPath(); x.arc(8, -7, 4, 0.2, 2.6); x.stroke();
+        x.restore();
+    },
+    drip(x, e, t, T) {
+        if (e.st === 3) return;
+        const sh = e.st === 1 ? Math.sin(t * 70) * 1.6 : 0, y0 = e.st === 2 ? e.y : e.sy;
+        x.save(); x.translate(e.x + sh, y0 - 16);
+        const g = x.createLinearGradient(0, 0, 0, 40); g.addColorStop(0, T.body[0]); g.addColorStop(1, T.top);
+        x.fillStyle = g; x.beginPath(); x.moveTo(-11, 0); x.lineTo(11, 0); x.lineTo(3, 30); x.lineTo(0, 40); x.lineTo(-3, 30); x.closePath(); x.fill();
+        x.fillStyle = 'rgba(255,255,255,.35)'; x.beginPath(); x.moveTo(-6, 2); x.lineTo(-2, 2); x.lineTo(-1, 28); x.closePath(); x.fill();
+        if (e.st === 1) { x.fillStyle = 'rgba(255,255,255,' + (0.4 + 0.4 * Math.sin(t * 40)) + ')'; x.fillRect(-12, -2, 24, 3); }
+        x.restore();
+    },
+    jet(x, e, t, T) {
+        x.save(); x.translate(e.x, e.y + 14);
+        x.fillStyle = '#2a1a1a'; x.beginPath(); x.moveTo(-13, 2); x.lineTo(-9, -6); x.lineTo(9, -6); x.lineTo(13, 2); x.closePath(); x.fill();
+        x.fillStyle = e.fire ? '#ffd070' : e.warn ? (Math.floor(t * 18) % 2 ? '#ff9a3a' : '#5a2a1a') : '#4a2a20'; x.fillRect(-6, -7, 12, 3);
+        if (e.warn) { x.fillStyle = 'rgba(255,150,60,.8)'; x.beginPath(); x.moveTo(-5, -7); x.quadraticCurveTo(0, -18 - Math.random() * 6, 5, -7); x.fill(); }
+        if (e.fire) {
+            const h = TS * 3.4; const g = x.createLinearGradient(0, -6, 0, -h); g.addColorStop(0, 'rgba(255,240,170,.95)'); g.addColorStop(0.5, 'rgba(255,130,40,.8)'); g.addColorStop(1, 'rgba(255,60,20,0)');
+            x.fillStyle = g; x.beginPath(); x.moveTo(-12, -6); x.quadraticCurveTo(-8 + Math.sin(t * 40) * 3, -h * 0.6, 0, -h); x.quadraticCurveTo(8 + Math.cos(t * 37) * 3, -h * 0.6, 12, -6); x.closePath(); x.fill();
+        }
+        x.restore();
+    },
+    heart(x, e, t) {
+        const b = Math.sin(t * 3 + e.seed) * 3, s = 1 + Math.sin(t * 6) * 0.08;
+        x.save(); x.translate(e.x, e.y + b); x.scale(s, s);
+        const g = x.createRadialGradient(0, 0, 2, 0, 0, 24); g.addColorStop(0, 'rgba(255,150,170,.5)'); g.addColorStop(1, 'rgba(255,150,170,0)'); x.fillStyle = g; x.fillRect(-24, -24, 48, 48);
+        x.fillStyle = '#ff6b8b'; x.beginPath(); x.moveTo(0, 11); x.bezierCurveTo(-18, -1, -12, -14, 0, -6); x.bezierCurveTo(12, -14, 18, -1, 0, 11); x.fill();
+        x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(-6, -5, 3, 2, -0.6, 0, 7); x.fill();
+        x.restore();
+    },
+    secret(x, e, t) {        // a lost lantern: a small glass lantern with a cold blue flame that flickers
+        const b = Math.sin(t * 2 + e.seed) * 2;
+        x.save(); x.translate(e.x, e.y + b);
+        const g = x.createRadialGradient(0, 0, 2, 0, 0, 30); g.addColorStop(0, 'rgba(160,240,255,.55)'); g.addColorStop(1, 'rgba(160,240,255,0)'); x.fillStyle = g; x.fillRect(-30, -30, 60, 60);
+        x.strokeStyle = '#8fa0b0'; x.lineWidth = 2; x.beginPath(); x.moveTo(-5, -8); x.quadraticCurveTo(0, -17, 5, -8); x.stroke();
+        x.fillStyle = 'rgba(150,200,230,.5)'; x.fillRect(-7, -8, 14, 16); x.strokeRect(-7, -8, 14, 16); x.fillStyle = '#6a7a8a'; x.fillRect(-8, 8, 16, 3);
+        x.fillStyle = '#d8faff'; x.beginPath(); x.moveTo(0, -6); x.quadraticCurveTo(5, 0, 0, 6 + Math.sin(t * 12) ); x.quadraticCurveTo(-5, 0, 0, -6); x.fill();
+        x.restore();
+    },
+    vent(x, v, t, T) {        // the wind column: pale streaks that rise
+        x.save(); const h = v.h * TS;
+        x.fillStyle = 'rgba(255,255,255,.07)'; x.fillRect(v.x + 4, v.y + TS - h, TS - 8, h);
+        x.fillStyle = 'rgba(40,40,50,.8)'; x.fillRect(v.x + 2, v.y + TS - 5, TS - 4, 5);
+        x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 1.5; x.lineCap = 'round';
+        for (let i = 0; i < 5; i++) { const u = ((t * 0.55 + i * 0.21 + v.seed * 0.13) % 1), yy = v.y + TS - 6 - u * (h - 8), xx = v.x + 6 + ((i * 7 + v.seed * 3) % (TS - 12)) + Math.sin(t * 5 + i) * 2;
+            x.globalAlpha = Math.sin(u * Math.PI) * 0.85; x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx, yy - 9); x.stroke(); }
+        x.restore();
+    },
     spark(x, e, t) {
         const b = Math.sin(t * 3 + e.seed) * 2.5, s = 1 + Math.sin(t * 6 + e.seed) * 0.1;
         x.save(); x.translate(e.x, e.y + b); x.rotate(t * 1.5 + e.seed); x.scale(s, s);
@@ -1068,6 +1141,35 @@ const PEOPLE = {
         x.fillStyle = '#fffbe6'; x.beginPath(); x.moveTo(-7, -46); x.quadraticCurveTo(0, -30, 7, -46); x.fill();
         x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1; eyesP(x, 1.5, -48, blink, '#a07040');
         x.strokeStyle = '#ffe6a8'; x.lineWidth = 2; x.beginPath(); x.moveTo(15, 0); x.lineTo(15, -66); x.stroke();
+    },
+    // Tamsin (1.2): a mapmaker: green scarf, big satchel, a rolled map and a pencil behind her ear
+    tam(x, t, face = 1, speaking = false) {
+        const { br, blink } = personBase(x, t, face, speaking);
+        x.fillStyle = '#3a2a22'; x.fillRect(-8, -8, 6, 8); x.fillRect(2, -8, 6, 8);
+        x.fillStyle = '#5a7a68'; x.beginPath(); x.ellipse(0, -19, 11, 13 + br * 0.4, 0, 0, 7); x.fill();
+        x.fillStyle = '#9a6a3a'; x.fillRect(-12, -22, 7, 12); x.fillStyle = '#6a4424'; x.fillRect(-12, -22, 7, 3);                       // satchel
+        x.fillStyle = '#e8d8a8'; x.save(); x.translate(10, -22); x.rotate(-0.5); x.fillRect(-2, -10, 4, 20); x.restore();             // rolled map
+        x.fillStyle = '#e0b890'; x.beginPath(); x.arc(0, -36, 9.5, 0, 7); x.fill();
+        x.fillStyle = '#3a2418'; x.beginPath(); x.ellipse(0, -41, 11, 7, 0, Math.PI, 0); x.fill(); x.fillRect(-11, -42, 4, 12);      // hair
+        x.fillStyle = '#7ad0b0'; x.fillRect(-9, -29, 18, 4);                                                                         // scarf
+        x.fillStyle = '#d8c040'; x.fillRect(6, -43, 1.6, 8);                                                                         // pencil
+        eyesP(x, 1.5, -37, blink);
+        if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(2, -32, 2, 1.5 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+        darkLantern(x, -16, -10);
+    },
+    // Quill (1.2): the librarian: round glasses, a long lilac robe, a stack of books
+    quill(x, t, face = 1, speaking = false) {
+        const { br, blink } = personBase(x, t, face, speaking);
+        x.fillStyle = '#2a2230'; x.fillRect(-7, -6, 5, 6); x.fillRect(2, -6, 5, 6);
+        x.fillStyle = '#7a5aa8'; x.beginPath(); x.moveTo(-12, -4); x.lineTo(-8, -34 - br); x.lineTo(8, -34 - br); x.lineTo(12, -4); x.closePath(); x.fill();
+        x.fillStyle = '#5a3a86'; x.fillRect(-1, -32, 2, 28);
+        x.fillStyle = '#c04a3a'; x.fillRect(5, -22, 11, 4); x.fillStyle = '#3a6a9a'; x.fillRect(6, -26, 10, 4); x.fillStyle = '#e0c060'; x.fillRect(5, -30, 11, 4);   // books
+        x.fillStyle = '#f0d4b0'; x.beginPath(); x.arc(0, -41, 9, 0, 7); x.fill();
+        x.fillStyle = '#d8d0e0'; x.beginPath(); x.ellipse(0, -46, 10, 6, 0, Math.PI, 0); x.fill();                                   // white hair
+        x.strokeStyle = '#3a3040'; x.lineWidth = 1.2; for (const dx of [-3.4, 3.4]) { x.beginPath(); x.arc(dx + 1, -41, 3.4, 0, 7); x.stroke(); }
+        eyesP(x, 1.5, -41, blink);
+        if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(1.5, -36, 2, 1.2 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+        darkLantern(x, -16, -12);
     }
 };
 
@@ -1080,6 +1182,8 @@ const PEOPLE = {
 //   S  spring          k  key                  u  shrine (teaches the world's new move)
 //   g  slime           b  bat                  t  flower turret        h  thornback (spiky: do not stomp)
 //   M  moving ledge, left/right (runs between walls or '|' markers)    N  moving ledge, up/down (between '|' markers)
+//   (1.2) j  hopper (a frog that hops at you: stomp it)  v  stalactite (falls when you walk under it)  f  fire jet (timed: watch the flicker)
+//         W  updraft vent (a column of wind that lifts you)  z  a lost lantern (a hidden secret)  ! (nothing)
 //   G  The Gloom (the last boss)  Q  the world's guardian (mini boss: def.guard says which)  n  a person to talk to
 // ==========================================
 const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
@@ -1087,7 +1191,7 @@ const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
 function parseLevel(def) {
     const rows = def.map.slice(), h = rows.length, w = Math.max(...rows.map(r => r.length));
     const L = { def, w, h, world: def.world, tiles: new Uint8Array(w * h), spikes: [], lava: [], ents: [], crumbles: [], doors: [], movers: [],
-        sparks: 0, moths: 0, start: null, marks: new Set() };
+        sparks: 0, moths: 0, start: null, marks: new Set(), vents: [] };
     const at = (x, y) => (rows[y] || '')[x] || ' ';
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const c = at(x, y), px = x * TS + TS / 2, py = y * TS + TS / 2;
@@ -1114,8 +1218,9 @@ function parseLevel(def) {
                 break;
             }
             default:
-                if ('oEL*SkubgthGQn'.includes(c)) {
-                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc' }[c];
+                if (c === 'W') { L.vents.push({ tx: x, ty: y, x: x * TS, y: y * TS, h: 0, seed: (x * 31 + y * 17) % 10 }); break; }
+                if ('oEL*SkubgthGQnjvfz'.includes(c)) {
+                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc', j: 'hopper', v: 'drip', f: 'jet', z: 'secret' }[c];
                     L.ents.push({ kind, x: px, y: py, sx: px, sy: py, seed: (x * 7919 + y * 104729) % 1000 / 100 });
                     if (c === 'o') L.sparks++;
                     if (c === '*') L.moths++;
@@ -1123,6 +1228,8 @@ function parseLevel(def) {
         }
     }
     if (!L.start) L.start = { x: TS * 2, y: TS * 2 };
+    // updraft vents: the wind rises from the vent through open air, up to 9 tiles, and stops at the first solid tile
+    for (const v of L.vents) { let k = 0; while (k < 9 && v.ty - k - 1 >= 0 && [T_AIR, T_ONEWAY].includes(tileAt(L, v.tx, v.ty - k - 1))) k++; v.h = k + 1; }
     // moving ledges: work out how far each one travels
     for (const m of L.movers) {
         if (m.kind === 'M') {
@@ -1361,7 +1468,7 @@ function respawn(G, full = true) {
     Object.assign(p, makePlayer(c.x, c.y), { keys: p.keys, hearts: G.maxHearts() });
     G.cam.snap = 0.2; G.hud(); p.spawnT = 0.6; G.iris = 0.35;
     burst(G, p.x, p.y, '#fff2c4', 22, 180);
-    guardReset(G);
+    guardReset(G); bossReset(G);
 }
 
 // ---------- enemies, items, moving bits ----------
@@ -1413,6 +1520,24 @@ function updateWorld(G, dt) {
             case 'slime': case 'thorn': walker(G, e, dt); break;
             case 'bat': e.x = e.sx + Math.sin(t * 1.2 + e.seed) * 62; e.y = e.sy + Math.sin(t * 2.3 + e.seed) * 24; e.dir = Math.cos(t * 1.2 + e.seed) > 0 ? 1 : -1; contact(G, e, 13); break;
             case 'turret': turret(G, e, dt); contact(G, e, 14); break;
+            case 'hopper': hopper(G, e, dt); break;
+            case 'drip': drip(G, e, dt); break;
+            case 'jet': jet(G, e, dt); break;
+            case 'heart':       // a heart that appears in a guardian fight; only picked up when you are missing one
+                if (!p.dead && near(p, e, 20) && p.hearts < G.maxHearts()) { e.gone = true; p.hearts++; Sound.play('lantern'); burst(G, e.x, e.y, '#ff9ab0', 16, 160, true); G.toast('A heart!'); G.hud(); }
+                break;
+            case 'secret':      // a lost lantern, hidden away: finding it is remembered
+                if (!p.dead && near(p, e, 22)) {
+                    e.gone = true; SAVE.d.secrets = SAVE.d.secrets || {}; const first = !SAVE.d.secrets[G.L.def.id]; SAVE.d.secrets[G.L.def.id] = true; if (first) ST('secrets'); SAVE.write();
+                    Sound.play('shrine'); G.white = 0.35; burst(G, e.x, e.y, '#bff7ff', 40, 260, true); ring(G, e.x, e.y, '#bff7ff'); UI.banner('A lost lantern', first ? 'Secret found' : 'You found it again', 'Hidden lanterns are scattered across the valley');
+                }
+                break;
+        }
+    }
+    // updraft vents: a column of wind that lifts anything that flies into it
+    for (const v of L.vents) {
+        if (!p.dead && !G.done && p.x > v.x + 3 && p.x < v.x + TS - 3 && p.y > v.y + TS - v.h * TS && p.y < v.y + TS) {
+            p.vy = Math.max(p.vy - 4000 * dt, -400); p.ground = false; p.on = null; if (p.vy < -200 && Math.random() < 0.3) dust(G, p.x, p.y + 10, 1);
         }
     }
     // turret orbs
@@ -1450,6 +1575,51 @@ function turret(G, e, dt) {
         if (e.cool <= 0) { e.cool = 1.6; e.charge = 0; const a = e.aim; G.shots.push({ x: e.x + Math.cos(a) * 14, y: e.y - 2 + Math.sin(a) * 14, vx: Math.cos(a) * 215, vy: Math.sin(a) * 215, life: 5 }); Sound.play('shoot'); }
     } else e.charge = Math.max(0, (e.charge || 0) - dt);
 }
+// 1.2 enemies and hazards
+// hopper: a frog. It rests, squats (the tell), then hops one step toward you (or away from an edge or a wall). Stomp it.
+function hopper(G, e, dt) {
+    const L = G.L, p = G.p; if (e.dead) return;
+    if (e.gy === undefined) { e.gy = e.y; e.u = 0; e.rest = 0.5 + e.seed % 1; e.dir = e.seed % 2 > 1 ? 1 : -1; }
+    e.sq = Math.max(0, (e.sq || 0) - dt * 4);
+    if (e.u > 0) {
+        e.u += dt / 0.62; const nx = e.x + e.dir * 92 * dt;
+        if (!solidAtPx(L, nx + e.dir * 12, e.gy - 6)) e.x = nx;
+        if (e.u >= 1) { e.u = 0; e.y = e.gy; e.rest = 1.15; e.sq = 1; } else e.y = e.gy - 4 * 40 * e.u * (1 - e.u);
+    } else {
+        e.rest -= dt;
+        if (e.rest <= 0) {
+            if (Math.abs(p.x - e.x) < TS * 8 && Math.abs(p.y - e.y) < TS * 4 && !p.dead) e.dir = sign(p.x - e.x) || e.dir;
+            const lx = e.x + e.dir * 57, floor = solidAtPx(L, lx, e.gy + 18) || tileAt(L, Math.floor(lx / TS), Math.floor((e.gy + 18) / TS)) === T_ONEWAY;
+            if (!floor || solidAtPx(L, lx, e.gy - 6)) e.dir *= -1;
+            e.u = 0.001; Sound.play('bounce');
+        }
+    }
+    contact(G, e, 13);
+}
+// drip: a stalactite. Walk under it and it trembles (a tell), lets go, shatters on the floor, and grows back.
+function drip(G, e, dt) {
+    const L = G.L, p = G.p;
+    if (e.st === undefined) { e.st = 0; e.t = 0; }
+    if (e.st === 0) {
+        const tx = Math.floor(e.x / TS);
+        let clear = true; for (let ty = Math.floor(e.y / TS) + 1; ty <= Math.floor(p.y / TS); ty++) if (tileAt(L, tx, ty) === T_SOLID) { clear = false; break; }
+        if (!p.dead && clear && Math.abs(p.x - e.x) < 22 && p.y > e.y && p.y - e.y < TS * 10) { e.st = 1; e.t = 0.75; Sound.play('crumble'); }
+    } else if (e.st === 1) { e.t -= dt; if (e.t <= 0) { e.st = 2; e.vy = 0; } }
+    else if (e.st === 2) {
+        e.vy = Math.min(e.vy + 2300 * dt, 780); e.y += e.vy * dt;
+        if (!p.dead && p.hurtT <= 0 && Math.abs(p.x - e.x) < 14 && Math.abs(p.y - (e.y + 8)) < 22) hurt(G, 'enemy', { kind: 'drip', x: e.x, y: e.y });
+        if (solidAtPx(G.L, e.x, e.y + 16) || e.y > e.sy + TS * 14) { e.st = 3; e.t = 3.2; burst(G, e.x, e.y + 14, '#9fb4d8', 12, 180); Sound.play('crumble'); e.y = e.sy; }
+    } else if (e.st === 3) { e.t -= dt; if (e.t <= 0 && Math.abs(p.x - e.x) > 40) { e.st = 0; } }
+}
+// jet: a fire vent in the floor. It flickers (about 0.7 s of warning) and then spouts a column of flame for a moment.
+function jet(G, e, dt) {
+    const p = G.p, ph = (G.t + e.seed * 0.43) % 3.6;
+    e.warn = ph > 2.0 && ph < 2.8; e.fire = ph >= 2.8;
+    if (e.fire) {
+        if (Math.random() < 0.9) G.parts.push({ x: e.x + rand(-8, 8), y: e.y + 12, vx: rand(-30, 30), vy: rand(-520, -300), life: 0.35, max: 0.35, size: rand(4, 8), color: Math.random() < 0.5 ? '#ffb040' : '#ff5a1a', add: true, g: 300 });
+        if (!p.dead && p.hurtT <= 0 && p.dashT <= 0 && Math.abs(p.x - e.x) < 15 && p.y > e.y - TS * 3.4 && p.y < e.y + 18) hurt(G, 'enemy', { kind: 'jet', x: e.x, y: p.y + 30 });
+    }
+}
 // touching an enemy: from above it is a stomp (not the spiky ones), a dash goes straight through anything, else it hurts
 function contact(G, e, r) {
     const p = G.p; if (p.dead || e.dead) return;
@@ -1466,7 +1636,7 @@ function kill(G, e) {
     ring(G, e.x, e.y + 12, '#fff3c4'); burst(G, e.x, e.y - 6, '#fff3c4', 8, 140, true);
 }
 function popEnemy(G, e) {
-    const T = WORLDS[G.world], col = e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
+    const T = WORLDS[G.world], col = e.kind === 'hopper' ? '#8ee06a' : e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
     for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });
     for (let i = 0; i < 5; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-120, 120), vy: rand(-260, -120), life: 0.8, max: 0.8, size: rand(4, 6), color: '#ffe08a', g: 500, star: true });
     burst(G, e.x, e.y, '#fff3c4', 10, 160, true); Sound.play('pop');
@@ -1561,9 +1731,10 @@ function render(G) {
     for (const c of G.L.crumbles) if (c.state !== 3 && vis(c.x, c.y)) Sprites.crumble(x, c, t, T);
     for (const d of G.L.doors) if (vis(d.x, d.y, 200)) { x.save(); x.translate(0, -d.slide * d.h * TS); x.beginPath(); x.rect(d.x, d.y + d.slide * d.h * TS, TS, d.h * TS); x.clip(); Sprites.door(x, d, t, T); x.restore(); }
     for (const m of G.L.movers) if (vis(m.x, m.y, 200)) Sprites.mover(x, m, t, T);
+    for (const v of G.L.vents) if (vis(v.x, v.y - v.h * TS / 2, v.h * TS)) Sprites.vent(x, v, t, T);
     for (const e of G.L.ents) {
         if (e.gone || !vis(e.x, e.y)) continue;
-        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc' }[e.kind];
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc', hopper: 'hopper', drip: 'drip', jet: 'jet', heart: 'heart', secret: 'secret' }[e.kind];
         if (!f) continue;
         if (e.dying !== undefined) {          // stomped: flattened into the ground, then it pops
             const k = clamp(e.dying / 0.22, 0, 1), fy = e.y + 14;
@@ -1644,6 +1815,9 @@ function lightPass(G, cx, cy, vw, vh) {
         else if (e.kind === 'npc') add(e.x, e.y - 8, 90, 0.7, '255,225,180');
         else if (e.kind === 'shrine' && !e.used) add(e.x, e.y - 30, 140, 1, '160,240,255');
         else if (e.kind === 'key') add(e.x, e.y, 60, 0.7, '255,210,120');
+        else if (e.kind === 'secret') add(e.x, e.y, 110, 0.9, '160,240,255');
+        else if (e.kind === 'heart') add(e.x, e.y, 80, 0.8, '255,150,170');
+        else if (e.kind === 'jet' && (e.fire || e.warn)) add(e.x, e.y - 30, e.fire ? 130 : 60, 0.8, '255,140,60');
         else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');
     }
     // small lights: only the nearest dozen (each one costs a draw)
@@ -1766,11 +1940,18 @@ function bossUpdate(G, dt) {
             B.say = { text: GLOOM_TALK.mid[(B.max - B.hp - 1) % GLOOM_TALK.mid.length], t: 2.6 }; UI.bossbar(B);
             if (B.hp % 3 === 0) {
                 B.phase++; G.toast(B.phase === 1 ? 'It is getting angry...' : 'One last push!');
-                for (let i = 0; i < 1 + B.phase; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.hy, sx: TS * (6 + i * 9) % (G.L.w * TS - TS * 8) + TS * 4, sy: B.hy + 40, seed: rand(9) });
+                for (let i = 0; i < 1 + B.phase; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.hy, sx: TS * (6 + i * 9) % (G.L.w * TS - TS * 8) + TS * 4, sy: B.hy + 40, seed: rand(9), spawned: true });
             }
             B.state = 'hurt'; B.t = 0.8; B.stun = 0; B.waves = [];
         } else if (p.hurtT <= 0 && p.dashT <= 0) hurt(G, 'enemy', B);
     }
+}
+// 1.2: dying in the final fight starts the whole fight again: The Gloom is back at full health, its phases start over, the bats and
+// shots are gone. (Nothing is kept from the failed try; only the "it already spoke" flag, so you are not made to sit through the talk.)
+function bossReset(G) {
+    const B = G.boss; if (!B || B.state === 'dying') return;
+    const be = G.L.ents.find(e => e.kind === 'boss'); if (!be) return;
+    G.boss = makeBoss(be); G.L.ents = G.L.ents.filter(e => !e.spawned); G.shots = []; G.ambient = null; UI.bossbar(null);
 }
 function findFloor(L, x) { const tx = Math.floor(x / TS); for (let y = 2; y < L.h; y++) if (isSolidT(L, tx, y)) return y * TS; return L.h * TS; }
 function drawBoss(x, G, t) {
@@ -1813,7 +1994,7 @@ function drawBoss(x, G, t) {
 // A "!" means it is open: stomp it or dash into it.
 // ==========================================
 const GUARDS = {
-    moss: { name: 'Mossback', sub: 'Guardian of the Glowwood', hp: 6, r: 46, col: '#8fe07a', light: '170,255,150',
+    moss: { name: 'Mossback', sub: 'Guardian of the Glowwood', hp: 4, r: 46, col: '#8fe07a', light: '170,255,150',
         free: 'Thank you, little light. He took our lanterns too.' },
     shard: { name: 'Shardwing', sub: 'Guardian of the Hollow Caves', hp: 5, r: 34, col: '#8ff0ff', light: '140,240,255',
         free: 'The Deep Bell can ring again. Go on, little one.' },
@@ -1853,10 +2034,11 @@ function guardHit(G, B) {
     const mid = GUARD_TALK[B.kind].mid; B.say = { text: mid[(B.phase - 1) % mid.length], t: 2.6 };
     const alive = G.L.ents.filter(e => e.spawned && !e.gone).length;
     if (B.kind === 'shard' && B.phase >= 3 && alive < 3) for (let i = 0; i < 2; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.top + 60, sx: B.x0 + 120 + i * (B.x1 - B.x0 - 240), sy: B.top + 70 + i * 30, seed: rand(9), spawned: true });
-    if (B.kind === 'moss' && alive < 4) {          // slimes shake loose from its back
-        for (let i = 0; i < (B.phase >= 3 ? 2 : 1); i++) G.L.ents.push({ kind: 'slime', x: B.x + (i ? 40 : -40), y: B.floor - TS / 2, sx: B.x, sy: B.floor - TS / 2, seed: rand(9), dir: i ? 1 : -1, spawned: true });
+    if (B.kind === 'moss' && alive < 1) {          // a slime shakes loose from its back (never more than one at a time)
+        for (let i = 0; i < 1; i++) G.L.ents.push({ kind: 'slime', x: B.x + (i ? 40 : -40), y: B.floor - TS / 2, sx: B.x, sy: B.floor - TS / 2, seed: rand(9), dir: i ? 1 : -1, spawned: true });
     }
-    if (B.kind === 'moss') { B.state = 'idle'; B.t = 0.6; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
+    if (B.kind === 'moss' && B.phase === 2 && !G.L.ents.some(e => e.kind === 'heart' && !e.gone)) G.L.ents.push({ kind: 'heart', x: (B.x0 + B.x1) / 2, y: B.floor - 40, sx: (B.x0 + B.x1) / 2, sy: B.floor - 40, seed: rand(9), spawned: true });     // a heart in the middle of the fight
+    if (B.kind === 'moss') { B.state = 'idle'; B.t = 1.2; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
     else if (B.kind === 'shard') { B.state = 'rise'; B.t = 0.9; }
     else if (B.kind === 'bell') { B.state = 'lift'; B.t = 0.8; }
     else { B.state = 'stalk'; B.t = 1.2; }
@@ -1897,12 +2079,15 @@ function guardFx(G, B, dt) {
 }
 const GUARD_AI = {
     moss(G, B, dt) {
-        const p = G.p, g = 2200, sp = 1 + B.phase * 0.25;
-        if (B.state === 'go') { B.state = 'idle'; B.t = 0.5; }
+        // 1.2: made fair. 4 hits (was 6); a long squat tell (1.1 s, was 0.7); a long rest after each landing (the moment to
+        // run under it and bounce off its back); slower, floatier hops; waves only on every other landing and slower;
+        // one telegraphed rock at most; the double hop only in its last phase and with a pause between the two.
+        const p = G.p, g = 2200, sp = 1 + B.phase * 0.08, tell = 1.1;
+        if (B.state === 'go') { B.state = 'idle'; B.t = 1.6; }
         if (B.state === 'idle') {
-            B.squat = clamp(1 - B.t / (0.7 / sp), 0, 1);
+            B.squat = clamp(1 - B.t / tell, 0, 1);
             if (B.t <= 0) {
-                const air = 0.95 - B.phase * 0.08; B.vy = -g * air / 2; B.vx = clamp((p.x - B.x) / air, -400, 400);
+                const air = 1.2 - B.phase * 0.04; B.vy = -g * air / 2; B.vx = clamp((p.x - B.x) / air, -300, 300);
                 B.face = sign(B.vx) || B.face; B.state = 'hop'; B.squat = 0; Sound.play('bounce'); dust(G, B.x, B.floor - 2, 10);
             }
         } else if (B.state === 'hop') {
@@ -1910,9 +2095,9 @@ const GUARD_AI = {
             if (B.x < B.x0 + B.D.r) { B.x = B.x0 + B.D.r; B.vx = Math.abs(B.vx); } if (B.x > B.x1 - B.D.r) { B.x = B.x1 - B.D.r; B.vx = -Math.abs(B.vx); }
             if (B.vy > 0 && B.y >= B.floor - B.D.r) {
                 B.y = B.floor - B.D.r; B.state = 'idle'; B.land = 1; G.shake(8); dust(G, B.x, B.floor - 2, 14); Sound.play('land');
-                B.hops = (B.hops || 0) + 1; B.t = B.phase >= 2 && B.hops % 2 ? 0.14 : 0.75 / sp;        // hurt enough, it hops twice in a row
-                if (B.phase >= 3 && !(B.hops % 2)) for (let i = 0; i < 3; i++) B.fx.push({ type: 'rock', x: B.x0 + 40 + rand(B.x1 - B.x0 - 80), t: 0.3 + i * 0.2 });
-                if (B.phase >= 1) for (const d of [-1, 1]) B.fx.push({ type: 'wave', x: B.x + d * B.D.r, dir: d, sp: 260, t: 1.6 });
+                B.hops = (B.hops || 0) + 1; B.t = B.phase >= 3 && B.hops % 2 ? 0.55 + tell : 1.5 / sp;
+                if (B.phase >= 3 && !(B.hops % 2) && !B.fx.some(f => f.type === 'rock')) B.fx.push({ type: 'rock', x: clamp(p.x, B.x0 + 40, B.x1 - 40), t: 1.2 });
+                if (B.phase >= 1 && B.hops % 2) for (const d of [-1, 1]) B.fx.push({ type: 'wave', x: B.x + d * B.D.r, dir: d, sp: 200, t: 1.6 });
             }
         }
     },
@@ -2492,7 +2677,9 @@ const UI = {
     },
     unlocked(i) {
         if (i === 0) return true;
-        const prev = LEVELS[i - 1]; return !!SAVE.d.levels[prev.id];
+        if (SAVE.d.levels[LEVELS[i - 1].id]) return true;
+        for (let j = i + 1; j < LEVELS.length; j++) if (SAVE.d.levels[LEVELS[j].id]) return true;       // 1.2: saves from before the new levels keep everything they had
+        return false;
     },
     map() {
         G.state = 'map'; $('#hud').classList.add('hidden'); Sound.musicFor(0);
@@ -2512,7 +2699,7 @@ const UI = {
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
                 b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
-                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span></span>` : '');
+                    + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}${TALKS[l.id] ? `<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span>` : ''}</span>` : '');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
                 list.appendChild(b);
             });
@@ -2572,7 +2759,8 @@ const UI = {
 // the light went out: what got you, how it is going, and straight back in with one key
 const CAUSE = { pit: 'You fell into the dark.', spike: 'Spikes.', lava: 'The lava took you.', slime: 'A slime got you.', bat: 'A bat got you.',
     thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.',
-    moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.' };
+    moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.',
+    hopper: 'A hopper got you.', drip: 'A stalactite fell on you.', jet: 'A fire jet got you.' };
 const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump longer to jump higher.', 'You can still jump a moment after running off a ledge.',
     'Stomp slimes, bats and turrets from above. Never thornbacks.', 'A dash goes straight through enemies.', 'Press R to go back to the last lantern.',
     'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.', 'Guardians can only be hurt when they show a !. Watch what they do first.', 'Talk to everyone you meet. Each of them knows part of what happened.', 'Press E or Enter next to someone to hear them again.',
@@ -2596,7 +2784,7 @@ UI.stats = function () {
     const pt = SAVE.d.playTime || 0, tp = pt >= 3600 ? Math.floor(pt / 3600) + 'h ' + Math.floor(pt % 3600 / 60) + 'm' : Math.floor(pt / 60) + 'm ' + Math.floor(pt % 60) + 's';
     const enemy = n('death_enemy');
     const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
-        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'],
+        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
         ['Flawless clears', n('flawless')], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
         ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
@@ -2659,6 +2847,8 @@ const CAST = {
     ilse: { name: 'Sister Ilse', col: '#e8d8ff', about: 'Keeper of the sky temples. She told the Lamplighter the truth, and was afraid of him.' },
     hob: { name: 'Hob', col: '#ff9a5a', about: 'The smith of the Ember Forge. He built the great lantern.' },
     moss: { name: 'Mossback', col: '#8fe07a' }, shard: { name: 'Shardwing', col: '#8ff0ff' }, bell: { name: 'The Bellkeeper', col: '#ffe08a' },
+    tam: { name: 'Tamsin', col: '#9fe0c8', about: 'A mapmaker who walks the whole valley and draws what is left of it. Always looking for places other people walked past.' },
+    quill: { name: 'Quill', col: '#d8b8ff', about: 'The last librarian of the sky temples. Took the best books down to the Forge so the fire could not have them.' },
     cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' }
 };
 const TALKS = {
@@ -2674,10 +2864,48 @@ const TALKS = {
         'Orin, the Lamplighter: he and I go way back. Best man in the valley, once. Lit every lantern by hand, every night, rain or snow.',
         'Then his girl got sick. Her light was fading, the healer said. Like a candle near the end.',
         'Something went out in him too, I think. He stopped talking to anyone. Just stared at the lanterns, like they owed him something.']],
-    '1-4': ['pip', ['You made it this far? Me too! Well. I hid a lot.',
+    '1-10': ['pip', ['You made it this far? Me too! Well. I hid a lot.',
         'Careful up ahead. That’s Mossback’s clearing. He used to let us ride on his back, me and Wren. He guards the forest.',
         'But he’s... wrong now. All dark and twitchy. Like something crawled inside him.',
         'Wren would know what to do. Wren always knew what to do.']],
+    // ---- 1.2: the new middle levels ----
+    '1-5': ['bram', ['Mind the old log. It is hollow, and the bridges inside it are older than I am.',
+        'Me and Orin carved our names in the inside, once. Somewhere up high, I think. He wrote "Orin" and I wrote "Bram", and the girl wrote "Wren" in the middle with a heart.']],
+    '1-6': ['tam', ['Shh, hold still, I am drawing you. A light in a mushroom field. Lovely.',
+        'Tamsin. Mapmaker. I mark where the valley used to be, and where it still is. There are little lanterns hidden all over, dropped by the carts.',
+        'The best ones are never on the path. If the path goes left, look up and right.']],
+    '1-9': ['pip', ['Whoa. You keep going. I would have turned around two lanterns ago.',
+        'Mossback is just past that gate. Be nice to him. He cannot help it, the dark makes his legs jump on their own.',
+        'Wait for him to squat down. That is when he is about to jump. Then slip under his back, okay?']],
+    '2-5': ['marta', ['Echo Chamber. Say something and it says it back, three times, a little sadder each time.',
+        'The old miners cut these steps so the lift would not be needed. I counted them once. I got tired around forty.']],
+    '2-6': ['tam', ['Down here too! I am so happy to see a face. Well. A glow.',
+        'There is a lantern hidden high up in this garden. The crystals grow in a ladder, if you stand just so. I mapped it. Do not tell Marta, she would have mined it.']],
+    '2-7': ['pip', ['There is a river down here. Under the rock. I did not know that.',
+        'The ledges ride it like little boats. Do not look down. I looked down. Do not.']],
+    '2-9': ['marta', ['The pool ahead is as black as the sky between stars. Do not try to wade.',
+        'Light your lantern here, little spark. Shardwing guards the Bell just beyond. It will not hurt you if you keep your head.',
+        'And if it does, you are very, very quick.']],
+    '3-5': ['ilse', ['The pillars were a bridge, once. Then the wind took the middle out of it.',
+        'Push against a wall and jump away from it. The stone remembers being climbed. It likes it.']],
+    '3-6': ['tam', ['Oh! You made it up here! Careful, the wind is rude.',
+        'It rises from the old windmills. Nobody has fed them in years but they are still breathing. Stand in it and let it carry you.',
+        'I left a lantern on a ledge in the east wing. Take it. It is lonely.']],
+    '3-8': ['quill', ['Quiet, please. This is a library. Was a library.',
+        'I carried the good books to the Forge before the dark came. Not that fire is any kinder to paper. But it is warmer than the dark.',
+        'One bookcase is a lie. It opens a little way, if you know where to press.']],
+    '3-9': ['ilse', ['The storm gate. Beyond it, the Bellkeeper.',
+        'Do not fear him. He is only a bell that forgot what it was for. Remind him, if you can.']],
+    '4-5': ['hob', ['Rivets! I put every one of those in by hand. Do you know how many rivets are in a world? A lot.',
+        'You can dash over the long gaps, little light. Jump first, then dash. The dash is faster than falling.']],
+    '4-6': ['tam', ['I knew I would find you. I followed the glow. Also the heat.',
+        'The lifts here still run. They were made to carry lanterns, not people, but they carry people fine.',
+        'There is a map in my pack that I never finished. It stops right where the Forge begins. I think I know why. I think nobody came back to draw it.']],
+    '4-8': ['hob', ['The long run. I built it to carry molten iron, so it is wide, and it is hot, and it is a very long way down.',
+        'Whatever you do, do not stop to rest on the molten bits.']],
+    '4-9': ['quill', ['Oh, the books are fine! A little singed. They are all the way at the back.',
+        'You will meet Cinderjaw next. He is a good guard who got a bad boss. Be firm, and be quick.',
+        'A lost lantern is hidden in this hall, on the wind ledge. Tamsin told me. She tells everyone.']],
     '2-1': ['marta', ['Stop right there. Oh. You’re a light. Sorry, I’ve been talking to rocks for days.',
         'Name’s Marta. I mine crystal down here. Or I did, before the carts.',
         'Hundreds of them rolled through, full of lanterns, all the way down to the Forge. We followed. Thought the Lamplighter had gone mad.',
@@ -2690,7 +2918,7 @@ const TALKS = {
         'That bell back there is the Deep Bell. Ring it when the dark comes, and the guardians wake. Old rule.',
         'Nobody rang it. The dark didn’t come with drums. It came quiet, rolling down the tunnels in a lantern.',
         'Strangest thing, though. A few nights back a girl came by. Small, pale, red ribbon gone. Walking down. Alone. Wouldn’t stop to rest.']],
-    '2-4': ['marta', ['Shardwing’s cave is just ahead. That bat kept the Deep Bell. Used to sing to it.',
+    '2-10': ['marta', ['Shardwing’s cave is just ahead. That bat kept the Deep Bell. Used to sing to it.',
         'It doesn’t sing anymore. It screams.',
         'Wake it up, the old way, and there’s a path out of here. Up. Toward the sky temples.']],
     '3-1': ['ilse', ['Welcome, little flame. Mind the wind. It is all we have left up here.',
@@ -2705,7 +2933,7 @@ const TALKS = {
         'I told him the truth. Light that is hoarded turns to shadow. It cannot be kept, only passed on.',
         'He said: then I will hoard it carefully. And he went down to the Forge with every lantern in the valley.',
         'I should have stopped him. I was afraid of him. That is a hard thing to say about a friend.']],
-    '3-4': ['ilse', ['The Bellkeeper waits beyond. It rings the hours of the valley. It rang the last hour the night the girl came through.',
+    '3-10': ['ilse', ['The Bellkeeper waits beyond. It rings the hours of the valley. It rang the last hour the night the girl came through.',
         'She asked me if her papa could be saved. I said: not by taking. Only by giving.',
         'She smiled at that. I did not understand why until much later.']],
     '4-1': ['hob', ['Hot enough for you? Ha. Sorry. Bad joke. I’m Hob. This is my forge. Was.',
@@ -2721,7 +2949,7 @@ const TALKS = {
         'She said: you don’t need all the lights, Papa. You only ever needed one. And she put her own light in his lantern.',
         'The whole thing went black. That’s when the Gloom was born. But one spark flew out of it. Small. Bright. Up and out, toward home.',
         '...It looked a lot like you.']],
-    '4-4': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
+    '4-10': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
         'You’re her. Aren’t you? You’re Wren. The light of her. The part she gave away.',
         'You can’t talk. That’s okay. You always talked enough for both of us.',
         'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']]
@@ -2815,7 +3043,7 @@ function drawPortrait(who, t = 0, speaking = false) {
 
 // ---------- People: everyone you met and everything they told you ----------
 UI.people = function () {
-    const order = ['bram', 'pip', 'marta', 'ilse', 'hob'], heard = SAVE.d.talks || {};
+    const order = ['bram', 'pip', 'marta', 'ilse', 'hob', 'tam', 'quill'], heard = SAVE.d.talks || {};
     $('#lo-n').textContent = talkCount() + ' of ' + TALK_N + ' conversations heard' + (talkCount() === TALK_N ? ': the whole story.' : '');
     $('#lo-list').innerHTML = order.map(who => {
         const ids = Object.keys(TALKS).filter(id => TALKS[id][0] === who), got = ids.filter(id => heard[id]);
@@ -2952,6 +3180,204 @@ const LEVELS = [
 },
 {
 "id": "1-4",
+"name": "Lantern Lane",
+"world": 0,
+"gives": null,
+"hint": "Hoppers squat before they jump: land on them from above",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"                                                         *",
+"                                                                                                         b",
+"                                                        ===                                                                                        *",
+"",
+"                                                     ===          oo     ooo",
+"                                                                 o  o  o o o     o o                                                        o     L",
+"                 ooo                              ===           o    o  o   o                          o*o                    ooo               #####ooo",
+"  o o o               o o o                                 g            ^^^      L   j                     o o o o                             #####",
+"                o   o                            ################    ####################             o   o                  o   o        ###########   o",
+"   P       L                j      L          j  ################    ####################         j           L      j    g        g      ###########         j L  E",
+"#################   #############################################    ##################################   ####################   ####################   ##############",
+"#################   #############################################    ##################################   ####################   ####################   ##############",
+"#################   #############################################    ##################################   ####################   ####################   ##############",
+"#################   #############################################    ##################################   ####################   ####################   ##############",
+"#################   #############################################    ##################################   ####################   ####################   ##############"
+]
+},
+{
+"id": "1-5",
+"name": "Hollow Log",
+"world": 0,
+"gives": null,
+"hint": "Crumbling bridges drop soon after you step on them: keep moving",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"                                                                                                                                  #    b",
+"                                                                                                                                z #",
+"                                                                                                                                  #",
+"                                                   *                                                                          ===",
+"",
+"                                                  ===                                                                      ===",
+"",
+"                                               ===       oo           ooooo                                             ===",
+"                                                        o  o  o o   oo     oo                                                                              L",
+"                  oooooo                    ===        o    o      o         o             o*o     ooo     oo        ===              ooo     *          ######## oo",
+"  o o o         oo      oo               L          b          g                                o o o     o  o                                           ########o  o",
+"               o          o           ##################    ########CCCCCCCCC             o   o   o   o  o    o   ===                o   o       ################    o",
+"   P       L                 L    j   ##################    ########          n  L    j  g         ^^^          L         h       j              ################       L j     j   E",
+"################CCCCCCCCCC##############################    ########         ##############   ############    ########################   ########################    ##################",
+"################          ##############################    ########         ##############   ############    ########################   ########################    ##################",
+"################          ##############################    ########         ##############   ############    ########################   ########################    ##################",
+"################          ##############################    ########         ##############   ############    ########################   ########################    ##################"
+]
+},
+{
+"id": "1-6",
+"name": "Mushroom Hop",
+"world": 0,
+"gives": null,
+"hint": "Springs throw you high: hold jump to go higher",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"                                                                          *",
+"",
+"                                                                       ======                                              b",
+"",
+"",
+"",
+"",
+"",
+"                                                                 o o o o                                o o o",
+"                    o o o                                             S                                 ======",
+"                      *                                         ========",
+"",
+"                    ======",
+"                                                                                  oo              oo",
+"                                                                           o o   o  o            o  o",
+"                                       b        oo      oo                      o    o          o    o",
+"                                       o o o   o  o    o  o                g           L    j  g          S              o*o             oo   b   oo",
+"              ooo                             o    o  o    o             ########    ############    ##########  o o          o o       o  o     o  o",
+"  o o              o o                                       L  n S  j   ########    ############    ##########         o   o          o    o   o    o",
+"             o   o                   ##########    ####    ######################    ############    ##########  L               j                      L     g E",
+"   P     L           S     L   j     ##########    ####    ######################    ############    ####################   ############    #####    ##############",
+"##############   ##############################    ####    ######################    ############    ####################   ############    #####    ##############",
+"##############   ##############################    ####    ######################    ############    ####################   ############    #####    ##############",
+"##############   ##############################    ####    ######################    ############    ####################   ############    #####    ##############",
+"##############   ##############################    ####    ######################    ############    ####################   ############    #####    ##############"
+]
+},
+{
+"id": "1-7",
+"name": "Briar Patch",
+"world": 0,
+"gives": null,
+"hint": "Thornbacks are spiky: jump over them, never onto them",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"                              b",
+"",
+"                                                                                                                                                                *",
+"",
+"                                                    *                                                                                                          ===",
+"",
+"                                                   ===     ooo             oo      oo      oo          * ooo                                                ===",
+"                                                          o o             o  o    o  o    o  o",
+"          ooo              oo  oooooooo         ===       o   o          o    o  o    o  o    o         o   o         ooo oooooooo                       ===  b",
+"                o o       o  ooo      ooo                  ^^^     L  h                          L    h  ^^^ h    j     ooo      ooo",
+"         o   o           o   oo         o    ===        ##################    ####    ####    ########################  oo         o                  ===",
+"   P    L ^^^       h                     L      h   j  ##################    ####    ####    ########################               L     h    j                    L   hE",
+"##########################       MMM    ##################################    ####    ####    ########################     MMM     ##########################################",
+"##########################              ##################################    ####    ####    ########################             ##########################################",
+"##########################              ##################################    ####    ####    ########################             ##########################################",
+"##########################              ##################################    ####    ####    ########################             ##########################################"
+]
+},
+{
+"id": "1-8",
+"name": "Night Orchard",
+"world": 0,
+"gives": null,
+"hint": "A key opens the door: just walk up to it",
+"guard": null,
+"map": [
+"                                                              #",
+"                                                              #",
+"                                                              #",
+"                                                              #",
+"                                                              #                                                                             b",
+"                                                              #",
+"                                                              #",
+"                                                              #",
+"                                                              #",
+"                                                              #",
+"                               *                              #                                             *",
+"                                  k                           #",
+"                              =======                         #                                            ===                          *",
+"                                                              #",
+"        z                  ===                                #              oo       oo                ===",
+"      =====                                                   D             o  o     o  o                                           L",
+"              ooo       ===              ooo     b            D            o    o   o    o           ===       ooo                ########ooo    ooo",
+"  o ===                                       o o       L     D    g L  j         g        L      h      j          o o           ########",
+"             o   o   ===                o   o         ######################    #####    ######################   o         ##############   o  o   o",
+"   P     L         L       g       j                  ######################    #####    ######################       g     ##############       ^^^j         L       E",
+"##############   ########################   ################################    #####    ######################   ########################   ############################",
+"##############   ########################   ################################    #####    ######################   ########################   ############################",
+"##############   ########################   ################################    #####    ######################   ########################   ############################",
+"##############   ########################   ################################    #####    ######################   ########################   ############################"
+]
+},
+{
+"id": "1-9",
+"name": "The Last Mile",
+"world": 0,
+"gives": null,
+"hint": "The guardian is close. Light every lantern on the way",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                    *",
+"",
+"                                                   ===                                                                                       b                                *",
+"",
+"                                                ===      oo   b    oooooo        ooo                                                                                         ===",
+"                     b                                  o  o     oo      oo",
+"             oo      oo      oo              ===       o    o   o          o    o   o           oo       oo   b   oo         *             ########        ooo            ===      oo",
+"            o  o  o o  o  o o  o  o       L     h    j                      n L  ^^^ h   g  j  o  o     o  o     o  o                  j   ########  L  h                         o  o",
+"           o    o  o    o  o    o       ################    #####CCCCCCCCCC####################    o   o    o   o    o             ########################   o        ===       o    o",
+"   P    L                         j     ################    #####          ####################      g                 L           ########################      L     j     h          L        E",
+"############    ####    ####    ########################    #####          ####################    #####    #####    ######################################   ####################    ##############",
+"############    ####    ####    ########################    #####          ####################    #####    #####    ######################################   ####################    ##############",
+"############    ####    ####    ########################    #####          ####################    #####    #####    ######################################   ####################    ##############",
+"############    ####    ####    ########################    #####          ####################    #####    #####    ######################################   ####################    ##############"
+]
+},
+{
+"id": "1-10",
 "name": "The Old Root",
 "world": 0,
 "gives": "double",
@@ -2962,8 +3388,8 @@ const LEVELS = [
 "",
 "",
 "",
-"                                                                                  b",
-"                                                              *              ooo  oo",
+"",
+"                                                              *              ooo  bo",
 "                                                                            o   oo  o       b",
 "                                                      ogoooo        g     L",
 "                                                     ########   #############                     t   L      ooo               *",
@@ -3088,6 +3514,224 @@ const LEVELS = [
 },
 {
 "id": "2-4",
+"name": "Glowworm Gallery",
+"world": 1,
+"gives": null,
+"hint": "Stalactites tremble before they fall: step out from under them",
+"guard": null,
+"map": [
+"##############################################################################################################################################################################",
+"##############################################################################################################################################################################",
+"                            v      v                v   v   v                     v         v     v      v                        v   v               v   v",
+"",
+"",
+"",
+"",
+"                               *                                                                                                            *",
+"",
+"                              ===                                          *                                                               ===",
+"",
+"                                           b                              ooo",
+"              b            ===                                   o o     o   o                                                          ===",
+"                                                                        o     o",
+"               ooo                      oooo                      g                     L            h       oooo   b   oooo             ooo  ooo        b       L     g E",
+"  o o         o   o     ===            o    o  o o o           ##########     ##############################o    o     o    o        ===     o   o  o o o     ##############",
+"             o     o                  o      o                 ##########     ##############################      o   o      o          o   o     o           ##############",
+"   P     L           L           g              L        g     ##########     ##############################                   L       t ^^^                  ##############",
+"##############     ####################      ############################     ##############################      #####      ################     ##########################",
+"##############     ####################      ############################     ##############################      #####      ################     ##########################",
+"##############     ####################      ############################     ##############################      #####      ################     ##########################",
+"##############     ####################      ############################     ##############################      #####      ################     ##########################"
+]
+},
+{
+"id": "2-5",
+"name": "Echo Chamber",
+"world": 1,
+"gives": null,
+"hint": "Climb. The way up is a staircase of cliffs",
+"guard": null,
+"map": [
+"############################################################################################################################################################",
+"############################################################################################################################################################",
+"                                                       v   v                                                   v  v",
+"",
+"                                                                                                                                                    *",
+"",
+"                                                                                                                                                   ===",
+"",
+"                                                                         b",
+"                                                                                                                                                ===",
+"",
+"                                                                                                          b           oo       oooo             L       E",
+"                                                                                                                     o  o  o  o    o  o o     ############",
+"                                                  *                                                                 o    o   o      o         ############",
+"                                                                                              oo   L             g         g               t  ############",
+"                                                 ===                             *           o  o####################    #####      ######################",
+"                                                                                            o    ####################    #####      ######################",
+"                                                                         ooo             h       ####################    #####      ######################",
+"                                              ===                       o   o        ########    ####################    #####      ######################",
+"                                                                       o     o       ########    ####################    #####      ######################",
+"                                                              n  L                   ########    ####################    #####      ######################",
+"                                           ===      ####################     ################    ####################    #####      ######################",
+"                                                    ####################     ################    ####################    #####      ######################",
+"                                       oo      g    ####################     ################    ####################    #####      ######################",
+"                                      o  o##############################     ################    ####################    #####      ######################",
+"                                     o    ##############################     ################    ####################    #####      ######################",
+"                                 L        ##############################     ################    ####################    #####      ######################",
+"                              ########    ##############################     ################    ####################    #####      ######################",
+"                              ########    ##############################     ################    ####################    #####      ######################",
+"                          g   ########    ##############################     ################    ####################    #####      ######################",
+"                o o   ################    ##############################     ################    ####################    #####      ######################",
+"                      ################    ##############################     ################    ####################    #####      ######################",
+"                  g   ################    ##############################     ################    ####################    #####      ######################",
+"  o o         ########################    ##############################     ################    ####################    #####      ######################",
+"              ########################    ##############################     ################    ####################    #####      ######################",
+"   P     L    ########################    ##############################     ################    ####################    #####      ######################",
+"######################################    ##############################     ################    ####################    #####      ######################",
+"######################################    ##############################     ################    ####################    #####      ######################",
+"######################################    ##############################     ################    ####################    #####      ######################",
+"######################################    ##############################     ################    ####################    #####      ######################"
+]
+},
+{
+"id": "2-6",
+"name": "Crystal Garden",
+"world": 1,
+"gives": null,
+"hint": "Some crystals hide a lost lantern",
+"guard": null,
+"map": [
+"##############################################################################################################################################################################",
+"##############################################################################################################################################################################",
+"                                                          v                                                         v",
+"                                                                                        z",
+"                                                                                       ==",
+"",
+"",
+"",
+"                                                                                    ==                                                                                *",
+"",
+"                                                                                                                                                                     ===",
+"                                                              *",
+"                                                                                 ==",
+"                                                b            ===                o o                                          *                                    ===",
+"                  b",
+"                                                                           oo   L  n         ooo    ooo     ooo            oooo        oooo        oooo",
+"                                                          ===         o o o  o##############o   o          o   o          o    o      o    o      o    o       ===",
+"                                                                         o    ##############     o o   o  o     o        o      o    o      o    o      o",
+"               oooo      oooo      oooo      oooo                      g      ##############        ^^^g           L                          g           L      h     g  E",
+"              o    o  o o    o  o o    o  o o    o     ===          ######    ##############     ##########     ##########      ######      ######      ####################",
+"             o      o  o      o  o      o  o      o                 ######    ##############     ##########     ##########      ######      ######      ####################",
+"   P     L                      g                    L        g     ######    ##############     ##########     ##########      ######      ######      ####################",
+"##############      ####      ####      ####      ########################    ##############     ##########     ##########      ######      ######      ####################",
+"##############      ####      ####      ####      ########################    ##############     ##########     ##########      ######      ######      ####################",
+"##############      ####      ####      ####      ########################    ##############     ##########     ##########      ######      ######      ####################",
+"##############      ####      ####      ####      ########################    ##############     ##########     ##########      ######      ######      ####################"
+]
+},
+{
+"id": "2-7",
+"name": "Underground River",
+"world": 1,
+"gives": null,
+"hint": "Ride the moving ledges: wait for them to come to you",
+"guard": null,
+"map": [
+"###############################################################################################################################################################",
+"###############################################################################################################################################################",
+"                                                                                              v     v",
+"",
+"",
+"",
+"",
+"                                   *                                                                                         *",
+"",
+"                                  ===                                                                                       ===",
+"",
+"",
+"                               ===                        *                                                              ===",
+"",
+"               oooooooooo             oooooooooo             oooooooooo              ooo                   oooooo           b     ooo        ooo",
+"  o o        oooo      oooo ===    oooo        oooo        oooo      oooo           o   o  o o o         oo      oo   ===        o   o      o   o",
+"             o            o        oo            oo        o            o          o     o              o          o            o     o    o     o",
+"   P     L                  L   g                   L   h                 L  n             L     b                   L                   g          L     E",
+"##############   MMM      ##########   MMMM       ##########   MMM      ############     ################   MMM    ##############     ######     ############",
+"##############            ##########              ##########            ############     ################          ##############     ######     ############",
+"##############^^^^^^^^^^^^##########^^^^^^^^^^^^^^##########^^^^^^^^^^^^############     ################^^^^^^^^^^##############     ######     ############",
+"##############^^^^^^^^^^^^##########^^^^^^^^^^^^^^##########^^^^^^^^^^^^############     ################^^^^^^^^^^##############     ######     ############"
+]
+},
+{
+"id": "2-8",
+"name": "Rockfall",
+"world": 1,
+"gives": null,
+"hint": "Crumbling stone: do not stop. Falling rock: do not stand still",
+"guard": null,
+"map": [
+"######################################################################################################################################################",
+"######################################################################################################################################################",
+"                  v    v        v      v               v   v   v                              v      v  v   v       v    v",
+"",
+"                                                                                     b",
+"",
+"",
+"",
+"",
+"                                      *                                                                                                    *",
+"",
+"                                     ===                                                                                                  ===",
+"",
+"                                                 b    ooooooooo              *",
+"                                  ===       o o     ooo       ooo                                                                      ===",
+"                                                   o             o",
+"                oooooooo                                           L     t        oooo      oooo                 oooooooooo",
+"  o o         ooo      ooo     ===        ##########CCCCCCCCCCCCC################o    o    o    o              ooo        ooo       ===",
+"             o            o               ##########             ################      o  o      o            oo            oo",
+"   P     L                  L       g     ##########             ################                  L      h                     L        g   E",
+"##############CCCCCCCCCCCC##########################             ################      ####CCCCCC##############CCCCCCCCCCCCCC##################",
+"##############            ##########################             ################      ####      ##############              ##################",
+"##############            ##########################             ################      ####      ##############              ##################",
+"##############            ##########################             ################      ####      ##############              ##################"
+]
+},
+{
+"id": "2-9",
+"name": "Black Pool",
+"world": 1,
+"gives": null,
+"hint": "The guardian is close. Take it slow, and light every lantern",
+"guard": null,
+"map": [
+"###################################################################################################################################################################################",
+"###################################################################################################################################################################################",
+"                                                            v    v                                  v    v",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                  *",
+"                     b",
+"                                                                 ===                                               *               ===",
+"",
+"                                                                             oooo   b   oooo                   oooooooo",
+"                            *                                 ===           o    o     o    o                ooo      ooo       ===",
+"                                                                           o      o   o      o              o            o",
+"             oooo     oooo      oooo     oooo      ooo                   g                      L     g                                     oooo      oooo      oooo",
+"            o    o   o    o    o    b   o    o    o   o    ===         #####      #####      ################CCCCCCCCCCCC    ===           o    o    o    o    o    o",
+"           o      o o      o  o      o o      o  o     o               #####      #####      ################                             o      o  o      o  o      o",
+"   P    L                                      g         L  n       g  #####      #####      ################              L     h     t          g                    L      E",
+"############      ###      ####      ###      ####     #####################      #####      ################            ##################      ####      ####      ############",
+"############      ###      ####      ###      ####     #####################      #####      ################            ##################      ####      ####      ############",
+"############      ###      ####      ###      ####     #####################      #####      ################            ##################      ####      ####      ############",
+"############      ###      ####      ###      ####     #####################      #####      ################            ##################      ####      ####      ############"
+]
+},
+{
+"id": "2-10",
 "name": "The Deep Bell",
 "world": 1,
 "gives": "wall",
@@ -3254,6 +3898,272 @@ const LEVELS = [
 },
 {
 "id": "3-4",
+"name": "Gale Gardens",
+"world": 2,
+"gives": null,
+"hint": "Stand in the wind and it lifts you",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                                                              b",
+"",
+"",
+"",
+"                                                            oooo       oooo           b",
+"                                                           o    o     o    o  o o                     *                 oo",
+"                           *                              o      o   o      o",
+"                                                 L   h             h          L                      ===              ======",
+"                        ======               ##############      #####      ##########",
+"                                             ##############      #####      ##########",
+"                                             ##############      #####      ##########            ===",
+"                                             ##############      #####      ##########",
+"               ooo              oooo         ##############      #####      ########## ooo            ooo   oooo          oooo   b   oooo         *",
+"  o o         o   o            o    o  o o   ##############      #####      ##########o   o    ===         o    o        o    o     o    o",
+"             o     o          o      o       ##############      #####      ##########     o         o   oo      o      o      o   o      o",
+"   P     L           LW     g           LW   ##############      #####      ##########       L      g ^^^           W                        L       E",
+"##############     ############      ######################      #####      ##########     ################      ########      #####      ##############",
+"##############     ############      ######################      #####      ##########     ################      ########      #####      ##############",
+"##############     ############      ######################      #####      ##########     ################      ########      #####      ##############",
+"##############     ############      ######################      #####      ##########     ################      ########      #####      ##############"
+]
+},
+{
+"id": "3-5",
+"name": "Pillar Run",
+"world": 2,
+"gives": null,
+"hint": "Walls are for jumping off: press jump against a wall",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"                                                                                                                    b                                                          L       E",
+"                                                                                                                                                                        #   ##############",
+"                                                                 *                                                                                                      #   ##############",
+"                 b                                                                                                                        *                             #ooo##############",
+"                                                                ===                                                                                                     #   ##############",
+"                                                                                                          oooo      oooo      oooo                                      #   ##############",
+"                                                                                                         o    o    o    o    o    o                                     #   ##############",
+"                                                             ===                                        o      o  o      o  o      o                                    #   ##############",
+"                                                                                                 L   b                               L                                  #   ##############",
+"                                          oooo      oooo                                   #   ##########      ####      ####      ##############                       #   ##############",
+"                                 o o     o    o    o    o ===                              #   ##########      ####      ####      ##############                       #   ##############",
+"                                        o      o  o      o                                 #ooo##########      ####      ####      ############## ooo                  b#   ##############",
+"                                  L g                            h                         #   ##########      ####      ####      ##############o   o                   ooo##############",
+"                           #   ##########      ####      ############                      #   ##########      ####      ####      ##############     o                     ##############",
+"                           #   ##########      ####      ############                      #   ##########      ####      ####      ##############        L      h           ##############",
+"                           #ooo##########      ####      ############ oooo                 #   ##########      ####      ####      ##############     ####################################",
+"                           #   ##########      ####      ############o    o                 ooo##########      ####      ####      ##############     ####################################",
+"                           #   ##########      ####      ############      o                   ##########      ####      ####      ##############     ####################################",
+"                           #   ##########      ####      ############        L  n           t  ##########      ####      ####      ##############     ####################################",
+"                           # * ##########      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"                           #   ##########      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"               ooo         #   ##########      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"  o o         o   o         ooo##########      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"             o     o           ##########      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"   P     L           L         ##########      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"##############     ######################      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"##############     ######################      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"##############     ######################      ####      ############      ##############################      ####      ####      ##############     ####################################",
+"##############     ######################      ####      ############      ##############################      ####      ####      ##############     ####################################"
+]
+},
+{
+"id": "3-6",
+"name": "Windmill Stair",
+"world": 2,
+"gives": null,
+"hint": "Ride the wind from ledge to ledge",
+"guard": null,
+"map": [
+"                                                 *      oooo       oooo                                                           o    o",
+"                                                       o    o     o    o                   *                                     o      o",
+"                                                      o      o   o      o                                                     h            L       E",
+"                                             L    g            t          L  n           ======                       #   ########      ##############",
+"                                           ############      #####      ##########                                    #   ########      ##############",
+"                                           ############      #####      ##########                                    #ooo########      ##############",
+"                                           ############      #####      ##########                                    #   ########      ##############",
+"                                           ############      #####      ##########                                    #   ########      ##############",
+"                                           ############      #####      ########## oo                oooo             #   ########      ##############",
+"                                     o o   ############      #####      ##########o  o              o    o             ooo########      ##############",
+"                                           ############      #####      ##########    o            o      o               ########      ##############",
+"                                         W ############      #####      ##########         W   b g          L        h    ########      ##############",
+"                                    ====== ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"               b                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                              o *          ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                  W        ############      #####      ##########    ##############      ########################      ##############",
+"                             ======        ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                       o o            b    ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                           W               ############      #####      ##########    ##############      ########################      ##############",
+"                      ======               ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"                                           ############      #####      ##########    ##############      ########################      ##############",
+"               ooo                         ############      #####      ##########    ##############      ########################      ##############",
+"  o o         o   o                        ############      #####      ##########    ##############      ########################      ##############",
+"             o     o                       ############      #####      ##########    ##############      ########################      ##############",
+"   P     L          WL                     ############      #####      ##########    ##############      ########################      ##############",
+"##############     ##########              ############      #####      ##########    ##############      ########################      ##############",
+"##############     ##########              ############      #####      ##########    ##############      ########################      ##############",
+"##############     ##########              ############      #####      ##########    ##############      ########################      ##############",
+"##############     ##########              ############      #####      ##########    ##############      ########################      ##############"
+]
+},
+{
+"id": "3-7",
+"name": "Cracked Causeway",
+"world": 2,
+"gives": null,
+"hint": "The causeway crumbles. Do not stop, and watch the bats",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                                                                              *",
+"",
+"                                                                                                                             ===",
+"",
+"                                                                                      b      b",
+"                                                                            L                                             ===",
+"                                                                      #   ########",
+"                                                                      #   ########   oooooooooo                  oooo            oooo       oooo",
+"                                       *                              #ooo########oooo        oooo              o    o ===      o    o     o    o",
+"                                                                      #   ########o              oo            o      o        o      o   o      o",
+"                                      ===            *                #   ########                  L      g               h            g          L      E",
+"                                                                      #   ########CCCC  CCCC  CCCC##############      ##########      #####      ############",
+"                                            b     oooooo              #   ########                ##############      ##########      #####      ############",
+"                   b               ===      o o oo      oo             ooo########                ##############      ##########      #####      ############",
+"                                               o          o               ########                ##############      ##########      #####      ############",
+"                oooooooooo                                  L    h        ########                ##############      ##########      #####      ############",
+"  o o         ooo        ooo    ===       ######CCCCCCCCCC########################                ##############      ##########      #####      ############",
+"             oo            oo             ######          ########################                ##############      ##########      #####      ############",
+"   P     L                    L      g    ######          ########################                ##############      ##########      #####      ############",
+"##############CCCCCCCCCCCCCC####################          ########################                ##############      ##########      #####      ############",
+"##############              ####################          ########################                ##############      ##########      #####      ############",
+"##############              ####################          ########################                ##############      ##########      #####      ############",
+"##############              ####################          ########################                ##############      ##########      #####      ############"
+]
+},
+{
+"id": "3-8",
+"name": "Cloud Library",
+"world": 2,
+"gives": null,
+"hint": "Bookcases hold a key. The door is further on",
+"guard": null,
+"map": [
+"                                                                    #",
+"                                                                    #",
+"                                                                    #",
+"                                                                    #",
+"                                                                    #",
+"                                                                    #",
+"                                                                    #                                       b",
+"                                                                    #        *",
+"                                                                    #",
+"                                                                    #       ===",
+"                                                                    #                                                                                      *    oooo",
+"                                                                    #                                                                                          o    o",
+"                                                                    #    ===                                                                                  o      o",
+"                                          k                         #                                                                                     g             L       E",
+"                                        ====        ooo             #            oooo       oooo                        z                          #   ########      ##############",
+"                                                   o   o            D ===       o    o     o    o                    ======                        #   ########      ##############",
+"                                                  o     o           D          o      o   o      o                                                 #ooo########      ##############",
+"                                        L    h            L         D   n  L            g          L                                               #   ########      ##############",
+"                                 #   ##############     ########################      #####      ##########                                        #   ########      ##############",
+"                b                #   ##############     ########################      #####      ##########                                        #   ########      ##############",
+"                                 #ooo##############     ########################      #####      ########## ooo                ooo                 #   ########      ##############",
+"                                 #   ##############     ########################      #####      ##########o   o              o   o                 ooo########      ##############",
+"                                 #   ##############     ########################      #####      ##########     o            o     o                   ########      ##############",
+"                                 #   ##############     ########################      #####      ##########        W    b            L       h      h  ########      ##############",
+"                                 # * ##############     ########################      #####      ##########     ##############     ############################      ##############",
+"                                 #   ##############     ########################      #####      ##########     ##############     ############################      ##############",
+"               ooo               #   ##############     ########################      #####      ##########     ##############     ############################      ##############",
+"  o o         o   o               ooo##############     ########################      #####      ##########     ##############     ############################      ##############",
+"             o     o                 ##############     ########################      #####      ##########     ##############     ############################      ##############",
+"   P     L           L      g        ##############     ########################      #####      ##########     ##############     ############################      ##############",
+"##############     ################################     ########################      #####      ##########     ##############     ############################      ##############",
+"##############     ################################     ########################      #####      ##########     ##############     ############################      ##############",
+"##############     ################################     ########################      #####      ##########     ##############     ############################      ##############",
+"##############     ################################     ########################      #####      ##########     ##############     ############################      ##############"
+]
+},
+{
+"id": "3-9",
+"name": "Storm Gate",
+"world": 2,
+"gives": null,
+"hint": "The guardian is close. Everything you learned is here",
+"guard": null,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"              b",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                     oo                                *",
+"                                                                                                                                       oooo      oooo      oooo",
+"                                                                   ======                             ===                             o    o    o    o    o    o",
+"                                                                                                                                     o      o  o      o  o      o",
+"                                                                                                                                L h                    b           L       E",
+"                                                                                                   ===                    #   ########      ####      ####      ##############",
+"                                                                                                                          #   ########      ####      ####      ##############",
+"                                                    *    oooo          oooo       oooooooo                                #ooo########      ####      ####      ##############",
+"                                                        o    o        o    o    ooo      ooo    ===                       #   ########      ####      ####      ##############",
+"                                                       o      o      o      o  o            o                             #   ########      ####      ####      ##############",
+"                        b                       L   n            W           b                L      g                    #   ########      ####      ####      ##############",
+"                                          #   ##########      ########      ####CCCCC  CCCCC##############                # * ########      ####      ####      ##############",
+"                                          #   ##########      ########      ####            ##############                #   ########      ####      ####      ##############",
+"                                          #ooo##########      ########      ####            ############## oooo           #   ########      ####      ####      ##############",
+"                                          #   ##########      ########      ####            ##############o    o           ooo########      ####      ####      ##############",
+"                                          #   ##########      ########      ####            ##############      o             ########      ####      ####      ##############",
+"                                          #   ##########      ########      ####            ##############        L           ########      ####      ####      ##############",
+"                                          #   ##########      ########      ####            ##############      ######################      ####      ####      ##############",
+"                                          #   ##########      ########      ####            ##############      ######################      ####      ####      ##############",
+"             oooo      oooo               #   ##########      ########      ####            ##############      ######################      ####      ####      ##############",
+"            o    o    o    o               ooo##########      ########      ####            ##############      ######################      ####      ####      ##############",
+"           o      o  o      o                 ##########      ########      ####            ##############      ######################      ####      ####      ##############",
+"   P    L                     L      h        ##########      ########      ####            ##############      ######################      ####      ####      ##############",
+"############      ####      ############################      ########      ####            ##############      ######################      ####      ####      ##############",
+"############      ####      ############################      ########      ####            ##############      ######################      ####      ####      ##############",
+"############      ####      ############################      ########      ####            ##############      ######################      ####      ####      ##############",
+"############      ####      ############################      ########      ####            ##############      ######################      ####      ####      ##############"
+]
+},
+{
+"id": "3-10",
 "name": "The Sun Shrine",
 "world": 2,
 "gives": "dash",
@@ -3282,14 +4192,14 @@ const LEVELS = [
 "                   #   #                                                    #   #                          #########################################################",
 "                   #   #                                                    #ooo#                          #########################################################",
 "                   #   #                                                    #   #                          #########################################################",
-"                   #ooo#                                                    #   #                     b    #########################################################",
+"                   #ooo#                                                    #   #                          #########################################################",
 "                   #   #                                                    #   #                          #########################################################",
 "                   #   #                                                    #   #                          #########################################################",
 "                   #   #                                                    #   #                          #########################################################",
 "                   #   #                                                    # * #                          #########################################################",
-"                       #                                                     ###                           #########################################################",
+"                       #                                                     ###                     b     #########################################################",
 "                       #                                                                                   #########################################################",
-"   P     L         t   #                                                                                   #########################################################",
+"   P     L          g  #                                                                                   #########################################################",
 "#######################                                                                                    #########################################################",
 "#######################                                                                                    #########################################################",
 "#######################                                                                                    #########################################################",
@@ -3412,6 +4322,240 @@ const LEVELS = [
 },
 {
 "id": "4-4",
+"name": "Slag Walk",
+"world": 3,
+"gives": null,
+"hint": "Fire jets flicker first, then burst. Wait, or dash through",
+"guard": null,
+"map": [
+"################################################################################################################################################################################",
+"################################################################################################################################################################################",
+"",
+"",
+"",
+"",
+"",
+"                                    *                                                                                                                *",
+"",
+"                                   ===                                                                                                              ===",
+"",
+"                                                                               *",
+"                                ===                                                                                                              ===",
+"                                                             o o o          oooooo",
+"               ooo                      oooo          oooo                oo      oo                          oo        oooo                               oooo",
+"  o o         o   o          ===       o    o        o    o  L   f    h              L     g                           o    o      oooooo     ===         o    o",
+"             o     o                  o      o      o      ################        ##############            o  o     o      o   oo      oo              o      o",
+"   P     L           L     f      g              f         ################        ##############  L  f     f ^^  h            g            L      t               L    f  E",
+"##############     ####################      ########      ################llllllll####################################      #####        ################      ##############",
+"##############     ####################      ########      ################llllllll####################################      #####        ################      ##############",
+"##############lllll####################llllll########llllll################llllllll####################################llllll#####llllllll################llllll##############",
+"##############lllll####################llllll########llllll################llllllll####################################llllll#####llllllll################llllll##############",
+"##############lllll####################llllll########llllll################llllllll####################################llllll#####llllllll################llllll##############",
+"##############lllll####################llllll########llllll################llllllll####################################llllll#####llllllll################llllll##############"
+]
+},
+{
+"id": "4-5",
+"name": "Rivet Row",
+"world": 3,
+"gives": null,
+"hint": "Hop the rivets. Dash is the fast way over",
+"guard": null,
+"map": [
+"##################################################################################################################################################################################",
+"##################################################################################################################################################################################",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                    *",
+"",
+"                                                                   ===",
+"",
+"",
+"                                                                ===       oooo     oooo     oooo                          *",
+"                              *                                          o    o   o    o   o    o    oooooo",
+"               oooo     oooo     oooo     oooo     ooooo                o      o o      o o      o oo      oo                oooo      oooo      oooo",
+"  o o         o    o   o    o   o    o   o    o   o     o    ===                         b                    L     g  f    o    o    o    o    o    o     oooooo",
+"             o      o o      o o      o o      o o       o                     ###      ###      ###        ################      o  o      o  o      o  oo      oo",
+"   P     L                             f                   L  n       f        ###      ###      ###        ################                                         L    f  E",
+"##############      ###      ###      ###      ###       ################llllll###llllll###llllll###llllllll################      ####      ####      ####        ##############",
+"##############      ###      ###      ###      ###       ################llllll###llllll###llllll###llllllll################      ####      ####      ####        ##############",
+"##############llllll###llllll###llllll###llllll###lllllll################llllll###llllll###llllll###llllllll################llllll####llllll####llllll####llllllll##############",
+"##############llllll###llllll###llllll###llllll###lllllll################llllll###llllll###llllll###llllllll################llllll####llllll####llllll####llllllll##############",
+"##############llllll###llllll###llllll###llllll###lllllll################llllll###llllll###llllll###llllllll################llllll####llllll####llllll####llllllll##############",
+"##############llllll###llllll###llllll###llllll###lllllll################llllll###llllll###llllll###llllllll################llllll####llllll####llllll####llllllll##############"
+]
+},
+{
+"id": "4-6",
+"name": "Chain Lift",
+"world": 3,
+"gives": null,
+"hint": "Ride the lifts. They stop at the top and the bottom",
+"guard": null,
+"map": [
+"####################################################################################################################################################",
+"####################################################################################################################################################",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                           |             *      ooooo          ooooo",
+"                                     *                         o     o        o     o",
+"                                                              o       o      o       o                    *",
+"                                    ===            L  n                   f",
+"                                                 ##############       ########                          oooooo                ooooo",
+"                                                 ##############       ########                       ooo      ooo            o     o",
+"                                 ===             ##############lllllll########lllllll               o            o          o       o",
+"                                            oo   ##############lllllll########lllllll  L      g   f                L   h               L       E",
+"                 oooooo                 o  oooo  ##############lllllll########lllllll################   MMM      ############       ##############",
+"  o o         ooo      ooo    ===        oo    oo##############lllllll########lllllll################            ############       ##############",
+"             o            o            ooo       ##############lllllll########lllllll################llllllllllll############lllllll##############",
+"   P     L                  L      g       NN    ##############lllllll########lllllll################llllllllllll############lllllll##############",
+"##############   MMM      ##############         ##############lllllll########lllllll################llllllllllll############lllllll##############",
+"##############            ##############   |     ##############lllllll########lllllll################llllllllllll############lllllll##############",
+"##############llllllllllll############## llllllll##############lllllll########lllllll################llllllllllll############lllllll##############",
+"##############llllllllllll############## llllllll##############lllllll########lllllll################llllllllllll############lllllll##############",
+"##############llllllllllll############## llllllll##############lllllll########lllllll################llllllllllll############lllllll##############",
+"##############llllllllllll############## llllllll##############lllllll########lllllll################llllllllllll############lllllll##############"
+]
+},
+{
+"id": "4-7",
+"name": "Bellows",
+"world": 3,
+"gives": null,
+"hint": "The bellows blow upward. Ride them, and mind the jets",
+"guard": null,
+"map": [
+"############################################################################################################################################",
+"############################################################################################################################################",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                                                        z",
+"                                                                                                     ======",
+"                                                                                       *",
+"",
+"                                                                                      ===",
+"",
+"                                                                            ooooo          oooo              oooo       *",
+"                                                                           o     o ===    o    o            o    o",
+"                                                                          o       o      o      o          o      o",
+"                                                         o     L     h                f           LW      t          L    f  E",
+"                                                      ====== ##############       ########      ##############    ##############",
+"                                                             ##############       ########      ##############    ##############",
+"                                                             ##############lllllll########llllll############llllll##############",
+"                                                             ##############lllllll########llllll############llllll##############",
+"                                                             ##############lllllll########llllll############llllll##############",
+"                                             oooo            ##############lllllll########llllll############llllll##############",
+"                                            o    o           ##############lllllll########llllll############llllll##############",
+"                            *              o      o          ##############lllllll########llllll############llllll##############",
+"                                  L    g            W  f     ##############lllllll########llllll############llllll##############",
+"                         ====== ############      ########## ##############lllllll########llllll############llllll##############",
+"                                ############      ########## ##############lllllll########llllll############llllll##############",
+"                                ############llllll########## ##############lllllll########llllll############llllll##############",
+"                                ############llllll########## ##############lllllll########llllll############llllll##############",
+"                                ############llllll########## ##############lllllll########llllll############llllll##############",
+"               oooo             ############llllll########## ##############lllllll########llllll############llllll##############",
+"  o o         o    o            ############llllll########## ##############lllllll########llllll############llllll##############",
+"             o      o           ############llllll########## ##############lllllll########llllll############llllll##############",
+"   P     L            LW     f  ############llllll########## ##############lllllll########llllll############llllll##############",
+"##############      ########################llllll########## ##############lllllll########llllll############llllll##############",
+"##############      ########################llllll########## ##############lllllll########llllll############llllll##############",
+"##############llllll########################llllll########## ##############lllllll########llllll############llllll##############",
+"##############llllll########################llllll########## ##############lllllll########llllll############llllll##############"
+]
+},
+{
+"id": "4-8",
+"name": "Molten Run",
+"world": 3,
+"gives": null,
+"hint": "Long jumps over the lava: jump, then dash",
+"guard": null,
+"map": [
+"################################################################################################################################################################################################",
+"################################################################################################################################################################################################",
+"",
+"",
+"",
+"",
+"",
+"                                                                               *",
+"",
+"                                                                              ===",
+"",
+"                                                                                       ooooo",
+"                                                                           ===        o     o      oooooo",
+"                                                   *                                 o       o   oo      oo",
+"                                                                                               t            L      f                                                              *",
+"             oooooo       oooooo         oooooo       oooooo            ===                  #####        ################ oooooo      oooooo      oooooo      oooooo",
+"           oo      oo   oo      oo     oo      oo   oo      oo                               #####        ################o      oo  oo      oo  oo      oo  oo      oo",
+"   P    L             g            L                               n  L     f     h   lllllll#####llllllll################                     b                        L       g        L E",
+"############        #####        #######        #####        #########################lllllll#####llllllll################        ####        ####        ####        ########################",
+"############        #####        #######        #####        #########################lllllll#####llllllll################        ####        ####        ####        ########################",
+"############llllllll#####llllllll#######llllllll#####llllllll#########################lllllll#####llllllll################llllllll####llllllll####llllllll####llllllll########################",
+"############llllllll#####llllllll#######llllllll#####llllllll#########################lllllll#####llllllll################llllllll####llllllll####llllllll####llllllll########################",
+"############llllllll#####llllllll#######llllllll#####llllllll#########################lllllll#####llllllll################llllllll####llllllll####llllllll####llllllll########################",
+"############llllllll#####llllllll#######llllllll#####llllllll#########################lllllll#####llllllll################llllllll####llllllll####llllllll####llllllll########################"
+]
+},
+{
+"id": "4-9",
+"name": "Anvil Hall",
+"world": 3,
+"gives": null,
+"hint": "The guardian is close. Jets, lava and lifts: you know it all",
+"guard": null,
+"map": [
+"###########################################################################################################################################################################",
+"###########################################################################################################################################################################",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                               *",
+"                                                                                                                                   *",
+"                              ===",
+"                                                                                                                                  ===",
+"                                                                             z",
+"                           ===                                            ======",
+"                                                                                                                               ===",
+"",
+"                        ===                                                                                      oooo",
+"                                                                                                                o    o      ===        oooooo       oooooo",
+"             oooo                                  oooo        oooo                      oooooo            *   o      o              oo      oo   oo      oo",
+"            o    o   ===           oooooo         o    o      o    o                  ooo      ooo                     L   f    f               t             L     f E",
+"           o      o              oo      oo      o      o    o      o                o            o                   ################        #####        ##############",
+"   P    L           L    f    h               f            h          L Wn   f    g                 L     h           ################        #####        ##############",
+"############      ################        ########      ######      ##################   MMM      ##############llllll################llllllll#####llllllll##############",
+"############      ################        ########      ######      ##################            ##############llllll################llllllll#####llllllll##############",
+"############llllll################llllllll########llllll######llllll##################llllllllllll##############llllll################llllllll#####llllllll##############",
+"############llllll################llllllll########llllll######llllll##################llllllllllll##############llllll################llllllll#####llllllll##############",
+"############llllll################llllllll########llllll######llllll##################llllllllllll##############llllll################llllllll#####llllllll##############",
+"############llllll################llllllll########llllll######llllll##################llllllllllll##############llllll################llllllll#####llllllll##############"
+]
+},
+{
+"id": "4-10",
 "name": "Heart of Embers",
 "world": 3,
 "gives": null,

@@ -181,7 +181,7 @@ function respawn(G, full = true) {
     Object.assign(p, makePlayer(c.x, c.y), { keys: p.keys, hearts: G.maxHearts() });
     G.cam.snap = 0.2; G.hud(); p.spawnT = 0.6; G.iris = 0.35;
     burst(G, p.x, p.y, '#fff2c4', 22, 180);
-    guardReset(G);
+    guardReset(G); bossReset(G);
 }
 
 // ---------- enemies, items, moving bits ----------
@@ -233,6 +233,24 @@ function updateWorld(G, dt) {
             case 'slime': case 'thorn': walker(G, e, dt); break;
             case 'bat': e.x = e.sx + Math.sin(t * 1.2 + e.seed) * 62; e.y = e.sy + Math.sin(t * 2.3 + e.seed) * 24; e.dir = Math.cos(t * 1.2 + e.seed) > 0 ? 1 : -1; contact(G, e, 13); break;
             case 'turret': turret(G, e, dt); contact(G, e, 14); break;
+            case 'hopper': hopper(G, e, dt); break;
+            case 'drip': drip(G, e, dt); break;
+            case 'jet': jet(G, e, dt); break;
+            case 'heart':       // a heart that appears in a guardian fight; only picked up when you are missing one
+                if (!p.dead && near(p, e, 20) && p.hearts < G.maxHearts()) { e.gone = true; p.hearts++; Sound.play('lantern'); burst(G, e.x, e.y, '#ff9ab0', 16, 160, true); G.toast('A heart!'); G.hud(); }
+                break;
+            case 'secret':      // a lost lantern, hidden away: finding it is remembered
+                if (!p.dead && near(p, e, 22)) {
+                    e.gone = true; SAVE.d.secrets = SAVE.d.secrets || {}; const first = !SAVE.d.secrets[G.L.def.id]; SAVE.d.secrets[G.L.def.id] = true; if (first) ST('secrets'); SAVE.write();
+                    Sound.play('shrine'); G.white = 0.35; burst(G, e.x, e.y, '#bff7ff', 40, 260, true); ring(G, e.x, e.y, '#bff7ff'); UI.banner('A lost lantern', first ? 'Secret found' : 'You found it again', 'Hidden lanterns are scattered across the valley');
+                }
+                break;
+        }
+    }
+    // updraft vents: a column of wind that lifts anything that flies into it
+    for (const v of L.vents) {
+        if (!p.dead && !G.done && p.x > v.x + 3 && p.x < v.x + TS - 3 && p.y > v.y + TS - v.h * TS && p.y < v.y + TS) {
+            p.vy = Math.max(p.vy - 4000 * dt, -400); p.ground = false; p.on = null; if (p.vy < -200 && Math.random() < 0.3) dust(G, p.x, p.y + 10, 1);
         }
     }
     // turret orbs
@@ -270,6 +288,51 @@ function turret(G, e, dt) {
         if (e.cool <= 0) { e.cool = 1.6; e.charge = 0; const a = e.aim; G.shots.push({ x: e.x + Math.cos(a) * 14, y: e.y - 2 + Math.sin(a) * 14, vx: Math.cos(a) * 215, vy: Math.sin(a) * 215, life: 5 }); Sound.play('shoot'); }
     } else e.charge = Math.max(0, (e.charge || 0) - dt);
 }
+// 1.2 enemies and hazards
+// hopper: a frog. It rests, squats (the tell), then hops one step toward you (or away from an edge or a wall). Stomp it.
+function hopper(G, e, dt) {
+    const L = G.L, p = G.p; if (e.dead) return;
+    if (e.gy === undefined) { e.gy = e.y; e.u = 0; e.rest = 0.5 + e.seed % 1; e.dir = e.seed % 2 > 1 ? 1 : -1; }
+    e.sq = Math.max(0, (e.sq || 0) - dt * 4);
+    if (e.u > 0) {
+        e.u += dt / 0.62; const nx = e.x + e.dir * 92 * dt;
+        if (!solidAtPx(L, nx + e.dir * 12, e.gy - 6)) e.x = nx;
+        if (e.u >= 1) { e.u = 0; e.y = e.gy; e.rest = 1.15; e.sq = 1; } else e.y = e.gy - 4 * 40 * e.u * (1 - e.u);
+    } else {
+        e.rest -= dt;
+        if (e.rest <= 0) {
+            if (Math.abs(p.x - e.x) < TS * 8 && Math.abs(p.y - e.y) < TS * 4 && !p.dead) e.dir = sign(p.x - e.x) || e.dir;
+            const lx = e.x + e.dir * 57, floor = solidAtPx(L, lx, e.gy + 18) || tileAt(L, Math.floor(lx / TS), Math.floor((e.gy + 18) / TS)) === T_ONEWAY;
+            if (!floor || solidAtPx(L, lx, e.gy - 6)) e.dir *= -1;
+            e.u = 0.001; Sound.play('bounce');
+        }
+    }
+    contact(G, e, 13);
+}
+// drip: a stalactite. Walk under it and it trembles (a tell), lets go, shatters on the floor, and grows back.
+function drip(G, e, dt) {
+    const L = G.L, p = G.p;
+    if (e.st === undefined) { e.st = 0; e.t = 0; }
+    if (e.st === 0) {
+        const tx = Math.floor(e.x / TS);
+        let clear = true; for (let ty = Math.floor(e.y / TS) + 1; ty <= Math.floor(p.y / TS); ty++) if (tileAt(L, tx, ty) === T_SOLID) { clear = false; break; }
+        if (!p.dead && clear && Math.abs(p.x - e.x) < 22 && p.y > e.y && p.y - e.y < TS * 10) { e.st = 1; e.t = 0.75; Sound.play('crumble'); }
+    } else if (e.st === 1) { e.t -= dt; if (e.t <= 0) { e.st = 2; e.vy = 0; } }
+    else if (e.st === 2) {
+        e.vy = Math.min(e.vy + 2300 * dt, 780); e.y += e.vy * dt;
+        if (!p.dead && p.hurtT <= 0 && Math.abs(p.x - e.x) < 14 && Math.abs(p.y - (e.y + 8)) < 22) hurt(G, 'enemy', { kind: 'drip', x: e.x, y: e.y });
+        if (solidAtPx(G.L, e.x, e.y + 16) || e.y > e.sy + TS * 14) { e.st = 3; e.t = 3.2; burst(G, e.x, e.y + 14, '#9fb4d8', 12, 180); Sound.play('crumble'); e.y = e.sy; }
+    } else if (e.st === 3) { e.t -= dt; if (e.t <= 0 && Math.abs(p.x - e.x) > 40) { e.st = 0; } }
+}
+// jet: a fire vent in the floor. It flickers (about 0.7 s of warning) and then spouts a column of flame for a moment.
+function jet(G, e, dt) {
+    const p = G.p, ph = (G.t + e.seed * 0.43) % 3.6;
+    e.warn = ph > 2.0 && ph < 2.8; e.fire = ph >= 2.8;
+    if (e.fire) {
+        if (Math.random() < 0.9) G.parts.push({ x: e.x + rand(-8, 8), y: e.y + 12, vx: rand(-30, 30), vy: rand(-520, -300), life: 0.35, max: 0.35, size: rand(4, 8), color: Math.random() < 0.5 ? '#ffb040' : '#ff5a1a', add: true, g: 300 });
+        if (!p.dead && p.hurtT <= 0 && p.dashT <= 0 && Math.abs(p.x - e.x) < 15 && p.y > e.y - TS * 3.4 && p.y < e.y + 18) hurt(G, 'enemy', { kind: 'jet', x: e.x, y: p.y + 30 });
+    }
+}
 // touching an enemy: from above it is a stomp (not the spiky ones), a dash goes straight through anything, else it hurts
 function contact(G, e, r) {
     const p = G.p; if (p.dead || e.dead) return;
@@ -286,7 +349,7 @@ function kill(G, e) {
     ring(G, e.x, e.y + 12, '#fff3c4'); burst(G, e.x, e.y - 6, '#fff3c4', 8, 140, true);
 }
 function popEnemy(G, e) {
-    const T = WORLDS[G.world], col = e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
+    const T = WORLDS[G.world], col = e.kind === 'hopper' ? '#8ee06a' : e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
     for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });
     for (let i = 0; i < 5; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-120, 120), vy: rand(-260, -120), life: 0.8, max: 0.8, size: rand(4, 6), color: '#ffe08a', g: 500, star: true });
     burst(G, e.x, e.y, '#fff3c4', 10, 160, true); Sound.play('pop');

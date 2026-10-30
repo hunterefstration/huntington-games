@@ -77,11 +77,18 @@ function bossUpdate(G, dt) {
             B.say = { text: GLOOM_TALK.mid[(B.max - B.hp - 1) % GLOOM_TALK.mid.length], t: 2.6 }; UI.bossbar(B);
             if (B.hp % 3 === 0) {
                 B.phase++; G.toast(B.phase === 1 ? 'It is getting angry...' : 'One last push!');
-                for (let i = 0; i < 1 + B.phase; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.hy, sx: TS * (6 + i * 9) % (G.L.w * TS - TS * 8) + TS * 4, sy: B.hy + 40, seed: rand(9) });
+                for (let i = 0; i < 1 + B.phase; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.hy, sx: TS * (6 + i * 9) % (G.L.w * TS - TS * 8) + TS * 4, sy: B.hy + 40, seed: rand(9), spawned: true });
             }
             B.state = 'hurt'; B.t = 0.8; B.stun = 0; B.waves = [];
         } else if (p.hurtT <= 0 && p.dashT <= 0) hurt(G, 'enemy', B);
     }
+}
+// 1.2: dying in the final fight starts the whole fight again: The Gloom is back at full health, its phases start over, the bats and
+// shots are gone. (Nothing is kept from the failed try; only the "it already spoke" flag, so you are not made to sit through the talk.)
+function bossReset(G) {
+    const B = G.boss; if (!B || B.state === 'dying') return;
+    const be = G.L.ents.find(e => e.kind === 'boss'); if (!be) return;
+    G.boss = makeBoss(be); G.L.ents = G.L.ents.filter(e => !e.spawned); G.shots = []; G.ambient = null; UI.bossbar(null);
 }
 function findFloor(L, x) { const tx = Math.floor(x / TS); for (let y = 2; y < L.h; y++) if (isSolidT(L, tx, y)) return y * TS; return L.h * TS; }
 function drawBoss(x, G, t) {

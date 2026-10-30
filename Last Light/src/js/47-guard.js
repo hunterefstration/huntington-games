@@ -8,7 +8,7 @@
 // A "!" means it is open: stomp it or dash into it.
 // ==========================================
 const GUARDS = {
-    moss: { name: 'Mossback', sub: 'Guardian of the Glowwood', hp: 6, r: 46, col: '#8fe07a', light: '170,255,150',
+    moss: { name: 'Mossback', sub: 'Guardian of the Glowwood', hp: 4, r: 46, col: '#8fe07a', light: '170,255,150',
         free: 'Thank you, little light. He took our lanterns too.' },
     shard: { name: 'Shardwing', sub: 'Guardian of the Hollow Caves', hp: 5, r: 34, col: '#8ff0ff', light: '140,240,255',
         free: 'The Deep Bell can ring again. Go on, little one.' },
@@ -48,10 +48,11 @@ function guardHit(G, B) {
     const mid = GUARD_TALK[B.kind].mid; B.say = { text: mid[(B.phase - 1) % mid.length], t: 2.6 };
     const alive = G.L.ents.filter(e => e.spawned && !e.gone).length;
     if (B.kind === 'shard' && B.phase >= 3 && alive < 3) for (let i = 0; i < 2; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.top + 60, sx: B.x0 + 120 + i * (B.x1 - B.x0 - 240), sy: B.top + 70 + i * 30, seed: rand(9), spawned: true });
-    if (B.kind === 'moss' && alive < 4) {          // slimes shake loose from its back
-        for (let i = 0; i < (B.phase >= 3 ? 2 : 1); i++) G.L.ents.push({ kind: 'slime', x: B.x + (i ? 40 : -40), y: B.floor - TS / 2, sx: B.x, sy: B.floor - TS / 2, seed: rand(9), dir: i ? 1 : -1, spawned: true });
+    if (B.kind === 'moss' && alive < 1) {          // a slime shakes loose from its back (never more than one at a time)
+        for (let i = 0; i < 1; i++) G.L.ents.push({ kind: 'slime', x: B.x + (i ? 40 : -40), y: B.floor - TS / 2, sx: B.x, sy: B.floor - TS / 2, seed: rand(9), dir: i ? 1 : -1, spawned: true });
     }
-    if (B.kind === 'moss') { B.state = 'idle'; B.t = 0.6; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
+    if (B.kind === 'moss' && B.phase === 2 && !G.L.ents.some(e => e.kind === 'heart' && !e.gone)) G.L.ents.push({ kind: 'heart', x: (B.x0 + B.x1) / 2, y: B.floor - 40, sx: (B.x0 + B.x1) / 2, sy: B.floor - 40, seed: rand(9), spawned: true });     // a heart in the middle of the fight
+    if (B.kind === 'moss') { B.state = 'idle'; B.t = 1.2; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
     else if (B.kind === 'shard') { B.state = 'rise'; B.t = 0.9; }
     else if (B.kind === 'bell') { B.state = 'lift'; B.t = 0.8; }
     else { B.state = 'stalk'; B.t = 1.2; }
@@ -92,12 +93,15 @@ function guardFx(G, B, dt) {
 }
 const GUARD_AI = {
     moss(G, B, dt) {
-        const p = G.p, g = 2200, sp = 1 + B.phase * 0.25;
-        if (B.state === 'go') { B.state = 'idle'; B.t = 0.5; }
+        // 1.2: made fair. 4 hits (was 6); a long squat tell (1.1 s, was 0.7); a long rest after each landing (the moment to
+        // run under it and bounce off its back); slower, floatier hops; waves only on every other landing and slower;
+        // one telegraphed rock at most; the double hop only in its last phase and with a pause between the two.
+        const p = G.p, g = 2200, sp = 1 + B.phase * 0.08, tell = 1.1;
+        if (B.state === 'go') { B.state = 'idle'; B.t = 1.6; }
         if (B.state === 'idle') {
-            B.squat = clamp(1 - B.t / (0.7 / sp), 0, 1);
+            B.squat = clamp(1 - B.t / tell, 0, 1);
             if (B.t <= 0) {
-                const air = 0.95 - B.phase * 0.08; B.vy = -g * air / 2; B.vx = clamp((p.x - B.x) / air, -400, 400);
+                const air = 1.2 - B.phase * 0.04; B.vy = -g * air / 2; B.vx = clamp((p.x - B.x) / air, -300, 300);
                 B.face = sign(B.vx) || B.face; B.state = 'hop'; B.squat = 0; Sound.play('bounce'); dust(G, B.x, B.floor - 2, 10);
             }
         } else if (B.state === 'hop') {
@@ -105,9 +109,9 @@ const GUARD_AI = {
             if (B.x < B.x0 + B.D.r) { B.x = B.x0 + B.D.r; B.vx = Math.abs(B.vx); } if (B.x > B.x1 - B.D.r) { B.x = B.x1 - B.D.r; B.vx = -Math.abs(B.vx); }
             if (B.vy > 0 && B.y >= B.floor - B.D.r) {
                 B.y = B.floor - B.D.r; B.state = 'idle'; B.land = 1; G.shake(8); dust(G, B.x, B.floor - 2, 14); Sound.play('land');
-                B.hops = (B.hops || 0) + 1; B.t = B.phase >= 2 && B.hops % 2 ? 0.14 : 0.75 / sp;        // hurt enough, it hops twice in a row
-                if (B.phase >= 3 && !(B.hops % 2)) for (let i = 0; i < 3; i++) B.fx.push({ type: 'rock', x: B.x0 + 40 + rand(B.x1 - B.x0 - 80), t: 0.3 + i * 0.2 });
-                if (B.phase >= 1) for (const d of [-1, 1]) B.fx.push({ type: 'wave', x: B.x + d * B.D.r, dir: d, sp: 260, t: 1.6 });
+                B.hops = (B.hops || 0) + 1; B.t = B.phase >= 3 && B.hops % 2 ? 0.55 + tell : 1.5 / sp;
+                if (B.phase >= 3 && !(B.hops % 2) && !B.fx.some(f => f.type === 'rock')) B.fx.push({ type: 'rock', x: clamp(p.x, B.x0 + 40, B.x1 - 40), t: 1.2 });
+                if (B.phase >= 1 && B.hops % 2) for (const d of [-1, 1]) B.fx.push({ type: 'wave', x: B.x + d * B.D.r, dir: d, sp: 200, t: 1.6 });
             }
         }
     },

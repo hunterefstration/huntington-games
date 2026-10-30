@@ -112,7 +112,7 @@ def l13():
 
 @level
 def l14():
-    v = Lv('1-4', 'The Old Root', 0, 140, 22, gives='double')
+    v = Lv('1-10', 'The Old Root', 0, 140, 22, gives='double')
     v.ground(0, 22, 18); v.put(3, 17, 'P')
     v.ledge(10, 12, 15); v.ledge(15, 17, 13); v.put(16, 10, '*')
     # stepping stones over a drop, a bat in the way
@@ -189,7 +189,7 @@ def l23():
 
 @level
 def l24():
-    v = Lv('2-4', 'The Deep Bell', 1, 126, 32, gives='wall')
+    v = Lv('2-10', 'The Deep Bell', 1, 126, 32, gives='wall')
     v.rect(0, 0, 125, 1); v.ground(0, 125, 28); v.put(3, 27, 'P')
     v.rect(8, 24, 11, 27); v.rect(14, 20, 17, 27); v.rect(20, 16, 23, 27); v.rect(26, 12, 29, 27); v.rect(18, 24, 19, 27); v.rect(24, 20, 25, 27); v.put(28, 11, 'L')
     v.arc(7, 22, 5, 2); v.arc(13, 18, 5, 2); v.arc(19, 14, 5, 2)
@@ -259,7 +259,7 @@ def l33():
 
 @level
 def l34():
-    v = Lv('3-4', 'The Sun Shrine', 2, 130, 34, gives='dash')
+    v = Lv('3-10', 'The Sun Shrine', 2, 130, 34, gives='dash')
     v.ground(0, 22, 30); v.put(3, 29, 'P'); v.put(9, 29, 'L')
     v.rect(19, 9, 19, 26); v.rect(23, 11, 23, 29); v.row(20, 22, 'o o o'); v.row(20, 15, 'o o o')
     v.rect(24, 11, 38, 11); v.put(27, 10, 'L'); v.put(33, 10, 'h')
@@ -321,7 +321,7 @@ def l43():
 
 @level
 def l44():
-    v = Lv('4-4', 'Heart of Embers', 3, 150, 30, gives=None)
+    v = Lv('4-10', 'Heart of Embers', 3, 150, 30, gives=None)
     v.rect(0, 0, 149, 1); v.ground(0, 14, 26); v.put(3, 25, 'P'); v.put(10, 25, 'L'); v.rect(15, 28, 149, 29, 'l')
     v.put(17, 22, 'M'); v.put(18, 22, 'M'); v.put(15, 22, '|'); v.put(30, 22, '|'); v.put(24, 17, 'b'); v.row(17, 19, 'o o o o o o o', 2)
     v.ground(31, 49, 19); v.rect(31, 28, 49, 29, '#'); v.put(34, 18, 'L'); v.put(39, 18, 'h'); v.put(43, 18, 'k')
@@ -342,6 +342,411 @@ def l51():
     v.ledge(8, 12, 11); v.ledge(33, 37, 11); v.ledge(20, 25, 7)
     v.put(23, 12, 'G'); v.put(40, 15, 'E')
     return v
+
+#@@NEW@@
+# =====================================================================  1.2: THE NEW MIDDLE LEVELS (6 per world)
+# Built from a few small, checked pieces (a Course walks left to right along a ground line that steps up and down), then
+# dressed by hand per level. The checker below still has the last word: it must be able to reach everything.
+def stairs(v, x, row, n, w=3, rise=2, back=False):
+    """ascending one-way ledges (to the right, or to the left with back=True); returns the cell just above the last one"""
+    for i in range(n):
+        if back: v.ledge(x - i * w - w + 1, x - i * w, row - i * rise)
+        else: v.ledge(x + i * w, x + i * w + w - 1, row - i * rise)
+    return (x + (n - 1) * w + w // 2 if not back else x - (n - 1) * w - w // 2), row - (n - 1) * rise - 1
+
+def spark_arc(v, x0, y0, n, h=2):
+    for i in range(n):
+        t = i / max(1, n - 1); x, y = x0 + i, y0 - round(4 * h * t * (1 - t))
+        if 0 <= x < v.w and 0 <= y < v.h and v.g[y][x] == ' ': v.g[y][x] = 'o'
+
+class Course:
+    """b = the row of the ground's top; you stand on row b-1."""
+    def __init__(s, v, b, x=0, ceil=0):
+        s.v, s.b, s.x, s.ceil = v, b, x, ceil
+        if ceil: v.rect(0, 0, v.w - 1, ceil - 1)
+    def room(s, n):
+        v = s.v
+        if s.x + n + 2 > v.w:
+            old = v.w; v.widen(s.x + n + 2 - v.w)
+            if s.ceil: v.rect(old, 0, v.w - 1, s.ceil - 1)
+    def run(s, n, lamp=None, foes='', dec=None, sparks=0, ch='#'):
+        s.room(n); v, x0 = s.v, s.x; v.ground(x0, x0 + n - 1, s.b, ch)
+        if lamp is not None: v.put(x0 + lamp, s.b - 1, 'L')
+        for dx, c in (foes if isinstance(foes, (list, tuple)) else []): v.put(x0 + dx, s.b - 1, c)
+        if sparks:
+            for i in range(sparks): v.put(x0 + 2 + i * 2, s.b - 3, 'o')
+        s.x += n; return x0, s.b
+    def gap(s, n, h=2, floor=None, ch='C'):
+        """a pit n wide; sparks arc over it; floor='^' puts spikes at the bottom (looks scarier, same jump)"""
+        s.room(n); spark_arc(s.v, s.x - 1, s.b - 2, n + 2, h)
+        if ch == 'C' and floor == 'C': s.v.rect(s.x, s.b, s.x + n - 1, s.b, 'C')
+        s.x += n
+    def up(s, d): s.b -= d
+    def down(s, d): s.b += d
+    def spikes(s, x0, n): s.v.rect(x0, s.b - 1, x0 + n - 1, s.b - 1, '^'); spark_arc(s.v, x0 - 1, s.b - 2, n + 2, 2)
+    def perch(s, x0, b, off, k, rise=2, w=3, moth=True):
+        """a staircase of ledges up from the ground (b = that ground's top): the star hangs over the last one"""
+        cx, cy = stairs(s.v, x0 + off, b - rise, k, w, rise)
+        if moth: s.v.put(cx, cy - 1, '*')
+        return cx, cy
+
+# ---------------- world 1: Glowwood (run and jump; no double jump yet): rises of 2, gaps of 4 at most
+@level
+def n14():
+    v = Lv('1-4', 'Lantern Lane', 0, 132, 20, hint='Hoppers squat before they jump: land on them from above'); c = Course(v, 15)
+    c.run(17, lamp=11, sparks=3); v.put(3, 14, 'P'); c.gap(3)
+    c.run(13, foes=[(8, 'j')], sparks=3)
+    x0, b = c.run(16, lamp=2, foes=[(13, 'j')]); c.up(2)                                   # step up two
+    x0, b = c.run(16); c.perch(x0, b, 1, 3); c.gap(4)
+    c.run(10, sparks=3); c.spikes(c.x - 6, 3); c.down(0); c.run(10, lamp=3, foes=[(7, 'j')], sparks=2); c.down(2)
+    c.run(14, foes=[(9, 'j')]); c.gap(3); v.put(c.x - 2, c.b - 4, '*')                    # a star hanging over a short gap
+    c.run(20, lamp=4, foes=[(11, 'j'), (16, 'g')], sparks=4)
+    c.gap(3); x0, b = c.run(9); c.up(2); x1, b1 = c.run(6, sparks=1); c.up(2); c.run(5, lamp=2); v.put(c.x - 2, c.b - 4, '*')
+    c.down(4); c.gap(3); c.run(14, foes=[(6, 'j')], lamp=8); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n15():
+    v = Lv('1-5', 'Hollow Log', 0, 140, 22, hint='Crumbling bridges drop soon after you step on them: keep moving'); c = Course(v, 18)
+    c.run(16, lamp=11, sparks=3); v.put(3, 17, 'P')
+    s = c.x; c.gap(10); v.rect(s, c.b, c.x - 1, c.b, 'C')        # a crumbling bridge
+    spark_arc(v, s, c.b - 3, 10, 1)
+    c.run(12, lamp=3, foes=[(8, 'j')]); c.up(2)
+    x0, b = c.run(18, lamp=3, foes=[(14, 'b')]); c.perch(x0, b, 6, 3)
+    c.gap(4); c.run(8, sparks=2); s = c.x; c.gap(9); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 9, 1)
+    c.down(2); c.run(14, lamp=4, foes=[(9, 'j'), (12, 'g')])
+    # the hollow: a pit in the floor with a lantern at the bottom of it, a hidden room at the top
+    c.gap(3); v.put(c.x - 2, c.b - 4, '*'); x0, b = c.run(12, sparks=3); c.spikes(x0 + 5, 3); c.gap(4)
+    x0, b = c.run(24, lamp=2, foes=[(12, 'h')]); v.put(x0 + 20, b - 1, 'j')
+    cx, cy = stairs(v, x0 + 4, b - 2, 5, 3, 2); v.put(cx + 1, cy - 1, 'z'); v.rect(cx + 3, cy - 2, cx + 3, cy, '#')         # the hidden lantern is up at the top of a long stair
+    c.gap(3); x0, b = c.run(8); v.put(c.x - 3, b - 4, '*')
+    c.up(2); c.run(8); c.up(2); c.run(8, lamp=2); c.down(4); c.gap(4); c.run(18, foes=[(5, 'j'), (11, 'j')], lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n16():
+    v = Lv('1-6', 'Mushroom Hop', 0, 128, 28, hint='Springs throw you high: hold jump to go higher'); c = Course(v, 24)
+    c.run(14, lamp=9, sparks=2); v.put(3, 23, 'P')
+    c.gap(3); x0, b = c.run(8, sparks=2); v.put(x0 + 4, b - 1, 'S'); v.ledge(x0 + 3, x0 + 8, b - 9); v.put(x0 + 5, b - 11, '*'); v.row(x0 + 3, b - 12, 'o o o', 2)
+    c.run(12, foes=[(6, 'j')], lamp=2); c.up(2)
+    c.run(10, sparks=3); c.gap(4); c.run(4); c.gap(4); x0, b = c.run(14, lamp=2, foes=[(10, 'j')])
+    v.put(x0 + 7, b - 1, 'S'); v.ledge(x0 + 5, x0 + 12, b - 9); v.row(x0 + 6, b - 11, 'o o o o', 2); v.put(x0 + 11, b - 10, 'S')
+    v.ledge(x0 + 12, x0 + 17, b - 17); v.put(x0 + 15, b - 19, '*')             # a spring on a ledge on a spring
+    c.up(2); c.run(8, sparks=2); c.gap(4); c.run(12, lamp=2, foes=[(7, 'j'), (10, 'g')])
+    c.gap(4); x0, b = c.run(10); v.put(x0 + 5, b - 1, 'S'); v.rect(x0 + 3, b - 8, x0 + 8, b - 8, '='); v.row(x0 + 3, b - 9, 'o o o', 2)
+    c.down(3); c.run(10, lamp=2, sparks=2); c.gap(3); v.put(c.x - 2, c.b - 4, '*'); c.run(12, foes=[(5, 'j')], sparks=2)
+    c.gap(4); c.run(5); c.gap(4); c.run(14, lamp=3, foes=[(9, 'g')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n17():
+    v = Lv('1-7', 'Briar Patch', 0, 138, 22, hint='Thornbacks are spiky: jump over them, never onto them'); c = Course(v, 18)
+    c.run(14, lamp=8); v.put(3, 17, 'P'); c.spikes(c.x - 4, 3)
+    c.run(12, foes=[(6, 'h')], sparks=2); c.gap(4)
+    # a ledge that slides across a long gap
+    s = c.x; c.gap(10); v.put(s + 3, c.b, 'M'); v.put(s + 4, c.b, 'M'); v.put(s + 5, c.b, 'M'); spark_arc(v, s - 1, c.b - 3, 12, 1)
+    x0, b = c.run(16, lamp=2, foes=[(9, 'h'), (13, 'j')]); c.perch(x0, b, 5, 3)
+    c.up(2); c.run(8, sparks=2); c.spikes(c.x - 5, 3); c.run(10, lamp=3, foes=[(6, 'h')])
+    c.gap(4); c.run(4); c.gap(4); c.run(4); c.gap(4)
+    x0, b = c.run(24, lamp=3, foes=[(8, 'h'), (15, 'h'), (20, 'j')]); c.spikes(x0 + 11, 3); v.put(x0 + 9, b - 4, '*')
+    c.down(2); c.gap(3); s = c.x; c.gap(10); v.put(s + 2, c.b, 'M'); v.put(s + 3, c.b, 'M'); v.put(s + 4, c.b, 'M'); spark_arc(v, s - 1, c.b - 3, 12, 1)
+    c.run(18, lamp=2, foes=[(8, 'h'), (13, 'j')]); x0, b = c.run(14); c.perch(x0, b, 1, 4)
+    c.run(10, lamp=2, foes=[(6, 'h')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n18():
+    v = Lv('1-8', 'Night Orchard', 0, 130, 24, hint='A key opens the door: just walk up to it'); c = Course(v, 20)
+    c.run(14, lamp=9, sparks=2); v.put(3, 19, 'P')
+    c.gap(3); x0, b = c.run(24, lamp=2, foes=[(18, 'j')]); cx, cy = stairs(v, x0 + 4, b - 2, 4, 3, 2); v.put(cx, cy - 1, '*')
+    v.put(cx + 3, cy, 'k'); v.ledge(cx + 2, cx + 5, cy + 1)
+    c.gap(3); c.run(10, sparks=2); c.up(2)
+    # the door: a wall above it so you cannot hop over
+    x0, b = c.run(8, lamp=2); d = c.x; v.rect(d, b - 3, d, b - 1, 'D'); v.rect(d, 0, d, b - 4, '#'); c.run(14, foes=[(5, 'g'), (10, 'j')], lamp=7)
+    c.gap(4); c.run(5); c.gap(4); x0, b = c.run(22, lamp=2, foes=[(9, 'h'), (16, 'j')]); c.perch(x0, b, 12, 3)
+    c.down(2); c.gap(3); c.run(10, sparks=2); c.up(2); c.run(6); c.up(2); x0, b = c.run(8, lamp=2); v.put(x0 + 6, b - 4, '*'); c.down(4)
+    c.gap(3); x0, b = c.run(14, foes=[(7, 'j')]); c.spikes(x0 + 4, 3); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    v.put(8, 14, 'z'); v.ledge(6, 10, 15); stairs(v, 4, 17, 1, 3, 2)
+    return v
+
+@level
+def n19():
+    v = Lv('1-9', 'The Last Mile', 0, 150, 22, hint='The guardian is close. Light every lantern on the way'); c = Course(v, 18)
+    c.run(12, lamp=8); v.put(3, 17, 'P')
+    for k in range(3):                                          # stepping stones with a hopper on the far side of each
+        c.gap(4); c.run(4 if k < 2 else 8, sparks=1, foes=[(2, 'j')] if k == 2 else [])
+    c.up(2); x0, b = c.run(16, lamp=2, foes=[(8, 'h'), (13, 'j')]); c.perch(x0, b, 5, 3); c.gap(4)
+    c.run(5); s = c.x; c.gap(10); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 10, 1)
+    x0, b = c.run(20, lamp=3, foes=[(10, 'h'), (14, 'g'), (17, 'j')]); c.spikes(x0 + 6, 3)
+    c.down(2); c.gap(4); c.run(5); c.gap(4); c.run(5); c.gap(4); x0, b = c.run(14, lamp=2); v.put(x0 + 8, b - 4, '*')
+    c.up(2); c.run(8, foes=[(4, 'j')]); c.up(2); c.run(8); c.down(2); c.run(8, lamp=2, foes=[(5, 'h')]); c.down(2); c.gap(3)
+    x0, b = c.run(20, lamp=3, foes=[(9, 'j'), (15, 'h')]); c.perch(x0, b, 9, 3)
+    c.gap(4); c.run(14, lamp=2); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+# ---------------- world 2: Hollow Caves (double jump): rises of 3 or 4, gaps of 6 at most. Stalactites hang from the ceiling.
+def drips(v, xs, row=2):
+    for x in xs: v.put(x, row, 'v')
+
+@level
+def n24():
+    v = Lv('2-4', 'Glowworm Gallery', 1, 150, 22, hint='Stalactites tremble before they fall: step out from under them'); c = Course(v, 18, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 17, 'P'); c.gap(5)
+    x0, b = c.run(20, foes=[(14, 'g')], lamp=2); drips(v, [x0 + 9, x0 + 16]); c.perch(x0, b, 5, 3, rise=3)
+    c.gap(6); x0, b = c.run(18, lamp=3, foes=[(12, 'g')], sparks=3); drips(v, [x0 + 7, x0 + 11, x0 + 15]); c.up(3)
+    c.run(10, sparks=2); c.gap(5); v.put(c.x - 3, c.b - 6, '*'); c.run(8); drips(v, [c.x - 4])
+    x0, b = c.run(22, lamp=2, foes=[(15, 'h')]); drips(v, [x0 + 6, x0 + 12, x0 + 19]); c.down(3)
+    c.gap(6); c.run(5); c.gap(6); x0, b = c.run(16, lamp=2, foes=[(10, 't')]); drips(v, [x0 + 5, x0 + 9]); c.perch(x0, b, 8, 3, rise=3)
+    c.spikes(x0 + 12, 3); c.gap(5); x0, b = c.run(12, sparks=3); drips(v, [x0 + 4, x0 + 8]); c.up(3); c.run(14, lamp=3, foes=[(9, 'g')])
+    v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n25():
+    v = Lv('2-5', 'Echo Chamber', 1, 120, 40, hint='Climb. The way up is a staircase of cliffs'); c = Course(v, 36, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 35, 'P'); c.up(3)
+    x0, b = c.run(8, sparks=2); c.up(3); c.run(8, foes=[(4, 'g')]); c.up(3); c.run(8, lamp=3); c.gap(4)
+    c.up(3); x0, b = c.run(10); c.perch(x0, b, 1, 3, rise=3); c.up(3); x0, b = c.run(10, foes=[(6, 'g')]); drips(v, [x0 + 3, x0 + 7]); c.run(10, lamp=3)
+    c.gap(5); x0, b = c.run(8); v.put(x0 + 4, b - 6, '*'); c.up(3); c.run(8, foes=[(4, 'h')]); c.gap(4); c.up(3); c.run(10, lamp=2)
+    x0, b = c.run(10, foes=[(6, 'g')]); drips(v, [x0 + 4, x0 + 7]); c.gap(4)
+    c.run(5, sparks=1); c.gap(6); x0, b = c.run(10, sparks=2); v.put(x0 + 7, b - 1, 't')
+    c.up(3); x0, b = c.run(12, lamp=2); c.perch(x0, b, 2, 2, rise=3); v.put(x0 + 10, b - 1, 'E')
+    return v
+
+@level
+def n26():
+    v = Lv('2-6', 'Crystal Garden', 1, 140, 26, hint='Some crystals hide a lost lantern'); c = Course(v, 22, ceil=2)
+    c.run(14, lamp=9); v.put(3, 21, 'P')
+    for k in range(3): c.gap(6); c.run(4, sparks=1, foes=[(2, 'g')] if k == 1 else [])
+    c.gap(6); x0, b = c.run(18, lamp=3, foes=[(12, 'g')]); c.perch(x0, b, 5, 3, rise=3); drips(v, [x0 + 8])
+    c.up(3); c.run(6, sparks=2); c.gap(4); c.up(3); x0, b = c.run(14, lamp=2, foes=[(9, 'b')], sparks=2)
+    # a hidden lantern high up on a chain of tiny ledges
+    v.ledge(x0 + 3, x0 + 4, b - 4); v.ledge(x0 + 6, x0 + 7, b - 8); v.ledge(x0 + 9, x0 + 10, b - 12); v.put(x0 + 10, b - 13, 'z')
+    c.down(3); c.gap(5); x0, b = c.run(10, foes=[(6, 'g')]); c.spikes(x0 + 3, 3); c.gap(5); c.run(10, lamp=3); drips(v, [c.x - 6])
+    c.gap(6); v.put(c.x - 3, c.b - 6, '*'); c.run(6); c.gap(6); c.run(6); c.gap(6)
+    x0, b = c.run(20, lamp=2, foes=[(9, 'h'), (15, 'g')]); c.perch(x0, b, 7, 3, rise=3); v.put(x0 + 18, b - 1, 'E')
+    return v
+
+@level
+def n27():
+    v = Lv('2-7', 'Underground River', 1, 150, 22, hint='Ride the moving ledges: wait for them to come to you'); c = Course(v, 18, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 17, 'P')
+    for k, w in enumerate((12, 14, 12)):
+        s = c.x; c.gap(w)
+        for i in range(3 if k != 1 else 4): v.put(s + 3 + i, c.b, 'M')
+        v.rect(s, c.b + 2, s + w - 1, c.b + 3, '^'); v.rect(s, c.b + 4, s + w - 1, v.h - 1, '#')
+        spark_arc(v, s - 1, c.b - 3, w + 2, 1)
+        x0, b = c.run(10 if k < 2 else 12, lamp=2, foes=[(6, 'g')] if k != 1 else [(6, 'h')])
+        if k == 0: c.perch(x0, b, 2, 3, rise=3)
+        if k == 1: v.put(x0 + 8, b - 6, '*')
+    c.gap(5); x0, b = c.run(16, lamp=2, foes=[(8, 'b')], sparks=3); drips(v, [x0 + 5, x0 + 11])
+    s = c.x; c.gap(10); v.put(s + 3, c.b, 'M'); v.put(s + 4, c.b, 'M'); v.put(s + 5, c.b, 'M'); v.rect(s, c.b + 2, s + 9, c.b + 3, '^'); v.rect(s, c.b + 4, s + 9, v.h - 1, '#')
+    x0, b = c.run(14, lamp=2); c.perch(x0, b, 3, 3, rise=3); c.gap(5); c.run(6, foes=[(3, 'g')]); c.gap(5); c.run(12, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n28():
+    v = Lv('2-8', 'Rockfall', 1, 150, 24, hint='Crumbling stone: do not stop. Falling rock: do not stand still'); c = Course(v, 20, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 19, 'P')
+    s = c.x; c.gap(12); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 12, 1); drips(v, [s + 4, s + 9])
+    x0, b = c.run(16, lamp=2, foes=[(10, 'g')]); drips(v, [x0 + 6, x0 + 13]); c.perch(x0, b, 5, 3, rise=3); c.up(3)
+    c.run(10, sparks=2); s = c.x; c.gap(13); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 13, 1); drips(v, [s + 3, s + 7, s + 11])
+    x0, b = c.run(16, lamp=2, foes=[(8, 't')]); v.put(x0 + 12, b - 4, '*'); c.down(3); c.gap(6)
+    c.run(4); v.rect(c.x, c.b, c.x + 5, c.b, 'C'); c.gap(6); drips(v, [c.x - 3]); x0, b = c.run(14, lamp=2, foes=[(9, 'h')]); drips(v, [x0 + 4, x0 + 7, x0 + 11])
+    s = c.x; c.gap(14); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 14, 1); drips(v, [s + 5, s + 10])
+    x0, b = c.run(18, lamp=3, foes=[(12, 'g')]); c.perch(x0, b, 7, 3, rise=3); v.put(x0 + 16, b - 1, 'E')
+    return v
+
+@level
+def n29():
+    v = Lv('2-9', 'Black Pool', 1, 150, 24, hint='The guardian is close. Take it slow, and light every lantern'); c = Course(v, 20, ceil=2)
+    c.run(12, lamp=8); v.put(3, 19, 'P')
+    for k in range(4):
+        c.gap(6); x0, b = c.run(3 if k % 2 == 0 else 4, sparks=0, foes=[(1, 'g')] if k == 3 else [])
+        if k == 1: v.put(x0 + 1, b - 6, '*')
+    c.gap(5); x0, b = c.run(16, lamp=2, foes=[(8, 'h'), (13, 'g')]); drips(v, [x0 + 5, x0 + 10]); c.perch(x0, b, 4, 3, rise=3); c.up(3)
+    c.run(5); c.gap(6); c.run(5); c.gap(6); x0, b = c.run(16, lamp=3, foes=[(9, 'g')]); drips(v, [x0 + 7, x0 + 12])
+    s = c.x; c.gap(12); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 12, 1); v.put(s + 6, c.b - 6, '*')
+    c.down(3); x0, b = c.run(18, lamp=2, foes=[(8, 'h'), (14, 't')]); c.perch(x0, b, 4, 3, rise=3, moth=False)
+    c.gap(6); c.run(4, foes=[(1, 'g')]); c.gap(6); c.run(4); c.gap(6); c.run(12, lamp=2); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+# ---------------- world 3: Sky Ruins (double + wall jump). New here: updraft vents ('W'): stand in the wind and it lifts you
+def climb(v, c, h, star=False):
+    """a wall-jump shaft: walls 4 apart (3 open between). The left wall stops 3 short of the floor so you walk in under it, and the
+    landing is on top of the right wall. Leaves the course at the landing (h higher); call c.run() next."""
+    x, b = c.x, c.b
+    c.run(4); v.rect(x, b - h, x, b - 4, '#')
+    v.row(x + 1, b - 3, 'o o o', 1); v.row(x + 1, b - h + 2, 'o o o', 1)
+    if star: v.put(x + 2, b - h // 2, '*')
+    c.x = x + 4; c.b = b - h
+
+@level
+def n34():
+    v = Lv('3-4', 'Gale Gardens', 2, 150, 28, hint='Stand in the wind and it lifts you'); c = Course(v, 24)
+    c.run(14, lamp=9, sparks=2); v.put(3, 23, 'P'); c.gap(5)
+    x0, b = c.run(12, foes=[(9, 'g')], lamp=2); v.put(x0 + 3, b - 1, 'W'); v.ledge(x0 + 5, x0 + 10, b - 8); v.put(x0 + 8, b - 10, '*')
+    c.gap(6); x0, b = c.run(14, lamp=3, foes=[(9, 'b')], sparks=2); v.put(x0 + 4, b - 1, 'W'); c.up(8)
+    c.x = x0 + 8; x1, b1 = c.run(14, lamp=4, foes=[(8, 'h')])
+    c.gap(6); c.run(5); c.gap(6); x0, b = c.run(10, lamp=2, sparks=2); c.down(8)
+    c.gap(5); x0, b = c.run(16, foes=[(9, 'g')], lamp=2); c.perch(x0, b, 4, 3, rise=3); c.spikes(x0 + 11, 3)
+    c.gap(6); x0, b = c.run(8); v.put(x0 + 3, b - 1, 'W'); v.ledge(x0 + 5, x0 + 10, b - 9); v.put(x0 + 7, b - 11, 'o'); v.put(x0 + 8, b - 11, 'o')
+    c.gap(6); c.run(5); c.gap(6); x0, b = c.run(14, lamp=3); v.put(x0 + 8, b - 4, '*'); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n35():
+    v = Lv('3-5', 'Pillar Run', 2, 150, 34, hint='Walls are for jumping off: press jump against a wall'); c = Course(v, 30)
+    c.run(14, lamp=9, sparks=2); v.put(3, 29, 'P'); c.gap(5)
+    x0, b = c.run(8, lamp=2); climb(v, c, 12, star=True); x0, b = c.run(10, foes=[(5, 'g')], lamp=3, sparks=2)
+    c.gap(6); c.run(4); c.gap(6); x0, b = c.run(12, foes=[(8, 'h')]); c.perch(x0, b, 1, 3, rise=3); c.down(6)
+    c.gap(6); x0, b = c.run(16, lamp=2, foes=[(10, 'g')]); climb(v, c, 10); x0, b = c.run(10, lamp=2, foes=[(6, 'b')])
+    c.gap(6); c.run(4); c.gap(6); c.run(4); c.gap(6); x0, b = c.run(14, lamp=2); v.put(x0 + 7, b - 6, '*'); c.down(6)
+    c.gap(5); x0, b = c.run(18, lamp=3, foes=[(10, 'h')]); climb(v, c, 14); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n36():
+    v = Lv('3-6', 'Windmill Stair', 2, 140, 40, hint='Ride the wind from ledge to ledge'); c = Course(v, 36)
+    c.run(14, lamp=9, sparks=2); v.put(3, 35, 'P')
+    x, b = c.x, c.b
+    c.gap(5); x0, b = c.run(10, lamp=2); v.put(x0 + 1, b - 1, 'W')
+    for k in range(3):                                           # a stair of windy ledges, each lifting you to the next
+        lx = x0 + 3 + 7 * k; ly = b - 8 - 8 * k
+        v.ledge(lx, lx + 5, ly); v.put(lx + 5, ly - 1, 'W'); v.row(lx + 1, ly - 3, 'o o', 2)
+        if k == 1: v.put(lx + 3, ly - 3, '*')
+    lx = x0 + 3 + 7 * 3; ly = b - 8 - 8 * 3 + 8 - 8
+    c.x = lx; c.b = b - 8 - 8 * 2 - 8 + 0
+    x1, b1 = c.run(12, lamp=2, foes=[(7, 'g')]); v.put(x1 + 6, b1 - 4, '*')
+    c.gap(6); c.run(5); c.gap(6); x0, b = c.run(10, lamp=2); c.down(8); c.gap(4)
+    x0, b = c.run(14, foes=[(9, 'b'), (11, 'g')]); v.put(x0 + 5, b - 1, 'W'); v.ledge(x0 + 3, x0 + 8, b - 9); v.put(x0 + 5, b - 11, '*')
+    c.gap(6); x0, b = c.run(12, lamp=2); climb(v, c, 9); c.run(8, foes=[(4, 'h')]); c.gap(6); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n37():
+    v = Lv('3-7', 'Cracked Causeway', 2, 150, 30, hint='The causeway crumbles. Do not stop, and watch the bats'); c = Course(v, 26)
+    c.run(14, lamp=9, sparks=2); v.put(3, 25, 'P')
+    s = c.x; c.gap(14); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 14, 1); v.put(s + 5, c.b - 6, 'b')
+    x0, b = c.run(14, lamp=2, foes=[(9, 'g')]); c.perch(x0, b, 4, 3, rise=3); c.up(3)
+    c.run(6, sparks=2); s = c.x; c.gap(10); v.rect(s, c.b, c.x - 1, c.b, 'C'); spark_arc(v, s, c.b - 3, 10, 1); v.put(s + 5, c.b - 6, '*')
+    x0, b = c.run(12, lamp=2, foes=[(7, 'h')]); climb(v, c, 10); c.run(8, lamp=2); c.down(5)
+    s = c.x; c.gap(16); v.rect(s, c.b, s + 3, c.b, 'C'); v.rect(s + 6, c.b, s + 9, c.b, 'C'); v.rect(s + 12, c.b, s + 15, c.b, 'C'); spark_arc(v, s, c.b - 3, 16, 1)
+    v.put(s + 4, c.b - 7, 'b'); v.put(s + 11, c.b - 7, 'b')
+    x0, b = c.run(14, lamp=2, foes=[(9, 'g')]); c.gap(6); x0, b = c.run(10, foes=[(5, 'h')]); c.perch(x0, b, 1, 3, rise=3)
+    c.gap(6); c.run(5); c.gap(6); c.run(12, lamp=2); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n38():
+    v = Lv('3-8', 'Cloud Library', 2, 150, 34, hint='Bookcases hold a key. The door is further on'); c = Course(v, 30)
+    c.run(14, lamp=9, sparks=2); v.put(3, 29, 'P'); c.gap(5)
+    x0, b = c.run(14, lamp=2, foes=[(9, 'g')]); climb(v, c, 12, star=True)
+    x0, b = c.run(14, lamp=3, foes=[(8, 'h')]); v.ledge(x0 + 3, x0 + 6, b - 4); v.put(x0 + 5, b - 5, 'k')
+    c.gap(5); x0, b = c.run(12, lamp=2); d = c.x; v.rect(d, b - 3, d, b - 1, 'D'); v.rect(d, b - 20, d, b - 4, '#'); x0, b = c.run(12, foes=[(5, 'g')], lamp=7)
+    c.perch(x0, b, 2, 3, rise=3); c.gap(6); c.run(5); c.gap(6); x0, b = c.run(10, lamp=2)
+    c.down(6); c.gap(5); x0, b = c.run(14, foes=[(8, 'b')]); v.put(x0 + 3, b - 1, 'W'); v.ledge(x0 + 5, x0 + 10, b - 9); v.put(x0 + 8, b - 10, 'z')
+    c.gap(5); x0, b = c.run(16, lamp=2, foes=[(10, 'h')]); climb(v, c, 10); c.run(8, foes=[(3, 'g')]); v.put(c.x - 4, c.b - 4, '*')
+    c.gap(6); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n39():
+    v = Lv('3-9', 'Storm Gate', 2, 150, 40, hint='The guardian is close. Everything you learned is here'); c = Course(v, 36)
+    c.run(12, lamp=8); v.put(3, 35, 'P')
+    c.gap(6); c.run(4); c.gap(6); x0, b = c.run(14, lamp=2, foes=[(9, 'h')]); climb(v, c, 12); x0, b = c.run(10, lamp=2, foes=[(5, 'g')]); v.put(x0 + 6, b - 4, '*')
+    c.gap(6); x0, b = c.run(8); v.put(x0 + 3, b - 1, 'W'); v.ledge(x0 + 5, x0 + 10, b - 9); v.put(x0 + 7, b - 11, 'o'); v.put(x0 + 8, b - 11, 'o')
+    c.gap(6); c.run(4, foes=[(1, 'b')]); s = c.x; c.gap(12); v.rect(s, c.b, s + 4, c.b, 'C'); v.rect(s + 7, c.b, s + 11, c.b, 'C'); spark_arc(v, s, c.b - 3, 12, 1)
+    x0, b = c.run(14, lamp=2, foes=[(9, 'g')]); c.perch(x0, b, 4, 3, rise=3); c.down(6)
+    c.gap(6); x0, b = c.run(10, lamp=2); climb(v, c, 12, star=True); x0, b = c.run(8, lamp=2, foes=[(4, 'h')])
+    c.gap(6); c.run(4); c.gap(6); c.run(4, foes=[(1, 'b')]); c.gap(6); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+# ---------------- world 4: Ember Forge (+ dash): gaps of up to 8 with lava below. New: fire jets ('f') with a flicker before they fire
+def lava(c, n, h=2):
+    s = c.x; c.gap(n, h); c.v.rect(s, c.b + 2, s + n - 1, c.v.h - 1, 'l'); return s
+
+@level
+def n44():
+    v = Lv('4-4', 'Slag Walk', 3, 150, 24, hint='Fire jets flicker first, then burst. Wait, or dash through'); c = Course(v, 18, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 17, 'P'); lava(c, 5)
+    x0, b = c.run(20, lamp=2, foes=[(8, 'f'), (15, 'g')]); c.perch(x0, b, 10, 3, rise=3)
+    lava(c, 6); x0, b = c.run(8, foes=[(4, 'f')]); lava(c, 6); c.up(2); x0, b = c.run(16, lamp=2, foes=[(6, 'f'), (11, 'h')], sparks=3)
+    lava(c, 8, 1); v.put(c.x - 4, c.b - 5, '*'); x0, b = c.run(14, lamp=2, foes=[(8, 'g')]); c.down(2)
+    x0, b = c.run(22, foes=[(5, 'f'), (11, 'f'), (17, 'h')], lamp=2); c.spikes(x0 + 13, 2)
+    lava(c, 6); c.run(5); lava(c, 8, 1); x0, b = c.run(16, lamp=2, foes=[(9, 't')]); c.perch(x0, b, 4, 3, rise=3)
+    lava(c, 6); c.run(14, lamp=3, foes=[(8, 'f')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n45():
+    v = Lv('4-5', 'Rivet Row', 3, 150, 26, hint='Hop the rivets. Dash is the fast way over'); c = Course(v, 20, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 19, 'P')
+    for k in range(4):
+        lava(c, 6); x0, b = c.run(3, foes=[(1, 'f')] if k == 2 else [])
+        if k == 1: v.put(x0 + 1, b - 5, '*')
+    lava(c, 7); x0, b = c.run(16, lamp=2, foes=[(9, 'h'), (13, 'f')]); c.perch(x0, b, 4, 3, rise=3); c.up(2)
+    for k in range(3):
+        lava(c, 6); x0, b = c.run(3, foes=[(1, 'b')] if k == 1 else [])
+    lava(c, 8, 1); x0, b = c.run(16, lamp=2, foes=[(8, 'g'), (11, 'f')]); v.put(x0 + 14, b - 4, '*'); c.down(2)
+    for k in range(3): lava(c, 6); c.run(4)
+    lava(c, 8, 1); c.run(14, lamp=3, foes=[(8, 'f')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n46():
+    v = Lv('4-6', 'Chain Lift', 3, 140, 30, hint='Ride the lifts. They stop at the top and the bottom'); c = Course(v, 24, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 23, 'P')
+    s = lava(c, 12); v.put(s + 3, c.b, 'M'); v.put(s + 4, c.b, 'M'); v.put(s + 5, c.b, 'M'); 
+    x0, b = c.run(14, lamp=2, foes=[(9, 'g')]); c.perch(x0, b, 4, 3, rise=3)
+    # a lift that goes up and down between two ledges
+    c.gap(1); x1 = c.x; v.rect(x1, c.b - 6, x1 + 7, c.v.h - 1, 'l') if False else None
+    lx = c.x + 2; c.gap(8); v.put(lx, c.b - 1, 'N'); v.put(lx + 1, c.b - 1, 'N'); v.put(lx, c.b - 12, '|'); v.put(lx, c.b + 1, '|'); v.rect(c.x - 8, c.b + 2, c.x - 1, v.h - 1, 'l')
+    spark_arc(v, lx, c.b - 4, 4, 1)
+    c.up(8); x0, b = c.run(14, lamp=2, foes=[(8, 'h')]); v.put(x0 + 8, b - 4, '*')
+    lava(c, 7); x0, b = c.run(8, foes=[(4, 'f')]); lava(c, 7); c.down(4); x0, b = c.run(16, lamp=2, foes=[(9, 'g'), (13, 'f')])
+    s = lava(c, 12); v.put(s + 3, c.b, 'M'); v.put(s + 4, c.b, 'M'); v.put(s + 5, c.b, 'M'); v.put(s + 5, c.b - 6, '*')
+    c.run(12, lamp=2, foes=[(6, 'h')]); lava(c, 7); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n47():
+    v = Lv('4-7', 'Bellows', 3, 140, 40, hint='The bellows blow upward. Ride them, and mind the jets'); c = Course(v, 36, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 35, 'P'); lava(c, 6)
+    x0, b = c.run(14, lamp=2, foes=[(9, 'f')]); v.put(x0 + 3, b - 1, 'W'); v.ledge(x0 + 5, x0 + 10, b - 9); v.put(x0 + 8, b - 11, '*')
+    c.x = x0 + 12; c.up(9); x0, b = c.run(12, lamp=2, foes=[(7, 'g')]); lava(c, 6)
+    x0, b = c.run(10, foes=[(5, 'f')]); v.put(x0 + 2, b - 1, 'W'); v.ledge(x0 + 4, x0 + 9, b - 9); v.put(x0 + 7, b - 10, 'o')
+    c.x = x0 + 11; c.up(9); x0, b = c.run(14, lamp=2, foes=[(8, 'h')]); lava(c, 7)
+    x0, b = c.run(8, foes=[(4, 'f')]); c.perch(x0, b, 1, 2, rise=3); lava(c, 6); x0, b = c.run(14, lamp=2); v.put(x0 + 3, b - 1, 'W'); v.ledge(x0 + 5, x0 + 10, b - 9); v.put(x0 + 8, b - 10, 'z')
+    c.x = x0 + 12; c.down(0); lava(c, 6); c.run(14, lamp=3, foes=[(8, 'f')]); v.put(c.x - 3, c.b - 1, 'E'); v.put(c.x - 8, c.b - 4, '*')
+    return v
+
+@level
+def n48():
+    v = Lv('4-8', 'Molten Run', 3, 150, 24, hint='Long jumps over the lava: jump, then dash'); c = Course(v, 18, ceil=2)
+    c.run(12, lamp=8); v.put(3, 17, 'P')
+    for k in range(4):
+        lava(c, 8, 1); x0, b = c.run(5 if k % 2 == 0 else 7, foes=[(3, 'g')] if k == 3 else [], lamp=2 if k == 1 else None)
+        if k == 2: v.put(x0 + 3, b - 5, '*')
+    x0, b = c.run(18, lamp=2, foes=[(8, 'f'), (14, 'h')]); c.perch(x0, b, 4, 3, rise=3); c.up(3)
+    lava(c, 7); c.run(5); lava(c, 8, 1); x0, b = c.run(16, lamp=2, foes=[(9, 'f')]); c.down(3)
+    for k in range(3): lava(c, 8, 1); x0, b = c.run(4, foes=[(1, 'b')] if k == 1 else [])
+    lava(c, 8, 1); x0, b = c.run(16, lamp=2, foes=[(10, 'g')]); v.put(x0 + 12, b - 4, '*'); c.run(8, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def n49():
+    v = Lv('4-9', 'Anvil Hall', 3, 150, 30, hint='The guardian is close. Jets, lava and lifts: you know it all'); c = Course(v, 24, ceil=2)
+    c.run(12, lamp=8); v.put(3, 23, 'P'); lava(c, 6)
+    x0, b = c.run(16, lamp=2, foes=[(7, 'f'), (12, 'h')]); c.perch(x0, b, 3, 4, rise=3); lava(c, 8, 1)
+    x0, b = c.run(8, foes=[(4, 'f')]); lava(c, 6); x0, b = c.run(6); lava(c, 6)
+    x0, b = c.run(18, lamp=2, foes=[(9, 'f'), (14, 'g')]); v.put(x0 + 4, b - 1, 'W'); v.ledge(x0 + 6, x0 + 11, b - 9); v.put(x0 + 9, b - 10, 'z')
+    s = lava(c, 12); v.put(s + 3, c.b, 'M'); v.put(s + 4, c.b, 'M'); v.put(s + 5, c.b, 'M')
+    x0, b = c.run(14, lamp=2, foes=[(8, 'h')]); v.put(x0 + 9, b - 4, '*'); c.up(2); lava(c, 6); x0, b = c.run(16, foes=[(5, 'f'), (10, 'f')], lamp=1)
+    c.perch(x0, b, 6, 3, rise=3); lava(c, 8, 1); c.run(5); lava(c, 8, 1); c.run(14, lamp=3, foes=[(9, 'f')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+LEVELS.sort(key=lambda v: (v.world, int(v.id.split('-')[1])))
 
 # =====================================================================  checker
 SOLIDS = set('#CD')
@@ -381,10 +786,20 @@ def check(v, ab, doors_open=False):
         def col(x, a, b): return all(free(x, yy) and not (strict and b > a and yy > a and t(x, yy) == '=') for yy in range(min(a, b), max(a, b) + 1))
         def rowc(y, a, b): return all(free(xx, y) for xx in range(min(a, b), max(a, b) + 1))
         return (col(x0, y0, top) and rowc(top, x0, x1) and col(x1, top, y1)) or (rowc(y0, x0, x1) and col(x1, y0, y1))
+    upov = {}
     while q:
         x, y = q.popleft()
         spring = t(x, y) == 'S' or t(x, y + 1) == 'S'
         up = 9 + (3 if ab['double'] else 0) if spring else H1
+        if (x, y) in upov: up = upov[(x, y)]
+        if t(x, y) == 'W':             # an updraft vent: the whole column is open air, and you can leave from near the top of it
+            k = 0
+            while k < 9 and y - k - 1 >= 0 and t(x, y - k - 1) not in '#D^l': k += 1
+            for kk in range(k + 1): air.add((x, y - kk))
+            for kk in range(max(0, k - 1), k + 1):
+                top = (x, y - kk)
+                edges[(x, y)].add(top); edges[top].add((x, y))
+                if top not in seen: seen.add(top); upov[top] = 3; q.append(top)
         # every place in reach from here
         for dy in range(-up, H):
             for dx in range(-DX - 4, DX + 5):
@@ -428,8 +843,8 @@ def check(v, ab, doors_open=False):
     for y in range(H):
         for x in range(W):
             c = g[y][x]
-            if c in 'E*oLkuGn' and (x, y) not in air and (x, y) not in seen:
-                probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'star', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss', 'n': 'person'}[c], x, y))
+            if c in 'E*oLkuGnz' and (x, y) not in air and (x, y) not in seen:
+                probs.append('%s at %d,%d' % ({'E': 'gate', '*': 'star', 'o': 'spark', 'L': 'lantern', 'k': 'key', 'u': 'shrine', 'G': 'boss', 'n': 'person', 'z': 'secret'}[c], x, y))
     # traps: places you can get to but never get out of to the gate (falling into a pit is fine: that is a death and a
     # respawn, but a box with no way out leaves you stuck). Walk backwards from the gate over the same moves.
     gate = [(x, y) for y in range(H) for x in range(W) if g[y][x] == 'E']
@@ -517,14 +932,17 @@ def arena(v, kind):
     if kind == 'bell': v.ledge(w0 + 8, w0 + 11, floor - 4); v.ledge(w0 + 21, w0 + 24, floor - 4)
     v.put(w0 + 20, floor - 1, 'Q'); v.put(w0 + 31, floor - 1, 'E')
     v.guard = kind
-for lid, kind in (('1-4', 'moss'), ('2-4', 'shard'), ('3-4', 'bell'), ('4-4', 'cinder')):
+for lid, kind in (('1-10', 'moss'), ('2-10', 'shard'), ('3-10', 'bell'), ('4-10', 'cinder')):
     arena(next(v for v in LEVELS if v.id == lid), kind)
 
 ABIL = [dict(double=False, wall=False, dash=False), dict(double=True, wall=False, dash=False), dict(double=True, wall=True, dash=False), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True)]
+# who has somebody to talk to (the lines are in src/js/65-lore.js): the 16 original levels, and 14 of the new ones
+PEOPLE_IN = {'1-1', '1-2', '1-3', '1-10', '2-1', '2-2', '2-3', '2-10', '3-1', '3-2', '3-3', '3-10', '4-1', '4-2', '4-3', '4-10',
+             '1-5', '1-6', '1-9', '2-5', '2-6', '2-7', '2-9', '3-5', '3-6', '3-8', '3-9', '4-5', '4-6', '4-8', '4-9'}
 def npc(v):
     """Somebody to talk to in every level (not the last): standing by a lantern, the safe places on the way. Before a
     guardian, right by the lantern at the arena door. Enemies too close to them are moved out of the way (removed)."""
-    if v.world == 4: return
+    if v.world == 4 or v.id not in PEOPLE_IN: return
     g, hi = v.g, getattr(v, 'w0', v.w)
     lan = [(x, y) for y in range(v.h) for x in range(hi) if g[y][x] == 'L']
     if hasattr(v, 'w0'): lan.sort(key=lambda q: -q[0])
