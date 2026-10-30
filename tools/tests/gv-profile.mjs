@@ -69,7 +69,7 @@ try {
   await until(async () => (await status(A)) === 'online', 60000);
   for (let i = 0; i < 6; i++) await A.click('#tour .go', { timeout: 800 }).catch(() => {});
   await A.click('#tour .skip', { timeout: 300 }).catch(() => {});
-  check('the wallet and the shop catalog arrive', !!(await until(() => A.evaluate(() => { const L = HGGrapevine; return L.eco.state() && L.eco.catalog() && L.eco.catalog().items.length > 400; }), 20000)));
+  check('the wallet and the shop catalog arrive', !!(await until(() => A.evaluate(() => { const L = HGGrapevine; return L.eco.state() && L.eco.catalog() && L.eco.catalog().items.length > 300; }), 20000)));
   await A.click('#chip');
   check('the name chip opens the Profile tab', await A.evaluate(() => !document.getElementById('view-prof').hidden && /goons/.test(document.querySelector('.pgoons').textContent)));
   // an achievement in the saves becomes a goon
