@@ -54,6 +54,7 @@ function netFire(e, slot, ps) { if (netOn()) PARTY.net.send('all', { t: 'fire', 
 function reportHit(p, tg, dmg) {
     if (!M || dmg <= 0.05) return;
     const own = EN.get(p.own); if (!own) return;
+    own.nHits = (own.nHits || 0) + 1;
     if (own === ME) { UI.hitMarker(false); sfx('hit'); }
     if (M.host) hostDamage(p.own, tg.id, dmg, p.pk || 0, p.slot, true);
     else { const key = tg.id + '|' + p.slot + '|' + (p.pk || 0); HQ[key] = (HQ[key] || 0) + dmg; if (p.k !== 'bullet') flushHits(); }
@@ -66,12 +67,15 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
     if (!M || M.over || M.state !== 'play') return;
     const a = EN.get(by), v = EN.get(tgId); if (!a || !v || !v.alive || a.team === v.team) return;
     if (!a.alive && simTime - (a.dieT || 0) > 3) return;
+    if (v.prot > 0) return;
     if (!trusted) {
         const w = a.def; let mx = 0; for (const k of ['w1', 'w2', 'w3']) if (w[k]) mx = Math.max(mx, w[k].dmg * (w[k].nn || 1)); 
         if (!(dmg > 0) || dmg > mx * 22 + 50 || dmg > a.budget + 5) return;
         a.budget -= dmg;
     }
-    const eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
+    let eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
+    if (a.ai) eff *= aiDiff().dmg;
+    eff = Math.min(eff, v.def.hp * (a.def.ln !== v.def.ln ? .3 : .5));      // no single hit takes more than 30% (50% in the same branch) of a full health bar
     v.hp -= eff;
     const dead = v.hp <= 0;
     bcast({ t: 'dmg', tg: tgId, e: Math.round(eff * 10) / 10, by, hp: Math.max(0, Math.round(v.hp)) });
@@ -164,7 +168,7 @@ function sendState() {
 function applyRemote(e, i, x, y, z, yaw, pitch, roll, tur, gun, hp, alive, fl) {
     if (!e || e === ME || e.ai) return;
     if (VEHS[i] && VEHS[i] !== e.def) setDef(e, VEHS[i]);
-    if (alive && !e.alive) { e.alive = true; e.kdone = false; e.mdl.root.visible = true; e.snap = true; e.dieT = 0; e.hp = e.def.hp; e.tg = { x, y, z, yaw, pitch, roll, tur, gun }; }
+    if (alive && !e.alive) { e.alive = true; e.kdone = false; e.mdl.root.visible = true; e.snap = true; e.dieT = 0; e.prot = SPAWN_PROT; e.hp = e.def.hp; e.tg = { x, y, z, yaw, pitch, roll, tur, gun }; }
     if (!e.alive) return;
     const now = performance.now(), dt = e.lastMsg ? clamp((now - e.lastMsg) / 1000, .03, .5) : 0; e.lastMsg = now;
     if (e.tg && dt) { const k = .5; e.vx = lerp(e.vx, (x - e.tg.x) / dt, k); e.vy = lerp(e.vy, (y - e.tg.y) / dt, k); e.vz = lerp(e.vz, (z - e.tg.z) / dt, k); }

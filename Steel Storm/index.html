@@ -1096,6 +1096,7 @@ function weaponFire(e, slot, c) {
         const v = w.v || 0, vx = dir[0] * v + vx0, vy = dir[1] * v + vy0, vz = dir[2] * v + vz0;
         const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep });
         if (!rep) p.dmg = 0;
+        e.nShots = (e.nShots || 0) + 1;
         out.push([+x.toFixed(1), +y.toFixed(1), +z.toFixed(1), +vx.toFixed(1), +vy.toFixed(1), +vz.toFixed(1)]);
     }
     // sound + flash
@@ -1329,6 +1330,7 @@ function netFire(e, slot, ps) { if (netOn()) PARTY.net.send('all', { t: 'fire', 
 function reportHit(p, tg, dmg) {
     if (!M || dmg <= 0.05) return;
     const own = EN.get(p.own); if (!own) return;
+    own.nHits = (own.nHits || 0) + 1;
     if (own === ME) { UI.hitMarker(false); sfx('hit'); }
     if (M.host) hostDamage(p.own, tg.id, dmg, p.pk || 0, p.slot, true);
     else { const key = tg.id + '|' + p.slot + '|' + (p.pk || 0); HQ[key] = (HQ[key] || 0) + dmg; if (p.k !== 'bullet') flushHits(); }
@@ -2121,6 +2123,7 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay,
     leave() { UI.leaveMatch(true); afterMatch(); },
     ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch() },
+    T: { newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };
 boot();

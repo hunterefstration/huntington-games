@@ -60,6 +60,7 @@ function updateCamera(dt) {
 function simStep(dt) {
     simTime += dt;
     if (!M) return;
+    for (const e of EN.values()) if (e.prot > 0) e.prot -= dt;
     if (!M.host) M.t += dt;
     if (ME && ME.alive) {
         const c = playerCtrl(ME, dt); stepVehicle(ME, c, dt);
@@ -192,6 +193,7 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay,
     leave() { UI.leaveMatch(true); afterMatch(); },
     ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch() },
+    T: { newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };
 boot();

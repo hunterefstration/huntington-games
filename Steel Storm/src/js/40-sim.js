@@ -3,6 +3,7 @@
 // The player and the bots share the same code: both just produce a control struct `c`:
 //   {thr, steer, aimYaw, aimPitch, f1, f2, f3}
 // ============================================================
+const SPAWN_PROT = 3;             // seconds nobody can hurt a vehicle that just spawned
 const EN = new Map();            // id -> entity
 let ME = null;                   // my entity
 let M = null;                    // the running match (60-match.js)
@@ -135,7 +136,7 @@ function pickSpawn(team, ln) {
 function spawnEnt(e, sp) {
     sp = sp || pickSpawn(e.team, e.def.ln);
     e.x = sp.x; e.y = sp.y; e.z = sp.z; e.yaw = sp.yaw; e.tur = sp.yaw; e.pitch = 0; e.roll = 0; e.gun = 0; e.hp = e.def.hp; e.alive = true; e.speed = e.def.ln === 'a' ? e.def.minSp * 1.6 : 0; e.thr = e.def.ln === 'a' ? .6 : 0;
-    e.a2 = e.def.w2 && e.def.w2.cnt || 0; e.a3 = e.def.w3 ? e.def.w3.cnt : 0; e.t1 = e.t2 = e.t3 = 1; e.vx = e.vy = e.vz = 0; e.budget = e.def.maxDps * 3;
+    e.a2 = e.def.w2 && e.def.w2.cnt || 0; e.a3 = e.def.w3 ? e.def.w3.cnt : 0; e.t1 = e.t2 = e.t3 = 1; e.vx = e.vy = e.vz = 0; e.budget = e.def.maxDps * 3; e.prot = SPAWN_PROT; if (e.ai) aiReset(e);
     e.tg = { x: e.x, y: e.y, z: e.z, yaw: e.yaw, pitch: 0, roll: 0, tur: e.tur, gun: 0 }; e.snap = true;
     if (e.mdl) e.mdl.root.visible = true; e.dieT = 0;
     applyAnim(e, 0);
@@ -261,6 +262,7 @@ function weaponFire(e, slot, c) {
         const v = w.v || 0, vx = dir[0] * v + vx0, vy = dir[1] * v + vy0, vz = dir[2] * v + vz0;
         const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep });
         if (!rep) p.dmg = 0;
+        e.nShots = (e.nShots || 0) + 1;
         out.push([+x.toFixed(1), +y.toFixed(1), +z.toFixed(1), +vx.toFixed(1), +vy.toFixed(1), +vz.toFixed(1)]);
     }
     // sound + flash
