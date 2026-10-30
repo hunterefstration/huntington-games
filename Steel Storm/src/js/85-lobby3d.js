@@ -37,7 +37,7 @@ const Lobby = {
         const list = rosterNow().slice(), meId = PARTY.net ? PARTY.myId : 0;
         const mi = list.findIndex(p => p.id === meId); if (mi > 0) list.unshift(list.splice(mi, 1)[0]);
         list.forEach((p, i) => {
-            if (i >= 5) return; const def = VBY[p.veh] || VBY.g1a, m = makeModel(def, i === 0 ? 0 : 1), P = getParts(def);
+            if (i >= 5) return; const def = VBY[p.veh] || VBY.g1a, m = makeModel(def, 0), P = getParts(def);
             const size = def.ln === 'a' ? Math.max(P.len, P.span) * 0.9 : P.len, k = 5.2 / size; m.root.scale.setScalar(k);
             const pad = this.pads[i]; m.root.position.set(pad.position.x, def.ln === 'a' ? 2.3 : def.ln === 'n' ? 0.55 + 1.2 * k : 0.55, pad.position.z);
             this.scene.add(m.root);
