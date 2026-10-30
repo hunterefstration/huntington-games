@@ -14,7 +14,8 @@
 const INTERP_MS = 100;           // how far "in the past" other things are shown (room for 2-3 updates)
 const MP_MODES = {
     coop: { name: 'CO-OP', team: 10, desc: 'Survive the waves together - up to 10 players. Everyone has their own cash and armory. Downed players come back next wave.' },
-    v1: { name: '1v1', team: 1 }, v2: { name: '2v2', team: 2 }, v3: { name: '3v3', team: 3 }, v4: { name: '4v4', team: 4 }, v5: { name: '5v5', team: 5 }
+    v1: { name: '1v1', team: 1 }, v2: { name: '2v2', team: 2 }, v3: { name: '3v3', team: 3 }, v4: { name: '4v4', team: 4 }, v5: { name: '5v5', team: 5 },
+    tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches from the stands. The last one standing is the champion.' }
 };
 const PVP_TARGET = { v1: 10, v2: 15, v3: 20, v4: 25, v5: 30 };
 const TEAM_COLORS = [0xef4444, 0x3b82f6], TEAM_NAMES = ['RED', 'BLUE'];
@@ -25,7 +26,7 @@ const ENEMY_IDS = Object.keys(enemyTypes);
 // (4 bits in the snapshot: 16 at most.) 5.0 added hidden (Vent Crawler in its vent), pounce, zap (Shocker) and Patient Zero's burrow/erupt/cast/nova
 const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak', 'hidden', 'pounce', 'zap', 'burrow', 'erupt', 'cast', 'nova'];
 const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
-const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp ? ' TEAM DEATHMATCH' : '');
+const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp && NET.mode !== 'tourney' ? ' TEAM DEATHMATCH' : '');
 const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // Grapevine (the launcher's account): one name in every game, players proven by their account key, and a
 // + FRIEND button that sends a real Grapevine friend request. The launcher page owns the account (window.parent.HGGrapevine);
@@ -236,7 +237,7 @@ async function clientJoinCode(raw, attempt = 0) {
                 const peer = peerFromConn(conn); NET.hostPeer = peer;
                 wirePeer(peer, () => {}, () => netHostGone());
                 NET.on = true; NET.host = false; NET.joinState = 'connected';
-                sendRel(peer, { t: 'hi', name: NET.name }); renderMP();
+                updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE }); renderMP();
                 // matchmaking is done: hang up on the server, the game connection stays
                 setTimeout(() => { try { pj.disconnect(); } catch (e) {} }, 1500);
             });
@@ -253,7 +254,7 @@ function makePlayer(id, name, team, color) {
     return { id, name, team, color, peer: null, buf: new Interp([4, 5]), cur: [0, 0, 0, 0, 0, 0], w: 0, f: 0, hp: 100, alive: true, kills: 0, deaths: 0, rtt: 0,
              tgt: { id, pos: new V3(0, -100, 0), feet: -100, local: false, alive: false }, av: null, fireT: 0, seenT: 0, walk: 0 };
 }
-function playerColor(p) { return NET.lobby.mode === 'coop' || NET.mode === 'coop' ? p.color : TEAM_COLORS[p.team]; }
+function playerColor(p) { return NET.lobby.mode === 'coop' || NET.mode === 'coop' || NET.lobby.mode === 'tourney' || NET.mode === 'tourney' ? p.color : TEAM_COLORS[p.team]; }
 
 
 // ---------- HOST: invites ----------
@@ -317,7 +318,7 @@ function autoTeam(p) {
 }
 function hostLobbyUpdate() {
     if (!NET.host) return;
-    const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv }));
+    const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null }));
     for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
     renderMP();
 }
@@ -326,7 +327,7 @@ function netRemovePlayer(id, why) {
     netPlayers.delete(id);
     if (p.av) { scene.remove(p.av.g); p.av = null; }
     try { p.peer && p.peer.pc.close(); } catch (e) {}
-    if (NET.host) { netBroadcast({ t: 'left', id }); hostLobbyUpdate(); }
+    if (NET.host) { netBroadcast({ t: 'left', id }); hostLobbyUpdate(); tourneyOnLeave(id); }
     netFeed(`<span style="color:${hex(playerColor(p))}">${escHtml(p.name)}</span> ${why || 'left'}`);
     if (!NET.inGame) renderMP();
 }
@@ -364,7 +365,7 @@ function clientLinkOpen(peer) {
     for (const q of NET.joinPeers || []) if (q !== peer) { q.gone = true; try { q.pc.close(); } catch (e) {} }
     NET.joinPeers = [];
     NET.on = true; NET.host = false; NET.joinState = 'connected'; NET.joinVia = 'long';
-    sendRel(peer, { t: 'hi', name: NET.name }); renderMP();
+    updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE }); renderMP();
 }
 function clientLinkClosed(peer) {
     if (peer.gone) return;                // hung up on purpose, or already handled ('failed' and the channel closing both land here)
@@ -406,7 +407,7 @@ function netLeave() {
 }
 function netReset() {
     try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyClose && NET.host && NET.code) lp.HG_partyClose(NET.code); } catch (e) {}
-    NET.partyAt = 0;
+    NET.partyAt = 0; tourneyReset();
     for (const p of netPlayers.values()) if (p.av) scene.remove(p.av.g);
     netPlayers.clear();
     for (const inv of NET.invites) try { inv.peer.pc.close(); } catch (e) {}
@@ -435,7 +436,7 @@ function hostMessage(p, peer, m) {
     switch (m.t) {
         case 'hi': {
             const first = p.pending;
-            p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false;
+            p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false; p.look = cleanLook(m.look);
             if (GVL.on() && !p.gvn) { p.gvn = GVL.L.newChallenge(); sendRel(peer, { t: 'gvq', n: p.gvn }); }   // "prove you are your Grapevine account"
             hostLobbyUpdate();
             if (first && NET.inGame) hostLateJoin(p);          // jumped into a match that's already going (or rejoined after a drop)
@@ -451,6 +452,7 @@ function hostMessage(p, peer, m) {
             break;
         }
         case 'bye': netRemovePlayer(p.id, 'left the party'); break;
+        case 'look': applyPlayerLook(p, m.look); if (NET.inGame) netBroadcast({ t: 'plook', id: p.id, look: p.look }); else hostLobbyUpdate(); break;
         case 'po': p.rtt = now - m.ts; break;
         case 'S': {
             clockSample(peer, m.ct, now);
@@ -478,7 +480,7 @@ function clientMessage(m) {
             break;
         }
         case 'lobby': {
-            if (!NET.saidHi) { NET.saidHi = true; sendRel(NET.hostPeer, { t: 'hi', name: NET.name }); }
+            if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
             if (GVL.on() && !NET.hostGvn && !NET.hostAsked) { NET.hostAsked = true; NET.hostGvn = GVL.L.newChallenge(); sendRel(NET.hostPeer, { t: 'gvq', n: NET.hostGvn }); }   // and the host proves itself to us
             NET.id = m.you; NET.lobby = { mode: m.mode, map: m.map, diff: m.diff };
             const seen = new Set();
@@ -487,7 +489,7 @@ function clientMessage(m) {
                 if (q.id === NET.id) { NET.team = q.team; NET.color = q.color; continue; }
                 let p = netPlayers.get(q.id);
                 if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
-                p.name = q.name; p.team = q.team; p.color = q.color;
+                p.name = q.name; p.team = q.team; p.color = q.color; p.look = cleanLook(q.look);
                 if (q.id !== 0) p.gv = !!q.gv;               // the host vouches for the others; the host proves itself (gva)
                 if (q.gv && q.id !== 0 && GVL.L) GVL.L.noteMet(q.name, 'Blocky Shooter');
             }
@@ -495,12 +497,15 @@ function clientMessage(m) {
             renderMP();
             break;
         }
+        case 'plook': { if (m.id !== NET.id) applyPlayerLook(netPlayers.get(m.id), m.look); break; }
         case 'full': NET.joinState = 'error'; NET.joinErr = 'That party is full or already playing.'; renderMP(); break;
+        case 'tb': tourneyApply(m); break;
+        case 'tend': netShowEnd(m); break;
         case 'start': netBeginGame(m); if (m.late) netApplyLate(m.late); break;
         case 'pj': if (NET.inGame && m.id !== NET.id) {
                 let p = netPlayers.get(m.id);
                 if (!p) { p = makePlayer(m.id, m.name, m.team, m.color); netPlayers.set(m.id, p); }
-                Object.assign(p, { name: m.name, team: m.team, color: m.color });
+                Object.assign(p, { name: m.name, team: m.team, color: m.color }); p.look = cleanLook(m.look);
                 if (!p.av) { p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
                 netFeed(`<span style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}</span> joined the match`);
             } break;

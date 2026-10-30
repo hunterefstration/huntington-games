@@ -271,7 +271,7 @@ function checkWaveStatus() {
 const _hurtDir = new V3(), _camDir = new V3();
 let lastHurtBy = '';
 function takeDamage(amount, fromPos, by) {
-    if (currentHp <= 0 || currentGameState !== 'playing' || debugGod || run.mode === 'sandbox') return;
+    if (currentHp <= 0 || currentGameState !== 'playing' || debugGod || run.mode === 'sandbox' || NET.spec || NET.lockT > 0) return;
     if (CAMP.on && CAMP.inv > 0) return;       // 5.0 campaign: a moment of grace after you go down
     lastHurtT = gameTime;
     if (by) lastHurtBy = by;
@@ -288,7 +288,7 @@ function takeDamage(amount, fromPos, by) {
     if (CAMP.on) CAMP.dmg += amount;
     if (amount > 0.01) waveHurt = true;          // 4.0: "clear a wave without losing health" challenge
     currentHp -= amount;
-    screenFlash('rgba(220,38,38,0.45)');
+    screenFlash('rgba(220,38,38,0.45)', true);
     shake = Math.max(shake, 0.2);
     sfx('hurt');
     if (fromPos) showHurtDir(fromPos);
@@ -309,9 +309,37 @@ function showHurtDir(fromPos) {
 }
 
 
-function screenFlash(color) {
-    ui.flash.style.transition = 'none'; ui.flash.style.background = color; ui.flash.style.opacity = '1';
-    requestAnimationFrame(() => { ui.flash.style.transition = 'opacity 0.35s'; ui.flash.style.opacity = '0'; });
+// 5.2: screen flashes never stack, loop or strobe. One at a time, at least 0.3s apart (0.45s for the red hit flash), capped in strength,
+// softer when "Reduce flashes" is on, and never when nobody is looking at the game (menus, hidden tab). The flash always clears itself on a timer.
+let _flashAt = -9, _flashClr = 0;
+function screenFlash(color, hit) {
+    if (currentGameState !== 'playing' && currentGameState !== 'dead' && currentGameState !== 'gameover') return;
+    const now = performance.now();
+    if (now - _flashAt < (hit ? 450 : 300)) return;
+    _flashAt = now;
+    const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/.exec(color);
+    if (m) {
+        let r = +m[1], g = +m[2], b = +m[3], a = m[4] === undefined ? 1 : +m[4];
+        const lum = (r + g + b) / 765;
+        a = Math.min(a, lum > 0.8 ? 0.18 : 0.4);                // near-white is capped hard: no flashbang look
+        if (settings.reduceFlash !== false) a *= 0.55;
+        color = `rgba(${r | 0},${g | 0},${b | 0},${a.toFixed(3)})`;
+    }
+    const el = ui.flash;
+    clearTimeout(_flashClr);
+    el.style.transition = 'none'; el.style.background = color; el.style.opacity = '1';
+    requestAnimationFrame(() => { el.style.transition = 'opacity 0.35s'; el.style.opacity = '0'; });
+    _flashClr = setTimeout(() => { el.style.transition = 'none'; el.style.opacity = '0'; }, 500);
+}
+// 5.2: can the player actually see this spot? (in front of the camera or very close, and no wall in between)
+const _fxv = new V3();
+function fxVisible(pos, maxDist = 90) {
+    const d = camera.position.distanceTo(pos);
+    if (d > maxDist) return false;
+    if (d < 2.5) return true;
+    camera.getWorldDirection(_fxv);
+    if (_fxv.dot(new V3().subVectors(pos, camera.position).multiplyScalar(1 / d)) < -0.15) return false;
+    return losClear(camera.position.x, camera.position.y, camera.position.z, pos.x, pos.y + 0.3, pos.z);
 }
 
 

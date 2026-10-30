@@ -217,6 +217,12 @@ function updateBlobs() {
 let fakeMz = 0, fakeBm = 0;
 const _fmz = new THREE.Vector3();
 function fakeMuzzle() { if (Q.pointLights === 0) fakeMz = 1; }
+// 5.2: how much of an explosion's light reaches your eyes: full when it is in view, a faint glow when it is behind a wall or behind you,
+// and softer the closer it is (a blast next to the camera used to white the whole screen out)
+function explosionGlare(pos) {
+    const d = camera.position.distanceTo(pos);
+    return (fxVisible(pos, 70) ? 1 : 0.12) * clamp(d / 7, 0.3, 1);
+}
 function fakeBoom(pos) { if (Q.pointLights === 0) { fakeBm = 1; LIGHT_U.uBm.value.set(pos.x, pos.y + 1, pos.z, 0); } }
 function updateFakeLights(dt) {
     if (Q.pointLights > 0) { if (fakeMz + fakeBm > 0) { fakeMz = fakeBm = 0; LIGHT_U.uMz.value.w = LIGHT_U.uBm.value.w = 0; } return; }
@@ -367,13 +373,14 @@ function updateExplosions(dt) {
         const k = ex.t / ex.dur;
         if (k >= 1) { scene.remove(ex.ball, ex.ring, ex.dust, ex.core); ex.active = false; explosions.splice(i, 1); continue; }
         const e = 1 - Math.pow(1 - k, 3);
-        ex.ball.scale.setScalar(0.5 + e * ex.radius * 0.55); ex.ball.material.opacity = (ex.peak || 0.9) * (1 - k);
+        const nearK = clamp((camera.position.distanceTo(ex.ball.position) - 1) / (ex.radius * 0.5 + 2), 0.1, 1);     // 5.2: camera inside the fireball -> it fades instead of whiting out the screen
+        ex.ball.scale.setScalar(0.5 + e * ex.radius * 0.55); ex.ball.material.opacity = (ex.peak || 0.9) * (1 - k) * nearK;
         ex.ring.scale.setScalar(0.5 + e * ex.radius); ex.ring.material.opacity = (ex.ringOnly ? 0.9 : 0.7) * (1 - k);
         if (ex.dust.visible) {
             const kd = Math.min(1, ex.t / (ex.dur * 1.6)), ed = 1 - Math.pow(1 - kd, 2.4);
             ex.dust.scale.setScalar(0.6 + ed * ex.radius * 1.35); ex.dust.material.opacity = 0.32 * (1 - kd);
             const kc = Math.min(1, ex.t / (ex.dur * 0.35));
-            ex.core.scale.setScalar((0.4 + kc * ex.radius * 0.3) ); ex.core.material.opacity = 0.95 * (1 - kc) * (1 - kc);
+            ex.core.scale.setScalar((0.4 + kc * ex.radius * 0.3) ); ex.core.material.opacity = 0.95 * (1 - kc) * (1 - kc) * nearK;
             ex.core.visible = kc < 1;
         }
     }
@@ -447,14 +454,16 @@ function updateWeather(dt) {
         rainMesh.material.uniforms.uTime.value += dt;
         rainMesh.position.set(camera.position.x, camera.position.y - 8, camera.position.z);
     }
+    // 5.2: lightning is ONE short, soft pulse (it used to double-strobe at 4x brightness every 7-17s, which looked like a flashbang).
+    // At least 14s apart, softer with "Reduce flashes" (on by default), and never while a menu is open.
     if (lightningFlash > 0) {
         lightningFlash = Math.max(0, lightningFlash - dt);
-        const k = lightningFlash > 0.18 || (lightningFlash > 0.06 && lightningFlash < 0.1) ? 1 : 0;
-        hemi.intensity = theme.hemiInt * (Q.env ? 1 : 2.1) * (1 + 3 * k);
+        const k = Math.sin(Math.PI * (1 - lightningFlash / 0.3)) * (settings.reduceFlash !== false ? 0.35 : 1);
+        hemi.intensity = theme.hemiInt * (Q.env ? 1 : 2.1) * (1 + 0.9 * k);
         if (lightningFlash <= 0) hemi.intensity = theme.hemiInt * (Q.env ? 1 : 2.1);
     }
-    if (theme.lightning && currentGameState !== 'paused' && currentGameState !== 'shop') {
+    if (theme.lightning && currentGameState === 'playing') {
         lightningT -= dt;
-        if (lightningT <= 0) { lightningT = 7 + Math.random() * 10; lightningFlash = 0.28; sfx('thunder'); }
+        if (lightningT <= 0) { lightningT = 14 + Math.random() * 14; lightningFlash = 0.3; sfx('thunder'); }
     }
 }

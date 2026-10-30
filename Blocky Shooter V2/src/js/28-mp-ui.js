@@ -1,7 +1,7 @@
 // ---------- HUD ----------
 Object.assign(ui, { netScore: $('net-score'), netFeed: $('net-feed'), netTeam: $('net-team'), netDown: $('net-down'), netBoard: $('net-board'), netBoardInner: $('net-board-inner'), netPing: $('net-ping'), mp: $('mp-overlay'), mpBody: $('mp-body') });
 function netHud(on) {
-    ui.netScore.classList.toggle('hidden', !on || !NET.pvp);
+    ui.netScore.classList.toggle('hidden', !on || !NET.pvp || NET.mode === 'tourney');
     ui.netFeed.innerHTML = ''; ui.netTeam.innerHTML = ''; ui.netPing.textContent = '';
     ui.netDown.classList.add('hidden'); ui.netBoard.classList.add('hidden');
     ui.txtMoney.classList.toggle('hidden', !!(on && NET.pvp));
@@ -9,7 +9,9 @@ function netHud(on) {
 function netHudDown() { ui.netDown.classList.remove('hidden'); if (!NET.pvp) ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">YOU'RE DOWN</div><div class="text-lg font-bold text-gray-200">${lastHurtBy ? 'Killed by ' + escHtml(lastHurtBy) + ' - ' : ''}you'll be back next wave</div>`; }
 function netHudUpdate() {
     const now = performance.now();
-    if (NET.pvp) {
+    if (NET.mode === 'tourney') {
+        setText(ui.txtLevel, 'TOURNAMENT'); setText(ui.txtEnemies, NET.spec ? 'Spectating' : 'In the duel'); ui.txtEnemies.style.color = NET.spec ? '#9ca3af' : '#fca5a5';
+    } else if (NET.pvp) {
         ui.netScore.innerHTML = `<span style="color:${hex(TEAM_COLORS[0])}">RED ${NET.score[0]}</span><span class="text-base text-gray-300">first to ${NET.target}</span><span style="color:${hex(TEAM_COLORS[1])}">${NET.score[1]} BLUE</span>`;
         setText(ui.txtLevel, netModeName()); setText(ui.txtEnemies, `Your team: ${TEAM_NAMES[NET.team]}`);
         ui.txtEnemies.style.color = hex(TEAM_COLORS[NET.team]);
@@ -30,7 +32,8 @@ function netHudUpdate() {
     if (!ui.netBoard.classList.contains('hidden')) renderBoard();
 }
 function renderBoard() {
-    const rows = (list) => list.map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td class="text-gray-400">${p.id === NET.id ? (NET.host ? '-' : Math.round(NET.rtt)) : (p.id === 0 ? '-' : Math.round(p.rtt))}</td></tr>`).join('');
+    if (NET.mode === 'tourney') { ui.netBoardInner.innerHTML = tourneyBoardHtml(); return; }
+    const rows = (list) => list.map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${tagSub(p)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td class="text-gray-400">${p.id === NET.id ? (NET.host ? '-' : Math.round(NET.rtt)) : (p.id === 0 ? '-' : Math.round(p.rtt))}</td></tr>`).join('');
     const head = `<tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">${NET.pvp ? 'KILLS' : 'KILLS'}</td><td class="pr-6">${NET.pvp ? 'DEATHS' : 'DOWNS'}</td><td>PING</td></tr>`;
     const all = allPlayers();
     ui.netBoardInner.innerHTML = `<div class="text-2xl font-black mb-3">${escHtml(netModeName())} <span class="text-sm text-gray-400">${MAPS[run.map] ? MAPS[run.map].name : ''}</span></div>` +
@@ -129,19 +132,19 @@ function renderMPSettings() {
     const el = $('mp-settings'); if (!el) return;
     const L = NET.lobby;
     let h = `<div class="mlabel">MODE</div><div class="flex flex-wrap gap-2">${Object.entries(MP_MODES).map(([k, m]) => chip(L.mode === k, `data-mpset="mode" data-val="${k}"`, m.name)).join('')}</div>`;
-    h += `<div class="mdesc">${L.mode === 'coop' ? MP_MODES.coop.desc : `Team deathmatch, ${MP_MODES[L.mode].team} per team. First team to ${PVP_TARGET[L.mode]} kills wins. Everyone gets every gun; respawn after 3s.`}</div>`;
+    h += `<div class="mdesc">${L.mode === 'coop' ? MP_MODES.coop.desc : L.mode === 'tourney' ? MP_MODES.tourney.desc + ' Needs 4 to 8 players; the Tournament Arena is used whatever map is picked.' : `Team deathmatch, ${MP_MODES[L.mode].team} per team. First team to ${PVP_TARGET[L.mode]} kills wins. Everyone gets every gun; respawn after 3s.`}</div>`;
     h += `<div class="mlabel">MAP</div><div class="flex flex-wrap gap-2">${chip(L.map === 'random', 'data-mpset="map" data-val="random"', 'RANDOM')}${Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => chip(L.map === k, `data-mpset="map" data-val="${k}"`, m.name)).join('')}</div>`;
     if (L.mode === 'coop') h += `<div class="mlabel">DIFFICULTY</div><div class="flex flex-wrap gap-2">${Object.entries(DIFFICULTIES).map(([k, d]) => chip(L.diff === k, `data-mpset="diff" data-val="${k}"`, d.name, d.color)).join('')}</div>`;
     el.innerHTML = h;
 }
 function renderMPPlayers() {
     const el = $('mp-players'); if (!el) return;
-    const pvp = NET.lobby.mode !== 'coop';
+    const pvp = NET.lobby.mode !== 'coop' && NET.lobby.mode !== 'tourney';
     const list = [{ id: NET.id, name: NET.name, team: NET.host && NET.me ? NET.me.team : NET.team, color: NET.host ? COOP_COLORS[0] : (NET.color || 0x888888), rtt: 0, me: true, gv: GVL.on() }]
-        .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv })));
+        .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv, look: p.look })));
     el.innerHTML = list.sort((a, b) => a.id - b.id).map(p => {
         const col = pvp ? TEAM_COLORS[p.team] : p.color;
-        return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 ? '' : Math.round(p.rtt) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
+        return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${tagHtml(p)}${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}${tagSub(p)}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 ? '' : Math.round(p.rtt) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
     }).join('');
 }
 function renderMPInvites() {

@@ -279,7 +279,7 @@ function buildWorldInner(mapId) {
 
 
     ({ blockyard: mapBlockyard, downtown: mapDowntown, fortress: mapFortress, plains: mapPlains,
-       skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab }[mapId] || mapBlockyard)();
+       skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab, tourney: mapTourney }[mapId] || mapBlockyard)();
     const cage = buildRamCage(); cageArea = cage;
     if (!VOID) edgeDecor(mapId);
     scatterProps(mapId);
@@ -609,6 +609,7 @@ const PROP_SETS = {
     mall:      [['planter', 6], ['bench', 8], ['cart', 8], ['rubble', 8], ['stain', 10], ['sign', 6], ['dumpster', 3], ['cones', 4], ['bone', 3]],
     subway:    [['jersey', 6], ['bench', 4], ['barrel', 6], ['rubble', 10], ['stain', 14], ['sign', 6], ['dumpster', 3], ['cones', 5], ['bone', 4], ['wreck', 2]],
     biolab:    [['barrel', 4], ['crate', 3], ['rubble', 3], ['stain', 12], ['bone', 3]],
+    tourney:   [],
     military:  [['sandbags', 10], ['hedgehog', 8], ['barrel', 10], ['jersey', 8], ['crate', 8], ['rubble', 8], ['stain', 12], ['antenna', 3], ['wreck', 4], ['cones', 4], ['sign', 5]]
 };
 function scatterProps(mapId) {

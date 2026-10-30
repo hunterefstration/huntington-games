@@ -632,7 +632,7 @@ function campDeath() {
     if (CAMP.deaths >= CAMP.m.lives) { currentHp = 0; campFail('You ran out of lives'); return; }
     currentHp = maxHp; const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null; if (tier) currentArmor = tier.max;
     camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; velocity.set(0, 0, 0); push.set(0, 0, 0);
-    CAMP.inv = 3; screenFlash('rgba(255,255,255,0.5)');
+    CAMP.inv = 3; screenFlash('rgba(120,20,20,0.4)');
     toast(`YOU WENT DOWN - ${campLives()} ${campLives() === 1 ? 'LIFE' : 'LIVES'} LEFT`, '#f87171', 2.6); sfx('hurt');
     updateHUD();
 }

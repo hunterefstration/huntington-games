@@ -29,8 +29,26 @@ function netSendFx(kind, pos, r, color, extra) {
     if (extra) Object.assign(m, extra);
     if (NET.host) netBroadcast(m); else sendRel(NET.hostPeer, m);
 }
+// 5.2: a blast/slam/emp show is played once per event: a repeat of the same one (same kind, same spot, within half a second), a flood of them
+// (more than ~8 a second) or a silly radius is dropped, so a replayed or spammed message can never strobe the screen.
+const _fxSeen = []; let _fxBurstT = 0, _fxBurstN = 0;
+function netFxAllowed(m) {
+    if (!m || !Array.isArray(m.p) || m.p.length < 3) return false;
+    const t = gameTime;
+    if (t - _fxBurstT > 1) { _fxBurstT = t; _fxBurstN = 0; }
+    if (++_fxBurstN > 8) return false;
+    for (let i = _fxSeen.length - 1; i >= 0; i--) {
+        const f = _fxSeen[i];
+        if (t - f.t > 0.5) { _fxSeen.splice(i, 1); continue; }
+        if (f.k === m.k && Math.abs(f.x - m.p[0]) < 0.6 && Math.abs(f.z - m.p[2]) < 0.6) return false;
+    }
+    _fxSeen.push({ k: m.k, x: m.p[0], z: m.p[2], t });
+    return true;
+}
 function netPlayFx(m) {
-    const p = new V3(m.p[0], m.p[1], m.p[2]);
+    if (!netFxAllowed(m)) return;
+    if (m.k === 'boom' || m.k === 'slam' || m.k === 'emp') m.r = clamp(+m.r || 4, 1, 40);
+    const p = new V3(+m.p[0] || 0, +m.p[1] || 0, +m.p[2] || 0);
     if (m.k === 'boom') explode(p, 0, m.r, { fxOnly: true, color: m.c });
     else if (m.k === 'slam') {
         spawnBlastFx(p, m.r, m.c, true, 0.5);
@@ -286,13 +304,14 @@ function hostApplyPvpHits(shooter, list) {
     for (const [pid, dmg, head, expl, si] of list) {
         const target = playerById(pid);
         if (!target || target.team === shooter.team || !target.alive) continue;
+        if (NET.mode === 'tourney' && (TN.phase !== 'duel' || !tnIsDuelist(shooter.id) || !tnIsDuelist(pid) || !shooter.alive)) continue;      // 5.2: only the two duelists, only while the fight is on
         const d = Math.min(+dmg || 0, 1500);
         if (pid === NET.id) netPvpDamaged(d, shooter.id, head, si, [r2(sPos.x), r2(sPos.z)]);
         else sendRel(target.peer, { t: 'pd', a: r2(d), by: shooter.id, h: head ? 1 : 0, s: si, f: [r2(sPos.x), r2(sPos.z)] });
     }
 }
 function netPvpDamaged(d, by, head, si, f) {
-    if (!NET.inGame || NET.dead) return;
+    if (!NET.inGame || NET.dead || NET.spec || NET.lockT > 0) return;
     NET.lastBy = by; NET.lastSrc = si;
     const k = playerById(by);
     takeDamage(d, f ? new V3(f[0], 0, f[1]) : null, k ? k.name : undefined);
@@ -318,6 +337,10 @@ function hostOnDeath(victim, by, si) {
     v.alive = false; if (v.tgt) v.tgt.alive = false;
     v.deaths++;
     const k = playerById(by);
+    if (NET.mode === 'tourney') {
+        const m = { t: 'feed', k: by !== victim ? by : -1, v: victim, s: si || 0 }; netBroadcast(m); netOnFeed(m);
+        tourneyOnDeath(victim, by); return;
+    }
     if (NET.pvp) {
         if (k && by !== victim) { k.kills++; NET.score[k.team]++; }
         const m = { t: 'feed', k: k && by !== victim ? by : -1, v: victim, s: si || 0 };
@@ -340,7 +363,7 @@ function netOnScore(m) {
 }
 function netOnFeed(m) {
     const v = playerById(m.v), k = playerById(m.k);
-    const nm = (p) => p ? `<span style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.id === NET.id ? 'YOU' : p.name)}</span>` : '?';
+    const nm = (p) => p ? `<span style="color:${hex(pcol(p))}">${escHtml(p.id === NET.id ? 'YOU' : p.name)}</span>` : '?';
     if (m.k === -2) netFeed(`${nm(v)} <span class="text-red-300">is down!</span>`);
     else if (k) netFeed(`${nm(k)} <span class="text-gray-300">[${escHtml(killerName(NET_SRC[m.s] || 'explosive'))}]</span> ${nm(v)}`);
     else netFeed(`${nm(v)} <span class="text-gray-300">died</span>`);
@@ -393,84 +416,7 @@ function netSpectate(dt) {
 }
 
 
-// ---------- avatars (how other players look) ----------
-const _avMats = new Map();
-const avMat = (c) => _avMats.get(c) || (_avMats.set(c, new THREE.MeshLambertMaterial({ color: c })), _avMats.get(c));
-const _flashMat = new THREE.MeshBasicMaterial({ color: 0xffd27a, toneMapped: false });
-function nameTag(name, color) {
-    const c = document.createElement('canvas'); c.width = 256; c.height = 64; const g = c.getContext('2d');
-    g.font = 'bold 34px Segoe UI, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineWidth = 7; g.strokeStyle = 'rgba(0,0,0,0.85)'; g.strokeText(name, 128, 30);
-    g.fillStyle = hex(color); g.fillText(name, 128, 30);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(c), transparent: true, depthWrite: false }));
-    sp.scale.set(1.8, 0.45, 1); sp.renderOrder = 5;
-    return sp;
-}
-function makeAvatar(p) {
-    const col = NET.pvp ? TEAM_COLORS[p.team] : p.color;
-    const g = new THREE.Group();
-    const body = avMat(col), dark = avMat(darken(col, 0.5)), skin = avMat(0xd9a066), black = avMat(0x1d1f24), gunM = avMat(0x34373e);
-    const B = (parent, sx, sy, sz, m, x, y, z) => { const o = new THREE.Mesh(sharedBox, m); o.scale.set(sx, sy, sz); o.position.set(x, y, z); o.castShadow = true; parent.add(o); return o; };
-    const legL = new THREE.Group(), legR = new THREE.Group();
-    legL.position.set(-0.15, 0.85, 0); legR.position.set(0.15, 0.85, 0); g.add(legL, legR);
-    B(legL, 0.26, 0.85, 0.3, dark, 0, -0.43, 0); B(legR, 0.26, 0.85, 0.3, dark, 0, -0.43, 0);
-    B(legL, 0.28, 0.14, 0.36, black, 0, -0.8, -0.03); B(legR, 0.28, 0.14, 0.36, black, 0, -0.8, -0.03);
-    B(g, 0.62, 0.72, 0.36, body, 0, 1.2, 0);
-    B(g, 0.64, 0.1, 0.38, black, 0, 0.88, 0);                       // belt
-    B(g, 0.5, 0.4, 0.1, dark, 0, 1.25, 0.2);                         // backpack
-    const head = new THREE.Group(); head.position.set(0, 1.56, 0); g.add(head);
-    B(head, 0.44, 0.44, 0.44, skin, 0, 0.22, 0);
-    B(head, 0.48, 0.18, 0.48, body, 0, 0.42, 0);                     // helmet
-    B(head, 0.34, 0.1, 0.04, black, 0, 0.26, -0.23);                 // visor
-    const arms = new THREE.Group(); arms.position.set(0, 1.45, 0); g.add(arms);
-    B(arms, 0.2, 0.2, 0.62, body, 0.3, -0.05, -0.26); B(arms, 0.2, 0.2, 0.6, body, -0.22, -0.08, -0.34);
-    B(arms, 0.18, 0.18, 0.16, skin, 0.3, -0.05, -0.62); B(arms, 0.18, 0.18, 0.16, skin, -0.14, -0.08, -0.68);
-    // detail: knee pads, vest pockets + straps, collar, goggles, gloves, sleeve bands
-    const pad = avMat(0x2b2d33), glove = avMat(0x3a3d44), lens = avMat(0x60a5fa);
-    B(legL, 0.3, 0.2, 0.08, pad, 0, -0.45, -0.17); B(legR, 0.3, 0.2, 0.08, pad, 0, -0.45, -0.17);
-    B(g, 0.2, 0.18, 0.08, dark, -0.17, 1.08, -0.2); B(g, 0.2, 0.18, 0.08, dark, 0.17, 1.08, -0.2);
-    B(g, 0.08, 0.66, 0.39, black, -0.2, 1.22, 0); B(g, 0.08, 0.66, 0.39, black, 0.2, 1.22, 0);
-    B(g, 0.46, 0.08, 0.4, dark, 0, 1.58, 0);
-    B(head, 0.4, 0.12, 0.06, black, 0, 0.36, -0.24); B(head, 0.12, 0.08, 0.03, lens, -0.1, 0.36, -0.275); B(head, 0.12, 0.08, 0.03, lens, 0.1, 0.36, -0.275);
-    B(arms, 0.22, 0.22, 0.18, glove, 0.3, -0.05, -0.62); B(arms, 0.22, 0.22, 0.18, glove, -0.14, -0.08, -0.68);
-    B(arms, 0.22, 0.06, 0.22, dark, 0.3, -0.05, -0.1); B(arms, 0.22, 0.06, 0.22, dark, -0.22, -0.08, -0.16);
-    const gun = B(arms, 0.11, 0.17, 0.72, gunM, 0.1, 0.02, -0.82);
-    B(arms, 0.05, 0.08, 0.3, black, 0.1, 0.14, -0.8); B(arms, 0.09, 0.2, 0.12, black, 0.1, -0.12, -0.72);
-    const flash = B(arms, 0.22, 0.22, 0.12, _flashMat, 0.1, 0.04, -1.24); flash.castShadow = false; flash.visible = false;
-    const tag = nameTag(p.name, col); tag.position.y = 2.42; g.add(tag);
-    scene.add(g);
-    return { g, legL, legR, head, arms, gun, flash, tag, phase: 0, px: 0, pz: 0, w: -1 };
-}
-function netUpdateAvatars(dt) {
-    const now = performance.now();
-    for (const p of netPlayers.values()) {
-        if (!p.av) continue;
-        const src = NET.host ? p.peer : NET.hostPeer;
-        const rt = now + (src && src.off !== undefined ? src.off : 0) - INTERP_MS;
-        const a = p.av;
-        if (p.buf.sample(rt, p.cur)) {
-            a.g.position.set(p.cur[0], p.cur[3], p.cur[2]);
-            a.g.rotation.y = p.cur[4];
-            a.arms.rotation.x = clamp(p.cur[5], -1.2, 1.2);
-            a.head.rotation.x = clamp(p.cur[5], -1.2, 1.2) * 0.6;
-        }
-        const sp = Math.hypot(a.g.position.x - a.px, a.g.position.z - a.pz) / Math.max(dt, 1e-3);
-        a.px = a.g.position.x; a.pz = a.g.position.z;
-        a.phase += Math.min(sp, 12) * dt * 2.1;
-        const sw = Math.sin(a.phase) * Math.min(1, sp / 4) * 0.75;
-        a.legL.rotation.x = sw; a.legR.rotation.x = -sw;
-        const sliding = !!(p.f & 8);
-        a.g.scale.y = sliding ? 0.72 : 1;
-        // in PvP dead players vanish (burst of blocks); in co-op a downed player lies on the floor
-        const alive = !!(p.f & 1);
-        if (NET.pvp) a.g.visible = alive;
-        else { a.g.visible = true; a.g.rotation.x = alive ? 0 : -1.4; }
-        if (p.fireT > 0) { p.fireT -= dt; a.flash.visible = true; a.flash.rotation.z = Math.random() * 3; } else a.flash.visible = false;
-        if (a.w !== p.w) { a.w = p.w; const wd = weaponsDb[WEAPON_ORDER[p.w]]; if (wd) { a.gun.material = avMat(darken(wd.color, 0.7)); a.gun.scale.z = isHandgun(wd.id) ? 0.4 : (wd.id === 'katana' ? 1.2 : (wd.id === 'sniper' || wd.id === 'rpg' || wd.id === 'railgun' ? 1.05 : 0.72)); } }
-        // host: remote positions also drive the enemy AI, blocked when they've gone quiet
-        if (NET.host && now - p.seenT > 3000) p.tgt.alive = false;
-    }
-}
+// (5.2: the player models, name tags and their animation moved to 27b-mp-look.js)
 
 
 // ---------- starting a match ----------
@@ -478,22 +424,25 @@ function hostStartGame() {
     const L = NET.lobby, mode = L.mode;
     const err = startProblem(); if (err) { NET.hostMsg = err; renderMP(); return; }
     const maps = MAP_IDS();
-    const map = L.map === 'random' ? maps[Math.floor(Math.random() * maps.length)] : L.map;
+    const tz = mode === 'tourney';
+    const map = tz ? 'tourney' : L.map === 'random' ? maps[Math.floor(Math.random() * maps.length)] : L.map;
     const themeIds = Object.keys(THEMES);
-    const cfg = { t: 'start', seed: Math.floor(Math.random() * 1e9), map, theme: themeIds[Math.floor(Math.random() * themeIds.length)], mode, diff: L.diff,
-                  players: allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color })) };
+    const cfg = { t: 'start', seed: Math.floor(Math.random() * 1e9), map, theme: tz ? (Math.random() < 0.5 ? 'day' : 'sunset') : themeIds[Math.floor(Math.random() * themeIds.length)], mode, diff: L.diff,
+                  players: allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, look: lookOf(p) || null })) };
     for (const p of netPlayers.values()) p.pending = false;
     NET.cfg = cfg;
     netBroadcast(cfg);
     netBeginGame(cfg);
+    if (tz) tourneyHostStart(cfg);
 }
 function hostLateJoin(p) {
     if (!NET.cfg) return;
     autoTeam(p);
     p.kills = 0; p.deaths = 0; p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
-    const players = allPlayers().map(q => ({ id: q.id, name: q.name, team: q.team, color: q.color }));
+    const players = allPlayers().map(q => ({ id: q.id, name: q.name, team: q.team, color: q.color, look: lookOf(q) || null }));
     sendRel(p.peer, Object.assign({}, NET.cfg, { players, late: { level: playerStats.level, wave: waveActive, inter: intermission, score: NET.score, kd: allPlayers().map(q => [q.id, q.kills, q.deaths]) } }));
-    netBroadcast({ t: 'pj', id: p.id, name: p.name, team: p.team, color: p.color }, p.id);
+    if (NET.mode === 'tourney') { p.spec = true; if (TN.on) { TN.names[p.id] = p.name; sendRel(p.peer, tourneySnapshot(Math.max(0, (TN.until - performance.now()) / 1000), TN.phase, TN.phaseId)); } }
+    netBroadcast({ t: 'pj', id: p.id, name: p.name, team: p.team, color: p.color, look: p.look || null }, p.id);
     if (!p.av) { p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
     netFeed(`<span style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}</span> joined the match`);
 }
@@ -511,6 +460,7 @@ function netApplyLate(L) {
 function startProblem() {
     const mode = NET.lobby.mode, all = allPlayers();
     if (mode === 'coop') return all.length > 10 ? 'Co-op is capped at 10 players.' : '';
+    if (mode === 'tourney') return all.length < 4 ? `A tournament needs 4 to 8 players (you have ${all.length}).` : all.length > 8 ? 'A tournament is limited to 8 players.' : '';
     const size = MP_MODES[mode].team, n = [0, 0];
     for (const p of all) n[p.team]++;
     if (all.length < 2) return 'You need at least one other player for ' + MP_MODES[mode].name + '.';
@@ -526,7 +476,7 @@ function netBeginGame(cfg) {
         if (q.id === NET.id) { NET.team = q.team; NET.color = q.color; continue; }
         let p = netPlayers.get(q.id);
         if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
-        Object.assign(p, { name: q.name, team: q.team, color: q.color, kills: 0, deaths: 0, alive: true, f: 1, fireT: 0 });
+        Object.assign(p, { name: q.name, team: q.team, color: q.color, kills: 0, deaths: 0, alive: true, f: 1, fireT: 0 }); if (q.look) p.look = cleanLook(q.look);
         p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
     }
     NET.me = { id: NET.id, name: NET.name, team: NET.team, color: NET.color || COOP_COLORS[0], kills: 0, deaths: 0, alive: true, rtt: 0 };
@@ -541,8 +491,8 @@ function netBeginGame(cfg) {
         playerStats.weapons = WEAPON_ORDER.slice(); playerStats.currentWeapon = 'ar';
         playerStats.secondaries = ['grenade']; playerStats.currentSecondary = 'grenade';
         resetAmmo();
-        pickTeamSpawns(cfg.seed);
-        netPvpRespawn();
+        if (cfg.mode === 'tourney') { NET.spawns = [[TOURNEY.spawns[0]], [TOURNEY.spawns[1]]]; tourneyInit(cfg); for (const p of netPlayers.values()) p.spec = true; tourneyGoSeat(); }
+        else { pickTeamSpawns(cfg.seed); netPvpRespawn(); }
     } else {
         const order = cfg.players.findIndex(q => q.id === NET.id), a = order / Math.max(1, cfg.players.length) * Math.PI * 2;
         netRespawn([spawnPt[0] + Math.cos(a) * (order ? 2.5 : 0), spawnPt[1] + Math.sin(a) * (order ? 2.5 : 0)], maxHp);
@@ -553,7 +503,7 @@ function netBeginGame(cfg) {
     netHud(true);
     changeGameState('playing');
     if (NET.host) startHiddenTicker();
-    toast(NET.pvp ? `${MP_MODES[cfg.mode].name} TEAM DEATHMATCH - first team to ${NET.target} wins` : 'CO-OP - first wave in a few seconds', '#c4b5fd', 3);
+    toast(cfg.mode === 'tourney' ? 'TOURNAMENT - win your duels to become champion' : NET.pvp ? `${MP_MODES[cfg.mode].name} TEAM DEATHMATCH - first team to ${NET.target} wins` : 'CO-OP - first wave in a few seconds', '#c4b5fd', 3);
 }
 function pickTeamSpawns(seed) {
     const rnd = mulberry32(seed + 7);
@@ -571,11 +521,13 @@ function pickTeamSpawns(seed) {
 }
 function netShowEnd(m) {
     if (!NET.inGame) return;
-    NET.inGame = false; NET.over = true;
+    NET.inGame = false; NET.over = true; if (TN.on) { tourneyReset(); }
     commitLife();
     const h = document.querySelector('#gameover-overlay h2'), sub = document.querySelector('#gameover-overlay p');
     let title, line;
-    if (m.t === 'end') {
+    if (m.t === 'tend') {
+        title = 'CHAMPION'; line = `${tnName(m.champ)} wins the tournament`;
+    } else if (m.t === 'end') {
         const won = m.win === NET.team;
         title = won ? 'VICTORY' : 'DEFEAT'; line = `${TEAM_NAMES[m.win]} TEAM WINS  ${m.score[0]} - ${m.score[1]}`;
     } else { title = 'SQUAD WIPED'; line = `Your squad made it to wave ${playerStats.level}`; }
@@ -588,6 +540,7 @@ function netShowEnd(m) {
     setTimeout(() => { if (NET.on && !NET.inGame) netBackToLobby(); }, 7000);
 }
 function netBackToLobby() {
+    tourneyReset();
     for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = null; p.tgt.alive = false; p.tgt.feet = -100; }
     h2Reset();
     resetRun();
@@ -624,8 +577,11 @@ function netTick(dt) {
     netKeepAlive(now);
     if (NET.inGame) {
         netUpdateAvatars(dt);
+        if (TN.on) tourneyTick(dt);
         if (NET.fireT > 0) NET.fireT -= dt;
-        if (NET.pvp && NET.dead) {
+        if (NET.pvp && NET.dead && NET.mode === 'tourney') {
+            ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">ELIMINATED</div><div class="text-lg font-bold text-gray-200">Watch the rest of the tournament from the stands</div>`;
+        } else if (NET.pvp && NET.dead) {
             NET.respawnT -= dt;
             const k = playerById(NET.lastBy);
             ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">ELIMINATED</div><div class="text-lg font-bold text-gray-200">${k && k.id !== NET.id ? 'by <span style="color:' + hex(TEAM_COLORS[k.team]) + '">' + escHtml(k.name) + '</span> - ' : ''}back in ${Math.max(0, Math.ceil(NET.respawnT))}</div>`;
@@ -668,7 +624,7 @@ function netKeepAlive(now) {
 }
 function myState() {
     _eul.setFromQuaternion(camera.quaternion);
-    const alive = currentHp > 0 && !NET.dead;
+    const alive = currentHp > 0 && !NET.dead && !NET.spec;
     const f = (alive ? 1 : 0) | (aimHeld ? 2 : 0) | (NET.fireT > 0 ? 4 : 0) | (slideT > 0 ? 8 : 0) | (isReloading ? 16 : 0) | (currentGameState !== 'playing' ? 32 : 0);
     return { p: [r2(camera.position.x), r2(camera.position.y), r2(camera.position.z), r2(feetY), r3(_eul.y), r3(_eul.x)], w: Math.max(0, WEAPON_ORDER.indexOf(playerStats.currentWeapon)), f, hp: Math.max(0, Math.ceil(currentHp)) };
 }

@@ -88,8 +88,8 @@ function explode(pos, damage, radius, opts = {}) {
         spawnParticles(pos, 0x4b4b4b, 14, 7, 1.4, 0.35, true, { grav: 2, drag: 1.5, up: 1.5 });
         if (boomLights.length) {
             const bl = boomLights.reduce((a, b) => (a.t <= b.t ? a : b));
-            bl.light.position.copy(pos); bl.light.position.y += 1; bl.t = 1; bl.peak = 900 * (1 - 0.8 * theme.bright); bl.light.intensity = bl.peak;
-        } else fakeBoom(pos);
+            bl.light.position.copy(pos); bl.light.position.y += 1; bl.t = 1; bl.peak = 900 * (1 - 0.8 * theme.bright) * explosionGlare(pos); bl.light.intensity = bl.peak;
+        } else if (explosionGlare(pos) > 0.5) fakeBoom(pos);
         const dPlayer = pos.distanceTo(camera.position);
         shake = Math.max(shake, clamp(1.4 - dPlayer / 30, 0, 0.9));
         sfx('boom');

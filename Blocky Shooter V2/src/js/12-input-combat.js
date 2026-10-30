@@ -5,6 +5,7 @@
 
 function onKeyDown(event) {
     if (currentGameState !== 'playing') return;
+    if ((NET.spec || NET.lockT > 0) && (event.code === 'KeyQ' || event.code === 'KeyV' || event.code === 'KeyG' || event.code === 'KeyX' || event.code === 'KeyR' || event.code === 'KeyC')) return;      // 5.2 tournament: no gadgets for the audience, nothing before the countdown ends
     switch (event.code) {
         case 'ArrowUp': case 'KeyW': moveForward = true; break;
         case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
@@ -186,10 +187,11 @@ function currentSpread(w) {
 
 
 function canShoot() {
-    return currentGameState === 'playing' && currentHp > 0 && jamT <= 0 && vm.raise > 0.75 && vm.sprint < 0.5 && !(vm.melee > 0);
+    return currentGameState === 'playing' && !NET.spec && !(NET.lockT > 0) && currentHp > 0 && jamT <= 0 && vm.raise > 0.75 && vm.sprint < 0.5 && !(vm.melee > 0);
 }
 function weaponTick(dt) {
     const id = playerStats.currentWeapon, w = W(id);
+    if (NET.spec || NET.lockT > 0) { triggerFresh = false; burstLeft = 0; return; }
     if (w.spinUp) {
         const want = (isMouseDown || aimHeld) && !isReloading && currentHp > 0;
         const was = spinT;

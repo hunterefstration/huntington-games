@@ -163,7 +163,7 @@ function updatePlayer(delta) {
     ui.scope.classList.toggle('hidden', !(scopedIn && w.scoped === 'sniper'));
     ui.optic.classList.toggle('hidden', !(scopedIn && w.scoped === 'optic'));
     setStyle(ui.crosshair, 'opacity', (scopedIn || (vm.adsT > 0.45 && !w.noAds && !w.akimbo)) ? '0' : '1');
-    if (vmModel) vmModel.root.visible = !scopedIn;
+    if (vmModel) vmModel.root.visible = !scopedIn && !NET.spec;
 
 
     const moving = Math.hypot(velocity.x, velocity.z) > 1.5 && onGround;

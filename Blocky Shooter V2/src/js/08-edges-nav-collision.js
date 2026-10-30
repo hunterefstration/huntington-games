@@ -178,6 +178,7 @@ function edgeDecor(mapId) {
 // ---------- THE RAM CAGE ----------
 // A barred cage near the spawn on every map. A Charger lives in it forever (see placeCageRam).
 function buildRamCage() {
+    if (currentMap === 'tourney') return null;       // 5.2: no zombie cage in the Tournament Arena
     const half = 4.2, H = 4.6, m = half + 1.8;
     const ok = (x, z) => {
         if (Math.abs(x) > ARENA - m - 2 || Math.abs(z) > ARENA - m - 2) return false;

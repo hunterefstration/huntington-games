@@ -9,6 +9,7 @@ function renderSettings() {
     $('set-sens').value = settings.sens; $('set-sens-v').textContent = settings.sens.toFixed(2) + 'x';
     $('set-vol').value = settings.volume; $('set-vol-v').textContent = Math.round(settings.volume * 100) + '%';
     $('set-fps').checked = settings.showFps;
+    $('set-flash').checked = settings.reduceFlash !== false;
 }
 document.querySelectorAll('#set-quality .qbtn').forEach(b => b.addEventListener('click', () => {
     settings.quality = b.dataset.q; saveSettings(); applyQuality(); renderSettings();
@@ -17,6 +18,7 @@ $('set-fov').addEventListener('input', (e) => { settings.fov = +e.target.value; 
 $('set-sens').addEventListener('input', (e) => { settings.sens = +e.target.value; saveSettings(); renderSettings(); });
 $('set-vol').addEventListener('input', (e) => { settings.volume = +e.target.value; if (master) master.gain.value = settings.volume; saveSettings(); renderSettings(); });
 $('set-fps').addEventListener('change', (e) => { settings.showFps = e.target.checked; saveSettings(); });
+$('set-flash').addEventListener('change', (e) => { settings.reduceFlash = e.target.checked; saveSettings(); });
 
 
 function updateMenuBest() {
@@ -82,7 +84,10 @@ function renderMenu() {
         h += chPanel();
     } else if (menuTab === 'news') {
         h += whatsNew();
+    } else if (menuTab === 'leaders') {
+        h += lbPanel();
     } else if (menuTab === 'customize') {
+        h += lockerHtml();
         h += swatchRow('SLEEVES', 'sleeve', SLEEVES);
         h += swatchRow('GLOVES', 'glove', GLOVES);
         h += chipRow('WEAPON CAMO', 'camo', Object.entries(CAMOS).map(([k, c]) => [k, c.name, c.rainbow ? '#f472b6' : (c.c !== undefined ? hexC(c.c) : '#9ca3af')]), 'Applies to every gun. Upgrade levels 4 and 5 keep their gold / plasma finish.');
@@ -166,7 +171,13 @@ function prestigePanel() {
 // 4.0: the version line on the menu opens this - the highlights of the whole update
 function whatsNew() {
     const sec = (title, col, items) => `<div class="mlabel" style="color:${col}">${title}</div><ul class="news text-sm text-gray-200">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
-    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.0</div>` +
+    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.2</div>` +
+        sec('FIXED: SCREEN FLASHES', '#fca5a5', ['<b>No more surprise flashbangs.</b> Lightning on the Storm lighting was a double 4x-brightness strobe every 7 to 17 seconds, red/white/green hit and pickup flashes could stack and repeat every frame (damage over time, several hits at once), and a big explosion next to your face could fill the screen with white. Lightning is now one soft pulse at least 14 seconds apart, screen flashes never stack or repeat (one at a time, capped in strength, never white), explosions fade near the camera and only light the scene when you could see them, and a replayed or spammed multiplayer explosion is dropped. New setting: <b>Reduce flashes</b> (on by default).']) +
+        sec('GOON SHOP SKINS + AVATARS', '#fde047', ['The <b>skin</b> and <b>avatar</b> you wear in your launcher Profile now show up in the game: your first-person sleeves and gloves take the skin colours and pattern (camo, stripes, check, metal, glow), and everyone in multiplayer sees your skin and avatar (robot, knight, astronaut, ninja, pirate, zombie, alien, cowboy, wizard, samurai) on your player model. The CUSTOMIZE tab shows what you wear. Get more in your launcher Profile (Goon Shop).']) +
+        sec('BETTER PLAYER MODELS', '#86efac', ['Other players now have a proper head, torso, arms with hands and legs, and they walk, aim, shoot, reload and slide. They hold the weapon they are using in their hands, with a different model for each gun class (pistols, SMG, rifles, shotgun, sniper, LMG, minigun, launchers, tesla, railgun, crossbow, katana), and it changes when they switch.']) +
+        sec('GAMER TAGS + GLOBAL LEADERBOARD', '#7dd3fc', ['Name tags and the scoreboard show each player\'s title, Blocky Shooter rank tier (R1 to R5, 1 is best), <b>Record Holder</b> and a crown for tournament winners. The new <b>LEADERBOARD</b> tab shows the global top 10 for XP and best wave, with your own position.']) +
+        sec('TOURNAMENT MODE', '#fbbf24', ['<b>Host a party of 4 to 8 players and pick TOURNAMENT.</b> A single-elimination bracket of 1v1 duels (byes when the numbers do not fit), one duel at a time on the new <b>Tournament Arena</b>: a colosseum with a sand pit, cover pillars, banners and stands. Everyone else watches from the stands. The bracket shows between duels, the winner is crowned, earns the <b>Tournament Champion</b> title and wears a crown on their name tag for the rest of the session.']) +
+        `<div class="text-2xl font-black text-white mt-4">5.0</div>` +
         sec('PERFORMANCE + LIGHTING', '#86efac', ['Baked ambient occlusion and soft contact shadows on every building and block, on all quality tiers. Dithered sky with no colour banding.',
             'Low settings get a muzzle flash and explosion light with no real lights. Zombies far away think less often and are skipped when off screen: less lag in big waves.']) +
         sec('REALISTIC GUNS', '#fca5a5', ['All 18 weapons rebuilt: real receivers, rails, magazines, sights, grips, stocks and muzzle devices, with metal, polymer and wood textures.',
@@ -378,3 +389,42 @@ window.__blocky = {
     // drive frames by hand (for automated testing when the tab is hidden)
     run(seconds, fps = 60) { let t = prevTime ?? performance.now(); for (let i = 0; i < seconds * fps; i++) { t += 1000 / fps; frame(t); } }
 };
+
+
+// ---------- 5.2: what you wear (CUSTOMIZE tab) and the global leaderboards (LEADERBOARD tab) ----------
+function lockerHtml() {
+    let skin = null, av = null, title = '';
+    try {
+        const G = hgG(), eq = (G && G.eco.state().equip) || {}, items = (G && G.eco.catalog().items) || [];
+        skin = items.find(i => i.id === eq.skin) || null; av = items.find(i => i.id === eq.avatar) || null; title = ((items.find(i => i.id === eq.title)) || {}).n || '';
+    } catch (e) {}
+    const sk = LOOK_MINE && LOOK_MINE.sk, avId = LOOK_MINE && LOOK_MINE.av;
+    const grad = sk ? `linear-gradient(135deg,${hexC(sk.c[0])},${hexC(sk.c[1])})` : 'linear-gradient(135deg,#374151,#1f2937)';
+    return `<div class="mlabel">WHAT YOU WEAR</div><div class="panel p-3 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:10px;border:2px solid rgba(255,255,255,0.3);background:${grad}"></div><div><div class="text-xs font-black tracking-widest text-gray-400">SKIN</div><div class="font-black">${sk ? escHtml(skin ? skin.n : 'Skin') + ' <span class="text-xs text-gray-400">' + sk.pat + '</span>' : 'Default (your sleeves + gloves below)'}</div></div></div>
+        <div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:10px;border:2px solid rgba(255,255,255,0.3);background:#1f2937;font-size:28px;display:flex;align-items:center;justify-content:center">${avId && av && av.e ? av.e : (avId ? '&#128100;' : '&#128578;')}</div><div><div class="text-xs font-black tracking-widest text-gray-400">AVATAR</div><div class="font-black">${avId ? AVATAR_NAMES[avId] : 'Soldier (default)'}</div></div></div>
+        <div><div class="text-xs font-black tracking-widest text-gray-400">TITLE</div><div class="font-black">${title ? escHtml(title) : 'None'}</div></div></div>
+        <div class="mdesc">Your skin colours your arms and gloves, and other players see your skin and avatar in multiplayer. <b class="text-white">Get more in your launcher Profile (Goon Shop).</b>${hgG() ? '' : ' (Open the game from the launcher to wear them.)'}</div>`;
+}
+const LBC = { xp: null, wave: null, at: -1e9, busy: false };
+function lbRows(res, myName) {
+    if (!res || !Array.isArray(res.rows)) return '<div class="mdesc">No scores yet.</div>';
+    const me = res.me;
+    return `<table class="w-full text-sm font-bold">${res.rows.slice(0, 10).map(r => `<tr class="${r.n === myName ? 'bg-white/10' : ''}"><td class="py-0.5 pr-3 text-gray-400">${r.pos}</td><td class="pr-3">${escHtml(r.n)}</td><td class="text-right text-amber-300">${(+r.s || 0).toLocaleString()}</td></tr>`).join('')}</table>
+        ${me ? `<div class="mt-2 text-sm font-black text-green-300">Your position: #${me.pos || '?'}${me.s !== undefined ? ' &middot; ' + (+me.s || 0).toLocaleString() : ''}</div>` : '<div class="mt-2 text-xs text-gray-400">You are not on the board yet.</div>'}`;
+}
+function lbPanel() {
+    const G = hgG();
+    if (!G || typeof G.eco.lbGet !== 'function') return `<div class="mlabel">GLOBAL LEADERBOARD</div><div class="mdesc">Open the game from your launcher (signed in to Grapevine) to see the global top 10 for XP and best wave, with your own position.</div>`;
+    if (!LBC.busy && performance.now() - LBC.at > 30000) {
+        LBC.busy = true; LBC.at = performance.now();
+        const get = (b) => { try { return Promise.resolve(G.eco.lbGet(b)).catch(() => null); } catch (e) { return Promise.resolve(null); } };
+        Promise.all([get('blocky:xp'), get('blocky:wave')]).then(([a, b]) => { LBC.xp = a || LBC.xp; LBC.wave = b || LBC.wave; LBC.busy = false; if (menuTab === 'leaders') { const el = $('lb-box'); if (el) el.innerHTML = lbBoxHtml(); } });
+    }
+    return `<div class="mlabel">GLOBAL LEADERBOARD</div><div id="lb-box">${lbBoxHtml()}</div>`;
+}
+function lbBoxHtml() {
+    let me = ''; try { const m = hgG().me && hgG().me(); me = m ? m.name : ''; } catch (e) {}
+    if (!LBC.xp && !LBC.wave) return '<div class="mdesc">Loading the leaderboards...</div>';
+    return `<div class="grid grid-cols-2 gap-4"><div class="panel p-3"><div class="text-xs font-black tracking-widest text-gray-400 mb-1">TOP 10 - TOTAL XP</div>${lbRows(LBC.xp, me)}</div><div class="panel p-3"><div class="text-xs font-black tracking-widest text-gray-400 mb-1">TOP 10 - BEST WAVE</div>${lbRows(LBC.wave, me)}</div></div>`;
+}

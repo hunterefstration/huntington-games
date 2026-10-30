@@ -96,7 +96,7 @@ try {
   check('they are kept in a key that cloud saves carry', await A.evaluate(() => /sp25/.test(localStorage.getItem('hgach:v1') || '')));
 
   console.log('\n=== the Account tab ===');
-  await A.evaluate(() => document.getElementById('chip').click());
+  await A.evaluate(() => document.getElementById('tab-acct').click());
   await A.waitForSelector('[data-view="ach"]', { timeout: 10000 }); await A.evaluate(() => document.querySelector('[data-view="ach"]').click());
   const total = await until(() => A.$eval('#gl-ach-total', e => e.textContent), 8000);
   check('Account > Achievements lists them with points', !!total && /^5 of \d+ - \d+ points$/.test(total), total);

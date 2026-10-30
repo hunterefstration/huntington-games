@@ -459,7 +459,7 @@ function applyTheme(id) {
     for (const k in mats) if (mats[k].isMeshStandardMaterial) mats[k].envMapIntensity = theme.envInt;
     applyFloorTint();
     if (rainMesh) rainMesh.visible = !!theme.rain;
-    lightningT = 5 + Math.random() * 6;
+    lightningT = 12 + Math.random() * 12; lightningFlash = 0;
     if (mats.neon) mats.neon.color.setHex(theme.neon);
     if (mats.lampHead) mats.lampHead.color.setHex(theme.lamp);
     if (mats.pool) { mats.pool.color.setHex(theme.lamp); mats.pool.opacity = theme.lampPool; }

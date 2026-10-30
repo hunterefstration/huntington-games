@@ -158,8 +158,22 @@ function vmMats() {
 function applyArmColors() {
     const sc = SLEEVES[settings.sleeve] ?? SLEEVES.navy, gc = GLOVES[settings.glove] ?? GLOVES.black;
     if (!VM.sleeve) return;
-    VM.sleeve.color.setHex(sc); VM.cuff.color.setHex(sc).multiplyScalar(0.62);
-    VM.glove.color.setHex(gc); VM.gloveDark.color.setHex(gc).multiplyScalar(0.7);
+    const sk = LOOK_MINE && LOOK_MINE.sk;      // 5.2: the goon-shop skin you wear (colours + pattern) replaces the Customize sleeves + gloves
+    const set = (m, col, k, map, emis) => {
+        m.color.setHex(col).multiplyScalar(k);
+        if ((m.map || null) !== map) { m.map = map; m.needsUpdate = true; const l = VM_LITE.get(m); if (l) { l.map = map; l.needsUpdate = true; } }
+        if (emis) { m.emissive.setHex(emis); m.emissiveIntensity = 0.45; } else if (m.emissiveIntensity && m.userData.skinGlow) { m.emissive.setHex(0); m.emissiveIntensity = 0; }
+        m.userData.skinGlow = !!emis;
+    };
+    if (sk) {
+        const glow = sk.pat === 'glow', tS = vmSkinTex(sk, false), tG = vmSkinTex(sk, true);
+        set(VM.sleeve, 0xffffff, 1, tS, glow ? sk.c[1] : 0); set(VM.cuff, 0xffffff, 0.62, tS, 0);
+        set(VM.glove, 0xffffff, 1, tG, glow ? sk.c[0] : 0); set(VM.gloveDark, 0xffffff, 0.7, tG, 0);
+        const metal = sk.pat === 'metal'; for (const m of [VM.sleeve, VM.cuff, VM.glove, VM.gloveDark]) { m.metalness = metal ? 0.65 : 0; m.roughness = metal ? 0.3 : 0.88; }
+    } else {
+        set(VM.sleeve, sc, 1, null, 0); set(VM.cuff, sc, 0.62, null, 0); set(VM.glove, gc, 1, null, 0); set(VM.gloveDark, gc, 0.7, null, 0);
+        for (const m of [VM.sleeve, VM.cuff, VM.glove, VM.gloveDark]) { m.metalness = 0; m.roughness = 0.9; }
+    }
 }
 // Low / lite: the gun draws with Lambert copies of its PBR materials (much cheaper per pixel). A copy shares the
 // original's colours and passes emissive / opacity through, so pulsing skins and fades still animate.
