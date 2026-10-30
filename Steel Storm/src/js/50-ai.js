@@ -112,6 +112,7 @@ function aiAir(e, dt, c) {
 }
 function aiStep(e, dt) {
     if (!e.ai) aiNew(e);
+    if (e.frozen) { applyAnim(e, dt); return; }       // test hook: a bot that stands still
     const a = e.ai; a.tT -= dt; if (a.tT <= 0) { a.tT = .6 + Math.random() * .3; a.tgt = aiPickTarget(e); }
     const c = { thr: 0, steer: 0, aimYaw: e.tur, aimPitch: 0, f1: false, f2: false, f3: false };
     if (e.def.ln === 'a') aiAir(e, dt, c); else aiSurface(e, dt, c);

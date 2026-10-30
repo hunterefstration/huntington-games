@@ -955,7 +955,7 @@ function pickSpawn(team, ln) {
     const sgn = team === 0 ? -1 : 1;
     for (let k = 0; k < 40; k++) {
         if (ln === 'g') {
-            const x = sgn * (430 + rnd(0, 70)), z = rnd(-110, 110);
+            const x = sgn * (340 + rnd(0, 70)), z = rnd(-110, 110);
             if (H(x, z) > 3 && H(x, z) < 22 && GH(x, z) === H(x, z)) return { x, z, y: H(x, z), yaw: team === 0 ? PI / 2 : -PI / 2 };
         } else if (ln === 'n') {
             const x = sgn * (240 + rnd(0, 200)), z = (Math.random() < .5 ? -1 : 1) * (500 + rnd(0, 90));
@@ -1259,6 +1259,7 @@ function aiAir(e, dt, c) {
 }
 function aiStep(e, dt) {
     if (!e.ai) aiNew(e);
+    if (e.frozen) { applyAnim(e, dt); return; }       // test hook: a bot that stands still
     const a = e.ai; a.tT -= dt; if (a.tT <= 0) { a.tT = .6 + Math.random() * .3; a.tgt = aiPickTarget(e); }
     const c = { thr: 0, steer: 0, aimYaw: e.tur, aimPitch: 0, f1: false, f2: false, f3: false };
     if (e.def.ln === 'a') aiAir(e, dt, c); else aiSurface(e, dt, c);
@@ -1292,7 +1293,7 @@ function makeConfig(players, opts) {
 function beginMatch(cfg, meId, isHost) {
     clearMatch();
     M = { mode: cfg.mode, cfg, t: 0, state: 'play', limit: cfg.limit, kills: [0, 0], tickets: [cfg.limit.tickets || 0, cfg.limit.tickets || 0], pts: PTS.map(() => ({ own: -1, prog: 0 })),
-        host: isHost, my: { kills: 0, deaths: 0, caps: 0, dmg: 0, tier: 1 }, over: false, winner: -2, feed: [], shown: 0, meId, size: cfg.size };
+        host: isHost, my: { kills: 0, deaths: 0, caps: 0, dmg: 0, tier: 1 }, over: false, winner: -2, feed: [], log: [], shown: 0, meId, size: cfg.size };
     const mk = (p, bot) => {
         const def = VBY[p.veh] || VBY.g1a, e = newEnt(p.id, def, p.team, p.name);
         e.isBot = !!bot; if (bot) { if (isHost) aiNew(e); else e.remote = true; } else e.remote = p.id !== meId;
@@ -1366,6 +1367,7 @@ function onDmg(m) {
 function onKill(m) {
     if (!M) return;
     const v = EN.get(m.v), k = EN.get(m.k);
+    if (M.log.length < 300) M.log.push([Math.round(M.t), m.k, m.v, m.w]);
     if (!M.host) { M.kills = m.kl; if (M.mode === 'conq') M.tickets = m.tk; }
     if (v) { if (v.alive) killVisual(v); v.hp = 0; v.kdone = true; if (!M.host) { v.deaths++; if (k && k !== v) k.kills++; } if (v === ME) { UI.died(k, m.w); } }
     if (k && k === ME && v && v.team !== k.team) { M.my.kills++; UI.hitMarker(true); sfx('kill'); UI.msg('Destroyed ' + v.name); }

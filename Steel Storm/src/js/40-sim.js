@@ -123,7 +123,7 @@ function pickSpawn(team, ln) {
     const sgn = team === 0 ? -1 : 1;
     for (let k = 0; k < 40; k++) {
         if (ln === 'g') {
-            const x = sgn * (430 + rnd(0, 70)), z = rnd(-110, 110);
+            const x = sgn * (340 + rnd(0, 70)), z = rnd(-110, 110);
             if (H(x, z) > 3 && H(x, z) < 22 && GH(x, z) === H(x, z)) return { x, z, y: H(x, z), yaw: team === 0 ? PI / 2 : -PI / 2 };
         } else if (ln === 'n') {
             const x = sgn * (240 + rnd(0, 200)), z = (Math.random() < .5 ? -1 : 1) * (500 + rnd(0, 90));

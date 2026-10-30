@@ -24,7 +24,7 @@ function makeConfig(players, opts) {
 function beginMatch(cfg, meId, isHost) {
     clearMatch();
     M = { mode: cfg.mode, cfg, t: 0, state: 'play', limit: cfg.limit, kills: [0, 0], tickets: [cfg.limit.tickets || 0, cfg.limit.tickets || 0], pts: PTS.map(() => ({ own: -1, prog: 0 })),
-        host: isHost, my: { kills: 0, deaths: 0, caps: 0, dmg: 0, tier: 1 }, over: false, winner: -2, feed: [], shown: 0, meId, size: cfg.size };
+        host: isHost, my: { kills: 0, deaths: 0, caps: 0, dmg: 0, tier: 1 }, over: false, winner: -2, feed: [], log: [], shown: 0, meId, size: cfg.size };
     const mk = (p, bot) => {
         const def = VBY[p.veh] || VBY.g1a, e = newEnt(p.id, def, p.team, p.name);
         e.isBot = !!bot; if (bot) { if (isHost) aiNew(e); else e.remote = true; } else e.remote = p.id !== meId;
@@ -98,6 +98,7 @@ function onDmg(m) {
 function onKill(m) {
     if (!M) return;
     const v = EN.get(m.v), k = EN.get(m.k);
+    if (M.log.length < 300) M.log.push([Math.round(M.t), m.k, m.v, m.w]);
     if (!M.host) { M.kills = m.kl; if (M.mode === 'conq') M.tickets = m.tk; }
     if (v) { if (v.alive) killVisual(v); v.hp = 0; v.kdone = true; if (!M.host) { v.deaths++; if (k && k !== v) k.kills++; } if (v === ME) { UI.died(k, m.w); } }
     if (k && k === ME && v && v.team !== k.team) { M.my.kills++; UI.hitMarker(true); sfx('kill'); UI.msg('Destroyed ' + v.name); }
