@@ -55,7 +55,22 @@
    }
 
 
+   // World leaderboard (Neon Dash 2.1): everyone's best score, from the launcher's Grapevine account
+   function hgAcct() { try { const L = window.parent && window.parent.HGGrapevine; return L && L.me && L.me() && L.eco ? L : null; } catch (e) { return null; } }
+   function updateWorldUI() {
+       const el = document.getElementById('worldList'), L = hgAcct(); if (!el) return;
+       if (!L) { el.innerHTML = '<div class="score-entry"><span>Open in the launcher and sign in</span><span></span></div>'; return; }
+       L.eco.lbGet('neon:best').then(m => {
+           const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+           const rows = (m && m.rows || []).slice(0, 5).map(r => `<div class="score-entry${r.me ? ' me' : ''}"><span>${r.pos}. ${esc(r.n)}</span><span>${Number(r.s).toLocaleString()}</span></div>`);
+           if (m && m.me && m.me.pos > 5) rows.push(`<div class="score-entry me"><span>${m.me.pos}. You</span><span>${Number(m.me.s).toLocaleString()}</span></div>`);
+           el.innerHTML = rows.join('') || '<div class="score-entry"><span>No scores yet. Be first!</span><span></span></div>';
+       }, () => {});
+   }
+   setTimeout(updateWorldUI, 1500);
+
    function saveScore(newName, newScore) {
+       const L = hgAcct(); if (L && newScore > 0) { L.eco.lbSubmit('neon:best', newScore); setTimeout(updateWorldUI, 1200); }
        let scores = loadScores();
        scores.push({ name: newName, val: newScore });
        scores.sort((a, b) => b.val - a.val);

@@ -7,3 +7,5 @@
        .score-entry { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #303; font-size: 14px; padding-bottom: 4px; }
        #levelMsg { position: absolute; color: #fff; font-size: 50px; font-weight: bold; text-shadow: 0 0 25px #fff; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10; text-transform: uppercase; }
    
+#leaderboard .world-h { margin-top: 10px; }
+#worldList .score-entry.me { color: #ffe066; }
