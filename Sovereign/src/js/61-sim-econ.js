@@ -337,7 +337,7 @@ function worldMonth(noise = true) {
   for (const n of G.nations) if (n) econMonth(n, noise);
   W.worldGdp = G.nations.reduce((a, n) => a + (n ? gdpUsd(n) : 0), 0);
   W.worldReal = G.nations.reduce((a, n) => a + (n ? n.real : 0), 0);
-  for (const n of G.nations) if (n && n.idx !== pIdx()) aiFiscal(n);
+  for (const n of G.nations) if (n && !isHuman(n.idx)) aiFiscal(n);
   reserveMonth();
 }
 

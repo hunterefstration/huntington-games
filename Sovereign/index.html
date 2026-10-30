@@ -13,6 +13,20 @@
   background: rgba(20, 24, 33, .92); border: 1px solid #d4af37; border-radius: 10px; font-size: 13px; color: #e8e2cf; box-shadow: 0 6px 20px rgba(0,0,0,.4); max-width: calc(100vw - 32px); flex-wrap: wrap; justify-content: center; }
 #simbar.on { display: flex; } #simbar b { color: #d4af37; letter-spacing: .12em; }
 
+/* general war: the battle screen */
+#genwar { position: fixed; inset: 0; z-index: 900; background: #10140f; cursor: none; }
+#gw-cv { position: absolute; inset: 0; }
+#gw-top { position: absolute; top: 0; left: 0; right: 0; height: 40px; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: rgba(10,12,9,.9); color: #e8e2cf; font-size: 13px; cursor: default; }
+#gw-top b { color: #d4af37; } #gw-top span { flex: 1; opacity: .9; }
+#gw-msg { position: absolute; top: 54px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.65); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 700; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: 90vw; text-align: center; }
+#gw-msg.on { opacity: 1; }
+#gw-end { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(20,24,33,.96); border: 1px solid #d4af37; border-radius: 14px; padding: 22px 30px; text-align: center; color: #e8e2cf; cursor: default; min-width: 300px; }
+
+/* online */
+#onbar { position: fixed; top: 58px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); z-index: 40; display: none; align-items: center; gap: 10px; padding: 6px 12px;
+  background: rgba(20, 24, 33, .92); border: 1px solid #5aa0ff; border-radius: 10px; font-size: 13px; color: #e8e2cf; }
+#onbar.on { display: flex; } #onbar b { color: #7fb6ff; letter-spacing: .12em; }
+
 :root {
   --bg: #060b16; --panel: rgba(10, 18, 34, .86); --panel2: rgba(22, 34, 58, .9); --line: rgba(160, 190, 230, .16);
   --text: #e7edf7; --dim: #93a3bd; --gold: #e2b65c; --gold2: #f5d58f; --red: #ef6b5b; --green: #5fd38d; --blue: #6aa7ff;
@@ -322,7 +336,7 @@ textarea.code { width: 100%; height: 80px; background: rgba(0, 0, 0, .35); color
 // Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-game.js.
 import * as THREE from 'three';
 
-const VERSION = '1.2';
+const VERSION = '1.3';
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1476,6 +1490,7 @@ const UI = {
       else if (a === 'hall') Hall.open();
       else if (a === 'take-office') Setup.go();
       else if (a === 'sim') Sim.start();
+      else if (a === 'online') Online.open();
       else if (a === 'explore') { G = null; this.home = null; this.startHud(); }
       else if (a === 'settings') this.settings();
       else if (a === 'credits') this.credits();
@@ -1591,7 +1606,7 @@ const UI = {
     const has = !!Saves.latest();
     $('#title .menu').innerHTML = (has ? '<button class="btn gold" data-act="continue">Continue</button><button class="btn" data-act="new">New Game</button><button class="btn" data-act="load">Load Game</button>'
       : '<button class="btn gold" data-act="new">New Game</button>') +
-      '<button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
+      '<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
   },
   confirm(title, text, ok, fn) {
     this.onOk = fn;
@@ -2142,7 +2157,7 @@ function worldMonth(noise = true) {
   for (const n of G.nations) if (n) econMonth(n, noise);
   W.worldGdp = G.nations.reduce((a, n) => a + (n ? gdpUsd(n) : 0), 0);
   W.worldReal = G.nations.reduce((a, n) => a + (n ? n.real : 0), 0);
-  for (const n of G.nations) if (n && n.idx !== pIdx()) aiFiscal(n);
+  for (const n of G.nations) if (n && !isHuman(n.idx)) aiFiscal(n);
   reserveMonth();
 }
 
@@ -3049,7 +3064,7 @@ MONTHLY.push(aiLeadersMonth);
 // AI countries change leaders too: elections, coups, revolutions
 function aiLeadersMonth() {
   for (const m of G.nations) {
-    if (!m || m.idx === pIdx()) continue;
+    if (!m || isHuman(m.idx)) continue;
     const c = World.countries[m.idx];
     if (m.aiElection != null && G.day >= m.aiElection) {
       m.aiElection = G.day + (TERM_YEARS[m.id] || 4) * 365;
@@ -3370,7 +3385,7 @@ function diploMonth() {
 function aiDiplomacy() {
   const N = G.nations.length, me = G.player.idx;
   for (let k = 0; k < 6; k++) {
-    const a = 1 + Math.floor(G.rng() * (N - 1)), n = G.nations[a]; if (!n || a === me) continue;
+    const a = 1 + Math.floor(G.rng() * (N - 1)), n = G.nations[a]; if (!n || isHuman(a)) continue;
     const p = n.persona = n.persona || makePersona(n);
     const b = 1 + Math.floor(G.rng() * (N - 1)); if (b === a) continue;
     const o = G.nations[b], rel = relation(a, b), ca = World.countries[a], cb = World.countries[b];
@@ -3671,14 +3686,14 @@ function fightFronts(w, k) {
   }
 }
 function warWeek() {
-  for (const w of G.wars.slice()) { aiStrikes(w); if (G.wars.includes(w)) fightFronts(w, 0.25); }
+  for (const w of G.wars.slice()) { if (w.hh && G.online && !G.online.host) continue; aiStrikes(w); if (G.wars.includes(w)) fightFronts(w, 0.25); }     // wars between online players: the host runs them
   weeklyWarReport();
   syncWarVisuals();
 }
 // the rest of a month of war: weariness, the economy, will to fight
 function warMonth() {
   for (const w of G.wars.slice()) {
-    if (!G.wars.includes(w)) continue;
+    if (!G.wars.includes(w) || (w.hh && G.online && !G.online.host)) continue;
     // weariness, economy and stability for everyone involved
     const months = (G.day - w.start) / 30;
     for (const i of w.a.concat(w.d)) {
@@ -3705,7 +3720,7 @@ function warMonth() {
     w.hits = {};
     warFlavor(w);
     if (!G.wars.includes(w)) continue;
-    for (const lead of [w.a[0], w.d[0]]) if (lead !== pIdx() && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
+    for (const lead of [w.a[0], w.d[0]]) if (!isHuman(lead) && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
   }
   for (const n of G.nations) if (n && !G.wars.some(w => w.a.includes(n.idx) || w.d.includes(n.idx)) && n.atWar) { n.atWar = false; setMod(n, 'growth', 'War', 0); setMod(n, 'infl', 'War', 0); setMod(n, 'stability', 'War', 0); setMod(n, 'approval', 'War', 0); if (n.cost) n.cost.War = 0; }
   // armies rebuild from defence spending
@@ -3717,6 +3732,7 @@ function warMonth() {
   syncWarVisuals();
 }
 function endWar(w, winner, how) {
+  Online.warEnded(w, winner, how);
   G.wars.splice(G.wars.indexOf(w), 1);
   const A = World.countries[w.a[0]], D = World.countries[w.d[0]];
   if (winner === 'white') newsWorld('Ceasefire between ' + A.name + ' and ' + D.name);
@@ -3747,10 +3763,10 @@ function aiWars() {
   if (G.rng() > 0.25) return;
   const cands = [];
   for (const n of G.nations) {
-    if (!n || n.idx === pIdx() || n.atWar || n.owner != null) continue;
+    if (!n || isHuman(n.idx) || n.atWar || n.owner != null) continue;
     const p = n.persona || makePersona(n); if (p.aggr < 60) continue;
     for (const id of World.countries[n.idx].borders) {
-      const o = G.nations[World.byId[id].idx]; if (o.atWar || o.owner != null || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
+      const o = G.nations[World.byId[id].idx]; if (o.atWar || (isHuman(o.idx) && o.idx !== pIdx()) || o.owner != null || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
       // deterrence: the target's allies count, and anyone under a nuclear umbrella is left alone
       const allies = G.nations.filter(m => m && m.idx !== o.idx && m.idx !== n.idx && (hasTreaty(m.idx, o.idx, 'defence') || ['NATO', 'CSTO'].some(b => m.blocs.includes(b) && o.blocs.includes(b))));
       if (o.nukes || allies.some(m => m.nukes)) continue;
@@ -4127,7 +4143,7 @@ function pushFronts(w, by, target, amt) {
 // the computer's sides bomb each other too, and that moves the lines just like the player's strikes
 function aiStrikes(w) {
   for (const lead of [w.a[0], w.d[0]]) {
-    if (lead === pIdx() || G.rng() > 0.22) continue;
+    if (isHuman(lead) || G.rng() > 0.22) continue;
     const enemy = lead === w.a[0] ? w.d[0] : w.a[0], n = G.nations[lead], m = G.nations[enemy];
     const ratio = airPower(n) / (airPower(m) + 1); if (ratio < 0.6) continue;
     const kind = n.dev > 0.7 && G.rng() < 0.4 ? 'missile' : 'air', hit = (kind === 'missile' ? 0.6 : 0.4) * clamp(ratio, 0.3, 2);
@@ -5949,7 +5965,7 @@ Object.assign(Panels, {
           ${w.fronts.map(f => `<div class="sumrow"><span>Front ${esc(World.countries[f.a].name)} / ${esc(World.countries[f.b].name)}</span><span>${f.prog > 0 ? 'pushed ' + Math.round(f.prog * 100) + '% into ' + esc(World.countries[f.b].name) : f.prog < 0 ? 'pushed back ' + Math.round(-f.prog * 100) + '%' : 'at the border'}</span></div>`).join('')}
           <div class="sumrow"><span>Our dead / theirs</span><span>${fmtInt(w.dead[me] || 0)} / ${fmtInt(w.dead[mine ? w.d[0] : w.a[0]] || 0)}</span></div>
           <div class="sumrow"><span>War weariness at home</span><b>${(w.weary[me] || 0).toFixed(0)}/100</b></div>
-          <div class="btnrow"><button class="btn small" data-wt="${mine ? w.d[0] : w.a[0]}">Strikes and peace talks</button><button class="btn small" data-wlook="${w.id}">Look at the front</button></div></div>`; }).join('') : '<div class="sub">We are at peace. To go to war, open a country in Diplomacy.</div>') +
+          <div class="btnrow"><button class="btn small gold" data-gen="${w.id}" ${General.can(w) ? '' : 'disabled'}>${General.can(w) ? '⚔ Lead a battle yourself' : 'Regrouping until ' + fmtDate(w.genT)}</button><button class="btn small" data-wt="${mine ? w.d[0] : w.a[0]}">Strikes and peace talks</button><button class="btn small" data-wlook="${w.id}">Look at the front</button></div></div>`; }).join('') : '<div class="sub">We are at peace. To go to war, open a country in Diplomacy.</div>') +
       controlledHtml() +
       `<h3>Wars around the world</h3>` + (G.wars.filter(w => !wars.includes(w)).map(w => `<div class="sumrow"><span>${World.countries[w.a[0]].flag} ${esc(World.countries[w.a[0]].name)} vs ${World.countries[w.d[0]].flag} ${esc(World.countries[w.d[0]].name)}</span><span><button class="btn small" data-med="${w.id}">Mediate (8)</button> <button class="btn small" data-wlook="${w.id}">Look</button></span></div>`).join('') || '<div class="sub">None.</div>') +
       `<h3>Spy networks</h3>` + (nets.length ? nets.map(([t, v]) => `<div class="sumrow"><span>${World.countries[t].flag} ${esc(World.countries[t].name)}${+t === G.spyFocus ? ' (focus)' : ''}</span><span>${v.toFixed(0)}/100 <button class="btn small" data-wt="${t}">Operations</button></span></div>`).join('') : '<div class="sub">No networks yet. Pick a focus country on its Diplomacy page. Intelligence spending makes them grow faster.</div>');
@@ -6110,6 +6126,437 @@ const Sim = {
 };
 setInterval(() => { try { Sim.bar(); } catch (e) {} }, 1000);
 
+// ---- 81-general.js ----
+// ==========================================
+// GENERAL WAR: lead one battle on a front yourself. You are a general with your own unit (move with WASD, aim with
+// the mouse, click or Space to fire), four friendly units that take your orders, and artillery on call.
+// Take the town (stand in the circle until it is yours) or wipe out the enemy. Win and the front moves your way and
+// the enemy's will to fight drops; lose and it goes the other way. One battle per war every 30 days.
+// ==========================================
+const General = {
+  B: null,
+  can(w) { return !w.genT || G.day >= w.genT; },
+  start(w) {
+    if (!w || !this.can(w)) { toast('Your army needs time to regroup (one battle every 30 days).'); return; }
+    const me = G.player.idx, mine = w.a.includes(me), enemy = mine ? w.d[0] : w.a[0];
+    const pw = landPower(G.nations[me]), pe = landPower(G.nations[enemy]), ratio = clamp(pe / Math.max(0.01, pw), 0.4, 2.5);
+    const city = (frontCity(w) || capitalOf(enemy)).name || 'the town';
+    Clock.pause();
+    const W = 1400, H = 820, r = makeRng(G.seed + G.day + w.id * 7);
+    const B = this.B = { w, me, enemy, mine, city, W, H, t: 0, over: false, cap: 0, keys: {}, mouse: { x: W * 0.5, y: H * 0.5, down: false }, art: 0, order: 'follow',
+      units: [], shots: [], fx: [], trees: [], msg: '', msgT: 0 };
+    // terrain: a river with two bridges, forests, the town on the enemy side
+    B.river = W * 0.5 + (r() - 0.5) * 120; B.bridges = [H * (0.22 + r() * 0.15), H * (0.62 + r() * 0.15)];
+    B.town = { x: W * (0.78 + r() * 0.08), y: H * (0.3 + r() * 0.4), r: 90 };
+    for (let i = 0; i < 26; i++) B.trees.push({ x: r() * W, y: r() * H, r: 26 + r() * 40 });
+    B.trees = B.trees.filter(t => Math.abs(t.x - B.river) > t.r + 30 && Math.hypot(t.x - B.town.x, t.y - B.town.y) > B.town.r + t.r);
+    const unit = (side, kind, x, y, you) => ({ side, kind, x, y, you: !!you, hp: kind === 'tank' ? 140 : kind === 'art' ? 70 : 90, max: kind === 'tank' ? 140 : kind === 'art' ? 70 : 90,
+      sp: kind === 'tank' ? 70 : kind === 'art' ? 32 : 46, range: kind === 'tank' ? 190 : kind === 'art' ? 420 : 150, rof: kind === 'tank' ? 1.6 : kind === 'art' ? 4 : 0.7, dmg: kind === 'tank' ? 26 : kind === 'art' ? 30 : 7, cd: r() * 1.5, ang: 0 });
+    const you = unit('us', 'tank', W * 0.1, H * 0.5, true); you.hp = you.max = 280; you.dmg = 34; B.units.push(you);       // the general's own unit is tougher
+    ['inf', 'inf', 'tank', 'art'].forEach((k, i) => B.units.push(unit('us', k, W * (0.06 + r() * 0.08), H * (0.18 + i * 0.2))));
+    const nEnemy = Math.round(3 + ratio * 1.6);
+    for (let i = 0; i < nEnemy; i++) { const k = i % 4 === 3 ? 'tank' : i === 5 ? 'art' : 'inf'; const a = r() * 6.28, d = 40 + r() * 140; B.units.push(unit('them', k, clamp(B.town.x + Math.cos(a) * d, B.river + 60, W - 20), clamp(B.town.y + Math.sin(a) * d, 20, H - 20))); }
+    for (const u of B.units) if (u.side === 'them') { u.hp *= 0.85 + ratio * 0.1; u.max = u.hp; }
+    this.mount();
+    this.say('Battle of ' + city + ': take the town or destroy the enemy. 1 Hold · 2 Follow me · 3 Attack · Q artillery');
+  },
+  mount() {
+    const B = this.B;
+    const el = document.createElement('div'); el.id = 'genwar';
+    el.innerHTML = `<canvas id="gw-cv"></canvas><div id="gw-top"><b>⚔ Battle of ${esc(B.city)}</b><span id="gw-info"></span><button class="btn small" id="gw-quit">Retreat</button></div><div id="gw-msg"></div>`;
+    document.body.appendChild(el);
+    const cv = $('#gw-cv'), x = cv.getContext('2d'); B.cv = cv; B.x = x;
+    const fit = () => { cv.width = innerWidth; cv.height = innerHeight; B.k = Math.min(cv.width / B.W, (cv.height - 40) / B.H); B.ox = (cv.width - B.W * B.k) / 2; B.oy = 40 + (cv.height - 40 - B.H * B.k) / 2; };
+    fit(); B.onResize = fit; addEventListener('resize', fit);
+    const toWorld = e => ({ x: (e.clientX - B.ox) / B.k, y: (e.clientY - B.oy) / B.k });
+    cv.addEventListener('pointermove', e => Object.assign(B.mouse, toWorld(e)));
+    cv.addEventListener('pointerdown', e => { Object.assign(B.mouse, toWorld(e)); B.mouse.down = true; });
+    addEventListener('pointerup', B.onUp = () => { B.mouse.down = false; });
+    B.onKey = e => { if (!this.B) return; const k = e.code; if (e.type === 'keydown') { B.keys[k] = true; if (k === 'Digit1') this.orderAll('hold'); if (k === 'Digit2') this.orderAll('follow'); if (k === 'Digit3') this.orderAll('attack'); if (k === 'KeyQ') this.artillery(); if (k === 'Escape') this.end(false, 'You pulled your forces back.'); } else B.keys[k] = false; e.stopPropagation(); if (/^(Space|Arrow|Key[WASDQ]|Digit)/.test(k)) e.preventDefault(); };
+    addEventListener('keydown', B.onKey, true); addEventListener('keyup', B.onKey, true);
+    $('#gw-quit').onclick = () => this.end(false, 'You pulled your forces back.');
+    B.last = performance.now();
+    const loop = now => { if (this.B !== B) return; const dt = Math.min(0.05, (now - B.last) / 1000); B.last = now; if (!B.over) this.step(dt); this.draw(); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  },
+  say(t) { const B = this.B; B.msg = t; B.msgT = 4; const m = $('#gw-msg'); if (m) { m.textContent = t; m.classList.add('on'); } },
+  orderAll(o) { this.B.order = o; this.say({ hold: 'Hold your positions!', follow: 'On me! Follow the general!', attack: 'All units: attack the town!' }[o]); },
+  artillery() {
+    const B = this.B; if (B.art > 0) { this.say('Artillery reloading: ' + Math.ceil(B.art) + ' s'); return; }
+    B.art = 14; const tx = B.mouse.x, ty = B.mouse.y;
+    for (let i = 0; i < 6; i++) setTimeout(() => { if (this.B !== B) return; const x = tx + (Math.random() - 0.5) * 90, y = ty + (Math.random() - 0.5) * 90; this.boom(x, y, 46, 34, 'us'); }, 600 + i * 220);
+    this.say('Artillery on the way!');
+  },
+  boom(x, y, rad, dmg, by) {
+    const B = this.B;
+    for (const u of B.units) if (u.hp > 0 && u.side !== by) { const d = Math.hypot(u.x - x, u.y - y); if (d < rad) u.hp -= dmg * (1 - d / rad * 0.6); }
+    for (let i = 0; i < 14; i++) { const a = Math.random() * 6.28, s = 30 + Math.random() * 120; B.fx.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6 + Math.random() * 0.4, c: i % 3 ? '#ffb347' : '#555' }); }
+    B.fx.push({ ring: true, x, y, r: 4, life: 0.35 }); Sfx.boom();
+  },
+  inForest(u) { return this.B.trees.some(t => Math.hypot(u.x - t.x, u.y - t.y) < t.r); },
+  passable(x, y) { const B = this.B; if (x < 8 || y < 8 || x > B.W - 8 || y > B.H - 8) return false; if (Math.abs(x - B.river) < 26) return B.bridges.some(b => Math.abs(y - b) < 34); return true; },
+  move(u, tx, ty, dt) {
+    const d = Math.hypot(tx - u.x, ty - u.y); if (d < 4) return;
+    let sp = u.sp * (this.inForest(u) ? 0.6 : 1) * dt, nx = u.x + (tx - u.x) / d * sp, ny = u.y + (ty - u.y) / d * sp;
+    if (!this.passable(nx, ny)) {          // head for the nearest bridge first
+      const br = this.B.bridges.reduce((a, b) => Math.abs(b - u.y) < Math.abs(a - u.y) ? b : a), bx = this.B.river + (tx > u.x ? 40 : -40);
+      const side = Math.sign(u.x - this.B.river), d2 = Math.hypot(this.B.river - side * 40 - u.x, br - u.y) || 1;
+      nx = u.x + ((Math.abs(u.y - br) < 20 ? bx : this.B.river - side * 40) - u.x) / d2 * sp; ny = u.y + (br - u.y) / d2 * sp;
+      if (!this.passable(nx, ny)) return;
+    }
+    u.x = nx; u.y = ny;
+  },
+  nearestFoe(u) { let best = null, bd = 1e9; for (const o of this.B.units) if (o.hp > 0 && o.side !== u.side) { let d = Math.hypot(o.x - u.x, o.y - u.y); if (this.inForest(o)) d *= 1.5; if (d < bd) { bd = d; best = o; } } return [best, bd]; },
+  fire(u, tx, ty) {
+    const B = this.B; u.cd = u.rof; u.ang = Math.atan2(ty - u.y, tx - u.x);
+    if (u.kind === 'art') { setTimeout(() => this.B === B && this.boom(tx + (Math.random() - 0.5) * 60, ty + (Math.random() - 0.5) * 60, 40, u.dmg, u.side), 900); B.shots.push({ x: u.x, y: u.y, tx, ty, life: 0.15, c: '#fff6' }); Sfx.shot(0.3); return; }
+    const spread = u.kind === 'tank' ? 0.05 : 0.12, a = u.ang + (Math.random() - 0.5) * spread, d = Math.min(u.range, Math.hypot(tx - u.x, ty - u.y) + 10);
+    const ex = u.x + Math.cos(a) * d, ey = u.y + Math.sin(a) * d;
+    B.shots.push({ x: u.x, y: u.y, tx: ex, ty: ey, life: u.kind === 'tank' ? 0.12 : 0.06, c: u.side === 'us' ? '#bfe3ff' : '#ffb0a0', w: u.kind === 'tank' ? 3 : 1.3 });
+    for (const o of B.units) if (o.hp > 0 && o.side !== u.side) {        // the first enemy along the line takes the hit
+      const t = ((o.x - u.x) * Math.cos(a) + (o.y - u.y) * Math.sin(a)); if (t < 0 || t > d) continue;
+      const px = u.x + Math.cos(a) * t, py = u.y + Math.sin(a) * t;
+      if (Math.hypot(o.x - px, o.y - py) < (o.kind === 'tank' ? 16 : 12)) { o.hp -= u.dmg * (this.inForest(o) ? 0.6 : 1) * (u.you ? 1.5 : 1) * (o.you ? 0.6 : 1); o.hitT = B.t; if (u.kind === 'tank') this.boom(o.x, o.y, 18, 4, u.side); break; }
+    }
+    Sfx.shot(u.kind === 'tank' ? 0.6 : 0.15);
+  },
+  step(dt) {
+    const B = this.B; B.t += dt; B.art = Math.max(0, B.art - dt);
+    if (B.msgT > 0 && (B.msgT -= dt) <= 0) $('#gw-msg').classList.remove('on');
+    const you = B.units[0];
+    for (const u of B.units) {
+      if (u.hp <= 0) { if (!u.dead) { u.dead = true; this.boom(u.x, u.y, 10, 0, u.side); } continue; }
+      u.cd -= dt;
+      if (u.you) {
+        if (B.t - (u.hitT || 0) > 3) u.hp = Math.min(u.max, u.hp + 6 * dt);       // patches up when out of fire
+        const k = B.keys; let dx = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0), dy = (k.KeyS || k.ArrowDown ? 1 : 0) - (k.KeyW || k.ArrowUp ? 1 : 0);
+        if (dx || dy) { const l = Math.hypot(dx, dy); this.move(u, u.x + dx / l * 30, u.y + dy / l * 30, dt); }
+        u.ang = Math.atan2(B.mouse.y - u.y, B.mouse.x - u.x);
+        if ((B.mouse.down || k.Space) && u.cd <= 0) this.fire(u, B.mouse.x, B.mouse.y);
+        continue;
+      }
+      const [foe, fd] = this.nearestFoe(u);
+      if (foe && fd < u.range && u.cd <= 0) this.fire(u, foe.x, foe.y);
+      if (u.side === 'us') {
+        if (B.order === 'follow' && Math.hypot(you.x - u.x, you.y - u.y) > 70) this.move(u, you.x - 40 + (B.units.indexOf(u) % 3) * 30, you.y - 30 + (B.units.indexOf(u) % 2) * 60, dt);
+        else if (B.order === 'attack') { if (!(foe && fd < u.range * 0.8)) this.move(u, B.town.x - 30 + (B.units.indexOf(u) * 17) % 60, B.town.y - 30 + (B.units.indexOf(u) * 29) % 60, dt); }
+      } else {
+        // the enemy defends the town, and pushes out once they think they are stronger
+        const alive = s => B.units.filter(o => o.side === s && o.hp > 0).length, push = alive('them') > alive('us') * 1.3 || B.t > 150;
+        if (foe && (fd < u.range * 1.6 || push)) { if (fd > u.range * 0.7) this.move(u, foe.x, foe.y, dt); }
+        else if (Math.hypot(u.x - B.town.x, u.y - B.town.y) > B.town.r * 0.9) this.move(u, B.town.x, B.town.y, dt);
+      }
+    }
+    // the town: ours fills up while we hold it and nobody contests it
+    const inTown = s => B.units.some(u => u.hp > 0 && u.side === s && Math.hypot(u.x - B.town.x, u.y - B.town.y) < B.town.r);
+    if (inTown('us') && !inTown('them')) B.cap = Math.min(100, B.cap + dt * 9); else if (inTown('them') && !inTown('us')) B.cap = Math.max(0, B.cap - dt * 6);
+    for (const s of B.shots) s.life -= dt; B.shots = B.shots.filter(s => s.life > 0);
+    for (const f of B.fx) { f.life -= dt; if (f.ring) f.r += 160 * dt; else { f.x += f.vx * dt; f.y += f.vy * dt; f.vx *= 0.92; f.vy *= 0.92; } } B.fx = B.fx.filter(f => f.life > 0);
+    const them = B.units.filter(u => u.side === 'them' && u.hp > 0).length, us = B.units.filter(u => u.side === 'us' && u.hp > 0).length;
+    $('#gw-info').textContent = `Town ${Math.round(B.cap)}% · our units ${us} · theirs ${them} · artillery ${B.art > 0 ? Math.ceil(B.art) + 's' : 'ready (Q)'} · orders: ${B.order} · ${Math.max(0, Math.ceil(240 - B.t))}s`;
+    if (B.cap >= 100) this.end(true, 'You took ' + B.city + '!');
+    else if (!them) this.end(true, 'The enemy force is destroyed!');
+    else if (you.hp <= 0) this.end(false, 'Your unit was knocked out. The attack falls apart.');
+    else if (!us) this.end(false, 'All our units are lost.');
+    else if (B.t > 240) this.end(B.cap >= 50, B.cap >= 50 ? 'Time is up, and we hold most of the town.' : 'Time is up. The attack has stalled.');
+  },
+  draw() {
+    const B = this.B, x = B.x, cv = B.cv; if (!x) return;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#10140f'; x.fillRect(0, 0, cv.width, cv.height);
+    x.setTransform(B.k, 0, 0, B.k, B.ox, B.oy);
+    x.fillStyle = '#4f6b3a'; x.fillRect(0, 0, B.W, B.H);
+    x.fillStyle = '#5a7742'; for (let i = 0; i < 40; i++) x.fillRect((i * 337) % B.W, (i * 211) % B.H, 60, 40);
+    x.fillStyle = '#3d6f99'; x.fillRect(B.river - 24, 0, 48, B.H);
+    x.fillStyle = '#8a7350'; for (const b of B.bridges) x.fillRect(B.river - 34, b - 22, 68, 44);
+    x.fillStyle = 'rgba(214,190,140,.35)'; for (const b of B.bridges) { x.fillRect(0, b - 8, B.W, 16); }
+    // the town
+    x.fillStyle = B.cap > 0 ? `rgba(80,140,255,${0.08 + B.cap / 500})` : 'rgba(255,90,70,.12)'; x.beginPath(); x.arc(B.town.x, B.town.y, B.town.r, 0, 6.28); x.fill();
+    x.strokeStyle = 'rgba(255,255,255,.35)'; x.setLineDash([8, 8]); x.stroke(); x.setLineDash([]);
+    x.fillStyle = '#b9a88a'; for (let i = 0; i < 9; i++) { const a = i * 0.7, d = 20 + (i * 13) % 50; x.fillRect(B.town.x + Math.cos(a) * d - 9, B.town.y + Math.sin(a) * d - 9, 18, 18); }
+    x.fillStyle = '#fff'; x.font = 'bold 15px system-ui'; x.textAlign = 'center'; x.fillText(B.city + (B.cap > 0 ? ' · ' + Math.round(B.cap) + '%' : ''), B.town.x, B.town.y - B.town.r - 8);
+    x.fillStyle = '#2f4a25'; for (const t of B.trees) { x.beginPath(); x.arc(t.x, t.y, t.r, 0, 6.28); x.fill(); }
+    // units
+    for (const u of B.units) {
+      if (u.hp <= 0) { x.fillStyle = 'rgba(30,30,30,.6)'; x.fillRect(u.x - 8, u.y - 6, 16, 12); continue; }
+      const col = u.side === 'us' ? (u.you ? '#ffd65a' : '#6fb3ff') : '#ff6b5a';
+      x.save(); x.translate(u.x, u.y);
+      x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(-15, -11, 32, 26);
+      x.fillStyle = col; x.strokeStyle = '#111'; x.lineWidth = 2; x.fillRect(-15, -12, 30, 24); x.strokeRect(-15, -12, 30, 24);
+      x.strokeStyle = '#111'; x.beginPath();
+      if (u.kind === 'inf') { x.moveTo(-15, -12); x.lineTo(15, 12); x.moveTo(15, -12); x.lineTo(-15, 12); }
+      else if (u.kind === 'tank') { x.ellipse(0, 0, 10, 6, 0, 0, 6.28); }
+      else { x.arc(0, 0, 4, 0, 6.28); }
+      x.stroke();
+      x.rotate(u.ang); x.fillStyle = '#222'; x.fillRect(8, -2, u.kind === 'tank' ? 18 : 10, 4);
+      x.restore();
+      x.fillStyle = '#000a'; x.fillRect(u.x - 15, u.y - 20, 30, 4); x.fillStyle = u.hp / u.max > 0.4 ? '#7CFC6A' : '#ff5a4a'; x.fillRect(u.x - 15, u.y - 20, 30 * Math.max(0, u.hp / u.max), 4);
+      if (u.you) { x.fillStyle = '#ffd65a'; x.font = 'bold 12px system-ui'; x.fillText('★ YOU', u.x, u.y - 26); }
+    }
+    for (const s of B.shots) { x.strokeStyle = s.c; x.lineWidth = s.w || 1.5; x.beginPath(); x.moveTo(s.x, s.y); x.lineTo(s.tx, s.ty); x.stroke(); }
+    for (const f of B.fx) { if (f.ring) { x.strokeStyle = `rgba(255,220,150,${f.life * 2})`; x.lineWidth = 3; x.beginPath(); x.arc(f.x, f.y, f.r, 0, 6.28); x.stroke(); } else { x.globalAlpha = Math.min(1, f.life * 2); x.fillStyle = f.c; x.fillRect(f.x - 2, f.y - 2, 4, 4); x.globalAlpha = 1; } }
+    if (!B.over) { x.strokeStyle = '#ffd65a'; x.lineWidth = 1.5; x.beginPath(); x.arc(B.mouse.x, B.mouse.y, 9, 0, 6.28); x.moveTo(B.mouse.x - 14, B.mouse.y); x.lineTo(B.mouse.x + 14, B.mouse.y); x.moveTo(B.mouse.x, B.mouse.y - 14); x.lineTo(B.mouse.x, B.mouse.y + 14); x.stroke(); }
+  },
+  end(won, why) {
+    const B = this.B; if (!B || B.over) return;
+    B.over = true;
+    const w = B.w, me = B.me, enemy = B.enemy, kills = B.units.filter(u => u.side === 'them' && u.hp <= 0).length, lost = B.units.filter(u => u.side === 'us' && u.hp <= 0).length;
+    if (G.wars.includes(w)) {
+      w.genT = G.day + 30;
+      const k = won ? 0.1 + kills * 0.008 : -0.06, dir = B.mine ? 1 : -1;
+      for (const f of w.fronts) f.prog = clamp(f.prog + k * dir, -0.6, 1);
+      if (w.will[enemy] != null) w.will[enemy] = clamp(w.will[enemy] - (won ? 10 + kills : -4), 0, 100);
+      if (w.will[me] != null) w.will[me] = clamp(w.will[me] + (won ? 5 : -6), 0, 100);
+      w.dead[me] = (w.dead[me] || 0) + lost * 220; w.dead[enemy] = (w.dead[enemy] || 0) + kills * 260;
+      const n = G.nations[me]; n.genWins = (n.genWins || 0) + (won ? 1 : 0);
+      newsWorld((won ? 'Victory at ' : 'Defeat at ') + B.city + ': ' + G.player.title + ' ' + G.player.name + ' led the battle personally');
+      inbox(won ? 'good' : 'bad', (won ? 'We won' : 'We lost') + ' the battle of ' + B.city, why + ' Enemy units destroyed: ' + kills + ', ours lost: ' + lost + '. ' + (won ? 'The front moves our way and their will to fight drops.' : 'The front slips back.'));
+      try { react(n, { title: (won ? 'Victory at ' : 'Defeat at ') + B.city, stance: { military: won ? 5 : -4 }, size: 0.8, mood: won ? 0.4 : -0.3 }); } catch (e) {}
+    }
+    const el = $('#genwar');
+    const card = document.createElement('div'); card.id = 'gw-end';
+    card.innerHTML = `<h2>${won ? '🏆 Victory' : '💀 Defeat'}</h2><p>${esc(why)}</p><p class="sub">Enemy units destroyed: ${kills} · ours lost: ${lost}</p><button class="btn gold" id="gw-done">Back to the war room</button>`;
+    el.appendChild(card);
+    $('#gw-done').onclick = () => this.close();
+    Sfx[won ? 'win' : 'lose']();
+  },
+  close() {
+    const B = this.B; this.B = null;
+    if (B) { removeEventListener('keydown', B.onKey, true); removeEventListener('keyup', B.onKey, true); removeEventListener('resize', B.onResize); removeEventListener('pointerup', B.onUp); }
+    const el = $('#genwar'); if (el) el.remove();
+    try { Bus.emit('changed'); Game.refresh(); } catch (e) {}
+  }
+};
+// tiny sounds for the battle (WebAudio, made on the fly)
+const Sfx = (() => {
+  let ac = null; const ctx = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) {} return ac; };
+  const noise = (len, vol, f) => { const c = ctx(); if (!c) return; const b = c.createBuffer(1, c.sampleRate * len, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const s = c.createBufferSource(), g = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = f; s.buffer = b; g.gain.value = vol; s.connect(lp); lp.connect(g); g.connect(c.destination); s.start(); };
+  const tone = (fr, len, vol) => { const c = ctx(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.frequency.value = fr; g.gain.setValueAtTime(vol, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + len); o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + len); };
+  let last = 0;
+  return { shot: v => { const n = performance.now(); if (n - last < 40) return; last = n; noise(0.08, 0.08 * v + 0.02, 2500); }, boom: () => noise(0.5, 0.25, 500),
+    win: () => [523, 659, 784].forEach((f, i) => setTimeout(() => tone(f, 0.4, 0.15), i * 140)), lose: () => [392, 330, 262].forEach((f, i) => setTimeout(() => tone(f, 0.5, 0.15), i * 180)) };
+})();
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-gen]'); if (b && G) General.start(G.wars.find(w => w.id === +b.dataset.gen)); });
+
+// ---- 82-online.js ----
+// ==========================================
+// SOVEREIGN ONLINE: 2-6 leaders in the same world (HGNet rooms with 6-digit codes, through the launcher).
+// Everyone starts the same world (same seed) as a different country and runs their own government.
+// - Time: the host's clock rules. Guests follow the host's speed and pauses, catching up or waiting as needed.
+// - Each month every leader sends their own country to the others, so you always see the real state of the other
+//   players' countries (on the map, in Diplomacy and in the Leaders board). The AI never plays a human's country.
+// - Wars between players are run by the host's game and sent to everyone; peace between players is a ceasefire
+//   offer the other leader accepts or refuses. Wars against AI countries stay your own business.
+// - Leaders board and chat at the top.
+// ==========================================
+const Online = {
+  on: false, net: null, host: false, code: '', id: 0, name: '', picks: {}, names: {}, started: false, lastClk: 0, hostClk: null,
+  hgnet() {
+    const h = window.HGNet || (() => { try { return window.parent && window.parent.HGNet; } catch (e) { return null; } })();
+    if (h) return Promise.resolve(h);
+    return new Promise(res => { const s = document.createElement('script'); s.src = '../gv/vendor/hgnet.js'; s.onload = () => res(window.HGNet || null); s.onerror = () => res(null); document.head.appendChild(s); });
+  },
+  myName() { try { const L = window.parent && window.parent.HGGrapevine, me = L && L.me(); if (me) return me.name; } catch (e) {} return Store.get('onlineName', 'Leader ' + (100 + Math.floor(Math.random() * 900))); },
+  countries() { return World.countries.filter(c => c && World.nat0[c.idx]).sort((a, b) => (World.nat0[b.idx].real || 0) - (World.nat0[a.idx].real || 0)); },
+  // ---- lobby
+  open() {
+    UI.modal(`<h2>🌐 Play online</h2><p class="sub">2 to 6 leaders in the same world, each running a different country. Your friends need the 6-digit code.</p>
+      <div class="btnrow"><button class="btn gold" id="on-host">Open a room</button><input id="on-code" maxlength="7" placeholder="6-digit code" style="width:130px;text-align:center;font-weight:700;letter-spacing:.15em;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px"><button class="btn" id="on-join">Join</button></div>
+      <div id="on-st" class="sub" style="min-height:20px;margin:8px 0"></div><div id="on-lobby"></div>
+      <div class="btnrow"><button class="btn" id="on-close">Close</button></div>`);
+    $('#on-host').onclick = () => this.hostRoom();
+    $('#on-join').onclick = () => this.joinRoom($('#on-code').value);
+    $('#on-code').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') this.joinRoom($('#on-code').value); };
+    $('#on-close').onclick = () => { if (!this.started) this.leave(); UI.closeModal(); };
+    this.paint();
+  },
+  st(t, bad) { const e = $('#on-st'); if (e) { e.textContent = t; e.style.color = bad ? '#ff8a7a' : ''; } },
+  wire(net) {
+    net.on('message', (p, m) => this.msg(p, m));
+    net.on('join', () => { if (this.host) this.lobbySend(); });
+    net.on('leave', p => { delete this.picks[p.id]; delete this.names[p.id]; if (G && G.online) for (const k in G.online.humans) if (G.online.humans[k].id === p.id) { toast(G.online.humans[k].name + ' left the game. The AI takes over ' + World.countries[k].name + '.'); delete G.online.humans[k]; } if (this.host) this.lobbySend(); this.paint(); });
+    net.on('closed', (r, t) => { if (this.net !== net) return; const was = this.started; this.reset(); if (was) toast(r === 'host-left' ? 'The host left: you keep playing on your own.' : 'Disconnected: you keep playing on your own.'); else this.st('Disconnected' + (t ? ': ' + t : ''), true); });
+  },
+  hostRoom() {
+    if (this.net) return; this.st('Opening a room...');
+    this.hgnet().then(HG => {
+      if (!HG) return this.st('Online play needs the Huntington Games launcher.', true);
+      this.name = this.myName(); const net = this.net = HG.create({ game: 'sovereign' }); this.wire(net);
+      net.host({ name: this.name, maxPlayers: 6, accept: () => this.started ? 'That game has already started.' : true }).then(r => {
+        this.host = true; this.code = r.code; this.id = 0; this.names[0] = this.name; this.st('Room open. Pick your country, then start when everyone is in.'); this.lobbySend(); this.advertise();
+      }, e => { this.net = null; this.st(e.message || 'Could not open a room.', true); });
+    });
+  },
+  joinRoom(code) {
+    code = String(code || '').replace(/\D/g, ''); if (code.length !== 6) return this.st('Type the 6-digit code.', true);
+    if (this.net) return; this.st('Joining...');
+    this.hgnet().then(HG => {
+      if (!HG) return this.st('Online play needs the Huntington Games launcher.', true);
+      this.name = this.myName(); const net = this.net = HG.create({ game: 'sovereign' }); this.wire(net);
+      net.join(code, { name: this.name }).then(r => { this.host = false; this.code = r.code || code; this.id = r.id; this.st('In the room. Pick your country and wait for the host to start.'); this.paint(); },
+        e => { this.net = null; this.st(e.message || 'Could not join.', true); });
+    });
+  },
+  advertise() {
+    clearInterval(this.adT);
+    const ad = () => { try { const p = window.parent; if (p && p !== window && p.HG_partyOpen && this.host && !this.started) p.HG_partyOpen({ game: 'sovereign', code: this.code, n: Object.keys(this.names).length, max: 6, mode: 'World leaders' }); } catch (e) {} };
+    ad(); this.adT = setInterval(ad, 30000);
+  },
+  lobbySend() {
+    if (!this.host || !this.net) return;
+    for (const p of this.net.peers()) if (!p.isHost && p.state !== 'left') this.names[p.id] = String(p.name || 'Leader').slice(0, 20);
+    this.net.send('all', { t: 'lobby', picks: this.picks, names: this.names }); this.paint();
+  },
+  paint() {
+    const el = $('#on-lobby'); if (!el) return;
+    if (!this.code) { el.innerHTML = ''; return; }
+    const taken = new Set(Object.entries(this.picks).filter(([id]) => +id !== this.id).map(([, i]) => i)), mine = this.picks[this.id];
+    el.innerHTML = `<div class="note-box">Room code <b style="font-size:20px;letter-spacing:.15em">${this.code}</b></div>
+      <div class="field"><label>Your country</label><select id="on-pick" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;width:100%">
+        <option value="">Choose...</option>${this.countries().filter(c => !taken.has(c.idx)).map(c => `<option value="${c.idx}" ${mine === c.idx ? 'selected' : ''}>${c.flag} ${esc(c.name)}</option>`).join('')}</select></div>
+      ${Object.entries(this.names).map(([id, n]) => { const i = this.picks[id]; return `<div class="sumrow"><span>${esc(n)}${+id === 0 ? ' (host)' : ''}${+id === this.id ? ' (you)' : ''}</span><span>${i != null ? World.countries[i].flag + ' ' + esc(World.countries[i].name) : '<i>choosing...</i>'}</span></div>`; }).join('')}
+      ${this.host ? `<div class="btnrow"><button class="btn gold" id="on-start">Start the game</button></div>` : '<div class="sub">The host starts the game.</div>'}`;
+    $('#on-pick').onchange = e => { const v = e.target.value === '' ? null : +e.target.value; if (this.host) { if (v == null) delete this.picks[0]; else this.picks[0] = v; this.lobbySend(); } else this.net.send('host', { t: 'pick', idx: v }); };
+    const sb = $('#on-start'); if (sb) sb.onclick = () => this.start();
+  },
+  start() {
+    const ids = Object.keys(this.names);
+    if (ids.some(id => this.picks[id] == null)) return this.st('Everyone has to pick a country first.', true);
+    const m = { t: 'start', seed: (Math.random() * 2 ** 31) | 0, picks: this.picks, names: this.names };
+    this.net.send('all', m); this.begin(m);
+  },
+  begin(m) {
+    this.started = true; clearInterval(this.adT);
+    try { const p = window.parent; if (p && p !== window && p.HG_partyClose && this.host) p.HG_partyClose(this.code); } catch (e) {}
+    const idx = m.picks[this.id], n0 = World.nat0[idx];
+    newGame({ seed: m.seed, idx, name: n0.leader, title: n0.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n0.leader), real: true });
+    const humans = {}; for (const id in m.picks) humans[m.picks[id]] = { id: +id, name: m.names[id] };
+    G.online = { humans, host: this.host, code: this.code };
+    UI.closeModal(); Game.start();
+    this.on = true;
+    inbox('info', 'Online game', 'You lead ' + World.countries[idx].name + '. The other leaders: ' + Object.entries(humans).filter(([i]) => +i !== idx).map(([i, h]) => h.name + ' (' + World.countries[i].name + ')').join(', ') + '. ' + (this.host ? 'You control the clock.' : 'The host controls the clock.') + ' Open Leaders at the top to compare countries and chat.');
+    Game.refresh();
+  },
+  reset() {
+    clearInterval(this.adT);
+    const net = this.net; this.net = null; try { net && net.close(); } catch (e) {}
+    Object.assign(this, { on: false, host: false, code: '', id: 0, picks: {}, names: {}, started: false, hostClk: null });
+    if (G) G.online = null;
+  },
+  leave() { this.reset(); },
+  // ---- messages
+  msg(peer, m) {
+    if (!m || typeof m !== 'object') return;
+    switch (m.t) {
+      case 'lobby': if (!this.host) { this.picks = m.picks; this.names = m.names; this.paint(); } return;
+      case 'pick': if (this.host) { if (m.idx == null || Object.entries(this.picks).some(([id, i]) => i === m.idx && +id !== peer.id)) delete this.picks[peer.id]; else this.picks[peer.id] = +m.idx; this.lobbySend(); } return;
+      case 'start': if (!this.host) this.begin(m); return;
+    }
+    if (!this.on || !G || !G.online) return;
+    switch (m.t) {
+      case 'clk': this.hostClk = m; return;
+      case 'nat': {          // another leader's country, as it is in their game
+        if (m.idx === G.player.idx || !G.online.humans[m.idx]) return;
+        const n = G.nations[m.idx]; if (n && m.n) { for (const k in m.n) n[k] = m.n[k]; }
+        return;
+      }
+      case 'declare': if (this.host) this.hostWar(m.a, m.d, m.goal); return;
+      case 'warStart': if (!this.host) { const w = startWar(m.a, m.d, m.goal); if (w) w.hh = true; this.warNote(m.a, m.d); } return;
+      case 'wars': if (!this.host) for (const r of m.list) { const w = G.wars.find(x => x.hh && x.a[0] === r.a[0] && x.d[0] === r.d[0]); if (w) { const id = w.id; Object.assign(w, r); w.id = id; } } return;
+      case 'warEnd': if (!this.host) { const w = G.wars.find(x => x.hh && x.a[0] === m.a && x.d[0] === m.d); if (w) { w.goal = m.goal; w.hhEnding = true; endWar(w, m.winner, m.how); } } return;
+      case 'peaceAsk': if (m.to === G.player.idx) {
+        const from = World.countries[m.from];
+        UI.confirm('Ceasefire offer from ' + from.name, G.online.humans[m.from].name + ' (' + from.name + ') offers a ceasefire on the current lines. Accept?', 'Accept the ceasefire', () => this.net.send('host', { t: 'peaceYes', a: m.a, d: m.d }) || (this.host && this.msg({ id: 0 }, { t: 'peaceYes', a: m.a, d: m.d })));
+      } return;
+      case 'peaceYes': if (this.host) { const w = G.wars.find(x => x.hh && x.a[0] === m.a && x.d[0] === m.d); if (w) endWar(w, 'white', 'talks'); } return;
+      case 'chat': { const t = String(m.text || '').slice(0, 200); this.chatLog.push({ name: m.name, text: t, day: G.day }); if (this.chatLog.length > 60) this.chatLog.shift(); toast('💬 ' + m.name + ': ' + t); this.paintBoard(); return; }
+    }
+  },
+  chatLog: [],
+  // ---- wars between players (the host's game runs them)
+  declare(t, goal) {
+    const me = G.player.idx, n = G.nations[me];
+    if (n.pc < 10) return 'Not enough political capital (10).';
+    if (G.wars.some(w => (w.a.includes(me) && w.d.includes(t)) || (w.a.includes(t) && w.d.includes(me)))) return 'Already at war.';
+    n.pc -= 10;
+    if (this.host) this.hostWar(me, t, goal); else this.net.send('host', { t: 'declare', a: me, d: t, goal });
+    return 'War declared on ' + World.countries[t].name + ' (' + G.online.humans[t].name + ')!';
+  },
+  hostWar(a, d, goal) {
+    const w = startWar(a, d, goal); if (!w) return; w.hh = true;
+    this.net.send('all', { t: 'warStart', a, d, goal }); this.warNote(a, d);
+  },
+  warNote(a, d) { newsWorld('⚔ ' + G.online.humans[a].name + ' (' + World.countries[a].name + ') declares war on ' + G.online.humans[d].name + ' (' + World.countries[d].name + ')'); },
+  warEnded(w, winner, how) { if (this.on && this.host && w.hh) this.net.send('all', { t: 'warEnd', a: w.a[0], d: w.d[0], winner, how, goal: w.goal }); },
+  peace(w) {
+    const me = G.player.idx, enemy = w.a.includes(me) ? w.d[0] : w.a[0];
+    this.net.send('all', { t: 'peaceAsk', from: me, to: enemy, a: w.a[0], d: w.d[0] });
+    return 'Ceasefire offer sent to ' + G.online.humans[enemy].name + '.';
+  },
+  // ---- every month: send our country; the host also sends the wars between players
+  month() {
+    if (!this.on || !G || !G.online) return;
+    const me = G.player.idx, n = G.nations[me];
+    this.net.send('all', { t: 'nat', idx: me, n: JSON.parse(JSON.stringify(n, (k, v) => k === 'rng' || k === 'why' || k === 'gwhy' ? undefined : v)) });
+    if (this.host) { const list = G.wars.filter(w => w.hh).map(w => JSON.parse(JSON.stringify(w))); if (list.length) this.net.send('all', { t: 'wars', list }); }
+  },
+  // ---- the shared clock
+  tick() {
+    if (G && G.online && !this.on) G.online = null;           // an online save loaded later plays offline
+    if (!this.on || !G) return;
+    if (this.host) { this.net.send('all', { t: 'clk', day: G.day, speed: Clock.speed, paused: Clock.paused }, { fast: true }); return; }
+    const h = this.hostClk; if (!h) return;
+    Clock.speed = h.speed;
+    const lag = h.day - G.day;
+    if (lag < 0 || (h.paused && lag <= 0)) { Clock.paused = true; return; }
+    Clock.paused = false;
+    if (lag > 2 && $('#modal').classList.contains('hidden') && !G.over) for (let i = 0; i < Math.min(lag - 1, 8); i++) nextDay();      // catch up
+  },
+  // ---- the leaders board + chat
+  board() {
+    if (!G || !G.online) return;
+    UI.modal(`<h2>🌐 Leaders</h2><div id="on-board"></div>
+      <h3>Chat</h3><div id="on-chat" style="max-height:160px;overflow:auto;font-size:13px"></div>
+      <div class="btnrow"><input id="on-say" maxlength="200" placeholder="Say something to the other leaders" style="flex:1;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px"><button class="btn" id="on-send">Send</button></div>
+      <div class="btnrow"><button class="btn" id="on-ok">Close</button></div>`);
+    const send = () => { const i = $('#on-say'), t = i.value.trim(); if (!t) return; i.value = ''; this.net.send('all', { t: 'chat', name: this.name, text: t }); this.chatLog.push({ name: this.name, text: t, day: G.day }); this.paintBoard(); };
+    $('#on-send').onclick = send; $('#on-say').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') send(); };
+    $('#on-ok').onclick = () => UI.closeModal();
+    this.paintBoard();
+  },
+  paintBoard() {
+    const el = $('#on-board'); if (!el || !G || !G.online) return;
+    const rows = Object.entries(G.online.humans).map(([i, h]) => { const n = G.nations[i]; return { i: +i, h, n, gdp: gdpUsd(n) }; }).sort((a, b) => b.gdp - a.gdp);
+    el.innerHTML = `<table class="tbl" style="width:100%;font-size:13px"><tr><th></th><th>Leader</th><th>GDP</th><th>Growth</th><th>Approval</th><th>Army</th><th>Rules</th><th>At war with</th></tr>` +
+      rows.map((r, k) => `<tr${r.i === G.player.idx ? ' style="color:var(--gold)"' : ''}><td>${k + 1}</td><td>${World.countries[r.i].flag} ${esc(r.h.name)}<div class="sub">${esc(World.countries[r.i].name)}</div></td><td>${usd(r.gdp)}</td><td>${(r.n.growth || 0).toFixed(1)}%</td><td>${(r.n.approval || 0).toFixed(0)}%</td><td>${fmtBig((r.n.army || {}).troops || 0)}</td><td>${G.nations.filter(m => m && m.owner === r.i).length}</td><td>${G.wars.filter(w => w.a.includes(r.i) || w.d.includes(r.i)).map(w => World.countries[w.a.includes(r.i) ? w.d[0] : w.a[0]].flag).join(' ') || '-'}</td></tr>`).join('') + '</table>';
+    const c = $('#on-chat'); if (c) { c.innerHTML = this.chatLog.map(l => `<div><b>${esc(l.name)}</b> <span class="sub">${fmtDate(l.day)}</span> ${esc(l.text)}</div>`).join('') || '<div class="sub">No messages yet.</div>'; c.scrollTop = 1e6; }
+  },
+  bar() {
+    let b = $('#onbar');
+    if (!b) { b = document.createElement('div'); b.id = 'onbar'; document.body.appendChild(b); b.addEventListener('click', e => { const t = e.target.closest('[data-on]'); if (t) this.board(); }); }
+    const on = !!(this.on && G && G.online && (UI.screen === 'game' || UI.screen === 'hud'));
+    b.classList.toggle('on', on);
+    if (on) b.innerHTML = `<b>ONLINE</b><span>${Object.keys(G.online.humans).length} leaders · room ${esc(this.code)}${this.host ? ' · you run the clock' : ''}</span><button class="btn small" data-on="board">Leaders & chat</button>`;
+  }
+};
+// the AI never plays a human's country, and leaves the other players alone (wars with them are between players)
+function isHuman(idx) { return idx === pIdx() || !!(G && G.online && G.online.humans && G.online.humans[idx]); }
+MONTHLY.push(() => Online.month());
+setInterval(() => { try { Online.tick(); Online.bar(); } catch (e) {} }, 400);
+// guests do not control time
+(() => {
+  const set0 = Clock.set, tog0 = Clock.toggle;
+  Clock.set = function (s) { if (Online.on && !Online.host) { toast('The host controls the clock.'); return; } return set0.call(this, s); };
+  Clock.toggle = function () { if (Online.on && !Online.host) { toast('The host controls the clock.'); return; } return tog0.call(this); };
+  const dec0 = War.declare, peace0 = War.peace;
+  War.declare = function (t, goal) { if (Online.on && G.online && G.online.humans[t]) return Online.declare(t, goal); return dec0.call(this, t, goal); };
+  War.peace = function (w, terms) { if (Online.on && w && w.hh) return Online.peace(w); return peace0.call(this, w, terms); };
+})();
+// the launcher: join from an invite / open party / Quick Match, or host for one
+window.__hgJoin = c => { Online.open(); $('#on-code').value = c; Online.joinRoom(c); return true; };
+window.__hgHost = convId => { Online.open(); Online.hostRoom(); const iv = setInterval(() => { if (Online.code) { clearInterval(iv); try { window.parent.HG_sendInvite(convId, { game: 'sovereign', code: Online.code, max: 6 }); } catch (e) {} } }, 300); setTimeout(() => clearInterval(iv), 25000); };
+setTimeout(function hgBoot() { try { if (!window.__sov || !window.__sov.ready) return setTimeout(hgBoot, 500); const p = window.parent; if (!p || p === window) return; const c = p.HG_takeJoin && p.HG_takeJoin('sovereign'); if (c) return window.__hgJoin(c); const h = p.HG_takeHost && p.HG_takeHost('sovereign'); if (h && h.convId) window.__hgHost(h.convId); } catch (e) {} }, 800);
+
 // ---- 90-main.js ----
 // Boot: read the data, build the 110m globe, show the title, then build the detailed 50m map in the background.
 const frame = () => new Promise(r => requestAnimationFrame(() => r()));
@@ -6178,7 +6625,7 @@ function loop(now) {
 
 window.__sov = {
   ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
-  get G() { return G; }, Sim, capitulate, newGame, worldMonth, nextMonth, nextDay, conquer, release, checkDomination, warWeek, frontLine, drawFronts, Rule, controlledHtml, MapModes, startWar, sovAch, endWar, Overlay, endGame, crisis, react, Politics, Life, War, peaceChance, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
+  get G() { return G; }, Sim, General, Online, capitulate, newGame, worldMonth, nextMonth, nextDay, conquer, release, checkDomination, warWeek, frontLine, drawFronts, Rule, controlledHtml, MapModes, startWar, sovAch, endWar, Overlay, endGame, crisis, react, Politics, Life, War, peaceChance, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
   flyTo, flyToCountry, screenToLL, llToScreen, pickLL, landPower: n => landPower(n), relation: (a, b) => relation(a, b),
   pick: (lon, lat) => { const h = pickLL(lon, lat); return h && h.c ? World.countries[h.c].id : null; },
   select: id => UI.select(id == null ? null : World.byId[id].idx, true),

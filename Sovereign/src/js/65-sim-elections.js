@@ -125,7 +125,7 @@ MONTHLY.push(aiLeadersMonth);
 // AI countries change leaders too: elections, coups, revolutions
 function aiLeadersMonth() {
   for (const m of G.nations) {
-    if (!m || m.idx === pIdx()) continue;
+    if (!m || isHuman(m.idx)) continue;
     const c = World.countries[m.idx];
     if (m.aiElection != null && G.day >= m.aiElection) {
       m.aiElection = G.day + (TERM_YEARS[m.id] || 4) * 365;

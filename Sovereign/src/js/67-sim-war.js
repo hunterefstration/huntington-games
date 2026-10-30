@@ -107,14 +107,14 @@ function fightFronts(w, k) {
   }
 }
 function warWeek() {
-  for (const w of G.wars.slice()) { aiStrikes(w); if (G.wars.includes(w)) fightFronts(w, 0.25); }
+  for (const w of G.wars.slice()) { if (w.hh && G.online && !G.online.host) continue; aiStrikes(w); if (G.wars.includes(w)) fightFronts(w, 0.25); }     // wars between online players: the host runs them
   weeklyWarReport();
   syncWarVisuals();
 }
 // the rest of a month of war: weariness, the economy, will to fight
 function warMonth() {
   for (const w of G.wars.slice()) {
-    if (!G.wars.includes(w)) continue;
+    if (!G.wars.includes(w) || (w.hh && G.online && !G.online.host)) continue;
     // weariness, economy and stability for everyone involved
     const months = (G.day - w.start) / 30;
     for (const i of w.a.concat(w.d)) {
@@ -141,7 +141,7 @@ function warMonth() {
     w.hits = {};
     warFlavor(w);
     if (!G.wars.includes(w)) continue;
-    for (const lead of [w.a[0], w.d[0]]) if (lead !== pIdx() && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
+    for (const lead of [w.a[0], w.d[0]]) if (!isHuman(lead) && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
   }
   for (const n of G.nations) if (n && !G.wars.some(w => w.a.includes(n.idx) || w.d.includes(n.idx)) && n.atWar) { n.atWar = false; setMod(n, 'growth', 'War', 0); setMod(n, 'infl', 'War', 0); setMod(n, 'stability', 'War', 0); setMod(n, 'approval', 'War', 0); if (n.cost) n.cost.War = 0; }
   // armies rebuild from defence spending
@@ -153,6 +153,7 @@ function warMonth() {
   syncWarVisuals();
 }
 function endWar(w, winner, how) {
+  Online.warEnded(w, winner, how);
   G.wars.splice(G.wars.indexOf(w), 1);
   const A = World.countries[w.a[0]], D = World.countries[w.d[0]];
   if (winner === 'white') newsWorld('Ceasefire between ' + A.name + ' and ' + D.name);
@@ -183,10 +184,10 @@ function aiWars() {
   if (G.rng() > 0.25) return;
   const cands = [];
   for (const n of G.nations) {
-    if (!n || n.idx === pIdx() || n.atWar || n.owner != null) continue;
+    if (!n || isHuman(n.idx) || n.atWar || n.owner != null) continue;
     const p = n.persona || makePersona(n); if (p.aggr < 60) continue;
     for (const id of World.countries[n.idx].borders) {
-      const o = G.nations[World.byId[id].idx]; if (o.atWar || o.owner != null || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
+      const o = G.nations[World.byId[id].idx]; if (o.atWar || (isHuman(o.idx) && o.idx !== pIdx()) || o.owner != null || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
       // deterrence: the target's allies count, and anyone under a nuclear umbrella is left alone
       const allies = G.nations.filter(m => m && m.idx !== o.idx && m.idx !== n.idx && (hasTreaty(m.idx, o.idx, 'defence') || ['NATO', 'CSTO'].some(b => m.blocs.includes(b) && o.blocs.includes(b))));
       if (o.nukes || allies.some(m => m.nukes)) continue;

@@ -16,7 +16,7 @@ function pushFronts(w, by, target, amt) {
 // the computer's sides bomb each other too, and that moves the lines just like the player's strikes
 function aiStrikes(w) {
   for (const lead of [w.a[0], w.d[0]]) {
-    if (lead === pIdx() || G.rng() > 0.22) continue;
+    if (isHuman(lead) || G.rng() > 0.22) continue;
     const enemy = lead === w.a[0] ? w.d[0] : w.a[0], n = G.nations[lead], m = G.nations[enemy];
     const ratio = airPower(n) / (airPower(m) + 1); if (ratio < 0.6) continue;
     const kind = n.dev > 0.7 && G.rng() < 0.4 ? 'missile' : 'air', hit = (kind === 'missile' ? 0.6 : 0.4) * clamp(ratio, 0.3, 2);

@@ -130,7 +130,7 @@ function diploMonth() {
 function aiDiplomacy() {
   const N = G.nations.length, me = G.player.idx;
   for (let k = 0; k < 6; k++) {
-    const a = 1 + Math.floor(G.rng() * (N - 1)), n = G.nations[a]; if (!n || a === me) continue;
+    const a = 1 + Math.floor(G.rng() * (N - 1)), n = G.nations[a]; if (!n || isHuman(a)) continue;
     const p = n.persona = n.persona || makePersona(n);
     const b = 1 + Math.floor(G.rng() * (N - 1)); if (b === a) continue;
     const o = G.nations[b], rel = relation(a, b), ca = World.countries[a], cb = World.countries[b];
