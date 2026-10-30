@@ -2087,7 +2087,7 @@ window.__steelstorm = {
     grant(o) { if (o.cr) save.credits += o.cr; if (o.rp) addRp(o.rp); if (o.free) save.freeRp += o.free; writeSave(); UI.wallet(); },
     research: { target: setTarget, free: spendFreeRp, canResearch, isResearched }, buy: buyVeh, lineup: lineupToggle, addRp, setTarget, buyVeh,
     press(code, down) { IN.keys[code] = down !== false; }, mouse(btn, down) { IN.mb[btn] = down === false ? 0 : 1; }, look(yaw, pitch) { if (yaw !== undefined) IN.camYaw = yaw; if (pitch !== undefined) IN.camPitch = pitch; },
-    get cam() { return IN; },
+    get cam() { return IN; }, get camera() { return camera; }, get renderer() { return renderer; },
     teleport(x, y, z, yaw) { if (!ME) return; ME.x = x; ME.z = z; ME.y = y === null || y === undefined ? GH(x, z) : y; if (yaw !== undefined) { ME.yaw = yaw; ME.tur = yaw; IN.camYaw = yaw; } },
     setVeh(id) { if (!ME) return; if (ME.alive) { ME.alive = false; } return respawnMe(id) || (ME.respT = 0, respawnMe(id)); },
     damage(id, n, by) { hostDamage(by === undefined ? (ME ? ME.id : 0) : by, id, n, 0, 'w1', true); },
