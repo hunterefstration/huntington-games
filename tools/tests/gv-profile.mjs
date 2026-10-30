@@ -60,6 +60,8 @@ async function createAccount(page, name) {
   return key;
 }
 try {
+  // the first account on a fresh rig is its owner (a developer: unlimited goons), so make that one first
+  const O = await device(await browser.newContext()); await createAccount(O, 'Own' + (Date.now() % 100000)); await until(async () => (await status(O)) === 'online', 60000); await O.close();
   const A = await device(await browser.newContext({ viewport: { width: 1280, height: 800 } }));
   A.on('dialog', d => d.accept());
   const nm = 'Prof' + (Date.now() % 100000);
