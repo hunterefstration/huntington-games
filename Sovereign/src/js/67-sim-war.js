@@ -53,7 +53,7 @@ function startWar(att, def, goal, silent) {
       if (!m || w.a.includes(m.idx) || w.d.includes(m.idx)) continue;
       const pact = hasTreaty(x, m.idx, 'defence') || (k === 'd' && ['NATO', 'CSTO'].some(b => m.blocs.includes(b) && G.nations[x].blocs.includes(b)));
       if (!pact) continue;
-      if (m.idx === G.player.idx) { G.requests.push({ type: 'joinwar', war: w.id, side: k, from: x, text: World.countries[x].name + ' is at war and asks you to join as their ally.', day: G.day, until: G.day + 45 }); inbox('crisis', World.countries[x].name + ' asks for help', 'Our ally is at war. Answer in Diplomacy.'); continue; }
+      if (m.idx === pIdx()) { G.requests.push({ type: 'joinwar', war: w.id, side: k, from: x, text: World.countries[x].name + ' is at war and asks you to join as their ally.', day: G.day, until: G.day + 45 }); inbox('crisis', World.countries[x].name + ' asks for help', 'Our ally is at war. Answer in Diplomacy.'); continue; }
       const p = m.persona || makePersona(m);
       if (G.rng() < 0.35 + p.honor / 200) joinWar(w, m.idx, k);
     }
@@ -141,7 +141,7 @@ function warMonth() {
     w.hits = {};
     warFlavor(w);
     if (!G.wars.includes(w)) continue;
-    for (const lead of [w.a[0], w.d[0]]) if (lead !== G.player.idx && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
+    for (const lead of [w.a[0], w.d[0]]) if (lead !== pIdx() && G.wars.includes(w)) aiWarChoice(w, lead, 'month');
   }
   for (const n of G.nations) if (n && !G.wars.some(w => w.a.includes(n.idx) || w.d.includes(n.idx)) && n.atWar) { n.atWar = false; setMod(n, 'growth', 'War', 0); setMod(n, 'infl', 'War', 0); setMod(n, 'stability', 'War', 0); setMod(n, 'approval', 'War', 0); if (n.cost) n.cost.War = 0; }
   // armies rebuild from defence spending
@@ -160,7 +160,7 @@ function endWar(w, winner, how) {
     const win = winner === 'a' ? w.a : w.d, lose = winner === 'a' ? w.d : w.a, W0 = G.nations[win[0]], L0 = G.nations[lose[0]];
     newsWorld(World.countries[win[0]].name + ' wins the war against ' + World.countries[lose[0]].name);
     if (winner === 'a' && w.goal === 'land') annex(w, w.a[0], w.d[0]);
-    if (winner === 'a' && (w.goal === 'conquer' || (how === 'capital' && w.a[0] !== G.player.idx && G.rng() < 0.35))) w.conquer = true;
+    if (winner === 'a' && (w.goal === 'conquer' || (how === 'capital' && w.a[0] !== pIdx() && G.rng() < 0.35))) w.conquer = true;
     if (winner === 'a' && (w.goal === 'regime' || how === 'capital')) { L0.leader = personName(World.countries[L0.idx], G.rng); L0.title = 'Interim Leader'; L0.gov = 'TRANS'; newsWorld('New government installed in ' + World.countries[L0.idx].name); if (L0.idx === G.player.idx) { endGame('conquered', 'Defeated in war', `Enemy forces took the capital. ${G.player.title} ${G.player.name} was removed from power.`); } }
     for (const i of win) G.nations[i].warsWon = (G.nations[i].warsWon || 0) + 1, G.nations[i].prestige = (G.nations[i].prestige || 0) + 2;
     for (const i of lose) G.nations[i].warsLost = (G.nations[i].warsLost || 0) + 1, G.nations[i].evStab -= 8;
@@ -183,7 +183,7 @@ function aiWars() {
   if (G.rng() > 0.25) return;
   const cands = [];
   for (const n of G.nations) {
-    if (!n || n.idx === G.player.idx || n.atWar || n.owner != null) continue;
+    if (!n || n.idx === pIdx() || n.atWar || n.owner != null) continue;
     const p = n.persona || makePersona(n); if (p.aggr < 60) continue;
     for (const id of World.countries[n.idx].borders) {
       const o = G.nations[World.byId[id].idx]; if (o.atWar || o.owner != null || o.mil < 5000 || hasTreaty(n.idx, o.idx, 'nonagg')) continue;
@@ -286,7 +286,7 @@ function nuclearWar(avenger) {
 function warActionsHtml(t) {
   const me = G.player.idx, w = G.wars.find(x => (x.a.includes(me) && x.d.includes(t)) || (x.d.includes(me) && x.a.includes(t)));
   const spy = G.spy[t] || 0;
-  let h = '<h3>Military</h3>';
+  let h = (G.sim ? `<div class="btnrow"><button class="btn gold" data-take="${t}">Take control of ${esc(World.countries[t].name)}</button></div>` : '') + '<h3>Military</h3>';
   const own = G.nations[t].owner;
   if (own === me) return h + `<div class="note-box">${esc(World.countries[t].name)} is under our control. Manage its tribute and unrest in Military, Controlled lands.</div>`;
   if (own != null) h += `<div class="note-box">${esc(World.countries[t].name)} is controlled by ${esc(World.countries[own].name)}. To free it, defeat ${esc(World.countries[own].name)}.</div>`;
@@ -302,6 +302,7 @@ function warActionsHtml(t) {
 }
 function bindWarActions(el, t) {
   const me = G.player.idx, w = G.wars.find(x => (x.a.includes(me) && x.d.includes(t)) || (x.d.includes(me) && x.a.includes(t)));
+  $$('[data-take]', el).forEach(b => b.onclick = () => Sim.take(+b.dataset.take));
   $$('[data-war]', el).forEach(b => b.onclick = () => {
     const k = b.dataset.war;
     if (k === 'declare') return UI.confirm('Declare war on ' + World.countries[t].name + '?', 'Soldiers will die, the economy will suffer and the world will judge you. Wars are hard to stop once started.', 'Declare war', () => { toast(War.declare(t, $('#wgoal', el).value)); Bus.emit('changed'); });
@@ -462,25 +463,31 @@ function aiWarChoice(w, lead, why) {
   }
   // tired but not beaten: ask for a ceasefire on current lines
   if (will < 45 && G.rng() < (45 - will) / 90) {
-    if (enemy === G.player.idx) { if (!G.requests.some(q => q.type === 'peace' && q.war === w.id)) { G.requests.push({ type: 'peace', war: w.id, from: lead, text: pickLine(PEACE_LINES, c.name, n), day: G.day, until: G.day + 45 }); inbox('good', 'Peace offer from ' + c.name, 'They want a ceasefire on the current lines. Answer in Diplomacy.'); } }
+    if (enemy === pIdx()) { if (!G.requests.some(q => q.type === 'peace' && q.war === w.id)) { G.requests.push({ type: 'peace', war: w.id, from: lead, text: pickLine(PEACE_LINES, c.name, n), day: G.day, until: G.day + 45 }); inbox('good', 'Peace offer from ' + c.name, 'They want a ceasefire on the current lines. Answer in Diplomacy.'); } }
     else if (G.rng() < 0.5 + (w.will[enemy] < 50 ? 0.3 : 0)) endWar(w, 'white', 'talks');
   }
 }
 function capitulate(w, loserSide, why) {
   const loser = loserSide === 'a' ? w.a[0] : w.d[0], winSide = loserSide === 'a' ? 'd' : 'a', winners = winSide === 'a' ? w.a : w.d, c = World.countries[loser];
   newsWorld(pickLine(SURRENDER_NEWS, c.name, G.nations[loser]));
-  if (winners.includes(G.player.idx)) return surrenderTerms(w, winSide, loser, why);
+  if (winners.includes(pIdx())) return surrenderTerms(w, winSide, loser, why);
   if (winSide === 'a' && !w.goal) w.goal = 'land';
   endWar(w, winSide, 'surrender');
 }
 // the enemy gives up: the player chooses the terms
 function surrenderTerms(w, winSide, loser, why) {
   Clock.pause();
-  const c = World.countries[loser], n = G.nations[loser], held = (w.taken[loser] || []).length, me = G.player.idx;
+  const c = World.countries[loser], n = G.nations[loser], held = (w.taken[loser] || []).length, me = G.player.idx, M = G.nations[me];
+  // a full annexation costs political capital (more for a bigger country); taking half of it is free
+  const annexCost = Math.round(clamp(15 + 45 * Math.sqrt(Math.min(1, (n.pop || 1) / Math.max(1, M.pop || 1))), 15, 60)), canAnnex = (M.pc || 0) >= annexCost;
+  const myCap = capitalOf(me), theirs = World.cities.map((x, i) => [x, i]).filter(([x]) => x.c === loser && !x.cap)
+    .sort((p, q) => Math.hypot(p[0].lon - myCap.lon, p[0].lat - myCap.lat) - Math.hypot(q[0].lon - myCap.lon, q[0].lat - myCap.lat)).map(p => p[1]);
+  const half = theirs.slice(0, Math.max(1, Math.ceil(World.cities.filter(x => x.c === loser).length / 2)));
   const intro = why === 'nuke' ? `After the nuclear strike, ${n.title} ${n.leader} went on television, pale and shaking: ${c.name} will stop fighting.` : pickLine(SURRENDER_LINES, c.name, n);
   UI.modal(`<h2>🏳 ${esc(c.name)} surrenders</h2><p style="font-size:15px">${esc(intro)}</p><p class="sub">Choose the peace terms.</p>
     <div class="menu" style="width:auto">
-      <button class="btn gold" data-terms="conquer">Take full control of ${esc(c.name)}: its land, its cities, its economy</button>
+      <button class="btn gold" data-terms="conquer" ${canAnnex ? '' : 'disabled'}>Annex all of ${esc(c.name)}: its land, its cities, its economy (costs ${annexCost} political capital${canAnnex ? '' : ', you have ' + Math.floor(M.pc || 0)})</button>
+      ${half.length ? `<button class="btn" data-terms="half">Half-annex (free): take the ${half.length} cities of ${esc(c.name)} nearest to us</button>` : ''}
       ${held ? `<button class="btn" data-terms="land">Annex the ${held} cities we hold</button>` : ''}
       <button class="btn" data-terms="regime">Install a friendly government</button>
       <button class="btn" data-terms="pay">Make them pay reparations (2% of their GDP a year for 5 years)</button>
@@ -489,7 +496,8 @@ function surrenderTerms(w, winSide, loser, why) {
     const t = b.dataset.terms; UI.closeModal();
     if (winSide === 'd') { [w.a, w.d] = [w.d, w.a]; w.fronts.forEach(f => { [f.a, f.b] = [f.b, f.a]; f.prog = -f.prog; }); }
     if (t === 'white') { endWar(w, 'white', 'talks'); react(G.nations[me], { title: 'Generous peace with ' + c.name, stance: { media: 3, military: -3 }, size: 1, abroad: 6, mood: 0.4 }); addRel(me, loser, 20); return; }
-    if (t === 'conquer') { w.goal = 'conquer'; endWar(w, 'a', 'surrender'); react(G.nations[me], { title: c.name + ' is ours', stance: { military: 8, students: -4 }, size: 2, mood: 0.6, abroad: -12 }); return; }
+    if (t === 'half') { w.taken[loser] = [...new Set((w.taken[loser] || []).concat(half))]; w.goal = 'land'; endWar(w, 'a', 'surrender'); react(G.nations[me], { title: 'Half of ' + c.name + ' joins us', stance: { military: 6, students: -3 }, size: 1.5, mood: 0.5, abroad: -8 }); return; }
+    if (t === 'conquer') { if ((M.pc || 0) < annexCost) return; M.pc -= annexCost; w.goal = 'conquer'; endWar(w, 'a', 'surrender'); react(G.nations[me], { title: c.name + ' is ours', stance: { military: 8, students: -4 }, size: 2, mood: 0.6, abroad: -12 }); return; }
     if (t === 'pay') { w.goal = 'punish'; endWar(w, 'a', 'surrender'); G.reparations = (G.reparations || []).concat([{ from: loser, to: me, until: G.day + 1825 }]); }
     else { w.goal = t; endWar(w, 'a', 'surrender'); if (t === 'regime') { addRel(me, loser, 60); n.title = 'Interim President'; } }
     react(G.nations[me], { title: 'Victory over ' + c.name, stance: { military: 8, retirees: 2, students: -2 }, size: 2, mood: 0.6, abroad: t === 'land' ? -8 : -2 });

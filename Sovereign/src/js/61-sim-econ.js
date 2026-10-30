@@ -220,7 +220,7 @@ function econMonth(n, noise = true) {
   n.unemp += (clamp(uT, 0.3, 60) - n.unemp) * 0.12;
   // central bank
   // AI governments that run their central bank still follow a rule; only the player can leave a rate where it is
-  if (mon.type === 'float' && (mon.independent || n.idx !== G.player.idx)) mon.rate += (taylorOf(n) - mon.rate) * (mon.independent ? 0.12 : 0.08);
+  if (mon.type === 'float' && (mon.independent || n.idx !== pIdx())) mon.rate += (taylorOf(n) - mon.rate) * (mon.independent ? 0.12 : 0.08);
   else if (mon.type === 'union') mon.rate = W.ecb;
   else if (mon.type !== 'float') { const an = anchorNation(mon.anchor), ar = mon.anchor === 'EUR' ? W.ecb : an ? an.mon.rate : 3; mon.rate = Math.max(0, ar + (b.rate - (mon.anchor === 'EUR' ? 2 : RATE0[CUR_ISSUER[mon.anchor]] || 3)) + mon.pressure * 10); }
   mon.rate = clamp(mon.rate, 0, 200);
@@ -337,7 +337,7 @@ function worldMonth(noise = true) {
   for (const n of G.nations) if (n) econMonth(n, noise);
   W.worldGdp = G.nations.reduce((a, n) => a + (n ? gdpUsd(n) : 0), 0);
   W.worldReal = G.nations.reduce((a, n) => a + (n ? n.real : 0), 0);
-  for (const n of G.nations) if (n && n.idx !== G.player.idx) aiFiscal(n);
+  for (const n of G.nations) if (n && n.idx !== pIdx()) aiFiscal(n);
   reserveMonth();
 }
 
@@ -386,7 +386,7 @@ const HIST_KEYS = ['gdp', 'growth', 'infl', 'unemp', 'debt', 'deficit', 'approva
 function recordHistory(first) {
   for (const n of G.nations) {
     if (!n) continue;
-    if (!first && n.idx !== G.player.idx && n.months % 12 !== 0) continue;
+    if (!first && n.idx !== pIdx() && n.months % 12 !== 0) continue;
     const vals = { gdp: gdpUsd(n), growth: n.growth, infl: n.infl, unemp: n.unemp, debt: n.debt / gdpL(n) * 100, deficit: (n.budget || budgetOf(n)).deficit,
       approval: n.approval, stability: n.stability, rate: n.mon.rate, fx: n.fx, yield: n.yield };
     for (const k of HIST_KEYS) { const h = n.hist[k] = n.hist[k] || []; h.push(+vals[k].toPrecision(5)); if (h.length > 360) h.shift(); }

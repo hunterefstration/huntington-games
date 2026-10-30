@@ -16,7 +16,7 @@ function pushFronts(w, by, target, amt) {
 // the computer's sides bomb each other too, and that moves the lines just like the player's strikes
 function aiStrikes(w) {
   for (const lead of [w.a[0], w.d[0]]) {
-    if (lead === G.player.idx || G.rng() > 0.22) continue;
+    if (lead === pIdx() || G.rng() > 0.22) continue;
     const enemy = lead === w.a[0] ? w.d[0] : w.a[0], n = G.nations[lead], m = G.nations[enemy];
     const ratio = airPower(n) / (airPower(m) + 1); if (ratio < 0.6) continue;
     const kind = n.dev > 0.7 && G.rng() < 0.4 ? 'missile' : 'air', hit = (kind === 'missile' ? 0.6 : 0.4) * clamp(ratio, 0.3, 2);
@@ -43,7 +43,7 @@ function weeklyWarReport() {
 function conquer(by, t, how) {
   const n = G.nations[t], B = G.nations[by];
   if (!n || !B || t === by || n.owner === by) return;
-  if (t === G.player.idx) { endGame('conquered', 'Conquered', `${nm(by)} took full control of ${nm(t)}. ${G.player.title} ${G.player.name} rules no more.`); return; }
+  if (t === pIdx()) { endGame('conquered', 'Conquered', `${nm(by)} took full control of ${nm(t)}. ${G.player.title} ${G.player.name} rules no more.`); return; }
   for (const m of G.nations) if (m && m.owner === t) { m.owner = by; m.unrest = Math.max(m.unrest || 0, 40); }   // its own conquests pass on
   n.owner = by; n.ownedSince = G.day; n.unrest = 35; n.tribute = 0.08; n.atWar = false;
   for (const w of G.wars.slice()) {

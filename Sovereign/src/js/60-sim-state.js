@@ -121,6 +121,8 @@ const spendOf = n => MINISTRIES.reduce((a, m) => a + n.spend[m.id], 0);
 // Euro area and other currencies as blocks
 function currencyMembers(code) { return G.nations.filter(n => n && (n.mon.cur === code || (n.mon.type !== 'float' && n.mon.anchor === code))); }
 
+// in Simulator mode nobody is 'the player': the AI runs every country (pIdx() is -1) until you take one over
+function pIdx() { return G && G.sim ? -1 : G.player.idx; }
 function newGame(opt) {
   const stats = World.stats;
   G = { v: SAVE_VERSION, seed: opt.seed || (Math.random() * 2 ** 31) | 0, day: 0, speed: 1, nations: [null], player: null,

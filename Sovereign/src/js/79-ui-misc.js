@@ -80,7 +80,7 @@ const TUTORIAL = [
 ];
 const Tutorial = {
   i: 0,
-  start() { if (Store.get('tutorialDone', false)) return; this.i = 0; this.show(); },
+  start() { if (Store.get('tutorialDone', false) || (G && G.sim)) return; this.i = 0; this.show(); },
   show() {
     let el = $('#tut'); if (!el) { el = document.createElement('div'); el.id = 'tut'; el.className = 'panel'; document.body.appendChild(el); }
     const [t, x] = TUTORIAL[this.i];

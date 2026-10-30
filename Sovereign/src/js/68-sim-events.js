@@ -290,6 +290,7 @@ function eventsMonth() {
     const p = e.w(n, c, ctx); if (!p || G.rng() > p * 2.2) continue;
     G.evCool[e.id] = G.day + (e.disaster ? 400 : 700);
     fired++;
+    if (G.sim) continue;
     G.pendingEvents = G.pendingEvents || []; G.pendingEvents.push({ id: e.id, ctx });
     if (e.disaster && ctx.city != null) { G.disasters.push({ city: ctx.city, icon: e.disaster, until: G.day + 30, c: n.idx }); const ci = World.cities[ctx.city]; for (let i = 0; i < (e.fx || 1) * 3; i++) Life.flash(ci.lon + (G.rng() - 0.5) * 0.6, ci.lat + (G.rng() - 0.5) * 0.4, 1.2, [1, 0.5, 0.2], 3); }
   }

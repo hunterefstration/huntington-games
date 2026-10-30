@@ -106,6 +106,7 @@ function electionsMonth(n) {
   if (free(n) && ['PRES', 'SEMI'].includes(n.gov) && n.approval < 20 && n.parl.parties.filter(p => p.gov).reduce((a, p) => a + p.seats, 0) < n.parl.total / 2 && G.rng() < 0.08) return crisis(n, 'impeach');
 }
 function electionsDay() {
+  if (G.sim) return;
   const n = G.nations[G.player.idx];
   if (n.midterm != null && G.day === n.midterm) { const r = runElection(n, 'midterm'); n.midterm = null; ElectionNight.show(n, r); }
   if (n.nextElection != null && G.day === n.nextElection - 1) Clock.pause();
@@ -118,13 +119,13 @@ function electionsDay() {
   }
 }
 DAILY.push(electionsDay);
-MONTHLY.push(() => electionsMonth(G.nations[G.player.idx]));
+MONTHLY.push(() => { if (!G.sim) electionsMonth(G.nations[G.player.idx]); });
 MONTHLY.push(aiLeadersMonth);
 
 // AI countries change leaders too: elections, coups, revolutions
 function aiLeadersMonth() {
   for (const m of G.nations) {
-    if (!m || m.idx === G.player.idx) continue;
+    if (!m || m.idx === pIdx()) continue;
     const c = World.countries[m.idx];
     if (m.aiElection != null && G.day >= m.aiElection) {
       m.aiElection = G.day + (TERM_YEARS[m.id] || 4) * 365;
@@ -216,7 +217,7 @@ const ElectionNight = {
 
 // ---- the end of a game: newspaper front page, legacy score, Hall of Leaders
 function endGame(kind, headline, text) {
-  if (!G || G.over) return;
+  if (!G || G.over || G.sim) return;
   G.over = { kind, headline, text, day: G.day };
   Clock.pause();
   const n = G.nations[G.player.idx], c = World.countries[n.idx], L = legacyScore(n), P = G.player;

@@ -142,7 +142,7 @@ function aiDiplomacy() {
   // old AI sanctions are sometimes lifted, so they do not pile up forever
   if (G.rng() < 0.25) { const old = G.sanctions.filter(s => s.since > 0 && s.by !== me && s.on !== me && G.day - s.since > 720); if (old.length) { const s = old[Math.floor(G.rng() * old.length)]; G.sanctions.splice(G.sanctions.indexOf(s), 1); addRel(s.by, s.on, 10); newsWorld(World.countries[s.by].name + ' lifts sanctions on ' + World.countries[s.on].name); } }
   // someone asks the player for something
-  if (G.rng() < 0.35) {
+  if (!G.sim && G.rng() < 0.35) {
     const cands = G.nations.filter(m => m && m.idx !== me), m = cands[Math.floor(G.rng() * cands.length)], rel = relation(m.idx, me), c = World.countries[m.idx];
     let req = null;
     if (rel > 25 && !hasTreaty(m.idx, me, 'trade')) req = { type: 'trade', text: c.name + ' proposes a free trade deal.' };
