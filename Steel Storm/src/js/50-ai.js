@@ -3,7 +3,7 @@
 // Bots only run on the match host (or in solo). They produce the same control struct the player does.
 // ============================================================
 function aiNew(e) {
-    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.2, .6) };
+    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.2, .6), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
     e.remote = false;
 }
 const d3 = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
@@ -46,37 +46,40 @@ function aiAim(e, c, t) {          // turret aim at the target with lead and a b
     const b = ballistic(m.x, m.y, m.z, t.x + t.vx * tt, py + t.vy * tt, t.z + t.vz * tt, w.v, w.g);
     c.aimYaw = b.yaw + a.ey; c.aimPitch = b.pitch + a.ep; return D;
 }
+function hasLOS(e, t) {         // is there open air between me and the target (hills and houses block shells)?
+    const x0 = e.x, y0 = e.y + 2.5, z0 = e.z, x1 = t.x, y1 = t.y + (t.def.ln === 'a' ? 0 : 1.5), z1 = t.z, n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 10);
+    for (let i = 1; i < n; i++) { const k = i / n, x = x0 + (x1 - x0) * k, z = z0 + (z1 - z0) * k; if (y0 + (y1 - y0) * k < GH(x, z) + .3) return false; }
+    return true;
+}
 function aiSurface(e, dt, c) {
     const a = e.ai, d = e.def, sea = d.ln === 'n', t = a.tgt && a.tgt.alive ? a.tgt : null;
     c.aimYaw = e.tur; c.aimPitch = 0;
-    let gx, gz, spd = 1, hold = false;
-    const rng = sea ? 420 : 300;
+    const rng = sea ? 430 : 310; let los = false, D = 1e9;
+    a.losT = (a.losT || 0) - dt; if (t && a.losT <= 0) { a.losT = .3; a.los = hasLOS(e, t); }
     if (t) {
-        const D = aiAim(e, c, t), dd = (sea ? 300 : 110) + a.skill * 60;
-        if (D > dd) { gx = t.x; gz = t.z; } else { hold = true; gx = t.x; gz = t.z; spd = D < dd * .5 ? -.4 : 0; }
-        a.react -= dt;
+        D = aiAim(e, c, t); los = !!a.los; a.react -= dt;
         const aligned = Math.abs(angDiff(e.tur, c.aimYaw)) < .05 + (1 - a.skill) * .04 && Math.abs(e.gun - clamp(c.aimPitch, -.14, sea ? .75 : .5)) < .06;
-        if (D < rng && aligned && a.react <= 0) { c.f1 = true; if (Math.random() < .3) a.react = rnd(0, .5); }
-        if (D < 230 && aligned) c.f2 = true;
-        if (!sea && !compatLand(e, t)) { hold = false; }
+        if (los && D < rng && aligned && a.react <= 0) { c.f1 = true; if (Math.random() < .3) a.react = rnd(0, .5); }
+        if (los && D < 230 && aligned) c.f2 = true;
     }
-    if (!t || (!sea && !compatLand(e, t))) {
-        // objectives
-        if (sea) {
-            if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 70 || (a.wpT -= dt) < 0) { const zs = e.z < 0 ? -1 : 1; a.wp = { x: rnd(-300, 300), z: zs * rnd(470, 560) }; a.wpT = 40; }
-            gx = a.wp.x; gz = a.wp.z;
-        } else {
-            let tp = null;
-            if (M && M.mode === 'conq') { let bd = 1e9; M.pts.forEach((p, i) => { if (p.own === e.team && Math.abs(p.prog) > .98) return; const dd = Math.hypot(PTS[i].x - e.x, PTS[i].z - e.z); if (dd < bd) { bd = dd; tp = PTS[i]; } }); }
-            if (!tp) { if (!a.wp || (a.wpT -= dt) < 0) { a.wp = { x: rnd(-120, 120), z: rnd(-80, 80) }; a.wpT = 25; } tp = a.wp; }
-            gx = tp.x; gz = tp.z; if (Math.hypot(gx - e.x, gz - e.z) < 22) { spd = 0; hold = true; }
-            if (!t) { c.aimYaw = Math.atan2(gx - e.x, gz - e.z); }
-        }
+    // where to go: engage a visible surface enemy, otherwise the objective
+    const surf = t && t.def.ln !== 'a' && (sea || compatLand(e, t));
+    let gx, gz, spd = 1, hold = false;
+    if (surf && los && D < (sea ? 320 : 150 + a.skill * 60)) { hold = true; gx = t.x; gz = t.z; spd = D < (sea ? 150 : 70) ? -.4 : 0; }
+    else if (surf && D < 520 && (!M || M.mode !== 'conq' || D < 200 || !los)) { gx = t.x; gz = t.z; spd = 1; }
+    else if (sea) {
+        if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 70 || (a.wpT -= dt) < 0) { const zs = e.z < 0 ? -1 : 1; a.wp = { x: rnd(-300, 300), z: zs * rnd(470, 560) }; a.wpT = 40; }
+        gx = a.wp.x; gz = a.wp.z;
+    } else {
+        let tp = null;
+        if (M && M.mode === 'conq') { let bd = 1e9; M.pts.forEach((p, i) => { if (p.own === e.team && Math.abs(p.prog) > .98) return; const dd = Math.hypot(PTS[i].x - e.x, PTS[i].z - e.z) + (a.pref ? a.pref[i] : 0); if (dd < bd) { bd = dd; tp = PTS[i]; } }); }
+        if (!tp) { if (!a.wp || (a.wpT -= dt) < 0 || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 20) { a.wp = { x: rnd(-150, 150) + (e.team ? 60 : -60), z: rnd(-120, 120) }; a.wpT = 25; } tp = a.wp; }
+        gx = tp.x; gz = tp.z; if (Math.hypot(gx - e.x, gz - e.z) < 24 && tp.name) { spd = 0; hold = true; }
+        if (!t) c.aimYaw = Math.atan2(gx - e.x, gz - e.z);
     }
-    if (gx !== undefined) steerTo(e, c, gx, gz, spd === undefined ? 1 : spd); else c.thr = 0;
-    if (hold && t && spd <= 0.01) { c.thr = spd; c.steer = 0; }
-    if (spd < 0 && !a.rev) { c.thr = spd; c.steer = 0; }
-    // stuck check
+    steerTo(e, c, gx, gz, spd);
+    if (hold && spd <= 0.01) { c.thr = spd; c.steer = 0; if (spd === 0 && t && !sea) { a.stT = (a.stT || 0) - dt; if (a.stT <= 0) { a.stT = rnd(1.5, 3); a.strafe = Math.random() < .5 ? -.6 : .6; } c.thr = .3; c.steer = a.strafe || 0; } }
+    else if (spd < 0 && !a.rev) { c.thr = spd; c.steer = 0; }
     a.sT -= dt; if (a.sT <= 0) { a.sT = 1.5; if (Math.hypot(e.x - a.lx, e.z - a.lz) < 1.5 && c.thr > .5) { a.rev = 1.3; a.side = -a.side; } a.lx = e.x; a.lz = e.z; }
     if (a.rev > 0) a.rev -= dt;
 }
@@ -94,8 +97,8 @@ function aiAir(e, dt, c) {
         a.eT -= dt; if (a.eT <= 0) { a.eT = .6; const k = (1 - a.skill) * .06; a.ey = rnd(-k, k); a.ep = rnd(-k, k); }
         c.aimYaw = Math.atan2(dx, dz) + a.ey; c.aimPitch = Math.atan2(dy, hd) + a.ep;
         const dot = (fx * dx + fy * dy + fz * dz) / (D + .01);
-        if (D < 360 && dot > .995 - (1 - a.skill) * .004 && !bomber) c.f1 = true;
-        else if (bomber && D < 300 && dot > .99 && grd) c.f1 = true;
+        if (D < 330 && dot > .985 && !bomber) c.f1 = true;
+        else if (bomber && D < 300 && dot > .98 && grd) c.f1 = true;
         if (d.w2 && dot > .985 && D > 120 && D < 520 && e.a2 > 0) c.f2 = true;
         if (d.w3 && grd && e.a3 > 0 && hd < 110) { const hh = Math.max(10, e.y - t.y), adv = e.speed * Math.sqrt(2 * hh / d.w3.g); if (Math.abs(hd - adv) < 28 && dot > .8) c.f3 = true; }
         if ((grd && bomber && hd < 45) || (D < 55 && !grd) || (grd && !bomber && D < 90 && e.y - t.y < 40)) { a.brk = rnd(1.8, 3.2); a.turnDir = Math.random() < .5 ? -1 : 1; }

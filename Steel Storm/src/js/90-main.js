@@ -49,7 +49,7 @@ function updateCamera(dt) {
         const cp = Math.cos(pit), dist = d.cd * IN.zoom, lift = d.ln === 'a' ? 3 : d.ln === 'n' ? 6 : 3.2;
         const cx = e.x, cy = e.y + lift, cz = e.z;
         camera.position.set(cx - Math.sin(yaw) * cp * dist, cy - Math.sin(pit) * dist, cz - Math.cos(yaw) * cp * dist);
-        const gmin = Math.max(GHS(camera.position.x, camera.position.z), 0) + 2; if (camera.position.y < gmin) camera.position.y = gmin;
+        const gmin = Math.max(H(camera.position.x, camera.position.z), 0) + 2; if (camera.position.y < gmin) camera.position.y = gmin;
         camera.lookAt(cx + Math.sin(yaw) * cp * 30, cy + Math.sin(pit) * 30, cz + Math.cos(yaw) * cp * 30);
     }
     if (shakeAmt > .02) { camera.position.x += rnd(-1, 1) * shakeAmt * .15; camera.position.y += rnd(-1, 1) * shakeAmt * .15; shakeAmt *= Math.pow(.02, dt); } else shakeAmt = 0;
@@ -98,6 +98,7 @@ function frame(now) {
         renderer.render(scene, camera);
         UI.hud(rdt);
         if (ME) { if (ME.alive) engineSet(ME.def.ln === 'a' ? ME.thr : Math.abs(ME.speed) / ME.def.sp, ME.def.ln); else engineStop(); }
+        autoQuality(now);
         // frame time stats
         const ft = now - FS.last; FS.last = now; if (ft < 1000) { FS.n++; FS.sum += ft; FS.max = Math.max(FS.max, ft); if (ft > 34) FS.over++; }
     } else {
@@ -105,13 +106,22 @@ function frame(now) {
     }
     saveT -= rdt; if (saveT <= 0) { saveT = 20; writeSave(); }
 }
+// drop the graphics quality by itself when the machine cannot keep up
+const AQ = { t: 0, n: 0, sum: 0 };
+function autoQuality(now) {
+    const ft = now - FS.last; if (ft > 1000) return; AQ.n++; AQ.sum += ft;
+    if (now - AQ.t > 5000) {
+        if (AQ.t && AQ.n > 20 && AQ.sum / AQ.n > 42 && save.settings.quality !== 'low') { save.settings.quality = save.settings.quality === 'high' ? 'med' : 'low'; applyQuality(); writeSave(); toast('Graphics lowered to ' + save.settings.quality + ' for smoother play'); }
+        AQ.t = now; AQ.n = AQ.sum = 0;
+    }
+}
 // ---------- input ----------
 function typing(e) { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA'); }
 function bindInput() {
     addEventListener('keydown', e => {
         if (typing(e)) return;
         IN.keys[e.code] = true;
-        if (e.code === 'Tab') { e.preventDefault(); UIS.board = true; }
+        if (e.code === 'Tab' && M) { e.preventDefault(); UIS.board = true; }
         if (M && !e.repeat) {
             if (e.code === 'Escape' && !Cam.locked() && ME && ME.alive && !M.over && $('#s-pause').classList.contains('hidden') && $('#s-settings').classList.contains('hidden')) $('#s-pause').classList.remove('hidden');
         }
@@ -134,7 +144,7 @@ function bindInput() {
         IN.camYaw -= e.movementX * s; IN.camPitch = clamp(IN.camPitch - e.movementY * s * (save.settings.invertY ? -1 : 1), air ? -1.3 : -.35, air ? 1.3 : .95);
     });
     document.addEventListener('pointerlockchange', () => {
-        const l = Cam.locked(); $('#h-lock').classList.toggle('hidden', l || !M);
+        const l = Cam.locked(); $('#h-lock').classList.toggle('hidden', l || !M || !ME || !ME.alive);
         if (!l && M && !M.over && ME && ME.alive && $('#s-settings').classList.contains('hidden')) $('#s-pause').classList.remove('hidden');
     });
     addEventListener('resize', () => { applyQuality(); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
@@ -161,7 +171,7 @@ window.__steelstorm = {
     get mode() { return M && M.mode; }, get tickets() { return M && M.tickets; }, get kills() { return M && M.kills; }, get points() { return M && M.pts; },
     ents() { return Array.from(EN.values()).map(e => ({ id: e.id, name: e.name, team: e.team, veh: e.def.id, x: +e.x.toFixed(1), y: +e.y.toFixed(1), z: +e.z.toFixed(1), hp: Math.round(e.hp), alive: e.alive, kills: e.kills, deaths: e.deaths, bot: !!e.isBot, remote: !!e.remote, ai: !!e.ai })); },
     ent(id) { return EN.get(id); }, get projectiles() { return PR.length; },
-    VEHS, VBY, H, GH, PTS, QUAL, Lobby,
+    VEHS, VBY, H, GH, PTS, QUAL, Lobby, BLD, EXT, ISL, UI, updateCamera, updateParticles,
     startMatch(o) {
         o = o || {}; const veh = o.veh || myVeh();
         const cfg = makeConfig([{ id: 0, name: myName(), veh }], o); beginMatch(cfg, 0, true); return cfg;

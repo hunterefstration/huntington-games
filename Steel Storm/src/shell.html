@@ -30,7 +30,7 @@
   </div>
   <div class="m-left panel">
     <h3>Mode</h3>
-    <button class="mode" data-m="tdm"><b>Team Battle</b><small>First team to 20 kills</small></button>
+    <button class="mode" data-m="tdm"><b>Team Battle</b><small>First team to 15 kills</small></button>
     <button class="mode" data-m="conq"><b>Conquest</b><small>Hold 3 points, drain their tickets</small></button>
     <h3>Match</h3>
     <div class="seg" id="m-size"><button data-s="3">3v3</button><button data-s="5">5v5</button></div>
@@ -106,7 +106,7 @@
   <div class="card wide">
     <h2>How to play</h2>
     <div class="how">
-      <div><h4>Goal</h4><p><b>Team Battle:</b> first team to 20 kills. <b>Conquest:</b> hold the 3 flags. The team that holds more flags drains the other team's tickets. Each death also costs a ticket.</p>
+      <div><h4>Goal</h4><p><b>Team Battle:</b> first team to 15 kills. <b>Conquest:</b> hold the 3 flags. The team that holds more flags drains the other team's tickets. Each death also costs a ticket.</p>
       <h4>Progress</h4><p>Every match earns <b>credits</b> and <b>research points</b>. Pick a vehicle to research in the Research screen, then buy it with credits and add it to your lineup in the Garage.</p>
       <h4>Party</h4><p>Press <b>Create party</b>, share the 6-digit code. Friends press <b>Join</b>. The leader picks the mode and presses PLAY; bots fill the rest.</p></div>
       <div><h4>Controls</h4>
@@ -136,6 +136,7 @@
   <div id="h-xh"><i></i><b id="h-hit"></b></div>
   <div id="h-msg"></div>
   <div id="h-dmg"></div>
+  <div id="h-hint"></div>
   <div id="h-lock" class="hidden">Click to take control of the mouse</div>
   <div id="h-board" class="hidden"></div>
 </div>
@@ -156,5 +157,6 @@
 <div id="s-result" class="scr dim hidden"><div class="card wide" id="r-card"></div></div>
 <div id="toast"></div>
 <!--@js-->
+<script>setTimeout(function () { if (!window.__steelstorm) { var s = document.getElementById('boot-s'); if (s) s.textContent = 'Steel Storm could not load (it needs cdn.jsdelivr.net for the 3D engine). Check your connection and reload.'; } }, 9000);</script>
 </body>
 </html>

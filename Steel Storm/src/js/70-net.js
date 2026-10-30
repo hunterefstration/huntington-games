@@ -90,12 +90,12 @@ function startPlay() {
     if (PARTY.net && !PARTY.host) return toast('Only the party leader can press PLAY.');
     const players = PARTY.net ? hostRoster() : [{ id: 0, name: myName(), veh: myVeh() }];
     const cfg = makeConfig(players, {});
-    if (PARTY.net) { PARTY.inMatch = true; PARTY.net.send('all', { t: 'start', cfg }); }
+    if (PARTY.net) { PARTY.inMatch = true; PARTY.net.send('all', { t: 'start', cfg }); advertise(); }
     beginMatch(cfg, 0, true);
 }
 function afterMatch() {         // back to the lobby, still in the party
     PARTY.inMatch = false;
-    if (PARTY.host) broadcastParty();
+    if (PARTY.host) { broadcastParty(); advertise(); }
 }
 // ---------- launcher hooks (invites, open parties) ----------
 let lpOpen = '';

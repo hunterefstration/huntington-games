@@ -3,7 +3,7 @@
 // ============================================================
 const UIS = { rs: null, gs: null, screen: 'menu', selDead: null, hudT: 0, msgT: 0, hitT: 0, board: false };
 const UI = {
-    showMenu() { UIS.screen = 'menu'; $('#menu').classList.remove('hidden'); $$('#s-research,#s-garage,#s-settings,#s-how,#hud,#s-dead,#s-pause,#s-result').forEach(e => e.classList.add('hidden')); UI.paintMenu(); },
+    showMenu() { UIS.screen = 'menu'; ovc.clearRect(0, 0, 4000, 4000); $('#menu').classList.remove('hidden'); $$('#s-research,#s-garage,#s-settings,#s-how,#hud,#s-dead,#s-pause,#s-result').forEach(e => e.classList.add('hidden')); UI.paintMenu(); },
     open(id) { $('#' + id).classList.remove('hidden'); if (id === 's-research') UI.paintResearch(); if (id === 's-garage') UI.paintGarage(); if (id === 's-settings') UI.paintSettings(); },
     close(id) { $('#' + id).classList.add('hidden'); UI.paintMenu(); },
     wallet() {
@@ -78,6 +78,10 @@ const UI = {
         $('#hud').classList.remove('hidden'); UIS.screen = 'match'; $('#h-feed').innerHTML = ''; $('#h-msg').classList.remove('on');
         $('#h-lock').classList.remove('hidden'); UI.msg(MODES[M.mode].name + ': ' + (M.mode === 'tdm' ? 'first to ' + M.limit.kills + ' kills' : 'hold the flags'), -1);
         UIS.hudT = 0; UI.buildCap(); if (typeof Cam !== 'undefined') Cam.reset();
+        const ln = ME.def.ln, h = $('#h-hint'); h.style.opacity = 1;
+        h.innerHTML = ln === 'a' ? '<b>Mouse</b> steer &middot; <b>W / S</b> throttle &middot; <b>A / D</b> turn<br><b>Left click</b> cannons &middot; <b>Right click / Space</b> rockets &middot; <b>B</b> bomb' : ln === 'n' ? '<b>Mouse</b> aim turrets &middot; <b>W / S</b> throttle (stays set) &middot; <b>A / D</b> rudder<br><b>Left click</b> main guns &middot; <b>Right click</b> secondary &middot; <b>Wheel</b> zoom' : '<b>Mouse</b> aim turret &middot; <b>W / S</b> drive &middot; <b>A / D</b> turn<br><b>Left click</b> cannon (has a reload) &middot; <b>Right click</b> machine gun &middot; <b>Wheel</b> zoom';
+        h.innerHTML += '<br><b>Tab</b> scoreboard &middot; <b>Esc</b> menu';
+        clearTimeout(UIS.hintT); UIS.hintT = setTimeout(() => { h.style.opacity = 0; }, 14000);
     },
     buildCap() { $('#h-cap').innerHTML = M.mode === 'conq' ? PTS.map((p, i) => '<div class="cp" data-i="' + i + '"><i></i><span>' + p.name + '</span></div>').join('') : ''; },
     leaveMatch(silent) {
@@ -102,7 +106,7 @@ const UI = {
     },
     died(k, w) {
         if (!M || M.over) return;
-        $('#s-dead').classList.remove('hidden'); if (document.pointerLockElement) document.exitPointerLock();
+        $('#s-dead').classList.remove('hidden'); $('#h-lock').classList.add('hidden'); if (document.pointerLockElement) document.exitPointerLock();
         $('#d-title').textContent = k && k !== ME ? 'Destroyed by ' + k.name : w === 'crash' ? 'You crashed' : 'Destroyed';
         UIS.selDead = UIS.selDead && save.lineup.includes(UIS.selDead) ? UIS.selDead : myVeh();
         UI.paintDead();
@@ -167,7 +171,7 @@ function drawMini() {
     c.drawImage(miniCv, 0, 0);
     if (M.mode === 'conq') PTS.forEach((p, i) => { const o = M.pts[i].own; c.fillStyle = o < 0 ? '#ddd' : '#' + TEAM_COL[o].toString(16).padStart(6, '0'); c.strokeStyle = '#000'; c.beginPath(); c.arc((p.x + EXT) * k, (p.z + EXT) * k, 6, 0, TAU); c.fill(); c.stroke(); });
     for (const e of EN.values()) {
-        if (!e.alive || (e.team !== ME.team && e !== ME && !(e.def.ln === 'a' ? false : true) && false)) continue;
+        if (!e.alive) continue;
         const x = (e.x + EXT) * k, y = (e.z + EXT) * k;
         c.save(); c.translate(x, y); c.rotate(-e.yaw + PI); c.fillStyle = '#' + TEAM_COL[e.team].toString(16).padStart(6, '0'); c.strokeStyle = e === ME ? '#fff' : '#000'; c.lineWidth = e === ME ? 2 : 1;
         c.beginPath(); if (e.def.ln === 'a') { c.moveTo(0, 5); c.lineTo(4, -4); c.lineTo(0, -2); c.lineTo(-4, -4); } else if (e.def.ln === 'n') { c.moveTo(0, 6); c.lineTo(3, -4); c.lineTo(-3, -4); } else { c.rect(-3, -3, 6, 6); }
@@ -223,7 +227,7 @@ function bindUI() {
     $$('#menu .mode').forEach(b => b.onclick = () => { save.mode = b.dataset.m; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $$('#m-size button').forEach(b => b.onclick = () => { save.size = +b.dataset.s; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $$('#m-split button').forEach(b => b.onclick = () => { save.split = +b.dataset.p; writeSave(); UI.paintMenu(); partySettingsChanged(); });
-    $('#b-play').onclick = () => startPlay();
+    $('#b-play').onclick = () => { startPlay(); if (M) Cam.lock(); };
     $('#b-research').onclick = () => UI.open('s-research'); $('#b-garage').onclick = () => UI.open('s-garage'); $('#b-settings').onclick = () => UI.open('s-settings'); $('#b-how').onclick = () => UI.open('s-how');
     $('#p-create').onclick = () => { ac(); partyCreate(); };
     $('#p-join').onclick = () => { ac(); partyJoin($('#p-code').value); };

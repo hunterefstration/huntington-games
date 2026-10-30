@@ -9,7 +9,7 @@ const ISL = [
     { x: -440, z: -370, r: 55, h: 8, c: 3 }, { x: 440, z: 370, r: 55, h: 8, c: 4 }, { x: 440, z: -370, r: 55, h: 8, c: 5 }, { x: -440, z: 370, r: 55, h: 8, c: 6 }
 ];
 const HILLS = [[-420, -130, 55, 16], [-200, 150, 60, 14], [170, -150, 70, 18], [430, 120, 55, 16], [0, -95, 45, 12], [75, 100, 40, 9], [-60, -150, 50, 10], [250, 150, 40, 9], [-300, -170, 40, 10]];
-const TOWNS = [{ x: -250, z: -20, n: 15, p: 0 }, { x: 0, z: 10, n: 13, p: 1 }, { x: 250, z: 20, n: 15, p: 2 }, { x: -440, z: 90, n: 9 }, { x: 440, z: -90, n: 9 }, { x: -120, z: -135, n: 6 }, { x: 120, z: 135, n: 6 }];
+const TOWNS = [{ x: -250, z: -20, n: 15, p: 0 }, { x: 0, z: 10, n: 13, p: 1 }, { x: 250, z: 20, n: 15, p: 2 }, { x: -470, z: 185, n: 9 }, { x: 470, z: -185, n: 9 }, { x: -120, z: -135, n: 6 }, { x: 120, z: 135, n: 6 }];
 const PTS = [{ x: -250, z: -20, name: 'A' }, { x: 0, z: 10, name: 'B' }, { x: 250, z: 20, name: 'C' }];
 const CAP_R = 48;
 function wob(x, z) { return Math.sin(x * 0.045 + 1.3) * Math.cos(z * 0.037 + .7) * 0.5 + Math.sin(x * 0.11 + z * 0.09) * 0.25 + Math.sin(z * 0.2 - x * 0.13) * 0.12; }
@@ -75,7 +75,7 @@ let terrain, waterMesh, waterTex, miniCv, ptViz = [];
 function buildWorld() {
     const rng = mulberry(20241031);
     // terrain
-    const N = 152, SZ = EXT * 2 + 120, g = new THREE.PlaneGeometry(SZ, SZ, N, N); g.rotateX(-PI / 2);
+    const N = 124, SZ = EXT * 2 + 120, g = new THREE.PlaneGeometry(SZ, SZ, N, N); g.rotateX(-PI / 2);
     const p = g.attributes.position, col = new Float32Array(p.count * 3), c = new THREE.Color();
     for (let i = 0; i < p.count; i++) p.setY(i, H(p.getX(i), p.getZ(i)));
     g.computeVertexNormals();
@@ -121,20 +121,20 @@ function buildWorld() {
     });
     bm.castShadow = rm.castShadow = true; bm.receiveShadow = true; bm.matrixAutoUpdate = rm.matrixAutoUpdate = false; scene.add(bm, rm);
     // trees: one merged trunk+2 cones geometry, instanced
-    const T = []; cy(T, .35, .45, 2.2, 5, 0, 1.1, 0, 0x6b4a2b); cy(T, 0, 2.2, 3.4, 6, 0, 3.4, 0, 0x2f7a3a); cy(T, 0, 1.6, 2.6, 6, 0, 5.2, 0, 0x3a8a44);
+    const T = []; cy(T, .35, .45, 2.2, 4, 0, 1.1, 0, 0x6b4a2b); cy(T, 0, 2.2, 3.4, 5, 0, 3.4, 0, 0x2f7a3a); cy(T, 0, 1.6, 2.6, 5, 0, 5.2, 0, 0x3a8a44);
     const tg = merge(T), spots = [];
-    for (let k = 0; k < 4000 && spots.length < 520; k++) {
+    for (let k = 0; k < 4000 && spots.length < 420; k++) {
         const x1 = (rng() * 2 - 1) * (EXT - 40), z1 = (rng() * 2 - 1) * (EXT - 40), h = H(x1, z1);
         if (h < 3 || h > 24) continue;
         let bad = false; for (const b of BLD) if (x1 > b.x0 - 3 && x1 < b.x1 + 3 && z1 > b.z0 - 3 && z1 < b.z1 + 3) { bad = true; break; }
         for (const q of PTS) if (Math.hypot(x1 - q.x, z1 - q.z) < 30) bad = true;
         if (Math.abs(x1) > 400 && Math.abs(z1) < 90) bad = true;      // keep the base areas open
-        if (!bad) spots.push([x1, h, z1, 0.8 + rng() * 0.8]);
+        if (!bad) spots.push([x1, h, z1, 0.5 + rng() * 0.45]);
     }
     const tm = new THREE.InstancedMesh(tg, MAT.base, spots.length); spots.forEach((s, i) => { mt.compose(new THREE.Vector3(s[0], s[1] - .2, s[2]), q0, new THREE.Vector3(s[3], s[3] * (0.9 + rng() * .5), s[3])); tm.setMatrixAt(i, mt); });
     tm.matrixAutoUpdate = false; tm.castShadow = true; scene.add(tm);
     // clouds (flat blobs high above)
-    const cg = new THREE.IcosahedronGeometry(1, 0), cm = new THREE.InstancedMesh(cg, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, emissive: 0x556677 }), 44);
+    const cg = new THREE.IcosahedronGeometry(1, 0), cm = new THREE.InstancedMesh(cg, new THREE.MeshBasicMaterial({ color: 0xf4f8ff, transparent: true, opacity: .92 }), 44);
     for (let i = 0; i < 44; i++) { mt.compose(new THREE.Vector3((rng() * 2 - 1) * 1000, 170 + rng() * 110, (rng() * 2 - 1) * 1000), q0, new THREE.Vector3(25 + rng() * 40, 5 + rng() * 6, 18 + rng() * 25)); cm.setMatrixAt(i, mt); }
     cm.matrixAutoUpdate = false; scene.add(cm);
     // capture points: ring on the ground, a flag and a tall light beam

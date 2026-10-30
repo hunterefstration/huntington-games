@@ -3,7 +3,7 @@
 // bots, capture points, tickets and the end. Everyone simulates their own vehicle and reports hits they make.
 // ============================================================
 const BOT_NAMES = ['Ace', 'Viper', 'Rook', 'Bolt', 'Echo', 'Fang', 'Hawk', 'Ivy', 'Jinx', 'Kilo', 'Luna', 'Mako', 'Nova', 'Onyx', 'Pike', 'Quill', 'Raze', 'Sage', 'Tank', 'Volt'];
-const MODES = { tdm: { name: 'Team Battle', kills: 20, time: 600 }, conq: { name: 'Conquest', tickets: 100, time: 720 } };
+const MODES = { tdm: { name: 'Team Battle', kills: 15, time: 600 }, conq: { name: 'Conquest', tickets: 100, time: 720 } };
 let HQ = {}, hqT = 0, sendT = 0, bsT = 0, msT = 0;
 
 function pickBotDef(maxTier) {
