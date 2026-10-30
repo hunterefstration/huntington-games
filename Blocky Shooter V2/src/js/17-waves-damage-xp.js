@@ -366,9 +366,16 @@ function commitLife() {
 function fellOff() {
     velocity.set(0, 0, 0); push.set(0, 0, 0);
     if (run.mode === 'sandbox' || debugGod || currentHp <= 0 || currentGameState !== 'playing') { camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; return; }
+    // co-op: a fall costs a third of your health and puts you back on the nearest cloud, instead of knocking you out for the wave
+    if (NET.inGame && !NET.pvp && !NET.dead && currentHp > maxHp * 0.34) {
+        const s = nearestSafe(camera.position.x, camera.position.z) || [spawnPt[0], 0, spawnPt[1]];
+        currentHp -= Math.round(maxHp * 0.33); camera.position.set(s[0], s[1] + EYE_STAND, s[2]); feetY = s[1];
+        toast('YOU FELL! -' + Math.round(maxHp * 0.33) + ' HP', '#fca5a5', 1.4); sfx('hurt'); updateHUD(); return;
+    }
+    if (NET.inGame && NET.dead) { const s = nearestSafe(spawnPt[0], spawnPt[1]); camera.position.set(s ? s[0] : spawnPt[0], (s ? s[1] : 0) + EYE_STAND, s ? s[2] : spawnPt[1]); feetY = s ? s[1] : 0; return; }
     lastHurtBy = 'falling off the clouds'; currentHp = 0; updateHUD(); sfx('hurt');
     die();
-    if (NET.inGame) { camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; }
+    if (NET.inGame) { const s = nearestSafe(spawnPt[0], spawnPt[1]); camera.position.set(s ? s[0] : spawnPt[0], (s ? s[1] : 0) + EYE_STAND, s ? s[2] : spawnPt[1]); feetY = s ? s[1] : 0; }
 }
 function die() {
     if (CAMP.on && !NET.inGame) { campDeath(); return; }

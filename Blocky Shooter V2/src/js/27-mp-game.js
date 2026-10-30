@@ -387,12 +387,24 @@ function netReviveIfDown() {
 }
 function netRespawn(xz, hp, feet = 0) {
     NET.dead = false; NET.me.alive = true; currentHp = hp;
+    if (xz.length > 2 && !feet) feet = xz[2];
     // land on whatever is at that height (ground by default), not the top of a crane above it
-    camera.position.set(xz[0], EYE_STAND, xz[1]); feetY = groundAt(xz[0], xz[1], 0.3, feet + 0.5); camera.position.y = feetY + EYE_STAND;
+    camera.position.set(xz[0], EYE_STAND, xz[1]); feetY = groundAt(xz[0], xz[1], 0.3, feet + 0.5);
+    // Sky Islands: never respawn over thin air or inside a block (that was the die-again-straight-away / can't-move bug)
+    if (VOID && (feetY < feet - 3 || pointInSolid(new V3(xz[0], feetY + 1, xz[1]), 0.4))) { const s = nearestSafe(xz[0], xz[1]); if (s) { camera.position.x = s[0]; camera.position.z = s[2]; feetY = s[1]; } }
+    camera.position.y = feetY + EYE_STAND;
     velocity.set(0, 0, 0); push.set(0, 0, 0);
     if (vmModel) vmModel.root.visible = true;
     ui.netDown.classList.add('hidden');
     updateHUD();
+}
+// the closest checked-safe standing spot (Sky Islands)
+function nearestSafe(x, z) {
+    if (!nav || !nav.Y.length) return null;
+    if (safeFor !== nav) buildSafeSpots();
+    let best = null, bd = 1e9;
+    for (const s of safeSpots) { const d = (s[0] - x) ** 2 + (s[2] - z) ** 2; if (d < bd) { bd = d; best = s; } }
+    return best;
 }
 function netPvpRespawn() {
     const list = NET.spawns[NET.team] || [];
@@ -508,6 +520,16 @@ function netBeginGame(cfg) {
 function pickTeamSpawns(seed) {
     const rnd = mulberry32(seed + 7);
     NET.spawns = [[], []];
+    if (VOID) {       // Sky Islands: random x/z is thin air, so spawn only on the checked-safe cloud spots, one end per team
+        if (safeFor !== nav) buildSafeSpots();
+        for (let team = 0; team < 2; team++) {
+            const side = team ? 1 : -1, mine = safeSpots.filter(s => s[2] * side > 4).sort((a, b) => b[2] * side - a[2] * side);
+            const pick = mine.length ? mine : safeSpots.slice();
+            for (let i = 0; i < 8 && pick.length; i++) { const s = pick[Math.floor(i * pick.length / 8 * 0.5)]; NET.spawns[team].push([s[0], s[2], s[1]]); }
+            if (!NET.spawns[team].length) NET.spawns[team].push([spawnPt[0], spawnPt[1], 0]);
+        }
+        return;
+    }
     for (let team = 0; team < 2; team++) {
         const zc = (team ? 1 : -1) * ARENA * 0.7;
         for (let tries = 0; tries < 600 && NET.spawns[team].length < 8; tries++) {
