@@ -104,6 +104,8 @@ function sovAch() {
     o.conquered = Math.max(o.conquered || 0, ruledBy(me).length);
     o.years = Math.max(o.years || 0, Math.floor((n.months || 0) / 12));
     if (G.dominated) o.domination = o.domination || Date.now();
+    o.genWins = Math.max(o.genWins || 0, n.genWins || 0);
+    if (G.online) o.online = Math.max(o.online || 0, 1);
     Store.set('hgach', o);
   } catch (e) {}
 }

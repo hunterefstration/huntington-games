@@ -184,6 +184,10 @@ function mpGameOver() {
     hideAllScreens(); mpEl('mpResults').classList.remove('hidden');
     mpEl('mpAgainBtn').classList.toggle('hidden', !MPS.host);
     MPS.started = false; mpAdvertise();
+    // for the launcher's achievements
+    progress.mpGames = (progress.mpGames || 0) + 1;
+    if (MPS.mode === 'race' ? rows[0] && rows[0].id === MPS.me && (MPS.scores[MPS.me] || 0) > 0 : true) progress.mpWins = (progress.mpWins || 0) + 1;
+    saveProgress();
 }
 function mpBoard() {
     const el = mpEl('mpBoard'); if (!el) return;

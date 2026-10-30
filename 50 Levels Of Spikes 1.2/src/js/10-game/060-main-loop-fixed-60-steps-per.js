@@ -60,6 +60,7 @@ function loadSaves() {
                 progress.beaten = !!p.beaten;
                 progress.bestOneLife = intIn(p.bestOneLife, 0, MAX_LEVELS, 0);
                 progress.bestEndless = intIn(p.bestEndless, 0, 1e6, 0);
+                progress.mpGames = intIn(p.mpGames, 0, 1e6, 0); progress.mpWins = intIn(p.mpWins, 0, 1e6, 0);
             }
         }
     } catch (e) { /* storage blocked or corrupt: play without saves */ }

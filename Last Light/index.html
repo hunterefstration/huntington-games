@@ -2327,6 +2327,9 @@ function mpShowEnd(order, mode) {
     $('#mpr-t').textContent = mode === 'race' ? (order[0] && order[0].time != null ? order[0].name + ' wins!' : 'Nobody made it') : (order.every(o => o.time != null) ? 'Everyone made it!' : 'Not everyone made it');
     $('#mpr-rows').innerHTML = order.map((o, i) => `<div class="drow"><span>${mode === 'race' ? (place[i] || (i + 1) + '.') : '•'} ${esc(o.name)}${o.id === MP.me ? ' (you)' : ''}</span><b>${o.time != null ? fmtTime(o.time) : 'did not finish'}</b></div>`).join('');
     $('#hud').classList.add('hidden'); UI.show('mpres');
+    // for the launcher's achievements (kept apart from the single-player records)
+    const won = mode === 'race' ? order[0] && order[0].id === MP.me && order[0].time != null : order.every(o => o.time != null);
+    SAVE.d.mp = SAVE.d.mp || { games: 0, wins: 0 }; SAVE.d.mp.games++; if (won) SAVE.d.mp.wins++; SAVE.write();
     $('#mpr-again').classList.toggle('hidden', !MP.host);
 }
 // the lobby screen

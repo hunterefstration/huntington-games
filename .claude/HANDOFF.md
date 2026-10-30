@@ -1,4 +1,44 @@
-# Handoff (updated 2026-10-24)
+# Handoff (updated 2026-10-30)
+
+## The UPDATE wave (released as r57; both repos on `main`)
+- **Launcher** (`launcher/` pieces, build with `node tools/build-game.js . --src launcher --check`):
+  - Tabs: Games, Profile, Multiplayer, Grapevine, Account.
+  - Profile has 4 tabs:
+    - Locker: profile picture, banner and title.
+    - Goon Shop.
+    - Leaderboards: every game; the R1-R5 tiers are top 2/10/25/50 %.
+    - Earn.
+  - One tour engine, `060-tour.js`. Grapevine's tutorial hands off to it via `parent.HG_tour`.
+  - Chat dock: T or the 💬 button opens it beside the game. It replaced the in-game T box (the New-tab copy still uses that box).
+  - Music: original tracks. "Tidal Wave" itself is copyrighted, so "Tidal" is an original stand-in.
+  - Multiplayer tab: Quick Match, friends playing, and open parties (same Wi-Fi via a STUN hash, or public).
+  - `INVITE_GAMES` (030 piece) lists the games that take invites and parties: blocky, frontline, imposter, lumi, spikes, sovereign, warpvp.
+  - A game joins the system with these hooks: `window.__hgJoin(code)`, `window.__hgHost(convId)`, `parent.HG_takeJoin(gid)`, `parent.HG_takeHost(gid)`, `parent.HG_partyOpen({...})` every 30 s, `parent.HG_partyClose(code)`.
+- **Goons** (server `grapevine/src/archive/075-economy.js`, catalog `074-catalog.js`):
+  - The server checks every claim.
+  - Developers (admins) get unlimited goons and the "kim jong goon" title, and are left off the goons board.
+  - "Tomato" is admin-only: give it with ecoAdmin `give`.
+  - The first account on a fresh test rig is its owner, so it is a developer (tests make an owner account first).
+- **Grapevine**:
+  - The n-word spins the wheel (1/5 permanent ban) instead of being masked. Set `GV_WHEEL=n` in tests to force the segment.
+  - Also new: about 430 emojis, nicknames only you see, leave or close a chat, custom countdowns up to 7 days, and profile pictures and titles in chat.
+  - Mentions and DMs always get past the 4 s notification limit.
+- **Games**:
+  - Last Light 1.1: One Life, Play together (`48-mp.js`: race and co-op, push and shove on F), and leaderboards.
+  - Spikes 2.2: multiplayer race and co-op with bots (`078-multiplayer.js`; bots plan with the game's own sim snapshot), music and themes (`075-themes-music.js`), and more roasts.
+  - Sovereign 1.3:
+    - Annex or half-annex in the surrender terms.
+    - Simulator (`80-sim-mode.js`; `pIdx()` is -1 while the AI runs everything).
+    - General War (`81-general.js`).
+    - Online (`82-online.js`; `isHuman(idx)`; the host runs wars between players and the clock).
+  - Blocky 5.2: tournaments plus the `tourney` map, new models, skins and avatars from goons, gamer tags, leaderboard, and gentler flashes.
+  - Neon Dash 2.1: World leaderboard.
+  - New games: Imposter, Element Lab, Steel Storm (War PVP).
+- Tests:
+  - Launcher: `tools/tests/gv*.mjs`. Run `bash /home/user/tmp-tests/rigreset.sh` before each one, or the signup limit trips.
+  - Grapevine: `test/e2e-eco.mjs`, `e2e-cos-ui.mjs` and the others.
+
+## Older notes (2026-10-24)
 
 ## Where things stand
 - Live: **r46** or newer (check `latest.json` on `main`). r40 added in-game pop-ups and chat on T; r41 fixed game-save sync. r39 made the whole launcher wear

@@ -178,7 +178,7 @@ const General = {
       if (w.will[enemy] != null) w.will[enemy] = clamp(w.will[enemy] - (won ? 10 + kills : -4), 0, 100);
       if (w.will[me] != null) w.will[me] = clamp(w.will[me] + (won ? 5 : -6), 0, 100);
       w.dead[me] = (w.dead[me] || 0) + lost * 220; w.dead[enemy] = (w.dead[enemy] || 0) + kills * 260;
-      const n = G.nations[me]; n.genWins = (n.genWins || 0) + (won ? 1 : 0);
+      const n = G.nations[me]; n.genWins = (n.genWins || 0) + (won ? 1 : 0); sovAch();
       newsWorld((won ? 'Victory at ' : 'Defeat at ') + B.city + ': ' + G.player.title + ' ' + G.player.name + ' led the battle personally');
       inbox(won ? 'good' : 'bad', (won ? 'We won' : 'We lost') + ' the battle of ' + B.city, why + ' Enemy units destroyed: ' + kills + ', ours lost: ' + lost + '. ' + (won ? 'The front moves our way and their will to fight drops.' : 'The front slips back.'));
       try { react(n, { title: (won ? 'Victory at ' : 'Defeat at ') + B.city, stance: { military: won ? 5 : -4 }, size: 0.8, mood: won ? 0.4 : -0.3 }); } catch (e) {}

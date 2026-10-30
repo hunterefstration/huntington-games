@@ -4231,6 +4231,8 @@ function sovAch() {
     o.conquered = Math.max(o.conquered || 0, ruledBy(me).length);
     o.years = Math.max(o.years || 0, Math.floor((n.months || 0) / 12));
     if (G.dominated) o.domination = o.domination || Date.now();
+    o.genWins = Math.max(o.genWins || 0, n.genWins || 0);
+    if (G.online) o.online = Math.max(o.online || 0, 1);
     Store.set('hgach', o);
   } catch (e) {}
 }
@@ -6307,7 +6309,7 @@ const General = {
       if (w.will[enemy] != null) w.will[enemy] = clamp(w.will[enemy] - (won ? 10 + kills : -4), 0, 100);
       if (w.will[me] != null) w.will[me] = clamp(w.will[me] + (won ? 5 : -6), 0, 100);
       w.dead[me] = (w.dead[me] || 0) + lost * 220; w.dead[enemy] = (w.dead[enemy] || 0) + kills * 260;
-      const n = G.nations[me]; n.genWins = (n.genWins || 0) + (won ? 1 : 0);
+      const n = G.nations[me]; n.genWins = (n.genWins || 0) + (won ? 1 : 0); sovAch();
       newsWorld((won ? 'Victory at ' : 'Defeat at ') + B.city + ': ' + G.player.title + ' ' + G.player.name + ' led the battle personally');
       inbox(won ? 'good' : 'bad', (won ? 'We won' : 'We lost') + ' the battle of ' + B.city, why + ' Enemy units destroyed: ' + kills + ', ours lost: ' + lost + '. ' + (won ? 'The front moves our way and their will to fight drops.' : 'The front slips back.'));
       try { react(n, { title: (won ? 'Victory at ' : 'Defeat at ') + B.city, stance: { military: won ? 5 : -4 }, size: 0.8, mood: won ? 0.4 : -0.3 }); } catch (e) {}
@@ -6435,7 +6437,7 @@ const Online = {
     UI.closeModal(); Game.start();
     this.on = true;
     inbox('info', 'Online game', 'You lead ' + World.countries[idx].name + '. The other leaders: ' + Object.entries(humans).filter(([i]) => +i !== idx).map(([i, h]) => h.name + ' (' + World.countries[i].name + ')').join(', ') + '. ' + (this.host ? 'You control the clock.' : 'The host controls the clock.') + ' Open Leaders at the top to compare countries and chat.');
-    Game.refresh();
+    Game.refresh(); sovAch();
   },
   reset() {
     clearInterval(this.adT);

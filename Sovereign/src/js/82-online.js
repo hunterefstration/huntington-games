@@ -94,7 +94,7 @@ const Online = {
     UI.closeModal(); Game.start();
     this.on = true;
     inbox('info', 'Online game', 'You lead ' + World.countries[idx].name + '. The other leaders: ' + Object.entries(humans).filter(([i]) => +i !== idx).map(([i, h]) => h.name + ' (' + World.countries[i].name + ')').join(', ') + '. ' + (this.host ? 'You control the clock.' : 'The host controls the clock.') + ' Open Leaders at the top to compare countries and chat.');
-    Game.refresh();
+    Game.refresh(); sovAch();
   },
   reset() {
     clearInterval(this.adT);
