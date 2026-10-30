@@ -99,6 +99,7 @@ input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(
 #h-msg{position:absolute;top:24%;width:100%;text-align:center;font:900 italic 30px "Arial Black",sans-serif;text-shadow:0 3px 8px #000;opacity:0;transition:opacity .4s}#h-msg.on{opacity:1}
 #h-hint{position:absolute;right:14px;bottom:14px;max-width:330px;background:#000a;border:1px solid #fff3;border-radius:8px;padding:8px 12px;font-size:12px;line-height:1.5;color:#dfe6ff;transition:opacity 1s;text-align:left}#h-hint b{color:var(--y)}
 #h-dmg{position:absolute;inset:0;box-shadow:inset 0 0 140px 30px #ff1a1acc;opacity:0;transition:opacity .35s}
+#h-prot{position:absolute;left:0;width:100%;top:26%;text-align:center;font-weight:900;font-size:16px;letter-spacing:1px;color:#7fe3ff;text-shadow:0 0 6px #000,0 0 12px #1aa0ff;opacity:0;transition:opacity .2s}#h-prot.on{opacity:1}
 #h-lock{position:absolute;bottom:90px;width:100%;text-align:center;font-weight:800;font-size:17px;text-shadow:0 2px 6px #000;color:var(--y)}
 #h-board{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#050818e8;border:2px solid #4457a5;border-radius:10px;padding:12px 16px;min-width:520px;font-size:13px}
 #h-board table{width:100%;border-collapse:collapse}#h-board th{color:var(--mut);text-align:left;font-size:11px}#h-board td,#h-board th{padding:2px 6px}
@@ -140,6 +141,10 @@ input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(
     <h3>Match</h3>
     <div class="seg" id="m-size"><button data-s="3">3v3</button><button data-s="5">5v5</button></div>
     <div class="seg" id="m-split"><button data-p="0">Party together</button><button data-p="1">Party versus</button></div>
+    <h3>Bots</h3>
+    <div class="seg" id="m-bots"><button data-b="match">Match me</button><button data-b="mixed">Mixed</button></div>
+    <h3>Bot difficulty</h3>
+    <div class="seg" id="m-diff"><button data-d="easy">Easy</button><button data-d="normal">Normal</button><button data-d="hard">Hard</button></div>
     <div id="m-lead-note" class="note"></div>
   </div>
   <div class="m-right panel">
@@ -239,6 +244,7 @@ input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(
   <canvas id="h-map" width="180" height="180"></canvas>
   <div id="h-veh"></div>
   <div id="h-xh"><i></i><b id="h-hit"></b></div>
+  <div id="h-prot"></div>
   <div id="h-msg"></div>
   <div id="h-dmg"></div>
   <div id="h-hint"></div>
@@ -289,7 +295,7 @@ let save = null;
 function defaultSave() {
     return {
         v: SAVE_V, name: '', credits: 800, freeRp: 0, rp: {}, researched: {}, owned: {}, target: null,
-        lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0,
+        lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0, bots: 'match', diff: 'normal',
         settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false },
         stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0 }, seenHow: false
     };
@@ -479,6 +485,9 @@ NT('n3b', 3, 'Bulwark', 'n2b', 1000, 60, 11, .34, 115, 3.5, 3, 300, { len: 38, w
 NT('n3c', 3, 'Thunder', 'n2c', 1200, 70, 9, .3, 210, 6, 2, 330, { len: 42, w: 6.6, tur: [[13, 1.7, 2], [8, 1.6, 2], [-12, 1.7, 2]], br: [-2, 2.6], fun: 2, c: [0x586a7a, 0x3e4b58] }, 'Heavy cruiser. Hits very hard.');
 NT('n4a', 4, 'Leviathan', 'n3b', 1800, 100, 8.5, .27, 280, 7, 3, 340, { len: 52, w: 8, tur: [[16, 2, 3], [10, 2, 3], [-14, 2, 3]], br: [0, 3.2], fun: 2, c: [0x4f5f70, 0x38444f] }, 'Battleship.');
 NT('n4b', 4, 'Titan', 'n3c', 2400, 130, 7, .24, 360, 9, 3, 360, { len: 60, w: 9, tur: [[20, 2.2, 3], [13, 2.2, 3], [-14, 2.2, 3], [-22, 2.2, 3]], br: [0, 3.6], fun: 2, c: [0x46535f, 0x333d46] }, 'Super-battleship. A floating fortress.');
+// balance pass: jets are made of paper next to their guns, so they get a lot more hit points; tanks a little more.
+const HPK = { g: 1.45, a: 2.4, n: 1.5 };
+VEHS.forEach(v => { v.hp = Math.round(v.hp * HPK[v.ln]); });
 const VBY = {};
 VEHS.forEach((v, i) => {
     v.i = i; VBY[v.id] = v;
@@ -838,6 +847,7 @@ function updatePointViz(pts) {
 // The player and the bots share the same code: both just produce a control struct `c`:
 //   {thr, steer, aimYaw, aimPitch, f1, f2, f3}
 // ============================================================
+const SPAWN_PROT = 3;             // seconds nobody can hurt a vehicle that just spawned
 const EN = new Map();            // id -> entity
 let ME = null;                   // my entity
 let M = null;                    // the running match (60-match.js)
@@ -909,7 +919,7 @@ function updateProjectiles(dt) {
         let hit = null;
         for (const e of EN.values()) {
             if (!e.alive || e.team === p.team || e.id === p.own) continue;
-            if (segSphere(ox, oy, oz, p.x, p.y, p.z, e.x, e.y + (e.def.ln === 'a' ? 0 : 1.5), e.z, e.def.r + (p.k === 'bullet' ? 0.6 : 0.3))) { hit = e; break; }
+            if (segSphere(ox, oy, oz, p.x, p.y, p.z, e.x, e.y + (e.def.ln === 'a' ? 0 : 1.5), e.z, e.def.r + (p.k === 'bullet' ? 0.6 : 0.3) + (p.big ? (p.k === 'bullet' ? 1.2 : 1.6) : 0))) { hit = e; break; }
         }
         const gh = GHS(p.x, p.z);
         if (hit || p.y < gh || p.life <= 0) {
@@ -970,7 +980,7 @@ function pickSpawn(team, ln) {
 function spawnEnt(e, sp) {
     sp = sp || pickSpawn(e.team, e.def.ln);
     e.x = sp.x; e.y = sp.y; e.z = sp.z; e.yaw = sp.yaw; e.tur = sp.yaw; e.pitch = 0; e.roll = 0; e.gun = 0; e.hp = e.def.hp; e.alive = true; e.speed = e.def.ln === 'a' ? e.def.minSp * 1.6 : 0; e.thr = e.def.ln === 'a' ? .6 : 0;
-    e.a2 = e.def.w2 && e.def.w2.cnt || 0; e.a3 = e.def.w3 ? e.def.w3.cnt : 0; e.t1 = e.t2 = e.t3 = 1; e.vx = e.vy = e.vz = 0; e.budget = e.def.maxDps * 3;
+    e.a2 = e.def.w2 && e.def.w2.cnt || 0; e.a3 = e.def.w3 ? e.def.w3.cnt : 0; e.t1 = e.t2 = e.t3 = 1; e.vx = e.vy = e.vz = 0; e.budget = e.def.maxDps * 3; e.prot = SPAWN_PROT; if (e.ai) aiReset(e);
     e.tg = { x: e.x, y: e.y, z: e.z, yaw: e.yaw, pitch: 0, roll: 0, tur: e.tur, gun: 0 }; e.snap = true;
     if (e.mdl) e.mdl.root.visible = true; e.dieT = 0;
     applyAnim(e, 0);
@@ -1031,7 +1041,7 @@ function stepAir(e, c, dt) {
     if (e.y > 330) ap = Math.min(ap, -.2);
     const tgt = lerp(d.minSp, d.sp, e.thr) - Math.sin(e.pitch) * d.sp * .3;
     e.speed += (tgt - e.speed) * Math.min(1, dt * .9); e.speed = clamp(e.speed, d.minSp * .85, d.sp * 1.12);
-    const my = d.turn, mp = d.turn * .75, yr = clamp(angDiff(e.yaw, ay) * 2.6, -my, my), pr = clamp((ap - e.pitch) * 2.6, -mp, mp);
+    const tk = e.turnK || 1, my = d.turn * tk, mp = d.turn * .75 * tk, yr = clamp(angDiff(e.yaw, ay) * 2.6, -my, my), pr = clamp((ap - e.pitch) * 2.6, -mp, mp);
     e.yaw += yr * dt; e.pitch = clamp(e.pitch + pr * dt, -1.3, 1.3);
     e.roll += (clamp(-yr / my, -1, 1) * .95 - e.roll) * Math.min(1, dt * 4);
     const cp = Math.cos(e.pitch);
@@ -1089,12 +1099,19 @@ function weaponFire(e, slot, c) {
         const m = muzzleWorld(e, d.ln === 'n' && w.k === 'shell' ? j : e.muz); let x = m.x, y = m.y, z = m.z, dir, vx0 = 0, vy0 = 0, vz0 = 0;
         if (d.ln === 'a') {
             const cp = Math.cos(e.pitch), fx = Math.sin(e.yaw) * cp, fy = Math.sin(e.pitch), fz = Math.cos(e.yaw) * cp, spr = w.sprd || 0;
-            dir = [fx + rnd(-1, 1) * spr, fy + rnd(-1, 1) * spr, fz + rnd(-1, 1) * spr]; vx0 = fx * e.speed; vy0 = fy * e.speed; vz0 = fz * e.speed;
+            // wing guns / rocket rails converge on the nose line (at the locked target's range if the player has one)
+            const Dc = e === ME && Cam.lead ? clamp(Cam.lead.D, 120, 700) : 350, cx = e.x + fx * Dc - x, cy2 = e.y + fy * Dc - y, cz = e.z + fz * Dc - z, cl = Math.hypot(cx, cy2, cz) || 1;
+            dir = [cx / cl + rnd(-1, 1) * spr, cy2 / cl + rnd(-1, 1) * spr, cz / cl + rnd(-1, 1) * spr];
+            if (e === ME && Cam.lead && w.k !== 'bomb') {       // soft lock: a target within ~7 degrees of the nose gets the shots sent at its lead point
+                const lx = Cam.lead.x - x, ly = Cam.lead.y - y, lz = Cam.lead.z - z, ll = Math.hypot(lx, ly, lz) || 1;
+                if ((lx * fx + ly * fy + lz * fz) / ll > .993) dir = [lx / ll + rnd(-1, 1) * spr * .5, ly / ll + rnd(-1, 1) * spr * .5, lz / ll + rnd(-1, 1) * spr * .5];
+            }
+            vx0 = fx * e.speed; vy0 = fy * e.speed; vz0 = fz * e.speed;
             if (w.k === 'bomb') { y -= 1.2; dir = [0, 0, 0]; }
             if (w.k === 'rocket') y -= .5;
         } else dir = dirAt(w.k === 'shell' ? (w.spread || 0.004) : (w.sprd || 0.02));
         const v = w.v || 0, vx = dir[0] * v + vx0, vy = dir[1] * v + vy0, vz = dir[2] * v + vz0;
-        const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep });
+        const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep, big: !e.ai });
         if (!rep) p.dmg = 0;
         e.nShots = (e.nShots || 0) + 1;
         out.push([+x.toFixed(1), +y.toFixed(1), +z.toFixed(1), +vx.toFixed(1), +vy.toFixed(1), +vz.toFixed(1)]);
@@ -1153,8 +1170,37 @@ function smokeDamaged(e, dt) {
 // BOT AI: simple steering per branch. Attack the nearest enemy, otherwise capture points / patrol.
 // Bots only run on the match host (or in solo). They produce the same control struct the player does.
 // ============================================================
+// ---- difficulty: reaction time before a bot opens fire on a new target, how wrong its aim starts (e0, radians) and how good it gets
+// while it keeps tracking (e1, never zero; tau = seconds to get there), burst / pause lengths, firing range scale, how well it leads
+// a moving target, and a damage scale. Normal is tuned so an average player beats a bot of the same vehicle more often than not.
+const BOTD = {
+    easy: { react: [1.1, 1.8], e0: .075, e1: .03, tau: 4, burst: [.6, 1], cd: [2.4, 3.6], rng: .6, lead: [.3, .6], dmg: .55, turn: .7 },
+    normal: { react: [.6, 1.2], e0: .055, e1: .018, tau: 3.5, burst: [.7, 1.2], cd: [1.8, 2.8], rng: .72, lead: [.5, .8], dmg: .75, turn: .85 },
+    hard: { react: [.35, .7], e0: .035, e1: .009, tau: 3, burst: [.9, 1.5], cd: [.9, 1.6], rng: .85, lead: [.7, .95], dmg: .95, turn: 1 }
+};
+const aiDiff = () => BOTD[M && M.cfg && M.cfg.diff] || BOTD.normal;
+function aiAcquire(e, t) {      // a new target: wait a human-ish moment before shooting, start with a sloppy aim
+    const a = e.ai, D = aiDiff(); a.tgt = t; a.react = t ? rnd(D.react[0], D.react[1]) : 0; a.track = 0; a.lead = rnd(D.lead[0], D.lead[1]); a.bOn = false; a.bT = 0; a.cdT = rnd(0, .5); a.lostT = 0;
+}
+function aiReset(e) { const a = e.ai; a.tgt = null; a.brk = 0; a.react = 0; a.track = 0; a.bOn = false; a.bT = 0; a.cdT = 0; a.rkCd = 0; a.bmCd = 0; a.flee = a.fcd = 0; a.rkN = a.bmN = 0; a.lostT = 0; a.tT = rnd(.1, .5); }
+function aiErr(e, dt) {         // aim error (radians): shrinks the longer the bot keeps tracking, never reaches zero; drifts, so it is not a fixed offset
+    const a = e.ai, D = aiDiff(); a.track += dt;
+    const k = (D.e1 + (D.e0 - D.e1) * Math.exp(-a.track / D.tau)) * (1.5 - a.skill) * (e.def.ln === 'g' ? 1.7 : e.def.ln === 'n' ? 1.4 : .55);
+    a.eT -= dt; if (a.eT <= 0) { a.eT = rnd(.3, .7); a.gy = (Math.random() < .5 ? -1 : 1) * rnd(.4, 1) * k; a.gp = (Math.random() < .5 ? -1 : 1) * rnd(.4, 1) * k; }
+    const f = Math.min(1, dt * 5); a.ey += ((a.gy || 0) - a.ey) * f; a.ep += ((a.gp || 0) - a.ep) * f; return k;
+}
+function aiTrigger(e, dt, rl, seen, ready) {     // burst fire: reaction time, then bursts with pauses in between (reloads are still enforced by weaponFire)
+    const a = e.ai, D = aiDiff();
+    if (!seen) return false;
+    if (a.react > 0) { a.react -= dt; return false; }
+    if (a.cdT > 0) { a.cdT -= dt; return false; }
+    if (!ready) return false;
+    if (!a.bOn) { a.bOn = true; a.bT = rnd(D.burst[0], D.burst[1]) * (rl < .2 ? 1.6 : 1); }
+    a.bT -= dt; if (a.bT <= 0) { a.bOn = false; a.cdT = rnd(D.cd[0], D.cd[1]) * (rl > 1 ? .8 : rl < .2 ? .35 : 1); }
+    return true;
+}
 function aiNew(e) {
-    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.2, .6), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
+    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.6, 1.2), track: 0, lead: .7, bOn: false, bT: 0, cdT: 0, lostT: 0, rkCd: 0, bmCd: 0, rkN: 0, bmN: 0, flee: 0, fcd: 0, gy: 0, gp: 0, pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
     e.remote = false;
 }
 const d3 = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
@@ -1162,7 +1208,7 @@ function aiPickTarget(e) {
     const ln = e.def.ln, bomber = !!e.def.w3 && ln === 'a';
     let best = null, bs = 1e9; const mc = compOf(e.x, e.z);
     for (const o of EN.values()) {
-        if (!o.alive || o.team === e.team) continue;
+        if (!o.alive || o.team === e.team || o.prot > 0) continue;
         const d = d3(e, o), ol = o.def.ln; let lim, pref = 1;
         if (ln === 'g') { if (ol === 'a') { lim = 280; pref = 1.8; } else if (ol === 'n') lim = 380; else lim = compOf(o.x, o.z) === mc ? 1000 : 400; }
         else if (ln === 'n') { lim = ol === 'a' ? 260 : 650; if (ol === 'n') pref = .8; }
@@ -1190,10 +1236,10 @@ function steerTo(e, c, gx, gz, spd) {
     const err = angDiff(e.yaw, best);
     c.steer = clamp(-err * 2.2, -1, 1); c.thr = (Math.abs(err) > 1.2 ? .15 : 1) * spd;
 }
-function aiAim(e, c, t) {          // turret aim at the target with lead and a bit of human error
+function aiAim(e, c, t, dt) {          // turret aim at the target with imperfect lead and an aim error that shrinks while tracking
     const a = e.ai, w = e.def.w1, sea = e.def.ln === 'n';
-    a.eT -= .016; if (a.eT <= 0) { a.eT = .7; const k = (1 - a.skill) * .05 + .004; a.ey = rnd(-k, k); a.ep = rnd(-k, k); }
-    const m = e.mdl ? muzzleWorld(e, 0) : e, D = d3(e, t), tt = D / w.v, py = t.y + (t.def.ln === 'a' ? 0 : 1.2);
+    aiErr(e, dt);
+    const m = e.mdl ? muzzleWorld(e, 0) : e, D = d3(e, t), tt = D / w.v * a.lead, py = t.y + (t.def.ln === 'a' ? 0 : 1.2);
     const b = ballistic(m.x, m.y, m.z, t.x + t.vx * tt, py + t.vy * tt, t.z + t.vz * tt, w.v, w.g);
     c.aimYaw = b.yaw + a.ey; c.aimPitch = b.pitch + a.ep; return D;
 }
@@ -1205,13 +1251,13 @@ function hasLOS(e, t) {         // is there open air between me and the target (
 function aiSurface(e, dt, c) {
     const a = e.ai, d = e.def, sea = d.ln === 'n', t = a.tgt && a.tgt.alive ? a.tgt : null;
     c.aimYaw = e.tur; c.aimPitch = 0;
-    const rng = sea ? 430 : 310; let los = false, D = 1e9;
+    const DD = aiDiff(), rng = (sea ? 430 : 310) * DD.rng; let los = false, D = 1e9;
     a.losT = (a.losT || 0) - dt; if (t && a.losT <= 0) { a.losT = .3; a.los = hasLOS(e, t); }
     if (t) {
-        D = aiAim(e, c, t); los = !!a.los; a.react -= dt;
+        D = aiAim(e, c, t, dt); los = !!a.los;
         const aligned = Math.abs(angDiff(e.tur, c.aimYaw)) < .05 + (1 - a.skill) * .04 && Math.abs(e.gun - clamp(c.aimPitch, -.14, sea ? .75 : .5)) < .06;
-        if (los && D < rng && aligned && a.react <= 0) { c.f1 = true; if (Math.random() < .3) a.react = rnd(0, .5); }
-        if (los && D < 230 && aligned) c.f2 = true;
+        if (!los) a.lostT += dt; else { if (a.lostT > 1) a.react = Math.max(a.react, rnd(.3, .6)); a.lostT = 0; }
+        if (los && D < rng && aiTrigger(e, dt, d.w1.rl, true, aligned)) { c.f1 = true; if (D < 150 * DD.rng / .72) c.f2 = true; }
     }
     // where to go: engage a visible surface enemy, otherwise the objective
     const surf = t && t.def.ln !== 'a' && (sea || compatLand(e, t));
@@ -1240,19 +1286,24 @@ function aiAir(e, dt, c) {
     c.thr = 1; c.aimYaw = e.yaw; c.aimPitch = 0;
     const fx = Math.sin(e.yaw) * Math.cos(e.pitch), fy = Math.sin(e.pitch), fz = Math.cos(e.yaw) * Math.cos(e.pitch);
     if (a.brk > 0) {
-        a.brk -= dt; c.aimYaw = e.yaw + a.turnDir * .9; c.aimPitch = .3 + a.skill * .1;
+        a.brk -= dt; c.aimYaw = e.yaw + a.turnDir * .9; c.aimPitch = clamp((160 - e.y) * .012, -.2, .35);
     } else if (t) {
-        const D = d3(e, t), tt = D / (w.v + e.speed * .6), grd = t.def.ln !== 'a';
+        const DD = aiDiff(), D = d3(e, t), tt = D / (w.v + e.speed * .6) * (1 - (1 - a.lead) * .35), grd = t.def.ln !== 'a';
         const tx = t.x + t.vx * tt, tz = t.z + t.vz * tt; let ty = t.y + (grd ? (bomber ? 65 : 2) : t.vy * tt);
         const dx = tx - e.x, dy = ty - e.y, dz = tz - e.z, hd = Math.hypot(dx, dz);
-        a.eT -= dt; if (a.eT <= 0) { a.eT = .6; const k = (1 - a.skill) * .06; a.ey = rnd(-k, k); a.ep = rnd(-k, k); }
+        aiErr(e, dt);
         c.aimYaw = Math.atan2(dx, dz) + a.ey; c.aimPitch = Math.atan2(dy, hd) + a.ep;
-        const dot = (fx * dx + fy * dy + fz * dz) / (D + .01);
-        if (D < 330 && dot > .985 && !bomber) c.f1 = true;
-        else if (bomber && D < 300 && dot > .98 && grd) c.f1 = true;
-        if (d.w2 && dot > .985 && D > 120 && D < 520 && e.a2 > 0) c.f2 = true;
-        if (d.w3 && grd && e.a3 > 0 && hd < 110) { const hh = Math.max(10, e.y - t.y), adv = e.speed * Math.sqrt(2 * hh / d.w3.g); if (Math.abs(hd - adv) < 28 && dot > .8) c.f3 = true; }
-        if ((grd && bomber && hd < 45) || (D < 55 && !grd) || (grd && !bomber && D < 90 && e.y - t.y < 40)) { a.brk = rnd(1.8, 3.2); a.turnDir = Math.random() < .5 ? -1 : 1; }
+        const LV = Math.hypot(dx, dy, dz) + .01, dot = (fx * dx + fy * dy + fz * dz) / LV;      // cos of the angle between my nose and the aim point
+        a.flee -= dt; a.fcd -= dt;      // an enemy jet on my tail: run straight-ish for a moment instead of circling with it forever
+        if (!grd && D < 320 && dot < -.2 && a.flee <= 0 && a.fcd <= 0) { a.flee = rnd(1.3, 2.2); a.fcd = a.flee + rnd(2, 3.5); }
+        const fleeing = a.flee > 0; if (fleeing) { c.aimYaw = e.yaw + Math.sin(simTime * 2.4 + e.id) * .3; c.aimPitch = clamp((160 - e.y) * .01, -.15, .2); }
+        const rA = 330 * DD.rng, miss = LV * Math.sqrt(Math.max(0, 1 - dot * dot)), onAim = dot > .9 && miss < 6.5 + D * .012, gunReady = bomber ? (D < rA * .9 && dot > .985 && grd) : (D < rA && onAim);
+        const go = !fleeing && aiTrigger(e, dt, w.rl, D < rA * 1.6, gunReady);
+        if (go) c.f1 = true;
+        a.rkCd -= dt; a.bmCd -= dt;
+        if (d.w2 && go && D > 120 && D < rA * 1.2 && e.a2 > 0 && a.rkCd <= 0 && e.t2 <= 0) { c.f2 = true; if (++a.rkN >= 2) { a.rkN = 0; a.rkCd = rnd(4, 7); } }
+        if (d.w3 && grd && e.a3 > 0 && hd < 110 && a.bmCd <= 0 && a.react <= 0) { const hh = Math.max(10, e.y - t.y), adv = e.speed * Math.sqrt(2 * hh / d.w3.g); if (Math.abs(hd - adv) < 28 && dot > .8 && e.t3 <= 0) { c.f3 = true; if (++a.bmN >= 2) { a.bmN = 0; a.bmCd = rnd(4, 6); } } }
+        if ((grd && bomber && hd < 45) || (D < 55 && !grd) || (grd && !bomber && D < 90 && e.y - t.y < 40)) { a.brk = rnd(1.1, 2); a.turnDir = Math.random() < .5 ? -1 : 1; a.bmN = 0; }
     } else {
         const dx = (a.wp ? a.wp.x : 0) - e.x, dz = (a.wp ? a.wp.z : 0) - e.z;
         if (!a.wp || Math.hypot(dx, dz) < 100) a.wp = { x: rnd(-400, 400), z: rnd(-300, 300) };
@@ -1267,9 +1318,15 @@ function aiAir(e, dt, c) {
 function aiStep(e, dt) {
     if (!e.ai) aiNew(e);
     if (e.frozen) { applyAnim(e, dt); return; }       // test hook: a bot that stands still
-    const a = e.ai; a.tT -= dt; if (a.tT <= 0) { a.tT = .6 + Math.random() * .3; a.tgt = aiPickTarget(e); }
+    const a = e.ai; if (a.tgt && (!a.tgt.alive || a.tgt.prot > 0)) { aiAcquire(e, null); a.tT = 0; }
+    a.tT -= dt; if (a.tT <= 0) {
+        a.tT = .6 + Math.random() * .3; const n = aiPickTarget(e), cur = a.tgt;
+        if (n !== cur && !(cur && n && d3(e, cur) < d3(e, n) * 1.4 && d3(e, cur) < 900)) aiAcquire(e, n);      // keep the current target unless a much closer one shows up
+    }
+    e.turnK = aiDiff().turn;      // easier bots also bank a little slower
     const c = { thr: 0, steer: 0, aimYaw: e.tur, aimPitch: 0, f1: false, f2: false, f3: false };
     if (e.def.ln === 'a') aiAir(e, dt, c); else aiSurface(e, dt, c);
+    if (a.mute) c.f1 = c.f2 = c.f3 = false;
     stepVehicle(e, c, dt);
 }
 
@@ -1282,8 +1339,13 @@ const BOT_NAMES = ['Ace', 'Viper', 'Rook', 'Bolt', 'Echo', 'Fang', 'Hawk', 'Ivy'
 const MODES = { tdm: { name: 'Team Battle', kills: 15, time: 600 }, conq: { name: 'Conquest', tickets: 100, time: 720 } };
 let HQ = {}, hqT = 0, sendT = 0, bsT = 0, msT = 0;
 
-function pickBotDef(maxTier) {
-    const r = Math.random(), ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n', tier = clamp(maxTier - (Math.random() < .45 ? 1 : 0), 1, 4);
+// Bots: "match" = fight what the humans fly/drive: pick a random human and use their branch (tank / jet / ship) and their tier or one lower,
+// so a solo player always meets his own branch and a party gets a mix weighted by what its members use. "mixed" = any branch.
+function pickBotDef(refs, mode) {
+    const maxTier = Math.max(1, ...refs.map(d => d.t));
+    let ln, tier;
+    if (mode === 'mixed') { const r = Math.random(); ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n'; tier = clamp(maxTier - (Math.random() < .45 ? 1 : 0), 1, 4); }
+    else { const ref = refs[Math.floor(Math.random() * refs.length)] || VBY.g1a; ln = ref.ln; tier = clamp(ref.t - (Math.random() < .5 ? 1 : 0), 1, 4); }
     const L = VEHS.filter(v => v.ln === ln && v.t === tier); return L[Math.floor(Math.random() * L.length)];
 }
 // Build the match description (host / solo). players = [{id,name,veh}], returns cfg that every client uses.
@@ -1291,9 +1353,10 @@ function makeConfig(players, opts) {
     const mode = opts.mode || save.mode, size = opts.size || save.size, split = opts.split !== undefined ? opts.split : save.split;
     const teams = [[], []], cfg = { mode, size, players: [], bots: [], seed: Date.now() & 0xffffff, limit: {} };
     players.forEach((p, i) => { const team = split ? i % 2 : 0; cfg.players.push({ id: p.id, name: p.name, veh: p.veh, team }); teams[team].push(p); });
-    let maxTier = 1; players.forEach(p => { if (VBY[p.veh]) maxTier = Math.max(maxTier, VBY[p.veh].t); });
+    const bm = opts.bots || save.bots || 'match', refs = players.map(p => VBY[p.veh]).filter(Boolean);
+    cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
     let bi = 0, names = BOT_NAMES.slice().sort(() => Math.random() - .5);
-    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(maxTier); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
+    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(refs, bm); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
     const mm = MODES[mode]; cfg.limit = { kills: opts.killLimit || mm.kills || 0, tickets: opts.tickets || mm.tickets || 0, time: opts.time || mm.time };
     return cfg;
 }
@@ -1329,7 +1392,7 @@ function netFire(e, slot, ps) { if (netOn()) PARTY.net.send('all', { t: 'fire', 
 // ---------- damage ----------
 function reportHit(p, tg, dmg) {
     if (!M || dmg <= 0.05) return;
-    const own = EN.get(p.own); if (!own) return;
+    const own = EN.get(p.own); if (!own || tg.prot > 0) return;
     own.nHits = (own.nHits || 0) + 1;
     if (own === ME) { UI.hitMarker(false); sfx('hit'); }
     if (M.host) hostDamage(p.own, tg.id, dmg, p.pk || 0, p.slot, true);
@@ -1343,12 +1406,15 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
     if (!M || M.over || M.state !== 'play') return;
     const a = EN.get(by), v = EN.get(tgId); if (!a || !v || !v.alive || a.team === v.team) return;
     if (!a.alive && simTime - (a.dieT || 0) > 3) return;
+    if (v.prot > 0) return;
     if (!trusted) {
         const w = a.def; let mx = 0; for (const k of ['w1', 'w2', 'w3']) if (w[k]) mx = Math.max(mx, w[k].dmg * (w[k].nn || 1)); 
         if (!(dmg > 0) || dmg > mx * 22 + 50 || dmg > a.budget + 5) return;
         a.budget -= dmg;
     }
-    const eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
+    let eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
+    if (a.ai) eff *= aiDiff().dmg;
+    eff = Math.min(eff, v.def.hp * (a.def.ln !== v.def.ln ? .3 : .5));      // no single hit takes more than 30% (50% in the same branch) of a full health bar
     v.hp -= eff;
     const dead = v.hp <= 0;
     bcast({ t: 'dmg', tg: tgId, e: Math.round(eff * 10) / 10, by, hp: Math.max(0, Math.round(v.hp)) });
@@ -1424,9 +1490,12 @@ function endMatch(win) {
     bcast({ t: 'end', win, stats, kl: M.kills, tk: M.tickets.map(x => Math.round(x)) });
 }
 function botRespawn(e) {
-    const maxTier = Math.max(1, ...Array.from(EN.values()).filter(o => !o.isBot).map(o => o.def.t));
-    if (Math.random() < .5) { const d = pickBotDef(maxTier); if (d !== e.def) setDef(e, d); }
-    e.kdone = false; spawnEnt(e); if (e.ai) { e.ai.tgt = null; e.ai.brk = 0; }
+    const refs = Array.from(EN.values()).filter(o => !o.isBot && !o.ai).map(o => o.def), bm = M && M.cfg && M.cfg.bm || 'match';
+    if (refs.length) {
+        if (bm === 'match') { const d = pickBotDef(refs, bm); if (d !== e.def) setDef(e, d); }       // follow the humans into whatever branch they are in now
+        else if (Math.random() < .5) { const d = pickBotDef(refs, bm); if (d !== e.def) setDef(e, d); }
+    }
+    e.kdone = false; spawnEnt(e); if (e.ai) aiReset(e);
 }
 function sendBots() {
     const rows = []; for (const e of EN.values()) if (e.ai) rows.push([e.id, e.def.i, r1(e.x), r1(e.y), r1(e.z), r2(e.yaw), r2(e.pitch), r2(e.roll), r2(e.tur), r2(e.gun), Math.round(e.hp), e.alive ? 1 : 0, e.fl]);
@@ -1441,7 +1510,7 @@ function sendState() {
 function applyRemote(e, i, x, y, z, yaw, pitch, roll, tur, gun, hp, alive, fl) {
     if (!e || e === ME || e.ai) return;
     if (VEHS[i] && VEHS[i] !== e.def) setDef(e, VEHS[i]);
-    if (alive && !e.alive) { e.alive = true; e.kdone = false; e.mdl.root.visible = true; e.snap = true; e.dieT = 0; e.hp = e.def.hp; e.tg = { x, y, z, yaw, pitch, roll, tur, gun }; }
+    if (alive && !e.alive) { e.alive = true; e.kdone = false; e.mdl.root.visible = true; e.snap = true; e.dieT = 0; e.prot = SPAWN_PROT; e.hp = e.def.hp; e.tg = { x, y, z, yaw, pitch, roll, tur, gun }; }
     if (!e.alive) return;
     const now = performance.now(), dt = e.lastMsg ? clamp((now - e.lastMsg) / 1000, .03, .5) : 0; e.lastMsg = now;
     if (e.tg && dt) { const k = .5; e.vx = lerp(e.vx, (x - e.tg.x) / dt, k); e.vy = lerp(e.vy, (y - e.tg.y) / dt, k); e.vz = lerp(e.vz, (z - e.tg.z) / dt, k); }
@@ -1516,7 +1585,7 @@ function hostRoster() {
 function broadcastParty() {
     if (!PARTY.host || !PARTY.net) return;
     PARTY.roster = hostRoster();
-    PARTY.net.send('all', { t: 'party', r: PARTY.roster, mode: save.mode, size: save.size, split: save.split });
+    PARTY.net.send('all', { t: 'party', r: PARTY.roster, mode: save.mode, size: save.size, split: save.split, bots: save.bots, diff: save.diff });
     UI.paintParty(); UI.refreshLobby();
 }
 function wireNet(net) {
@@ -1536,7 +1605,7 @@ function wireNet(net) {
 }
 function onNetMsg(peer, m) {
     if (!m || typeof m !== 'object') return;
-    if (m.t === 'party') { if (!PARTY.host) { PARTY.roster = m.r; save.mode = m.mode; save.size = m.size; save.split = m.split; UI.paintParty(); UI.refreshLobby(); UI.paintMenuSel(); } return; }
+    if (m.t === 'party') { if (!PARTY.host) { PARTY.roster = m.r; save.mode = m.mode; save.size = m.size; save.split = m.split; if (m.bots) save.bots = m.bots; if (m.diff) save.diff = m.diff; UI.paintParty(); UI.refreshLobby(); UI.paintMenuSel(); } return; }
     if (m.t === 'veh') { if (PARTY.host && VBY[m.v]) { PARTY.vehs[peer.id] = m.v; broadcastParty(); } return; }
     if (m.t === 'start') { if (!PARTY.host && m.cfg) { PARTY.inMatch = true; beginMatch(m.cfg, PARTY.myId, false); } return; }
     handleMatchMsg(peer.id, m);
@@ -1636,8 +1705,10 @@ const UI = {
         $$('#menu .mode').forEach(b => b.classList.toggle('on', b.dataset.m === save.mode));
         $$('#m-size button').forEach(b => b.classList.toggle('on', +b.dataset.s === save.size));
         $$('#m-split button').forEach(b => b.classList.toggle('on', +b.dataset.p === save.split));
+        $$('#m-bots button').forEach(b => b.classList.toggle('on', b.dataset.b === save.bots));
+        $$('#m-diff button').forEach(b => b.classList.toggle('on', b.dataset.d === save.diff));
         const guest = PARTY.net && !PARTY.host;
-        $$('#menu .mode,#m-size button,#m-split button').forEach(b => b.disabled = !!guest);
+        $$('#menu .mode,#m-size button,#m-split button,#m-bots button,#m-diff button').forEach(b => b.disabled = !!guest);
         $('#m-lead-note').textContent = guest ? 'The party leader picks the mode.' : (save.split ? 'Party members play against each other, bots fill the rest.' : 'Party members play together, bots fill the rest.');
         $('#b-play').textContent = guest ? 'WAITING...' : 'PLAY'; $('#b-play').disabled = !!guest;
         const nm = $('#m-name'); if (document.activeElement !== nm) nm.value = myName(); nm.disabled = !!LP() && !!(() => { try { return window.parent.HGGrapevine && window.parent.HGGrapevine.me && window.parent.HGGrapevine.me(); } catch (e) { return null; } })();
@@ -1767,6 +1838,7 @@ const UI = {
         if (d.w3) w += rl(d.w3.n, ME.t3, d.w3.rl, ' ' + ME.a3);
         let fl = d.ln === 'a' ? 'Speed ' + Math.round(ME.speed * 3.6) + ' km/h &middot; Alt ' + Math.round(ME.y) + ' m &middot; Throttle ' + Math.round(ME.thr * 100) + '%' + (ME.warn ? ' <b style="color:#ff6a5a">RETURN TO BATTLE AREA</b>' : '') : 'Speed ' + Math.round(Math.abs(ME.speed) * 3.6) + ' km/h' + (d.ln === 'n' ? ' &middot; Throttle ' + Math.round(ME.thr * 100) + '%' : '');
         $('#h-veh').innerHTML = '<div class="nm">' + esc(d.n) + '</div><div class="hp' + (hpk < .3 ? ' low' : '') + '"><i style="width:' + hpk * 100 + '%"></i><b>' + Math.max(0, Math.ceil(ME.hp)) + ' / ' + d.hp + '</b></div><div class="wp">' + w + '</div><div class="fl">' + fl + '</div>';
+        const pr = $('#h-prot'); if (ME.alive && ME.prot > 0) { pr.textContent = 'SPAWN PROTECTION ' + ME.prot.toFixed(1) + ' s'; pr.classList.add('on'); } else pr.classList.remove('on');
         if (!ME.alive) { const sec = Math.max(0, ME.respT); $('#d-sub').textContent = sec > 0 ? 'You can deploy in ' + Math.ceil(sec) + ' s' : 'Choose a vehicle and deploy'; $('#d-go').disabled = sec > 0; $('#d-go').textContent = sec > 0 ? 'WAIT ' + Math.ceil(sec) : 'DEPLOY'; }
         const b = $('#h-board'); b.classList.toggle('hidden', !UIS.board);
         if (UIS.board) {
@@ -1816,6 +1888,11 @@ function drawOverlay() {
         const p = proj(pt.x, pt.y + 16, pt.z); if (!p) return; const o = M.pts[i].own, d = Math.round(Math.hypot(pt.x - camera.position.x, pt.z - camera.position.z));
         c.fillStyle = o < 0 ? '#ddd' : '#' + TEAM_COL[o].toString(16).padStart(6, '0'); c.strokeStyle = '#000'; c.font = 'bold 16px Trebuchet MS'; c.strokeText(pt.name, p[0], p[1]); c.fillText(pt.name, p[0], p[1]); c.font = 'bold 11px Trebuchet MS'; c.fillText(d + 'm', p[0], p[1] + 13);
     });
+    // lead marker: where to put the reticle's shot to hit the target under it
+    if (ME.alive && Cam.lead) {
+        const p = proj(Cam.lead.x, Cam.lead.y, Cam.lead.z);
+        if (p) { c.strokeStyle = '#ff5a4a'; c.lineWidth = 2; c.beginPath(); c.moveTo(p[0], p[1] - 9); c.lineTo(p[0] + 9, p[1]); c.lineTo(p[0], p[1] + 9); c.lineTo(p[0] - 9, p[1]); c.closePath(); c.stroke(); }
+    }
     // where the gun really points (it lags behind the mouse)
     if (ME.alive && ME.def.ln !== 'a' && Cam.aimD) {
         const m = muzzleWorld(ME, 0), dd = Cam.aimD, fx = Math.sin(ME.tur) * Math.cos(ME.gun), fy = Math.sin(ME.gun), fz = Math.cos(ME.tur) * Math.cos(ME.gun);
@@ -1846,6 +1923,8 @@ function bindUI() {
     });
     $$('#menu .mode').forEach(b => b.onclick = () => { save.mode = b.dataset.m; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $$('#m-size button').forEach(b => b.onclick = () => { save.size = +b.dataset.s; writeSave(); UI.paintMenu(); partySettingsChanged(); });
+    $$('#m-bots button').forEach(b => b.onclick = () => { save.bots = b.dataset.b; writeSave(); UI.paintMenu(); partySettingsChanged(); });
+    $$('#m-diff button').forEach(b => b.onclick = () => { save.diff = b.dataset.d; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $$('#m-split button').forEach(b => b.onclick = () => { save.split = +b.dataset.p; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $('#b-play').onclick = () => { startPlay(); if (M) Cam.lock(); };
     $('#b-research').onclick = () => UI.open('s-research'); $('#b-garage').onclick = () => UI.open('s-garage'); $('#b-settings').onclick = () => UI.open('s-settings'); $('#b-how').onclick = () => UI.open('s-how');
@@ -1939,6 +2018,13 @@ const Cam = {
     lock() { try { const r = $('#gl').requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} },
     locked() { return document.pointerLockElement === $('#gl'); }
 };
+// where to aim to hit a moving target o with a shot of speed v fired from `from` (the shooter's own speed adds to bullets/rockets in the air)
+function leadPoint(e, o, v, from) {
+    const air = o.def.ln === 'a', cy = o.y + (air ? 0 : 1.5), sp = Math.max(60, v * (e.def.ln === 'a' ? 1 : .97) + (e.def.ln === 'a' ? e.speed * .9 : 0));
+    let px = o.x, py = cy, pz = o.z;
+    for (let i = 0; i < 3; i++) { const tt = Math.hypot(px - from.x, py - from.y, pz - from.z) / sp; px = o.x + o.vx * tt; py = cy + (air ? o.vy * tt : 0); pz = o.z + o.vz * tt; }
+    return { x: px, y: py, z: pz };
+}
 function aimRay(e) {
     camera.getWorldDirection(V3); const dx = V3.x, dy = V3.y, dz = V3.z, ox = camera.position.x, oy = camera.position.y, oz = camera.position.z;
     let t = 1200, found = false;
@@ -1949,9 +2035,10 @@ function aimRay(e) {
         const cy = o.y + (o.def.ln === 'a' ? 0 : 1.5), vx = o.x - ox, vy = cy - oy, vz = o.z - oz, tt = vx * dx + vy * dy + vz * dz;
         if (tt < 8 || tt > bt) continue;
         const px = ox + dx * tt - o.x, py = oy + dy * tt - cy, pz = oz + dz * tt - o.z;
-        if (Math.sqrt(px * px + py * py + pz * pz) < o.def.r * 1.4 + tt * .012) { best = o; bt = tt; }
+        if (Math.sqrt(px * px + py * py + pz * pz) < o.def.r * 1.8 + tt * .02) { best = o; bt = tt; }
     }
-    if (best) return { x: best.x, y: best.y + (best.def.ln === 'a' ? 0 : 1.5), z: best.z };
+    Cam.lead = null;
+    if (best) { const lp = leadPoint(e, best, e.def.w1.v, e.mdl ? muzzleWorld(e, 0) : e); Cam.lead = { x: lp.x, y: lp.y, z: lp.z, id: best.id, D: bt }; return lp; }
     return { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t };
 }
 function playerCtrl(e, dt) {
@@ -1961,6 +2048,16 @@ function playerCtrl(e, dt) {
         e.thr = clamp(e.thr + W * dt * .6, 0, 1); c.thr = e.thr;
         IN.camYaw += A * dt * 1.5; IN.camPitch = clamp(IN.camPitch + ((k.ArrowUp ? 1 : 0) - (k.ArrowDown ? 1 : 0)) * dt * .9, -1.3, 1.3);
         c.aimYaw = IN.camYaw; c.aimPitch = IN.camPitch;
+        // soft aim assist: an enemy near the reticle pulls the nose onto its lead point, so the guns (which converge there) can hit
+        Cam.lead = null; camera.getWorldDirection(V3);
+        const dx = V3.x, dy = V3.y, dz = V3.z, ox = camera.position.x, oy = camera.position.y, oz = camera.position.z; let bestA = .07;
+        for (const o of EN.values()) {
+            if (!o.alive || o.team === e.team) continue;
+            const vx = o.x - ox, vy = o.y - oy, vz = o.z - oz, L = Math.hypot(vx, vy, vz); if (L < 40 || L > 800) continue;
+            const ang = Math.acos(clamp((vx * dx + vy * dy + vz * dz) / L, -1, 1));
+            if (ang < bestA) { bestA = ang; const lp = leadPoint(e, o, d.w1.v, e); Cam.lead = { x: lp.x, y: lp.y, z: lp.z, id: o.id, D: Math.hypot(o.x - e.x, o.y - e.y, o.z - e.z) }; }
+        }
+        if (Cam.lead) { const lx = Cam.lead.x - e.x, ly = Cam.lead.y - e.y, lz = Cam.lead.z - e.z; c.aimYaw = Math.atan2(lx, lz); c.aimPitch = Math.atan2(ly, Math.hypot(lx, lz)); }
     } else {
         if (d.ln === 'n') { e.thr = clamp(e.thr + W * dt * .45, -.45, 1); c.thr = e.thr; c.steer = -A; } else { c.thr = W; c.steer = -A; }
         const p = aimRay(e), m = muzzleWorld(e, 0), b = ballistic(m.x, m.y, m.z, p.x, p.y, p.z, d.w1.v, d.w1.g);
@@ -1991,6 +2088,7 @@ function updateCamera(dt) {
 function simStep(dt) {
     simTime += dt;
     if (!M) return;
+    for (const e of EN.values()) if (e.prot > 0) e.prot -= dt;
     if (!M.host) M.t += dt;
     if (ME && ME.alive) {
         const c = playerCtrl(ME, dt); stepVehicle(ME, c, dt);
@@ -2123,7 +2221,7 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay,
     leave() { UI.leaveMatch(true); afterMatch(); },
     ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch() },
-    T: { newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
+    T: { PR, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };
 boot();

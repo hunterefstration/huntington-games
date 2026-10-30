@@ -24,7 +24,7 @@ function hostRoster() {
 function broadcastParty() {
     if (!PARTY.host || !PARTY.net) return;
     PARTY.roster = hostRoster();
-    PARTY.net.send('all', { t: 'party', r: PARTY.roster, mode: save.mode, size: save.size, split: save.split });
+    PARTY.net.send('all', { t: 'party', r: PARTY.roster, mode: save.mode, size: save.size, split: save.split, bots: save.bots, diff: save.diff });
     UI.paintParty(); UI.refreshLobby();
 }
 function wireNet(net) {
@@ -44,7 +44,7 @@ function wireNet(net) {
 }
 function onNetMsg(peer, m) {
     if (!m || typeof m !== 'object') return;
-    if (m.t === 'party') { if (!PARTY.host) { PARTY.roster = m.r; save.mode = m.mode; save.size = m.size; save.split = m.split; UI.paintParty(); UI.refreshLobby(); UI.paintMenuSel(); } return; }
+    if (m.t === 'party') { if (!PARTY.host) { PARTY.roster = m.r; save.mode = m.mode; save.size = m.size; save.split = m.split; if (m.bots) save.bots = m.bots; if (m.diff) save.diff = m.diff; UI.paintParty(); UI.refreshLobby(); UI.paintMenuSel(); } return; }
     if (m.t === 'veh') { if (PARTY.host && VBY[m.v]) { PARTY.vehs[peer.id] = m.v; broadcastParty(); } return; }
     if (m.t === 'start') { if (!PARTY.host && m.cfg) { PARTY.inMatch = true; beginMatch(m.cfg, PARTY.myId, false); } return; }
     handleMatchMsg(peer.id, m);

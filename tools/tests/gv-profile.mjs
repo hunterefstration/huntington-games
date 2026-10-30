@@ -78,11 +78,11 @@ try {
   check('...and the chip shows it', !!(await until(() => A.evaluate(() => /1 goons/.test(document.getElementById('chip-goons').textContent)), 5000)));
   // buy a title in the shop and wear it
   await A.click('[data-ptab="shop"]'); await A.click('[data-pcat="title"]');
-  await A.click('[data-buy="title:goat"]');
-  check('buying a title spends the goon', !!(await until(() => A.evaluate(() => HGGrapevine.eco.state().goons === 0 && HGGrapevine.eco.state().owned.includes('title:goat')), 10000)));
+  await A.click('[data-buy="title:gamer"]');
+  check('buying a title spends the goon', !!(await until(() => A.evaluate(() => HGGrapevine.eco.state().goons === 0 && HGGrapevine.eco.state().owned.includes('title:gamer')), 10000)));
   await A.click('[data-ptab="locker"]'); await A.click('[data-pcat="title"]');
-  await A.click('[data-equip="title:goat"]');
-  check('wearing it shows it on the profile card', !!(await until(() => A.evaluate(() => /GOAT/.test(document.querySelector('.phead').textContent)), 10000)));
+  await A.click('[data-equip="title:gamer"]');
+  check('wearing it shows it on the profile card', !!(await until(() => A.evaluate(() => /Gamer/.test(document.querySelector('.phead').textContent)), 10000)));
   // leaderboards fed from the saves
   await A.click('#tab-lb');
   await A.evaluate(() => { const g = [...document.querySelectorAll('[data-lbg]')].find(b => /Spikes/.test(b.textContent)); g && g.click(); });

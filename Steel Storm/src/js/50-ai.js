@@ -2,8 +2,37 @@
 // BOT AI: simple steering per branch. Attack the nearest enemy, otherwise capture points / patrol.
 // Bots only run on the match host (or in solo). They produce the same control struct the player does.
 // ============================================================
+// ---- difficulty: reaction time before a bot opens fire on a new target, how wrong its aim starts (e0, radians) and how good it gets
+// while it keeps tracking (e1, never zero; tau = seconds to get there), burst / pause lengths, firing range scale, how well it leads
+// a moving target, and a damage scale. Normal is tuned so an average player beats a bot of the same vehicle more often than not.
+const BOTD = {
+    easy: { react: [1.1, 1.8], e0: .075, e1: .03, tau: 4, burst: [.6, 1], cd: [2.4, 3.6], rng: .6, lead: [.3, .6], dmg: .55, turn: .7 },
+    normal: { react: [.6, 1.2], e0: .055, e1: .018, tau: 3.5, burst: [.7, 1.2], cd: [1.8, 2.8], rng: .72, lead: [.5, .8], dmg: .75, turn: .85 },
+    hard: { react: [.35, .7], e0: .035, e1: .009, tau: 3, burst: [.9, 1.5], cd: [.9, 1.6], rng: .85, lead: [.7, .95], dmg: .95, turn: 1 }
+};
+const aiDiff = () => BOTD[M && M.cfg && M.cfg.diff] || BOTD.normal;
+function aiAcquire(e, t) {      // a new target: wait a human-ish moment before shooting, start with a sloppy aim
+    const a = e.ai, D = aiDiff(); a.tgt = t; a.react = t ? rnd(D.react[0], D.react[1]) : 0; a.track = 0; a.lead = rnd(D.lead[0], D.lead[1]); a.bOn = false; a.bT = 0; a.cdT = rnd(0, .5); a.lostT = 0;
+}
+function aiReset(e) { const a = e.ai; a.tgt = null; a.brk = 0; a.react = 0; a.track = 0; a.bOn = false; a.bT = 0; a.cdT = 0; a.rkCd = 0; a.bmCd = 0; a.flee = a.fcd = 0; a.rkN = a.bmN = 0; a.lostT = 0; a.tT = rnd(.1, .5); }
+function aiErr(e, dt) {         // aim error (radians): shrinks the longer the bot keeps tracking, never reaches zero; drifts, so it is not a fixed offset
+    const a = e.ai, D = aiDiff(); a.track += dt;
+    const k = (D.e1 + (D.e0 - D.e1) * Math.exp(-a.track / D.tau)) * (1.5 - a.skill) * (e.def.ln === 'g' ? 1.7 : e.def.ln === 'n' ? 1.4 : .55);
+    a.eT -= dt; if (a.eT <= 0) { a.eT = rnd(.3, .7); a.gy = (Math.random() < .5 ? -1 : 1) * rnd(.4, 1) * k; a.gp = (Math.random() < .5 ? -1 : 1) * rnd(.4, 1) * k; }
+    const f = Math.min(1, dt * 5); a.ey += ((a.gy || 0) - a.ey) * f; a.ep += ((a.gp || 0) - a.ep) * f; return k;
+}
+function aiTrigger(e, dt, rl, seen, ready) {     // burst fire: reaction time, then bursts with pauses in between (reloads are still enforced by weaponFire)
+    const a = e.ai, D = aiDiff();
+    if (!seen) return false;
+    if (a.react > 0) { a.react -= dt; return false; }
+    if (a.cdT > 0) { a.cdT -= dt; return false; }
+    if (!ready) return false;
+    if (!a.bOn) { a.bOn = true; a.bT = rnd(D.burst[0], D.burst[1]) * (rl < .2 ? 1.6 : 1); }
+    a.bT -= dt; if (a.bT <= 0) { a.bOn = false; a.cdT = rnd(D.cd[0], D.cd[1]) * (rl > 1 ? .8 : rl < .2 ? .35 : 1); }
+    return true;
+}
 function aiNew(e) {
-    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.2, .6), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
+    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.6, 1.2), track: 0, lead: .7, bOn: false, bT: 0, cdT: 0, lostT: 0, rkCd: 0, bmCd: 0, rkN: 0, bmN: 0, flee: 0, fcd: 0, gy: 0, gp: 0, pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
     e.remote = false;
 }
 const d3 = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
@@ -11,7 +40,7 @@ function aiPickTarget(e) {
     const ln = e.def.ln, bomber = !!e.def.w3 && ln === 'a';
     let best = null, bs = 1e9; const mc = compOf(e.x, e.z);
     for (const o of EN.values()) {
-        if (!o.alive || o.team === e.team) continue;
+        if (!o.alive || o.team === e.team || o.prot > 0) continue;
         const d = d3(e, o), ol = o.def.ln; let lim, pref = 1;
         if (ln === 'g') { if (ol === 'a') { lim = 280; pref = 1.8; } else if (ol === 'n') lim = 380; else lim = compOf(o.x, o.z) === mc ? 1000 : 400; }
         else if (ln === 'n') { lim = ol === 'a' ? 260 : 650; if (ol === 'n') pref = .8; }
@@ -39,10 +68,10 @@ function steerTo(e, c, gx, gz, spd) {
     const err = angDiff(e.yaw, best);
     c.steer = clamp(-err * 2.2, -1, 1); c.thr = (Math.abs(err) > 1.2 ? .15 : 1) * spd;
 }
-function aiAim(e, c, t) {          // turret aim at the target with lead and a bit of human error
+function aiAim(e, c, t, dt) {          // turret aim at the target with imperfect lead and an aim error that shrinks while tracking
     const a = e.ai, w = e.def.w1, sea = e.def.ln === 'n';
-    a.eT -= .016; if (a.eT <= 0) { a.eT = .7; const k = (1 - a.skill) * .05 + .004; a.ey = rnd(-k, k); a.ep = rnd(-k, k); }
-    const m = e.mdl ? muzzleWorld(e, 0) : e, D = d3(e, t), tt = D / w.v, py = t.y + (t.def.ln === 'a' ? 0 : 1.2);
+    aiErr(e, dt);
+    const m = e.mdl ? muzzleWorld(e, 0) : e, D = d3(e, t), tt = D / w.v * a.lead, py = t.y + (t.def.ln === 'a' ? 0 : 1.2);
     const b = ballistic(m.x, m.y, m.z, t.x + t.vx * tt, py + t.vy * tt, t.z + t.vz * tt, w.v, w.g);
     c.aimYaw = b.yaw + a.ey; c.aimPitch = b.pitch + a.ep; return D;
 }
@@ -54,13 +83,13 @@ function hasLOS(e, t) {         // is there open air between me and the target (
 function aiSurface(e, dt, c) {
     const a = e.ai, d = e.def, sea = d.ln === 'n', t = a.tgt && a.tgt.alive ? a.tgt : null;
     c.aimYaw = e.tur; c.aimPitch = 0;
-    const rng = sea ? 430 : 310; let los = false, D = 1e9;
+    const DD = aiDiff(), rng = (sea ? 430 : 310) * DD.rng; let los = false, D = 1e9;
     a.losT = (a.losT || 0) - dt; if (t && a.losT <= 0) { a.losT = .3; a.los = hasLOS(e, t); }
     if (t) {
-        D = aiAim(e, c, t); los = !!a.los; a.react -= dt;
+        D = aiAim(e, c, t, dt); los = !!a.los;
         const aligned = Math.abs(angDiff(e.tur, c.aimYaw)) < .05 + (1 - a.skill) * .04 && Math.abs(e.gun - clamp(c.aimPitch, -.14, sea ? .75 : .5)) < .06;
-        if (los && D < rng && aligned && a.react <= 0) { c.f1 = true; if (Math.random() < .3) a.react = rnd(0, .5); }
-        if (los && D < 230 && aligned) c.f2 = true;
+        if (!los) a.lostT += dt; else { if (a.lostT > 1) a.react = Math.max(a.react, rnd(.3, .6)); a.lostT = 0; }
+        if (los && D < rng && aiTrigger(e, dt, d.w1.rl, true, aligned)) { c.f1 = true; if (D < 150 * DD.rng / .72) c.f2 = true; }
     }
     // where to go: engage a visible surface enemy, otherwise the objective
     const surf = t && t.def.ln !== 'a' && (sea || compatLand(e, t));
@@ -89,19 +118,24 @@ function aiAir(e, dt, c) {
     c.thr = 1; c.aimYaw = e.yaw; c.aimPitch = 0;
     const fx = Math.sin(e.yaw) * Math.cos(e.pitch), fy = Math.sin(e.pitch), fz = Math.cos(e.yaw) * Math.cos(e.pitch);
     if (a.brk > 0) {
-        a.brk -= dt; c.aimYaw = e.yaw + a.turnDir * .9; c.aimPitch = .3 + a.skill * .1;
+        a.brk -= dt; c.aimYaw = e.yaw + a.turnDir * .9; c.aimPitch = clamp((160 - e.y) * .012, -.2, .35);
     } else if (t) {
-        const D = d3(e, t), tt = D / (w.v + e.speed * .6), grd = t.def.ln !== 'a';
+        const DD = aiDiff(), D = d3(e, t), tt = D / (w.v + e.speed * .6) * (1 - (1 - a.lead) * .35), grd = t.def.ln !== 'a';
         const tx = t.x + t.vx * tt, tz = t.z + t.vz * tt; let ty = t.y + (grd ? (bomber ? 65 : 2) : t.vy * tt);
         const dx = tx - e.x, dy = ty - e.y, dz = tz - e.z, hd = Math.hypot(dx, dz);
-        a.eT -= dt; if (a.eT <= 0) { a.eT = .6; const k = (1 - a.skill) * .06; a.ey = rnd(-k, k); a.ep = rnd(-k, k); }
+        aiErr(e, dt);
         c.aimYaw = Math.atan2(dx, dz) + a.ey; c.aimPitch = Math.atan2(dy, hd) + a.ep;
-        const dot = (fx * dx + fy * dy + fz * dz) / (D + .01);
-        if (D < 330 && dot > .985 && !bomber) c.f1 = true;
-        else if (bomber && D < 300 && dot > .98 && grd) c.f1 = true;
-        if (d.w2 && dot > .985 && D > 120 && D < 520 && e.a2 > 0) c.f2 = true;
-        if (d.w3 && grd && e.a3 > 0 && hd < 110) { const hh = Math.max(10, e.y - t.y), adv = e.speed * Math.sqrt(2 * hh / d.w3.g); if (Math.abs(hd - adv) < 28 && dot > .8) c.f3 = true; }
-        if ((grd && bomber && hd < 45) || (D < 55 && !grd) || (grd && !bomber && D < 90 && e.y - t.y < 40)) { a.brk = rnd(1.8, 3.2); a.turnDir = Math.random() < .5 ? -1 : 1; }
+        const LV = Math.hypot(dx, dy, dz) + .01, dot = (fx * dx + fy * dy + fz * dz) / LV;      // cos of the angle between my nose and the aim point
+        a.flee -= dt; a.fcd -= dt;      // an enemy jet on my tail: run straight-ish for a moment instead of circling with it forever
+        if (!grd && D < 320 && dot < -.2 && a.flee <= 0 && a.fcd <= 0) { a.flee = rnd(1.3, 2.2); a.fcd = a.flee + rnd(2, 3.5); }
+        const fleeing = a.flee > 0; if (fleeing) { c.aimYaw = e.yaw + Math.sin(simTime * 2.4 + e.id) * .3; c.aimPitch = clamp((160 - e.y) * .01, -.15, .2); }
+        const rA = 330 * DD.rng, miss = LV * Math.sqrt(Math.max(0, 1 - dot * dot)), onAim = dot > .9 && miss < 6.5 + D * .012, gunReady = bomber ? (D < rA * .9 && dot > .985 && grd) : (D < rA && onAim);
+        const go = !fleeing && aiTrigger(e, dt, w.rl, D < rA * 1.6, gunReady);
+        if (go) c.f1 = true;
+        a.rkCd -= dt; a.bmCd -= dt;
+        if (d.w2 && go && D > 120 && D < rA * 1.2 && e.a2 > 0 && a.rkCd <= 0 && e.t2 <= 0) { c.f2 = true; if (++a.rkN >= 2) { a.rkN = 0; a.rkCd = rnd(4, 7); } }
+        if (d.w3 && grd && e.a3 > 0 && hd < 110 && a.bmCd <= 0 && a.react <= 0) { const hh = Math.max(10, e.y - t.y), adv = e.speed * Math.sqrt(2 * hh / d.w3.g); if (Math.abs(hd - adv) < 28 && dot > .8 && e.t3 <= 0) { c.f3 = true; if (++a.bmN >= 2) { a.bmN = 0; a.bmCd = rnd(4, 6); } } }
+        if ((grd && bomber && hd < 45) || (D < 55 && !grd) || (grd && !bomber && D < 90 && e.y - t.y < 40)) { a.brk = rnd(1.1, 2); a.turnDir = Math.random() < .5 ? -1 : 1; a.bmN = 0; }
     } else {
         const dx = (a.wp ? a.wp.x : 0) - e.x, dz = (a.wp ? a.wp.z : 0) - e.z;
         if (!a.wp || Math.hypot(dx, dz) < 100) a.wp = { x: rnd(-400, 400), z: rnd(-300, 300) };
@@ -116,8 +150,14 @@ function aiAir(e, dt, c) {
 function aiStep(e, dt) {
     if (!e.ai) aiNew(e);
     if (e.frozen) { applyAnim(e, dt); return; }       // test hook: a bot that stands still
-    const a = e.ai; a.tT -= dt; if (a.tT <= 0) { a.tT = .6 + Math.random() * .3; a.tgt = aiPickTarget(e); }
+    const a = e.ai; if (a.tgt && (!a.tgt.alive || a.tgt.prot > 0)) { aiAcquire(e, null); a.tT = 0; }
+    a.tT -= dt; if (a.tT <= 0) {
+        a.tT = .6 + Math.random() * .3; const n = aiPickTarget(e), cur = a.tgt;
+        if (n !== cur && !(cur && n && d3(e, cur) < d3(e, n) * 1.4 && d3(e, cur) < 900)) aiAcquire(e, n);      // keep the current target unless a much closer one shows up
+    }
+    e.turnK = aiDiff().turn;      // easier bots also bank a little slower
     const c = { thr: 0, steer: 0, aimYaw: e.tur, aimPitch: 0, f1: false, f2: false, f3: false };
     if (e.def.ln === 'a') aiAir(e, dt, c); else aiSurface(e, dt, c);
+    if (a.mute) c.f1 = c.f2 = c.f3 = false;
     stepVehicle(e, c, dt);
 }

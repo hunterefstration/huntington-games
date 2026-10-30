@@ -413,3 +413,5 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
 .ppfp.art svg { width: 100%; height: 100%; display: block; }
 .ppfp.art.leg { box-shadow: 0 0 0 2px #f6c945, 0 0 10px rgba(246,201,69,.6); }
 .psec { margin: 14px 0 6px; font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+/* the tabs wrap onto a second line instead of hiding behind the ? and name chip when space runs out */
+#tabs { flex-wrap: wrap; overflow: visible; row-gap: 0; }

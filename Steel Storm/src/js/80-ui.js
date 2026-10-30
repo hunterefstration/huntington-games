@@ -16,8 +16,10 @@ const UI = {
         $$('#menu .mode').forEach(b => b.classList.toggle('on', b.dataset.m === save.mode));
         $$('#m-size button').forEach(b => b.classList.toggle('on', +b.dataset.s === save.size));
         $$('#m-split button').forEach(b => b.classList.toggle('on', +b.dataset.p === save.split));
+        $$('#m-bots button').forEach(b => b.classList.toggle('on', b.dataset.b === save.bots));
+        $$('#m-diff button').forEach(b => b.classList.toggle('on', b.dataset.d === save.diff));
         const guest = PARTY.net && !PARTY.host;
-        $$('#menu .mode,#m-size button,#m-split button').forEach(b => b.disabled = !!guest);
+        $$('#menu .mode,#m-size button,#m-split button,#m-bots button,#m-diff button').forEach(b => b.disabled = !!guest);
         $('#m-lead-note').textContent = guest ? 'The party leader picks the mode.' : (save.split ? 'Party members play against each other, bots fill the rest.' : 'Party members play together, bots fill the rest.');
         $('#b-play').textContent = guest ? 'WAITING...' : 'PLAY'; $('#b-play').disabled = !!guest;
         const nm = $('#m-name'); if (document.activeElement !== nm) nm.value = myName(); nm.disabled = !!LP() && !!(() => { try { return window.parent.HGGrapevine && window.parent.HGGrapevine.me && window.parent.HGGrapevine.me(); } catch (e) { return null; } })();
@@ -147,6 +149,7 @@ const UI = {
         if (d.w3) w += rl(d.w3.n, ME.t3, d.w3.rl, ' ' + ME.a3);
         let fl = d.ln === 'a' ? 'Speed ' + Math.round(ME.speed * 3.6) + ' km/h &middot; Alt ' + Math.round(ME.y) + ' m &middot; Throttle ' + Math.round(ME.thr * 100) + '%' + (ME.warn ? ' <b style="color:#ff6a5a">RETURN TO BATTLE AREA</b>' : '') : 'Speed ' + Math.round(Math.abs(ME.speed) * 3.6) + ' km/h' + (d.ln === 'n' ? ' &middot; Throttle ' + Math.round(ME.thr * 100) + '%' : '');
         $('#h-veh').innerHTML = '<div class="nm">' + esc(d.n) + '</div><div class="hp' + (hpk < .3 ? ' low' : '') + '"><i style="width:' + hpk * 100 + '%"></i><b>' + Math.max(0, Math.ceil(ME.hp)) + ' / ' + d.hp + '</b></div><div class="wp">' + w + '</div><div class="fl">' + fl + '</div>';
+        const pr = $('#h-prot'); if (ME.alive && ME.prot > 0) { pr.textContent = 'SPAWN PROTECTION ' + ME.prot.toFixed(1) + ' s'; pr.classList.add('on'); } else pr.classList.remove('on');
         if (!ME.alive) { const sec = Math.max(0, ME.respT); $('#d-sub').textContent = sec > 0 ? 'You can deploy in ' + Math.ceil(sec) + ' s' : 'Choose a vehicle and deploy'; $('#d-go').disabled = sec > 0; $('#d-go').textContent = sec > 0 ? 'WAIT ' + Math.ceil(sec) : 'DEPLOY'; }
         const b = $('#h-board'); b.classList.toggle('hidden', !UIS.board);
         if (UIS.board) {
@@ -196,6 +199,11 @@ function drawOverlay() {
         const p = proj(pt.x, pt.y + 16, pt.z); if (!p) return; const o = M.pts[i].own, d = Math.round(Math.hypot(pt.x - camera.position.x, pt.z - camera.position.z));
         c.fillStyle = o < 0 ? '#ddd' : '#' + TEAM_COL[o].toString(16).padStart(6, '0'); c.strokeStyle = '#000'; c.font = 'bold 16px Trebuchet MS'; c.strokeText(pt.name, p[0], p[1]); c.fillText(pt.name, p[0], p[1]); c.font = 'bold 11px Trebuchet MS'; c.fillText(d + 'm', p[0], p[1] + 13);
     });
+    // lead marker: where to put the reticle's shot to hit the target under it
+    if (ME.alive && Cam.lead) {
+        const p = proj(Cam.lead.x, Cam.lead.y, Cam.lead.z);
+        if (p) { c.strokeStyle = '#ff5a4a'; c.lineWidth = 2; c.beginPath(); c.moveTo(p[0], p[1] - 9); c.lineTo(p[0] + 9, p[1]); c.lineTo(p[0], p[1] + 9); c.lineTo(p[0] - 9, p[1]); c.closePath(); c.stroke(); }
+    }
     // where the gun really points (it lags behind the mouse)
     if (ME.alive && ME.def.ln !== 'a' && Cam.aimD) {
         const m = muzzleWorld(ME, 0), dd = Cam.aimD, fx = Math.sin(ME.tur) * Math.cos(ME.gun), fy = Math.sin(ME.gun), fz = Math.cos(ME.tur) * Math.cos(ME.gun);
@@ -226,6 +234,8 @@ function bindUI() {
     });
     $$('#menu .mode').forEach(b => b.onclick = () => { save.mode = b.dataset.m; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $$('#m-size button').forEach(b => b.onclick = () => { save.size = +b.dataset.s; writeSave(); UI.paintMenu(); partySettingsChanged(); });
+    $$('#m-bots button').forEach(b => b.onclick = () => { save.bots = b.dataset.b; writeSave(); UI.paintMenu(); partySettingsChanged(); });
+    $$('#m-diff button').forEach(b => b.onclick = () => { save.diff = b.dataset.d; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $$('#m-split button').forEach(b => b.onclick = () => { save.split = +b.dataset.p; writeSave(); UI.paintMenu(); partySettingsChanged(); });
     $('#b-play').onclick = () => { startPlay(); if (M) Cam.lock(); };
     $('#b-research').onclick = () => UI.open('s-research'); $('#b-garage').onclick = () => UI.open('s-garage'); $('#b-settings').onclick = () => UI.open('s-settings'); $('#b-how').onclick = () => UI.open('s-how');

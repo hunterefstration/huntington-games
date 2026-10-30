@@ -24,7 +24,7 @@ let save = null;
 function defaultSave() {
     return {
         v: SAVE_V, name: '', credits: 800, freeRp: 0, rp: {}, researched: {}, owned: {}, target: null,
-        lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0,
+        lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0, bots: 'match', diff: 'normal',
         settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false },
         stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0 }, seenHow: false
     };

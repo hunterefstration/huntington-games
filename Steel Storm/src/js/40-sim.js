@@ -75,7 +75,7 @@ function updateProjectiles(dt) {
         let hit = null;
         for (const e of EN.values()) {
             if (!e.alive || e.team === p.team || e.id === p.own) continue;
-            if (segSphere(ox, oy, oz, p.x, p.y, p.z, e.x, e.y + (e.def.ln === 'a' ? 0 : 1.5), e.z, e.def.r + (p.k === 'bullet' ? 0.6 : 0.3))) { hit = e; break; }
+            if (segSphere(ox, oy, oz, p.x, p.y, p.z, e.x, e.y + (e.def.ln === 'a' ? 0 : 1.5), e.z, e.def.r + (p.k === 'bullet' ? 0.6 : 0.3) + (p.big ? (p.k === 'bullet' ? 1.2 : 1.6) : 0))) { hit = e; break; }
         }
         const gh = GHS(p.x, p.z);
         if (hit || p.y < gh || p.life <= 0) {
@@ -197,7 +197,7 @@ function stepAir(e, c, dt) {
     if (e.y > 330) ap = Math.min(ap, -.2);
     const tgt = lerp(d.minSp, d.sp, e.thr) - Math.sin(e.pitch) * d.sp * .3;
     e.speed += (tgt - e.speed) * Math.min(1, dt * .9); e.speed = clamp(e.speed, d.minSp * .85, d.sp * 1.12);
-    const my = d.turn, mp = d.turn * .75, yr = clamp(angDiff(e.yaw, ay) * 2.6, -my, my), pr = clamp((ap - e.pitch) * 2.6, -mp, mp);
+    const tk = e.turnK || 1, my = d.turn * tk, mp = d.turn * .75 * tk, yr = clamp(angDiff(e.yaw, ay) * 2.6, -my, my), pr = clamp((ap - e.pitch) * 2.6, -mp, mp);
     e.yaw += yr * dt; e.pitch = clamp(e.pitch + pr * dt, -1.3, 1.3);
     e.roll += (clamp(-yr / my, -1, 1) * .95 - e.roll) * Math.min(1, dt * 4);
     const cp = Math.cos(e.pitch);
@@ -255,12 +255,19 @@ function weaponFire(e, slot, c) {
         const m = muzzleWorld(e, d.ln === 'n' && w.k === 'shell' ? j : e.muz); let x = m.x, y = m.y, z = m.z, dir, vx0 = 0, vy0 = 0, vz0 = 0;
         if (d.ln === 'a') {
             const cp = Math.cos(e.pitch), fx = Math.sin(e.yaw) * cp, fy = Math.sin(e.pitch), fz = Math.cos(e.yaw) * cp, spr = w.sprd || 0;
-            dir = [fx + rnd(-1, 1) * spr, fy + rnd(-1, 1) * spr, fz + rnd(-1, 1) * spr]; vx0 = fx * e.speed; vy0 = fy * e.speed; vz0 = fz * e.speed;
+            // wing guns / rocket rails converge on the nose line (at the locked target's range if the player has one)
+            const Dc = e === ME && Cam.lead ? clamp(Cam.lead.D, 120, 700) : 350, cx = e.x + fx * Dc - x, cy2 = e.y + fy * Dc - y, cz = e.z + fz * Dc - z, cl = Math.hypot(cx, cy2, cz) || 1;
+            dir = [cx / cl + rnd(-1, 1) * spr, cy2 / cl + rnd(-1, 1) * spr, cz / cl + rnd(-1, 1) * spr];
+            if (e === ME && Cam.lead && w.k !== 'bomb') {       // soft lock: a target within ~7 degrees of the nose gets the shots sent at its lead point
+                const lx = Cam.lead.x - x, ly = Cam.lead.y - y, lz = Cam.lead.z - z, ll = Math.hypot(lx, ly, lz) || 1;
+                if ((lx * fx + ly * fy + lz * fz) / ll > .993) dir = [lx / ll + rnd(-1, 1) * spr * .5, ly / ll + rnd(-1, 1) * spr * .5, lz / ll + rnd(-1, 1) * spr * .5];
+            }
+            vx0 = fx * e.speed; vy0 = fy * e.speed; vz0 = fz * e.speed;
             if (w.k === 'bomb') { y -= 1.2; dir = [0, 0, 0]; }
             if (w.k === 'rocket') y -= .5;
         } else dir = dirAt(w.k === 'shell' ? (w.spread || 0.004) : (w.sprd || 0.02));
         const v = w.v || 0, vx = dir[0] * v + vx0, vy = dir[1] * v + vy0, vz = dir[2] * v + vz0;
-        const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep });
+        const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep, big: !e.ai });
         if (!rep) p.dmg = 0;
         e.nShots = (e.nShots || 0) + 1;
         out.push([+x.toFixed(1), +y.toFixed(1), +z.toFixed(1), +vx.toFixed(1), +vy.toFixed(1), +vz.toFixed(1)]);

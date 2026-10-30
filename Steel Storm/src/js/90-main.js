@@ -8,6 +8,13 @@ const Cam = {
     lock() { try { const r = $('#gl').requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} },
     locked() { return document.pointerLockElement === $('#gl'); }
 };
+// where to aim to hit a moving target o with a shot of speed v fired from `from` (the shooter's own speed adds to bullets/rockets in the air)
+function leadPoint(e, o, v, from) {
+    const air = o.def.ln === 'a', cy = o.y + (air ? 0 : 1.5), sp = Math.max(60, v * (e.def.ln === 'a' ? 1 : .97) + (e.def.ln === 'a' ? e.speed * .9 : 0));
+    let px = o.x, py = cy, pz = o.z;
+    for (let i = 0; i < 3; i++) { const tt = Math.hypot(px - from.x, py - from.y, pz - from.z) / sp; px = o.x + o.vx * tt; py = cy + (air ? o.vy * tt : 0); pz = o.z + o.vz * tt; }
+    return { x: px, y: py, z: pz };
+}
 function aimRay(e) {
     camera.getWorldDirection(V3); const dx = V3.x, dy = V3.y, dz = V3.z, ox = camera.position.x, oy = camera.position.y, oz = camera.position.z;
     let t = 1200, found = false;
@@ -18,9 +25,10 @@ function aimRay(e) {
         const cy = o.y + (o.def.ln === 'a' ? 0 : 1.5), vx = o.x - ox, vy = cy - oy, vz = o.z - oz, tt = vx * dx + vy * dy + vz * dz;
         if (tt < 8 || tt > bt) continue;
         const px = ox + dx * tt - o.x, py = oy + dy * tt - cy, pz = oz + dz * tt - o.z;
-        if (Math.sqrt(px * px + py * py + pz * pz) < o.def.r * 1.4 + tt * .012) { best = o; bt = tt; }
+        if (Math.sqrt(px * px + py * py + pz * pz) < o.def.r * 1.8 + tt * .02) { best = o; bt = tt; }
     }
-    if (best) return { x: best.x, y: best.y + (best.def.ln === 'a' ? 0 : 1.5), z: best.z };
+    Cam.lead = null;
+    if (best) { const lp = leadPoint(e, best, e.def.w1.v, e.mdl ? muzzleWorld(e, 0) : e); Cam.lead = { x: lp.x, y: lp.y, z: lp.z, id: best.id, D: bt }; return lp; }
     return { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t };
 }
 function playerCtrl(e, dt) {
@@ -30,6 +38,16 @@ function playerCtrl(e, dt) {
         e.thr = clamp(e.thr + W * dt * .6, 0, 1); c.thr = e.thr;
         IN.camYaw += A * dt * 1.5; IN.camPitch = clamp(IN.camPitch + ((k.ArrowUp ? 1 : 0) - (k.ArrowDown ? 1 : 0)) * dt * .9, -1.3, 1.3);
         c.aimYaw = IN.camYaw; c.aimPitch = IN.camPitch;
+        // soft aim assist: an enemy near the reticle pulls the nose onto its lead point, so the guns (which converge there) can hit
+        Cam.lead = null; camera.getWorldDirection(V3);
+        const dx = V3.x, dy = V3.y, dz = V3.z, ox = camera.position.x, oy = camera.position.y, oz = camera.position.z; let bestA = .07;
+        for (const o of EN.values()) {
+            if (!o.alive || o.team === e.team) continue;
+            const vx = o.x - ox, vy = o.y - oy, vz = o.z - oz, L = Math.hypot(vx, vy, vz); if (L < 40 || L > 800) continue;
+            const ang = Math.acos(clamp((vx * dx + vy * dy + vz * dz) / L, -1, 1));
+            if (ang < bestA) { bestA = ang; const lp = leadPoint(e, o, d.w1.v, e); Cam.lead = { x: lp.x, y: lp.y, z: lp.z, id: o.id, D: Math.hypot(o.x - e.x, o.y - e.y, o.z - e.z) }; }
+        }
+        if (Cam.lead) { const lx = Cam.lead.x - e.x, ly = Cam.lead.y - e.y, lz = Cam.lead.z - e.z; c.aimYaw = Math.atan2(lx, lz); c.aimPitch = Math.atan2(ly, Math.hypot(lx, lz)); }
     } else {
         if (d.ln === 'n') { e.thr = clamp(e.thr + W * dt * .45, -.45, 1); c.thr = e.thr; c.steer = -A; } else { c.thr = W; c.steer = -A; }
         const p = aimRay(e), m = muzzleWorld(e, 0), b = ballistic(m.x, m.y, m.z, p.x, p.y, p.z, d.w1.v, d.w1.g);
@@ -193,7 +211,7 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay,
     leave() { UI.leaveMatch(true); afterMatch(); },
     ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch() },
-    T: { newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
+    T: { PR, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };
 boot();

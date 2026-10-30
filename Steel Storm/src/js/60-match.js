@@ -6,8 +6,13 @@ const BOT_NAMES = ['Ace', 'Viper', 'Rook', 'Bolt', 'Echo', 'Fang', 'Hawk', 'Ivy'
 const MODES = { tdm: { name: 'Team Battle', kills: 15, time: 600 }, conq: { name: 'Conquest', tickets: 100, time: 720 } };
 let HQ = {}, hqT = 0, sendT = 0, bsT = 0, msT = 0;
 
-function pickBotDef(maxTier) {
-    const r = Math.random(), ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n', tier = clamp(maxTier - (Math.random() < .45 ? 1 : 0), 1, 4);
+// Bots: "match" = fight what the humans fly/drive: pick a random human and use their branch (tank / jet / ship) and their tier or one lower,
+// so a solo player always meets his own branch and a party gets a mix weighted by what its members use. "mixed" = any branch.
+function pickBotDef(refs, mode) {
+    const maxTier = Math.max(1, ...refs.map(d => d.t));
+    let ln, tier;
+    if (mode === 'mixed') { const r = Math.random(); ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n'; tier = clamp(maxTier - (Math.random() < .45 ? 1 : 0), 1, 4); }
+    else { const ref = refs[Math.floor(Math.random() * refs.length)] || VBY.g1a; ln = ref.ln; tier = clamp(ref.t - (Math.random() < .5 ? 1 : 0), 1, 4); }
     const L = VEHS.filter(v => v.ln === ln && v.t === tier); return L[Math.floor(Math.random() * L.length)];
 }
 // Build the match description (host / solo). players = [{id,name,veh}], returns cfg that every client uses.
@@ -15,9 +20,10 @@ function makeConfig(players, opts) {
     const mode = opts.mode || save.mode, size = opts.size || save.size, split = opts.split !== undefined ? opts.split : save.split;
     const teams = [[], []], cfg = { mode, size, players: [], bots: [], seed: Date.now() & 0xffffff, limit: {} };
     players.forEach((p, i) => { const team = split ? i % 2 : 0; cfg.players.push({ id: p.id, name: p.name, veh: p.veh, team }); teams[team].push(p); });
-    let maxTier = 1; players.forEach(p => { if (VBY[p.veh]) maxTier = Math.max(maxTier, VBY[p.veh].t); });
+    const bm = opts.bots || save.bots || 'match', refs = players.map(p => VBY[p.veh]).filter(Boolean);
+    cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
     let bi = 0, names = BOT_NAMES.slice().sort(() => Math.random() - .5);
-    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(maxTier); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
+    for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) { const d = pickBotDef(refs, bm); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, team: t }); bi++; }
     const mm = MODES[mode]; cfg.limit = { kills: opts.killLimit || mm.kills || 0, tickets: opts.tickets || mm.tickets || 0, time: opts.time || mm.time };
     return cfg;
 }
@@ -53,7 +59,7 @@ function netFire(e, slot, ps) { if (netOn()) PARTY.net.send('all', { t: 'fire', 
 // ---------- damage ----------
 function reportHit(p, tg, dmg) {
     if (!M || dmg <= 0.05) return;
-    const own = EN.get(p.own); if (!own) return;
+    const own = EN.get(p.own); if (!own || tg.prot > 0) return;
     own.nHits = (own.nHits || 0) + 1;
     if (own === ME) { UI.hitMarker(false); sfx('hit'); }
     if (M.host) hostDamage(p.own, tg.id, dmg, p.pk || 0, p.slot, true);
@@ -151,9 +157,12 @@ function endMatch(win) {
     bcast({ t: 'end', win, stats, kl: M.kills, tk: M.tickets.map(x => Math.round(x)) });
 }
 function botRespawn(e) {
-    const maxTier = Math.max(1, ...Array.from(EN.values()).filter(o => !o.isBot).map(o => o.def.t));
-    if (Math.random() < .5) { const d = pickBotDef(maxTier); if (d !== e.def) setDef(e, d); }
-    e.kdone = false; spawnEnt(e); if (e.ai) { e.ai.tgt = null; e.ai.brk = 0; }
+    const refs = Array.from(EN.values()).filter(o => !o.isBot && !o.ai).map(o => o.def), bm = M && M.cfg && M.cfg.bm || 'match';
+    if (refs.length) {
+        if (bm === 'match') { const d = pickBotDef(refs, bm); if (d !== e.def) setDef(e, d); }       // follow the humans into whatever branch they are in now
+        else if (Math.random() < .5) { const d = pickBotDef(refs, bm); if (d !== e.def) setDef(e, d); }
+    }
+    e.kdone = false; spawnEnt(e); if (e.ai) aiReset(e);
 }
 function sendBots() {
     const rows = []; for (const e of EN.values()) if (e.ai) rows.push([e.id, e.def.i, r1(e.x), r1(e.y), r1(e.z), r2(e.yaw), r2(e.pitch), r2(e.roll), r2(e.tur), r2(e.gun), Math.round(e.hp), e.alive ? 1 : 0, e.fl]);
