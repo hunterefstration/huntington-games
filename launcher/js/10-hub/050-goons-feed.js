@@ -50,9 +50,9 @@ var LB_FEED = [
   // Last Light: every level's best time, and the full game = all of them added up (only once all 17 are done)
   ['lumi:*', function () {
     var lv = (feedRd('lumi_save') || {}).levels || {}, out = [], ids = [], sum = 0;
-    for (var w = 1; w <= 4; w++) for (var n = 1; n <= 4; n++) ids.push(w + '-' + n); ids.push('5-1');
+    for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) ids.push(w + '-' + n); ids.push('5-1');      // (Last Light 1.2: 10 levels a world)
     ids.forEach(function (id) { var b = lv[id] && feedNum(lv[id].best); if (b > 0) { out.push(['lumi:lv' + id, b]); sum += b; } });
-    if (out.length === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 17 }]);
+    if (out.length === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 41 }]);
     var lr = feedRd('lumi_save') || {};
     if (lr.runs && feedNum(lr.runs.full) > 0) out.push(['lumi:run', feedNum(lr.runs.full)]);
     if (lr.runs && feedNum(lr.runs.onelife) > 0) out.push(['lumi:onelife', feedNum(lr.runs.onelife)]);

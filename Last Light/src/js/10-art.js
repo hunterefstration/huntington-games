@@ -219,7 +219,7 @@ const Sprites = {
         x.beginPath(); x.ellipse(4.2 + lx, -1 + ly, 2.3, 3.4 * blink, 0, 0, 7); x.fill();
         if (blink > 0.5) { x.fillStyle = '#fff'; x.beginPath(); x.arc(-3.4 + lx, -2.4 + ly, 0.9, 0, 7); x.arc(5 + lx, -2.4 + ly, 0.9, 0, 7); x.fill(); }
         x.fillStyle = 'rgba(255,120,120,.45)'; x.beginPath(); x.ellipse(-7.5 + lx * 0.6, 3, 2.4, 1.3, 0, 0, 7); x.ellipse(7.5 + lx * 0.6, 3, 2.4, 1.3, 0, 0, 7); x.fill();
-        if (p.hurtT > 0 && Math.floor(t * 20) % 2) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(-14, -30, 28, 44); }
+        if (p.hurtT > 0 && Math.floor(t * 20) % 2) { x.globalCompositeOperation = 'lighter'; x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(0, -1, 11, 12, 0, 0, 7); x.fill(); }      // hurt: Lumi flashes white (it used to flash a white box)
         x.restore();
     },
     slime(x, e, t, T) {
