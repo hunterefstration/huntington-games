@@ -183,7 +183,7 @@ try {
   const gf = await until(async () => A.frames().find(x => /Levi%20Dash/.test(x.url())), 60000);
   check('Neon Dash opens inside the launcher', !!gf);
   const [pop] = await Promise.all([A.context().waitForEvent('page', { timeout: 15000 }).catch(() => null), A.click('#newtab')]);
-  check('New tab opens a blank page', !!pop && pop.url() === 'about:blank');
+  check('New tab opens the game in a tab of its own', !!pop && (/^blob:/.test(pop.url()) || /Levi%20Dash/.test(pop.url())), pop && pop.url());
   if (pop) {
     await pop.waitForTimeout(1500);
     check('...with the game loaded into it', await pop.evaluate(() => !!document.querySelector('canvas') && /Neon Dash/.test(document.title + document.body.innerHTML.slice(0, 4000)) ).catch(() => false));

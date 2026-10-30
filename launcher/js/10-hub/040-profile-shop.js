@@ -6,15 +6,19 @@ var PROF = { tab: 'locker', cat: 'pfp', grp: '', lbGame: '', lbBoard: '', lbData
 function profEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function profItem(id) { var L = window.HGGrapevine, c = L && L.eco.catalog(); if (!c) return null; if (!c.byId) { c.byId = {}; c.items.forEach(function (i) { c.byId[i.id] = i; }); } return c.byId[id] || null; }
 // a picture as a round badge: its emoji (or a team's letters) on its two colours; a developer's own image
+function profSvgUrl(svg) { return "url('data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg).replace(/'/g, '%27') + "')"; }      // (single quotes: this goes inside style="...")
+// the shop's sections: one per game ('Games: Last Light') shown together under "Games"
+function profSect(g) { return /^Games: /.test(g || '') ? 'Games' : (g || 'Other'); }
 function profPfp(id, px, img) {
   var s = px || 40;
   if (img) return '<span class="ppfp" style="width:' + s + 'px;height:' + s + 'px"><img src="' + profEsc(img) + '" alt=""></span>';
   var it = profItem(id);
   if (!it) return '<span class="ppfp none" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * .5) + 'px">?</span>';
+  if (it.svg) return '<span class="ppfp art' + (it.r === 'legendary' ? ' leg' : '') + '" title="' + profEsc(it.n) + '" style="width:' + s + 'px;height:' + s + 'px">' + it.svg + '</span>';
   var inner = it.t ? '<b style="font-size:' + Math.round(s * (it.t.length > 2 ? .34 : .42)) + 'px">' + profEsc(it.t) + '</b>' : profEsc(it.e || '');
   return '<span class="ppfp' + (it.t ? ' team' : '') + '" title="' + profEsc(it.n) + '" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * .6) + 'px;background:linear-gradient(135deg,' + it.c[0] + ',' + it.c[1] + ')">' + inner + '</span>';
 }
-function profBannerCss(id) { var it = profItem(id); return it ? 'linear-gradient(120deg,' + it.c.join(',') + ')' : ''; }
+function profBannerCss(id) { var it = profItem(id); if (!it) return ''; var g = 'linear-gradient(120deg,' + it.c.join(',') + ')'; return it.svg ? profSvgUrl(it.svg) + ' center/cover no-repeat, ' + g : g; }
 var RAR = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', secret: 'Secret' };
 function profFmt(v, f) {
   v = Number(v) || 0;
@@ -38,7 +42,7 @@ function profRender() {
     ((mine.rec || []).length ? '<span class="ptag rec">🏆 Record Holder</span>' : '') +
     ranks.slice(0, 4).map(function (g) { return '<span class="ptag rank t' + mine.ranks[g] + '">R' + mine.ranks[g] + ' · ' + profEsc(g) + '</span>'; }).join('') +
     '</div><div class="pgoons"><b>' + (e.dev ? '∞' : e.goons) + '</b><span>goons</span><small>' + profFmt(e.playSec, 'dur') + ' played</small></div></div>';
-  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['lb', 'Leaderboards'], ['earn', 'Earn goons']].concat(e.dev ? [['admin', 'Admin tools']] : []).map(function (t) {
+  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['earn', 'Earn goons']].concat(e.dev ? [['admin', 'Admin tools']] : []).map(function (t) {
     return '<button data-ptab="' + t[0] + '" class="' + (PROF.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
   if (PROF.tab === 'shop' || PROF.tab === 'locker') h += profItems(e, c, PROF.tab === 'shop');
   else if (PROF.tab === 'lb') h += profBoards(c);
@@ -51,14 +55,17 @@ var SLOTS = [['pfp', 'Pictures'], ['banner', 'Banners'], ['title', 'Titles'], ['
 function profItems(e, c, shop) {
   var eq = e.equip || {}, buys = window.HGGrapevine.eco.buys();
   var list = c.items.filter(function (i) { return i.k === PROF.cat && (shop ? i.p > 0 && !profOwns(e, i) || (shop && i.p > 0 && e.dev) : profOwns(e, i) || i.x); });
-  var groups = []; list.forEach(function (i) { var g = i.g || ''; if (groups.indexOf(g) < 0) groups.push(g); });
+  var groups = []; list.forEach(function (i) { var g = profSect(i.g); if (groups.indexOf(g) < 0) groups.push(g); });
   if (PROF.grp && groups.indexOf(PROF.grp) < 0) PROF.grp = '';
   var h = '<div class="pcats">' + SLOTS.map(function (s) { return '<button data-pcat="' + s[0] + '" class="' + (PROF.cat === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('') + '</div>';
   if (groups.length > 1) h += '<div class="pgrps"><button data-pgrp="" class="' + (!PROF.grp ? 'on' : '') + '">All</button>' + groups.map(function (g) { return '<button data-pgrp="' + profEsc(g) + '" class="' + (PROF.grp === g ? 'on' : '') + '">' + profEsc(g || 'Other') + '</button>'; }).join('') + '</div>';
-  if (PROF.grp) list = list.filter(function (i) { return (i.g || '') === PROF.grp; });
+  if (PROF.grp) list = list.filter(function (i) { return profSect(i.g) === PROF.grp; });
   if (PROF.cat === 'music' && !shop) h += '<div class="pnote">The track you wear plays on the launcher (never over a game). <button class="pb" data-mtoggle="1">' + (window.HG_music && localStorage.getItem('hgv:music') === 'off' ? 'Music is off: turn on' : 'Music is on: turn off') + '</button></div>';
   if (!list.length) return h + '<div class="pempty">' + (shop ? 'You own everything here. Nice.' : 'Nothing here yet: the Goon Shop has plenty.') + '</div>';
-  h += '<div class="pgrid">' + list.map(function (i) {
+  // one grid per group, with the game's name over its pictures ("Games: Last Light" -> "Last Light")
+  var blocks = [], at = {};
+  list.forEach(function (i) { var g = i.g || ''; if (!(g in at)) { at[g] = blocks.length; blocks.push({ g: g, items: [] }); } blocks[at[g]].items.push(i); });
+  var card = function (i) {
     var own = profOwns(e, i), on = eq[i.k] === i.id, locked = !own && i.x;
     var prev = i.k === 'pfp' ? profPfp(i.id, 54) : i.k === 'banner' ? '<span class="pban" style="background:' + profBannerCss(i.id) + '"></span>'
       : i.k === 'title' ? '<span class="ptag big r-' + i.r + '">' + profEsc(i.n) + '</span>'
@@ -68,7 +75,8 @@ function profItems(e, c, shop) {
       : '<button data-buy="' + i.id + '" class="pb buy">' + i.p + ' goon' + (i.p === 1 ? '' : 's') + '</button>';
     return '<div class="pcard r-' + i.r + (locked ? ' locked' : '') + '">' + prev + '<div class="pcn">' + (i.k === 'title' ? '' : profEsc(i.n)) + '</div><div class="pcr">' + RAR[i.r] +
       (buys[i.id] ? ' · ' + buys[i.id] + ' bought' : '') + '</div>' + btn + '</div>';
-  }).join('') + '</div>';
+  };
+  blocks.forEach(function (b) { h += (blocks.length > 1 && b.g ? '<h4 class="psec">' + profEsc(b.g.replace(/^Games: /, '')) + '</h4>' : '') + '<div class="pgrid">' + b.items.map(card).join('') + '</div>'; });
   return h;
 }
 function profBoards(c) {
@@ -93,7 +101,14 @@ function profBoards(c) {
   return h;
 }
 function profLoadBoard(k) {
-  window.HGGrapevine.eco.lbGet(k).then(function (m) { PROF.lbData = m; profRender(); }, function () { PROF.lbAsked = ''; });
+  window.HGGrapevine.eco.lbGet(k).then(function (m) { PROF.lbData = m; profRender(); lbRender(); }, function () { PROF.lbAsked = ''; });
+}
+// the Leaderboards tab: every game's boards (the same boards the Profile used to show)
+function lbRender() {
+  var box = document.getElementById('view-lb'); if (!box || box.hidden) return;
+  var L = window.HGGrapevine, c = L && L.me() && L.eco && L.eco.catalog();
+  if (!c) { box.innerHTML = '<div class="pempty">' + (L && L.me() ? 'Loading the leaderboards...' : 'Sign in to see the leaderboards.') + '</div>'; return; }
+  box.innerHTML = '<div class="lbhead"><h2>Leaderboards</h2><span>Every game, everyone. Pick a game, then a board.</span></div>' + profBoards(c);
 }
 function profEarn(e) {
   var rows = [['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],
@@ -126,7 +141,7 @@ function profDevUpload(box) {
   };
 }
 document.addEventListener('click', function (ev) {
-  var b = ev.target.closest && ev.target.closest('#view-prof button'); if (!b) return;
+  var b = ev.target.closest && ev.target.closest('#view-prof button, #view-lb button'); if (!b) return;
   var L = window.HGGrapevine, d = b.dataset;
   if (d.ptab) { PROF.tab = d.ptab; PROF.grp = ''; }
   else if (d.pcat) { PROF.cat = d.pcat; PROF.grp = ''; }
@@ -144,11 +159,11 @@ document.addEventListener('click', function (ev) {
     L.eco.admin(d.padm, nm, t); hubToast((d.padm === 'give' ? 'Gave ' : 'Took back ') + (it ? it.n : t) + (d.padm === 'give' ? ' to ' : ' from ') + nm + '.'); return;
   }
   else return;
-  profRender();
+  profRender(); lbRender();
 });
 function profMount() {
   var L = window.HGGrapevine; if (!L || profMount.done) return; profMount.done = true;
-  L.on('eco', function (m) { profRender(); paintChip(); if (m && m.bought) { var it = profItem(m.bought); if (it) hubToast('Bought ' + it.n + '!'); } });
+  L.on('eco', function (m) { profRender(); lbRender(); paintChip(); if (m && m.bought) { var it = profItem(m.bought); if (it) hubToast('Bought ' + it.n + '!'); } });
   L.on('cos', function () { if (PROF.tab === 'lb') profRender(); });
   L.on('ecoError', function (m) { hubToast(m.text || 'That did not work.'); });
 }

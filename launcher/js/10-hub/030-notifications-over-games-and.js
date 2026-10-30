@@ -205,6 +205,7 @@ document.getElementById('tab-chat').onclick = function () { showTab('chat'); };
 document.getElementById('tab-acct').onclick = function () { showTab('acct'); };
 document.getElementById('chip').onclick = function () { showTab('prof'); };
 document.getElementById('tab-prof').onclick = function () { showTab('prof'); };
+document.getElementById('tab-lb').onclick = function () { showTab('lb'); };
 window.addEventListener('resize', function () { if (document.body.className === 'chat') document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px'); });
 // ---- chat guard (identical in archive.js and client.html: keep the two in step) ----
 // SLUR: the one word this server will not carry, the n-word in its usual spellings (n1gga, n i g g e r, Cyrillic

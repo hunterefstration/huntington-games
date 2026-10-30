@@ -185,14 +185,25 @@ function closePlayer() {
 // page's storage, so saves and the Grapevine account work there too (the game finds this launcher as window.opener).
 document.getElementById('newtab').onclick = function () {
   if (!current) return;
-  var g = current.game, w = window.open('about:blank', '_blank');
-  popup = w; popupGame = g;
-  if (!w) { alert('The browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
-  function write(html) { try { w.document.open(); w.document.write(html); w.document.close(); attachChat(w.document, g); gvStartApp(); } catch (e) { w.close(); } }
-  w.document.title = g.name;
-  if (current.html) return write(current.html);
-  if (local) { HG_set(g); var u = new URL(path(g), location.href).href; fetch(u).then(function (r) { return r.text(); }).then(function (t) { write(withBase(t, u.replace(/[^\/]*$/, ''))); }, function () { w.close(); }); return; }
-  w.close();
+  var g = current.game;
+  // The game opens as a page of its own: a real address when the games are served from here, otherwise the game's code as a
+  // blob: page made by this launcher. Writing into an about:blank tab broke wherever the launcher runs inside another
+  // page (jsfiddle, jsbin, Google Sites): the browser opens the tab but hands back no window to write into, so it stayed
+  // blank and the launcher said the tab was blocked. A blob: page needs no window handle, and it shares this page's
+  // storage, so saves still work. When we do get the window back, the chat and pop-ups are added to it.
+  var url;
+  if (local) { HG_set(g); url = new URL(path(g), location.href).href; }
+  else if (current.html) url = URL.createObjectURL(new Blob([current.html], { type: 'text/html' }));
+  else { hubToast('The game is still loading. Try again in a moment.'); return; }
+  var w = null;
+  try { w = window.open(url, '_blank'); } catch (e) {}
+  if (!w) hubToast(g.name + ' opened in a new tab.');        // (some pages open the tab but hand back no window: that is fine now)
+  else {
+    popup = w; popupGame = g;
+    var hook = function () { try { if (w.document && w.document.body) { w.document.title = g.name; attachChat(w.document, g); gvStartApp(); } } catch (e) {} };
+    try { w.addEventListener('load', hook); } catch (e) {}
+  }
+  if (!local) setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
 };
 document.getElementById('back').onclick = closePlayer;
 document.getElementById('full').onclick = function () { var p = document.getElementById('player'); if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(function () {}); };
@@ -379,10 +390,12 @@ function showTab(which) {
   document.getElementById('view-acct').hidden = which !== 'acct';
   document.getElementById('view-prof').hidden = which !== 'prof';
   if (which === 'prof') loadGV().then(function () { profMount(); profRender(); }, function () {});
+  document.getElementById('view-lb').hidden = which !== 'lb';
+  if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); }, function () {});
   document.getElementById('view-mp').hidden = which !== 'mp';
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
-  ['games', 'prof', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  ['games', 'prof', 'lb', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
   if (chat) {
     document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
     if (chatLoaded !== true) loadGV().then(startChat, function () {});

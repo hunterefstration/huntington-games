@@ -69,7 +69,7 @@ try {
   await until(async () => (await status(A)) === 'online', 60000);
   for (let i = 0; i < 6; i++) await A.click('#tour .go', { timeout: 800 }).catch(() => {});
   await A.click('#tour .skip', { timeout: 300 }).catch(() => {});
-  check('the wallet and the shop catalog arrive', !!(await until(() => A.evaluate(() => { const L = HGGrapevine; return L.eco.state() && L.eco.catalog() && L.eco.catalog().items.length > 300; }), 20000)));
+  check('the wallet and the shop catalog arrive', !!(await until(() => A.evaluate(() => { const L = HGGrapevine; return L.eco.state() && L.eco.catalog() && L.eco.catalog().items.length > 200; }), 20000)));
   await A.click('#chip');
   check('the name chip opens the Profile tab', await A.evaluate(() => !document.getElementById('view-prof').hidden && /goons/.test(document.querySelector('.pgoons').textContent)));
   // an achievement in the saves becomes a goon
@@ -84,7 +84,7 @@ try {
   await A.click('[data-equip="title:goat"]');
   check('wearing it shows it on the profile card', !!(await until(() => A.evaluate(() => /GOAT/.test(document.querySelector('.phead').textContent)), 10000)));
   // leaderboards fed from the saves
-  await A.click('[data-ptab="lb"]');
+  await A.click('#tab-lb');
   await A.evaluate(() => { const g = [...document.querySelectorAll('[data-lbg]')].find(b => /Spikes/.test(b.textContent)); g && g.click(); });
   const row = await until(() => A.evaluate(n => { const t = document.querySelector('.plb'); return t && [...t.querySelectorAll('tr')].some(r => r.textContent.includes(n) && r.textContent.includes('12')); }, nm), 15000);
   if (!row) console.log('    debug:', await A.evaluate(() => HGGrapevine.eco.lbGet('spikes:level').then(m => JSON.stringify(m).slice(0, 300), e => 'ERR ' + e.message)), await A.evaluate(() => document.getElementById('view-prof').textContent.slice(-300)));

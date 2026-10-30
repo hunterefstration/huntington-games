@@ -13,7 +13,7 @@ function htSteps() {
     { target: '#grid .game', title: 'Games', text: 'Every card is a game. Press one to play: it saves to your account by itself, on any computer you sign in on.', next: 'Next' },
     { target: '#chip', title: 'Your profile', text: 'This is you: your picture, your goons and your title. Press it.', wait: 'click' },
     { target: '[data-ptab="shop"]', title: 'The Goon Shop', text: '<b>Goons</b> come from playing: every achievement, 15 minutes of play, Blocky waves and ranks, daily top spots. Spend them here on pictures, banners, titles and Blocky skins. Press it.', wait: 'click' },
-    { target: '[data-ptab="lb"]', title: 'Leaderboards', text: 'Every game has global leaderboards. Your rank (R1 is the best, R5 the lowest) shows next to your name in chat, and first place is the <b>Record Holder</b>. Press it.', wait: 'click' },
+    { target: '#tab-lb', title: 'Leaderboards', text: 'Every game has global leaderboards, all in this tab. Your rank (R1 is the best, R5 the lowest) shows next to your name in chat, and first place is the <b>Record Holder</b>. Press it.', wait: 'click' },
     { target: '#tab-mp', title: 'Multiplayer', text: 'Type <b>any 6-digit code</b> and you are in a room with whoever types the same one: chat, then start a game together. Press it.', wait: 'click' },
     { target: '#tab-chat', title: 'Grapevine', text: 'Chat rooms, DMs and friends, built in. Press it and we will show you around inside.', wait: 'click' },
     { gv: true, target: gvFind(function (d) { return d.querySelector('#convs [data-conv="main"]'); }),

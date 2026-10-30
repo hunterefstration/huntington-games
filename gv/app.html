@@ -1290,6 +1290,7 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
   background:conic-gradient(#dc2626 0 72deg,#16a34a 72deg 144deg,#15803d 144deg 216deg,#16a34a 216deg 288deg,#15803d 288deg 360deg);transition:transform 5s cubic-bezier(.12,.6,.12,1)}
 #wheel .wdisc span{position:absolute;left:50%;top:50%;width:60px;margin:-8px 0 0 -30px;font:900 13px/16px var(--mono);color:#fff;text-shadow:0 1px 2px #000}
 #wheel .wres{min-height:22px;font-weight:800}#wheel .wres.ban{color:#f87171}#wheel .wres.safe{color:#4ade80}
+.pfp.art{padding:0}.pfp.art svg{width:100%;height:100%;display:block}
 </style>
 </head>
 <body>
@@ -8485,6 +8486,7 @@ function pfpHtml(c, px){
   if (c && c.img) return `<span class="pfp" style="width:${s}px;height:${s}px"><img src="${esc(c.img)}" alt=""></span>`;
   const it = c && c.p && CATALOG && CATALOG.byId.get(c.p);
   if (!it) return '';
+  if (it.svg) return `<span class="pfp art" title="${esc(it.n)}" style="width:${s}px;height:${s}px">${it.svg}</span>`;      // a drawn picture (from the shop catalog)
   const bg = `linear-gradient(135deg,${it.c[0]},${it.c[1]})`;
   const inner = it.t ? `<b style="font-size:${Math.round(s * (it.t.length > 2 ? 0.34 : 0.42))}px">${esc(it.t)}</b>` : esc(it.e || '');
   return `<span class="pfp${it.t ? ' team' : ''}" title="${esc(it.n)}" style="width:${s}px;height:${s}px;font-size:${Math.round(s * 0.62)}px;background:${bg}">${inner}</span>`;
@@ -8521,7 +8523,7 @@ function repaintNames(uid){
 function paintUserCos(uid){
   const c = COS.get(uid), box = $('#umCos'); if (!box) return;
   const b = c && c.b && CATALOG && CATALOG.byId.get(c.b);
-  box.style.background = b ? `linear-gradient(120deg,${b.c.join(',')})` : '';
+  box.style.background = b ? (b.svg ? `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(b.svg)}") center/cover no-repeat, ` : '') + `linear-gradient(120deg,${b.c.join(',')})` : '';
   box.classList.toggle('has', !!b);
   const ranks = Object.entries((c && c.ranks) || {}).sort((a, b2) => a[1] - b2[1]).slice(0, 6)
     .map(([g, t]) => `<span class="gtag rank t${t}">R${t} · ${esc(g)}</span>`).join('');
