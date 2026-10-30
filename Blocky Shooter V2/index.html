@@ -11389,7 +11389,7 @@
             };
             const disabled = (btnKind === 'poor' || btnKind === 'on' || btnKind === 'off') ? 'disabled' : '';
             const extraBtn = extra ? `<button ${(extra.kind === 'poor' || extra.kind === 'off') ? 'disabled' : ''} onclick="${extra.onclick}" class="w-full py-1.5 mt-2 font-bold rounded text-xs transition-colors ${kinds[extra.kind]}">${extra.text}</button>` : '';
-            return `<div class="bg-gray-800 border rounded-lg p-4 flex flex-col justify-between transition-transform transform hover:scale-105 ${highlight ? 'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'border-gray-600'}">
+            return `<div class="bg-gray-800 border rounded-lg p-3 flex flex-col justify-between transition-transform transform hover:scale-[1.03] ${highlight ? 'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'border-gray-600'}">
                 <div>
                     <h3 class="${title.replace(/[\u2605 ]+$/, '').length > 14 ? 'text-lg' : 'text-xl'} font-black mb-1 truncate" style="color:${color}">${title}</h3>
                     <div class="text-[10px] text-gray-400 font-mono uppercase mb-2 bg-black/30 inline-block px-2 py-0.5 rounded">${tag}</div>
@@ -11411,6 +11411,25 @@
         }
 
 
+        // the armory's view: which tab, and how the gun list is filtered (kept between visits)
+        const SHOPV = { tab: (() => { try { return localStorage.getItem('blocky_shoptab') || 'weapons'; } catch (e) { return 'weapons'; } })(), filter: 'all', sort: 'default', q: '', wMeta: [] };
+        function shopWeaponGrid() {
+            const money = playerStats.money, q = SHOPV.q.trim().toLowerCase();
+            let list = SHOPV.wMeta.filter(m => (SHOPV.filter === 'all' || (SHOPV.filter === 'owned' && m.owned) || (SHOPV.filter === 'buy' && !m.owned && !m.locked && money >= m.cost) || (SHOPV.filter === 'locked' && m.locked)) && (!q || m.name.includes(q)));
+            if (SHOPV.sort === 'price') list = list.slice().sort((a, b) => a.cost - b.cost);
+            else if (SHOPV.sort === 'dmg') list = list.slice().sort((a, b) => b.dmg - a.dmg);
+            else if (SHOPV.sort === 'name') list = list.slice().sort((a, b) => a.name.localeCompare(b.name));
+            else list = list.slice().sort((a, b) => (b.eq - a.eq) || a.k - b.k);       // what you hold first, then unlock order
+            return list.map(m => m.html).join('') || '<div class="col-span-full text-gray-400 text-sm py-6 text-center">No guns match.</div>';
+        }
+        addEventListener('keydown', e => {      // 1-5 switch the armory's tabs
+            if (currentGameState !== 'shop' || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
+            const n = { Digit1: 'weapons', Digit2: 'perks', Digit3: 'class', Digit4: 'secondary', Digit5: 'armor' }[e.code]; if (n) { window.shopTab(n); e.preventDefault(); }
+        });
+        window.shopTab = (t) => { SHOPV.tab = t; try { localStorage.setItem('blocky_shoptab', t); } catch (e) {} renderShopItems(); sfx('click'); };
+        window.shopFilter = (f) => { SHOPV.filter = f; renderShopItems(); };
+        window.shopSort = (v) => { SHOPV.sort = v; renderShopItems(); };
+        window.shopSearch = (v) => { SHOPV.q = v; const g = document.getElementById('shop-wgrid'); if (g) g.innerHTML = shopWeaponGrid(); };
         function renderShopItems() {
             const container = document.getElementById('shop-items');
             const money = playerStats.money;
@@ -11513,13 +11532,33 @@
                     rows: [['COST', `$${cost}`], ['STATUS', own ? 'Active' : next ? 'Next up' : 'Locked']] });
             });
             const classSub = NET.pvp ? 'Classes are off in PvP.' : `Your ability is on X. ${canSwitch ? 'Switch class any time between waves' : 'You can switch class between waves'} - upgrades stay with each class.`;
-            container.innerHTML =
-                section(`CLASS \u00b7 <span style="color:${hex(CC.color)}">${CC.name}</span>`, classSub, classCards, 'lg:grid-cols-4') +
-                section(`${CC.name} UPGRADES`, `<b class="text-gray-200">Passive:</b> ${CC.passive} Buy the steps in order - they last until the run ends.`, treeCards, 'lg:grid-cols-3') +
-                section('PLAYER UPGRADES', 'Make yourself tougher, faster and deadlier. 5 levels each - they last until the run ends.', perkCards) +
-                section('WEAPONS', 'Switch in-game with 1-9, 0, - or the scroll wheel (the keys follow the order of the guns you own). Upgrades: 5 levels, each a new gun model (Tactical, Heavy, Elite, Gold Elite, Plasma Prototype). Per level: +18% damage, +20% mag, -10% reload, +5% fire rate, tighter spread, less recoil. ATTACHMENTS bolt onto guns you own: <b style="color:#22d3ee">SCOPE</b> (more zoom, -35% aim spread, +10% headshots), <b style="color:#facc15">EXT MAG</b> (+40% mag), <b style="color:#a3e635">GRIP</b> (-30% recoil, steadier hip fire). New weapons unlock with your rank.', weaponCards) +
-                section('SECONDARIES', 'Press Q to use. One equipped at a time, on a cooldown. The Sentry Turret upgrades to level 5.' + (gadgetMul() < 1 ? ' <b class="text-yellow-300">ENGINEER: gadgets and sentry upgrades cost 25% less.</b>' : ''), secCards, 'lg:grid-cols-3') +
-                section('ARMOR & SUPPLIES', 'Armor soaks up part of every hit until it breaks.', armorCards);
+            // 5.2: the armory in tabs (no more scrolling past everything), with a quick-buy bar and, for guns, filters, sort and search
+            const wMeta = WEAPON_ORDER.map((id, k) => { const b = weaponsDb[id], w = W(id), owned = playerStats.weapons.includes(id), needR = unlockRank('weapon', id);
+                return { id, k, html: weaponCards[k], name: b.name.toLowerCase(), owned, locked: !owned && myRank < needR, cost: b.cost, dmg: (w.damage || 0) * (w.pellets || 1), eq: playerStats.currentWeapon === id }; });
+            SHOPV.wMeta = wMeta;
+            const tabs = [['weapons', 'WEAPONS', ownedList.length + ' owned'], ['perks', 'UPGRADES', ''], ['class', 'CLASS', CC.name], ['secondary', 'SECONDARIES', ''], ['armor', 'ARMOR & SUPPLIES', '']];
+            if (!tabs.some(t => t[0] === SHOPV.tab)) SHOPV.tab = 'weapons';
+            const qb = (txt, kind, on, dis) => `<button ${dis ? 'disabled' : ''} onclick="${on}" class="px-3 py-1.5 rounded font-black text-xs ${dis ? 'bg-gray-700 text-gray-400' : kind}">${txt}</button>`;
+            const quick = `<div class="flex flex-wrap items-center gap-2 mb-3 p-2 rounded-lg bg-black/40 border border-gray-700"><span class="text-xs text-gray-400 font-bold mr-1">QUICK BUY</span>` +
+                qb(hpFull ? 'HEALTH FULL' : `+${HEALTH_AMOUNT} HP $${HEALTH_COST}`, 'bg-red-600 hover:bg-red-500 text-white', 'window.buyHealth()', hpFull || money < HEALTH_COST) +
+                qb(!tier ? 'NO ARMOR' : armorFull ? 'ARMOR FULL' : `REPAIR ARMOR $${ARMOR_REPAIR_COST}`, 'bg-sky-600 hover:bg-sky-500 text-white', 'window.repairArmor()', !tier || armorFull || money < ARMOR_REPAIR_COST) +
+                `<span class="ml-auto text-xs text-gray-400">Tabs: <b class="text-gray-200">1-5</b></span></div>`;
+            const bar = `<div class="sticky top-0 z-10 -mx-1 px-1 pt-1 pb-2 mb-2 bg-gray-900"><div class="flex flex-wrap gap-2">` + tabs.map(([k, n, sub], ti) =>
+                `<button onclick="window.shopTab('${k}')" class="px-4 py-2 rounded-lg font-black text-sm tracking-wide ${SHOPV.tab === k ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'}">${n}${sub ? ` <span class="font-bold text-[11px] opacity-70">${sub}</span>` : ''}</button>`).join('') + `</div></div>`;
+            let body;
+            if (SHOPV.tab === 'weapons') {
+                const chip = (k, n) => `<button onclick="window.shopFilter('${k}')" class="px-3 py-1 rounded-full text-xs font-bold ${SHOPV.filter === k ? 'bg-white text-black' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}">${n}</button>`;
+                body = `<div class="flex flex-wrap items-center gap-2 mb-3">${chip('all', 'All')}${chip('owned', 'Owned')}${chip('buy', 'Can afford')}${chip('locked', 'Locked')}` +
+                    `<select onchange="window.shopSort(this.value)" class="ml-2 bg-gray-800 text-gray-200 text-xs font-bold rounded px-2 py-1 border border-gray-600">${[['default', 'Sort: unlock order'], ['price', 'Sort: price'], ['dmg', 'Sort: damage'], ['name', 'Sort: name']].map(([v, n]) => `<option value="${v}" ${SHOPV.sort === v ? 'selected' : ''}>${n}</option>`).join('')}</select>` +
+                    `<input id="shop-q" value="${SHOPV.q.replace(/"/g, '')}" oninput="window.shopSearch(this.value)" onkeydown="event.stopPropagation()" placeholder="Search guns..." class="ml-auto bg-gray-800 text-white text-sm rounded px-3 py-1 border border-gray-600 w-48"></div>` +
+                    `<div class="text-xs text-gray-400 mb-3">Switch guns in-game with 1-9, 0, - or the scroll wheel. Upgrades: 5 levels each (Tactical, Heavy, Elite, Gold Elite, Plasma Prototype).</div>` +
+                    `<div id="shop-wgrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">${shopWeaponGrid()}</div>`;
+            } else if (SHOPV.tab === 'perks') body = section('PLAYER UPGRADES', 'Tougher, faster and deadlier. 5 levels each, for this run.', perkCards);
+            else if (SHOPV.tab === 'class') body = section(`CLASS \u00b7 <span style="color:${hex(CC.color)}">${CC.name}</span>`, classSub, classCards, 'lg:grid-cols-4') +
+                section(`${CC.name} UPGRADES`, `<b class="text-gray-200">Passive:</b> ${CC.passive} Buy the steps in order: they last until the run ends.`, treeCards, 'lg:grid-cols-3');
+            else if (SHOPV.tab === 'secondary') body = section('SECONDARIES', 'Press Q to use. One equipped at a time, on a cooldown. The Sentry Turret upgrades to level 5.' + (gadgetMul() < 1 ? ' <b class="text-yellow-300">ENGINEER: gadgets and sentry upgrades cost 25% less.</b>' : ''), secCards);
+            else body = section('ARMOR & SUPPLIES', 'Armor soaks up part of every hit until it breaks.', armorCards);
+            container.innerHTML = bar + quick + body;
         }
 
 
