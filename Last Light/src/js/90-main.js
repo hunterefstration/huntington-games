@@ -46,6 +46,7 @@ function titleStats() {
     const done = Object.keys(SAVE.d.levels).length, moths = Object.values(SAVE.d.levels).reduce((n, r) => n + (r.moths || []).filter(Boolean).length, 0);
     $('#t-stats').textContent = done ? `${done} of ${LEVELS.length} levels · ${moths} stars · ${SAVE.d.sparks} sparks` : 'The last light in a dark world';
     $('#t-play').textContent = done ? 'Continue' : 'Play';
+    try { const m = svMeta(); $('#t-saves').textContent = 'Save files · ' + m.names[m.active]; } catch (e) {}
 }
 titleStats();
 mpBind();

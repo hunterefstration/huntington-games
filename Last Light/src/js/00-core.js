@@ -39,6 +39,8 @@ const SAVE = (() => {
     // cache, the chat server keeps the history) and try again; if it still fails, say so.
     let warned = false;
     function write() {
+        if (window.__lumiSwitching) return true;          // switching save files: the page reloads with the other file
+        d.at = Date.now();
         const v = JSON.stringify(d);
         for (let round = 0; round < 6; round++) {
             try { localStorage.setItem(SAVE_KEY, v); return true; } catch (e) {}
