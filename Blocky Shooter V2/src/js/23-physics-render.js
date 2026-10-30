@@ -370,6 +370,7 @@ function frame(ts) {
     pfMark('misc');
     renderer.info.autoReset = false; renderer.info.reset();
     frameNo++;
+    if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} }      // the launcher's loading screen can go
     renderer.shadowMap.autoUpdate = false;
     if (Q.shadows && (frameNo & 1)) renderer.shadowMap.needsUpdate = true;
     if (composer) {

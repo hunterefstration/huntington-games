@@ -334,3 +334,72 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
 .game:hover .playov { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
 @media (max-width: 560px) { #tabs { flex-wrap: wrap; overflow: visible; } .tab { padding: 9px 8px; letter-spacing: .06em; } }
+
+/* profile: admin tools */
+.padmin h4 { margin: 14px 0 6px; } .padmin .prow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.padmin input, .padmin select { background: var(--raise); color: var(--text); border: 1px solid var(--line2); border-radius: 8px; padding: 8px 10px; font: inherit; }
+.padmin .pb.ghost { background: transparent; color: var(--text); border: 1px solid var(--line2); }
+
+/* ---- the boot screen (097-loading.js) ---- */
+#boot { position: fixed; inset: 0; z-index: 3000; overflow: hidden; background: radial-gradient(120% 90% at 50% 20%, #2a1748 0%, #120a22 55%, #06040c 100%); display: flex; align-items: center; justify-content: center; transition: opacity .6s, transform .6s; }
+#boot.out { opacity: 0; transform: scale(1.08); pointer-events: none; }
+.bt-sky { position: absolute; inset: 0; background-image: radial-gradient(2px 2px at 20% 30%, #fff8, transparent), radial-gradient(1.5px 1.5px at 70% 20%, #fff7, transparent), radial-gradient(2px 2px at 40% 70%, #fff5, transparent), radial-gradient(1.5px 1.5px at 85% 60%, #fff6, transparent), radial-gradient(1px 1px at 10% 80%, #fff6, transparent); animation: bt-twinkle 3s ease-in-out infinite; }
+.bt-grid { position: absolute; left: -50%; right: -50%; bottom: -10%; height: 55%; transform: perspective(320px) rotateX(62deg); transform-origin: 50% 100%;
+  background-image: linear-gradient(rgba(255,120,220,.55) 2px, transparent 2px), linear-gradient(90deg, rgba(120,200,255,.45) 2px, transparent 2px); background-size: 60px 60px; animation: bt-grid 1.2s linear infinite;
+  -webkit-mask-image: linear-gradient(to top, #000 30%, transparent); mask-image: linear-gradient(to top, #000 30%, transparent); }
+.bt-in { position: relative; text-align: center; padding: 0 16px; }
+.bt-title { font: 900 clamp(26px, 6vw, 64px)/1.1 var(--sans); letter-spacing: .06em; color: #fff; text-shadow: 0 0 18px #ff5fd2, 0 0 40px #7b5cff; white-space: nowrap; }
+.bt-title span { display: inline-block; animation: bt-pop .6s cubic-bezier(.2,1.6,.4,1) both, bt-wave 2.4s ease-in-out infinite; }
+.bt-title em { display: inline-block; width: .4em; }
+.bt-title span:nth-of-type(1) { animation-delay: 0.00s, 0.80s; }
+.bt-title span:nth-of-type(2) { animation-delay: 0.05s, 0.88s; }
+.bt-title span:nth-of-type(3) { animation-delay: 0.10s, 0.96s; }
+.bt-title span:nth-of-type(4) { animation-delay: 0.15s, 1.04s; }
+.bt-title span:nth-of-type(5) { animation-delay: 0.20s, 1.12s; }
+.bt-title span:nth-of-type(6) { animation-delay: 0.25s, 1.20s; }
+.bt-title span:nth-of-type(7) { animation-delay: 0.30s, 1.28s; }
+.bt-title span:nth-of-type(8) { animation-delay: 0.35s, 1.36s; }
+.bt-title span:nth-of-type(9) { animation-delay: 0.40s, 1.44s; }
+.bt-title span:nth-of-type(10) { animation-delay: 0.45s, 1.52s; }
+.bt-title span:nth-of-type(11) { animation-delay: 0.50s, 1.60s; }
+.bt-title span:nth-of-type(12) { animation-delay: 0.55s, 1.68s; }
+.bt-title span:nth-of-type(13) { animation-delay: 0.60s, 1.76s; }
+.bt-title span:nth-of-type(14) { animation-delay: 0.65s, 1.84s; }
+.bt-title span:nth-of-type(15) { animation-delay: 0.70s, 1.92s; }
+
+.bt-sub { margin-top: 12px; font: 600 13px var(--mono); letter-spacing: .35em; text-transform: uppercase; color: #ffd76a; animation: bt-blink 1.1s steps(2) infinite; }
+.bt-welcome { display: none; margin-top: 14px; color: #e9ddff; font-size: 15px; animation: bt-pop .8s .9s both; }
+#boot.first .bt-welcome { display: block; }
+.bt-bar { margin: 22px auto 0; }
+.bt-cube { width: 34px; height: 34px; margin: 0 auto 18px; border-radius: 7px; background: linear-gradient(135deg, #ffd76a, #ff7a3a); box-shadow: 0 0 22px #ff9a3a; position: relative; animation: bt-hop 1.4s cubic-bezier(.4,0,.6,1) infinite; }
+.bt-cube b, .gl-cube b { position: absolute; top: 28%; width: 18%; height: 22%; background: #1b1030; border-radius: 2px; } .bt-cube b:first-child, .gl-cube b:first-child { left: 22%; } .bt-cube b:last-child, .gl-cube b:last-child { right: 22%; }
+@keyframes bt-pop { from { opacity: 0; transform: translateY(30px) scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes bt-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes bt-hop { 0%, 100% { transform: translateY(0) scale(1.15, .85); } 15% { transform: translateY(0) scale(1); } 50% { transform: translateY(-34px) rotate(180deg); } 85% { transform: translateY(0) rotate(360deg) scale(1); } }
+@keyframes bt-grid { from { background-position: 0 0; } to { background-position: 0 60px; } }
+@keyframes bt-twinkle { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes bt-blink { 50% { opacity: .35; } }
+
+/* ---- a game's loading screen: a cube runs, hops three spikes, rolls back home and does it again ---- */
+#gload { position: absolute; left: 0; right: 0; bottom: 0; top: 41px; z-index: 5; overflow: hidden; background: #0b0814; display: flex; align-items: center; justify-content: center; transition: opacity .45s; }
+#gload.out { opacity: 0; pointer-events: none; }
+#gload .gl-bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(18px) brightness(.45) saturate(1.3); transform: scale(1.1); animation: gl-drift 9s ease-in-out infinite; }
+#gload .gl-in { position: relative; text-align: center; }
+.gl-name { font: 900 clamp(22px, 4vw, 40px) var(--sans); color: #fff; text-shadow: 0 0 16px rgba(255,180,90,.7); margin-bottom: 22px; }
+.gl-stage { position: relative; width: 260px; height: 70px; margin: 0 auto; }
+.gl-track { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); }
+.gl-spike { position: absolute; bottom: 4px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 16px solid #ff5a6a; filter: drop-shadow(0 0 6px #ff5a6a); }
+.gl-spike.s1 { left: 68px; } .gl-spike.s2 { left: 138px; } .gl-spike.s3 { left: 208px; }
+.gl-cube { position: absolute; left: 0; bottom: 4px; width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #ffd76a, #ff7a3a); box-shadow: 0 0 14px #ff9a3a; animation: gl-run 3.2s linear infinite; }
+@keyframes gl-run {
+  0% { transform: translate(0, 0) rotate(0); } 10% { transform: translate(40px, 0) rotate(0); } 16% { transform: translate(65px, -40px) rotate(90deg); } 22% { transform: translate(90px, 0) rotate(180deg); }
+  30% { transform: translate(110px, 0) rotate(180deg); } 36% { transform: translate(135px, -40px) rotate(270deg); } 42% { transform: translate(160px, 0) rotate(360deg); }
+  50% { transform: translate(180px, 0) rotate(360deg); } 56% { transform: translate(205px, -40px) rotate(450deg); } 62% { transform: translate(230px, 0) rotate(540deg); }
+  66% { transform: translate(230px, 0) rotate(540deg) scale(1.25, .75); } 70% { transform: translate(230px, 0) rotate(540deg); } 100% { transform: translate(0, 0) rotate(0); } }
+.gl-bar { width: 220px; height: 6px; margin: 26px auto 0; border-radius: 3px; background: rgba(255,255,255,.15); overflow: hidden; }
+.gl-bar span { display: block; width: 40%; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ff5fd2, #ffd76a); animation: gl-bar 1.4s ease-in-out infinite; }
+@keyframes gl-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+.gl-quip { margin-top: 14px; color: #d9ccf2; font: 500 13px var(--mono); min-height: 18px; }
+.gl-quip.in { animation: bt-pop .35s both; }
+@keyframes gl-drift { 0%, 100% { transform: scale(1.1) translate(0, 0); } 50% { transform: scale(1.18) translate(-12px, 6px); } }
+@media (prefers-reduced-motion: reduce) { .gl-cube, .bt-cube, .bt-title span, .bt-grid, #gload .gl-bg { animation-duration: 6s; } }

@@ -56,5 +56,6 @@ const Lobby = {
         this.dust.rotation.y += dt * 0.02;
         this.cam.aspect = innerWidth / innerHeight; this.cam.position.set(0, 5.4 + Math.sin(this.t * .3) * .2, 23.5 + (innerWidth / innerHeight < 1.4 ? 7 : 0)); this.cam.lookAt(0, 1.9, 0); this.cam.updateProjectionMatrix();
         renderer.render(this.scene, this.cam);
+        if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} }      // the launcher's loading screen can go
     }
 };

@@ -341,9 +341,88 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
 .game:hover .playov { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
 @media (max-width: 560px) { #tabs { flex-wrap: wrap; overflow: visible; } .tab { padding: 9px 8px; letter-spacing: .06em; } }
+
+/* profile: admin tools */
+.padmin h4 { margin: 14px 0 6px; } .padmin .prow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.padmin input, .padmin select { background: var(--raise); color: var(--text); border: 1px solid var(--line2); border-radius: 8px; padding: 8px 10px; font: inherit; }
+.padmin .pb.ghost { background: transparent; color: var(--text); border: 1px solid var(--line2); }
+
+/* ---- the boot screen (097-loading.js) ---- */
+#boot { position: fixed; inset: 0; z-index: 3000; overflow: hidden; background: radial-gradient(120% 90% at 50% 20%, #2a1748 0%, #120a22 55%, #06040c 100%); display: flex; align-items: center; justify-content: center; transition: opacity .6s, transform .6s; }
+#boot.out { opacity: 0; transform: scale(1.08); pointer-events: none; }
+.bt-sky { position: absolute; inset: 0; background-image: radial-gradient(2px 2px at 20% 30%, #fff8, transparent), radial-gradient(1.5px 1.5px at 70% 20%, #fff7, transparent), radial-gradient(2px 2px at 40% 70%, #fff5, transparent), radial-gradient(1.5px 1.5px at 85% 60%, #fff6, transparent), radial-gradient(1px 1px at 10% 80%, #fff6, transparent); animation: bt-twinkle 3s ease-in-out infinite; }
+.bt-grid { position: absolute; left: -50%; right: -50%; bottom: -10%; height: 55%; transform: perspective(320px) rotateX(62deg); transform-origin: 50% 100%;
+  background-image: linear-gradient(rgba(255,120,220,.55) 2px, transparent 2px), linear-gradient(90deg, rgba(120,200,255,.45) 2px, transparent 2px); background-size: 60px 60px; animation: bt-grid 1.2s linear infinite;
+  -webkit-mask-image: linear-gradient(to top, #000 30%, transparent); mask-image: linear-gradient(to top, #000 30%, transparent); }
+.bt-in { position: relative; text-align: center; padding: 0 16px; }
+.bt-title { font: 900 clamp(26px, 6vw, 64px)/1.1 var(--sans); letter-spacing: .06em; color: #fff; text-shadow: 0 0 18px #ff5fd2, 0 0 40px #7b5cff; white-space: nowrap; }
+.bt-title span { display: inline-block; animation: bt-pop .6s cubic-bezier(.2,1.6,.4,1) both, bt-wave 2.4s ease-in-out infinite; }
+.bt-title em { display: inline-block; width: .4em; }
+.bt-title span:nth-of-type(1) { animation-delay: 0.00s, 0.80s; }
+.bt-title span:nth-of-type(2) { animation-delay: 0.05s, 0.88s; }
+.bt-title span:nth-of-type(3) { animation-delay: 0.10s, 0.96s; }
+.bt-title span:nth-of-type(4) { animation-delay: 0.15s, 1.04s; }
+.bt-title span:nth-of-type(5) { animation-delay: 0.20s, 1.12s; }
+.bt-title span:nth-of-type(6) { animation-delay: 0.25s, 1.20s; }
+.bt-title span:nth-of-type(7) { animation-delay: 0.30s, 1.28s; }
+.bt-title span:nth-of-type(8) { animation-delay: 0.35s, 1.36s; }
+.bt-title span:nth-of-type(9) { animation-delay: 0.40s, 1.44s; }
+.bt-title span:nth-of-type(10) { animation-delay: 0.45s, 1.52s; }
+.bt-title span:nth-of-type(11) { animation-delay: 0.50s, 1.60s; }
+.bt-title span:nth-of-type(12) { animation-delay: 0.55s, 1.68s; }
+.bt-title span:nth-of-type(13) { animation-delay: 0.60s, 1.76s; }
+.bt-title span:nth-of-type(14) { animation-delay: 0.65s, 1.84s; }
+.bt-title span:nth-of-type(15) { animation-delay: 0.70s, 1.92s; }
+
+.bt-sub { margin-top: 12px; font: 600 13px var(--mono); letter-spacing: .35em; text-transform: uppercase; color: #ffd76a; animation: bt-blink 1.1s steps(2) infinite; }
+.bt-welcome { display: none; margin-top: 14px; color: #e9ddff; font-size: 15px; animation: bt-pop .8s .9s both; }
+#boot.first .bt-welcome { display: block; }
+.bt-bar { margin: 22px auto 0; }
+.bt-cube { width: 34px; height: 34px; margin: 0 auto 18px; border-radius: 7px; background: linear-gradient(135deg, #ffd76a, #ff7a3a); box-shadow: 0 0 22px #ff9a3a; position: relative; animation: bt-hop 1.4s cubic-bezier(.4,0,.6,1) infinite; }
+.bt-cube b, .gl-cube b { position: absolute; top: 28%; width: 18%; height: 22%; background: #1b1030; border-radius: 2px; } .bt-cube b:first-child, .gl-cube b:first-child { left: 22%; } .bt-cube b:last-child, .gl-cube b:last-child { right: 22%; }
+@keyframes bt-pop { from { opacity: 0; transform: translateY(30px) scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes bt-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes bt-hop { 0%, 100% { transform: translateY(0) scale(1.15, .85); } 15% { transform: translateY(0) scale(1); } 50% { transform: translateY(-34px) rotate(180deg); } 85% { transform: translateY(0) rotate(360deg) scale(1); } }
+@keyframes bt-grid { from { background-position: 0 0; } to { background-position: 0 60px; } }
+@keyframes bt-twinkle { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes bt-blink { 50% { opacity: .35; } }
+
+/* ---- a game's loading screen: a cube runs, hops three spikes, rolls back home and does it again ---- */
+#gload { position: absolute; left: 0; right: 0; bottom: 0; top: 41px; z-index: 5; overflow: hidden; background: #0b0814; display: flex; align-items: center; justify-content: center; transition: opacity .45s; }
+#gload.out { opacity: 0; pointer-events: none; }
+#gload .gl-bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(18px) brightness(.45) saturate(1.3); transform: scale(1.1); animation: gl-drift 9s ease-in-out infinite; }
+#gload .gl-in { position: relative; text-align: center; }
+.gl-name { font: 900 clamp(22px, 4vw, 40px) var(--sans); color: #fff; text-shadow: 0 0 16px rgba(255,180,90,.7); margin-bottom: 22px; }
+.gl-stage { position: relative; width: 260px; height: 70px; margin: 0 auto; }
+.gl-track { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); }
+.gl-spike { position: absolute; bottom: 4px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 16px solid #ff5a6a; filter: drop-shadow(0 0 6px #ff5a6a); }
+.gl-spike.s1 { left: 68px; } .gl-spike.s2 { left: 138px; } .gl-spike.s3 { left: 208px; }
+.gl-cube { position: absolute; left: 0; bottom: 4px; width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #ffd76a, #ff7a3a); box-shadow: 0 0 14px #ff9a3a; animation: gl-run 3.2s linear infinite; }
+@keyframes gl-run {
+  0% { transform: translate(0, 0) rotate(0); } 10% { transform: translate(40px, 0) rotate(0); } 16% { transform: translate(65px, -40px) rotate(90deg); } 22% { transform: translate(90px, 0) rotate(180deg); }
+  30% { transform: translate(110px, 0) rotate(180deg); } 36% { transform: translate(135px, -40px) rotate(270deg); } 42% { transform: translate(160px, 0) rotate(360deg); }
+  50% { transform: translate(180px, 0) rotate(360deg); } 56% { transform: translate(205px, -40px) rotate(450deg); } 62% { transform: translate(230px, 0) rotate(540deg); }
+  66% { transform: translate(230px, 0) rotate(540deg) scale(1.25, .75); } 70% { transform: translate(230px, 0) rotate(540deg); } 100% { transform: translate(0, 0) rotate(0); } }
+.gl-bar { width: 220px; height: 6px; margin: 26px auto 0; border-radius: 3px; background: rgba(255,255,255,.15); overflow: hidden; }
+.gl-bar span { display: block; width: 40%; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ff5fd2, #ffd76a); animation: gl-bar 1.4s ease-in-out infinite; }
+@keyframes gl-bar { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+.gl-quip { margin-top: 14px; color: #d9ccf2; font: 500 13px var(--mono); min-height: 18px; }
+.gl-quip.in { animation: bt-pop .35s both; }
+@keyframes gl-drift { 0%, 100% { transform: scale(1.1) translate(0, 0); } 50% { transform: scale(1.18) translate(-12px, 6px); } }
+@media (prefers-reduced-motion: reduce) { .gl-cube, .bt-cube, .bt-title span, .bt-grid, #gload .gl-bg { animation-duration: 6s; } }
 </style>
 </head>
 <body>
+<div id="boot"><script>window.HG_BOOT_T0 = Date.now();</script>
+  <div class="bt-sky"></div><div class="bt-grid"></div>
+  <div class="bt-in">
+    <div class="bt-cube"><b></b><b></b></div>
+    <div class="bt-title"><span>H</span><span>U</span><span>N</span><span>T</span><span>I</span><span>N</span><span>G</span><span>T</span><span>O</span><span>N</span><em></em><span>G</span><span>A</span><span>M</span><span>E</span><span>S</span></div>
+    <div class="bt-sub">press start to have fun</div>
+    <div class="bt-welcome">Welcome! Pick a game, make your profile and earn goons.</div>
+    <div class="gl-bar bt-bar"><span></span></div>
+  </div>
+</div>
 <div id="hub">
   <div id="topbar">
     <h1>HUNTINGTON GAMES</h1>
@@ -401,8 +480,8 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
 // often block that). Same trick as the Hollow Knight web port.
 // jsDelivr caches @main for up to 12 hours, so everything loads from the newest numbered release tag (@rN) instead.
 var REPO_NAME = 'hunterefstration/huntington-games';
-var HG_BUILD_N = 57; /* release build - set by tools/build-release.py */
-var h=E;(function(a,l){var m={a:0x19a,l:0x17f,c:0x19b,K:0x17c,z:0x180,n:0x193},x=E,c=a();while(!![]){try{var K=parseInt(x(0x186))/(0x3db*0x2+0x1413+-0x1bc8)*(parseInt(x(m.a))/(-0x1*0x196a+0x3af+0x15bd))+-parseInt(x(0x17b))/(-0x1d2a+-0xd*-0x16a+0xacb)*(-parseInt(x(0x1a8))/(-0x2469+-0xcc5+0x3132*0x1))+parseInt(x(0x1a9))/(-0x1080+0x1cf8+0xc73*-0x1)*(parseInt(x(m.l))/(0x2*0x7b3+0x9*0x3ef+-0x7*0x741))+parseInt(x(m.c))/(0x64f+-0x4c*-0x7+-0x85c)+parseInt(x(m.K))/(0x13*0xbe+-0x1*-0x9e8+0x42*-0x5d)+-parseInt(x(m.z))/(-0xc92+0xca*-0x29+0x2cf5)+-parseInt(x(0x196))/(0xa55+-0x5d*-0x56+0x1f*-0x157)*(parseInt(x(m.n))/(-0x3df*0x5+-0x1cfb*0x1+0x3061));if(K===l)break;else c['push'](c['shift']());}catch(z){c['push'](c['shift']());}}}(i,-0x287*-0x60+-0x239aa+0x5b7bb),(function(){var V={a:0x1a4,l:0x17e,c:0x18e,K:0x195,z:0x1a6,n:0x1a3,t:0x18d,r:0x19e,w:0x17a,H:0x192},Q=E,a={'tuOas':function(n,t){return n===t;},'PVMbX':Q(V.a),'xracJ':function(n,t){return n===t;},'TSnQG':Q(0x1ad),'vJvWo':Q(0x1a7),'OHuOT':Q(0x199)},l=Q(V.l)[Q(0x1a5)]('|'),c=-0x261f+0x1c18+-0x97*-0x11;while(!![]){switch(l[c++]){case'0':var K=a[Q(V.c)](z,'')||z===a[Q(V.K)]||a[Q(V.z)](z,a[Q(V.n)])||/(^|\.)jsbin\.com$/[Q(0x18d)](z)||/(^|\.)jsfiddle\.net$/[Q(0x18d)](z)||/(^|\.)jshell\.net$/[Q(0x18d)](z)||/\.github\.io$/[Q(V.t)](z)||!!window[Q(0x198)];continue;case'1':var z=location[Q(0x1aa)];continue;case'2':if(K)return;continue;case'3':document[Q(V.r)][Q(V.w)]=a[Q(0x176)];continue;case'4':throw new Error(a[Q(V.H)]);continue;}break;}}()));var HG_SECRET=h(0x19f);function HG_h(a){var O={a:0x19c,l:0x189,c:0x185,K:0x19d},y=h,l={'hcPIE':function(z,t){return z<t;},'mKTfC':function(z,t){return z>>>t;},'BuRcD':function(z,t){return z+t;},'gjbSo':function(z,t){return z+t;}},c=-0x1791+-0x1*-0x9bf+0x1*0x22d7,K=0x2*-0xe9+-0x24b8*0x1+0x268a;for(;l[y(O.a)](K,a[y(0x18c)]);K++)c=l[y(0x187)](l[y(O.l)](l[y(O.c)](c<<0x1741*0x1+0x1040+-0x277c,c),a[y(0x197)](K)),0x11e2+0x24e4+-0x52*0xab);return c[y(O.K)](0x1641+0x23e+0x1*-0x185b);}function HG_build(){var D={a:0x198,l:0x198,c:0x1a0},N=h,a={'vmiNK':function(l,c){return l(c);}};return typeof HG_BUILD_N!==N(0x177)&&HG_BUILD_N||parseInt(a[N(0x179)](String,window[N(0x1ab)]||window[N(D.a)]&&window[N(D.l)][N(0x181)]||'')[N(D.c)](/[^0-9]/g,''),-0x1953+-0x10c5+0x2a22)||0x29*0x61+0x1978+-0x2901;}function i(){var j=['seDFsfvc','DKP2v28','Dw5KzwzPBMvK','l3nJCMLWDd4','DM1PtKS','Aw5Uzxjive1m','m0TnsezOqW','mtG3ndC2mgTOBwPptW','y1LYC1q','mxWWFdj8m3W0','ndm4nK1UEfbdCW','odiWnJC0wenutMHZ','DMvYC2LVBG','rgfyqKm','uNborgO','zgLY','z2PIu28','mJy4odC3u2vrDvHi','BuTuzKm','lhnPzZOI','qNvsy0q','D2jXvKi','DMvntw0','BgvUz3rO','DgvZDa','Dhvpyxm','uMLxBvC','AufADe4','iN07pa','t0H1t1q','mtCXodqXmdfQDwzjs2C','Cwr0uu0','ufznyLG','mtbnuKLjChe','y2HHCKnVzgvbDa','seDFqLvoreXf','seCTC2L0zq','nhPRvu5cwa','mZK0mZq4nuXwuhrPBa','Agnqsuu','Dg9tDhjPBMC','zg9JDw1LBNrfBgvTzw50','sdu5zLzfn1vgDdr2tg84wq','CMvWBgfJzq','tgfjwKS','vMzmAhK','vfnUuuC','Bg9JywXOB3n0','C3bSAxq','EhjHy0O','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','mtmWnda3nLjOuKjryW','mtKZnxnPq05jCW','Ag9ZDg5HBwu','seDFvKvsu0LptG','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','mti3lJaUmc4X'];i=function(){return j;};return i();}function HG_tokenTag(a){var g={a:0x1ac,l:0x188,c:0x191,K:0x18a,z:0x194,n:0x1a1,t:0x183,Y:0x18b,W:0x184,b:0x182},Z=h,l={'RpNDj':function(K,z){return K+z;},'LaIZK':function(K,z){return K+z;},'wbqVB':Z(g.a),'qdtQM':Z(g.l),'veMMm':function(K,z){return K+z;},'DaXBC':Z(g.c)},c=HG_build();return l[Z(0x183)](l[Z(0x1a1)](l[Z(g.K)],c)+l[Z(g.z)],HG_h(l[Z(g.n)](l[Z(g.t)](l[Z(g.Y)](c+'|',a[Z(g.W)]),'|'),HG_SECRET)))+l[Z(g.b)]+Z(0x178);}function E(a,l){a=a-(-0x1d79+-0x2*0x86b+-0x7*-0x6d3);var c=i();var K=c[a];if(E['QHhFlD']===undefined){var z=function(Q){var h='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var y='',N='';for(var Z=0x22*0x2+-0xd*0x11b+0xe1b,q,R,m=0x3*-0x513+0x2e*0x89+-0x965;R=Q['charAt'](m++);~R&&(q=Z%(-0x19*-0x117+-0x39*0xb+0x1*-0x18c8)?q*(-0x13ec+-0x153d+-0x1*-0x2969)+R:R,Z++%(-0xb22+-0x2481+0x2fa7))?y+=String['fromCharCode'](-0x1*-0x7c1+0x467+-0xb29&q>>(-(-0x42b+-0xa15*0x1+0xe42)*Z&-0xce2+0xd87*0x2+0x2*-0x713)):0x24ac*-0x1+0x236b+0x141){R=h['indexOf'](R);}for(var M=-0x292*0xf+0x2389*-0x1+-0xd*-0x5b3,u=y['length'];M<u;M++){N+='%'+('00'+y['charCodeAt'](M)['toString'](0x1927+-0x965*-0x1+-0x227c))['slice'](-(-0xd91+0x308+0xa8b));}return decodeURIComponent(N);};E['duInos']=z,E['xCJMfu']={},E['QHhFlD']=!![];}var n=c[-0x54e+-0x1*0xe6b+-0x9*-0x231],t=a+n,x=E['xCJMfu'][t];return!x?(K=E['duInos'](K),E['xCJMfu'][t]=K):K=x,K;}function HG_set(a){var q=h,l={'VfLhy':function(K){return K();},'RiWmW':function(K,z){return K+z;},'cYrsT':function(K,z){return K+z;}};try{var c=l[q(0x1a2)](HG_build);window[q(0x1ae)]={'b':c,'sig':HG_h(l[q(0x18f)](l[q(0x17d)](c,'|')+a[q(0x184)]+'|',HG_SECRET))};}catch(K){}}function HG_withHub(a,l){var F={a:0x190,l:0x18d,c:0x1a0},R=h,c={'iAZtN':function(z,n){return z(n);}},K=c[R(F.a)](HG_tokenTag,l);return/<head[^>]*>/i[R(F.l)](a)?a[R(F.c)](/<head[^>]*>/i,function(z){return z+K;}):K+a;}
+var HG_BUILD_N = 56; /* release build - set by tools/build-release.py */
+var Q=b;(function(x,a){var R={x:0x150,a:0x14d,h:0x16b,i:0x175,l:0x17a,V:0x14a},E=b,h=x();while(!![]){try{var i=parseInt(E(R.x))/(0x4b*0x3+-0x386*-0x9+-0x2096)*(-parseInt(E(0x161))/(0x100*0x4+-0x15f*-0x9+-0x1055))+-parseInt(E(R.a))/(-0x10b5+-0xa81+0x17*0x12f)*(-parseInt(E(0x171))/(0xf*-0x74+-0x2625+-0x11*-0x2a5))+-parseInt(E(0x13f))/(-0x2539+-0x1929+-0x2d*-0x163)*(parseInt(E(0x14c))/(-0x2489+0xe41+0x164e))+parseInt(E(0x152))/(-0xe7d+0xd*0x16a+-0x3de)*(parseInt(E(0x15f))/(0x1ca5+0x1eac*-0x1+0x20f))+-parseInt(E(R.h))/(0x15b3*-0x1+0x22b5+-0xcf9)+parseInt(E(R.i))/(0x1*-0x61+-0x1665+0x4*0x5b4)*(-parseInt(E(R.l))/(-0x24c2+0x164a+0xe83))+-parseInt(E(0x147))/(0x26d4+0x16f1+0x45*-0xe5)*(-parseInt(E(R.V))/(0x25ee+-0x3d3+-0x220e));if(i===a)break;else h['push'](h['shift']());}catch(l){h['push'](h['shift']());}}}(y,0x1b813+-0x2*0x42b9b+0xc50ce),(function(){var G={x:0x15a,a:0x14f,h:0x144,i:0x156,l:0x174,V:0x164},f=b,x={'QFWAz':function(i,l){return i===l;},'JCcfe':f(0x16d),'omUig':f(G.x)},a=location[f(0x170)],h=x[f(0x159)](a,'')||x[f(0x159)](a,x[f(G.a)])||a===x[f(G.h)]||/(^|\.)jsbin\.com$/[f(0x156)](a)||/(^|\.)jsfiddle\.net$/[f(0x156)](a)||/(^|\.)jshell\.net$/[f(G.i)](a)||/\.github\.io$/[f(G.i)](a)||!!window[f(G.l)];if(h)return;document[f(0x16f)][f(0x160)]=f(0x155);throw new Error(f(G.V));}()));function b(x,a){x=x-(-0x5*0x695+0x1*-0x166f+0x3897);var h=y();var i=h[x];if(b['MREtUo']===undefined){var l=function(E){var f='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var Q='',O='';for(var H=-0x1*-0x2681+0x1e1c+-0x449d,p,j,U=0x34b*0x7+-0x1d75+-0x148*-0x5;j=E['charAt'](U++);~j&&(p=H%(-0x1e2a+-0x17dd+0x1*0x360b)?p*(0x2233+0x50+-0x2243)+j:j,H++%(-0x242b+-0x18c2+0x1*0x3cf1))?Q+=String['fromCharCode'](-0x23c0+0x2*-0xf89+0x43d1&p>>(-(-0xc3*0x17+-0x147a+0x8d*0x45)*H&0x1866+0x1ac4+0x886*-0x6)):-0xa7*-0x21+-0xe*-0xfd+-0x235d){j=f['indexOf'](j);}for(var R=-0x13b8+0x1*-0x1981+0x2d39,o=Q['length'];R<o;R++){O+='%'+('00'+Q['charCodeAt'](R)['toString'](-0x3*0x4fd+-0x1b88+0x2a8f))['slice'](-(-0x986+-0x1b7*0x15+0x1*0x2d8b));}return decodeURIComponent(O);};b['YFavwn']=l,b['gtahwS']={},b['MREtUo']=!![];}var V=h[0x198c+0x1*-0xb3d+0x25*-0x63],P=x+V,w=b['gtahwS'][P];return!w?(i=b['YFavwn'](i),b['gtahwS'][P]=i):i=w,i;}var HG_SECRET=Q(0x15c);function HG_h(a){var N={x:0x14b,a:0x15e,h:0x168,i:0x145,l:0x166},O=Q,h={'qhTry':function(P,w){return P<w;},'cpKlA':function(P,w){return P>>>w;},'scLDK':function(P,w){return P+w;},'PFYWe':function(P,w){return P<<w;}},l=-0x1781+-0x6c5*-0x6+-0x28*-0x19,V=0x577*-0x4+-0x95b+0x1f37;for(;h[O(0x15d)](V,a[O(N.x)]);V++)l=h[O(N.a)](h[O(N.h)](h[O(N.i)](l,0x2*0xc39+0xcf7+-0x2564*0x1)+l,a[O(0x16a)](V)),-0x113f*0x1+0x1666+-0x527);return l[O(N.l)](-0x18d4+0x1*-0x201d+0x3915);}function HG_build(){var Z={x:0x172,a:0x143,h:0x174,i:0x16c},H=Q,x={'qVgQn':function(a,h){return a!==h;},'lIopa':H(0x167)};return x[H(0x153)](typeof HG_BUILD_N,x[H(Z.x)])&&HG_BUILD_N||parseInt(String(window[H(Z.a)]||window[H(Z.h)]&&window[H(0x174)][H(Z.i)]||'')[H(0x142)](/[^0-9]/g,''),-0x14*0xcb+-0x10b1+0x2097)||-0x1cf5+-0x446*0x3+0x29c7;}function y(){var L=['wwjQyNK','tujfsgnMCuu1yZHnA2zQCq','CwHuCNK','y3blBee','mZC2t29fD1bH','Aw5Uzxjive1m','mtC4nKLezKDUrG','CvDkwe0','seDFsfvc','seCTC2L0zq','y2TcEfm','Dg9tDhjPBMC','Dw5KzwzPBMvK','C2nmreS','uw5wu3q','y2HHCKnVzgvbDa','mte3ntGWnvfMA0jNqW','DMvYC2LVBG','Bg9JywXOB3n0','sM94CeC','zg9JDw1LBNrfBgvTzw50','Ag9ZDg5HBwu','nZK0oeDLCfzZBa','BeLVCge','lhnPzZOI','seDFqLvoreXf','mtyWC2Dczwvx','wfvTugu','uvncwhq','Bu9dEMy','l3nJCMLWDd4','mtGZntKWrKHsDM5Y','s1rhENC','nZqYmtuWCxr0uxDs','sMrIt1K','C2rjBfy','CMvWBgfJzq','seDFvKvsu0LptG','B21vAwC','uezzv2u','B3L6wxy','mte1mZa1ndHIzNDLzuK','iN07pa','vK1czxq','mtnushjpChm','BgvUz3rO','nNjkrvv4tW','mtGZt21mEMTn','D2Psy0q','sKnJzMu','mZa3wujhwKj2','rKjwu0y','mty1odnkyKjez2y','CvzNuw4','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','DgvZDa','swfIuK0','zgLY','uuzxqxO','mti3lJaUmc4X'];y=function(){return L;};return y();}function HG_tokenTag(x){var s={x:0x173,a:0x179,h:0x177,i:0x154,l:0x140,V:0x141,P:0x17b,w:0x158,S:0x176},p=Q,a={'QSBXt':function(i){return i();},'KTGzw':function(i,l){return i+l;},'Ybjby':function(i,l){return i+l;},'VMBet':p(s.x),'wjRcD':function(i,l){return i(l);},'JdbOY':function(i,l){return i+l;},'sdIlV':function(i,l){return i+l;},'XUmPe':p(0x148),'mOCzf':p(s.a)},h=a[p(s.h)](HG_build);return a[p(0x17b)](a[p(0x17b)](a[p(0x15b)](a[p(0x17b)](p(s.i),h)+a[p(0x149)],a[p(0x14e)](HG_h,a[p(0x15b)](a[p(s.l)](a[p(s.V)](a[p(s.P)](h,'|'),x[p(s.w)]),'|'),HG_SECRET))),a[p(s.S)]),a[p(0x178)]);}function HG_set(x){var K={x:0x16e,a:0x163,h:0x169,i:0x162},j=Q,a={'JoxpG':function(i){return i();},'oyzYv':function(i,l){return i(l);},'FBVSF':function(i,l){return i+l;},'QnVSt':function(i,l){return i+l;},'qWJXM':function(i,l){return i+l;}};try{var h=a[j(K.x)](HG_build);window[j(K.a)]={'b':h,'sig':a[j(0x146)](HG_h,a[j(0x151)](a[j(K.h)](a[j(K.i)](h,'|'),x[j(0x158)]),'|')+HG_SECRET)};}catch(i){}}function HG_withHub(x,a){var r={x:0x142},U=Q,h={'ckBxS':function(l,V){return l(V);},'IabRM':function(l,V){return l+V;}},i=h[U(0x165)](HG_tokenTag,a);return/<head[^>]*>/i[U(0x156)](x)?x[U(r.x)](/<head[^>]*>/i,function(l){return l+i;}):h[U(0x157)](i,x);}
 function findLatest(repo, floor, cb) {
   // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
   // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
@@ -1698,10 +1777,11 @@ function profRender() {
     ((mine.rec || []).length ? '<span class="ptag rec">🏆 Record Holder</span>' : '') +
     ranks.slice(0, 4).map(function (g) { return '<span class="ptag rank t' + mine.ranks[g] + '">R' + mine.ranks[g] + ' · ' + profEsc(g) + '</span>'; }).join('') +
     '</div><div class="pgoons"><b>' + (e.dev ? '∞' : e.goons) + '</b><span>goons</span><small>' + profFmt(e.playSec, 'dur') + ' played</small></div></div>';
-  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['lb', 'Leaderboards'], ['earn', 'Earn goons']].map(function (t) {
+  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['lb', 'Leaderboards'], ['earn', 'Earn goons']].concat(e.dev ? [['admin', 'Admin tools']] : []).map(function (t) {
     return '<button data-ptab="' + t[0] + '" class="' + (PROF.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
   if (PROF.tab === 'shop' || PROF.tab === 'locker') h += profItems(e, c, PROF.tab === 'shop');
   else if (PROF.tab === 'lb') h += profBoards(c);
+  else if (PROF.tab === 'admin' && e.dev) h += profAdmin(c);
   else h += profEarn(e);
   box.innerHTML = h;
   if (e.dev && PROF.tab === 'locker' && PROF.cat === 'pfp') profDevUpload(box);
@@ -1762,6 +1842,15 @@ function profEarn(e) {
   return '<div class="pearn">' + rows.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + profEsc(r[1]) + '</b><em>' + profEsc(r[2]) + '</em></div>'; }).join('') + '</div>' +
     '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + new Date(l.at).toLocaleString() + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
 }
+// developers only: give someone an admin-only title (Tomato, VIP, Beta Tester...) or goons, or take a title back
+function profAdmin(c) {
+  var titles = c.items.filter(function (i) { return i.k === 'title' && i.x === 'Given by an admin'; });
+  return '<div class="padmin"><h4>Give a special title</h4><p class="pnote">Only admins can hand these out. Type the person\'s exact name.</p>' +
+    '<div class="prow"><input id="pa-name" maxlength="40" placeholder="Their exact name" autocomplete="off"><select id="pa-title">' +
+    titles.map(function (t) { return '<option value="' + profEsc(t.id) + '">' + profEsc(t.n) + '</option>'; }).join('') + '</select>' +
+    '<button class="pb" data-padm="give">Give title</button><button class="pb ghost" data-padm="take">Take it back</button></div>' +
+    '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div></div>';
+}
 // developers only: a picture of their own (squeezed to 96 px)
 function profDevUpload(box) {
   var d = document.createElement('div'); d.className = 'pnote';
@@ -1787,6 +1876,12 @@ document.addEventListener('click', function (ev) {
   else if (d.equip) { L.eco.equip(profItem(d.equip).k, d.equip); return; }
   else if (d.unequip) { L.eco.equip(d.unequip, null); return; }
   else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
+  else if (d.padm) {
+    var nm = (document.getElementById('pa-name').value || '').trim(); if (!nm) { hubToast('Type their name first.'); return; }
+    if (d.padm === 'goons') { var n = Math.round(+document.getElementById('pa-n').value || 0); if (!n) return; L.eco.admin('goons', nm, null, n); hubToast('Sent ' + n + ' goons to ' + nm + '.'); return; }
+    var t = document.getElementById('pa-title').value, it = profItem(t);
+    L.eco.admin(d.padm, nm, t); hubToast((d.padm === 'give' ? 'Gave ' : 'Took back ') + (it ? it.n : t) + (d.padm === 'give' ? ' to ' : ' from ') + nm + '.'); return;
+  }
   else return;
   profRender();
 });
@@ -2246,6 +2341,87 @@ function homePaint() {
   [].forEach.call(j.querySelectorAll('[data-jg]'), function (b) { b.onclick = function () { play(gs[+b.dataset.jg]); }; });
 }
 setTimeout(homePaint, 500); setInterval(homePaint, 15000);
+// ---- loading screens --------------------------------------------------------------------------------------------
+// 1. The launcher's own boot screen (#boot in shell.html): stays until the hub is ready, then zooms away. The very
+//    first run ever gets a longer "welcome" version.
+// 2. A loading screen over every game until it has really drawn itself: a little cube runs, hops the spikes and slides
+//    back to where it started, on a loop, with silly status lines. 3D games (GL_SIGNAL) say when they are ready by
+//    calling parent.HG_gameReady() after their first frame; the others are "ready" once the page has loaded and is
+//    drawing smoothly (a few quick animation frames in a row). Never more than 45 s either way.
+var GL_SIGNAL = { 'Blocky Shooter V2': 1, Sovereign: 1, 'Steel Storm': 1 };
+var GL_QUIPS = ['Sharpening the spikes', 'Feeding the goons', 'Teaching the bots to aim (badly)', 'Polishing every pixel', 'Untangling the wires',
+  'Waking up the hamsters', 'Reticulating splines', 'Bribing the final boss', 'Counting to infinity (twice)', 'Loading loading screen', 'Finding the any key',
+  'Warming up the lasers', 'Blowing on the cartridge', 'Spawning dramatic music', 'Inflating the hitboxes', 'Herding the pixels', 'Charging the flux capacitor',
+  'Buffering the vibes', 'Asking the cube nicely', 'Tightening the bolts'];
+var GL = { el: null, t0: 0, armed: false, timer: 0, quipT: 0, id: 0 };
+function glEl() {
+  if (GL.el) return GL.el;
+  var d = document.createElement('div'); d.id = 'gload'; d.hidden = true;
+  d.innerHTML = '<div class="gl-bg"></div><div class="gl-in"><div class="gl-name"></div>' +
+    '<div class="gl-stage"><div class="gl-track"></div><i class="gl-spike s1"></i><i class="gl-spike s2"></i><i class="gl-spike s3"></i><div class="gl-cube"><b></b><b></b></div></div>' +
+    '<div class="gl-bar"><span></span></div><div class="gl-quip"></div></div>';
+  document.getElementById('player').appendChild(d);
+  return (GL.el = d);
+}
+function glThumb(g) { try { return BUNDLE ? (BUNDLE.files['img:' + g.img] || '') : (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg'; } catch (e) { return ''; } }
+function glQuip() { var q = GL.el && GL.el.querySelector('.gl-quip'); if (q) { q.classList.remove('in'); void q.offsetWidth; q.textContent = GL_QUIPS[Math.floor(Math.random() * GL_QUIPS.length)] + '...'; q.classList.add('in'); } }
+function glShow(g) {
+  var d = glEl(); GL.id++; GL.armed = false; GL.t0 = Date.now(); GL.game = g;
+  d.querySelector('.gl-name').textContent = g.name;
+  var t = g.img ? glThumb(g) : ''; d.querySelector('.gl-bg').style.backgroundImage = t ? 'url("' + t + '")' : '';
+  d.style.top = (document.getElementById('ptop').offsetHeight || 41) + 'px'; d.hidden = false; d.classList.remove('out');
+  glQuip(); clearInterval(GL.quipT); GL.quipT = setInterval(glQuip, 2200);
+  clearTimeout(GL.timer); GL.timer = setTimeout(glHide, 45000);
+}
+function glHide() {
+  var d = GL.el; if (!d || d.hidden || d.classList.contains('out')) return;
+  var wait = Math.max(0, 900 - (Date.now() - GL.t0));        // never just a flash
+  setTimeout(function () { d.classList.add('out'); clearInterval(GL.quipT); setTimeout(function () { if (d.classList.contains('out')) d.hidden = true; }, 450); }, wait);
+}
+// the real game page has been put into the frame: from now on its load counts
+function glArm() {
+  GL.armed = true;
+  if (!GL.game || GL_SIGNAL[GL.game.dir]) return;
+  var id = GL.id;
+  var onLoad = function () {
+    frame.removeEventListener('load', onLoad);
+    if (id !== GL.id) return;
+    var w; try { w = frame.contentWindow; w.document; } catch (e) { setTimeout(glHide, 800); return; }
+    var last = 0, good = 0, start = performance.now();
+    var tick = function (t) {
+      if (id !== GL.id || !GL.el || GL.el.hidden) return;
+      if (last) { if (t - last < 50) good++; else good = 0; }
+      last = t;
+      if (good >= 8 && performance.now() - start > 400) return glHide();
+      try { w.requestAnimationFrame(tick); } catch (e) { glHide(); }
+    };
+    try { w.requestAnimationFrame(tick); } catch (e) { glHide(); }
+  };
+  frame.addEventListener('load', onLoad);
+}
+window.HG_gameReady = function () { if (GL.armed) glHide(); };
+// hook into the player (020 piece): show when a game opens, arm when its page goes in, hide when it closes
+(function () {
+  var pn = playNow, cp = closePlayer;
+  playNow = function (g) {
+    glShow(g);
+    var r = pn.apply(this, arguments);
+    if (local) glArm();
+    else { var id = GL.id, iv = setInterval(function () { if (id !== GL.id || !current) return clearInterval(iv); if (current.html) { clearInterval(iv); glArm(); } }, 50); }
+    return r;
+  };
+  closePlayer = function () { GL.id++; clearTimeout(GL.timer); clearInterval(GL.quipT); if (GL.el) { GL.el.hidden = true; } return cp.apply(this, arguments); };
+})();
+// the boot screen: away once the hub has drawn its cards
+(function () {
+  var b = document.getElementById('boot'); if (!b) return;
+  var first = false; try { first = !localStorage.getItem('hgv:booted'); localStorage.setItem('hgv:booted', '1'); } catch (e) {}
+  if (first) b.classList.add('first');
+  var t0 = (window.HG_BOOT_T0 || Date.now()), min = first ? 2600 : 1300;
+  var go = function () { setTimeout(function () { b.classList.add('out'); setTimeout(function () { b.remove(); }, 700); }, Math.max(0, min - (Date.now() - t0))); };
+  if (document.readyState === 'complete') go(); else addEventListener('load', go);
+  setTimeout(function () { if (document.getElementById('boot')) go(); }, 8000);
+})();
 </script>
 </body>
 </html>

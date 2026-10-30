@@ -849,6 +849,7 @@ function renderGlobe(dt, t) {
   for (const k in Globe.lines) Globe.lines[k].scale.setScalar(1 + clamp(Cam.alt * 0.0012, 0.000012, 0.0005));
   Globe.outline.scale.setScalar(1 + clamp(Cam.alt * 0.0016, 0.000016, 0.0007));
   Globe.renderer.render(Globe.scene, Globe.camera);
+  if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} }      // the launcher's loading screen can go
   Globe.dirty = false;
 }
 

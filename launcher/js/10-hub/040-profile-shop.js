@@ -38,10 +38,11 @@ function profRender() {
     ((mine.rec || []).length ? '<span class="ptag rec">🏆 Record Holder</span>' : '') +
     ranks.slice(0, 4).map(function (g) { return '<span class="ptag rank t' + mine.ranks[g] + '">R' + mine.ranks[g] + ' · ' + profEsc(g) + '</span>'; }).join('') +
     '</div><div class="pgoons"><b>' + (e.dev ? '∞' : e.goons) + '</b><span>goons</span><small>' + profFmt(e.playSec, 'dur') + ' played</small></div></div>';
-  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['lb', 'Leaderboards'], ['earn', 'Earn goons']].map(function (t) {
+  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['lb', 'Leaderboards'], ['earn', 'Earn goons']].concat(e.dev ? [['admin', 'Admin tools']] : []).map(function (t) {
     return '<button data-ptab="' + t[0] + '" class="' + (PROF.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
   if (PROF.tab === 'shop' || PROF.tab === 'locker') h += profItems(e, c, PROF.tab === 'shop');
   else if (PROF.tab === 'lb') h += profBoards(c);
+  else if (PROF.tab === 'admin' && e.dev) h += profAdmin(c);
   else h += profEarn(e);
   box.innerHTML = h;
   if (e.dev && PROF.tab === 'locker' && PROF.cat === 'pfp') profDevUpload(box);
@@ -102,6 +103,15 @@ function profEarn(e) {
   return '<div class="pearn">' + rows.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + profEsc(r[1]) + '</b><em>' + profEsc(r[2]) + '</em></div>'; }).join('') + '</div>' +
     '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + new Date(l.at).toLocaleString() + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
 }
+// developers only: give someone an admin-only title (Tomato, VIP, Beta Tester...) or goons, or take a title back
+function profAdmin(c) {
+  var titles = c.items.filter(function (i) { return i.k === 'title' && i.x === 'Given by an admin'; });
+  return '<div class="padmin"><h4>Give a special title</h4><p class="pnote">Only admins can hand these out. Type the person\'s exact name.</p>' +
+    '<div class="prow"><input id="pa-name" maxlength="40" placeholder="Their exact name" autocomplete="off"><select id="pa-title">' +
+    titles.map(function (t) { return '<option value="' + profEsc(t.id) + '">' + profEsc(t.n) + '</option>'; }).join('') + '</select>' +
+    '<button class="pb" data-padm="give">Give title</button><button class="pb ghost" data-padm="take">Take it back</button></div>' +
+    '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div></div>';
+}
 // developers only: a picture of their own (squeezed to 96 px)
 function profDevUpload(box) {
   var d = document.createElement('div'); d.className = 'pnote';
@@ -127,6 +137,12 @@ document.addEventListener('click', function (ev) {
   else if (d.equip) { L.eco.equip(profItem(d.equip).k, d.equip); return; }
   else if (d.unequip) { L.eco.equip(d.unequip, null); return; }
   else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
+  else if (d.padm) {
+    var nm = (document.getElementById('pa-name').value || '').trim(); if (!nm) { hubToast('Type their name first.'); return; }
+    if (d.padm === 'goons') { var n = Math.round(+document.getElementById('pa-n').value || 0); if (!n) return; L.eco.admin('goons', nm, null, n); hubToast('Sent ' + n + ' goons to ' + nm + '.'); return; }
+    var t = document.getElementById('pa-title').value, it = profItem(t);
+    L.eco.admin(d.padm, nm, t); hubToast((d.padm === 'give' ? 'Gave ' : 'Took back ') + (it ? it.n : t) + (d.padm === 'give' ? ' to ' : ' from ') + nm + '.'); return;
+  }
   else return;
   profRender();
 });
