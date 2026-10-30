@@ -36,6 +36,12 @@ const migEnemyIds = (o) => {
 };
 for (const k in life) if (life[k] && typeof life[k] === 'object' && !Array.isArray(life[k])) { migEnemyIds(life[k]); for (const k2 in life[k]) if (life[k][k2] && typeof life[k][k2] === 'object' && !Array.isArray(life[k][k2])) migEnemyIds(life[k][k2]); }
 if (settings.quality === 'medium') settings.quality = 'normal';
+// Graphics quality belongs to this device, not the account: 'blocky21_settings' syncs through the launcher's cloud saves,
+// so a Chromebook used to get the quality picked on a gaming PC. The device's own choice lives in a key that never syncs
+// (the launcher only syncs keys starting 'blocky'...). First run on a device: keep what this device already had.
+const DEV_QUALITY_KEY = 'hgdev_blocky_quality';
+(() => { try { const q = localStorage.getItem(DEV_QUALITY_KEY);
+    if (q && /^(auto|low|normal|high|cinematic)$/.test(q)) settings.quality = q; else localStorage.setItem(DEV_QUALITY_KEY, settings.quality || 'auto'); } catch (e) {} })();
 
 
 // hip: viewmodel position at the hip (camera space). adsDist: how far the sight sits from your eye when aiming.

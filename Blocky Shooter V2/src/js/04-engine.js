@@ -13,7 +13,8 @@ const VM_FOV = 58, VM_SCALE = 0.55;
 const LOWEND = (navigator.deviceMemory && navigator.deviceMemory <= 4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
 // Auto remembers the tier it settled on here. The next launch starts there, and only tries one tier better when the
 // last fights at that tier really held ~60 FPS (the menu alone is lighter than a fight, so it can't tell).
-const AUTO_TIERS = 4, AUTO_KEY = 'blocky_autotier';
+const AUTO_TIERS = 4, AUTO_KEY = 'hgdev_blocky_autotier';      // per device too (was 'blocky_autotier', which synced)
+try { for (const sfx of ['', '_fps']) { const old = localStorage.getItem('blocky_autotier' + sfx); if (old !== null && localStorage.getItem(AUTO_KEY + sfx) === null) localStorage.setItem(AUTO_KEY + sfx, old); localStorage.removeItem('blocky_autotier' + sfx); } } catch (e) {}
 let autoTier = (() => { try {
     const v = localStorage.getItem(AUTO_KEY);
     if (v !== null) { const t = clamp(+v | 0, 0, AUTO_TIERS - 1), f = String(localStorage.getItem(AUTO_KEY + '_fps') || '').split(':'); return (+f[0] === t && +f[1] >= 58) ? Math.max(0, t - 1) : t; }

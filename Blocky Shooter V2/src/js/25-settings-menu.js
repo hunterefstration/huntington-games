@@ -1,6 +1,6 @@
 // ---------- SETTINGS ----------
 const bootAA = settings.quality !== 'low';
-function saveSettings() { saveJSON('blocky21_settings', settings); }
+function saveSettings() { saveJSON('blocky21_settings', settings); try { localStorage.setItem(DEV_QUALITY_KEY, settings.quality); } catch (e) {} }      // (quality: this device only, see 01-state.js)
 function renderSettings() {
     document.querySelectorAll('#set-quality .qbtn').forEach(b => b.classList.toggle('on', b.dataset.q === settings.quality));
     const aaNote = (settings.quality !== 'low') !== bootAA ? ' (Anti-aliasing change applies after reloading the page.)' : '';
