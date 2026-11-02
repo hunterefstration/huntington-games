@@ -2011,7 +2011,7 @@ function drawBoss(x, G, t) {
 // GUARDIANS: a mini boss at the end of every world, each a creature of its world that the dark got into.
 // The arena door slams shut behind you; beat it and it turns back into light, the door opens and the gate appears.
 //   Mossback (Glowwood)       a huge mossy beetle: hops at you, and its back is always fair game. Stomps shake slimes loose.
-//   Shardwing (Hollow Caves)  a crystal bat: hovers dropping shards, skims across the floor, then dives and gets stuck.
+//   Shardwing (Hollow Caves)  a crystal bat: hovers raising crystal spikes from the floor, skims across the floor, then dives and gets stuck.
 //   The Bellkeeper (Sky)      a stone bell: fires rings of light, then tolls - crashes down, sends waves, sticks a moment.
 //   Cinderjaw (Ember Forge)   a magma beast: spits lava, then charges; hitting the wall knocks it silly.
 // A "!" means it is open: stomp it or dash into it.
@@ -2086,6 +2086,15 @@ function guardFx(G, B, dt) {
             if (Math.random() < 0.7) G.parts.push({ x: f.x, y: B.floor - 4, vx: rand(-30, 30), vy: rand(-170, -60), life: 0.4, max: 0.4, size: rand(3, 6), color: B.D.col, add: true, g: 500 });
             if (!p.dead && Math.abs(p.x - f.x) < 14 && p.y + p.h / 2 > B.floor - 22) hurt(G, 'enemy', { kind: B.kind, x: f.x - f.dir * 20, y: p.y });
             if (f.x < B.x0 || f.x > B.x1) f.t = 0;
+        } else if (f.type === 'spike') {      // Shardwing's crystal spikes: a glowing crack first, then up out of the floor, then back down
+            const age = f.T - f.t;
+            if (age < f.warn) { if (Math.random() < 0.25) G.parts.push({ x: f.x + rand(-10, 10), y: B.floor - 2, vx: rand(-20, 20), vy: rand(-80, -30), life: 0.35, max: 0.35, size: rand(2, 3), color: '#bff7ff', add: true, g: 200 }); }
+            else {
+                if (!f.out) { f.out = true; Sound.play('crumble'); G.shake(3); burst(G, f.x, B.floor - 4, '#bff7ff', 8, 160); }
+                const up = age - f.warn, H = 58;
+                f.h = f.t < f.down ? H * Math.max(0, f.t / f.down) : H * Math.min(1, up / 0.08);      // shoots up in 0.08 s, sinks back over f.down
+                if (!p.dead && f.h > 16 && Math.abs(p.x - f.x) < 13 && p.y + p.h / 2 > B.floor - f.h) hurt(G, 'enemy', { kind: B.kind, x: f.x, y: p.y + 30 });
+            }
         } else if (f.type === 'glint' && f.t <= 0) {
             G.shots.push({ x: f.x, y: B.top + 6, vx: 0, vy: 40, g: 1250, life: 3, style: 'shard', guard: true, kind: B.kind, col: '#bff7ff', light: '140,240,255' });
         } else if (f.type === 'rock' && f.t <= 0) {
@@ -2130,8 +2139,11 @@ const GUARD_AI = {
         switch (B.state) {
             case 'hover':
                 B.x = lerp(B.x, clamp(p.x, B.x0 + 60, B.x1 - 60), dt * 1.3); B.y = lerp(B.y, hy + Math.sin(B.wob * 3) * 10, dt * 3);
-                B.drop -= dt; if (B.drop <= 0) { B.drop = 0.75 / sp; for (const o of B.phase >= 2 ? [-70, 0, 70] : [0]) B.fx.push({ type: 'glint', x: clamp(p.x + o + rand(-30, 30), B.x0 + 20, B.x1 - 20), t: 0.5 }); }
-                if (B.t <= 0) { B.state = 'screech'; B.t = 0.6; Sound.play('screech'); G.shake(4); }
+                // crystal spikes from the floor (1 s of warning each, well spaced); none new once the hover is over
+                B.drop -= dt; if (B.drop <= 0 && B.t > 0) { B.drop = 1.4 / sp; for (const o of B.phase >= 2 ? [-90, 0, 90] : [0]) B.fx.push({ type: 'spike', x: clamp(p.x + o + rand(-30, 30), B.x0 + 20, B.x1 - 20), warn: 1, up: 0.55, down: 0.3, T: 1.85, t: 1.85, h: 0 }); }
+                // the swoop / dive only starts once every spike has been gone for more than half a second
+                B.clear = B.fx.some(f => f.type === 'spike') ? 0 : (B.clear || 0) + dt;
+                if (B.t <= 0 && B.clear > 0.5) { B.state = 'screech'; B.t = 0.6; Sound.play('screech'); G.shake(4); }
                 break;
             case 'screech': B.y = lerp(B.y, hy - 20, dt * 4); if (B.t <= 0) {
                 B.n++;
@@ -2253,6 +2265,18 @@ function drawGuard(x, G, t) {
     for (const f of B.fx) {
         if (f.type === 'glint' || f.type === 'rock') { x.save(); x.translate(f.x, B.top + 4); x.globalAlpha = 0.5 + 0.5 * Math.sin(t * 30); x.fillStyle = f.type === 'rock' ? '#ffb070' : '#e8feff';
             x.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, r = i % 2 ? 3 : 10; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.fill(); x.restore(); }
+        if (f.type === 'spike') {
+            const age = f.T - f.t;
+            if (age < f.warn) {          // the warning: a crack in the floor that glows brighter as the spike comes
+                const k = age / f.warn; x.save(); x.globalAlpha = 0.35 + 0.55 * k * (0.7 + 0.3 * Math.sin(t * 30)); x.fillStyle = '#9ff3ff';
+                x.beginPath(); x.ellipse(f.x, B.floor - 2, 14 + 6 * k, 4, 0, 0, 7); x.fill();
+                x.strokeStyle = '#e8feff'; x.lineWidth = 2; x.beginPath(); x.moveTo(f.x - 12, B.floor - 1); x.lineTo(f.x - 4, B.floor - 4); x.lineTo(f.x + 3, B.floor - 1); x.lineTo(f.x + 11, B.floor - 3); x.stroke(); x.restore();
+            } else if (f.h > 1) {        // the crystal spike itself
+                x.save(); x.fillStyle = '#8ff0ff'; x.strokeStyle = '#e8feff'; x.lineWidth = 2; x.globalCompositeOperation = 'source-over';
+                x.beginPath(); x.moveTo(f.x - 11, B.floor); x.lineTo(f.x - 4, B.floor - f.h * 0.55); x.lineTo(f.x, B.floor - f.h); x.lineTo(f.x + 5, B.floor - f.h * 0.6); x.lineTo(f.x + 11, B.floor); x.closePath(); x.fill(); x.stroke();
+                x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.moveTo(f.x - 2, B.floor - 4); x.lineTo(f.x, B.floor - f.h + 6); x.lineTo(f.x + 2, B.floor - 4); x.fill(); x.restore();
+            }
+        }
         if (f.type === 'geyser' && !f.hot) { x.save(); x.globalAlpha = 0.4 + 0.3 * Math.sin(t * 25); x.fillStyle = '#ff6a1a'; x.beginPath(); x.ellipse(f.x, B.floor - 2, 20, 5, 0, 0, 7); x.fill(); x.restore(); }
     }
     x.save(); x.translate(B.x, B.y);
