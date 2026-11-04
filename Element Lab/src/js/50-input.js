@@ -14,7 +14,9 @@ function placeCursor() {
     const c = $('cursor'), wrap = $('wrap');
     if (!c) return;
     if (!ptr.inside || tool === 'zap' || (drag && (tool === 'line' || tool === 'rect'))) { c.style.display = 'none'; return; }
-    const cell = wrap.clientWidth / W, d = (brushR * 2 + 1) * cell;
+    const one = tool === 'use' || tool === 'pick';
+    const cell = wrap.clientWidth / W, d = ((one ? 0 : brushR) * 2 + 1) * cell;
+    c.className = one || SETTINGS.shape === 'square' ? 'sq' : SETTINGS.shape === 'spray' ? 'spray' : '';
     c.style.display = 'block'; c.style.width = c.style.height = d + 'px';
     c.style.left = ((ptr.gx + 0.5) * cell - d / 2) + 'px'; c.style.top = ((ptr.gy + 0.5) * cell - d / 2) + 'px';
 }
@@ -38,6 +40,8 @@ function pDown(ev) {
     ptr.gx = g.x; ptr.gy = g.y; ptr.inside = true;
     drag = { id: ev.pointerId, x0: g.x, y0: g.y, lx: g.x, ly: g.y };
     holdFrames = 0;
+    if (tool === 'use') { const m = useAt(g.x, g.y); if (m) toast(m); drag = null; dirtySave = true; return; }
+    if (tool === 'pick') { if (inb(g.x, g.y)) { const e = el[ix(g.x, g.y)]; if (e && !HIDE[e]) { selectElement(e); toast(DEFS[e].label + ' picked'); } } drag = null; return; }
     if (tool !== 'zap') pushUndo();
     if (tool === 'brush' || tool === 'erase') { paintAt(g.x, g.y); if (curEl === ID.water && tool === 'brush') sfx('splash', 0.6); }
     else if (tool === 'zap') { zapAt(g.x, g.y); holdFrames = 1; }
@@ -88,8 +92,11 @@ function initInput() {
         if (!$('title').classList.contains('hidden') || !$('dlg').classList.contains('hidden')) { if (ev.key === 'Escape') closeDlg(); return; }
         const k = ev.key.toLowerCase();
         if (ev.ctrlKey || ev.metaKey) { if (k === 'z') { ev.preventDefault(); doUndo(); } return; }
-        const map = { b: 'brush', l: 'line', r: 'rect', e: 'erase', h: 'heat', c: 'cool', w: 'wind', z: 'zap' };
+        const map = {};
+        for (const t in TOOL_KEYS) map[TOOL_KEYS[t].toLowerCase()] = t;
         if (map[k]) setTool(map[k]);
+        else if (k === 'v') setView(VIEWS[(VIEWS.indexOf(SETTINGS.view) + 1) % VIEWS.length]);
+        else if (k === 'f') setFacing([3, 2, 0, 1][SETTINGS.dir & 3]);
         else if (k === ' ') { ev.preventDefault(); togglePause(); }
         else if (k === '.') stepOnce();
         else if (k === '[') setBrush(brushR - 1);

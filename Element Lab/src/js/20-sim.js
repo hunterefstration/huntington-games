@@ -1,25 +1,30 @@
 // ==========================================
-// ELEMENT LAB - the simulation: grid, chunk sleeping, movement, heat
+// ELEMENT LAB - the simulation: grid, chunk sleeping, movement, heat, pressure
 // The grid has a one cell wall border (stride P = W + 2) so neighbours never need bounds checks.
+// One typed array per property: el element, tp temperature, life timer/health, aux extra (clone target, facing, pipe
+// contents...), vr colour shade, st "already moved this tick" stamp, pw powered (electric pass), pr gas pressure.
 // ==========================================
 let W = 0, H = 0, P = 0, NP = 0, CW = 0, CH = 0;
-let el, tp, life, aux, vr, st, act, run;
+let el, tp, life, aux, vr, st, act, run, pw, pr;
 const OFF = new Int32Array(4), DX = [1, -1, 0, 0], DY = [0, 0, 1, -1];
 let tickN = 0, stamp = 1;
-const CNT = new Int32Array(256);                  // cells per element (recount())
-const MADE = new Uint8Array(256);                 // elements the simulation itself has made (challenges)
-const STAT = { grown: 0, rain: 0, lamp: 0, infected: 0, ate: 0, alk: 0, boomN: 0, chain: 0 };
+const CNT = new Int32Array(NE);                   // cells per element (recount())
+const MADE = new Uint8Array(NE);                  // elements the simulation itself has made (challenges)
+const STAT = { grown: 0, rain: 0, lamp: 0, infected: 0, ate: 0, alk: 0, boomN: 0, chain: 0,
+    fission: 0, turbine: 0, andOn: 0, notOn: 0, crystal: 0, deaths: 0, burst: 0, born: 0, pumped: 0, pushed: 0 };
 const ix = (x, y) => (y + 1) * P + x + 1;
 const CHUNK = 16;
+const MESH = ID.mesh, PIPE = ID.pipe, VALVE = ID.valve;
 
 function allocGrid(w, h) {
     W = w; H = h; P = w + 2; NP = P * (h + 2); CW = (w + CHUNK - 1) >> 4; CH = (h + CHUNK - 1) >> 4;
-    el = new Uint8Array(NP); tp = new Int16Array(NP).fill(AMB); life = new Uint8Array(NP); aux = new Uint8Array(NP);
-    vr = new Uint8Array(NP); st = new Uint8Array(NP);
+    el = new Uint16Array(NP); tp = new Int16Array(NP).fill(AMB); life = new Uint8Array(NP); aux = new Uint16Array(NP);
+    vr = new Uint8Array(NP); st = new Uint8Array(NP); pw = new Uint8Array(NP); pr = new Uint8Array(NP);
     act = new Uint8Array(CW * CH).fill(3); run = new Uint8Array(CW * CH);
     OFF[0] = 1; OFF[1] = -1; OFF[2] = P; OFF[3] = -P;
     for (let x = -1; x <= w; x++) { el[ix(x, -1)] = WALL; el[ix(x, h)] = WALL; }
     for (let y = -1; y <= h; y++) { el[ix(-1, y)] = WALL; el[ix(w, y)] = WALL; }
+    if (typeof allocElectric === 'function') allocElectric();
 }
 
 // wake the chunk holding (x, y) and any neighbour chunk it touches
@@ -29,6 +34,7 @@ function wk(x, y) {
     const y0 = ly === 0 && cy > 0 ? cy - 1 : cy, y1 = ly === 15 && cy < CH - 1 ? cy + 1 : cy;
     for (let b = y0; b <= y1; b++) for (let a = x0; a <= x1; a++) act[b * CW + a] = 3;
 }
+function wkI(i) { const y = ((i / P) | 0) - 1, x = i - (y + 1) * P - 1; if (x >= 0 && y >= 0 && x < W && y < H) wk(x, y); }
 function wakeAll() { act.fill(3); }
 
 function swap(i, j) {
@@ -37,15 +43,16 @@ function swap(i, j) {
     t = life[i]; life[i] = life[j]; life[j] = t;
     t = aux[i]; aux[i] = aux[j]; aux[j] = t;
     t = vr[i]; vr[i] = vr[j]; vr[j] = t;
+    t = pr[i]; pr[i] = pr[j]; pr[j] = t;
     st[i] = st[j] = stamp;
 }
-function clr(i) { el[i] = 0; tp[i] = AMB; life[i] = 0; aux[i] = 0; }
+function clr(i) { el[i] = 0; tp[i] = AMB; life[i] = 0; aux[i] = 0; pr[i] = 0; }
 
 // a cell the simulation makes (reactions, burning, phase changes). `silent` skips the challenge bookkeeping.
 function put(i, e, heat, silent) {
     el[i] = e; tp[i] = TINIT[e] + (heat || 0); vr[i] = (rnd() * 16) | 0;
     const a = L0[e]; life[i] = a ? a + ((rnd() * (L1[e] - a + 1)) | 0) : 0;
-    aux[i] = AUX0[e]; st[i] = stamp;
+    aux[i] = AUX0[e]; st[i] = stamp; pr[i] = 0;
     if (!silent) MADE[e] = 1;
 }
 
@@ -61,6 +68,8 @@ function movePowder(x, y, i, e) {
         j = i + P - s; b = el[j];
         if (b === 0 || (FLUID[b] && DENS[b] < dn && rnd() < 0.4)) { swap(i, j); wk(x, y); wk(x - s, y + 1); return; }
     }
+    b = el[i - P];                                 // lighter than the liquid around it: float up
+    if (KIND[b] === K.LIQUID && DENS[b] > dn && rnd() < 0.3) { swap(i, i - P); wk(x, y); wk(x, y - 1); }
 }
 function moveLiquid(x, y, i, e) {
     const mv = MOVEP[e];
@@ -71,17 +80,46 @@ function moveLiquid(x, y, i, e) {
     const dn = DENS[e];
     let j = i + P, b = el[j];
     if (b === 0 || (FLUID[b] && DENS[b] < dn && rnd() < 0.8)) { swap(i, j); wk(x, y); wk(x, y + 1); return; }
+    if (b === MESH && y + 2 < H && el[j + P] === 0) { swap(i, j + P); wk(x, y); wk(x, y + 2); return; }   // drips through mesh
     const s = rnd() < 0.5 ? -1 : 1;
     if (el[i + P + s] === 0) { swap(i, i + P + s); wk(x, y); wk(x + s, y + 1); return; }
     if (el[i + P - s] === 0) { swap(i, i + P - s); wk(x, y); wk(x - s, y + 1); return; }
     const dsp = DISP[e];
     let last = 0, kk = 0;
-    for (let k = 1; k <= dsp; k++) { if (el[i + s * k] === 0) { last = i + s * k; kk = k; } else break; }
+    for (let k = 1; k <= dsp; k++) {
+        const q = el[i + s * k];
+        if (q === 0) { last = i + s * k; kk = k; }
+        else if (q === MESH && k < dsp && el[i + s * (k + 1)] === 0) { last = i + s * (k + 1); kk = k + 1; break; }
+        else break;
+    }
     if (last) { swap(i, last); wk(x, y); wk(x + s * kk, y); }
+}
+// gas pressure: how crowded the gas is, times how hot. It spreads through connected gas.
+function gasPressure(i, t) {
+    let n = 0, s = 0, g = 0;
+    for (let d = 0; d < 4; d++) {
+        const j = i + OFF[d], b = el[j];
+        if (b !== 0) { n++; if (KIND[b] === K.GAS) { s += pr[j]; g++; } }
+    }
+    let tf = (t + 273) / 373; tf = tf < 0.6 ? 0.6 : tf > 2.6 ? 2.6 : tf;
+    const v = (n * 40 * tf + s) / (1 + g);
+    pr[i] = v > 255 ? 255 : v;
 }
 function moveGas(x, y, i, e) {
     const mv = MOVEP[e];
     wk(x, y);
+    gasPressure(i, tp[i]);
+    const p = pr[i];
+    if (p > 150) {                                 // pressure bursts weak walls (glass, wood, paper...)
+        const j = i + OFF[(rnd() * 4) | 0], b = el[j], bt = BURST[b];
+        if (bt !== 0 && p > bt && rnd() < 0.04) {
+            STAT.burst++;
+            const jx = x + (j - i === 1 ? 1 : j - i === -1 ? -1 : 0), jy = y + (j - i === P ? 1 : j - i === -P ? -1 : 0);
+            if (p > 235 && rnd() < 0.3) { clr(j); queueBoom(jx, jy, 2, 1, -1); }
+            else { if (RUB[b]) put(j, RUB[b], 0, true); else clr(j); sfx('pop', 0.6); }
+            wk(jx, jy);
+        }
+    }
     if (mv < 1 && rnd() > mv) return;
     const dn = DENS[e];
     if (y === 0 && LEAK[e] && rnd() < 0.08) { clr(i); return; }
@@ -90,6 +128,7 @@ function moveGas(x, y, i, e) {
     if (dx === 0 && dy === 0) dx = rnd() < 0.5 ? -1 : 1;
     const j = i + dx + dy * P, b = el[j];
     if (b === 0) { swap(i, j); wk(x + dx, y + dy); }
+    else if (b === MESH) { const k = j + dx + dy * P; if (el[k] === 0 && inb(x + 2 * dx, y + 2 * dy)) { swap(i, k); wk(x + 2 * dx, y + 2 * dy); } }
     else if (FLUID[b]) {
         const db = DENS[b];
         if (KIND[b] === K.GAS) { if (dy < 0 ? db > dn : dy > 0 ? db < dn : true) { swap(i, j); wk(x + dx, y + dy); } }
@@ -100,15 +139,17 @@ function moveGas(x, y, i, e) {
 // ---------- phase changes ----------
 function phase(i, e, to, alt, altP, thr, x, y) {
     if (alt && rnd() < altP) to = alt;
+    if (to === 0) { clr(i); wk(x, y); return; }
     el[i] = to; vr[i] = (rnd() * 16) | 0;
     const a = L0[to]; life[i] = a ? a + ((rnd() * (L1[to] - a + 1)) | 0) : 0;
     aux[i] = AUX0[to]; MADE[to] = 1; st[i] = stamp;
     tp[i] = thr;                                   // the excess heat is spent on the change (cheap latent heat)
     if (to === ID.steam && rnd() < 0.03) sfx('sizzle', 0.5);
+    if (to === ID.cuso4crystal) STAT.crystal++;
     wk(x, y);
 }
 
-// ---------- burning ----------
+// ---------- burning (needs air: an empty or oxygen neighbour) ----------
 function flame(x, y, i) {
     const d = (rnd() * 5) | 0;                     // up, up-left, up-right, left, right
     const dx = d === 1 ? -1 : d === 2 ? 1 : d === 3 ? -1 : d === 4 ? 1 : 0, dy = d < 3 ? -1 : 0;
@@ -123,6 +164,13 @@ function burnStep(x, y, i, e) {
         const p = BPROD[e], t = tp[i];
         if (p === 0) clr(i); else { put(i, p, 0, true); tp[i] = t < 200 ? t : 200; }
         return true;
+    }
+    const j = i + OFF[(rnd() * 4) | 0], b = el[j];
+    if (b === ID.oxygen) { life[i] = l > 2 ? l - 2 : 1; tp[i] += 80; if (rnd() < 0.3) put(j, ID.co2, 0, true); }
+    else if (b !== 0 && b !== ID.fire && KIND[b] !== K.GAS) {
+        let air = 0;
+        for (let d = 0; d < 4; d++) { const q = el[i + OFF[d]]; if (q === 0 || q === ID.oxygen || q === ID.fire) { air = 1; break; } }
+        if (!air && rnd() < 0.08) { life[i] = 0; tp[i] = IGN[e] > 60 ? IGN[e] - 40 : 20; return false; }   // smothered
     }
     life[i] = l;
     if (rnd() < 0.3) flame(x, y, i);
@@ -141,6 +189,8 @@ function cell(x, y, i, e) {
         if (life[i] === 0 && rnd() < BIGN[e]) life[i] = BLIFE[e];
     }
     if (BLIFE[e] !== 0 && life[i] !== 0 && burnStep(x, y, i, e)) return;
+    if (DECP[e] !== 0 && rnd() < DECP[e]) { const q = DECE[e]; if (q === 0) clr(i); else put(i, q); wk(x, y); return; }
+    if (RADN[e] !== 0 && rnd() < RADN[e]) emitNeutron(x + 0.5, y + 0.5, false);
 
     // heat and reactions with one random neighbour
     const d = (rnd() * 4) | 0, j = i + OFF[d], e2 = el[j];
@@ -150,10 +200,11 @@ function cell(x, y, i, e) {
             wk(x, y);
             if (react(i, j, x, y, d, RXL[ri])) { e = el[i]; if (e === 0) return; t = tp[i]; }
         }
-        if (DOUSE[e2] && BLIFE[e] !== 0 && life[i] !== 0) { life[i] = 0; tp[i] = 90; wk(x, y); }
+        const e3 = el[j];
+        if (DOUSE[e3] && BLIFE[e] !== 0 && life[i] !== 0) { life[i] = 0; tp[i] = 90; wk(x, y); }
         const dt = tp[j] - t;
         if (dt > 1 || dt < -1) {
-            const dd = dt * (COND[e] + COND[e2]) * 0.5, a = dd < 0 ? -dd : dd;
+            const dd = dt * (COND[e] + COND[e3]) * 0.5, a = dd < 0 ? -dd : dd;
             let n = a | 0; if (rnd() < a - n) n++;
             if (n !== 0) { if (dd < 0) n = -n; tp[i] = t + n; tp[j] -= n; wk(x, y); }
         }
@@ -180,7 +231,8 @@ function step() {
     const flip = tickN & 1;
     for (let c = 0; c < act.length; c++) { if (act[c] > 0) { run[c] = 1; act[c]--; } else run[c] = 0; }
     if (boomQ.length) runBooms();
-    if (nParts) stepParticles();
+    if (nParts) stepParticles(); else nNeut = 0;
+    if ((tickN & 1) === 0) electric();
     for (let y = H - 1; y >= 0; y--) {
         const rowc = (y >> 4) * CW, base = (y + 1) * P + 1;
         for (let k = 0; k < CW; k++) {
@@ -202,3 +254,4 @@ function recount() {
     return CNT;
 }
 function activeChunks() { let n = 0; for (let c = 0; c < act.length; c++) if (act[c] > 0) n++; return n; }
+function inb(x, y) { return x >= 0 && y >= 0 && x < W && y < H; }

@@ -1,11 +1,13 @@
 // ==========================================
-// ELEMENT LAB - reactions: built from data/reactions.tsv (columns: a b p ra rb heat pa pb tmin boom note)
+// ELEMENT LAB - reactions: built from data/reactions.tsv (columns: a b p ra rb heat pa pb tmin boom note need)
 //   a, b   element names, or #group (all elements in that group, unless the pair has its own row)
 //   p      chance per contact; ra/rb  what a / b turn into (blank = unchanged, "empty" = gone)
 //   heat   added to the new cells; pa/pb chance each one actually changes; tmin needs one of them this hot; boom blast radius
+//   need   a catalyst: the reaction only happens when this element touches one of the two cells
 // Each row works in both directions, so "acid metal" also covers "metal acid".
+// Lookup is a table indexed by (element a, element b): no list scanning while the simulation runs.
 // ==========================================
-const RXI = new Int16Array(NE * NE).fill(-1);
+const RXI = new Int32Array(NE * NE).fill(-1);
 const RXL = [];
 const REACTIONS = [];
 (function buildReactions() {
@@ -17,7 +19,8 @@ const REACTIONS = [];
     const specific = new Set();
     rows.forEach(r => { if (r.a.charAt(0) !== '#' && r.b.charAt(0) !== '#') { specific.add(nm(r.a) * NE + nm(r.b)); specific.add(nm(r.b) * NE + nm(r.a)); } });
     function add(a, b, r) {
-        const o = { p: +r.p, ra: prod(r.ra), rb: prod(r.rb), heat: num(r.heat, 0), pa: num(r.pa, 1), pb: num(r.pb, 1), tmin: num(r.tmin, -99999), boom: num(r.boom, 0), note: r.note };
+        const o = { p: +r.p, ra: prod(r.ra), rb: prod(r.rb), heat: num(r.heat, 0), pa: num(r.pa, 1), pb: num(r.pb, 1), tmin: num(r.tmin, -99999),
+            boom: num(r.boom, 0), note: r.note, need: r.need ? nm(r.need) : 0 };
         const k = a * NE + b;
         if (RXI[k] < 0) { RXI[k] = RXL.length; RXL.push([]); }
         RXL[RXI[k]].push(o);
@@ -27,11 +30,15 @@ const REACTIONS = [];
         REACTIONS.push(r);
         members(r.a).forEach(a => members(r.b).forEach(b => {
             if (grp && specific.has(a * NE + b)) return;
+            if (a === b && r.a !== r.b) return;
             add(a, b, r);
-            if (a !== b) add(b, a, { p: r.p, ra: r.rb, rb: r.ra, heat: r.heat, pa: r.pb, pb: r.pa, tmin: r.tmin, boom: r.boom, note: r.note });
+            if (a !== b) add(b, a, { p: r.p, ra: r.rb, rb: r.ra, heat: r.heat, pa: r.pb, pb: r.pa, tmin: r.tmin, boom: r.boom, note: r.note, need: r.need });
         }));
     });
 })();
+const RX_PAIRS = RXL.length;
+
+function touches(i, e) { return el[i + 1] === e || el[i - 1] === e || el[i + P] === e || el[i - P] === e; }
 
 // returns true when something happened. i = this cell, j = the neighbour in direction d
 function react(i, j, x, y, d, list) {
@@ -39,18 +46,21 @@ function react(i, j, x, y, d, list) {
         const r = list[q];
         if (rnd() >= r.p) continue;
         if (r.tmin > -99999 && (tp[i] > tp[j] ? tp[i] : tp[j]) < r.tmin) continue;
+        if (r.need !== 0 && !touches(i, r.need) && !touches(j, r.need)) continue;
         const h = r.heat, xj = x + DX[d], yj = y + DY[d];
         if (r.ra >= 0 && (r.pa >= 1 || rnd() < r.pa)) { if (r.ra === 0) clr(i); else put(i, r.ra, h); } else if (h && el[i]) tp[i] += h;
         if (r.rb >= 0 && (r.pb >= 1 || rnd() < r.pb)) { if (r.rb === 0) clr(j); else put(j, r.rb, h); } else if (h && el[j]) tp[j] += h;
-        if (tp[i] > 4000) tp[i] = 4000;
-        if (tp[j] > 4000) tp[j] = 4000;
+        if (tp[i] > 6000) tp[i] = 6000;
+        if (tp[j] > 6000) tp[j] = 6000;
         if (tp[i] < -273) tp[i] = -273;
         if (tp[j] < -273) tp[j] = -273;
         wk(x, y); wk(xj, yj);
         if (r.ra === ID.steam || r.rb === ID.steam) sfx('sizzle', 0.7);
-        if (r.note === 'infect') STAT.infected++;
-        if (r.boom) { if (r.note === 'alkali') STAT.alk++; queueBoom(x, y, r.boom, 1, -1); }
-        else if (r.note === 'alkali') STAT.alk++;
+        const n = r.note;
+        if (n === 'infect') STAT.infected++;
+        else if (n === 'crystal') STAT.crystal++;
+        if (r.boom) { if (n === 'alkali') STAT.alk++; queueBoom(x, y, r.boom, 1, -1); }
+        else if (n === 'alkali') STAT.alk++;
         return true;
     }
     return false;

@@ -1,6 +1,7 @@
 // ==========================================
 // ELEMENT LAB - core: helpers, saves, settings, sound
 // ==========================================
+const VERSION = '2.0';
 const AMB = 20;                                   // room temperature, degrees C
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const $ = id => document.getElementById(id);
@@ -16,10 +17,14 @@ const LS = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
-const QUAL = [{ n: 'Low', w: 160, h: 90 }, { n: 'Medium', w: 240, h: 135 }, { n: 'High', w: 320, h: 180 }];
-const SETTINGS = Object.assign({ quality: 1, sound: true, overlay: false, glow: true, fx: true, replace: false, seenHelp: false },
+const QUAL = [{ n: 'Low', w: 160, h: 90 }, { n: 'Medium', w: 240, h: 135 }, { n: 'High', w: 320, h: 180 }, { n: 'Huge', w: 400, h: 225 }];
+const VIEWS = ['normal', 'heat', 'pressure', 'charge'];
+const SETTINGS = Object.assign({ quality: 1, sound: true, overlay: false, glow: true, bloom: true, noise: true, fx: true, replace: false, seenHelp: false,
+    view: 'normal', shape: 'circle', dir: 0, open: null },
     LS.get('elementlab_settings', {}) || {});
 if (!(SETTINGS.quality >= 0 && SETTINGS.quality < QUAL.length)) SETTINGS.quality = 1;
+if (SETTINGS.overlay) { SETTINGS.view = 'heat'; SETTINGS.overlay = false; }   // 1.x saves: the old temperature view switch
+if (VIEWS.indexOf(SETTINGS.view) < 0) SETTINGS.view = 'normal';
 function saveSettings() { LS.set('elementlab_settings', SETTINGS); }
 
 // ---------- sound (WebAudio, short synthesized effects; silent until the first click) ----------
