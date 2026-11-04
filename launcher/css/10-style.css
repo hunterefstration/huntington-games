@@ -415,3 +415,7 @@ html.playing #htour { display: none !important; }   /* the tour waits while a ga
 .psec { margin: 14px 0 6px; font: 600 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
 /* the tabs wrap onto a second line instead of hiding behind the ? and name chip when space runs out */
 #tabs { flex-wrap: wrap; overflow: visible; row-gap: 0; }
+/* banned: the whole launcher is locked */
+html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, html.banned #chatdock { display: none !important; }
+#banwall { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 40%, #3a0a0a, #0a0202); color: #fecaca; text-align: center; padding: 24px; }
+#banwall h1 { font: 900 44px var(--sans); color: #fff; margin: 8px 0; letter-spacing: .04em; } #banwall .bw-ic { font-size: 64px; } #banwall p { font-size: 17px; max-width: 520px; margin: 8px auto; } #banwall .bw-sub { color: #fca5a5; opacity: .8; font-size: 14px; }

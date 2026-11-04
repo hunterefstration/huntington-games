@@ -212,6 +212,7 @@
       // a failed profile lookup or friend request: tell whoever asked
       Object.keys(st.lookups).forEach(function (n) { var cbs = st.lookups[n]; delete st.lookups[n]; cbs.forEach(function (f) { f(null); }); });
     }
+    if (code === 'banned') emit('banned', { text: m.text || 'You are banned.' });      // the launcher locks itself (any time: at sign-in or a live kick)
     if (FATAL[code] || (st.auth && !st.ready)) {
       var err = new Error(m.text || code); err.code = code;
       failAuth(err);
@@ -495,6 +496,29 @@
 
   // Can this browser reach a Grapevine server at all? (The launcher offers "play without an account" when it cannot,
   // so a server that is down never locks everybody out of the games.)
+  // is THIS device banned? Asked the moment the launcher loads, account or not (the server answers a 'probe' hello and hangs up)
+  function banCheck() {
+    return new Promise(function (resolve) {
+      var i = 0, done = false;
+      function finish(v) { if (!done) { done = true; resolve(v); } }
+      function next() {
+        if (done) return;
+        if (i >= CFG.archives.length) return finish(null);
+        var id = CFG.archives[i++], c, t;
+        try { c = GVLink.connect(id, { shards: CFG.shards, relays: CFG.relays, pinned: CFG.pinned[id] || '', verify: function (p, m, g) { return ED.verify(p, m, g); } }); }
+        catch (e) { return next(); }
+        t = setTimeout(function () { try { c.close(); } catch (e) {} next(); }, 15000);
+        c.on('data', function (m) {
+          if (!m || done) return;
+          if (m.type === 'challenge') { try { c.send({ type: 'hello', probe: 1, dev: devId() }); } catch (e) {} }
+          else if (m.type === 'probe') { clearTimeout(t); try { c.close(); } catch (e) {} finish({ banned: !!m.banned, text: m.text || '' }); }
+        });
+        // (a link races several routes and reports a close for each loser: give the answer a moment before moving on)
+        var moved = false; c.on('close', function () { setTimeout(function () { if (!done && !moved) { moved = true; clearTimeout(t); next(); } }, 2500); });
+      }
+      next();
+    });
+  }
   function probe() {
     return new Promise(function (resolve) {
       var i = 0, done = false;
@@ -514,6 +538,7 @@
 
   window.HGGrapevine = {
     probe: probe,
+    banCheck: banCheck,
     version: 1,
     config: CFG,
     me: function () { return st.name ? { name: st.name, userId: st.userId, pub: st.pub, status: st.status } : null; },
