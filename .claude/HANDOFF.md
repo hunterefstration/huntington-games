@@ -1,4 +1,20 @@
-# Handoff (updated 2026-10-30)
+# Handoff (updated 2026-11-04)
+
+## Round 4 (r62)
+- **Bans** cover the whole platform. Every admin ban is also a device ban: all devices that ever signed in to the account, kept in `server_bans` as `dev:<id>` rows (noteDevice keeps the last 2000).
+  - Launcher `launcher/js/10-hub/005-ban.js` locks the page at load if `localStorage hgv:ban` is set, then asks the server with a `probe` hello (`gv/core.js banCheck`; server `040-hello...js`). A `banned` event locks it while running.
+  - Test: `tools/tests/gv-ban.mjs`.
+- **Custom titles**: ecoAdmin op `custom` with `text` (id `title:c-<hash>`, kept in `e.ctitles`). The admin tools are in Profile → Admin tools.
+- **Daily check-in**: claim `daily` gives 1 goon, or 3 on every 7th day in a row.
+- **Leaderboards tab** (`#tab-lb`, `lbView` in 040): side game list, board tabs, a level picker for Last Light levels, podium. A single Last Light level gives no tag (tagsNow skips `lumi:lv*`).
+- **Market Life auto-click guard** (`090-buildbiz.js`): ignores untrusted clicks and more than 14 a second; strikes for robot-steady timing; the lock grows with strikes (`marketLife_ac`), and goons from Market Life stop at 3 strikes.
+- **Game pop-ups** (`098-gamepops.js`): turn Grapevine pop-ups off in games, or pick channels (`hgv:gamepops`).
+- **Top bar** is one row again (CSS media queries in `css/10-style.css`).
+- **Minigames** (`Minigames/<Name>/src`, category `cat:'mini'` in the 010 piece, ids `mg-*`): Reaction Duel, Snake Arena, Typing Race, Pong, Connect Four, Tic-Tac-Toe.
+  - The shared lobby is `Minigames/_shared/mg.js` + `mg.css`. Edit them there, then run `bash Minigames/build.sh` (it copies them into each game's src and builds every game).
+  - Rooms use hgnet; bots have ids 100+; the launcher invite and party hooks are built in. The server party regex allows `mg-*`.
+- **Element Lab 2.0**: 302 elements, reactions in `Element Lab/data/reactions.tsv` (631 rows), electricity, nuclear, pipes, humans, 6 save slots, 22 challenges. 1.x saves and codes still load.
+  - The reactor scene's water boils off before it can melt down. Meltdown needs a dry uranium + graphite core.
 
 ## The UPDATE wave (released as r57; both repos on `main`)
 - **Launcher** (`launcher/` pieces, build with `node tools/build-game.js . --src launcher --check`):
