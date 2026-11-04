@@ -2092,7 +2092,7 @@ var LB_FEED = [
   ['tetris:lines', function () { var st = (feedRd('huntingtonTetrisSurge1') || {}).stats || {}; return [feedNum(st.lines), { tetrises: feedNum(st.tetrises) }]; }],
   ['clicker:total', function () { var b = feedRd('brownEClickerSave') || {}, s = b.state || {}; return [Math.max(feedNum(s.totalBrownEs), feedNum(s.allTime), feedNum(s.brownEs)), { ascensions: feedNum((b.meta || {}).ascensions) }]; }],
   ['coffee:best', function () { var s = (feedRd('beanBrewSaveV2') || {}).stats || {}; return [feedNum(s.earned), { served: feedNum(s.served) }]; }],
-  ['market:worth', function () { return [Math.max(feedNum(feedRd('netWorthPB')), feedNum(feedRd('lifeScorePB')))]; }],
+  ['market:worth', function () { if (feedNum(feedRd('marketLife_ac')) >= 3) return [0]; return [Math.max(feedNum(feedRd('netWorthPB')), feedNum(feedRd('lifeScorePB')))]; }],      // (3 autoclicker strikes: off the board)
   ['td:endless', function () { var t = feedRd('td2_records') || {}; return [feedNum(t.bestEndless), { kills: feedNum(t.kills) }]; }],
   ['frontline:wins', function () { var f = feedRd('frontline_profile_v2') || {}; return [feedNum(f.wins), { kills: feedNum(f.kills), online: feedNum(f.mpWins) }]; }],
   ['sov:best', function () { var s = feedRd('sov.hgach') || {}; return [feedNum(s.conquered), { wars: feedNum(s.warsWon), years: feedNum(s.years) }]; }],

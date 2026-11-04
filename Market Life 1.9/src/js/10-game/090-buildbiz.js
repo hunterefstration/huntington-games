@@ -371,9 +371,35 @@
         rename: () => showRename(), saveName: () => saveName(),
         newLife: () => newLife(), startLife: () => startLife(), pickAvatar: a => pickSetup('avatar', a, 'av-pick'), pickTrait: a => pickSetup('trait', a, 'trait')
     };
+    // ---- autoclicker protection: every button in the game goes through here ----
+    // Fake (script) clicks are ignored; more than 14 clicks a second are ignored; a robot's give-away (two dozen clicks in a
+    // row spaced almost exactly the same) or a long burst faster than any hand locks the buttons for a while. Each time is a
+    // strike, saved with the game; three strikes keep this life off the world leaderboard.
+    const AC = { t: [], lockUntil: 0, warnAt: 0, strikes: (() => { try { return +localStorage.getItem('marketLife_ac') || 0; } catch (e) { return 0; } })() };
+    function acStrike(now, why) {
+        AC.strikes++; try { localStorage.setItem('marketLife_ac', String(AC.strikes)); } catch (e) {}
+        AC.lockUntil = now + Math.min(120000, 20000 * AC.strikes); AC.t = [];
+        toast('Autoclicker detected (' + why + '). Buttons are locked for ' + Math.round((AC.lockUntil - now) / 1000) + ' s.' + (AC.strikes >= 3 ? ' This life no longer counts for the world leaderboard.' : ''), 'bad');
+    }
+    function acAllow(e) {
+        if (!e.isTrusted) return false;
+        const now = performance.now();
+        if (now < AC.lockUntil) { if (now - AC.warnAt > 2000) { AC.warnAt = now; toast('Slow down: buttons unlock in ' + Math.ceil((AC.lockUntil - now) / 1000) + ' s.', 'bad'); } return false; }
+        AC.t.push(now); if (AC.t.length > 80) AC.t.shift();
+        const inLast = ms => AC.t.filter(x => now - x < ms).length;
+        if (AC.t.length >= 25) {
+            const iv = []; for (let i = AC.t.length - 24; i < AC.t.length; i++) iv.push(AC.t[i] - AC.t[i - 1]);
+            const m = iv.reduce((a, b) => a + b, 0) / iv.length, sd = Math.sqrt(iv.reduce((a, b) => a + (b - m) * (b - m), 0) / iv.length);
+            if (m < 400 && sd < 6) { acStrike(now, 'clicks spaced like a machine'); return false; }
+        }
+        if (inLast(6000) > 72) { acStrike(now, 'over 12 clicks a second for 6 seconds'); return false; }
+        if (inLast(1000) > 14) return false;
+        return true;
+    }
     document.addEventListener('click', e => {
         const b = e.target.closest('[data-act]');
         if (!b || b.disabled) return;
+        if (!acAllow(e)) return;
         // while a modal is open only its own buttons work
         if (modalOpen && !b.closest('#modal')) return;
         const f = ACTIONS[b.dataset.act];
