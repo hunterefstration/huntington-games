@@ -47,7 +47,7 @@ for (let k = 0; k < 256; k++) { const f = k / 255; PRLUT[k] = pack((40 + 215 * M
 const dimC = (c, f) => pack(((c & 255) * f) | 0, (((c >> 8) & 255) * f) | 0, (((c >> 16) & 255) * f) | 0);
 
 let cv, ctx, img, buf, gcv, gctx, gimg, gbuf, GWID = 0, GHEI = 0, gacc, ocv, octx, fr = 0;
-let bcv, bctx, bimg, bbuf, BWID = 0, BHEI = 0, bacc;
+let BWID = 0, BHEI = 0, bacc;
 let preview = null;                                // {type: 'line' | 'rect', x0, y0, x1, y1} drawn while dragging
 
 function initRender() {
@@ -58,8 +58,7 @@ function initRender() {
     gcv = $('glow'); gcv.width = GWID; gcv.height = GHEI; gctx = gcv.getContext('2d');
     gimg = gctx.createImageData(GWID, GHEI); gbuf = new Uint32Array(gimg.data.buffer); gacc = new Int32Array(GWID * GHEI * 3);
     BWID = Math.max(2, W >> 3); BHEI = Math.max(2, H >> 3);
-    bcv = $('bloom'); bcv.width = BWID; bcv.height = BHEI; bctx = bcv.getContext('2d');
-    bimg = bctx.createImageData(BWID, BHEI); bbuf = new Uint32Array(bimg.data.buffer); bacc = new Int32Array(BWID * BHEI * 3);
+    bacc = new Int32Array(BWID * BHEI * 3);
     ocv = $('ov'); ocv.width = W; ocv.height = H; octx = ocv.getContext('2d');
     layoutStage();
 }
@@ -145,7 +144,7 @@ function render() {
                     if (pw[i] || (ELC[e] >= E_GATE && life[i])) {
                         if (e === ID.lamp) { s = 6; gr = 255; gg = 236; gb = 160; }
                         else if (dc === 8) s = 5;
-                        else if (e === ID.eheater) { s = 2; }
+                        else if (e === ID.eheater || e === ID.furnace) { s = e === ID.furnace ? 3 : 2; gr = 255; gg = 110; gb = 40; }
                         else if (s === 0) { s = 1; gr = 90; gg = 200; gb = 255; }
                     } else if (dc === 8 || e === ID.lamp) s = 0;
                 } else if (dc === 14) s = life[i] > 0 ? 4 : 0;
@@ -172,6 +171,16 @@ function render() {
         buf[y * W + x] = c;
     }
     ctx.putImageData(img, 0, 0);
+    if (bloom) {                                   // a cheap blur on the tiny bloom buffer (two box passes), added into the glow layer
+        for (let pass = 0; pass < 2; pass++) for (let y = 0; y < BHEI; y++) for (let x = 0; x < BWID; x++) {
+            const k = (y * BWID + x) * 3, l = x > 0 ? k - 3 : k, r = x < BWID - 1 ? k + 3 : k, u = y > 0 ? k - BWID * 3 : k, d = y < BHEI - 1 ? k + BWID * 3 : k;
+            for (let c = 0; c < 3; c++) bacc[k + c] = (bacc[k + c] * 4 + bacc[l + c] + bacc[r + c] + bacc[u + c] + bacc[d + c]) >> 3;
+        }
+        for (let y = 0; y < GHEI; y++) {
+            const by = Math.min(BHEI - 1, y >> 1) * BWID;
+            for (let x = 0; x < GWID; x++) { const k = (y * GWID + x) * 3, q = (by + Math.min(BWID - 1, x >> 1)) * 3; gacc[k] += bacc[q] >> 1; gacc[k + 1] += bacc[q + 1] >> 1; gacc[k + 2] += bacc[q + 2] >> 1; }
+        }
+    }
     if (glow) {
         for (let k = 0, n = GWID * GHEI; k < n; k++) {
             const r = Math.min(255, gacc[k * 3] >> 4), g = Math.min(255, gacc[k * 3 + 1] >> 4), b = Math.min(255, gacc[k * 3 + 2] >> 4);
@@ -179,15 +188,7 @@ function render() {
         }
         gctx.putImageData(gimg, 0, 0);
     }
-    if (bloom) {
-        for (let k = 0, n = BWID * BHEI; k < n; k++) {
-            const r = Math.min(255, bacc[k * 3] >> 6), g = Math.min(255, bacc[k * 3 + 1] >> 6), b = Math.min(255, bacc[k * 3 + 2] >> 6);
-            bbuf[k] = pack(r, g, b);
-        }
-        bctx.putImageData(bimg, 0, 0);
-    }
     gcv.style.display = glow ? '' : 'none';
-    bcv.style.display = bloom ? '' : 'none';
     drawOverlay();
 }
 

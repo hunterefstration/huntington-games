@@ -91,8 +91,11 @@ function updSmoke(i, x, y, e) {
     if (--life[i] <= 0) { clr(i); return true; }
     return false;
 }
+// steam carries latent heat (life): it stays at 100 C while that lasts, then condenses gradually below 97 C
 function updSteam(i, x, y, e) {
-    if (tp[i] < 98) {
+    let t = tp[i];
+    if (t < 100 && life[i] > 0) { const d = 100 - t, l = life[i]; if (l > d) { life[i] = l - d; tp[i] = t = 100; } else { life[i] = 0; tp[i] = t = t + l; } }
+    if (t < 97 && rnd() < (97 - t) * 0.006) {
         if (y < H * 0.3 && rnd() < 0.4) put(i, ID.cloud, 0, false), aux[i] = 25;
         else put(i, ID.water);
         tp[i] = 90;
@@ -221,7 +224,7 @@ function updPipe(i, x, y, e) {
         for (let d = 0; d < 4; d++) if (isPipe(el[i + OFF[d]])) np++;
         if (np <= 1) for (let k = 0; k < 4; k++) {
             const d = (s + k) & 3, j = i + OFF[d], b = el[j];
-            if (b !== 0 && !isPipe(b) && (KIND[b] === K.LIQUID || KIND[b] === K.GAS) && st[j] !== stamp) {
+            if (b !== 0 && !isPipe(b) && st[j] !== stamp && ((KIND[b] === K.LIQUID && el[j + P] !== 0) || (KIND[b] === K.GAS && pr[j] > 40))) {   // pooled liquid, crowded gas
                 aux[i] = b | ((d + 1) << 10); tp[i] = (tp[i] + tp[j]) >> 1; clr(j); wk(x + DX[d], y + DY[d]); wk(x, y);
                 break;
             }
@@ -243,8 +246,8 @@ function updPipe(i, x, y, e) {
             return true;
         }
     }
-    if (np === 0) for (let k = 0; k < 4; k++) {    // the far end: let it out
-        const d = (s + k) & 3;
+    if (np === 0) for (let k = 0; k < 4; k++) {    // the far end: let it out (downwards first for liquids)
+        const d = k === 0 ? 2 : k === 3 ? 3 : (s & 1) ? k - 1 : 2 - k;
         if (d === from) continue;
         const j = i + OFF[d];
         if (el[j] === 0) { put(j, c, 0, true); tp[j] = tp[i]; aux[i] = 0; wk(x + DX[d], y + DY[d]); return true; }
@@ -258,13 +261,16 @@ function updTurbine(i, x, y, e) {
     const j = i + P, b = el[j];                    // steam from below goes out the top
     if (KIND[b] === K.GAS && tp[j] > 90) {
         const o = i - P;
-        if (el[o] === 0) { swap(j, o); tp[o] -= 10; s += 12; wk(x, y - 1); wk(x, y + 1); }
+        const q = el[o];
+        if (q === 0 || (FLUID[q] && !(KIND[q] === K.GAS && tp[o] > 90))) { swap(j, o); tp[o] -= 8; s += 12; wk(x, y - 1); wk(x, y + 1); }   // condensate above drops through
         else s += pr[j] > 90 ? 3 : 1;
     } else {
         const d = rnd() < 0.5 ? 0 : 1, js = i + OFF[d], bs = el[js];   // or from one side to the other
         if (KIND[bs] === K.GAS && tp[js] > 90) { const o = i - OFF[d]; if (el[o] === 0) { swap(js, o); tp[o] -= 10; s += 8; wk(x - DX[d], y); } }
     }
-    s = s > 255 ? 255 : s > 0 ? s - 1 : 0;
+    const l = el[i - 1] === e ? aux[i - 1] : 0, r = el[i + 1] === e ? aux[i + 1] : 0, m = (l > r ? l : r) - 2;
+    if (m > s) s = m;                              // a row of turbines is one rotor
+    s = s > 255 ? 255 : s > 0 && (tickN & 1) ? s - 1 : s;
     aux[i] = s;
     if (s > 20) STAT.turbine++;
     return false;
@@ -298,3 +304,10 @@ UPD[ID.pipe] = updPipe; UPD[ID.valve] = updPipe;
 UPD[ID.turbine] = updTurbine;
 function updNoble(i, x, y, e) { if (life[i] > 0) life[i]--; return false; }
 UPD[ID.neon] = updNoble; UPD[ID.argon] = updNoble;
+// fuel keeps heating itself after splitting (decay heat in aux). Water carries it away; a dry core melts.
+function updFuel(i, x, y, e) {
+    const a = aux[i];
+    if (a !== 0) { tp[i] += (a >> 8) + (rnd() < (a & 255) / 256 ? 1 : 0); aux[i] = a - (a >> 9) - 1; }
+    return false;
+}
+UPD[ID.uranium] = updFuel; UPD[ID.plutonium] = updFuel; UPD[ID.thorium] = updFuel; UPD[ID.spentfuel] = updFuel;

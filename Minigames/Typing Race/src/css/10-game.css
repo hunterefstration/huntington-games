@@ -1,0 +1,9 @@
+#tr { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; }
+#tr-cars { width: min(900px, 96vw); display: flex; flex-direction: column; gap: 6px; }
+.tr-lane { display: grid; grid-template-columns: 150px 1fr 70px; align-items: center; gap: 8px; font: 700 13px system-ui; } .tr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .tr-w { color: #fde68a; text-align: right; }
+.tr-track { position: relative; height: 26px; border-radius: 13px; background: rgba(255,255,255,.06); border: 1px dashed rgba(255,255,255,.12); }
+.tr-car { position: absolute; top: -3px; width: 30px; height: 30px; border-radius: 9px; text-align: center; line-height: 30px; font-size: 18px; transition: left .2s; }
+#tr-text { width: min(900px, 96vw); font: 500 24px/1.6 ui-monospace, Consolas, monospace; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 16px 20px; color: #94a3b8; }
+#tr-text .ok { color: #4ade80; } #tr-text .bad { background: #7f1d1d; color: #fecaca; } #tr-text .cur { border-bottom: 3px solid #fb923c; color: #fff; }
+#tr-in { width: min(900px, 96vw); font: 600 22px ui-monospace, monospace; padding: 12px 16px; border-radius: 12px; border: 2px solid #fb923c; background: rgba(0,0,0,.45); color: #fff; }
+#tr-msg { font: 900 28px system-ui; color: #fb923c; min-height: 36px; }

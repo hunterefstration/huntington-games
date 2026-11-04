@@ -116,7 +116,6 @@ function zapAt(cx, cy) { lightning(cx, cy); }
 // ---------- undo (a few steps) ----------
 const undoStack = [];
 function snapshot() { return { w: W, h: H, el: el.slice(), tp: tp.slice(), life: life.slice(), aux: aux.slice(), vr: vr.slice() }; }
-function snapshotOk(s) { return s && s.el instanceof Uint16Array; }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 6) undoStack.shift(); }
 function undo() {
     const s = undoStack.pop();

@@ -19,7 +19,7 @@ const CHALLENGES = [
     { id: 'fission', name: 'Split the atom', hint: 'Put uranium in water and add a Neutron Source. Slow neutrons split uranium.', test: () => STAT.fission >= 200 },
     { id: 'turbine', name: 'Steam power', hint: 'Boil water under a Turbine so the steam spins it.', test: () => STAT.turbine >= 200 },
     { id: 'logic', name: 'Logic gate', hint: 'Power both inputs of an AND gate (left and right) so it switches on.', test: () => STAT.andOn > 0 },
-    { id: 'meltdown', name: 'Meltdown', hint: 'Pull every control rod out of a reactor and wait. Stand well back.', test: () => MADE[ID.corium] },
+    { id: 'meltdown', name: 'Meltdown', hint: 'Water reactors protect themselves. A core of uranium and graphite with no water and no rods does not. Stand well back.', test: () => MADE[ID.corium] },
     { id: 'alloy', name: 'Make an alloy', hint: 'Melt copper and tin together for bronze (or copper and zinc for brass).', test: () => MADE[ID.molten_bronze] || MADE[ID.molten_brass] || MADE[ID.molten_steel] || MADE[ID.molten_solder] },
     { id: 'crystal', name: 'Grow crystals', hint: 'Dissolve copper sulfate in water, then boil the water away.', test: () => STAT.crystal >= 15 },
     { id: 'town', name: 'Populate a town', hint: 'Have 15 people living in your lab at once.', test: () => CNT[ID.human] >= 15 },
@@ -112,7 +112,7 @@ function screenshot() {
     c.width = W * s; c.height = H * s;
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false; g.drawImage(cv, 0, 0, c.width, c.height);
-    if (SETTINGS.glow) { g.imageSmoothingEnabled = true; g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.8; g.drawImage(gcv, 0, 0, c.width, c.height); if (SETTINGS.bloom) g.drawImage(bcv, 0, 0, c.width, c.height); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    if (SETTINGS.glow) { g.imageSmoothingEnabled = true; g.globalCompositeOperation = 'screen'; g.globalAlpha = 0.8; g.drawImage(gcv, 0, 0, c.width, c.height); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
     g.imageSmoothingEnabled = false; g.drawImage(ocv, 0, 0, c.width, c.height);
     const url = c.toDataURL('image/png');
     const a = document.createElement('a');

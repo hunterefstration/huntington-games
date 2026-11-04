@@ -64,11 +64,12 @@ function deposit(x, y, e, temp) {                  // a flying bit lands: put it
     return false;
 }
 function fission(i, gx, gy) {
-    const t = tp[i] + 60; tp[i] = t > 6000 ? 6000 : t;
+    const t = tp[i] + 200; tp[i] = t > 6000 ? 6000 : t;
     STAT.fission++; fissionsTick++;
     const n = rnd() < 0.5 ? 3 : 2;
     for (let k = 0; k < n; k++) emitNeutron(gx + 0.5, gy + 0.5, false);
     const e = el[i];
+    if (KIND[e] === K.SOLID) { const a = aux[i] + 90; aux[i] = a > 9000 ? 9000 : a; }   // fission products: decay heat (see updFuel)
     if ((e === ID.uranium || e === ID.plutonium) && rnd() < 0.0003) put(i, ID.spentfuel, 0, true), tp[i] = t;
     if (rnd() < 0.02) { const j = i + OFF[(rnd() * 4) | 0]; if (el[j] === 0) put(j, ID.radiation, 0, true); }
     wk(gx, gy);
@@ -79,12 +80,12 @@ function neutronHit(n, gx, gy, i, e) {
     if (e === HUMAN || e === HEAD) { hurtHuman(i, 2, 'rad'); return rnd() < 0.3 ? 1 : 0; }
     const f = FIS[e];
     if (f !== 0) {
-        let p = (slow ? 0.3 : 0.03) * f;
+        let p = (slow ? 0.45 : 0.04) * f;
         const t = tp[i];
         if (t > 600) { const k = 1 - (t - 600) / 2500; p *= k < 0.3 ? 0.3 : k; }   // hot fuel splits less (keeps it stable)
         if (rnd() < p) { fission(i, gx, gy); return 1; }
     }
-    if (MOD[e] !== 0 && !slow && rnd() < 0.4) {    // moderator: slow down and scatter
+    if (MOD[e] !== 0 && !slow && rnd() < 0.5) {    // moderator: slow down and scatter
         const a = rnd() * 6.283; PVX[n] = Math.cos(a) * 0.45; PVY[n] = Math.sin(a) * 0.45;
     }
     if (REFL[e] !== 0) return 2;

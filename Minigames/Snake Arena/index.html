@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Snake Arena</title>
+<style>
+/* Huntington Minigames: shared look (copied into every minigame by Minigames/build.sh) */
+:root { --mg: #38bdf8; --bg: #0b0f1a; --panel: rgba(17, 24, 39, .92); --line: rgba(255,255,255,.12); --text: #e5e7eb; --dim: #94a3b8; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 60%); color: var(--text); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
+.hidden { display: none !important; }
+#mg-lobby, #mg-res { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 8, 16, .72); backdrop-filter: blur(4px); }
+.mg-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px 28px; max-width: 640px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.mg-kicker { font: 700 11px ui-monospace, monospace; letter-spacing: .3em; text-transform: uppercase; color: var(--mg); }
+.mg-card h1 { margin: 6px 0 4px; font-size: 40px; font-weight: 900; letter-spacing: .01em; text-shadow: 0 0 24px color-mix(in srgb, var(--mg) 50%, transparent); }
+.mg-sub { color: var(--dim); margin: 4px 0 10px; } .mg-how { font-size: 14px; color: #cbd5e1; margin: 8px 0 14px; line-height: 1.5; }
+.mg-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 10px 0; }
+.mg-btn { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 10px 18px; font: 800 15px system-ui, sans-serif; cursor: pointer; }
+.mg-btn:hover { border-color: var(--mg); } .mg-btn.big { background: var(--mg); color: #06101f; border-color: var(--mg); }
+.mg-btn:disabled { opacity: .45; cursor: default; }
+#mg-code { width: 140px; text-align: center; font: 800 18px system-ui; letter-spacing: .15em; padding: 9px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: #fff; }
+#mg-st { min-height: 20px; color: #bae6fd; font-size: 14px; } #mg-st.bad { color: #fda4af; }
+.mg-code { font-size: 16px; margin: 8px 0; } .mg-code b { color: var(--mg); font-size: 26px; letter-spacing: .2em; }
+#mg-people { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
+.mg-chip { background: rgba(255,255,255,.07); border-radius: 999px; padding: 4px 10px; font-size: 14px; display: inline-flex; gap: 6px; align-items: center; } .mg-chip i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; } .mg-chip small { color: var(--dim); }
+select { background: rgba(0,0,0,.4); color: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: 700 14px system-ui; }
+label { color: var(--dim); font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+.mg-res-row { display: flex; justify-content: space-between; padding: 8px 6px; border-bottom: 1px solid var(--line); font-weight: 700; font-size: 17px; } .mg-res-row b { color: var(--mg); }
+.mg-hud { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font: 800 14px system-ui; pointer-events: none; }
+.mg-hud span { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+canvas { display: block; }
+
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+// ---- 00-mg.js ----
+// ==========================================
+// HUNTINGTON MINIGAMES: the shared lobby (copied into every minigame by Minigames/build.sh; edit it here).
+// Play vs bots right away, or open a room (6-digit code, HGNet = the launcher's multiplayer network) and friends
+// join; the host adds bots to fill seats and starts. The host runs the game (and the bots) and tells everyone.
+// A game calls MG.init({...}) and gets onStart(roster, seed), onMsg(peerId, msg), onLeave(id) back.
+// ==========================================
+const MG = { cfg: null, net: null, host: false, solo: false, code: '', me: 0, name: '', roster: [], started: false, bots: 1, adT: 0 };
+const MG_BOTS = ['Byte', 'Pixel', 'Turbo', 'Glitch', 'Echo', 'Nova', 'Bolt', 'Rusty', 'Sprocket', 'Zippy'];
+const MG_COLS = ['#38bdf8', '#f472b6', '#facc15', '#4ade80', '#a78bfa', '#fb923c', '#f87171', '#2dd4bf', '#e879f9', '#fde68a'];
+function mgEl(id) { return document.getElementById(id); }
+function mgEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function mgCol(i) { return MG_COLS[i % MG_COLS.length]; }
+function mgHG() {
+    const h = window.HGNet || (() => { try { return window.parent && window.parent.HGNet; } catch (e) { return null; } })();
+    if (h) return Promise.resolve(h);
+    return new Promise(res => { const s = document.createElement('script'); s.src = '../../gv/vendor/hgnet.js'; s.onload = () => res(window.HGNet || null); s.onerror = () => res(null); document.head.appendChild(s); });
+}
+function mgMyName() {
+    try { const L = window.parent && window.parent.HGGrapevine, me = L && L.me(); if (me) return me.name; } catch (e) {}
+    try { return localStorage.getItem('hgmini_name') || 'Player ' + (100 + Math.floor(Math.random() * 900)); } catch (e) { return 'Player'; }
+}
+function mgSay(t, bad) { const e = mgEl('mg-st'); if (e) { e.textContent = t; e.className = bad ? 'bad' : ''; } }
+// ---- the lobby screen
+MG.init = function (cfg) {
+    MG.cfg = Object.assign({ min: 2, max: 8, bots: 7, defBots: 1, color: '#38bdf8', solo: true }, cfg);
+    document.documentElement.style.setProperty('--mg', MG.cfg.color);
+    const d = document.createElement('div'); d.id = 'mg-lobby';
+    d.innerHTML = `<div class="mg-card"><div class="mg-kicker">Huntington Minigames</div><h1>${mgEsc(cfg.title)}</h1><p class="mg-sub">${cfg.sub || ''}</p>
+      <div class="mg-how">${cfg.howto || ''}</div>
+      <div class="mg-row">${MG.cfg.solo ? '<button class="mg-btn big" id="mg-solo">Play vs bots</button>' : ''}<button class="mg-btn" id="mg-host">Open a room</button>
+        <input id="mg-code" maxlength="7" inputmode="numeric" placeholder="6-digit code" autocomplete="off"><button class="mg-btn" id="mg-join">Join</button></div>
+      <div id="mg-st"></div>
+      <div id="mg-room" class="hidden"><div class="mg-code">Room code <b id="mg-codev"></b></div><div id="mg-people"></div>
+        <div class="mg-row" id="mg-hostrow"><label>Bots <select id="mg-bots"></select></label><button class="mg-btn big" id="mg-start">Start</button></div>
+        <div id="mg-wait" class="mg-sub hidden">Waiting for the host to start...</div></div></div>`;
+    document.body.appendChild(d);
+    const r = document.createElement('div'); r.id = 'mg-res'; r.className = 'hidden'; document.body.appendChild(r);
+    const sel = mgEl('mg-bots'); for (let i = 0; i <= MG.cfg.bots; i++) sel.add(new Option(String(i), i)); sel.value = MG.cfg.defBots;
+    sel.onchange = () => { MG.bots = +sel.value; mgLobbySend(); };
+    MG.bots = MG.cfg.defBots;
+    if (mgEl('mg-solo')) mgEl('mg-solo').onclick = () => mgSolo();
+    mgEl('mg-host').onclick = () => mgHost();
+    mgEl('mg-join').onclick = () => mgJoin(mgEl('mg-code').value);
+    mgEl('mg-code').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') mgJoin(mgEl('mg-code').value); };
+    mgEl('mg-start').onclick = () => mgStart();
+    // the launcher: invites, open parties, Quick Match
+    window.__hgJoin = c => { mgShowLobby(); mgEl('mg-code').value = c; mgJoin(c); return true; };
+    window.__hgHost = convId => { mgShowLobby(); mgHost(); const iv = setInterval(() => { if (MG.code) { clearInterval(iv); try { window.parent.HG_sendInvite(convId, { game: MG.cfg.id, code: MG.code, max: MG.cfg.max }); } catch (e) {} } }, 300); setTimeout(() => clearInterval(iv), 25000); };
+    setTimeout(() => { try { const p = window.parent; if (!p || p === window) return; const c = p.HG_takeJoin && p.HG_takeJoin(MG.cfg.id); if (c) return window.__hgJoin(c); const h = p.HG_takeHost && p.HG_takeHost(MG.cfg.id); if (h && h.convId) window.__hgHost(h.convId); } catch (e) {} }, 400);
+    window.__mg = MG;
+};
+function mgShowLobby() { mgEl('mg-lobby').classList.remove('hidden'); mgEl('mg-res').classList.add('hidden'); }
+function mgHideLobby() { mgEl('mg-lobby').classList.add('hidden'); mgEl('mg-res').classList.add('hidden'); }
+function mgBotsFor(nHumans, n) { const out = []; for (let i = 0; i < Math.min(n, MG.cfg.max - nHumans); i++) out.push({ id: 100 + i, name: MG_BOTS[i % MG_BOTS.length] + ' (bot)', bot: true }); return out; }
+function mgHumans() {
+    const out = [{ id: 0, name: MG.host ? MG.name : ((MG.roster.find(r => r.id === 0) || {}).name || 'Host') }];
+    if (MG.net && MG.host) for (const p of MG.net.peers()) if (!p.isHost && p.state !== 'left') out.push({ id: p.id, name: String(p.name || 'Player').slice(0, 16) });
+    return out;
+}
+function mgRosterNow() { const h = mgHumans().slice(0, MG.cfg.max); return h.concat(mgBotsFor(h.length, MG.bots)).map((r, i) => Object.assign(r, { col: mgCol(i) })); }
+function mgSolo() {
+    MG.solo = true; MG.host = true; MG.me = 0; MG.name = mgMyName();
+    const bots = Math.max(MG.cfg.min - 1, MG.bots || 1);
+    MG.roster = [{ id: 0, name: MG.name }].concat(mgBotsFor(1, bots)).map((r, i) => Object.assign(r, { col: mgCol(i) }));
+    mgBegin({ roster: MG.roster, seed: (Math.random() * 1e9) | 0 });
+}
+function mgWire(net) {
+    net.on('message', (peer, m) => {
+        if (!m || typeof m !== 'object') return;
+        if (m.t === '_lobby' && !MG.host) { MG.roster = m.roster; MG.bots = m.bots; mgPaint(); return; }
+        if (m.t === '_start' && !MG.host) return mgBegin(m);
+        if (m.t === '_end' && !MG.host) return mgShowEnd(m.html);
+        if (m.t === 'g' && MG.cfg.onMsg) MG.cfg.onMsg(peer.id, m.d);
+    });
+    net.on('join', () => { if (MG.host) mgLobbySend(); });
+    net.on('leave', peer => { if (MG.host) { if (!MG.started) mgLobbySend(); else if (MG.cfg.onLeave) MG.cfg.onLeave(peer.id); } mgPaint(); });
+    net.on('closed', (r, t) => { if (MG.net !== net) return; MG.net = null; MG.code = ''; MG.started = false; mgShowLobby(); mgEl('mg-room').classList.add('hidden'); mgSay(r === 'host-left' ? 'The host left.' : 'Disconnected' + (t ? ': ' + t : '.'), true); if (MG.cfg.onQuit) MG.cfg.onQuit(); });
+}
+function mgHost() {
+    if (MG.net) return; mgSay('Opening a room...');
+    mgHG().then(HG => {
+        if (!HG) return mgSay('Playing with friends needs the Huntington Games launcher. "Play vs bots" works anywhere.', true);
+        MG.name = mgMyName(); const net = MG.net = HG.create({ game: MG.cfg.id }); mgWire(net);
+        net.host({ name: MG.name, maxPlayers: MG.cfg.max, accept: () => MG.started ? 'That game has already started.' : true }).then(r => {
+            MG.host = true; MG.solo = false; MG.code = r.code; MG.me = 0; mgSay('Room open: share the code, add bots if you like, then Start.'); mgLobbySend(); mgAdvertise();
+        }, e => { MG.net = null; mgSay(e.message || 'Could not open a room.', true); });
+    });
+}
+function mgJoin(code) {
+    code = String(code || '').replace(/\D/g, ''); if (code.length !== 6) return mgSay('Type the 6-digit code.', true);
+    if (MG.net) return; mgSay('Joining...');
+    mgHG().then(HG => {
+        if (!HG) return mgSay('Playing with friends needs the Huntington Games launcher.', true);
+        MG.name = mgMyName(); const net = MG.net = HG.create({ game: MG.cfg.id }); mgWire(net);
+        net.join(code, { name: MG.name }).then(r => { MG.host = false; MG.solo = false; MG.code = r.code || code; MG.me = r.id; mgSay('In the room. The host starts the game.'); mgPaint(); },
+            e => { MG.net = null; mgSay(e.message || 'Could not join.', true); });
+    });
+}
+function mgAdvertise() {
+    clearInterval(MG.adT);
+    const ad = () => { try { const p = window.parent; if (p && p !== window && p.HG_partyOpen && MG.host && MG.net && !MG.started) p.HG_partyOpen({ game: MG.cfg.id, code: MG.code, n: mgHumans().length, max: MG.cfg.max, mode: MG.cfg.title }); } catch (e) {} };
+    ad(); MG.adT = setInterval(ad, 30000);
+}
+function mgLobbySend() { if (!MG.host || !MG.net) return; MG.roster = mgRosterNow(); MG.net.send('all', { t: '_lobby', roster: MG.roster, bots: MG.bots }); mgPaint(); }
+function mgPaint() {
+    const room = mgEl('mg-room'); room.classList.toggle('hidden', !MG.code);
+    if (!MG.code) return;
+    mgEl('mg-codev').textContent = MG.code;
+    const roster = MG.host ? mgRosterNow() : MG.roster;
+    mgEl('mg-people').innerHTML = roster.map(r => `<span class="mg-chip"><i style="background:${r.col}"></i>${mgEsc(r.name)}${r.id === 0 ? ' <small>host</small>' : ''}${r.id === MG.me ? ' <small>you</small>' : ''}</span>`).join('');
+    mgEl('mg-hostrow').classList.toggle('hidden', !MG.host); mgEl('mg-wait').classList.toggle('hidden', MG.host);
+    mgEl('mg-bots').value = MG.bots;
+    const need = MG.cfg.min - roster.length; mgEl('mg-start').disabled = need > 0; mgEl('mg-start').textContent = need > 0 ? 'Need ' + need + ' more (add bots)' : 'Start';
+}
+function mgStart() {
+    if (!MG.host) return;
+    MG.roster = mgRosterNow(); if (MG.roster.length < MG.cfg.min) return;
+    const m = { t: '_start', roster: MG.roster, seed: (Math.random() * 1e9) | 0 };
+    if (MG.net) MG.net.send('all', m);
+    mgBegin(m);
+}
+function mgBegin(m) {
+    MG.started = true; MG.roster = m.roster; clearInterval(MG.adT);
+    try { const p = window.parent; if (p && p !== window && p.HG_partyClose && MG.host && MG.code) p.HG_partyClose(MG.code); } catch (e) {}
+    mgHideLobby();
+    MG.cfg.onStart(MG.roster, m.seed);
+}
+// ---- during a game
+MG.isHost = () => MG.host || MG.solo;
+MG.send = (to, d, fast) => { if (MG.net) try { MG.net.send(to === 'host' ? 'host' : to, { t: 'g', d }, fast ? { fast: true } : undefined); } catch (e) {} };
+MG.toAll = (d, fast) => MG.send('all', d, fast);
+MG.toHost = (d, fast) => { if (MG.isHost()) { if (MG.cfg.onMsg) MG.cfg.onMsg(MG.me, d); } else MG.send('host', d, fast); };
+MG.player = id => MG.roster.find(r => r.id === id);
+// the host ends the game for everyone with a results card (html)
+MG.end = html => { if (!MG.isHost()) return; if (MG.net) MG.net.send('all', { t: '_end', html }); mgShowEnd(html); };
+function mgShowEnd(html) {
+    MG.started = false; if (MG.cfg.onEnd) MG.cfg.onEnd();
+    const r = mgEl('mg-res'); r.classList.remove('hidden');
+    r.innerHTML = `<div class="mg-card">${html}<div class="mg-row">${MG.isHost() ? '<button class="mg-btn big" id="mg-again">Play again</button>' : '<span class="mg-sub">The host can start another round.</span>'}<button class="mg-btn" id="mg-leave">${MG.solo ? 'Menu' : 'Leave'}</button></div></div>`;
+    if (mgEl('mg-again')) mgEl('mg-again').onclick = () => { r.classList.add('hidden'); if (MG.solo) mgSolo(); else { mgShowLobby(); mgLobbySend(); mgAdvertise(); } };
+    mgEl('mg-leave').onclick = () => { r.classList.add('hidden'); mgLeave(); };
+}
+function mgLeave() {
+    const net = MG.net; MG.net = null; try { net && net.close(); } catch (e) {}
+    Object.assign(MG, { host: false, solo: false, code: '', started: false, roster: [] }); clearInterval(MG.adT);
+    mgEl('mg-room').classList.add('hidden'); mgSay(''); mgShowLobby(); if (MG.cfg.onQuit) MG.cfg.onQuit();
+}
+MG.leave = mgLeave;
+// a seeded random (the same on every screen when the host sends the seed)
+function mgRng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// tiny sounds
+const MGS = (() => { let ac = null; const c = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) {} return ac; };
+    const tone = (f, len, type = 'square', vol = 0.06, f2) => { const a = c(); if (!a) return; const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f, a.currentTime); if (f2) o.frequency.exponentialRampToValueAtTime(f2, a.currentTime + len); g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + len); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + len + 0.02); };
+    return { blip: () => tone(660, 0.08), hit: () => tone(220, 0.12, 'square', 0.08, 110), win: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.08), i * 110)), lose: () => [392, 330, 262].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.07), i * 140)), go: () => tone(880, 0.25, 'sawtooth', 0.07, 1320) }; })();
+
+// ---- 10-game.js ----
+// ==========================================
+// SNAKE ARENA: everyone's snake on one board. Eat to grow, don't hit walls, yourself or anyone else.
+// Last snake alive wins (or the longest when 2 minutes are up). The host moves every snake 9 times a second.
+// ==========================================
+const GW = 48, GH = 30, TICK = 1 / 9, ROUND = 120;
+const SN = { snakes: [], food: [], on: false, acc: 0, t: 0, myDir: null, rng: Math.random, cell: 16 };
+document.getElementById('app').innerHTML = '<div class="mg-hud" id="sn-hud"></div><canvas id="sn"></canvas>';
+const cv = document.getElementById('sn'), x = cv.getContext('2d');
+function fit() { SN.cell = Math.floor(Math.min(innerWidth / GW, (innerHeight - 50) / GH)); cv.width = GW * SN.cell; cv.height = GH * SN.cell; cv.style.margin = '44px auto 0'; }
+addEventListener('resize', fit); fit();
+const DIRS = { u: [0, -1], d: [0, 1], l: [-1, 0], r: [1, 0] }, OPP = { u: 'd', d: 'u', l: 'r', r: 'l' };
+const key = (a, b) => a + b * GW;
+function occupied() { const s = new Set(); for (const sn of SN.snakes) if (sn.alive) for (const [a, b] of sn.body) s.add(key(a, b)); return s; }
+function addFood() { const occ = occupied(); for (let k = 0; k < 50; k++) { const a = Math.floor(SN.rng() * GW), b = Math.floor(SN.rng() * GH); if (!occ.has(key(a, b)) && !SN.food.some(f => f[0] === a && f[1] === b)) { SN.food.push([a, b]); return; } } }
+// a bot: the safe move that heads for the closest food, preferring room to move (a small flood fill)
+function room(a, b, occ) { const seen = new Set([key(a, b)]), q = [[a, b]]; while (q.length && seen.size < 60) { const [p, r] = q.shift(); for (const d of Object.values(DIRS)) { const n = [p + d[0], r + d[1]], kk = key(n[0], n[1]); if (n[0] < 0 || n[1] < 0 || n[0] >= GW || n[1] >= GH || occ.has(kk) || seen.has(kk)) continue; seen.add(kk); q.push(n); } } return seen.size; }
+function botDir(sn) {
+    const occ = occupied(), h = sn.body[0];
+    let best = null, bs = -1e9;
+    for (const [d, v] of Object.entries(DIRS)) {
+        if (d === OPP[sn.dir]) continue; const n = [h[0] + v[0], h[1] + v[1]];
+        if (n[0] < 0 || n[1] < 0 || n[0] >= GW || n[1] >= GH || occ.has(key(n[0], n[1]))) continue;
+        const f = SN.food.reduce((m, q) => Math.min(m, Math.abs(q[0] - n[0]) + Math.abs(q[1] - n[1])), 99);
+        const s = -f * 2 + Math.min(room(n[0], n[1], occ), 40) + Math.random() * 3;
+        if (s > bs) { bs = s; best = d; }
+    }
+    return best || sn.dir;
+}
+function hostTick() {
+    for (const sn of SN.snakes) if (sn.alive) { if (sn.bot) sn.dir = botDir(sn); else if (sn.want && sn.want !== OPP[sn.dir]) sn.dir = sn.want; }
+    const heads = SN.snakes.filter(s => s.alive).map(s => { const v = DIRS[s.dir], h = s.body[0]; return [s, [h[0] + v[0], h[1] + v[1]]]; });
+    const occ = occupied();
+    for (const [s, n] of heads) {
+        let dead = n[0] < 0 || n[1] < 0 || n[0] >= GW || n[1] >= GH || occ.has(key(n[0], n[1]));
+        if (!dead) for (const [o, m] of heads) if (o !== s && m[0] === n[0] && m[1] === n[1]) dead = true;   // head on head
+        s.next = n; s.dying = dead;
+    }
+    for (const [s] of heads) {
+        if (s.dying) { s.alive = false; s.diedAt = SN.t; continue; }
+        s.body.unshift(s.next);
+        const fi = SN.food.findIndex(f => f[0] === s.next[0] && f[1] === s.next[1]);
+        if (fi >= 0) { SN.food.splice(fi, 1); s.grow += 3; addFood(); }
+        if (s.grow > 0) s.grow--; else s.body.pop();
+    }
+    const alive = SN.snakes.filter(s => s.alive);
+    MG.toAll({ k: 's', s: SN.snakes.map(s => [s.id, s.alive ? 1 : 0, s.body.flat()]), f: SN.food.flat(), t: Math.round(SN.t) }, true);
+    if ((SN.snakes.length > 1 && alive.length <= 1) || SN.t >= ROUND || !alive.length) {
+        SN.on = false;
+        const rows = SN.snakes.slice().sort((a, b) => (b.alive - a.alive) || (b.body.length - a.body.length) || ((b.diedAt || 0) - (a.diedAt || 0)));
+        setTimeout(() => MG.end(`<h1>${mgEsc(rows[0].name)} wins!</h1>` + rows.map((s, i) => `<div class="mg-res-row"><span>${['🥇', '🥈', '🥉'][i] || (i + 1) + '.'} ${mgEsc(s.name)}${s.alive ? '' : ' 💀'}</span><b>${s.body.length}</b></div>`).join('')), 900);
+    }
+}
+function start(roster, seed) {
+    SN.rng = mgRng(seed); SN.t = 0; SN.acc = 0; SN.food = [];
+    const spots = [[6, 6, 'r'], [GW - 7, GH - 7, 'l'], [GW - 7, 6, 'l'], [6, GH - 7, 'r'], [GW / 2 | 0, 4, 'd'], [GW / 2 | 0, GH - 5, 'u'], [4, GH / 2 | 0, 'r'], [GW - 5, GH / 2 | 0, 'l']];
+    SN.snakes = roster.map((p, i) => { const [a, b, d] = spots[i % spots.length], v = DIRS[d]; return { id: p.id, name: p.name, col: p.col, bot: !!p.bot, dir: d, alive: true, grow: 0, body: [0, 1, 2].map(k => [a - v[0] * k, b - v[1] * k]) }; });
+    for (let i = 0; i < 6; i++) addFood();
+    SN.on = true;
+}
+function loop(t) {
+    requestAnimationFrame(loop);
+    const dt = Math.min(0.1, (t - (SN.last || t)) / 1000); SN.last = t;
+    if (SN.on && MG.isHost()) { SN.t += dt; SN.acc += dt; while (SN.acc >= TICK) { SN.acc -= TICK; hostTick(); if (!SN.on) break; } }
+    draw();
+}
+function draw() {
+    const c = SN.cell; x.fillStyle = '#060a14'; x.fillRect(0, 0, cv.width, cv.height);
+    x.strokeStyle = 'rgba(255,255,255,.04)'; x.lineWidth = 1; x.beginPath(); for (let i = 0; i <= GW; i++) { x.moveTo(i * c, 0); x.lineTo(i * c, GH * c); } for (let j = 0; j <= GH; j++) { x.moveTo(0, j * c); x.lineTo(GW * c, j * c); } x.stroke();
+    for (const [a, b] of SN.food) { x.fillStyle = '#facc15'; x.shadowColor = '#facc15'; x.shadowBlur = 12; x.beginPath(); x.arc(a * c + c / 2, b * c + c / 2, c * 0.32, 0, 7); x.fill(); } x.shadowBlur = 0;
+    for (const s of SN.snakes) {
+        x.globalAlpha = s.alive ? 1 : 0.25;
+        s.body.forEach(([a, b], i) => { x.fillStyle = i ? s.col : '#fff'; x.fillRect(a * c + 1, b * c + 1, c - 2, c - 2); if (!i) { x.fillStyle = s.col; x.fillRect(a * c + 3, b * c + 3, c - 6, c - 6); } });
+        x.globalAlpha = 1;
+    }
+    const hud = document.getElementById('sn-hud'), me = SN.snakes.find(s => s.id === MG.me);
+    hud.innerHTML = `<span>⏱ ${Math.max(0, ROUND - Math.round(SN.t))} s</span>` + SN.snakes.map(s => `<span style="color:${s.col}">${mgEsc(s.name.replace(' (bot)', ''))} ${s.alive ? s.body.length : '💀'}</span>`).join('') + (me && !me.alive && SN.on ? '<span>You crashed: watching</span>' : '');
+}
+function steer(d) { const me = SN.snakes.find(s => s.id === MG.me); if (!me || !me.alive) return; MG.toHost({ k: 'dir', d }); }
+addEventListener('keydown', e => { const d = { ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd', ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r' }[e.code]; if (d) { e.preventDefault(); steer(d); } });
+let touch0 = null; cv.addEventListener('pointerdown', e => { touch0 = [e.clientX, e.clientY]; }); cv.addEventListener('pointerup', e => { if (!touch0) return; const dx = e.clientX - touch0[0], dy = e.clientY - touch0[1]; if (Math.max(Math.abs(dx), Math.abs(dy)) > 20) steer(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u')); touch0 = null; });
+requestAnimationFrame(loop);
+MG.init({
+    id: 'mg-snake', title: 'Snake Arena', color: '#4ade80', min: 2, max: 8, bots: 7, defBots: 3,
+    sub: 'Every snake on one board. Last one slithering wins.', howto: 'Steer with the <b>arrow keys</b> or <b>WASD</b> (swipe on a touch screen). Eat the gold to grow. Hit a wall, yourself or another snake and you are out. Last snake alive wins; after 2 minutes the longest wins.',
+    onStart(roster, seed) { start(roster, seed); },
+    onMsg(from, m) {
+        if (m.k === 'dir' && MG.isHost()) { const s = SN.snakes.find(q => q.id === from); if (s) s.want = m.d; }
+        if (m.k === 's' && !MG.isHost()) { SN.t = m.t; for (const [id, alive, flat] of m.s) { const s = SN.snakes.find(q => q.id === id); if (!s) continue; s.alive = !!alive; s.body = []; for (let i = 0; i < flat.length; i += 2) s.body.push([flat[i], flat[i + 1]]); } SN.food = []; for (let i = 0; i < m.f.length; i += 2) SN.food.push([m.f[i], m.f[i + 1]]); }
+    },
+    onLeave(id) { const s = SN.snakes.find(q => q.id === id); if (s) s.alive = false; }, onQuit() { SN.on = false; }, onEnd() { SN.on = false; }
+});
+
+</script>
+</body>
+</html>

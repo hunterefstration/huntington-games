@@ -1,0 +1,5 @@
+#rd { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: background .08s; background: #1e293b; }
+#rd.wait { background: #7f1d1d; } #rd.go { background: #16a34a; } #rd.early { background: #57534e; } #rd.tapped { background: #1d4ed8; } #rd.result { background: #312e81; }
+#rd-big { font: 900 clamp(48px, 10vw, 120px) system-ui; color: #fff; text-shadow: 0 6px 30px rgba(0,0,0,.4); } #rd-small { font: 700 20px system-ui; color: rgba(255,255,255,.85); margin-top: 8px; min-height: 26px; }
+#rd-board { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 96vw; }
+.rd-p { background: rgba(0,0,0,.35); border-radius: 12px; padding: 6px 12px; font: 700 14px system-ui; display: flex; gap: 8px; align-items: center; } .rd-p i { width: 10px; height: 10px; border-radius: 3px; } .rd-p b { letter-spacing: 2px; color: #fde047; } .rd-p span { color: #cbd5e1; font-size: 12px; }

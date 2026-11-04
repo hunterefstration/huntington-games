@@ -7,7 +7,7 @@
 // Each row works in both directions, so "acid metal" also covers "metal acid".
 // Lookup is a table indexed by (element a, element b): no list scanning while the simulation runs.
 // ==========================================
-const RXI = new Int32Array(NE * NE).fill(-1);
+const RXI = new Int16Array(NE * NE).fill(-1);       // index into RXL (fewer than 32k reacting pairs)
 const RXL = [];
 const REACTIONS = [];
 (function buildReactions() {
@@ -22,7 +22,7 @@ const REACTIONS = [];
         const o = { p: +r.p, ra: prod(r.ra), rb: prod(r.rb), heat: num(r.heat, 0), pa: num(r.pa, 1), pb: num(r.pb, 1), tmin: num(r.tmin, -99999),
             boom: num(r.boom, 0), note: r.note, need: r.need ? nm(r.need) : 0 };
         const k = a * NE + b;
-        if (RXI[k] < 0) { RXI[k] = RXL.length; RXL.push([]); }
+        if (RXI[k] < 0) { if (RXL.length >= 32767) return; RXI[k] = RXL.length; RXL.push([]); }
         RXL[RXI[k]].push(o);
     }
     rows.forEach(r => {

@@ -1,0 +1,25 @@
+/* Huntington Minigames: shared look (copied into every minigame by Minigames/build.sh) */
+:root { --mg: #38bdf8; --bg: #0b0f1a; --panel: rgba(17, 24, 39, .92); --line: rgba(255,255,255,.12); --text: #e5e7eb; --dim: #94a3b8; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 60%); color: var(--text); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; overflow: hidden; user-select: none; }
+.hidden { display: none !important; }
+#mg-lobby, #mg-res { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 8, 16, .72); backdrop-filter: blur(4px); }
+.mg-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px 28px; max-width: 640px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.mg-kicker { font: 700 11px ui-monospace, monospace; letter-spacing: .3em; text-transform: uppercase; color: var(--mg); }
+.mg-card h1 { margin: 6px 0 4px; font-size: 40px; font-weight: 900; letter-spacing: .01em; text-shadow: 0 0 24px color-mix(in srgb, var(--mg) 50%, transparent); }
+.mg-sub { color: var(--dim); margin: 4px 0 10px; } .mg-how { font-size: 14px; color: #cbd5e1; margin: 8px 0 14px; line-height: 1.5; }
+.mg-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 10px 0; }
+.mg-btn { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--line); border-radius: 12px; padding: 10px 18px; font: 800 15px system-ui, sans-serif; cursor: pointer; }
+.mg-btn:hover { border-color: var(--mg); } .mg-btn.big { background: var(--mg); color: #06101f; border-color: var(--mg); }
+.mg-btn:disabled { opacity: .45; cursor: default; }
+#mg-code { width: 140px; text-align: center; font: 800 18px system-ui; letter-spacing: .15em; padding: 9px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: #fff; }
+#mg-st { min-height: 20px; color: #bae6fd; font-size: 14px; } #mg-st.bad { color: #fda4af; }
+.mg-code { font-size: 16px; margin: 8px 0; } .mg-code b { color: var(--mg); font-size: 26px; letter-spacing: .2em; }
+#mg-people { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
+.mg-chip { background: rgba(255,255,255,.07); border-radius: 999px; padding: 4px 10px; font-size: 14px; display: inline-flex; gap: 6px; align-items: center; } .mg-chip i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; } .mg-chip small { color: var(--dim); }
+select { background: rgba(0,0,0,.4); color: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: 700 14px system-ui; }
+label { color: var(--dim); font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+.mg-res-row { display: flex; justify-content: space-between; padding: 8px 6px; border-bottom: 1px solid var(--line); font-weight: 700; font-size: 17px; } .mg-res-row b { color: var(--mg); }
+.mg-hud { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font: 800 14px system-ui; pointer-events: none; }
+.mg-hud span { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+canvas { display: block; }

@@ -65,6 +65,7 @@ function buildTop() {
     onToolChange = refreshUi; onUiRefresh = refreshUi;
     $('ver').textContent = 'v' + VERSION + ' - lab bench';
     $('t-ver').textContent = VERSION;
+    document.querySelector('#title .tag').textContent = 'Build reactors, circuits and cities. ' + (NE - 1 - HIDE.reduce((a, b) => a + b, 0)) + ' elements, ' + REACTIONS.length + ' reactions.';
 }
 function refreshUi() {
     for (const k in TOOLS) $('tool-' + k).classList.toggle('on', tool === k);
@@ -178,7 +179,7 @@ function showHelp() {
         '<li><b>Control Rods</b> soak up neutrons. Pull rods out (Erase) and it runs hotter; put more in and it cools. Lead and concrete shield.</li>' +
         '<li>The hot fuel boils the water into <b>steam</b>. Steam rising through a <b>Turbine</b> spins it, and a spinning turbine powers any wire it touches: run wire to your bulbs.</li>' +
         '<li>Keep the water topped up with a <b>Spout</b> (it copies the water touching it). Steam condenses back to water when it cools.</li>' +
-        '<li>Boiling the water away means no moderator, so it slows down by itself. But fuel over 1800 C melts into <b>Corium</b>: lava-hot, radioactive, and it explodes in water. Try the Reactor scene.</li></ul>' +
+        '<li>Boiling the water away means no moderator, so a water reactor slows down by itself. A <b>graphite</b> core has no such brake: without rods or cooling, fuel passes 1800 C and melts into <b>Corium</b> (lava-hot, radioactive, explodes in water). Split fuel keeps giving off decay heat for a while after.</li></ul>' +
         '<h3>Plumbing</h3><ul><li><b>Pipe</b>: an open end sucks in liquid or gas, which flows along and out the far end. <b>Pump</b> pushes into a pipe; <b>Valve</b> only opens when powered. <b>Drain</b> swallows fluids, <b>Mesh</b> lets fluids through.</li></ul>' +
         '<p class="note">Element Lab ' + VERSION + ' - ' + (NE - 1) + ' elements, ' + REACTIONS.length + ' reactions.</p>');
 }

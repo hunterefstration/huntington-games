@@ -6545,7 +6545,7 @@ function renderCard(el, m){
     el.append(c); return true;
   }
   // a game invite from the Huntington Games launcher: "... hg-invite:<game>:<party code>"
-  if ((mm = /hg-invite:([a-z]+):([A-Za-z0-9-]{4,40})/.exec(t))) {
+  if ((mm = /hg-invite:([a-z0-9-]+):([A-Za-z0-9-]{4,40})/.exec(t))) {
     const hub = gameHub(), name = INVITE_NAMES[mm[1]] || mm[1], said = t.replace(mm[0], '').replace(/\s*-\s*$/, '').trim();
     const c = document.createElement('div'); c.className = 'rcard invite';
     c.innerHTML = `<b>🎮 ${esc(name)}</b>` + (said ? `<span>${esc(said)}</span>` : '') + (said.includes(mm[2]) ? '' : `<span>party code ${esc(mm[2])}</span>`);

@@ -59,7 +59,8 @@ function updHuman(i, x, y, e) {
         if (t > 70 && b !== ID.water) { hp -= ((t - 70) / 40) | 0; if (!cause) cause = 'burn'; }
         else if (t < -15) { hp -= 1; if (!cause) cause = 'freeze'; }
     }
-    if (tp[i] > 60) { hp -= 2; cause = cause || 'burn'; } else if (tp[i] < -20) { hp -= 1; cause = cause || 'freeze'; }
+    const bt = tp[i];
+    if (bt > 60) { hp -= bt > 300 ? 40 : 2; cause = cause || (bt > 600 ? 'lava' : 'burn'); } else if (bt < -20) { hp -= bt < -80 ? 10 : 1; cause = cause || 'freeze'; }
     if (tp[i] !== 37 && rnd() < 0.2) tp[i] += tp[i] < 37 ? 1 : -1;   // body heat
     if (hasHead && KIND[el[hd - P]] === K.LIQUID && KIND[el[hd + 1]] === K.LIQUID && KIND[el[hd - 1]] === K.LIQUID && (tickN & 7) === 0) { hp -= 1; cause = cause || 'drown'; }
     if (hp <= 0) { killHuman(i, hd, cause); return true; }
@@ -68,7 +69,9 @@ function updHuman(i, x, y, e) {
     // ---- falling (or sinking slowly in a liquid)
     const below = el[i + P];
     if (passable(below)) { moveHuman(i, i + P); return true; }
-    if (KIND[below] === K.LIQUID && !DANGER[below] && rnd() < 0.25) { moveHuman(i, i + P); return true; }
+    const up = hd - P;
+    if (hasHead && KIND[el[up]] === K.LIQUID && !DANGER[el[up]] && rnd() < 0.3) { swap(hd, up); swap(i, hd); return true; }   // swim up
+    if (KIND[below] === K.LIQUID && !DANGER[below] && KIND[el[up]] !== K.LIQUID && rnd() < 0.05) { moveHuman(i, i + P); return true; }
     // ---- look around for danger every few ticks
     if (((tickN + vr[i]) & 3) === 0) {
         let dl = 99, dr = 99;
@@ -91,7 +94,8 @@ function updHuman(i, x, y, e) {
         const f = i + dir, fb = el[f];
         if (CARRY[fb] && (a >> 8) === 0 && panic === 0 && rnd() < 0.05) { a = (a & 255) | ((fb + 1) << 8); clr(f); }   // pick it up
         else if (hpass(f) && hpass(f - P)) {
-            if (scary(f) || scary(f - P) || scary(f + P) || (passable(el[f + P]) && passable(el[f + 2 * P]) && (scary(f + 2 * P) || scary(f + 3 * P)))) dir = -dir;
+            const wet = KIND[el[f + P]] === K.LIQUID || (passable(el[f + P]) && KIND[el[f + 2 * P]] === K.LIQUID);
+            if (scary(f) || scary(f - P) || scary(f + P) || (passable(el[f + P]) && passable(el[f + 2 * P]) && (scary(f + 2 * P) || scary(f + 3 * P))) || (wet && panic === 0)) dir = -dir;
             else cur = moveHuman(i, f);
         } else if (hpass(f - P) && hpass(f - 2 * P) && hpass(hd - P) && !scary(f - P) && !scary(f - 2 * P)) {
             cur = moveHuman(i, f - P);             // climb a one-cell step

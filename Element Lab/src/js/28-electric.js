@@ -110,7 +110,7 @@ function electric() {
         if (b === 0) { if (fx && rnd() < 0.0015) { const y = ((i / P) | 0) - 1, x = i - (y + 1) * P - 1; addPart(x + 0.5, y + 0.5, (rnd() - 0.5) * 1.5, (rnd() - 0.5) * 1.5, 0, 6, 0, 3); } continue; }
         if (ELC[b] !== 0) continue;
         if (b === ID.neon || b === ID.argon) { life[j] = 8; wkI(j); }
-        else if (b === HUMAN || b === HEAD) { if (rnd() < 0.3) hurtHuman(j, 34, 'shock'); }
+        else if (b === HUMAN || b === HEAD) { if (rnd() < 0.5) hurtHuman(j, 45, 'shock'); }
         else if (BOOM[b] !== 0) { if (rnd() < 0.3) { const y = ((j / P) | 0) - 1; detonate(j - (y + 1) * P - 1, y, j, b); } }
         else if (KIND[b] === K.GAS && FLAM[b] > 0.5 && rnd() < 0.05) { life[j] = BLIFE[b]; tp[j] = IGN[b] + 50; wkI(j); }
         else if (b === ID.water && rnd() < 0.0005) put(j, rnd() < 0.67 ? ID.hydrogen : ID.oxygen);
@@ -124,6 +124,7 @@ function cellXY(i) { const y = ((i / P) | 0) - 1; return [i - (y + 1) * P - 1, y
 function device(i, e, on) {
     if (e === ID.lamp) { if (on) { STAT.lamp++; if (tp[i] < 60) tp[i]++; } return; }
     if (e === ID.eheater) { if (on) { tp[i] += ((450 - tp[i]) * 0.25) | 0; wkI(i); } return; }
+    if (e === ID.furnace) { if (on) { tp[i] += ((1600 - tp[i]) * 0.2) | 0; wkI(i); } return; }
     if (e === ID.ecooler) { if (on) { tp[i] += ((-60 - tp[i]) * 0.25) | 0; wkI(i); } return; }
     if (e === ID.piston) { piston(i, on); return; }
     if (!on) return;

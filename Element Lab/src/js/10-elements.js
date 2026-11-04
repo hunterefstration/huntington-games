@@ -29,7 +29,7 @@ def('ash', 'Ash', 'Land', P_, [125, 125, 132], { dens: 400, slide: .85, g: ['dis
 def('rust', 'Rust', 'Land', P_, [166, 76, 34], { dens: 1800, slide: .8, g: ['diss'] });
 def('coal', 'Coal', 'Land', P_, [38, 38, 44], { dens: 1300, slide: .8, ign: 350, ip: .1, burn: [255, 800, 'ash'], flam: .08, g: ['diss', 'carbon'] });
 def('gravel', 'Gravel', 'Land', P_, [132, 127, 122], { dens: 2000, slide: .9, var: .14, hi: [1100, 'lava'], g: ['diss'] });
-def('water', 'Water', 'Liquids', L_, [48, 118, 232], { dens: 1000, disp: 5, cond: .25, var: .05, lo: [0, 'ice'], hi: [100, 'steam'], g: ['douse', 'wet'], mod: 1, abs: .012 });
+def('water', 'Water', 'Liquids', L_, [48, 118, 232], { dens: 1000, disp: 5, cond: .25, var: .05, lo: [0, 'ice'], hi: [100, 'steam'], g: ['douse', 'wet'], mod: 1, abs: .005 });
 def('saltwater', 'Salt Water', 'Liquids', L_, [70, 150, 205], { dens: 1100, disp: 5, cond: .25, var: .05, lo: [-4, 'ice'], hi: [100, 'steam', 'salt', .35], g: ['douse', 'wet'], elc: 'c', mod: 1, abs: .02 });
 def('oil', 'Oil', 'Liquids', L_, [98, 62, 26], { dens: 800, disp: 4, mv: .85, cond: .1, ign: 200, burn: [90, 750, 'smoke'], flam: .35 });
 def('lava', 'Lava', 'Liquids', L_, [255, 96, 12], { dens: 2500, disp: 3, mv: .45, ti: 1300, cond: .035, cool: .002, lo: [500, 'stone'], self: 1, glow: [255, 90, 20, 3], awake: 1, danger: 1 });
@@ -39,7 +39,7 @@ def('mud', 'Mud', 'Land', L_, [92, 62, 36], { dens: 1700, disp: 1, mv: .12, hi: 
 def('lnitro', 'Liquid Nitrogen', 'Liquids', L_, [168, 228, 255], { dens: 800, disp: 4, ti: -196, cond: .2, cool: .008, hi: [-150, 'nitrogen'], g: ['douse'] });
 def('moltenmetal', 'Molten Metal', 'Metals', L_, [255, 160, 70], { dens: 6000, disp: 3, mv: .3, ti: 1500, cond: .35, cool: .01, lo: [1300, 'metal'], self: 1, glow: [255, 140, 50, 3], awake: 1, danger: 1, g: ['molten'] });
 def('moltenglass', 'Molten Glass', 'Liquids', L_, [255, 176, 80], { dens: 2300, disp: 2, mv: .3, ti: 1150, cond: .15, cool: .01, lo: [1000, 'glass'], self: 1, glow: [255, 150, 60, 2], awake: 1, danger: 1 });
-def('steam', 'Steam', 'Gases', G_, [214, 222, 235], { dens: 60, ti: 110, alpha: .5, cool: .12 });
+def('steam', 'Steam', 'Gases', G_, [214, 222, 235], { dens: 60, ti: 110, alpha: .5, cool: .04, life: [160, 240] });
 def('smoke', 'Smoke', 'Gases', G_, [88, 88, 96], { dens: 90, ti: 80, alpha: .55, life: [100, 260] });
 def('methane', 'Methane', 'Gases', G_, [150, 205, 120], { dens: 55, alpha: .4, ign: 260, ip: .9, burn: [4, 1000, 'co2'], flam: .9, g: ['fgas'] });
 def('hydrogen', 'Hydrogen', 'Gases', G_, [220, 235, 255], { dens: 7, alpha: .35, ign: 240, ip: .95, burn: [3, 1100, 'steam'], flam: .95, g: ['fgas'] });
@@ -269,6 +269,7 @@ def('spout', 'Spout', 'Machines', S_, [80, 160, 200], { unb: 1, hard: 1, awake: 
 def('drain', 'Drain', 'Machines', S_, [40, 40, 50], { unb: 1, hard: 1, awake: 1, desc: 'Swallows liquids and gases.' });
 def('turbine', 'Turbine', 'Machines', S_, [170, 175, 190], { hard: .9, awake: 1, elc: 'src', desc: 'Steam pushing through it spins it and makes power.' });
 def('mesh', 'Mesh', 'Machines', S_, [100, 100, 110], { hard: .7, desc: 'Liquids and gases pass through, powders do not.' });
+def('furnace', 'Furnace', 'Machines', S_, [120, 64, 44], { hard: .9, cond: .45, elc: 'dev', glow: [255, 120, 40, 0], desc: 'Heats up to 1600 C while powered: melts ore and metal.' });
 def('drill', 'Drill', 'Machines', S_, [170, 150, 60], { hard: .95, elc: 'dev', dir: 1, desc: 'Powered: breaks whatever is in front of it.' });
 // ---- Nuclear
 def('uranium', 'Uranium', 'Nuclear', S_, [70, 190, 60], { hard: .8, cond: .3, hi: [1800, 'corium'], fis: 1, rad: .0006, awake: 1, glow: [80, 255, 60, 0], desc: 'Fuel. Slow neutrons split it: heat and more neutrons.' });
@@ -296,8 +297,8 @@ def('smokebomb', 'Smoke Bomb', 'Explosives', P_, [110, 110, 120], { dens: 1300, 
 def('firecracker', 'Firecracker', 'Explosives', P_, [220, 40, 40], { dens: 1200, slide: .6, boom: 1, bd: 1, ign: 200, flam: .9 });
 def('nuke', 'Nuke', 'Explosives', S_, [90, 220, 80], { hard: .5, boom: 20, bd: 6, ign: 800, flam: 0, desc: 'A huge blast and radioactive fallout. Neutrons set it off.' });
 // ---- Life
-def('human', 'Human', 'Life', C_, [60, 110, 200], { life: [100, 100], hi: [90, 'cookedmeat'], lo: [-30, 'ice'], awake: 1, g: ['organic', 'living', 'critter'], desc: 'Walks, climbs steps, runs from danger.' });
-def('head', 'Head', 'Life', C_, [240, 196, 160], { hide: 1, hi: [90, 'cookedmeat'], awake: 1, g: ['organic', 'living'] });
+def('human', 'Human', 'Life', C_, [60, 110, 200], { life: [100, 100], ti: 37, awake: 1, g: ['organic', 'living', 'critter'], desc: 'Walks, climbs steps, runs from danger.' });
+def('head', 'Head', 'Life', C_, [240, 196, 160], { hide: 1, ti: 37, awake: 1, g: ['organic', 'living'] });
 def('body', 'Body', 'Life', P_, [170, 90, 90], { dens: 1050, slide: .1, hi: [200, 'cookedmeat'], dec: [.0004, 'rottenmeat'], awake: 1, g: ['organic', 'diss'] });
 def('blood', 'Blood', 'Life', L_, [150, 10, 20], { dens: 1060, disp: 3, mv: .6, hi: [110, 'steam', 'salt', .1], lo: [-2, 'ice'], g: ['wet', 'organic'] });
 def('bone', 'Bone', 'Life', P_, [232, 226, 210], { dens: 1900, slide: .2, hi: [1200, 'quicklime'], g: ['diss'] });
