@@ -171,8 +171,10 @@ try {
   check('and back', !!(await until(() => A.evaluate(() => document.documentElement.dataset.base === 'dark' && document.documentElement.dataset.flavor === 'amber'), 8000)));
 
   console.log('\n=== 7. the game cards ===');
-  const names = await A.$$eval('.game .name', es => es.map(e => e.textContent));
+  const names = await A.$$eval('#grid .game .name', es => es.map(e => e.textContent));
   check('Neon Dash is a main game, last', names[names.length - 1] === 'Neon Dash 2.1', names.slice(-2).join(' | '));
+  const minis = await A.$$eval('#grid-mini .game .name', es => es.map(e => e.textContent));
+  check('Minigames have their own section', minis.length === 6 && minis.includes('Reaction Duel') && await A.evaluate(() => !document.getElementById('mini-h').hidden), minis.join(' | '));
   check('it is credited to Levi', await A.$eval('.game:last-child .credit', e => /Levi/.test(e.textContent)));
   check('Bean & Brew Classic is credited to Robbie', await A.evaluate(() => [...document.querySelectorAll('.game')].some(g => /Bean & Brew Classic/.test(g.textContent) && /Robbie/.test(g.querySelector('.credit').textContent))));
   check('Market & Life is credited to Robbie', await A.evaluate(() => [...document.querySelectorAll('.game')].some(g => /Market & Life/.test(g.textContent) && /Robbie/.test(g.querySelector('.credit').textContent))));
