@@ -110,12 +110,45 @@ function profBoards(c) {
 function profLoadBoard(k) {
   window.HGGrapevine.eco.lbGet(k).then(function (m) { PROF.lbData = m; profRender(); lbRender(); }, function () { PROF.lbAsked = ''; });
 }
+// the Leaderboards tab, laid out: games down the side, the game's main boards as tabs (single levels tucked in a picker),
+// a podium for the top three, your own place, then everyone else
+function lbView(c) {
+  var games = [], count = {};
+  Object.keys(c.boards).forEach(function (k) { var g = c.boards[k].g; if (/^hub:/.test(k)) g = 'Huntington Games'; if (games.indexOf(g) < 0) games.push(g); count[g] = (count[g] || 0) + 1; });
+  games.sort(function (a, b) { return a === 'Huntington Games' ? -1 : b === 'Huntington Games' ? 1 : a.localeCompare(b); });
+  if (games.indexOf(PROF.lbGame) < 0) PROF.lbGame = games[0];
+  var gOf = function (k) { return /^hub:/.test(k) ? 'Huntington Games' : c.boards[k].g; };
+  var keys = Object.keys(c.boards).filter(function (k) { return gOf(k) === PROF.lbGame; });
+  var main = keys.filter(function (k) { return !/^lumi:lv/.test(k); }), levels = keys.filter(function (k) { return /^lumi:lv/.test(k); });
+  if (keys.indexOf(PROF.lbBoard) < 0) PROF.lbBoard = main[0] || keys[0];
+  var side = '<div class="lbside">' + games.map(function (g) { return '<button data-lbg="' + profEsc(g) + '" class="' + (PROF.lbGame === g ? 'on' : '') + '"><b>' + profEsc(g) + '</b><span>' + count[g] + ' board' + (count[g] === 1 ? '' : 's') + '</span></button>'; }).join('') + '</div>';
+  var h = '<div class="lbmain"><div class="lbtitle"><h2>' + profEsc(PROF.lbGame) + '</h2><span class="pnote">R1 = top 2% · R2 top 10% · R3 top 25% · R4 top half · R5 everyone else. First place is the Record Holder.</span></div>';
+  h += '<div class="lbtabs">' + main.map(function (k) { return '<button data-lbb="' + k + '" class="' + (PROF.lbBoard === k ? 'on' : '') + '">' + profEsc(c.boards[k].n) + '</button>'; }).join('') +
+    (levels.length ? '<select id="lb-level" class="' + (/^lumi:lv/.test(PROF.lbBoard) ? 'on' : '') + '"><option value="">Single level...</option>' + levels.map(function (k) { return '<option value="' + k + '"' + (PROF.lbBoard === k ? ' selected' : '') + '>' + profEsc(c.boards[k].n) + '</option>'; }).join('') + '</select>' : '') + '</div>';
+  if (/^lumi:lv/.test(PROF.lbBoard)) h += '<div class="pnote">Single-level boards are just for fun: they give no tag or rank.</div>';
+  var d = PROF.lbData && PROF.lbData.board === PROF.lbBoard ? PROF.lbData : null;
+  if (!d) { if (PROF.lbAsked !== PROF.lbBoard) { PROF.lbAsked = PROF.lbBoard; profLoadBoard(PROF.lbBoard); } return '<div class="lbwrap">' + side + h + '<div class="pempty">Loading...</div></div></div>'; }
+  var def = d.def || c.boards[PROF.lbBoard], L = window.HGGrapevine;
+  if (!d.rows.length) return '<div class="lbwrap">' + side + h + '<div class="pempty">Nobody on this board yet. Be the first!</div></div></div>';
+  L.eco.cos(d.rows.slice(0, 60).map(function (r) { return r.u; }));
+  var cosOfU = function (u) { return L.eco.cos([])[u] || {}; };
+  var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { return profEsc(k) + ': ' + profEsc(r.d[k]); }).join(', ') : ''; };
+  var top = d.rows.slice(0, 3), order = [1, 0, 2];
+  h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
+    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + profPfp(cs.p, i ? 46 : 60, cs.img) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
+  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span></div>';
+  var rest = d.rows.slice(3);
+  if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
+    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
+  return '<div class="lbwrap">' + side + h + '</div></div>';
+}
+document.addEventListener('change', function (e) { if (e.target && e.target.id === 'lb-level' && e.target.value) { PROF.lbBoard = e.target.value; PROF.lbData = null; lbRender(); } });
 // the Leaderboards tab: every game's boards (the same boards the Profile used to show)
 function lbRender() {
   var box = document.getElementById('view-lb'); if (!box || box.hidden) return;
   var L = window.HGGrapevine, c = L && L.me() && L.eco && L.eco.catalog();
   if (!c) { box.innerHTML = '<div class="pempty">' + (L && L.me() ? 'Loading the leaderboards...' : 'Sign in to see the leaderboards.') + '</div>'; return; }
-  box.innerHTML = '<div class="lbhead"><h2>Leaderboards</h2><span>Every game, everyone. Pick a game, then a board.</span></div>' + profBoards(c);
+  box.innerHTML = lbView(c);
 }
 function profEarn(e) {
   var rows = [['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],

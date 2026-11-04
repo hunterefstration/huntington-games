@@ -86,7 +86,7 @@ try {
   // leaderboards fed from the saves
   await A.click('#tab-lb');
   await A.evaluate(() => { const g = [...document.querySelectorAll('[data-lbg]')].find(b => /Spikes/.test(b.textContent)); g && g.click(); });
-  const row = await until(() => A.evaluate(n => { const t = document.querySelector('.plb'); return t && [...t.querySelectorAll('tr')].some(r => r.textContent.includes(n) && r.textContent.includes('12')); }, nm), 15000);
+  const row = await until(() => A.evaluate(n => { const t = document.getElementById('view-lb'); return t && t.textContent.includes(n) && t.textContent.includes('12'); }, nm), 15000);
   if (!row) console.log('    debug:', await A.evaluate(() => HGGrapevine.eco.lbGet('spikes:level').then(m => JSON.stringify(m).slice(0, 300), e => 'ERR ' + e.message)), await A.evaluate(() => document.getElementById('view-prof').textContent.slice(-300)));
   check('the Spikes leaderboard shows your level from the save', !!row);
   check('every leaderboard game is listed', await A.evaluate(() => document.querySelectorAll('[data-lbg]').length >= 12));
