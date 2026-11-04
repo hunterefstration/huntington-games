@@ -8494,7 +8494,7 @@ function pfpHtml(c, px){
 function badgesHtml(c){
   if (!c) return '';
   let h = '';
-  const t = c.t && CATALOG && CATALOG.byId.get(c.t);
+  const t = (c.t && CATALOG && CATALOG.byId.get(c.t)) || (c.tn ? { n: c.tn, r: 'secret' } : null);      // (c.tn: a developer-given custom title)
   if (t) h += `<span class="gtag r-${t.r}" title="title">${esc(t.n)}</span>`;
   if (c.rec && c.rec.length) {
     const b = CATALOG && CATALOG.boards[c.rec[0]];
@@ -8528,7 +8528,7 @@ function paintUserCos(uid){
   const ranks = Object.entries((c && c.ranks) || {}).sort((a, b2) => a[1] - b2[1]).slice(0, 6)
     .map(([g, t]) => `<span class="gtag rank t${t}">R${t} · ${esc(g)}</span>`).join('');
   const recs = ((c && c.rec) || []).map(k => { const d = CATALOG && CATALOG.boards[k]; return `<span class="gtag rec">🏆 ${esc(d ? d.g + ': ' + d.n : k)}</span>`; }).join('');
-  const t = c && c.t && CATALOG && CATALOG.byId.get(c.t);
+  const t = (c && c.t && CATALOG && CATALOG.byId.get(c.t)) || (c && c.tn ? { n: c.tn, r: 'secret' } : null);
   box.innerHTML = `<div class="umpfp">${pfpHtml(c, 56) || ''}</div><div class="umtags">${t ? `<span class="gtag big r-${t.r}">${esc(t.n)}</span>` : ''}${recs}${ranks}</div>`;
 }
 const _openUser = openUser;

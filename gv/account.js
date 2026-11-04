@@ -516,7 +516,7 @@ const GVLink = (() => {
 
   function onError(c, m) {
     var code = m.code || '';
-    if (/^(goons|not-owned|not-for-sale|owned|not-admin)$/.test(code)) { emit('ecoError', m); return; }
+    if (/^(goons|not-owned|not-for-sale|owned|not-admin|bad-title)$/.test(code)) { emit('ecoError', m); return; }
     if (code === 'rate') { rpcFail(new Error('Slow down a little.')); settlePending(new Error('Slow down a little.')); return; }
     if (code === 'rebind' && !st.sendKey && st.auth) { st.sendKey = true; try { c.close(); } catch (e) {} return; }   // retry once, sending the key to bind it
     if (code === 'full') { st.idx++; try { c.close(); } catch (e) {} return; }
@@ -919,7 +919,7 @@ const GVLink = (() => {
       claim: function (kind, id, n) { if (st.ready) send({ type: 'ecoClaim', kind: kind, id: id || null, n: n || 0 }); },
       play: function (game, active) { if (st.ready) send({ type: 'play', game: String(game || '').slice(0, 40), active: !!active }); },
       slur: function () { if (st.ready) send({ type: 'slur' }); },
-      admin: function (op, name, id, n) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0 }); },
+      admin: function (op, name, id, n, text) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0, text: text || null }); },
       lbSubmit: function (board, s, d) { if (st.ready && isFinite(s)) send({ type: 'lbSubmit', board: board, s: s, d: d || null }); },
       lbGet: function (board) { return st.ready ? rpc({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
       // what other people wear: cached for 10 minutes, fetched in one batch

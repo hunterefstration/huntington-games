@@ -4,7 +4,13 @@
 // (grapevine src/archive/074-catalog.js): this file only draws it. Goons can only be changed by the server.
 var PROF = { tab: 'locker', cat: 'pfp', grp: '', lbGame: '', lbBoard: '', lbData: null, lbAsked: '' };
 function profEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-function profItem(id) { var L = window.HGGrapevine, c = L && L.eco.catalog(); if (!c) return null; if (!c.byId) { c.byId = {}; c.items.forEach(function (i) { c.byId[i.id] = i; }); } return c.byId[id] || null; }
+function profItem(id) {
+  // a developer-given custom title is not in the catalog: it lives in the wallet's ctitles
+  var e0 = window.HGGrapevine && window.HGGrapevine.eco.state();
+  if (id && /^title:c-/.test(id) && e0 && e0.ctitles && e0.ctitles[id]) return { id: id, k: 'title', n: e0.ctitles[id], r: 'secret', p: 0, x: 'Given by an admin', custom: true };
+  return profItem0(id);
+}
+function profItem0(id) { var L = window.HGGrapevine, c = L && L.eco.catalog(); if (!c) return null; if (!c.byId) { c.byId = {}; c.items.forEach(function (i) { c.byId[i.id] = i; }); } return c.byId[id] || null; }
 // a picture as a round badge: its emoji (or a team's letters) on its two colours; a developer's own image
 function profSvgUrl(svg) { return "url('data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg).replace(/'/g, '%27') + "')"; }      // (single quotes: this goes inside style="...")
 // the shop's sections: one per game ('Games: Last Light') shown together under "Games"
@@ -28,7 +34,7 @@ function profFmt(v, f) {
   if (f === 'big') return v >= 1e12 ? (v / 1e12).toFixed(2) + 'T' : v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : Math.round(v).toLocaleString();
   return Math.round(v).toLocaleString();
 }
-function profOwns(e, it) { return !!(e && (it.free || e.dev || e.owned.indexOf(it.id) >= 0 || e.earned.indexOf(it.id) >= 0)); }
+function profOwns(e, it) { return !!(e && (it.custom ||it.free || e.dev || e.owned.indexOf(it.id) >= 0 || e.earned.indexOf(it.id) >= 0)); }
 function profRender() {
   var box = document.getElementById('view-prof'); if (!box || box.hidden) return;
   var L = window.HGGrapevine, me = L && L.me(), e = L && L.eco.state(), c = L && L.eco.catalog();
@@ -55,6 +61,7 @@ var SLOTS = [['pfp', 'Pictures'], ['banner', 'Banners'], ['title', 'Titles'], ['
 function profItems(e, c, shop) {
   var eq = e.equip || {}, buys = window.HGGrapevine.eco.buys();
   var list = c.items.filter(function (i) { return i.k === PROF.cat && (shop ? i.p > 0 && !profOwns(e, i) || (shop && i.p > 0 && e.dev) : profOwns(e, i) || i.x); });
+  if (!shop && PROF.cat === 'title') Object.keys(e.ctitles || {}).forEach(function (id) { list.unshift(profItem(id)); });      // custom titles from a developer
   var groups = []; list.forEach(function (i) { var g = profSect(i.g); if (groups.indexOf(g) < 0) groups.push(g); });
   if (PROF.grp && groups.indexOf(PROF.grp) < 0) PROF.grp = '';
   var h = '<div class="pcats">' + SLOTS.map(function (s) { return '<button data-pcat="' + s[0] + '" class="' + (PROF.cat === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('') + '</div>';
@@ -125,6 +132,8 @@ function profAdmin(c) {
     '<div class="prow"><input id="pa-name" maxlength="40" placeholder="Their exact name" autocomplete="off"><select id="pa-title">' +
     titles.map(function (t) { return '<option value="' + profEsc(t.id) + '">' + profEsc(t.n) + '</option>'; }).join('') + '</select>' +
     '<button class="pb" data-padm="give">Give title</button><button class="pb ghost" data-padm="take">Take it back</button></div>' +
+    '<h4>Give a custom title</h4><p class="pnote">Any words you like (2 to 24 characters), for one person. They wear it like any other title.</p>' +
+    '<div class="prow"><input id="pa-ctext" maxlength="24" placeholder="e.g. Pizza Lord" autocomplete="off"><button class="pb" data-padm="custom">Give custom title</button></div>' +
     '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div></div>';
 }
 // developers only: a picture of their own (squeezed to 96 px)
@@ -154,6 +163,7 @@ document.addEventListener('click', function (ev) {
   else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
   else if (d.padm) {
     var nm = (document.getElementById('pa-name').value || '').trim(); if (!nm) { hubToast('Type their name first.'); return; }
+    if (d.padm === 'custom') { var ct = (document.getElementById('pa-ctext').value || '').trim(); if (ct.length < 2) { hubToast('Type the title first (2 to 24 characters).'); return; } L.eco.admin('custom', nm, null, 0, ct); hubToast('Gave the title "' + ct + '" to ' + nm + '.'); return; }
     if (d.padm === 'goons') { var n = Math.round(+document.getElementById('pa-n').value || 0); if (!n) return; L.eco.admin('goons', nm, null, n); hubToast('Sent ' + n + ' goons to ' + nm + '.'); return; }
     var t = document.getElementById('pa-title').value, it = profItem(t);
     L.eco.admin(d.padm, nm, t); hubToast((d.padm === 'give' ? 'Gave ' : 'Took back ') + (it ? it.n : t) + (d.padm === 'give' ? ' to ' : ' from ') + nm + '.'); return;
