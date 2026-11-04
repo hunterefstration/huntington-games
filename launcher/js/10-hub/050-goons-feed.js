@@ -79,7 +79,10 @@ function feedNow() {
 setInterval(feedNow, 120000);
 function feedMount() {
   var L = window.HGGrapevine; if (!L || feedMount.done) return; feedMount.done = true;
-  L.on('eco', function () { if (!FEED.first) { FEED.first = 1; setTimeout(feedNow, 1500); } });
+  L.on('eco', function () {
+    if (!FEED.first) { FEED.first = 1; setTimeout(feedNow, 1500); }
+    var e = L.eco.state(); if (e && !e.checkedIn && !FEED.daily) { FEED.daily = 1; L.eco.claim('daily'); }      // the daily check-in goon (once a day, the server decides)
+  });
   // the wheel, for the launcher's own chats (the hub rooms): the server spins it and may ban
   L.on('spin', function (m) { if (!document.querySelector('#gvapp') || document.getElementById('view-chat').hidden) hubWheel(m); });
 }

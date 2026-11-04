@@ -446,3 +446,7 @@ html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, htm
 #view-gpops { max-width: 760px; margin: 18px auto 40px; } .gpops { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
 .gpops h3 { margin: 0 0 8px; font-size: 16px; } .gp-row { display: block; margin: 6px 0; } .gp-sub { color: var(--dim); font-size: 13px; margin: 10px 0 6px; }
 .gp-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 12px; } .gp-list label { font-size: 14px; }
+
+/* the Minigames section under the main games */
+.gsec { margin: 28px 0 12px; font: 800 20px var(--sans); letter-spacing: .02em; color: var(--text); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.gsec span { font: 500 13px var(--sans); color: var(--dim); }

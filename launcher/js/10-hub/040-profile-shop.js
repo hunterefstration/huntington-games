@@ -151,7 +151,7 @@ function lbRender() {
   box.innerHTML = lbView(c);
 }
 function profEarn(e) {
-  var rows = [['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],
+  var rows = [['📅', 'Open the launcher every day', '1 goon a day, 3 on every 7th day in a row' + (e.streak ? ' (you: ' + e.streak + ' in a row)' : '')], ['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],
     ['⬆️', 'Rank up in Blocky Shooter', '1 goon per rank'], ['⏱️', '15 minutes of active play, any game', '1 goon'],
     ['🕯️', 'First in Last Light (full game) at the end of the day', '1 goon'], ['🥇', 'Top 3 in playtime for the day', '5 goons each'],
     ['⌛', 'First in daily playtime every day for a week', 'the Timeless Gooner title'], ['💰', 'The top of the goon leaderboard', 'Godly / Goated / Great Gooner titles']];

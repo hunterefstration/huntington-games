@@ -453,6 +453,10 @@ html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, htm
 #view-gpops { max-width: 760px; margin: 18px auto 40px; } .gpops { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
 .gpops h3 { margin: 0 0 8px; font-size: 16px; } .gp-row { display: block; margin: 6px 0; } .gp-sub { color: var(--dim); font-size: 13px; margin: 10px 0 6px; }
 .gp-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px 12px; } .gp-list label { font-size: 14px; }
+
+/* the Minigames section under the main games */
+.gsec { margin: 28px 0 12px; font: 800 20px var(--sans); letter-spacing: .02em; color: var(--text); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.gsec span { font: 500 13px var(--sans); color: var(--dim); }
 </style>
 </head>
 <body>
@@ -476,6 +480,8 @@ html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, htm
   <div class="sub" id="hello">Pick a game.</div>
   <div id="jump"></div>
   <div class="grid" id="grid"></div>
+  <h2 class="gsec" id="mini-h" hidden>Minigames <span>Quick games, mostly for playing with friends</span></h2>
+  <div class="grid mini" id="grid-mini"></div>
   <div id="offbar"><span id="offstat"></span><span id="offprog"><i id="offfill"></i></span><button id="offdl" title="Save one HTML file with every game inside, to play with no internet">Download offline copy</button></div>
   <div class="note" id="note"></div>
   </div>
@@ -631,8 +637,9 @@ function path(g) { return encodeURI(g.dir) + '/' + (local ? 'index.html' : (g.fi
 function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 function render() {
   if (!local && !MIRRORS.length) { versionReady.then(function (v) { setVersion(v); render(); }); return; }
-  var grid = document.getElementById('grid');
-  grid.innerHTML = ''; document.getElementById('exp-list').innerHTML = '';
+  var grid = document.getElementById('grid'), mini = document.getElementById('grid-mini');
+  grid.innerHTML = ''; mini.innerHTML = ''; document.getElementById('exp-list').innerHTML = '';
+  document.getElementById('mini-h').hidden = !GAMES.some(function (g) { return g.cat === 'mini'; });      // the Minigames section (cat: 'mini')
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
     var m = 0;
@@ -651,7 +658,7 @@ function render() {
     shot.appendChild(img); shot.appendChild(el('div', 'playov', '&#9654; Play')); b.appendChild(shot); b.title = g.name + ' - ' + String(g.desc || '').replace(/<[^>]+>/g, '');
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { homeRecent(g); play(g); };
-    grid.appendChild(b);
+    (g.cat === 'mini' ? mini : grid).appendChild(b);
   });
   var list = document.getElementById('exp-list');
   EXPERIMENTAL.forEach(function (g) {
@@ -1993,7 +2000,7 @@ function lbRender() {
   box.innerHTML = lbView(c);
 }
 function profEarn(e) {
-  var rows = [['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],
+  var rows = [['📅', 'Open the launcher every day', '1 goon a day, 3 on every 7th day in a row' + (e.streak ? ' (you: ' + e.streak + ' in a row)' : '')], ['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],
     ['⬆️', 'Rank up in Blocky Shooter', '1 goon per rank'], ['⏱️', '15 minutes of active play, any game', '1 goon'],
     ['🕯️', 'First in Last Light (full game) at the end of the day', '1 goon'], ['🥇', 'Top 3 in playtime for the day', '5 goons each'],
     ['⌛', 'First in daily playtime every day for a week', 'the Timeless Gooner title'], ['💰', 'The top of the goon leaderboard', 'Godly / Goated / Great Gooner titles']];
@@ -2134,7 +2141,10 @@ function feedNow() {
 setInterval(feedNow, 120000);
 function feedMount() {
   var L = window.HGGrapevine; if (!L || feedMount.done) return; feedMount.done = true;
-  L.on('eco', function () { if (!FEED.first) { FEED.first = 1; setTimeout(feedNow, 1500); } });
+  L.on('eco', function () {
+    if (!FEED.first) { FEED.first = 1; setTimeout(feedNow, 1500); }
+    var e = L.eco.state(); if (e && !e.checkedIn && !FEED.daily) { FEED.daily = 1; L.eco.claim('daily'); }      // the daily check-in goon (once a day, the server decides)
+  });
   // the wheel, for the launcher's own chats (the hub rooms): the server spins it and may ban
   L.on('spin', function (m) { if (!document.querySelector('#gvapp') || document.getElementById('view-chat').hidden) hubWheel(m); });
 }

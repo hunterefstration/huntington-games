@@ -67,8 +67,9 @@ function path(g) { return encodeURI(g.dir) + '/' + (local ? 'index.html' : (g.fi
 function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
 function render() {
   if (!local && !MIRRORS.length) { versionReady.then(function (v) { setVersion(v); render(); }); return; }
-  var grid = document.getElementById('grid');
-  grid.innerHTML = ''; document.getElementById('exp-list').innerHTML = '';
+  var grid = document.getElementById('grid'), mini = document.getElementById('grid-mini');
+  grid.innerHTML = ''; mini.innerHTML = ''; document.getElementById('exp-list').innerHTML = '';
+  document.getElementById('mini-h').hidden = !GAMES.some(function (g) { return g.cat === 'mini'; });      // the Minigames section (cat: 'mini')
   GAMES.forEach(function (g) {
     var b = el('button', 'game'), shot = el('div', 'shot'), img = new Image();
     var m = 0;
@@ -87,7 +88,7 @@ function render() {
     shot.appendChild(img); shot.appendChild(el('div', 'playov', '&#9654; Play')); b.appendChild(shot); b.title = g.name + ' - ' + String(g.desc || '').replace(/<[^>]+>/g, '');
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { homeRecent(g); play(g); };
-    grid.appendChild(b);
+    (g.cat === 'mini' ? mini : grid).appendChild(b);
   });
   var list = document.getElementById('exp-list');
   EXPERIMENTAL.forEach(function (g) {
