@@ -73,13 +73,17 @@ try {
   await A.click('#chip');
   check('the name chip opens the Profile tab', await A.evaluate(() => !document.getElementById('view-prof').hidden && /goons/.test(document.querySelector('.pgoons').textContent)));
   // an achievement in the saves becomes a goon
+  // the daily check-in goon lands first (feedMount claims it), so count from there
+  await until(() => A.evaluate(() => !!HGGrapevine.eco.state().checkedIn), 10000);
+  const g0 = await A.evaluate(() => HGGrapevine.eco.state().goons);
+  check('the daily check-in gives a goon', g0 === 1, 'goons ' + g0);
   await A.evaluate(() => { localStorage.setItem('hgach:v1', JSON.stringify({ sp10: Date.now() })); localStorage.setItem('spikes100_progress', JSON.stringify({ unlocked: 12 })); feedNow(); });
-  check('an unlocked achievement is worth a goon', !!(await until(() => A.evaluate(() => HGGrapevine.eco.state().goons === 1), 15000)));
-  check('...and the chip shows it', !!(await until(() => A.evaluate(() => /1 goons/.test(document.getElementById('chip-goons').textContent)), 5000)));
+  check('an unlocked achievement is worth a goon', !!(await until(() => A.evaluate(() => HGGrapevine.eco.state().goons === 2), 15000)));
+  check('...and the chip shows it', !!(await until(() => A.evaluate(() => /2 goons/.test(document.getElementById('chip-goons').textContent)), 5000)));
   // buy a title in the shop and wear it
   await A.click('[data-ptab="shop"]'); await A.click('[data-pcat="title"]');
   await A.click('[data-buy="title:gamer"]');
-  check('buying a title spends the goon', !!(await until(() => A.evaluate(() => HGGrapevine.eco.state().goons === 0 && HGGrapevine.eco.state().owned.includes('title:gamer')), 10000)));
+  check('buying a title spends the goon', !!(await until(() => A.evaluate(() => HGGrapevine.eco.state().goons === 1 && HGGrapevine.eco.state().owned.includes('title:gamer')), 10000)));
   await A.click('[data-ptab="locker"]'); await A.click('[data-pcat="title"]');
   await A.click('[data-equip="title:gamer"]');
   check('wearing it shows it on the profile card', !!(await until(() => A.evaluate(() => /Gamer/.test(document.querySelector('.phead').textContent)), 10000)));
