@@ -15,7 +15,16 @@ const INTERP_MS = 100;           // how far "in the past" other things are shown
 const MP_MODES = {
     coop: { name: 'CO-OP', team: 10, desc: 'Survive the waves together - up to 10 players. Everyone has their own cash and armory. Downed players come back next wave.' },
     v1: { name: '1v1', team: 1 }, v2: { name: '2v2', team: 2 }, v3: { name: '3v3', team: 3 }, v4: { name: '4v4', team: 4 }, v5: { name: '5v5', team: 5 },
-    tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches from the stands. The last one standing is the champion.' }
+    // 5.3 modes (rules in 28d-mp-modes.js). ffa = everyone for themselves (each player is their own "team" in the match);
+    // teams = picked in the lobby like team deathmatch; neither = the host deals the teams out at the start (Infection)
+    ffa: { name: 'FREE-FOR-ALL', team: 10, ffa: true, rules: true, target: 20, mins: 8, desc: 'Every player for themselves, 2 to 10 players. First to 20 kills wins (or the most kills after 8 minutes).' },
+    gungame: { name: 'GUN GAME', team: 10, ffa: true, rules: true, mins: 10, desc: 'Every kill swaps your gun for the next one on the list, from the LMG down to the Katana. The first to get a kill with the Katana wins. No grenades.' },
+    kc: { name: 'KILL CONFIRMED', team: 5, teams: true, rules: true, target: 20, mins: 10, desc: 'Team deathmatch with dog tags: a kill only scores when your team picks up the tag it drops. Grab your own team\'s tags to deny the other team. First to 20 confirms wins.' },
+    ctf: { name: 'CAPTURE THE FLAG', team: 5, teams: true, rules: true, target: 3, mins: 10, desc: 'Run the enemy flag back to your own flag. Your flag has to be at home to score. Drop it when you die; touch your dropped flag to send it home. First to 3 captures wins.' },
+    koth: { name: 'KING OF THE HILL', team: 5, teams: true, rules: true, target: 90, mins: 10, desc: 'Hold the glowing hill: your team scores every second it is the only team inside. The hill moves every minute. First to 90 wins.' },
+    lts: { name: 'LAST TEAM STANDING', team: 5, teams: true, rules: true, target: 3, desc: 'No respawns: wipe out the other team to win the round. Dead players watch a teammate. First team to win 3 rounds wins.' },
+    infect: { name: 'INFECTION', team: 10, rules: true, mins: 3, desc: 'One player starts infected with a Katana. Anyone they kill joins the infected. Survivors win if anyone is still human after 3 minutes; the infected win if they get everyone.' },
+    tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches as an invisible spectator. The last one standing is the champion.' }
 };
 const PVP_TARGET = { v1: 10, v2: 15, v3: 20, v4: 25, v5: 30 };
 const TEAM_COLORS = [0xef4444, 0x3b82f6], TEAM_NAMES = ['RED', 'BLUE'];
@@ -26,7 +35,9 @@ const ENEMY_IDS = Object.keys(enemyTypes);
 // (4 bits in the snapshot: 16 at most.) 5.0 added hidden (Vent Crawler in its vent), pounce, zap (Shocker) and Patient Zero's burrow/erupt/cast/nova
 const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak', 'hidden', 'pounce', 'zap', 'burrow', 'erupt', 'cast', 'nova'];
 const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
-const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp && NET.mode !== 'tourney' ? ' TEAM DEATHMATCH' : '');
+const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp && /^v\d$/.test(NET.mode) ? ' TEAM DEATHMATCH' : '');
+// 5.3: which modes pick teams in the lobby (team deathmatch and the new team modes)
+const lobbyTeams = (mode) => /^v\d$/.test(mode) || !!(MP_MODES[mode] && MP_MODES[mode].teams);
 const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 // Grapevine (the launcher's account): one name in every game, players proven by their account key, and a
 // + FRIEND button that sends a real Grapevine friend request. The launcher page owns the account (window.parent.HGGrapevine);
@@ -88,9 +99,23 @@ class Interp {
     }
 }
 // clock matching: the fastest packet tells us the other computer's clock (+ as little delay as possible)
+// 5.3: it also learns how far apart the updates arrive (gap) and how unevenly (jit), so netDelay() can show things
+// just far enough in the past: snappy on a good link, smooth (no stutter or rubber-banding) on busy school Wi-Fi
 function clockSample(obj, remoteT, now) {
     const s = remoteT - now;
     if (obj.off === undefined || s > obj.off) obj.off = s; else obj.off -= 0.15;
+    if (obj.lastRT !== undefined && remoteT > obj.lastRT) {
+        const g = Math.min(250, remoteT - obj.lastRT);
+        obj.gap = obj.gap === undefined ? g : obj.gap * 0.9 + g * 0.1;
+        obj.jit = (obj.jit || 0) * 0.94 + Math.min(300, obj.off - s) * 0.06;
+    }
+    if (obj.lastRT === undefined || remoteT > obj.lastRT) obj.lastRT = remoteT;
+}
+function netDelay(src, now) {
+    if (!src || src.gap === undefined) return INTERP_MS;
+    const want = clamp(src.gap * 2.1 + (src.jit || 0) * 1.6 + 8, 55, 260);
+    src.delay = src.delay === undefined ? want : src.delay + (want - src.delay) * 0.02;      // drift slowly: no visible jumps
+    return src.delay;
 }
 
 
@@ -254,7 +279,7 @@ function makePlayer(id, name, team, color) {
     return { id, name, team, color, peer: null, buf: new Interp([4, 5]), cur: [0, 0, 0, 0, 0, 0], w: 0, f: 0, hp: 100, alive: true, kills: 0, deaths: 0, rtt: 0,
              tgt: { id, pos: new V3(0, -100, 0), feet: -100, local: false, alive: false }, av: null, fireT: 0, seenT: 0, walk: 0 };
 }
-function playerColor(p) { return NET.lobby.mode === 'coop' || NET.mode === 'coop' || NET.lobby.mode === 'tourney' || NET.mode === 'tourney' ? p.color : TEAM_COLORS[p.team]; }
+function playerColor(p) { return NET.inGame ? pcol(p) : (lobbyTeams(NET.lobby.mode) ? TEAM_COLORS[p.team & 1] : p.color); }
 
 
 // ---------- HOST: invites ----------
@@ -297,7 +322,8 @@ function hostPeerOpened(inv) {
     if (inv.done) return;
     inv.done = true;
     NET.invites = NET.invites.filter(i => i !== inv);
-    const cap = NET.inGame && NET.pvp ? MP_MODES[NET.mode].team * 2 : 10;
+    const cap = Math.min(10, NET.inGame && NET.pvp ? MP_MODES[NET.mode].team * 2 : 10);
+    if (allPlayers().length >= cap) botMakeRoom();          // 5.3: a real player bumps a bot
     if (allPlayers().length >= cap) { sendRel(inv.peer, { t: 'full' }); setTimeout(() => inv.peer.pc.close(), 500); renderMP(); return; }
     const id = NET.nextId++;
     const p = makePlayer(id, 'Player ' + id, 0, COOP_COLORS[id % COOP_COLORS.length]);
@@ -312,18 +338,21 @@ function hostPeerClosed(inv) {
     const p = inv.peer.player; if (p) netRemovePlayer(p.id, 'left the party');
 }
 function autoTeam(p) {
-    if (NET.lobby.mode === 'coop') return;
-    const n = [0, 0]; for (const q of allPlayers()) if (q !== p) n[q.team]++;
+    const mode = NET.inGame ? NET.mode : NET.lobby.mode;
+    if (mode === 'coop') return;
+    if (NET.inGame && MP_MODES[mode] && MP_MODES[mode].rules && !lobbyTeams(mode)) { modeLateTeam(p); return; }      // free-for-all / infection
+    const n = [0, 0]; for (const q of allPlayers()) if (q !== p) n[q.team & 1]++;
     p.team = n[0] <= n[1] ? 0 : 1;
 }
 function hostLobbyUpdate() {
     if (!NET.host) return;
-    const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null }));
+    const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null, bot: p.bot ? 1 : undefined }));
     for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
     renderMP();
 }
 function netRemovePlayer(id, why) {
     const p = netPlayers.get(id); if (!p) return;
+    if (NET.host && NET.inGame && !p.bot) netGhostSave(p);     // 5.3: rejoin within 5 minutes and you get your score back
     netPlayers.delete(id);
     if (p.av) { scene.remove(p.av.g); p.av = null; }
     try { p.peer && p.peer.pc.close(); } catch (e) {}
@@ -383,10 +412,20 @@ function clientLinkClosed(peer) {
     NET.joinErr = "Couldn't connect to the host. Ask them for a NEW invite code (each one works once) and make a new reply. If it keeps failing, your networks may be blocking it - being on the same Wi-Fi helps.";
     renderMP();
 }
-function netHostGone(msg) {
+function netHostGone(msg, ended) {
     if (!NET.on && NET.joinState !== 'connected' && NET.joinState !== 'reply') return;
-    const wasIn = NET.inGame, via = NET.joinVia;
+    const wasIn = NET.inGame, via = NET.joinVia, code = NET.joinCode, wasConn = NET.joinState === 'connected';
     netReset();
+    // 5.3: a dropped link (not the host ending it) on a 6-digit code: try to get straight back in, up to 3 times
+    if (!ended && wasConn && via !== 'long' && /^\d{6}$/.test(code || '') && (NET.rejoinN || 0) < 3) {
+        NET.rejoinN = (NET.rejoinN || 0) + 1;
+        if (wasIn) { resetRun(); changeGameState('main'); }
+        openMP('join'); NET.joinCode = code; NET.joinState = 'connecting'; NET.homeMsg = '';
+        renderMP();
+        setTimeout(() => { if (NET.joinState === 'connecting' && !NET.on) clientJoinCode(code); }, 1200 * NET.rejoinN);
+        return;
+    }
+    NET.rejoinN = 0;
     if (wasIn) { resetRun(); changeGameState('main'); }
     openMP('home');
     // long-code invites only work once, so "type the code again" would send them nowhere
@@ -407,7 +446,7 @@ function netLeave() {
 }
 function netReset() {
     try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyClose && NET.host && NET.code) lp.HG_partyClose(NET.code); } catch (e) {}
-    NET.partyAt = 0; tourneyReset();
+    NET.partyAt = 0; tourneyReset(); modeReset(); botsClear();
     for (const p of netPlayers.values()) if (p.av) scene.remove(p.av.g);
     netPlayers.clear();
     for (const inv of NET.invites) try { inv.peer.pc.close(); } catch (e) {}
@@ -437,6 +476,8 @@ function hostMessage(p, peer, m) {
         case 'hi': {
             const first = p.pending;
             p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false; p.look = cleanLook(m.look);
+            // 5.3: the same player coming back after a drop while their old connection hasn't timed out yet: replace the old one
+            if (first) for (const q of [...netPlayers.values()]) if (q !== p && !q.bot && q.name === p.name && q.peer && now - (q.peer.lastMsg || 0) > 3000) netRemovePlayer(q.id, 'reconnected');
             if (GVL.on() && !p.gvn) { p.gvn = GVL.L.newChallenge(); sendRel(peer, { t: 'gvq', n: p.gvn }); }   // "prove you are your Grapevine account"
             hostLobbyUpdate();
             if (first && NET.inGame) hostLateJoin(p);          // jumped into a match that's already going (or rejoined after a drop)
@@ -460,8 +501,9 @@ function hostMessage(p, peer, m) {
             p.buf.push(m.ct, [s[0], s[1], s[2], s[3], s[4], s[5]]);
             p.last = s; p.w = m.w; p.f = m.f; p.hp = m.hp; p.seenT = now;
             p.tgt.pos.set(s[0], s[1], s[2]); p.tgt.feet = s[3];
+            if (!p.alive && (m.f & 1) && NET.pvp) p.protUntil = now + SPAWN_PROT_MS;      // 5.3: just respawned
             p.alive = !!(m.f & 1); p.tgt.alive = p.alive && NET.inGame;
-            if (m.s && m.s.length) { for (const seg of m.s) { NET.shotOut.push([p.id, ...seg]); netShowShot(p, seg); } }
+            if (m.s && m.s.length) { p.protUntil = 0; for (const seg of m.s) { NET.shotOut.push([p.id, ...seg]); netShowShot(p, seg); } }
             break;
         }
         case 'h': if (NET.inGame && !NET.pvp) hostApplyHits(p.id, m.l); break;
@@ -480,7 +522,8 @@ function clientMessage(m) {
             break;
         }
         case 'lobby': {
-            if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
+            NET.rejoinN = 0;
+        if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
             if (GVL.on() && !NET.hostGvn && !NET.hostAsked) { NET.hostAsked = true; NET.hostGvn = GVL.L.newChallenge(); sendRel(NET.hostPeer, { t: 'gvq', n: NET.hostGvn }); }   // and the host proves itself to us
             NET.id = m.you; NET.lobby = { mode: m.mode, map: m.map, diff: m.diff };
             const seen = new Set();
@@ -489,7 +532,7 @@ function clientMessage(m) {
                 if (q.id === NET.id) { NET.team = q.team; NET.color = q.color; continue; }
                 let p = netPlayers.get(q.id);
                 if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
-                p.name = q.name; p.team = q.team; p.color = q.color; p.look = cleanLook(q.look);
+                p.name = q.name; p.team = q.team; p.color = q.color; p.look = cleanLook(q.look); p.bot = !!q.bot;
                 if (q.id !== 0) p.gv = !!q.gv;               // the host vouches for the others; the host proves itself (gva)
                 if (q.gv && q.id !== 0 && GVL.L) GVL.L.noteMet(q.name, 'Blocky Shooter');
             }
@@ -500,16 +543,18 @@ function clientMessage(m) {
         case 'plook': { if (m.id !== NET.id) applyPlayerLook(netPlayers.get(m.id), m.look); break; }
         case 'full': NET.joinState = 'error'; NET.joinErr = 'That party is full or already playing.'; renderMP(); break;
         case 'tb': tourneyApply(m); break;
+        case 'mst': modeApply(m); break;          // 5.3 mode state (flags, hill, tags, gun levels, rounds...)
+        case 'tm': modeTeamMsg(m); break;         // 5.3 someone changed team (Infection)
         case 'tend': netShowEnd(m); break;
         case 'start': netBeginGame(m); if (m.late) netApplyLate(m.late); break;
         case 'pj': if (NET.inGame && m.id !== NET.id) {
                 let p = netPlayers.get(m.id);
                 if (!p) { p = makePlayer(m.id, m.name, m.team, m.color); netPlayers.set(m.id, p); }
-                Object.assign(p, { name: m.name, team: m.team, color: m.color }); p.look = cleanLook(m.look);
+                Object.assign(p, { name: m.name, team: m.team, color: m.color, bot: !!m.bot }); p.look = cleanLook(m.look);
                 if (!p.av) { p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
-                netFeed(`<span style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}</span> joined the match`);
+                netFeed(`<span style="color:${hex(pcol(p))}">${escHtml(p.name)}</span> joined the match`);
             } break;
-        case 'bye': netHostGone(); break;
+        case 'bye': netHostGone('', true); break;
         case 'left': netRemovePlayer(m.id, 'left the party'); break;
         case 'pi': sendRel(NET.hostPeer, { t: 'po', ts: m.ts }); break;
         case 'rt': for (const [id, rtt] of m.l) { const p = playerById(id); if (p) p.rtt = rtt; if (id === NET.id) NET.rtt = rtt; } break;

@@ -60,6 +60,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070a1a; col
   cursor: pointer; border: 1px solid transparent; font: inherit; color: inherit; text-align: left; width: 100%; }
 .lvl:hover:not([disabled]), .lvl:focus-visible { border-color: var(--gold); background: rgba(255, 211, 107, .1); outline: none; }
 .lvl[disabled] { opacity: .45; cursor: default; }
+.lvl { position: relative; }
+.lvl.flaw { border-color: rgba(125, 249, 255, .55); box-shadow: 0 0 14px rgba(125, 249, 255, .22) inset; }
+.flawgem { position: absolute; top: 3px; right: 6px; font-size: 13px; color: #7df9ff; text-shadow: 0 0 8px #7df9ff; }
+.flawtxt { color: #7df9ff; text-shadow: 0 0 8px rgba(125, 249, 255, .6); font-weight: 700; }
 .lvl .num { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 900;
   background: radial-gradient(circle at 35% 35%, #fff4c8, #ffb34a 60%, #b8601a); color: #3a1d02; box-shadow: 0 0 14px rgba(255,180,80,.5); flex: none; }
 .lvl.boss .num { background: radial-gradient(circle at 35% 35%, #e9d4ff, #8a4dff 60%, #3a1580); color: #fff; box-shadow: 0 0 14px rgba(150,90,255,.6); }

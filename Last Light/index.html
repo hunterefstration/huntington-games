@@ -68,6 +68,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070a1a; col
   cursor: pointer; border: 1px solid transparent; font: inherit; color: inherit; text-align: left; width: 100%; }
 .lvl:hover:not([disabled]), .lvl:focus-visible { border-color: var(--gold); background: rgba(255, 211, 107, .1); outline: none; }
 .lvl[disabled] { opacity: .45; cursor: default; }
+.lvl { position: relative; }
+.lvl.flaw { border-color: rgba(125, 249, 255, .55); box-shadow: 0 0 14px rgba(125, 249, 255, .22) inset; }
+.flawgem { position: absolute; top: 3px; right: 6px; font-size: 13px; color: #7df9ff; text-shadow: 0 0 8px #7df9ff; }
+.flawtxt { color: #7df9ff; text-shadow: 0 0 8px rgba(125, 249, 255, .6); font-weight: 700; }
 .lvl .num { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 900;
   background: radial-gradient(circle at 35% 35%, #fff4c8, #ffb34a 60%, #b8601a); color: #3a1d02; box-shadow: 0 0 14px rgba(255,180,80,.5); flex: none; }
 .lvl.boss .num { background: radial-gradient(circle at 35% 35%, #e9d4ff, #8a4dff 60%, #3a1580); color: #fff; box-shadow: 0 0 14px rgba(150,90,255,.6); }
@@ -445,15 +449,41 @@ const fmtTime = t => { const m = Math.floor(t / 60), s = t - m * 60; return m + 
 const SAVE_KEY = 'lumi_save';
 // Save version 2 (game 1.2): every world has 10 levels and the guardian level moved from w-4 to w-10. Progress, best times, stars and
 // the person you met move with it. Nothing is wiped: unknown fields (runs.onelife, mp, stats...) are left exactly as they are.
-const SAVE_VER = 2, LEVEL_MOVED = { '1-4': '1-10', '2-4': '2-10', '3-4': '3-10', '4-4': '4-10' };
+const SAVE_VER = 3, LEVEL_MOVED = { '1-4': '1-10', '2-4': '2-10', '3-4': '3-10', '4-4': '4-10' };
 function migrateSave(d) {
     if ((d.v || 1) >= SAVE_VER) return d;
-    for (const key of ['levels', 'talks']) {
+    if ((d.v || 1) < 2) for (const key of ['levels', 'talks']) {
         const o = d[key]; if (!o || typeof o !== 'object') continue;
         for (const a in LEVEL_MOVED) if (a in o) { if (!(LEVEL_MOVED[a] in o)) o[LEVEL_MOVED[a]] = o[a]; delete o[a]; }
     }
-    d.v = SAVE_VER; return d;
+    d.v = SAVE_VER; d.flawlessFrom = 2; return d;      // v3: "flawless" means everything (see flawlessCheck); old clears are checked on first use
 }
+// FLAWLESS (1.3): a clear with no hits that also got every star and every spark that run, with the level's lost lantern
+// found and its person talked to (if it has them). rec.perfect marks a level done flawless.
+function levelNeeds(def) {
+    const m = def.map.join(''), c = ch => m.split(ch).length - 1;
+    return { moths: c('*'), sparks: c('o'), secret: c('z') > 0, talk: typeof TALKS !== 'undefined' && !!TALKS[def.id] };
+}
+// what a clear still lacked; [] means flawless. run = { hits, moths: [..], sparks } of this clear
+function flawlessMissing(def, run, d) {
+    const n = levelNeeds(def), out = [], mo = run.moths.slice(0, n.moths).filter(Boolean).length;
+    if (run.hits) out.push(run.hits + (run.hits === 1 ? ' hit' : ' hits'));
+    if (mo < n.moths) out.push((n.moths - mo) + (n.moths - mo === 1 ? ' star' : ' stars'));
+    if (run.sparks < n.sparks) out.push((n.sparks - run.sparks) + (n.sparks - run.sparks === 1 ? ' spark' : ' sparks'));
+    if (n.secret && !(d.secrets || {})[def.id]) out.push('the lost lantern');
+    if (n.talk && !(d.talks || {})[def.id]) out.push('a talk');
+    return out;
+}
+// saves from before 1.3: a level counts if one clear had no hits and the record holds every star and the most sparks
+function flawlessGrandfather(d) {
+    if (!d.flawlessFrom || typeof LEVELS === 'undefined') return false;
+    for (const def of LEVELS) {
+        const r = d.levels && d.levels[def.id];
+        if (r && r.flawless && !r.perfect && !flawlessMissing(def, { hits: 0, moths: r.moths || [], sparks: r.sparks || 0 }, d).length) r.perfect = true;
+    }
+    delete d.flawlessFrom; return true;
+}
+const flawlessCount = () => LEVELS.filter(l => (SAVE.d.levels[l.id] || {}).perfect).length;
 const SAVE = (() => {
     const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
     let d;
@@ -2672,7 +2702,9 @@ const G = {
         rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);
         rec.sparks = Math.max(rec.sparks || 0, this.got.sparks); rec.clears = (rec.clears || 0) + 1; if (best) rec.best = +this.time.toFixed(2);
         rec.deaths = (rec.deaths || 0) + this.stats.deaths; if (!this.stats.hits) rec.flawless = true;
-        ST('clears'); if (!this.stats.hits) ST('flawless'); if (def.world === 4) ST('bossKills');
+        const missing = flawlessMissing(def, { hits: this.stats.hits, moths: this.got.moths, sparks: this.got.sparks }, SAVE.d), flawNew = !missing.length && !rec.perfect;
+        if (!missing.length) rec.perfect = true;
+        ST('clears'); if (flawNew) ST('flawless'); if (def.world === 4) ST('bossKills');
         SAVE.d.levels[def.id] = rec; SAVE.write();
         this.p.vx = 0;
         // One Life run: no results screen, straight on to the next level (the run ends at the first fall)
@@ -2687,7 +2719,7 @@ const G = {
         }
         setTimeout(() => {
             this.state = 'done';
-            (def.world === 4 ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
+            (def.world === 4 ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, missing, flawNew, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
         }, 1500);
     },
     hud() {
@@ -2738,21 +2770,23 @@ const UI = {
             const art = document.createElement('div'); art.className = 'wart'; const cv = document.createElement('canvas'); cv.width = 600; cv.height = 240; art.appendChild(cv);
             const layers = paintBackground(wi, 600, 240), cx = cv.getContext('2d'); layers.forEach(l => cx.drawImage(l.c, 0, l.fixed ? 0 : 20 * (1 - l.k)));
             const done = lv.filter(o => SAVE.d.levels[o.l.id]).length;
-            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}</div>`);
+            const fl = lv.filter(o => (SAVE.d.levels[o.l.id] || {}).perfect).length;
+            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}${fl ? ` · <span class="flawtxt">✦ ${fl}</span>` : ''}</div>`);
             card.appendChild(art);
             const list = document.createElement('div'); list.className = 'lvls';
             lv.forEach(({ l, i }) => {
-                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : ''); b.disabled = !this.unlocked(i);
+                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : '') + (rec && rec.perfect ? ' flaw' : ''); b.disabled = !this.unlocked(i);
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
                 b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
                     + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}${TALKS[l.id] ? `<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span>` : ''}</span>` : '');
+                if (rec && rec.perfect) b.insertAdjacentHTML('beforeend', '<span class="flawgem" title="Done flawless: no hits, every star, every spark, the lost lantern and the talk">✦</span>');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
                 list.appendChild(b);
             });
             card.appendChild(list); box.appendChild(card);
         });
-        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf}`;
+        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf} &nbsp; <span class="flawtxt" title="Levels done flawless">✦ ${flawlessCount()}/${LEVELS.length}</span>`;
         this.show('map');
     },
     pause() {
@@ -2769,7 +2803,8 @@ const UI = {
             ['Time', fmtTime(r.time) + (r.best ? '<span class="new">NEW BEST</span>' : '')],
             ['Sparks', r.sparks + ' / ' + r.sparksOf],
             ['Stars', r.moths.slice(0, LEVELS[G.idx].map.join('').split('*').length - 1).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">★</span>`).join(' ') + (r.mothsNew > 0 ? '<span class="new">+' + r.mothsNew + ' NEW</span>' : '')],
-            ['Hits taken', r.hits ? r.hits : 'none<span class="new">FLAWLESS</span>'],
+            ['Hits taken', r.hits ? r.hits : 'none'],
+            ['Flawless', r.missing && !r.missing.length ? '<span class="flawtxt">✦ FLAWLESS</span>' + (r.flawNew ? '<span class="new">NEW</span>' : '') : r.rec && r.rec.perfect ? '<span class="flawtxt">✦ done before</span>' : 'missed ' + (r.missing || []).join(', ')],
             ['Enemies defeated', r.kills],
             ['Falls', r.deaths]
         ];
@@ -2832,7 +2867,7 @@ UI.stats = function () {
     const enemy = n('death_enemy');
     const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
         ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
-        ['Flawless clears', n('flawless')], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
+        ['Levels done flawless', flawlessCount() + ' / ' + LEVELS.length], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
         ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
         ['Distance', n('dist').toLocaleString() + ' tiles']];
@@ -4851,7 +4886,7 @@ setTimeout(() => { const s = $('#splash'); if (!s) return; s.classList.add('out'
 
 // test hook (used by the launcher's automated tests)
 window.__lumi = {
-    get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R,
+    get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R, UI, levelNeeds, flawlessCount,
     start: i => G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i),
     step(sec, keys = {}) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { for (const k in keys) Input.touchSet(k, !!keys[k]); G.update(STEP); Input.endFrame(); } for (const k in keys) Input.touchSet(k, false); },
     key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
@@ -4861,6 +4896,8 @@ window.__lumi = {
     ability(k, v = true) { SAVE.d.abilities[k] = v; },
     render: () => render(G)
 };
+// saves from before 1.3: work out which levels were already done flawless (once)
+if (flawlessGrandfather(SAVE.d)) SAVE.write();
 
 </script>
 </body>

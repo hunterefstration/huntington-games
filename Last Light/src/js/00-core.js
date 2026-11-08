@@ -17,15 +17,41 @@ const fmtTime = t => { const m = Math.floor(t / 60), s = t - m * 60; return m + 
 const SAVE_KEY = 'lumi_save';
 // Save version 2 (game 1.2): every world has 10 levels and the guardian level moved from w-4 to w-10. Progress, best times, stars and
 // the person you met move with it. Nothing is wiped: unknown fields (runs.onelife, mp, stats...) are left exactly as they are.
-const SAVE_VER = 2, LEVEL_MOVED = { '1-4': '1-10', '2-4': '2-10', '3-4': '3-10', '4-4': '4-10' };
+const SAVE_VER = 3, LEVEL_MOVED = { '1-4': '1-10', '2-4': '2-10', '3-4': '3-10', '4-4': '4-10' };
 function migrateSave(d) {
     if ((d.v || 1) >= SAVE_VER) return d;
-    for (const key of ['levels', 'talks']) {
+    if ((d.v || 1) < 2) for (const key of ['levels', 'talks']) {
         const o = d[key]; if (!o || typeof o !== 'object') continue;
         for (const a in LEVEL_MOVED) if (a in o) { if (!(LEVEL_MOVED[a] in o)) o[LEVEL_MOVED[a]] = o[a]; delete o[a]; }
     }
-    d.v = SAVE_VER; return d;
+    d.v = SAVE_VER; d.flawlessFrom = 2; return d;      // v3: "flawless" means everything (see flawlessCheck); old clears are checked on first use
 }
+// FLAWLESS (1.3): a clear with no hits that also got every star and every spark that run, with the level's lost lantern
+// found and its person talked to (if it has them). rec.perfect marks a level done flawless.
+function levelNeeds(def) {
+    const m = def.map.join(''), c = ch => m.split(ch).length - 1;
+    return { moths: c('*'), sparks: c('o'), secret: c('z') > 0, talk: typeof TALKS !== 'undefined' && !!TALKS[def.id] };
+}
+// what a clear still lacked; [] means flawless. run = { hits, moths: [..], sparks } of this clear
+function flawlessMissing(def, run, d) {
+    const n = levelNeeds(def), out = [], mo = run.moths.slice(0, n.moths).filter(Boolean).length;
+    if (run.hits) out.push(run.hits + (run.hits === 1 ? ' hit' : ' hits'));
+    if (mo < n.moths) out.push((n.moths - mo) + (n.moths - mo === 1 ? ' star' : ' stars'));
+    if (run.sparks < n.sparks) out.push((n.sparks - run.sparks) + (n.sparks - run.sparks === 1 ? ' spark' : ' sparks'));
+    if (n.secret && !(d.secrets || {})[def.id]) out.push('the lost lantern');
+    if (n.talk && !(d.talks || {})[def.id]) out.push('a talk');
+    return out;
+}
+// saves from before 1.3: a level counts if one clear had no hits and the record holds every star and the most sparks
+function flawlessGrandfather(d) {
+    if (!d.flawlessFrom || typeof LEVELS === 'undefined') return false;
+    for (const def of LEVELS) {
+        const r = d.levels && d.levels[def.id];
+        if (r && r.flawless && !r.perfect && !flawlessMissing(def, { hits: 0, moths: r.moths || [], sparks: r.sparks || 0 }, d).length) r.perfect = true;
+    }
+    delete d.flawlessFrom; return true;
+}
+const flawlessCount = () => LEVELS.filter(l => (SAVE.d.levels[l.id] || {}).perfect).length;
 const SAVE = (() => {
     const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
     let d;

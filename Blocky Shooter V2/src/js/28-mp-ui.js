@@ -9,7 +9,8 @@ function netHud(on) {
 function netHudDown() { ui.netDown.classList.remove('hidden'); if (!NET.pvp) ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">YOU'RE DOWN</div><div class="text-lg font-bold text-gray-200">${lastHurtBy ? 'Killed by ' + escHtml(lastHurtBy) + ' - ' : ''}you'll be back next wave</div>`; }
 function netHudUpdate() {
     const now = performance.now();
-    if (NET.mode === 'tourney') {
+    if (MD.on) modeHud();
+    else if (NET.mode === 'tourney') {
         setText(ui.txtLevel, 'TOURNAMENT'); setText(ui.txtEnemies, NET.spec ? 'Spectating' : 'In the duel'); ui.txtEnemies.style.color = NET.spec ? '#9ca3af' : '#fca5a5';
     } else if (NET.pvp) {
         ui.netScore.innerHTML = `<span style="color:${hex(TEAM_COLORS[0])}">RED ${NET.score[0]}</span><span class="text-base text-gray-300">first to ${NET.target}</span><span style="color:${hex(TEAM_COLORS[1])}">${NET.score[1]} BLUE</span>`;
@@ -31,9 +32,16 @@ function netHudUpdate() {
     ui.netPing.style.color = quiet > 1500 ? '#fca5a5' : '';
     if (!ui.netBoard.classList.contains('hidden')) renderBoard();
 }
+// 5.3: ping in colour (green / amber / red) so a laggy player is easy to spot; bots and the host show a dash
+function pingCell(p) {
+    const ms = p.id === NET.id ? (NET.host ? -1 : NET.rtt) : (p.id === 0 || p.bot ? -1 : p.rtt);
+    if (ms < 0) return '-';
+    return `<span style="color:${ms < 90 ? '#86efac' : ms < 200 ? '#fcd34d' : '#fca5a5'}">${Math.round(ms)}</span>`;
+}
 function renderBoard() {
     if (NET.mode === 'tourney') { ui.netBoardInner.innerHTML = tourneyBoardHtml(); return; }
-    const rows = (list) => list.map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${tagSub(p)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td class="text-gray-400">${p.id === NET.id ? (NET.host ? '-' : Math.round(NET.rtt)) : (p.id === 0 ? '-' : Math.round(p.rtt))}</td></tr>`).join('');
+    if (MD.on) { ui.netBoardInner.innerHTML = modeBoardHtml(); return; }
+    const rows = (list) => list.map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${tagSub(p)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.bot ? ' <span class="text-[10px] text-gray-400">BOT</span>' : ''}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td class="text-gray-400">${pingCell(p)}</td></tr>`).join('');
     const head = `<tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">${NET.pvp ? 'KILLS' : 'KILLS'}</td><td class="pr-6">${NET.pvp ? 'DEATHS' : 'DOWNS'}</td><td>PING</td></tr>`;
     const all = allPlayers();
     ui.netBoardInner.innerHTML = `<div class="text-2xl font-black mb-3">${escHtml(netModeName())} <span class="text-sm text-gray-400">${MAPS[run.map] ? MAPS[run.map].name : ''}</span></div>` +
@@ -47,7 +55,7 @@ function netDrawMinimap(c, scale, off) {
         if (!p.av || !p.av.g.visible) continue;
         if (NET.pvp && p.team !== NET.team) continue;          // don't give away where the other team is
         const P = p.av.g.position, x = (P.x + off) * scale, y = (P.z + off) * scale;
-        c.fillStyle = (p.f & 1) ? hex(NET.pvp ? TEAM_COLORS[p.team] : p.color) : '#6b7280';
+        c.fillStyle = (p.f & 1) ? hex(pcol(p)) : '#6b7280';
         c.strokeStyle = '#fff'; c.lineWidth = 1.5;
         c.beginPath(); c.arc(x, y, 4, 0, Math.PI * 2); c.fill(); c.stroke();
     }
@@ -74,7 +82,7 @@ function renderMP() {
                 <button id="mp-join" class="hbtn card">JOIN A PARTY<div class="text-xs font-bold text-gray-400 mt-1">Type in the host's 6-digit code.</div></button>
               </div>`;
         h += `<div id="mp-lan-list" class="mt-6">${LAN.html()}</div>`;
-        h += `<div class="mdesc mt-6">Modes: CO-OP waves (up to 10 players), or team deathmatch 1v1, 2v2, 3v3, 4v4 and 5v5. Tip: the host should keep the game window open - it's running the match for everyone.</div>`;
+        h += `<div class="mdesc mt-6">Modes: CO-OP waves (up to 10 players), team deathmatch 1v1 to 5v5, Free-for-all, Gun Game, Kill Confirmed, Capture the Flag, King of the Hill, Last Team Standing, Infection and the Tournament. The host can fill empty spots with bots. Tip: the host should keep the game window open - it's running the match for everyone.</div>`;
     } else if (v === 'host') {
         const cs = NET.codeState, codeTxt = cs === 'ready' ? NET.code.slice(0, 3) + ' ' + NET.code.slice(3) : '--- ---';
         h += `<div class="panel p-4 flex items-center gap-6 flex-wrap">
@@ -132,19 +140,23 @@ function renderMPSettings() {
     const el = $('mp-settings'); if (!el) return;
     const L = NET.lobby;
     let h = `<div class="mlabel">MODE</div><div class="flex flex-wrap gap-2">${Object.entries(MP_MODES).map(([k, m]) => chip(L.mode === k, `data-mpset="mode" data-val="${k}"`, m.name)).join('')}</div>`;
-    h += `<div class="mdesc">${L.mode === 'coop' ? MP_MODES.coop.desc : L.mode === 'tourney' ? MP_MODES.tourney.desc + ' Needs 4 to 8 players; the Tournament Arena is used whatever map is picked.' : `Team deathmatch, ${MP_MODES[L.mode].team} per team. First team to ${PVP_TARGET[L.mode]} kills wins. Everyone gets every gun; respawn after 3s.`}</div>`;
+    h += `<div class="mdesc">${L.mode === 'coop' ? MP_MODES.coop.desc : L.mode === 'tourney' ? MP_MODES.tourney.desc + ' Needs 4 to 8 players; the Tournament Arena is used whatever map is picked.' : MP_MODES[L.mode].desc ? MP_MODES[L.mode].desc + (lobbyTeams(L.mode) ? ` Up to ${MP_MODES[L.mode].team} per team.` : '') : `Team deathmatch, ${MP_MODES[L.mode].team} per team. First team to ${PVP_TARGET[L.mode]} kills wins. Everyone gets every gun; respawn after 3s.`}</div>`;
     h += `<div class="mlabel">MAP</div><div class="flex flex-wrap gap-2">${chip(L.map === 'random', 'data-mpset="map" data-val="random"', 'RANDOM')}${Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => chip(L.map === k, `data-mpset="map" data-val="${k}"`, m.name)).join('')}</div>`;
+    if (L.mode !== 'coop') {       // 5.3 bots
+        const sk = botSkill();
+        h += `<div class="mlabel">BOTS <span class="text-gray-500">- FILL EMPTY SPOTS, ANY PVP MODE</span></div><div class="flex flex-wrap gap-2 items-center"><button class="chip" id="mp-addbot">+ ADD BOT</button><button class="chip" id="mp-fillbots">FILL WITH BOTS</button><button class="chip" id="mp-clearbots">REMOVE BOTS</button>${lobbyTeams(L.mode) ? '<button class="chip" id="mp-shuffle">SHUFFLE TEAMS</button>' : ''}<span class="text-xs text-gray-400 ml-2">SKILL</span>${['easy', 'normal', 'hard'].map(k => chip(sk === k, `data-botskill="${k}"`, k.toUpperCase())).join('')}</div>`;
+    }
     if (L.mode === 'coop') h += `<div class="mlabel">DIFFICULTY</div><div class="flex flex-wrap gap-2">${Object.entries(DIFFICULTIES).map(([k, d]) => chip(L.diff === k, `data-mpset="diff" data-val="${k}"`, d.name, d.color)).join('')}</div>`;
     el.innerHTML = h;
 }
 function renderMPPlayers() {
     const el = $('mp-players'); if (!el) return;
-    const pvp = NET.lobby.mode !== 'coop' && NET.lobby.mode !== 'tourney';
+    const pvp = lobbyTeams(NET.lobby.mode);
     const list = [{ id: NET.id, name: NET.name, team: NET.host && NET.me ? NET.me.team : NET.team, color: NET.host ? COOP_COLORS[0] : (NET.color || 0x888888), rtt: 0, me: true, gv: GVL.on() }]
-        .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv, look: p.look })));
+        .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv, look: p.look, bot: p.bot })));
     el.innerHTML = list.sort((a, b) => a.id - b.id).map(p => {
-        const col = pvp ? TEAM_COLORS[p.team] : p.color;
-        return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${tagHtml(p)}${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}${tagSub(p)}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 ? '' : Math.round(p.rtt) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
+        const col = pvp ? TEAM_COLORS[p.team & 1] : p.color;
+        return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${tagHtml(p)}${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}${p.bot ? ' <span class="text-[10px] font-black text-gray-300 bg-white/10 rounded px-1">BOT</span>' : ''}${tagSub(p)}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team & 1]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 || p.bot ? '' : pingCell(p) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
     }).join('');
 }
 function renderMPInvites() {
@@ -191,12 +203,17 @@ ui.mp.addEventListener('click', (ev) => {
     else if (b.id === 'mp-start') { initAudio(); hostStartGame(); }
     else if (b.dataset.mpcls) { settings.cls = validClass(b.dataset.mpcls); saveSettings(); if (!NET.inGame) playerStats.cls = settings.cls; sfx('click'); renderMP(); if (currentGameState === 'main') renderMenu(); }
     else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
+    else if (b.id === 'mp-addbot' && NET.host) { if (!botAdd()) NET.hostMsg = 'The party is full.'; else NET.hostMsg = ''; hostLobbyUpdate(); }
+    else if (b.id === 'mp-fillbots' && NET.host) { botFill(); NET.hostMsg = ''; hostLobbyUpdate(); }
+    else if (b.id === 'mp-clearbots' && NET.host) { for (const p of [...netPlayers.values()]) if (p.bot) netRemovePlayer(p.id, 'was removed'); NET.hostMsg = ''; hostLobbyUpdate(); }
+    else if (b.id === 'mp-shuffle' && NET.host) { teamsShuffle(); NET.hostMsg = ''; hostLobbyUpdate(); }
+    else if (b.dataset.botskill) { settings.mpBotSkill = b.dataset.botskill; saveJSON('blocky21_settings', settings); renderMPSettings(); }
     else if (b.dataset.mpteam !== undefined && NET.host) {
-        const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - p.team;
+        const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - (p.team & 1);
         NET.hostMsg = ''; hostLobbyUpdate();
     }
     else if (b.dataset.gvfriend) { const L = GVL.L, who = b.dataset.gvfriend; if (L) { b.disabled = true; L.addFriend(who).then(renderMPPlayers, (e) => { b.disabled = false; netFeed(escHtml(e.message || 'Could not send that request')); }); } }
-    else if (b.dataset.mpkick) { const id = +b.dataset.mpkick; const p = netPlayers.get(id); if (p) { sendRel(p.peer, { t: 'bye' }); netRemovePlayer(id, 'was kicked'); } }
+    else if (b.dataset.mpkick) { const id = +b.dataset.mpkick; const p = netPlayers.get(id); if (p) { sendRel(p.peer, { t: 'bye' }); netRemovePlayer(id, p.bot ? 'was removed' : 'was kicked'); } }
     else if (b.dataset.invcopy) { const i = inv(b.dataset.invcopy); if (i && i.code) copyText(i.code); }
     else if (b.dataset.invcancel) { const i = inv(b.dataset.invcancel); if (i) { try { i.peer.pc.close(); } catch (e) {} NET.invites = NET.invites.filter(x => x !== i); renderMPInvites(); } }
     else if (b.dataset.invgo) { const i = inv(b.dataset.invgo); const ta = ui.mp.querySelector(`[data-invreply="${b.dataset.invgo}"]`); if (i && ta && ta.value.trim()) { i.reply = ta.value; hostAcceptReply(i, ta.value); } }

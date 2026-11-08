@@ -17,7 +17,7 @@
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
       SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; },
       LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; }, EL = function () { return cnt(rd('elementlab_challenges')); };
-  var luDone = function (id) { return !!((LU().levels || {})[id]); }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
+  var luDone = function (id) { return !!((LU().levels || {})[id]); }, luFlaw = function () { var n = 0, l = LU().levels || {}; for (var k in l) if ((l[k] || {}).perfect) n++; return n; }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
   var ACH = [
     // 100 Levels of Spikes
@@ -129,6 +129,9 @@
     { id: 'luguard', g: 'lumi', i: '🛡️', n: 'Guardian Breaker', d: 'Free all four world guardians.', p: 50, t: function () { return Object.keys(LU().guards || {}).length >= 4; } },
     { id: 'lulore8', g: 'lumi', i: '📜', n: 'Piecing It Together', d: 'Hear 8 of the valley\'s stories in Last Light.', p: 25, t: function () { return Object.keys(LU().talks || {}).length >= 8; } },
     { id: 'lulore', g: 'lumi', i: '🕯️', n: 'The Whole Truth', d: 'Hear 16 conversations in Last Light.', p: 100, t: function () { return Object.keys(LU().talks || {}).length >= 16; } },
+    { id: 'luflaw1', g: 'lumi', i: '💎', n: 'Not a Scratch', d: 'Clear a Last Light level flawless: no hits, every star, every spark, the lost lantern and the talk.', p: 10, t: function () { return luFlaw() >= 1; } },
+    { id: 'luflaw10', g: 'lumi', i: '✦', n: 'Spotless', d: 'Clear 10 Last Light levels flawless.', p: 50, t: function () { return luFlaw() >= 10; } },
+    { id: 'luflawall', g: 'lumi', i: '🏆', n: 'Flawless Lantern', d: 'Clear every Last Light level flawless (41).', p: 100, t: function () { return luFlaw() >= 41; } },
     { id: 'lulore31', g: 'lumi', i: '📖', n: 'Valley Historian', d: 'Talk to everyone in Last Light (31 conversations).', p: 100, t: function () { return Object.keys(LU().talks || {}).length >= 31; } },
     { id: 'luspark', g: 'lumi', i: '💛', n: 'Spark Hoarder', d: 'Collect 500 sparks.', p: 25, t: function () { return num(LU().sparks) >= 500; } },
     { id: 'hubgames', g: 'hub', i: '🎮', n: 'Game Hopper', d: 'Play 5 different games.', p: 10, t: function () { return cnt(PL()) >= 5; } },

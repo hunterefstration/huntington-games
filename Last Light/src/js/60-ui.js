@@ -32,21 +32,23 @@ const UI = {
             const art = document.createElement('div'); art.className = 'wart'; const cv = document.createElement('canvas'); cv.width = 600; cv.height = 240; art.appendChild(cv);
             const layers = paintBackground(wi, 600, 240), cx = cv.getContext('2d'); layers.forEach(l => cx.drawImage(l.c, 0, l.fixed ? 0 : 20 * (1 - l.k)));
             const done = lv.filter(o => SAVE.d.levels[o.l.id]).length;
-            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}</div>`);
+            const fl = lv.filter(o => (SAVE.d.levels[o.l.id] || {}).perfect).length;
+            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}${fl ? ` · <span class="flawtxt">✦ ${fl}</span>` : ''}</div>`);
             card.appendChild(art);
             const list = document.createElement('div'); list.className = 'lvls';
             lv.forEach(({ l, i }) => {
-                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : ''); b.disabled = !this.unlocked(i);
+                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : '') + (rec && rec.perfect ? ' flaw' : ''); b.disabled = !this.unlocked(i);
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
                 b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
                     + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}${TALKS[l.id] ? `<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span>` : ''}</span>` : '');
+                if (rec && rec.perfect) b.insertAdjacentHTML('beforeend', '<span class="flawgem" title="Done flawless: no hits, every star, every spark, the lost lantern and the talk">✦</span>');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
                 list.appendChild(b);
             });
             card.appendChild(list); box.appendChild(card);
         });
-        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf}`;
+        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf} &nbsp; <span class="flawtxt" title="Levels done flawless">✦ ${flawlessCount()}/${LEVELS.length}</span>`;
         this.show('map');
     },
     pause() {
@@ -63,7 +65,8 @@ const UI = {
             ['Time', fmtTime(r.time) + (r.best ? '<span class="new">NEW BEST</span>' : '')],
             ['Sparks', r.sparks + ' / ' + r.sparksOf],
             ['Stars', r.moths.slice(0, LEVELS[G.idx].map.join('').split('*').length - 1).map(m => `<span class="${m ? 'moth-on' : 'moth-off'}">★</span>`).join(' ') + (r.mothsNew > 0 ? '<span class="new">+' + r.mothsNew + ' NEW</span>' : '')],
-            ['Hits taken', r.hits ? r.hits : 'none<span class="new">FLAWLESS</span>'],
+            ['Hits taken', r.hits ? r.hits : 'none'],
+            ['Flawless', r.missing && !r.missing.length ? '<span class="flawtxt">✦ FLAWLESS</span>' + (r.flawNew ? '<span class="new">NEW</span>' : '') : r.rec && r.rec.perfect ? '<span class="flawtxt">✦ done before</span>' : 'missed ' + (r.missing || []).join(', ')],
             ['Enemies defeated', r.kills],
             ['Falls', r.deaths]
         ];
@@ -126,7 +129,7 @@ UI.stats = function () {
     const enemy = n('death_enemy');
     const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
         ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
-        ['Flawless clears', n('flawless')], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
+        ['Levels done flawless', flawlessCount() + ' / ' + LEVELS.length], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
         ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
         ['Distance', n('dist').toLocaleString() + ' tiles']];

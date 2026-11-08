@@ -85,7 +85,7 @@ setTimeout(() => { const s = $('#splash'); if (!s) return; s.classList.add('out'
 
 // test hook (used by the launcher's automated tests)
 window.__lumi = {
-    get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R,
+    get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R, UI, levelNeeds, flawlessCount,
     start: i => G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i),
     step(sec, keys = {}) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { for (const k in keys) Input.touchSet(k, !!keys[k]); G.update(STEP); Input.endFrame(); } for (const k in keys) Input.touchSet(k, false); },
     key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
@@ -95,3 +95,5 @@ window.__lumi = {
     ability(k, v = true) { SAVE.d.abilities[k] = v; },
     render: () => render(G)
 };
+// saves from before 1.3: work out which levels were already done flawless (once)
+if (flawlessGrandfather(SAVE.d)) SAVE.write();

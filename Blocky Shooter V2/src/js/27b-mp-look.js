@@ -309,7 +309,7 @@ function netUpdateAvatars(dt) {
     for (const p of netPlayers.values()) {
         if (!p.av) continue;
         const src = NET.host ? p.peer : NET.hostPeer;
-        const rt = now + (src && src.off !== undefined ? src.off : 0) - INTERP_MS;
+        const rt = now + (src && src.off !== undefined ? src.off : 0) - (p.bot && NET.host ? 40 : netDelay(src, now));
         const a = p.av;
         let pitch = 0;
         if (p.buf.sample(rt, p.cur)) {
@@ -333,14 +333,11 @@ function netUpdateAvatars(dt) {
             a.w = p.w; const id = WEAPON_ORDER[p.w] || 'ar', geo = weaponAsset(id);
             a.gun.geometry = geo; a.fore = geo.userData.fore; a.melee = geo.userData.melee; a.flash.position.set(0, 0.04, geo.userData.mz - 0.05);
         }
+        // 5.3: tournament spectators are invisible to everyone: no body, name tag, gun, shadow or sound, and nothing to hit
         const spec = tz && p.spec;
-        a.wp.visible = !spec;
         const kick = p.fireT > 0 ? p.fireT / 0.08 : 0;
-        if (spec) {         // audience: arms down by the sides, clapping now and then
-            const cl = Math.max(0, Math.sin(gameTime * 3 + p.id)) * 0.25;
-            a.aim.rotation.x = 0; a.aim.position.y = 1.4;
-            pointArm(a.armR, SH_R, _t1.set(0.3, -0.5 + cl, -0.12 - cl)); pointArm(a.armL, SH_L, _t2.set(-0.3, -0.5 + cl, -0.12 - cl));
-        } else {
+        if (spec) { a.g.visible = false; if (p.fireT > 0) p.fireT -= dt; continue; }
+        {
             a.aim.position.y = 1.4;
             a.aim.rotation.x = pitch * 0.85 - 0.32 * (1 - a.aimK) - 0.35 * a.slK;
             const sway = Math.sin(a.phase * 0.5) * 0.012 * walk;
@@ -355,7 +352,7 @@ function netUpdateAvatars(dt) {
         }
         a.g.scale.y = 1;
         // in PvP dead players vanish (burst of blocks); in co-op a downed player lies on the floor; tournament audience stays in the stands
-        if (NET.pvp) a.g.visible = alive || !!spec;
+        if (NET.pvp) a.g.visible = alive && !((f & 64) && Math.floor(now / 110) % 3 === 0);       // 5.3: spawn-protected players flicker
         else { a.g.visible = true; a.g.rotation.x = alive ? 0 : -1.4; }
         if (p.fireT > 0) p.fireT -= dt;
         // host: remote positions also drive the enemy AI, blocked when they've gone quiet

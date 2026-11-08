@@ -56,6 +56,8 @@ var LB_FEED = [
     var lr = feedRd('lumi_save') || {};
     if (lr.runs && feedNum(lr.runs.full) > 0) out.push(['lumi:run', feedNum(lr.runs.full)]);
     if (lr.runs && feedNum(lr.runs.onelife) > 0) out.push(['lumi:onelife', feedNum(lr.runs.onelife)]);
+    var fl = 0; for (var k in lv) if (lv[k] && lv[k].perfect === true) fl++;
+    if (fl > 0) out.push(['lumi:flawless', Math.min(fl, 41), { of: 41 }]);
     return out;
   }]
 ];
