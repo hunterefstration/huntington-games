@@ -525,7 +525,7 @@ function netApplyLate(L) {
         if (waveActive) scheduleSupply();
     } else NET.score = L.score || [0, 0];
     for (const [id, k, d] of L.kd || []) { const q = playerById(id); if (q) { q.kills = k; q.deaths = d; } }
-    if (NET.pvp && NET.mode === 'lts' && MD.phase === 'live') { netLocalDeath(); }      // 5.3: wait for the next round
+    if (NET.pvp && NET.mode === 'lts' && MD.phase === 'live') netSitOut();      // 5.3: wait for the next round
     toast('Joined a match in progress!', '#c4b5fd', 2.2);
     updateHUD();
 }
@@ -553,7 +553,6 @@ function netBeginGame(cfg) {
         p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
     }
     NET.me = { id: NET.id, name: NET.name, team: NET.team, color: NET.color || COOP_COLORS[0], kills: 0, deaths: 0, pts: 0, alive: true, rtt: 0 };
-    if (MP_MODES[cfg.mode].rules) modeBegin(cfg);
     // a fresh run on the same map as everyone else
     resetRun(); needsNewWorld = false;
     run = { mode: 'classic', map: cfg.map, diff: cfg.diff || 'normal' };
@@ -561,6 +560,7 @@ function netBeginGame(cfg) {
     netEnemySeq = 0; enemyById.clear(); NET.deadIds.clear();
     applyTheme(cfg.theme); buildWorld(cfg.map, cfg.seed);
     for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
+    if (MP_MODES[cfg.mode].rules) modeBegin(cfg); else modeReset();
     if (NET.pvp) {
         maxHp = 100; modeLoadout();
         resetAmmo();
@@ -600,6 +600,13 @@ function pickTeamSpawns(seed) {
             NET.spawns[team].push([x, z]);
         }
         if (!NET.spawns[team].length) NET.spawns[team].push([0, zc * 0.8]);
+    }
+    // 5.3 free-for-all: spawn points all over the map, not just at the two ends
+    if (isFfaMode()) for (let tries = 0, k = 0; tries < 600 && k < 10; tries++) {
+        const x = (rnd() * 2 - 1) * ARENA * 0.7, z = (rnd() * 2 - 1) * ARENA * 0.45;
+        const n = navNodeAt(x, z, 0.2);
+        if (n < 0 || nav.Y[n] > 0.1 || nav.ceil[n] < 5 || pointInSolid(new V3(x, 1, z), 1.2)) continue;
+        NET.spawns[k++ & 1].push([x, z]);
     }
 }
 function netShowEnd(m) {

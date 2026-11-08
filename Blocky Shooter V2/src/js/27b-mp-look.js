@@ -278,7 +278,7 @@ const _flashM = new THREE.MeshBasicMaterial({ color: 0xffd27a, toneMapped: false
 const _flashGeo = new THREE.BoxGeometry(0.16, 0.16, 0.1);
 const _avUp = new V3(0, 0, 1), _avD = new V3(), _avQ = new THREE.Quaternion();
 
-function pcol(p) { return NET.mode === 'tourney' ? (p.spec ? p.color : TEAM_COLORS[p.team]) : (NET.pvp ? TEAM_COLORS[p.team] : p.color); }
+function pcol(p) { return NET.mode === 'tourney' ? (p.spec ? p.color : TEAM_COLORS[p.team & 1]) : !NET.pvp || isFfaMode() ? p.color : modeTeamCol(p.team); }
 function makeAvatar(p) {
     const col = pcol(p), l = lookOf(p) || null, ge = avGeos(l && l.av), mat = lookMat(l && l.sk, col);
     const g = new THREE.Group(), hip = new THREE.Group(), inner = new THREE.Group();
