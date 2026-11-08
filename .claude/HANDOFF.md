@@ -1,5 +1,11 @@
 # Handoff (updated 2026-11-04)
 
+## Round 5 (r63)
+- **Blocky 5.3 multiplayer**: host-side bots for every PvP mode (`27c-mp-bots.js`); 7 new modes, with their rules in `28d-mp-modes.js` (ffa, gungame, kc, ctf, koth, lts, infect) and one host `mst` state message; tournament spectators are hidden and fly or follow; Tournament Arena rebuilt (`07c-map-tourney.js`); spawn protection, adaptive interpolation (55-260 ms), rejoin keeps stats for 5 min, kill cam. Debug hook: `__blocky.modes`.
+  - The automatic reconnect on 6-digit codes is untested: it needs PeerJS, which can't be reached offline.
+- **Storage**: `grapevine/migrate-v15.sql` (the owner runs it once, then `VACUUM FULL;` on its own). It adds `gv_purge_main` (the daily #main wipe for good) and `gv_tidy(saves)`: deleted messages, old edit versions, leftovers, stale presence, and extra save copies, the last only when the server is on the user_saves table. The server retries the purge hourly and tidies daily.
+- **Last Light 1.3 flawless** (`00-core.js` levelNeeds/flawlessMissing; save v3, `rec.perfect`): a clear counts when it has no hits and gets every star and spark that run, with the lantern found and the talk done (ever). Old saves are grandfathered once at boot. The launcher sends `lumi:flawless`; the achievements are luflaw1, luflaw10 (title Spotless) and luflawall (title Flawless).
+
 ## Round 4 (r62)
 - **Bans** cover the whole platform. Every admin ban is also a device ban: all devices that ever signed in to the account, kept in `server_bans` as `dev:<id>` rows (noteDevice keeps the last 2000).
   - Launcher `launcher/js/10-hub/005-ban.js` locks the page at load if `localStorage hgv:ban` is set, then asks the server with a `probe` hello (`gv/core.js banCheck`; server `040-hello...js`). A `banned` event locks it while running.
