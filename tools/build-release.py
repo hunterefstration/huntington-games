@@ -12,14 +12,18 @@ def obf(js): return subprocess.run(['node', str(pathlib.Path(__file__).resolve()
 hub = ROOT/'index.html'; lines = hub.read_text().split('\n')
 k = [i for i, l in enumerate(lines) if l.startswith('var HG_BUILD_N')]; assert len(k) == 1, 'HG_BUILD_N line not found exactly once'
 k = k[0]; lines[k] = 'var HG_BUILD_N = %d; /* release build - set by tools/build-release.py */' % N
-lines[k + 1] = obf((ROOT/'src/hub-licence.tpl.js').read_text().replace('__SECRET__', SECRET))
+htpl = (ROOT/'src/hub-licence.tpl.js').read_text()
+hnames = re.findall(r'^(?:function|var)\s+(HG_\w+)', htpl, re.M)      # what the hub calls; everything else stays private
+lines[k + 1] = '(function(){' + obf(htpl.replace('__SECRET__', SECRET)) + '\n' + ''.join('window.%s=%s;' % (n, n) for n in hnames) + '})();'
 hub.write_text('\n'.join(lines))
 # games
 tmpl = (ROOT/'src/gate-game.js').read_text()
 for d in GAMES:
     f = ROOT/d/'index.html'; s = f.read_text()
     s = re.sub(r'\n<!--HG-->.*?<!--/HG-->', '', s, flags=re.S)   # idempotent: strip only what we insert
-    snip = '\n<!--HG--><script>' + obf(tmpl.replace('__BUILD__', str(N)).replace('__ID__', d).replace('__SECRET__', SECRET)) + '</script><!--/HG-->'
+    # wrapped in a function: the obfuscator's helper names (random single letters) must never become globals, or they
+    # clash with a game's own top-level names (r62: a helper called V broke Bean & Brew Tycoon's `const V`)
+    snip = '\n<!--HG--><script>(function(){' + obf(tmpl.replace('__BUILD__', str(N)).replace('__ID__', d).replace('__SECRET__', SECRET)) + '\n})();</script><!--/HG-->'
     m = re.search(r'<head[^>]*>', s, re.I); assert m, d
     f.write_text(s[:m.end()] + snip + s[m.end():])
 SECRET_OUT.write_text(SECRET)
