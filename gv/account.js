@@ -645,9 +645,28 @@ const GVLink = (() => {
     }
   }
 
+  // ---- paced frames ----
+  // Scores and goon claims come in bursts (a new device sends every leaderboard and achievement at once). They go out
+  // at most 3 a second so a launcher never meets the server's limits; a frame the queue holds when the connection drops
+  // is sent once it is back (scores and claims are safe to send twice).
+  var pace = { q: [], t: null };
+  function paced(frame) {
+    if (pace.q.length > 400) pace.q.shift();
+    pace.q.push(frame); if (!pace.t) pace.t = setTimeout(paceTick, 0);
+  }
+  function paceTick() {
+    pace.t = null; if (!pace.q.length) return;
+    if (st.ready && send(pace.q[0])) pace.q.shift();
+    if (pace.q.length) pace.t = setTimeout(paceTick, st.ready ? 340 : 3000);
+  }
+
   // ---- cloud saves ----
   // Every game keeps its progress in localStorage, and the games all run on the launcher's page, so the launcher can
-  // carry the lot. Per key: a hash and a "changed at" time, newest wins; the server keeps one row per key.
+  // carry the lot. Per key the device remembers the hash both sides agreed on at the last sync (its base), so a sync can
+  // tell who changed what: only this device changed it -> push (a reset or delete made here syncs too); only the cloud
+  // changed it -> pull; both changed it (or this device never synced it) -> the copy with MORE PROGRESS wins (saveScore),
+  // and only a tie falls back to the newer copy. A deleted save travels as an empty value. The server also refuses a
+  // copy with clearly less progress unless it was made on top of the cloud's current one.
   // Rules that keep it safe:
   //  * a device meeting an account for the first time lets the cloud win conflicts (and keeps the overwritten value
   //    under hgv:bak:<key>), so a fresh Chromebook never wipes real progress;
@@ -667,7 +686,15 @@ const GVLink = (() => {
     return out;
   }
   function wipeDevice() { try { eligible().forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {} store.del('sync'); store.del('syncat'); sy.at = 0; sy.synced = false; }
+  // save frames go out at most ~3 a second (the server's limit is 3 a second with a burst of 40): a big first sync
+  // simply takes a few seconds longer instead of being refused
+  var rpcLast = 0;
   function rpc(frame, reply) {
+    var gap = rpcLast + 350 - Date.now(); rpcLast = Math.max(Date.now(), rpcLast + 350);
+    if (gap > 0) return wait(gap).then(function () { return rpc0(frame, reply); });
+    return rpc0(frame, reply);
+  }
+  function rpc0(frame, reply) {
     return new Promise(function (resolve, reject) {
       var w = { resolve: resolve, reject: reject, t: setTimeout(function () { var l = sy.waiters[reply] || []; var i = l.indexOf(w); if (i >= 0) l.splice(i, 1); reject(new Error('Grapevine did not answer.')); }, 20000) };
       (sy.waiters[reply] = sy.waiters[reply] || []).push(w);
@@ -687,6 +714,35 @@ const GVLink = (() => {
     try { document.cookie = 'gvdev=' + id + '; max-age=' + 60 * 60 * 24 * 3650 + '; path=/; SameSite=Lax'; } catch (e) {}
     return id;
   }
+// How far along a game save is, roughly: every unlocked/true flag counts 1, every positive number counts by its size
+  // (log scale: 10 -> 1, 1000 -> 3), each object entry a little. Clock times, ids, seeds and versions are ignored. Two
+  // versions of the same game's save compare well this way: more played = more unlocked, bigger totals. null = unknown
+  // (settings, text we cannot read), and then the newer copy wins as before.
+  function saveScore(k, v) {
+    if (/^gv:set:/.test(k)) return null;                         // settings, not progress
+    if (v === '' || v == null) return 0;                         // deleted
+    var d; try { d = JSON.parse(v); } catch (e) { d = undefined; }
+    if (d === undefined) { var n = Number(v); return isFinite(n) && n > 0 && n < 1e11 ? Math.log10(1 + n) : (String(v).length > 2 ? null : 0); }
+    var s = 0, nodes = 0, skip = /^(t|ts|at|time|date|ver|version|v|id|seed|rng|uid|key|.*(At|Date|Stamp|Id|Seed|Ver|Version)|last.*|saved.*|updated.*|created.*)$/;
+    (function walk(x, depth, name) {
+      if (++nodes > 50000 || depth > 14) return;
+      if (x === true) s += 1;
+      else if (typeof x === 'number') {
+        if (!isFinite(x) || x <= 0 || skip.test(name)) return;
+        if (x >= 1e11 && x < 1e13) return;                         // a clock time in ms
+        s += Math.log10(1 + x);
+      } else if (Array.isArray(x)) { for (var i = 0; i < x.length; i++) walk(x[i], depth + 1, name); }
+      else if (x && typeof x === 'object') { for (var kk in x) { s += 0.05; walk(x[kk], depth + 1, kk); } }
+    })(d, 0, '');
+    return s;
+  }
+  // true when save a has clearly less progress than save b (both of the same key)
+  function saveLess(k, a, b) {
+    var x = saveScore(k, a), y = saveScore(k, b);
+    if (x == null || y == null) return false;
+    return x < y - Math.max(0.5, y * 0.02);
+  }
+  var H0 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';   // sha256 of '' (a deleted save)
   function syncRun(opts) {
     if (sy.running) return sy.running;
     if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
@@ -698,20 +754,44 @@ const GVLink = (() => {
       for (var i = 0; i < keys.length; i++) {
         var k = keys[i], v = localStorage.getItem(k);
         if (v == null || v.length > SAVE_MAX) continue;
-        var h = await sha256hex(v);
-        if (!meta[k] || meta[k].h !== h) meta[k] = { h: h, t: now };
-        local[k] = { v: v, h: h, t: meta[k].t }; seen[k] = 1;
+        var h = await sha256hex(v), m0 = meta[k];
+        var base = m0 ? (m0.b !== undefined ? m0.b : m0.h) : null;      // saves synced before bases existed: their last hash
+        if (!m0 || m0.h !== h) meta[k] = { h: h, t: now, b: base };
+        else if (m0.b === undefined) m0.b = base;
+        local[k] = { v: v, h: h, t: meta[k].t, b: base }; seen[k] = 1;
       }
-      Object.keys(meta).forEach(function (k) { if (!seen[k]) delete meta[k]; });
+      // a save this device had synced and that is now gone was deleted here (a game's reset): it syncs as a delete
+      Object.keys(meta).forEach(function (k) {
+        if (seen[k]) return;
+        var m0 = meta[k], base = m0.b !== undefined ? m0.b : m0.h;
+        if (base && base !== H0 && GAME_KEYS.test(k)) { if (m0.h !== H0) meta[k] = { h: H0, t: now, b: base }; local[k] = { v: '', h: H0, t: meta[k].t, b: base }; }
+        else if (base === H0) local[k] = { v: '', h: H0, t: m0.t, b: H0 };
+        else delete meta[k];
+      });
       var list = (await rpc({ type: 'savesList' }, 'saves')).items || [];
       var srv = {}; list.forEach(function (it) { srv[it.k] = it; });
-      var need = [], put = [];
+      var need = [], put = [], judge = [];
       Object.keys(srv).forEach(function (k) {
-        var l = local[k];
-        if (!l) need.push(k);
-        else if (l.h !== srv[k].h) { if (firstOnDevice || srv[k].at > l.t) need.push(k); else put.push(k); }
+        var l = local[k], sh = srv[k].h;
+        if (!l) { if (sh !== H0) need.push(k); return; }
+        if (l.h === sh) { meta[k].b = sh; return; }
+        if (l.b && l.b === l.h) need.push(k);                          // only the cloud changed it
+        else if (l.b && l.b === sh) put.push(k);                       // only this device changed it
+        else judge.push(k);                                            // both changed it, or never synced here
       });
-      Object.keys(local).forEach(function (k) { if (!srv[k]) put.push(k); });
+      Object.keys(local).forEach(function (k) { if (!srv[k] && local[k].h !== H0) put.push(k); });
+      // conflicts: more progress wins; a tie goes to the newer copy (to the cloud on a device's first sync)
+      for (var c = 0; c < judge.length; c += 10) {
+        var part = judge.slice(c, c + 10), got0 = await rpc({ type: 'savesGet', keys: part }, 'savesData'), vals = {};
+        (got0.items || []).forEach(function (it) { vals[it.k] = it.v; });
+        part.forEach(function (k) {
+          var sv = vals[k] != null ? vals[k] : '', l = local[k];
+          if (saveLess(k, l.v, sv)) need.push(k);
+          else if (saveLess(k, sv, l.v)) { l.t = meta[k].t = now; put.push(k); }
+          else if (firstOnDevice || srv[k].at > l.t) need.push(k);
+          else put.push(k);
+        });
+      }
       var pulled = 0, deferred = 0;
       if (need.length && (sy.open || opts.noApply)) { deferred = need.length; need = []; }
       for (var j = 0; j < need.length; j += 10) {
@@ -719,17 +799,23 @@ const GVLink = (() => {
         for (var g = 0; g < (got.items || []).length; g++) {
           var it = got.items[g], old = localStorage.getItem(it.k);
           if (old != null && old !== it.v) { try { localStorage.setItem('hgv:bak:' + it.k, old); } catch (e) {} }
-          try { localStorage.setItem(it.k, it.v); } catch (e) { continue; }
-          meta[it.k] = { h: srv[it.k] ? srv[it.k].h : await sha256hex(it.v), t: it.at };
+          try { if (it.v === '') localStorage.removeItem(it.k); else localStorage.setItem(it.k, it.v); } catch (e) { continue; }
+          var nh = srv[it.k] ? srv[it.k].h : await sha256hex(it.v);
+          meta[it.k] = { h: nh, t: it.at, b: nh };
           pulled++;
         }
       }
       var pushed = 0, batch = [], size = 0;
-      async function flush() { if (!batch.length) return; var r = await rpc({ type: 'savesPut', items: batch }, 'savesPut'); pushed += r.stored || 0; batch = []; size = 0; }
+      async function flush() {
+        if (!batch.length) return;
+        var r = await rpc({ type: 'savesPut', items: batch }, 'savesPut'); pushed += r.stored || 0;
+        if (!r.regress) batch.forEach(function (x) { if (meta[x.k]) meta[x.k].b = meta[x.k].h; });   // agreed: the new base
+        batch = []; size = 0;
+      }
       for (var q = 0; q < put.length; q++) {
         var pk = put[q], pv = local[pk];
         if (batch.length >= 20 || size + pv.v.length > 900000) await flush();
-        batch.push({ k: pk, v: pv.v, at: pv.t }); size += pv.v.length;
+        batch.push({ k: pk, v: pv.v, at: Math.max(pv.t, srv[pk] ? srv[pk].at : 0), base: srv[pk] ? srv[pk].h : '' }); size += pv.v.length;
       }
       await flush();
       store.set('sync', JSON.stringify(meta));
@@ -916,11 +1002,11 @@ const GVLink = (() => {
       refresh: function (cat) { if (st.ready) send({ type: 'eco', cat: !!cat || !st.cat }); },
       buy: function (id) { if (st.ready) send({ type: 'ecoBuy', id: id }); },
       equip: function (slot, id, img) { if (st.ready) send({ type: 'ecoEquip', slot: slot, id: id || null, img: img || null }); },
-      claim: function (kind, id, n) { if (st.ready) send({ type: 'ecoClaim', kind: kind, id: id || null, n: n || 0 }); },
+      claim: function (kind, id, n) { if (st.ready) paced({ type: 'ecoClaim', kind: kind, id: id || null, n: n || 0 }); },
       play: function (game, active) { if (st.ready) send({ type: 'play', game: String(game || '').slice(0, 40), active: !!active }); },
       slur: function () { if (st.ready) send({ type: 'slur' }); },
       admin: function (op, name, id, n, text) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0, text: text || null }); },
-      lbSubmit: function (board, s, d) { if (st.ready && isFinite(s)) send({ type: 'lbSubmit', board: board, s: s, d: d || null }); },
+      lbSubmit: function (board, s, d) { if (st.ready && isFinite(s)) paced({ type: 'lbSubmit', board: board, s: s, d: d || null }); },
       lbGet: function (board) { return st.ready ? rpc({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
       // what other people wear: cached for 10 minutes, fetched in one batch
       cos: function (ids) {

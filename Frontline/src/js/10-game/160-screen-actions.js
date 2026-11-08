@@ -223,7 +223,10 @@ function loadMQTT() {
 function relayOpen(onUp) {
   return loadMQTT().then(mq => RELAYS.forEach(url => {
     let c; try { c = mq.connect(url, { clientId: 'fl' + Math.random().toString(36).slice(2, 12), clean: true, connectTimeout: 8000, reconnectPeriod: 3000, keepalive: 20, protocolVersion: 4 }); } catch (e) { return; }
-    NET.mq.push(c); let up = false; c.on('error', () => { }); c.on('connect', () => { if (!up) { up = true; onUp(c); } });
+    // a relay that drops and reconnects comes back with no subscriptions (clean session): remember them and subscribe
+    // again, or the match would go silent after the first hiccup
+    const sub = c.subscribe.bind(c), subs = new Set(); c.subscribe = (t, o) => { subs.add(t); return sub(t, o); };
+    NET.mq.push(c); let up = false; c.on('error', () => { }); c.on('connect', () => { if (!up) { up = true; onUp(c); } else subs.forEach(t => { try { sub(t, { qos: 0 }); } catch (e) { } }); });
   }), () => { });
 }
 function relayEnd(keep) { for (const c of NET.mq) if (c !== keep) { try { c.end(); } catch (e) { } } NET.mq = keep ? [keep] : []; }

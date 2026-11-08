@@ -6444,7 +6444,10 @@ function loadMQTT() {
 function relayOpen(onUp) {
   return loadMQTT().then(mq => RELAYS.forEach(url => {
     let c; try { c = mq.connect(url, { clientId: 'fl' + Math.random().toString(36).slice(2, 12), clean: true, connectTimeout: 8000, reconnectPeriod: 3000, keepalive: 20, protocolVersion: 4 }); } catch (e) { return; }
-    NET.mq.push(c); let up = false; c.on('error', () => { }); c.on('connect', () => { if (!up) { up = true; onUp(c); } });
+    // a relay that drops and reconnects comes back with no subscriptions (clean session): remember them and subscribe
+    // again, or the match would go silent after the first hiccup
+    const sub = c.subscribe.bind(c), subs = new Set(); c.subscribe = (t, o) => { subs.add(t); return sub(t, o); };
+    NET.mq.push(c); let up = false; c.on('error', () => { }); c.on('connect', () => { if (!up) { up = true; onUp(c); } else subs.forEach(t => { try { sub(t, { qos: 0 }); } catch (e) { } }); });
   }), () => { });
 }
 function relayEnd(keep) { for (const c of NET.mq) if (c !== keep) { try { c.end(); } catch (e) { } } NET.mq = keep ? [keep] : []; }
@@ -6774,9 +6777,10 @@ function netTick(now) {
   if (!NET.peer) return; if (now - NET.pingT > 1000) { NET.pingT = now; sendRel({ t: 'ping', ts: now }); }
   const silent = now - NET.lastRx;
   if (inGame && W && W.o.mp && !W.over) {
-    const bar = $('#netbar'); if (silent > 2500) { bar.classList.remove('hidden'); bar.textContent = 'Connection unstable... (' + Math.floor(silent / 1000) + 's)'; } else if (NET.rtt > 0) { bar.classList.toggle('hidden', NET.rtt < 400); bar.textContent = 'High latency: ' + Math.round(NET.rtt) + ' ms'; } else bar.classList.add('hidden');
-    if (silent > 9000) { if (NET.role === 'guest') guestHostGone('No response from the host for 9 seconds. The match ended.'); else hostGuestGone(); }
-  } else if (silent > 15000 && NET.role) { if (NET.role === 'guest') guestHostGone('Lost contact with the host.'); else hostGuestGone(); }
+    const bar = $('#netbar'); if (silent > 2500) { bar.classList.remove('hidden'); bar.textContent = (silent > 6000 ? 'Connection lost, reconnecting... (' : 'Connection unstable... (') + Math.floor(silent / 1000) + 's)'; } else if (NET.rtt > 0) { bar.classList.toggle('hidden', NET.rtt < 400); bar.textContent = 'High latency: ' + Math.round(NET.rtt) + ' ms'; } else bar.classList.add('hidden');
+    // school Wi-Fi drops for a few seconds when a Chromebook changes access point: wait a full minute before giving up
+    if (silent > 60000) { if (NET.role === 'guest') guestHostGone('No response from the host for a minute. The match ended.'); else hostGuestGone(); }
+  } else if (silent > 60000 && NET.role) { if (NET.role === 'guest') guestHostGone('Lost contact with the host.'); else hostGuestGone(); }
 }
 // =====================================================================
 //  MAIN LOOP / GAME FLOW

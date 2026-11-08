@@ -217,9 +217,10 @@ function netTick(now) {
   if (!NET.peer) return; if (now - NET.pingT > 1000) { NET.pingT = now; sendRel({ t: 'ping', ts: now }); }
   const silent = now - NET.lastRx;
   if (inGame && W && W.o.mp && !W.over) {
-    const bar = $('#netbar'); if (silent > 2500) { bar.classList.remove('hidden'); bar.textContent = 'Connection unstable... (' + Math.floor(silent / 1000) + 's)'; } else if (NET.rtt > 0) { bar.classList.toggle('hidden', NET.rtt < 400); bar.textContent = 'High latency: ' + Math.round(NET.rtt) + ' ms'; } else bar.classList.add('hidden');
-    if (silent > 9000) { if (NET.role === 'guest') guestHostGone('No response from the host for 9 seconds. The match ended.'); else hostGuestGone(); }
-  } else if (silent > 15000 && NET.role) { if (NET.role === 'guest') guestHostGone('Lost contact with the host.'); else hostGuestGone(); }
+    const bar = $('#netbar'); if (silent > 2500) { bar.classList.remove('hidden'); bar.textContent = (silent > 6000 ? 'Connection lost, reconnecting... (' : 'Connection unstable... (') + Math.floor(silent / 1000) + 's)'; } else if (NET.rtt > 0) { bar.classList.toggle('hidden', NET.rtt < 400); bar.textContent = 'High latency: ' + Math.round(NET.rtt) + ' ms'; } else bar.classList.add('hidden');
+    // school Wi-Fi drops for a few seconds when a Chromebook changes access point: wait a full minute before giving up
+    if (silent > 60000) { if (NET.role === 'guest') guestHostGone('No response from the host for a minute. The match ended.'); else hostGuestGone(); }
+  } else if (silent > 60000 && NET.role) { if (NET.role === 'guest') guestHostGone('Lost contact with the host.'); else hostGuestGone(); }
 }
 // =====================================================================
 //  MAIN LOOP / GAME FLOW
