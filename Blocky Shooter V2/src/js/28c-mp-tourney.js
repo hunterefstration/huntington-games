@@ -2,7 +2,8 @@
 // The host is the referee. The flow, for 4 to 8 players (byes fill the bracket when the number is not 4 or 8):
 //   bracket (everyone in the stands, the bracket on screen) -> ready (the two duelists drop into the pit, 4 second countdown, nobody can shoot)
 //   -> duel (first death wins; after 2 minutes the one with more health wins) -> over (who beat whom) -> bracket again ... -> champ.
-// Everyone who is not in the duel is a spectator: standing on the terrace, unhurtable, unable to shoot, and counted as "not alive" by everyone else.
+// Everyone who is not in the duel is a spectator: unhurtable, unable to shoot, counted as "not alive" by everyone else and (5.3) INVISIBLE:
+// no body, name tag, gun, shadow or sound, nothing to bump into. Spectators fly a free camera or follow either duelist (click to switch).
 const TN = { on: false, ids: [], names: {}, n: 0, rounds: [], phase: '', phaseId: 0, until: 0, a: -1, b: -1, r: 0, m: 0, champ: -1, msg: '', wins: {}, fightAt: 0 };
 const TN_BYE = -1, TN_TBD = -2;
 const TN_SECS = { bracket: 6, ready: 4, duel: 120, over: 4, champ: 12 };
@@ -10,7 +11,7 @@ let _tnHtml = '', _tnEl = null;
 { const st = document.createElement('style'); st.textContent = '.tn-spec #hud-slots, .tn-spec #hud-sec, .tn-spec #hud-ammo-card, .tn-spec #hud-abil, .tn-spec #crosshair { display: none !important; }'; document.head.appendChild(st); }
 
 function tourneyReset() {
-    document.body.classList.remove('tn-spec'); TN.on = false; TN.phase = ''; TN.rounds = []; TN.champ = -1; TN.a = TN.b = -1; NET.spec = false; NET.lockT = 0;
+    document.body.classList.remove('tn-spec'); TN.on = false; TSC.mode = 0; TN.phase = ''; TN.rounds = []; TN.champ = -1; TN.a = TN.b = -1; NET.spec = false; NET.lockT = 0;
     if (_tnEl) { _tnEl.remove(); _tnEl = null; _tnHtml = ''; }
 }
 const tnName = (id) => { const p = playerById(id); return p ? p.name : (TN.names[id] || '?'); };
@@ -130,9 +131,9 @@ function tourneyApply(m) {
 function tnSetSpec(id, spec) { if (id === NET.id) NET.spec = spec; else { const p = netPlayers.get(id); if (p) p.spec = spec; } }
 function tourneySeatIndex(id) { const i = TN.ids.indexOf(id); return i >= 0 ? i : Math.abs(id | 0) % 8; }
 function tourneyGoSeat() {
-    const [x, z] = tourneySeat(tourneySeatIndex(NET.id), 8);
+    const [x, z, y] = tourneySeat(tourneySeatIndex(NET.id), 8);
     NET.spec = true; NET.lockT = 0; cancelReload(); isMouseDown = false;
-    netRespawn([x, z], maxHp, TOURNEY.deckY);
+    netRespawn([x, z], maxHp, y);
     camera.quaternion.setFromEuler(new THREE.Euler(-0.3, Math.atan2(x, z), 0, 'YXZ'));
     if (vmModel) vmModel.root.visible = false;
 }
@@ -150,10 +151,14 @@ function tourneyEnterPhase() {
     if (ph === 'bracket') {
         for (const id of [NET.id, ...netPlayers.keys()]) tnSetSpec(id, true);
         tourneyGoSeat();
+        if (NET.host) for (const p of netPlayers.values()) if (isBot(p) && p.bot.feet !== undefined) botPark(p);
     } else if (ph === 'ready') {
         for (const id of [NET.id, ...netPlayers.keys()]) { tnSetSpec(id, !tnIsDuelist(id)); const p = playerById(id); if (p && tnIsDuelist(id)) p.team = id === TN.a ? 0 : 1; }
         NET.lockT = Math.max(0, (TN.until - performance.now()) / 1000);
         if (tnIsDuelist(NET.id)) tourneyGoPit();
+        else TSC.mode = 1;                           // spectators start by following the first duelist
+        // the host drops bot duelists into the pit (the others stay parked, invisible)
+        if (NET.host) for (const p of netPlayers.values()) if (isBot(p) && p.bot.feet !== undefined) { if (tnIsDuelist(p.id)) botRespawn(p, TOURNEY.spawns[p.team & 1]); else botPark(p); }
         sfx('wave');
     } else if (ph === 'duel') {
         NET.lockT = 0; TN.fightAt = performance.now(); toast('FIGHT!', '#fca5a5', 1.2); sfx('boom');
@@ -189,6 +194,7 @@ function tourneyUi() {
     if (TN.a >= 0 && ph !== 'champ') head = `<span style="color:#fca5a5">${escHtml(tnName(TN.a))}</span> <span style="color:#9ca3af">vs</span> <span style="color:#93c5fd">${escHtml(tnName(TN.b))}</span>`;
     const mm = Math.floor(left / 60), ss = String(Math.floor(left % 60)).padStart(2, '0');
     let h = `<div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);border-radius:10px;padding:6px 16px;text-align:center"><div style="font-size:11px;letter-spacing:3px;color:#fbbf24;font-weight:900">TOURNAMENT${TN.r === lastR && ph !== 'champ' ? ' - THE FINAL' : ' - ROUND ' + (TN.r + 1)}${NET.spec && ph !== 'champ' ? ' - SPECTATING' : ''}</div><div style="font-size:20px;font-weight:900">${head}${ph === 'duel' ? ` <span style="color:#e5e7eb;font-size:15px">${mm}:${ss}</span>` : ''}</div></div>`;
+    if (NET.spec && ph !== 'champ' && ph !== 'bracket') h += `<div style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.5);border-radius:8px;padding:4px 14px;font-size:13px;font-weight:800;color:#e5e7eb">${TSC.mode ? 'FOLLOWING ' + escHtml(tnName(TSC.mode === 1 ? TN.a : TN.b)) : 'FREE CAMERA - WASD, SPACE up, SHIFT fast'} <span style="color:#9ca3af">- click to switch camera</span></div>`;
     if (ph === 'ready') h += `<div style="position:absolute;top:30%;left:0;right:0"><div style="${big}">${Math.max(1, Math.ceil(left))}</div><div style="text-align:center;font-size:22px;font-weight:900;margin-top:8px">${tnIsDuelist(NET.id) ? 'GET READY' : 'THE DUEL STARTS'}</div></div>`;
     else if (ph === 'duel' && TN.fightAt && performance.now() - TN.fightAt < 1300) h += `<div style="position:absolute;top:30%;left:0;right:0"><div style="${big};color:#fca5a5">FIGHT!</div></div>`;
     else if (ph === 'over') h += `<div style="position:absolute;top:34%;left:0;right:0;text-align:center;font-size:32px;font-weight:900;color:#fde047">${escHtml(TN.msg)}</div>`;
@@ -203,6 +209,34 @@ function tourneyBoardHtml() {
     return `<div class="text-2xl font-black mb-3">TOURNAMENT <span class="text-sm text-gray-400">${TN.n} players</span></div>${tourneyBracketHtml()}
         <table class="w-full text-sm font-bold mt-4"><tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">DUELS WON</td><td>PING</td></tr>${allPlayers().map(p => `<tr><td class="py-1 pr-6 font-black" style="color:${hex(p.color)}">${tagHtml(p)}${escHtml(p.name)}</td><td class="pr-6">${TN.wins[p.id] | 0}</td><td class="text-gray-400">${p.id === NET.id ? '-' : Math.round(p.rtt)}</td></tr>`).join('')}</table>`;
 }
+// ----- 5.3 spectator camera: free flight, or a chase camera behind either duelist (click to cycle) -----
+const TSC = { mode: 0 };
+const _tsc = new V3(), _tscF = new V3();
+function tnSpecCam(dt) {        // from the frame loop instead of the normal walking; true = it moved the camera
+    if (!TN.on || !NET.spec || !NET.inGame) return false;
+    const id = TSC.mode === 1 ? TN.a : TSC.mode === 2 ? TN.b : -1, p = id >= 0 && id !== NET.id ? playerById(id) : null;
+    if (p && p.av && p.av.g.visible) {
+        const P = p.av.g.position, yaw = p.cur[4];
+        _tsc.set(P.x + Math.sin(yaw) * 4.2, P.y + 2.7, P.z + Math.cos(yaw) * 4.2);
+        if (pointInSolid(_tsc, 0.2)) _tsc.set(P.x, P.y + 5, P.z);      // never inside a wall
+        camera.position.lerp(_tsc, 1 - Math.exp(-7 * dt));
+        camera.lookAt(P.x, P.y + 1.5, P.z);
+    } else {
+        camera.getWorldDirection(_tscF);
+        const sp = (sprintHeld ? 26 : 12) * dt, r = new V3().crossVectors(_tscF, camera.up).normalize();
+        const f = (moveForward ? 1 : 0) - (moveBackward ? 1 : 0), s = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
+        camera.position.addScaledVector(_tscF, f * sp).addScaledVector(r, s * sp);
+        if (jumpHeld) camera.position.y += sp;
+        camera.position.x = clamp(camera.position.x, -ARENA + 1, ARENA - 1); camera.position.z = clamp(camera.position.z, -ARENA + 1, ARENA - 1);
+        camera.position.y = clamp(camera.position.y, 1, 30);
+    }
+    feetY = camera.position.y - EYE_STAND;
+    return true;
+}
+document.addEventListener('mousedown', () => {
+    if (!TN.on || !NET.spec || !NET.inGame || currentGameState !== 'playing' || TN.phase === 'bracket' || TN.phase === 'champ') return;
+    TSC.mode = (TSC.mode + 1) % 3; sfx('click');
+});
 // per frame, from netTick
 function tourneyTick(dt) {
     if (!TN.on) return;
@@ -226,7 +260,7 @@ Object.assign(window.__blocky, {
         TN, secs: TN_SECS, state: () => ({ on: TN.on, phase: TN.phase, a: TN.a, b: TN.b, r: TN.r, m: TN.m, champ: TN.champ, spec: NET.spec, lock: NET.lockT, n: TN.n, rounds: TN.rounds.map(R => R.map(x => [x.a, x.b, x.w])) }),
         win: (id) => { if (!NET.host || TN.phase !== 'duel') return false; tourneyDecide(id, id === TN.a ? TN.b : TN.a, 'test'); return true; },
         build: (ids) => { tourneyBuild(ids); const r = TN.rounds.map(R => R.map(x => [x.a, x.b, x.w])); TN.rounds = []; return r; },
-        seat: (i, n) => tourneySeat(i, n || 8)
+        seat: (i, n) => tourneySeat(i, n || 8), cam: () => TSC.mode, setCam: (m) => { TSC.mode = m; }
     },
     flash: { screenFlash: (c, h) => screenFlash(c, h), opacity: () => +ui.flash.style.opacity, bg: () => ui.flash.style.background, fxVisible: (x, y, z) => fxVisible(new V3(x, y, z)), lightning: () => ({ t: lightningT, f: lightningFlash, hemi: hemi.intensity }), allowFx: (m) => netFxAllowed(m), ex: () => explosions.map(e => [+e.ball.material.opacity.toFixed(3), +e.core.material.opacity.toFixed(3), e.radius]), boomLights: () => boomLights.map(b => Math.round(b.light.intensity)), cam: () => [camera.position.x, camera.position.y, camera.position.z] }
 });

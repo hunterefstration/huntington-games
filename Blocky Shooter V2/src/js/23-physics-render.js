@@ -276,7 +276,8 @@ function frame(ts) {
         camera.position.sub(camOffset); camOffset.set(0, 0, 0);
 
 
-        if (currentGameState === 'playing' && !NET.dead) {
+        if (currentGameState === 'playing' && !NET.dead && NET.spec && tnSpecCam(delta)) { /* 5.3 tournament spectator camera */ }
+        else if (currentGameState === 'playing' && !NET.dead) {
             updatePlayer(delta);
             weaponTick(delta);
             applyAimPunch(delta);

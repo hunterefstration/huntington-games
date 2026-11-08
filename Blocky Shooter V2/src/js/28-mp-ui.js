@@ -202,12 +202,13 @@ ui.mp.addEventListener('click', (ev) => {
     else if (b.id === 'mp-invite') hostCreateInvite();
     else if (b.id === 'mp-start') { initAudio(); hostStartGame(); }
     else if (b.dataset.mpcls) { settings.cls = validClass(b.dataset.mpcls); saveSettings(); if (!NET.inGame) playerStats.cls = settings.cls; sfx('click'); renderMP(); if (currentGameState === 'main') renderMenu(); }
-    else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
+    else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode' && b.dataset.val === 'coop') for (const p of [...netPlayers.values()]) if (p.bot) netRemovePlayer(p.id, 'was removed');      // no bots in co-op
+        if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
     else if (b.id === 'mp-addbot' && NET.host) { if (!botAdd()) NET.hostMsg = 'The party is full.'; else NET.hostMsg = ''; hostLobbyUpdate(); }
     else if (b.id === 'mp-fillbots' && NET.host) { botFill(); NET.hostMsg = ''; hostLobbyUpdate(); }
     else if (b.id === 'mp-clearbots' && NET.host) { for (const p of [...netPlayers.values()]) if (p.bot) netRemovePlayer(p.id, 'was removed'); NET.hostMsg = ''; hostLobbyUpdate(); }
     else if (b.id === 'mp-shuffle' && NET.host) { teamsShuffle(); NET.hostMsg = ''; hostLobbyUpdate(); }
-    else if (b.dataset.botskill) { settings.mpBotSkill = b.dataset.botskill; saveJSON('blocky21_settings', settings); renderMPSettings(); }
+    else if (b.dataset.botskill) { settings.mpBotSkill = b.dataset.botskill; saveJSON('blocky21_settings', settings); for (const p of netPlayers.values()) if (isBot(p)) p.bot.skill = botSkill(); renderMPSettings(); }
     else if (b.dataset.mpteam !== undefined && NET.host) {
         const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - (p.team & 1);
         NET.hostMsg = ''; hostLobbyUpdate();

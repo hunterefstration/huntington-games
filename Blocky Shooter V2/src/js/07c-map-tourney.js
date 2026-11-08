@@ -1,29 +1,32 @@
-// ---------- 5.2 TOURNAMENT ARENA: a colosseum for 1v1 duels (hidden map: only the Tournament mode uses it) ----------
-// A round sand pit (radius 20) with four cover pillars, four low walls and a central dais, ringed by a 3.6m high stone terrace
-// with banners, columns with torches and benches. Players who are not in the current duel stand up on the terrace and watch.
-// Everything is symmetrical: the duelists start at (0, -16) and (0, 16), the audience seats run round the terrace at radius 26.
-const TOURNEY = { pit: 20.5, deckY: 3.6, seatR: 26, spawns: [[0, -16], [0, 16]] };
-const tourneySeat = (i, n) => { const a = ((i + 0.5) / Math.max(1, n)) * Math.PI * 2 + Math.PI / 8; return [Math.cos(a) * TOURNEY.seatR, Math.sin(a) * TOURNEY.seatR]; };
-// collision for a ring (annulus): vertical slabs along both axes, so a round wall is a few dozen boxes (not drawn, collision only).
-// Slabs never poke into the open middle or outside the ring; the two directions cover each other's notches.
-function annulusSolids(r1, r2, y0, h, step, thru) {
-    for (const swap of [false, true]) {
-        for (let u = -r2 * 0.72 + step / 2; u < r2 * 0.72; u += step) {
-            const near = Math.max(0, Math.abs(u) - step / 2), far = Math.abs(u) + step / 2;
-            if (far >= r2) continue;
-            const zo = Math.sqrt(r2 * r2 - far * far), zi = near < r1 ? Math.sqrt(r1 * r1 - near * near) : 0;
-            const put = (v0, v1) => { const c = (v0 + v1) / 2, len = v1 - v0; if (len < 0.05) return; if (swap) addSolid(c, y0, u, len, h, step, thru); else addSolid(u, y0, c, step, h, len, thru); };
-            if (zi > 0.01) { put(zi, zo); put(-zo, -zi); } else put(-zo, zo);
-        }
-    }
-}
-function tourneyStoneTex(base, line, rep) {
-    const [c, g] = makeCanvas(128);
-    g.fillStyle = base; g.fillRect(0, 0, 128, 128);
-    g.strokeStyle = line; g.lineWidth = 3;
-    for (let y = 0; y < 128; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke(); for (let x = (y / 32 % 2) * 32; x < 128; x += 64) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 32); g.stroke(); } }
-    for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`; g.fillRect(Math.random() * 128, Math.random() * 128, 3, 3); }
-    const t = canvasTex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); return t;
+// ---------- TOURNAMENT ARENA (5.3 rebuild): a floodlit duel stadium (hidden map: only the Tournament mode uses it) ----------
+// A 30 x 44 sunken pit, mirror-symmetric both ways, so neither duelist gets a better side:
+//   - each end: a raised spawn pad behind a low shield wall, two tall crates in the corners
+//   - the middle: a plinth with a tall pillar that blocks the spawn-to-spawn sight line, low walls on the centre line
+//   - both flanks: a 2.5 m catwalk with stairs at each end (the high ground), glass rails you can shoot through
+//   - tall pillars and half walls in between, so cover comes at three heights (1.2, 2.5, 4+)
+// Round it: stepped stands on both long sides, team-coloured glow strips along the pit walls, two lighting trusses
+// over the pit (real lamp lights on High) and a big screen over each end. Spectators are invisible now, so the stands are scenery;
+// they still give the free camera a nice place to start. Everything is plain blocks, merged into one mesh per material.
+const TOURNEY = { pitX: 15, pitZ: 22, wallH: 4.2, deckY: 6.0, spawns: [[0, -19.2], [0, 19.2]] };
+// spectator start spots: on the middle tier of the two stands, 4 a side
+const tourneySeat = (i, n) => { const side = i % 2 ? 1 : -1, k = Math.floor((i % 8) / 2); return [side * 22.75, -12 + k * 8, TOURNEY.deckY]; };
+function tourneyFloorTex() {
+    const [c, g] = makeCanvas(512);
+    const gr = g.createLinearGradient(0, 0, 0, 512);
+    gr.addColorStop(0, '#3b1d24'); gr.addColorStop(0.32, '#262a35'); gr.addColorStop(0.68, '#262a35'); gr.addColorStop(1, '#1d2a44');
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+    g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 2;
+    for (let i = 0; i <= 512; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 512); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(512, i); g.stroke(); }
+    for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
+    g.strokeStyle = 'rgba(253,224,71,0.55)'; g.lineWidth = 5;
+    g.beginPath(); g.moveTo(0, 256); g.lineTo(512, 256); g.stroke();
+    g.beginPath(); g.arc(256, 256, 70, 0, 6.3); g.stroke();
+    g.strokeStyle = 'rgba(239,68,68,0.6)'; g.strokeRect(150, 6, 212, 92);
+    g.strokeStyle = 'rgba(59,130,246,0.6)'; g.strokeRect(150, 414, 212, 92);
+    g.font = '900 34px sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,0.13)';
+    g.save(); g.translate(256, 160); g.fillText('BLOCKY CUP', 0, 0); g.restore();
+    g.save(); g.translate(256, 352); g.rotate(Math.PI); g.fillText('BLOCKY CUP', 0, 0); g.restore();
+    return canvasTex(c);
 }
 function tourneyBanner(col, col2) {
     const [c, g] = makeCanvas(128);
@@ -32,50 +35,102 @@ function tourneyBanner(col, col2) {
     g.font = '900 15px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fde68a'; g.fillText('BLOCKY', 64, 108);
     return canvasTex(c);
 }
+function tourneyScreenTex(col) {
+    const [c, g] = makeCanvas(256);
+    g.fillStyle = '#05070d'; g.fillRect(0, 0, 256, 256);
+    const gr = g.createLinearGradient(0, 0, 256, 0); gr.addColorStop(0, col); gr.addColorStop(1, '#111827');
+    g.fillStyle = gr; g.fillRect(10, 64, 236, 128);
+    g.fillStyle = 'rgba(0,0,0,0.25)'; for (let y = 64; y < 192; y += 4) g.fillRect(10, y, 236, 1);
+    g.fillStyle = '#fde047'; g.font = '900 38px sans-serif'; g.textAlign = 'center'; g.fillText('BLOCKY', 128, 118); g.fillStyle = '#fff'; g.font = '900 30px sans-serif'; g.fillText('CUP', 128, 160);
+    g.strokeStyle = col; g.lineWidth = 6; g.strokeRect(4, 58, 248, 140);
+    return canvasTex(c);
+}
 function mapTourney() {
-    const R = TOURNEY.pit, DY = TOURNEY.deckY, RO = 31, RW = 32.6, W = worldGroup;
+    const X = TOURNEY.pitX, Z = TOURNEY.pitZ, WH = TOURNEY.wallH, W = worldGroup;
     spawnPt = [TOURNEY.spawns[0][0], TOURNEY.spawns[0][1]];
-    const stoneD = new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#7c7263', '#564e41', [28, 2]), side: THREE.BackSide });
-    const stoneO = new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#9b8f7a', '#6f6554', [28, 6]), side: THREE.BackSide });
-    const deckM = new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#b3a88f', '#8b8068', [10, 10]) });
-    const add = (geo, mat, x, y, z, shadow) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.receiveShadow = !!shadow; W.add(m); return m; };
-    // the sand pit
-    const [sc, sg] = makeCanvas(256);
-    sg.fillStyle = '#d9c28f'; sg.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 1800; i++) { sg.fillStyle = `rgba(${120 + Math.random() * 60 | 0},${95 + Math.random() * 50 | 0},60,0.18)`; sg.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
-    sg.strokeStyle = 'rgba(120,90,40,0.5)'; sg.lineWidth = 3; for (const r of [124, 96, 30]) { sg.beginPath(); sg.arc(128, 128, r, 0, 6.3); sg.stroke(); }
-    sg.strokeStyle = 'rgba(160,30,30,0.55)'; sg.lineWidth = 5; sg.beginPath(); sg.moveTo(128, 8); sg.lineTo(128, 248); sg.stroke();
-    const pit = add(new THREE.CircleGeometry(R, 56), new THREE.MeshLambertMaterial({ map: canvasTex(sc) }), 0, 0.03, 0, true); pit.rotation.x = -Math.PI / 2;
-    // terrace: top, outer wall, inner wall
-    const top = add(new THREE.RingGeometry(R, RO, 56, 1), deckM, 0, DY, 0, true); top.rotation.x = -Math.PI / 2;
-    add(new THREE.CylinderGeometry(R, R, DY, 56, 1, true), stoneD, 0, DY / 2, 0, true);
-    add(new THREE.CylinderGeometry(RW, RW, 13, 56, 1, true), stoneO, 0, 6.5, 0, true);
-    annulusSolids(R, RO, 0, DY, 1.4, false);                                      // the terrace (solid down to the sand: the pit wall)
-    annulusSolids(RO, RW, 0, 14, 1.0, false);                                     // the outer wall
-    // railing round the pit: stone parapet + glass, collision for it (bullets and eyes pass, feet do not)
-    add(new THREE.CylinderGeometry(R + 0.35, R + 0.35, 1.1, 56, 1, true), new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#8c8270', '#5d5546', [28, 1]), side: THREE.DoubleSide }), 0, DY + 0.55, 0);
-    add(new THREE.CylinderGeometry(R + 0.35, R + 0.35, 1.5, 56, 1, true), new THREE.MeshLambertMaterial({ color: 0xa6dcf5, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }), 0, DY + 1.85, 0);
-    annulusSolids(R, R + 0.8, DY, 3.2, 1.0, true);
-    // benches: three low rings on the terrace (decoration only)
-    for (const r of [23, 28.6]) { const bm = add(new THREE.CylinderGeometry(r + 0.4, r + 0.4, 0.45, 56, 1, false), new THREE.MeshLambertMaterial({ color: 0x8a6a45 }), 0, DY + 0.22, 0); bm.castShadow = false; }
-    // arches in the pit wall, banners and torches on the outer wall
-    for (const [x, z, w, d] of [[0, -R + 0.05, 3.4, 0.5], [0, R - 0.05, 3.4, 0.5], [-R + 0.05, 0, 0.5, 3.4], [R - 0.05, 0, 0.5, 3.4]]) {
-        addBlock(x, 0, z, w, 2.7, d, 'rubber', false); addBlock(x, 2.7, z, w + 0.5, 0.35, d + 0.2, 'concreteDark', false);
-    }
+    const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); W.add(m); return m; };
+    // mirrored placement helpers: both sides of x = 0 and/or z = 0
+    const mx = (fn) => { fn(1); fn(-1); };
+    const m4 = (fn) => { for (const sx of [1, -1]) for (const sz of [1, -1]) fn(sx, sz); };
+    // ---- the pit floor and walls ----
+    const fl = add(new THREE.PlaneGeometry(2 * X, 2 * Z), new THREE.MeshLambertMaterial({ map: tourneyFloorTex() }), 0, 0.02, 0); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true;
+    mx(s => { addBlock(0, 0, s * (Z + 0.5), 2 * X + 2, WH, 1, 'concreteDark'); addBlock(s * (X + 0.5), 0, 0, 1, WH, 2 * Z, 'concreteDark'); });
+    // team glow strips along the top of the walls: red half (z < 0), blue half (z > 0)
+    mx(s => {
+        const g = s < 0 ? 'glowR' : 'glowB';
+        addBlock(0, WH, s * (Z + 0.05), 2 * X, 0.14, 0.12, g, false); addBlock(0, 1.2, s * (Z - 0.03), 2 * X, 0.08, 0.06, g, false);
+        mx(sx => { addBlock(sx * (X + 0.05), WH, s * Z / 2, 0.12, 0.14, Z, g, false); addBlock(sx * (X - 0.03), 1.2, s * Z / 2, 0.06, 0.08, Z, g, false); });
+    });
+    // tunnel mouths in the end walls (behind each spawn)
+    mx(s => { addBlock(0, 0, s * (Z - 0.02), 4.4, 3.0, 0.06, 'rubber', false); addBlock(0, 3.0, s * (Z - 0.05), 5.0, 0.18, 0.1, s < 0 ? 'glowR' : 'glowB', false); });
+    // ---- spawn ends ----
+    mx(s => {
+        addBlock(0, 0, s * 19.75, 8, 0.6, 4.5, 'concrete');                                 // spawn pad
+        addBlock(0, 0.6, s * 21.7, 8, 0.06, 0.4, s < 0 ? 'accR' : 'accB', false);
+        addBlock(0, 0, s * 15.6, 6, 1.3, 0.8, 'concreteDark');                               // shield wall
+        addBlock(0, 1.3, s * 15.6 - s * 0.42, 6.0, 0.08, 0.1, s < 0 ? 'glowR' : 'glowB', false);
+        mx(sx => {
+            addBlock(sx * 9.5, 0, s * 19.2, 2.2, 2.4, 2.2, s < 0 ? 'accR' : 'accB');       // tall corner crates + a step crate
+            addBlock(sx * 11.3, 0, s * 18.4, 1.3, 1.2, 1.3, 'woodDark');
+            addBlock(sx * 4.6, 0, s * 13.2, 1.2, 1.2, 1.2, 'woodDark');                      // low crate covering the pad exits
+        });
+    });
+    // ---- the middle: plinth + pillar, centre-line walls ----
+    addBlock(0, 0, 0, 7, 0.9, 7, 'concrete');
+    mx(s => { addBlock(s * 4.1, 0, 0, 1.2, 0.45, 3, 'concreteDark'); addBlock(0, 0, s * 4.1, 3, 0.45, 1.2, 'concreteDark'); });     // steps onto the plinth
+    addBlock(0, 0.9, 0, 2.2, 3.6, 2.2, 'stone'); addBlock(0, 4.5, 0, 2.6, 0.25, 2.6, 'concrete', false); addBlock(0, 4.75, 0, 1.0, 0.12, 1.0, 'glowY', false);
+    m4((sx, sz) => addBlock(sx * 2.85, 0.9, sz * 2.85, 1.2, 1.0, 1.2, 'concreteDark'));         // knee-high cover on the plinth corners
+    mx(s => addBlock(s * 8.2, 0, 0, 0.9, 1.25, 3.4, 'concreteDark'));
+    // ---- mid-field cover at three heights ----
+    m4((sx, sz) => {
+        addBlock(sx * 6.4, 0, sz * 9.2, 1.7, 4.6, 1.7, 'stone'); addBlock(sx * 6.4, 4.6, sz * 9.2, 2.1, 0.25, 2.1, 'concrete', false);   // tall pillars
+        addBlock(sx * 5.2, 0, sz * 4.8, 3.2, 1.2, 0.8, 'concreteDark');                                                              // half walls
+    });
+    // ---- the flank catwalks: 2.5 m high, stairs down at both ends, glass rail on the inside ----
+    const CY = 2.5, CW = 3, cx = X - CW / 2 - 0.05;
+    mx(sx => {
+        addBlock(sx * cx, CY - 0.3, 0, CW, 0.3, 14, 'steel');
+        addBlock(sx * (cx - CW / 2 + 0.06), CY, 0, 0.12, 1.0, 14, 'glass'); addSolid(sx * (cx - CW / 2 + 0.06), CY, 0, 0.12, 1.0, 14, true);
+        addBlock(sx * (cx - CW / 2 + 0.06), CY + 1.0, 0, 0.16, 0.08, 14, sx < 0 ? 'glowP' : 'glowC', false);
+        for (const sz of [1, -1]) {
+            addBlock(sx * (cx - CW / 2 + 0.25), 0, sz * 6.75, 0.5, CY - 0.3, 0.5, 'post');                            // supports
+            addBlock(sx * (cx + CW / 2 - 0.25), 0, sz * 6.75, 0.5, CY - 0.3, 0.5, 'post');
+            for (let i = 0; i < 4; i++) addBlock(sx * cx, 0, sz * (7.45 + i * 0.9), CW, CY - 0.5 - i * 0.5, 0.9, i % 2 ? 'concrete' : 'steel');   // 2.0, 1.5, 1.0, 0.5
+        }
+        addBlock(sx * cx, 0, 0, CW - 0.6, 0.9, 1.2, 'woodDark');                                                     // something to hide behind under it
+    });
+    // ---- stands on both long sides (scenery; spectators float) ----
+    mx(sx => {
+        const tiers = [[16, 20.5, 4.6], [20.5, 25, 6.0], [25, 29.5, 7.4]];
+        for (const [a, b, top] of tiers) {
+            addBlock(sx * (a + b) / 2, 0, 0, b - a, top, 42, 'concrete');
+            addBlock(sx * (a + 0.9), top, 0, 0.9, 0.45, 40, sx < 0 ? 'accR' : 'accB', false);                       // bench row
+            addBlock(sx * (a + 0.05), top - 0.12, 0, 0.1, 0.1, 42, 'glowW', false);
+        }
+        addBlock(sx * 30.6, 0, 0, 1.2, 13, 46, 'concreteDark');                                                        // back wall
+        addBlock(sx * 29.9, 12.4, 0, 0.2, 0.2, 44, 'glowY', false);
+        mx(sz => { addBlock(sx * 23, 0, sz * 21.6, 14, 9, 1.2, 'concreteDark'); addBlock(sx * 23, 9, sz * 21.6, 14.4, 0.3, 1.6, 'concrete', false); });   // stand end walls
+    });
+    // banners on the back walls (4 colours, one merged mesh each)
     const bgs = [[], [], [], []], cols = [['#b91c1c', '#7f1d1d'], ['#1d4ed8', '#1e3a8a'], ['#ca8a04', '#854d0e'], ['#6d28d9', '#4c1d95']];
-    for (let i = 0; i < 16; i++) {
-        const a = (i / 16) * Math.PI * 2 + Math.PI / 16, x = Math.cos(a) * (RO + 0.2), z = Math.sin(a) * (RO + 0.2);
-        const g = new THREE.PlaneGeometry(3.2, 5.6); g.rotateY(-a - Math.PI / 2); g.translate(x, DY + 7.4, z); bgs[i % 4].push(g);
-        // columns between the banners, torches on top
-        const ca = a + Math.PI / 16, cx = Math.cos(ca) * (RO - 0.5), cz = Math.sin(ca) * (RO - 0.5);
-        addBlock(cx, DY, cz, 1.0, 9.5, 1.0, 'concreteDark', false); addBlock(cx, DY + 9.5, cz, 1.3, 0.35, 1.3, 'concrete', false); addBlock(cx, DY + 9.85, cz, 0.55, 0.7, 0.55, 'glowY', false);
-        if (i % 2 === 0) { addBlock(cx * 0.66, DY, cz * 0.66, 0.3, 2.4, 0.3, 'post', false); addBlock(cx * 0.66, DY + 2.4, cz * 0.66, 0.6, 0.5, 0.6, 'glowY', false); }
-    }
-    bgs.forEach((list, k) => { const m = add(mergeGeometries(list, false), new THREE.MeshLambertMaterial({ map: tourneyBanner(cols[k][0], cols[k][1]), side: THREE.DoubleSide }), 0, 0, 0); list.forEach(g => g.dispose()); });
-    // cover in the pit (180 degree + mirror symmetric): 4 pillars, 4 low walls, a central dais, short fences in front of each spawn
-    for (const [x, z] of [[-8.5, -8.5], [8.5, -8.5], [-8.5, 8.5], [8.5, 8.5]]) { addBlock(x, 0, z, 1.9, 5.4, 1.9, 'stone'); addBlock(x, 5.4, z, 2.4, 0.4, 2.4, 'concrete', false); addBlock(x, 0, z, 2.3, 0.5, 2.3, 'concreteDark', false); }
-    for (const [x, z, w, d] of [[-13.5, 0, 1.0, 5], [13.5, 0, 1.0, 5], [0, -12.5, 5, 1.0], [0, 12.5, 5, 1.0]]) addBlock(x, 0, z, w, 1.25, d, 'concrete');
-    addBlock(0, 0, 0, 5.2, 0.5, 5.2, 'sand'); addBlock(0, 0.5, 0, 1.2, 1.1, 1.2, 'accY'); addBlock(0, 1.6, 0, 1.5, 0.15, 1.5, 'glowY', false);
-    for (const [x, z] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) addBlock(x, 0, z, 1.3, 0.9, 1.3, 'woodDark');
-    for (const [x, z] of [[-3, -16.5], [3, -16.5], [-3, 16.5], [3, 16.5]]) addBlock(x, 0, z, 0.5, 1.1, 0.5, 'steel');
+    let bi = 0;
+    mx(sx => { for (let z = -16; z <= 16; z += 8) { const g = new THREE.PlaneGeometry(3.4, 4.6); g.rotateY(sx > 0 ? -Math.PI / 2 : Math.PI / 2); g.translate(sx * 29.95, 10, z); bgs[bi++ % 4].push(g); } });
+    bgs.forEach((list, k) => { if (!list.length) return; add(mergeGeometries(list, false), new THREE.MeshLambertMaterial({ map: tourneyBanner(cols[k][0], cols[k][1]), side: THREE.DoubleSide }), 0, 0, 0); list.forEach(g => g.dispose()); });
+    // ---- big screens over each end ----
+    mx(s => {
+        const scr = add(new THREE.PlaneGeometry(16, 8), new THREE.MeshBasicMaterial({ map: tourneyScreenTex(s < 0 ? '#ef4444' : '#3b82f6'), toneMapped: false }), 0, 11, s * (ARENA - 0.2));
+        if (s > 0) scr.rotation.y = Math.PI;
+        addBlock(0, 6.6, s * (ARENA - 0.1), 17, 0.4, 0.4, 'steel', false); addBlock(0, 15.0, s * (ARENA - 0.1), 17, 0.4, 0.4, 'steel', false);
+        addBlock(0, 0, s * 28, 30, 3, 1.5, 'concreteDark');                                                          // end terraces
+        addBlock(0, 3, s * 27.2, 30.2, 0.1, 0.12, s < 0 ? 'glowR' : 'glowB', false);
+    });
+    // ---- lighting: two trusses across the pit with hanging floodlights ----
+    mx(sz => {
+        addBlock(0, 14, sz * 11, 2 * X + 4, 0.45, 0.45, 'steel', false);
+        addBlock(0, 14.6, sz * 11, 2 * X + 4, 0.2, 0.2, 'steel', false);
+        mx(sx => addBlock(sx * (X + 2.2), WH, sz * 11, 0.5, 14 - WH + 0.5, 0.5, 'steel', false));
+        for (const x of [-10, -3.5, 3.5, 10]) addCeilingLight(x, sz * 11, 0, 13.9, 15, false, 1.2);
+    });
+    // floodlight masts in the four corners
+    m4((sx, sz) => { addBlock(sx * 31, 0, sz * 31, 0.8, 18, 0.8, 'post', false); addBlock(sx * 31, 18, sz * 31, 3, 1.4, 0.5, 'lampHead', false); });
 }

@@ -772,7 +772,7 @@
             mall:      { name: 'MALL',      size: 72,  desc: 'NEW! Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
             subway:    { name: 'SUBWAY', size: 64, desc: 'NEW! A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
             biolab:    { name: 'BIOLAB', size: 46, hidden: true, desc: 'Campaign finale arena: a sunken containment pit ringed by catwalks, vents and quarantine pods.' },
-            tourney:   { name: 'TOURNAMENT ARENA', size: 34, hidden: true, desc: 'Colosseum for tournament duels: a round sand pit with cover pillars, ringed by stands, banners and torches.' },
+            tourney:   { name: 'TOURNAMENT ARENA', size: 34, hidden: true, desc: 'Floodlit duel stadium: a symmetric pit with a central pillar, flank catwalks and cover at three heights, ringed by stands and big screens.' },
             military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'NEW! Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
         };
         // maps with hidden: true are campaign-only arenas (never in the map pickers, random picks or challenges)
@@ -3477,32 +3477,35 @@
         }
 
         // ---- 07c-map-tourney.js ----
-        // ---------- 5.2 TOURNAMENT ARENA: a colosseum for 1v1 duels (hidden map: only the Tournament mode uses it) ----------
-        // A round sand pit (radius 20) with four cover pillars, four low walls and a central dais, ringed by a 3.6m high stone terrace
-        // with banners, columns with torches and benches. Players who are not in the current duel stand up on the terrace and watch.
-        // Everything is symmetrical: the duelists start at (0, -16) and (0, 16), the audience seats run round the terrace at radius 26.
-        const TOURNEY = { pit: 20.5, deckY: 3.6, seatR: 26, spawns: [[0, -16], [0, 16]] };
-        const tourneySeat = (i, n) => { const a = ((i + 0.5) / Math.max(1, n)) * Math.PI * 2 + Math.PI / 8; return [Math.cos(a) * TOURNEY.seatR, Math.sin(a) * TOURNEY.seatR]; };
-        // collision for a ring (annulus): vertical slabs along both axes, so a round wall is a few dozen boxes (not drawn, collision only).
-        // Slabs never poke into the open middle or outside the ring; the two directions cover each other's notches.
-        function annulusSolids(r1, r2, y0, h, step, thru) {
-            for (const swap of [false, true]) {
-                for (let u = -r2 * 0.72 + step / 2; u < r2 * 0.72; u += step) {
-                    const near = Math.max(0, Math.abs(u) - step / 2), far = Math.abs(u) + step / 2;
-                    if (far >= r2) continue;
-                    const zo = Math.sqrt(r2 * r2 - far * far), zi = near < r1 ? Math.sqrt(r1 * r1 - near * near) : 0;
-                    const put = (v0, v1) => { const c = (v0 + v1) / 2, len = v1 - v0; if (len < 0.05) return; if (swap) addSolid(c, y0, u, len, h, step, thru); else addSolid(u, y0, c, step, h, len, thru); };
-                    if (zi > 0.01) { put(zi, zo); put(-zo, -zi); } else put(-zo, zo);
-                }
-            }
-        }
-        function tourneyStoneTex(base, line, rep) {
-            const [c, g] = makeCanvas(128);
-            g.fillStyle = base; g.fillRect(0, 0, 128, 128);
-            g.strokeStyle = line; g.lineWidth = 3;
-            for (let y = 0; y < 128; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke(); for (let x = (y / 32 % 2) * 32; x < 128; x += 64) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 32); g.stroke(); } }
-            for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`; g.fillRect(Math.random() * 128, Math.random() * 128, 3, 3); }
-            const t = canvasTex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); return t;
+        // ---------- TOURNAMENT ARENA (5.3 rebuild): a floodlit duel stadium (hidden map: only the Tournament mode uses it) ----------
+        // A 30 x 44 sunken pit, mirror-symmetric both ways, so neither duelist gets a better side:
+        //   - each end: a raised spawn pad behind a low shield wall, two tall crates in the corners
+        //   - the middle: a plinth with a tall pillar that blocks the spawn-to-spawn sight line, low walls on the centre line
+        //   - both flanks: a 2.5 m catwalk with stairs at each end (the high ground), glass rails you can shoot through
+        //   - tall pillars and half walls in between, so cover comes at three heights (1.2, 2.5, 4+)
+        // Round it: stepped stands on both long sides, team-coloured glow strips along the pit walls, two lighting trusses
+        // over the pit (real lamp lights on High) and a big screen over each end. Spectators are invisible now, so the stands are scenery;
+        // they still give the free camera a nice place to start. Everything is plain blocks, merged into one mesh per material.
+        const TOURNEY = { pitX: 15, pitZ: 22, wallH: 4.2, deckY: 6.0, spawns: [[0, -19.2], [0, 19.2]] };
+        // spectator start spots: on the middle tier of the two stands, 4 a side
+        const tourneySeat = (i, n) => { const side = i % 2 ? 1 : -1, k = Math.floor((i % 8) / 2); return [side * 22.75, -12 + k * 8, TOURNEY.deckY]; };
+        function tourneyFloorTex() {
+            const [c, g] = makeCanvas(512);
+            const gr = g.createLinearGradient(0, 0, 0, 512);
+            gr.addColorStop(0, '#3b1d24'); gr.addColorStop(0.32, '#262a35'); gr.addColorStop(0.68, '#262a35'); gr.addColorStop(1, '#1d2a44');
+            g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+            g.strokeStyle = 'rgba(255,255,255,0.06)'; g.lineWidth = 2;
+            for (let i = 0; i <= 512; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, 512); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(512, i); g.stroke(); }
+            for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
+            g.strokeStyle = 'rgba(253,224,71,0.55)'; g.lineWidth = 5;
+            g.beginPath(); g.moveTo(0, 256); g.lineTo(512, 256); g.stroke();
+            g.beginPath(); g.arc(256, 256, 70, 0, 6.3); g.stroke();
+            g.strokeStyle = 'rgba(239,68,68,0.6)'; g.strokeRect(150, 6, 212, 92);
+            g.strokeStyle = 'rgba(59,130,246,0.6)'; g.strokeRect(150, 414, 212, 92);
+            g.font = '900 34px sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(255,255,255,0.13)';
+            g.save(); g.translate(256, 160); g.fillText('BLOCKY CUP', 0, 0); g.restore();
+            g.save(); g.translate(256, 352); g.rotate(Math.PI); g.fillText('BLOCKY CUP', 0, 0); g.restore();
+            return canvasTex(c);
         }
         function tourneyBanner(col, col2) {
             const [c, g] = makeCanvas(128);
@@ -3511,52 +3514,104 @@
             g.font = '900 15px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#fde68a'; g.fillText('BLOCKY', 64, 108);
             return canvasTex(c);
         }
+        function tourneyScreenTex(col) {
+            const [c, g] = makeCanvas(256);
+            g.fillStyle = '#05070d'; g.fillRect(0, 0, 256, 256);
+            const gr = g.createLinearGradient(0, 0, 256, 0); gr.addColorStop(0, col); gr.addColorStop(1, '#111827');
+            g.fillStyle = gr; g.fillRect(10, 64, 236, 128);
+            g.fillStyle = 'rgba(0,0,0,0.25)'; for (let y = 64; y < 192; y += 4) g.fillRect(10, y, 236, 1);
+            g.fillStyle = '#fde047'; g.font = '900 38px sans-serif'; g.textAlign = 'center'; g.fillText('BLOCKY', 128, 118); g.fillStyle = '#fff'; g.font = '900 30px sans-serif'; g.fillText('CUP', 128, 160);
+            g.strokeStyle = col; g.lineWidth = 6; g.strokeRect(4, 58, 248, 140);
+            return canvasTex(c);
+        }
         function mapTourney() {
-            const R = TOURNEY.pit, DY = TOURNEY.deckY, RO = 31, RW = 32.6, W = worldGroup;
+            const X = TOURNEY.pitX, Z = TOURNEY.pitZ, WH = TOURNEY.wallH, W = worldGroup;
             spawnPt = [TOURNEY.spawns[0][0], TOURNEY.spawns[0][1]];
-            const stoneD = new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#7c7263', '#564e41', [28, 2]), side: THREE.BackSide });
-            const stoneO = new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#9b8f7a', '#6f6554', [28, 6]), side: THREE.BackSide });
-            const deckM = new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#b3a88f', '#8b8068', [10, 10]) });
-            const add = (geo, mat, x, y, z, shadow) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.receiveShadow = !!shadow; W.add(m); return m; };
-            // the sand pit
-            const [sc, sg] = makeCanvas(256);
-            sg.fillStyle = '#d9c28f'; sg.fillRect(0, 0, 256, 256);
-            for (let i = 0; i < 1800; i++) { sg.fillStyle = `rgba(${120 + Math.random() * 60 | 0},${95 + Math.random() * 50 | 0},60,0.18)`; sg.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
-            sg.strokeStyle = 'rgba(120,90,40,0.5)'; sg.lineWidth = 3; for (const r of [124, 96, 30]) { sg.beginPath(); sg.arc(128, 128, r, 0, 6.3); sg.stroke(); }
-            sg.strokeStyle = 'rgba(160,30,30,0.55)'; sg.lineWidth = 5; sg.beginPath(); sg.moveTo(128, 8); sg.lineTo(128, 248); sg.stroke();
-            const pit = add(new THREE.CircleGeometry(R, 56), new THREE.MeshLambertMaterial({ map: canvasTex(sc) }), 0, 0.03, 0, true); pit.rotation.x = -Math.PI / 2;
-            // terrace: top, outer wall, inner wall
-            const top = add(new THREE.RingGeometry(R, RO, 56, 1), deckM, 0, DY, 0, true); top.rotation.x = -Math.PI / 2;
-            add(new THREE.CylinderGeometry(R, R, DY, 56, 1, true), stoneD, 0, DY / 2, 0, true);
-            add(new THREE.CylinderGeometry(RW, RW, 13, 56, 1, true), stoneO, 0, 6.5, 0, true);
-            annulusSolids(R, RO, 0, DY, 1.4, false);                                      // the terrace (solid down to the sand: the pit wall)
-            annulusSolids(RO, RW, 0, 14, 1.0, false);                                     // the outer wall
-            // railing round the pit: stone parapet + glass, collision for it (bullets and eyes pass, feet do not)
-            add(new THREE.CylinderGeometry(R + 0.35, R + 0.35, 1.1, 56, 1, true), new THREE.MeshLambertMaterial({ map: tourneyStoneTex('#8c8270', '#5d5546', [28, 1]), side: THREE.DoubleSide }), 0, DY + 0.55, 0);
-            add(new THREE.CylinderGeometry(R + 0.35, R + 0.35, 1.5, 56, 1, true), new THREE.MeshLambertMaterial({ color: 0xa6dcf5, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }), 0, DY + 1.85, 0);
-            annulusSolids(R, R + 0.8, DY, 3.2, 1.0, true);
-            // benches: three low rings on the terrace (decoration only)
-            for (const r of [23, 28.6]) { const bm = add(new THREE.CylinderGeometry(r + 0.4, r + 0.4, 0.45, 56, 1, false), new THREE.MeshLambertMaterial({ color: 0x8a6a45 }), 0, DY + 0.22, 0); bm.castShadow = false; }
-            // arches in the pit wall, banners and torches on the outer wall
-            for (const [x, z, w, d] of [[0, -R + 0.05, 3.4, 0.5], [0, R - 0.05, 3.4, 0.5], [-R + 0.05, 0, 0.5, 3.4], [R - 0.05, 0, 0.5, 3.4]]) {
-                addBlock(x, 0, z, w, 2.7, d, 'rubber', false); addBlock(x, 2.7, z, w + 0.5, 0.35, d + 0.2, 'concreteDark', false);
-            }
+            const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); W.add(m); return m; };
+            // mirrored placement helpers: both sides of x = 0 and/or z = 0
+            const mx = (fn) => { fn(1); fn(-1); };
+            const m4 = (fn) => { for (const sx of [1, -1]) for (const sz of [1, -1]) fn(sx, sz); };
+            // ---- the pit floor and walls ----
+            const fl = add(new THREE.PlaneGeometry(2 * X, 2 * Z), new THREE.MeshLambertMaterial({ map: tourneyFloorTex() }), 0, 0.02, 0); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true;
+            mx(s => { addBlock(0, 0, s * (Z + 0.5), 2 * X + 2, WH, 1, 'concreteDark'); addBlock(s * (X + 0.5), 0, 0, 1, WH, 2 * Z, 'concreteDark'); });
+            // team glow strips along the top of the walls: red half (z < 0), blue half (z > 0)
+            mx(s => {
+                const g = s < 0 ? 'glowR' : 'glowB';
+                addBlock(0, WH, s * (Z + 0.05), 2 * X, 0.14, 0.12, g, false); addBlock(0, 1.2, s * (Z - 0.03), 2 * X, 0.08, 0.06, g, false);
+                mx(sx => { addBlock(sx * (X + 0.05), WH, s * Z / 2, 0.12, 0.14, Z, g, false); addBlock(sx * (X - 0.03), 1.2, s * Z / 2, 0.06, 0.08, Z, g, false); });
+            });
+            // tunnel mouths in the end walls (behind each spawn)
+            mx(s => { addBlock(0, 0, s * (Z - 0.02), 4.4, 3.0, 0.06, 'rubber', false); addBlock(0, 3.0, s * (Z - 0.05), 5.0, 0.18, 0.1, s < 0 ? 'glowR' : 'glowB', false); });
+            // ---- spawn ends ----
+            mx(s => {
+                addBlock(0, 0, s * 19.75, 8, 0.6, 4.5, 'concrete');                                 // spawn pad
+                addBlock(0, 0.6, s * 21.7, 8, 0.06, 0.4, s < 0 ? 'accR' : 'accB', false);
+                addBlock(0, 0, s * 15.6, 6, 1.3, 0.8, 'concreteDark');                               // shield wall
+                addBlock(0, 1.3, s * 15.6 - s * 0.42, 6.0, 0.08, 0.1, s < 0 ? 'glowR' : 'glowB', false);
+                mx(sx => {
+                    addBlock(sx * 9.5, 0, s * 19.2, 2.2, 2.4, 2.2, s < 0 ? 'accR' : 'accB');       // tall corner crates + a step crate
+                    addBlock(sx * 11.3, 0, s * 18.4, 1.3, 1.2, 1.3, 'woodDark');
+                    addBlock(sx * 4.6, 0, s * 13.2, 1.2, 1.2, 1.2, 'woodDark');                      // low crate covering the pad exits
+                });
+            });
+            // ---- the middle: plinth + pillar, centre-line walls ----
+            addBlock(0, 0, 0, 7, 0.9, 7, 'concrete');
+            mx(s => { addBlock(s * 4.1, 0, 0, 1.2, 0.45, 3, 'concreteDark'); addBlock(0, 0, s * 4.1, 3, 0.45, 1.2, 'concreteDark'); });     // steps onto the plinth
+            addBlock(0, 0.9, 0, 2.2, 3.6, 2.2, 'stone'); addBlock(0, 4.5, 0, 2.6, 0.25, 2.6, 'concrete', false); addBlock(0, 4.75, 0, 1.0, 0.12, 1.0, 'glowY', false);
+            m4((sx, sz) => addBlock(sx * 2.85, 0.9, sz * 2.85, 1.2, 1.0, 1.2, 'concreteDark'));         // knee-high cover on the plinth corners
+            mx(s => addBlock(s * 8.2, 0, 0, 0.9, 1.25, 3.4, 'concreteDark'));
+            // ---- mid-field cover at three heights ----
+            m4((sx, sz) => {
+                addBlock(sx * 6.4, 0, sz * 9.2, 1.7, 4.6, 1.7, 'stone'); addBlock(sx * 6.4, 4.6, sz * 9.2, 2.1, 0.25, 2.1, 'concrete', false);   // tall pillars
+                addBlock(sx * 5.2, 0, sz * 4.8, 3.2, 1.2, 0.8, 'concreteDark');                                                              // half walls
+            });
+            // ---- the flank catwalks: 2.5 m high, stairs down at both ends, glass rail on the inside ----
+            const CY = 2.5, CW = 3, cx = X - CW / 2 - 0.05;
+            mx(sx => {
+                addBlock(sx * cx, CY - 0.3, 0, CW, 0.3, 14, 'steel');
+                addBlock(sx * (cx - CW / 2 + 0.06), CY, 0, 0.12, 1.0, 14, 'glass'); addSolid(sx * (cx - CW / 2 + 0.06), CY, 0, 0.12, 1.0, 14, true);
+                addBlock(sx * (cx - CW / 2 + 0.06), CY + 1.0, 0, 0.16, 0.08, 14, sx < 0 ? 'glowP' : 'glowC', false);
+                for (const sz of [1, -1]) {
+                    addBlock(sx * (cx - CW / 2 + 0.25), 0, sz * 6.75, 0.5, CY - 0.3, 0.5, 'post');                            // supports
+                    addBlock(sx * (cx + CW / 2 - 0.25), 0, sz * 6.75, 0.5, CY - 0.3, 0.5, 'post');
+                    for (let i = 0; i < 4; i++) addBlock(sx * cx, 0, sz * (7.45 + i * 0.9), CW, CY - 0.5 - i * 0.5, 0.9, i % 2 ? 'concrete' : 'steel');   // 2.0, 1.5, 1.0, 0.5
+                }
+                addBlock(sx * cx, 0, 0, CW - 0.6, 0.9, 1.2, 'woodDark');                                                     // something to hide behind under it
+            });
+            // ---- stands on both long sides (scenery; spectators float) ----
+            mx(sx => {
+                const tiers = [[16, 20.5, 4.6], [20.5, 25, 6.0], [25, 29.5, 7.4]];
+                for (const [a, b, top] of tiers) {
+                    addBlock(sx * (a + b) / 2, 0, 0, b - a, top, 42, 'concrete');
+                    addBlock(sx * (a + 0.9), top, 0, 0.9, 0.45, 40, sx < 0 ? 'accR' : 'accB', false);                       // bench row
+                    addBlock(sx * (a + 0.05), top - 0.12, 0, 0.1, 0.1, 42, 'glowW', false);
+                }
+                addBlock(sx * 30.6, 0, 0, 1.2, 13, 46, 'concreteDark');                                                        // back wall
+                addBlock(sx * 29.9, 12.4, 0, 0.2, 0.2, 44, 'glowY', false);
+                mx(sz => { addBlock(sx * 23, 0, sz * 21.6, 14, 9, 1.2, 'concreteDark'); addBlock(sx * 23, 9, sz * 21.6, 14.4, 0.3, 1.6, 'concrete', false); });   // stand end walls
+            });
+            // banners on the back walls (4 colours, one merged mesh each)
             const bgs = [[], [], [], []], cols = [['#b91c1c', '#7f1d1d'], ['#1d4ed8', '#1e3a8a'], ['#ca8a04', '#854d0e'], ['#6d28d9', '#4c1d95']];
-            for (let i = 0; i < 16; i++) {
-                const a = (i / 16) * Math.PI * 2 + Math.PI / 16, x = Math.cos(a) * (RO + 0.2), z = Math.sin(a) * (RO + 0.2);
-                const g = new THREE.PlaneGeometry(3.2, 5.6); g.rotateY(-a - Math.PI / 2); g.translate(x, DY + 7.4, z); bgs[i % 4].push(g);
-                // columns between the banners, torches on top
-                const ca = a + Math.PI / 16, cx = Math.cos(ca) * (RO - 0.5), cz = Math.sin(ca) * (RO - 0.5);
-                addBlock(cx, DY, cz, 1.0, 9.5, 1.0, 'concreteDark', false); addBlock(cx, DY + 9.5, cz, 1.3, 0.35, 1.3, 'concrete', false); addBlock(cx, DY + 9.85, cz, 0.55, 0.7, 0.55, 'glowY', false);
-                if (i % 2 === 0) { addBlock(cx * 0.66, DY, cz * 0.66, 0.3, 2.4, 0.3, 'post', false); addBlock(cx * 0.66, DY + 2.4, cz * 0.66, 0.6, 0.5, 0.6, 'glowY', false); }
-            }
-            bgs.forEach((list, k) => { const m = add(mergeGeometries(list, false), new THREE.MeshLambertMaterial({ map: tourneyBanner(cols[k][0], cols[k][1]), side: THREE.DoubleSide }), 0, 0, 0); list.forEach(g => g.dispose()); });
-            // cover in the pit (180 degree + mirror symmetric): 4 pillars, 4 low walls, a central dais, short fences in front of each spawn
-            for (const [x, z] of [[-8.5, -8.5], [8.5, -8.5], [-8.5, 8.5], [8.5, 8.5]]) { addBlock(x, 0, z, 1.9, 5.4, 1.9, 'stone'); addBlock(x, 5.4, z, 2.4, 0.4, 2.4, 'concrete', false); addBlock(x, 0, z, 2.3, 0.5, 2.3, 'concreteDark', false); }
-            for (const [x, z, w, d] of [[-13.5, 0, 1.0, 5], [13.5, 0, 1.0, 5], [0, -12.5, 5, 1.0], [0, 12.5, 5, 1.0]]) addBlock(x, 0, z, w, 1.25, d, 'concrete');
-            addBlock(0, 0, 0, 5.2, 0.5, 5.2, 'sand'); addBlock(0, 0.5, 0, 1.2, 1.1, 1.2, 'accY'); addBlock(0, 1.6, 0, 1.5, 0.15, 1.5, 'glowY', false);
-            for (const [x, z] of [[-5, -5], [5, -5], [-5, 5], [5, 5]]) addBlock(x, 0, z, 1.3, 0.9, 1.3, 'woodDark');
-            for (const [x, z] of [[-3, -16.5], [3, -16.5], [-3, 16.5], [3, 16.5]]) addBlock(x, 0, z, 0.5, 1.1, 0.5, 'steel');
+            let bi = 0;
+            mx(sx => { for (let z = -16; z <= 16; z += 8) { const g = new THREE.PlaneGeometry(3.4, 4.6); g.rotateY(sx > 0 ? -Math.PI / 2 : Math.PI / 2); g.translate(sx * 29.95, 10, z); bgs[bi++ % 4].push(g); } });
+            bgs.forEach((list, k) => { if (!list.length) return; add(mergeGeometries(list, false), new THREE.MeshLambertMaterial({ map: tourneyBanner(cols[k][0], cols[k][1]), side: THREE.DoubleSide }), 0, 0, 0); list.forEach(g => g.dispose()); });
+            // ---- big screens over each end ----
+            mx(s => {
+                const scr = add(new THREE.PlaneGeometry(16, 8), new THREE.MeshBasicMaterial({ map: tourneyScreenTex(s < 0 ? '#ef4444' : '#3b82f6'), toneMapped: false }), 0, 11, s * (ARENA - 0.2));
+                if (s > 0) scr.rotation.y = Math.PI;
+                addBlock(0, 6.6, s * (ARENA - 0.1), 17, 0.4, 0.4, 'steel', false); addBlock(0, 15.0, s * (ARENA - 0.1), 17, 0.4, 0.4, 'steel', false);
+                addBlock(0, 0, s * 28, 30, 3, 1.5, 'concreteDark');                                                          // end terraces
+                addBlock(0, 3, s * 27.2, 30.2, 0.1, 0.12, s < 0 ? 'glowR' : 'glowB', false);
+            });
+            // ---- lighting: two trusses across the pit with hanging floodlights ----
+            mx(sz => {
+                addBlock(0, 14, sz * 11, 2 * X + 4, 0.45, 0.45, 'steel', false);
+                addBlock(0, 14.6, sz * 11, 2 * X + 4, 0.2, 0.2, 'steel', false);
+                mx(sx => addBlock(sx * (X + 2.2), WH, sz * 11, 0.5, 14 - WH + 0.5, 0.5, 'steel', false));
+                for (const x of [-10, -3.5, 3.5, 10]) addCeilingLight(x, sz * 11, 0, 13.9, 15, false, 1.2);
+            });
+            // floodlight masts in the four corners
+            m4((sx, sz) => { addBlock(sx * 31, 0, sz * 31, 0.8, 18, 0.8, 'post', false); addBlock(sx * 31, 18, sz * 31, 3, 1.4, 0.5, 'lampHead', false); });
         }
 
         // ---- 08-edges-nav-collision.js ----
@@ -11199,7 +11254,8 @@
                 camera.position.sub(camOffset); camOffset.set(0, 0, 0);
 
 
-                if (currentGameState === 'playing' && !NET.dead) {
+                if (currentGameState === 'playing' && !NET.dead && NET.spec && tnSpecCam(delta)) { /* 5.3 tournament spectator camera */ }
+                else if (currentGameState === 'playing' && !NET.dead) {
                     updatePlayer(delta);
                     weaponTick(delta);
                     applyAimPunch(delta);
@@ -12128,7 +12184,16 @@
         const MP_MODES = {
             coop: { name: 'CO-OP', team: 10, desc: 'Survive the waves together - up to 10 players. Everyone has their own cash and armory. Downed players come back next wave.' },
             v1: { name: '1v1', team: 1 }, v2: { name: '2v2', team: 2 }, v3: { name: '3v3', team: 3 }, v4: { name: '4v4', team: 4 }, v5: { name: '5v5', team: 5 },
-            tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches from the stands. The last one standing is the champion.' }
+            // 5.3 modes (rules in 28d-mp-modes.js). ffa = everyone for themselves (each player is their own "team" in the match);
+            // teams = picked in the lobby like team deathmatch; neither = the host deals the teams out at the start (Infection)
+            ffa: { name: 'FREE-FOR-ALL', team: 10, ffa: true, rules: true, target: 20, mins: 8, desc: 'Every player for themselves, 2 to 10 players. First to 20 kills wins (or the most kills after 8 minutes).' },
+            gungame: { name: 'GUN GAME', team: 10, ffa: true, rules: true, mins: 10, desc: 'Every kill swaps your gun for the next one on the list, from the LMG down to the Katana. The first to get a kill with the Katana wins. No grenades.' },
+            kc: { name: 'KILL CONFIRMED', team: 5, teams: true, rules: true, target: 20, mins: 10, desc: 'Team deathmatch with dog tags: a kill only scores when your team picks up the tag it drops. Grab your own team\'s tags to deny the other team. First to 20 confirms wins.' },
+            ctf: { name: 'CAPTURE THE FLAG', team: 5, teams: true, rules: true, target: 3, mins: 10, desc: 'Run the enemy flag back to your own flag. Your flag has to be at home to score. Drop it when you die; touch your dropped flag to send it home. First to 3 captures wins.' },
+            koth: { name: 'KING OF THE HILL', team: 5, teams: true, rules: true, target: 90, mins: 10, desc: 'Hold the glowing hill: your team scores every second it is the only team inside. The hill moves every minute. First to 90 wins.' },
+            lts: { name: 'LAST TEAM STANDING', team: 5, teams: true, rules: true, target: 3, desc: 'No respawns: wipe out the other team to win the round. Dead players watch a teammate. First team to win 3 rounds wins.' },
+            infect: { name: 'INFECTION', team: 10, rules: true, mins: 3, desc: 'One player starts infected with a Katana. Anyone they kill joins the infected. Survivors win if anyone is still human after 3 minutes; the infected win if they get everyone.' },
+            tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches as an invisible spectator. The last one standing is the champion.' }
         };
         const PVP_TARGET = { v1: 10, v2: 15, v3: 20, v4: 25, v5: 30 };
         const TEAM_COLORS = [0xef4444, 0x3b82f6], TEAM_NAMES = ['RED', 'BLUE'];
@@ -12139,7 +12204,9 @@
         // (4 bits in the snapshot: 16 at most.) 5.0 added hidden (Vent Crawler in its vent), pounce, zap (Shocker) and Patient Zero's burrow/erupt/cast/nova
         const E_STATES = ['walk', 'windup', 'charge', 'stun', 'aim', 'slam', 'cloak', 'hidden', 'pounce', 'zap', 'burrow', 'erupt', 'cast', 'nova'];
         const r2 = (v) => Math.round(v * 100) / 100, r3 = (v) => Math.round(v * 1000) / 1000;
-        const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp && NET.mode !== 'tourney' ? ' TEAM DEATHMATCH' : '');
+        const netModeName = () => (MP_MODES[NET.mode] || MP_MODES.coop).name + (NET.pvp && /^v\d$/.test(NET.mode) ? ' TEAM DEATHMATCH' : '');
+        // 5.3: which modes pick teams in the lobby (team deathmatch and the new team modes)
+        const lobbyTeams = (mode) => /^v\d$/.test(mode) || !!(MP_MODES[mode] && MP_MODES[mode].teams);
         const escHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         // Grapevine (the launcher's account): one name in every game, players proven by their account key, and a
         // + FRIEND button that sends a real Grapevine friend request. The launcher page owns the account (window.parent.HGGrapevine);
@@ -12201,9 +12268,23 @@
             }
         }
         // clock matching: the fastest packet tells us the other computer's clock (+ as little delay as possible)
+        // 5.3: it also learns how far apart the updates arrive (gap) and how unevenly (jit), so netDelay() can show things
+        // just far enough in the past: snappy on a good link, smooth (no stutter or rubber-banding) on busy school Wi-Fi
         function clockSample(obj, remoteT, now) {
             const s = remoteT - now;
             if (obj.off === undefined || s > obj.off) obj.off = s; else obj.off -= 0.15;
+            if (obj.lastRT !== undefined && remoteT > obj.lastRT) {
+                const g = Math.min(250, remoteT - obj.lastRT);
+                obj.gap = obj.gap === undefined ? g : obj.gap * 0.9 + g * 0.1;
+                obj.jit = (obj.jit || 0) * 0.94 + Math.min(300, obj.off - s) * 0.06;
+            }
+            if (obj.lastRT === undefined || remoteT > obj.lastRT) obj.lastRT = remoteT;
+        }
+        function netDelay(src, now) {
+            if (!src || src.gap === undefined) return INTERP_MS;
+            const want = clamp(src.gap * 2.1 + (src.jit || 0) * 1.6 + 8, 55, 260);
+            src.delay = src.delay === undefined ? want : src.delay + (want - src.delay) * 0.02;      // drift slowly: no visible jumps
+            return src.delay;
         }
 
 
@@ -12367,7 +12448,7 @@
             return { id, name, team, color, peer: null, buf: new Interp([4, 5]), cur: [0, 0, 0, 0, 0, 0], w: 0, f: 0, hp: 100, alive: true, kills: 0, deaths: 0, rtt: 0,
                      tgt: { id, pos: new V3(0, -100, 0), feet: -100, local: false, alive: false }, av: null, fireT: 0, seenT: 0, walk: 0 };
         }
-        function playerColor(p) { return NET.lobby.mode === 'coop' || NET.mode === 'coop' || NET.lobby.mode === 'tourney' || NET.mode === 'tourney' ? p.color : TEAM_COLORS[p.team]; }
+        function playerColor(p) { return NET.inGame ? pcol(p) : (lobbyTeams(NET.lobby.mode) ? TEAM_COLORS[p.team & 1] : p.color); }
 
 
         // ---------- HOST: invites ----------
@@ -12410,7 +12491,8 @@
             if (inv.done) return;
             inv.done = true;
             NET.invites = NET.invites.filter(i => i !== inv);
-            const cap = NET.inGame && NET.pvp ? MP_MODES[NET.mode].team * 2 : 10;
+            const cap = Math.min(10, NET.inGame && NET.pvp ? MP_MODES[NET.mode].team * 2 : 10);
+            if (allPlayers().length >= cap) botMakeRoom();          // 5.3: a real player bumps a bot
             if (allPlayers().length >= cap) { sendRel(inv.peer, { t: 'full' }); setTimeout(() => inv.peer.pc.close(), 500); renderMP(); return; }
             const id = NET.nextId++;
             const p = makePlayer(id, 'Player ' + id, 0, COOP_COLORS[id % COOP_COLORS.length]);
@@ -12425,18 +12507,21 @@
             const p = inv.peer.player; if (p) netRemovePlayer(p.id, 'left the party');
         }
         function autoTeam(p) {
-            if (NET.lobby.mode === 'coop') return;
-            const n = [0, 0]; for (const q of allPlayers()) if (q !== p) n[q.team]++;
+            const mode = NET.inGame ? NET.mode : NET.lobby.mode;
+            if (mode === 'coop') return;
+            if (NET.inGame && MP_MODES[mode] && MP_MODES[mode].rules && !lobbyTeams(mode)) { modeLateTeam(p); return; }      // free-for-all / infection
+            const n = [0, 0]; for (const q of allPlayers()) if (q !== p) n[q.team & 1]++;
             p.team = n[0] <= n[1] ? 0 : 1;
         }
         function hostLobbyUpdate() {
             if (!NET.host) return;
-            const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null }));
+            const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null, bot: p.bot ? 1 : undefined }));
             for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
             renderMP();
         }
         function netRemovePlayer(id, why) {
             const p = netPlayers.get(id); if (!p) return;
+            if (NET.host && NET.inGame && !p.bot) netGhostSave(p);     // 5.3: rejoin within 5 minutes and you get your score back
             netPlayers.delete(id);
             if (p.av) { scene.remove(p.av.g); p.av = null; }
             try { p.peer && p.peer.pc.close(); } catch (e) {}
@@ -12496,10 +12581,20 @@
             NET.joinErr = "Couldn't connect to the host. Ask them for a NEW invite code (each one works once) and make a new reply. If it keeps failing, your networks may be blocking it - being on the same Wi-Fi helps.";
             renderMP();
         }
-        function netHostGone(msg) {
+        function netHostGone(msg, ended) {
             if (!NET.on && NET.joinState !== 'connected' && NET.joinState !== 'reply') return;
-            const wasIn = NET.inGame, via = NET.joinVia;
+            const wasIn = NET.inGame, via = NET.joinVia, code = NET.joinCode, wasConn = NET.joinState === 'connected';
             netReset();
+            // 5.3: a dropped link (not the host ending it) on a 6-digit code: try to get straight back in, up to 3 times
+            if (!ended && wasConn && via !== 'long' && /^\d{6}$/.test(code || '') && (NET.rejoinN || 0) < 3) {
+                NET.rejoinN = (NET.rejoinN || 0) + 1;
+                if (wasIn) { resetRun(); changeGameState('main'); }
+                openMP('join'); NET.joinCode = code; NET.joinState = 'connecting'; NET.homeMsg = '';
+                renderMP();
+                setTimeout(() => { if (NET.joinState === 'connecting' && !NET.on) clientJoinCode(code); }, 1200 * NET.rejoinN);
+                return;
+            }
+            NET.rejoinN = 0;
             if (wasIn) { resetRun(); changeGameState('main'); }
             openMP('home');
             // long-code invites only work once, so "type the code again" would send them nowhere
@@ -12520,7 +12615,7 @@
         }
         function netReset() {
             try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyClose && NET.host && NET.code) lp.HG_partyClose(NET.code); } catch (e) {}
-            NET.partyAt = 0; tourneyReset();
+            NET.partyAt = 0; tourneyReset(); modeReset(); botsClear();
             for (const p of netPlayers.values()) if (p.av) scene.remove(p.av.g);
             netPlayers.clear();
             for (const inv of NET.invites) try { inv.peer.pc.close(); } catch (e) {}
@@ -12550,6 +12645,8 @@
                 case 'hi': {
                     const first = p.pending;
                     p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false; p.look = cleanLook(m.look);
+                    // 5.3: the same player coming back after a drop while their old connection hasn't timed out yet: replace the old one
+                    if (first) for (const q of [...netPlayers.values()]) if (q !== p && !q.bot && q.name === p.name && q.peer && now - (q.peer.lastMsg || 0) > 3000) netRemovePlayer(q.id, 'reconnected');
                     if (GVL.on() && !p.gvn) { p.gvn = GVL.L.newChallenge(); sendRel(peer, { t: 'gvq', n: p.gvn }); }   // "prove you are your Grapevine account"
                     hostLobbyUpdate();
                     if (first && NET.inGame) hostLateJoin(p);          // jumped into a match that's already going (or rejoined after a drop)
@@ -12573,8 +12670,9 @@
                     p.buf.push(m.ct, [s[0], s[1], s[2], s[3], s[4], s[5]]);
                     p.last = s; p.w = m.w; p.f = m.f; p.hp = m.hp; p.seenT = now;
                     p.tgt.pos.set(s[0], s[1], s[2]); p.tgt.feet = s[3];
+                    if (!p.alive && (m.f & 1) && NET.pvp) p.protUntil = now + SPAWN_PROT_MS;      // 5.3: just respawned
                     p.alive = !!(m.f & 1); p.tgt.alive = p.alive && NET.inGame;
-                    if (m.s && m.s.length) { for (const seg of m.s) { NET.shotOut.push([p.id, ...seg]); netShowShot(p, seg); } }
+                    if (m.s && m.s.length) { p.protUntil = 0; for (const seg of m.s) { NET.shotOut.push([p.id, ...seg]); netShowShot(p, seg); } }
                     break;
                 }
                 case 'h': if (NET.inGame && !NET.pvp) hostApplyHits(p.id, m.l); break;
@@ -12593,7 +12691,8 @@
                     break;
                 }
                 case 'lobby': {
-                    if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
+                    NET.rejoinN = 0;
+                if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
                     if (GVL.on() && !NET.hostGvn && !NET.hostAsked) { NET.hostAsked = true; NET.hostGvn = GVL.L.newChallenge(); sendRel(NET.hostPeer, { t: 'gvq', n: NET.hostGvn }); }   // and the host proves itself to us
                     NET.id = m.you; NET.lobby = { mode: m.mode, map: m.map, diff: m.diff };
                     const seen = new Set();
@@ -12602,7 +12701,7 @@
                         if (q.id === NET.id) { NET.team = q.team; NET.color = q.color; continue; }
                         let p = netPlayers.get(q.id);
                         if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
-                        p.name = q.name; p.team = q.team; p.color = q.color; p.look = cleanLook(q.look);
+                        p.name = q.name; p.team = q.team; p.color = q.color; p.look = cleanLook(q.look); p.bot = !!q.bot;
                         if (q.id !== 0) p.gv = !!q.gv;               // the host vouches for the others; the host proves itself (gva)
                         if (q.gv && q.id !== 0 && GVL.L) GVL.L.noteMet(q.name, 'Blocky Shooter');
                     }
@@ -12613,16 +12712,18 @@
                 case 'plook': { if (m.id !== NET.id) applyPlayerLook(netPlayers.get(m.id), m.look); break; }
                 case 'full': NET.joinState = 'error'; NET.joinErr = 'That party is full or already playing.'; renderMP(); break;
                 case 'tb': tourneyApply(m); break;
+                case 'mst': modeApply(m); break;          // 5.3 mode state (flags, hill, tags, gun levels, rounds...)
+                case 'tm': modeTeamMsg(m); break;         // 5.3 someone changed team (Infection)
                 case 'tend': netShowEnd(m); break;
                 case 'start': netBeginGame(m); if (m.late) netApplyLate(m.late); break;
                 case 'pj': if (NET.inGame && m.id !== NET.id) {
                         let p = netPlayers.get(m.id);
                         if (!p) { p = makePlayer(m.id, m.name, m.team, m.color); netPlayers.set(m.id, p); }
-                        Object.assign(p, { name: m.name, team: m.team, color: m.color }); p.look = cleanLook(m.look);
+                        Object.assign(p, { name: m.name, team: m.team, color: m.color, bot: !!m.bot }); p.look = cleanLook(m.look);
                         if (!p.av) { p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
-                        netFeed(`<span style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}</span> joined the match`);
+                        netFeed(`<span style="color:${hex(pcol(p))}">${escHtml(p.name)}</span> joined the match`);
                     } break;
-                case 'bye': netHostGone(); break;
+                case 'bye': netHostGone('', true); break;
                 case 'left': netRemovePlayer(m.id, 'left the party'); break;
                 case 'pi': sendRel(NET.hostPeer, { t: 'po', ts: m.ts }); break;
                 case 'rt': for (const [id, rtt] of m.l) { const p = playerById(id); if (p) p.rtt = rtt; if (id === NET.id) NET.rtt = rtt; } break;
@@ -12827,7 +12928,7 @@
             }
         }
         function netUpdateEnemies(dt) {
-            const now = performance.now(), rt = now + (NET.hostPeer && NET.hostPeer.off !== undefined ? NET.hostPeer.off : 0) - INTERP_MS;
+            const now = performance.now(), rt = now + (NET.hostPeer && NET.hostPeer.off !== undefined ? NET.hostPeer.off : 0) - netDelay(NET.hostPeer, now);
             let stale = null;
             for (const e of enemies) {
                 const u = e.userData; if (!u.net || u.dead) continue;
@@ -12918,7 +13019,7 @@
 
         // ---------- shots you can see and hear from other players ----------
         function netRecordShot(from, to) {
-            NET.fireT = 0.12;
+            NET.fireT = 0.12; NET.protT = 0; if (NET.host && NET.me) NET.me.protUntil = 0;
             if (NET.myShots.length < 4) NET.myShots.push([r2(from.x), r2(from.y), r2(from.z), r2(to.x), r2(to.y), r2(to.z)]);
         }
         const _sa = new V3(), _sb = new V3();
@@ -12926,6 +13027,7 @@
             if (!seg || seg.length < 6) return;
             _sa.set(seg[0], seg[1], seg[2]); _sb.set(seg[3], seg[4], seg[5]);
             spawnTracer(_sa, _sb, NET.pvp && p && p.team !== NET.team ? 0xff9a8a : 0xffe9a8, 0.022, 0.09);
+            if (p && NET.mode === 'tourney' && p.spec) return;        // 5.3: spectators make no sound and show nothing
             if (p) {
                 p.fireT = 0.08;
                 const now = performance.now();
@@ -12960,7 +13062,7 @@
             netQueuePvpHit(best.id, dmg, head, false, w.id);
             showHitMarker(head, false); sfx(head ? 'head' : 'hit');
             spawnDamageNumber(pt, Math.round(dmg), head ? 'head' : '');
-            spawnParticles(pt, TEAM_COLORS[best.team], 4, 5, 0.35, 0.1, true, { grav: 20 });
+            spawnParticles(pt, pcol(best), 4, 5, 0.35, 0.1, true, { grav: 20 });
             runStats.hits++;
             return pt;
         }
@@ -12978,13 +13080,17 @@
         }
         function hostApplyPvpHits(shooter, list) {
             if (!Array.isArray(list)) return;
-            const sPos = shooter.tgt ? shooter.tgt.pos : camera.position;
+            const sPos = shooter.tgt && shooter !== NET.me ? shooter.tgt.pos : camera.position, now = performance.now();
+            if (list.length) shooter.protUntil = 0;            // 5.3: shooting someone ends your own spawn protection
             for (const [pid, dmg, head, expl, si] of list) {
                 const target = playerById(pid);
-                if (!target || target.team === shooter.team || !target.alive) continue;
+                if (!target || target.team === shooter.team || !target.alive || target.spec) continue;
+                if (target.protUntil > now) continue;          // 5.3: spawn protection (host's clock)
+                if (!modeHitOk(shooter, target)) continue;     // 5.3: e.g. Last Team Standing between rounds
                 if (NET.mode === 'tourney' && (TN.phase !== 'duel' || !tnIsDuelist(shooter.id) || !tnIsDuelist(pid) || !shooter.alive)) continue;      // 5.2: only the two duelists, only while the fight is on
                 const d = Math.min(+dmg || 0, 1500);
                 if (pid === NET.id) netPvpDamaged(d, shooter.id, head, si, [r2(sPos.x), r2(sPos.z)]);
+                else if (target.bot) botDamaged(target, d, shooter.id, si);
                 else sendRel(target.peer, { t: 'pd', a: r2(d), by: shooter.id, h: head ? 1 : 0, s: si, f: [r2(sPos.x), r2(sPos.z)] });
             }
         }
@@ -13005,7 +13111,7 @@
             cancelReload(); isMouseDown = false;
             const by = NET.pvp ? NET.lastBy : -1;
             if (NET.host) hostOnDeath(NET.id, by, NET.lastSrc); else sendRel(NET.hostPeer, { t: 'dead', by, s: NET.lastSrc });
-            if (NET.pvp) NET.respawnT = 3;
+            if (NET.pvp) { NET.respawnT = modeRespawnDelay(); NET.deathAt = performance.now(); NET.deathPos = camera.position.clone(); }
             screenFlash('rgba(0,0,0,0.6)');
             netHudDown();
             updateHUD();
@@ -13018,6 +13124,14 @@
             if (NET.mode === 'tourney') {
                 const m = { t: 'feed', k: by !== victim ? by : -1, v: victim, s: si || 0 }; netBroadcast(m); netOnFeed(m);
                 tourneyOnDeath(victim, by); return;
+            }
+            if (MP_MODES[NET.mode] && MP_MODES[NET.mode].rules) {           // 5.3 modes keep their own score
+                if (k && by !== victim) k.kills++;
+                const m = { t: 'feed', k: k && by !== victim ? by : -1, v: victim, s: si || 0 };
+                netBroadcast(m); netOnFeed(m);
+                modeHostDeath(v, k && by !== victim ? k : null, si);
+                hostSendScore();
+                return;
             }
             if (NET.pvp) {
                 if (k && by !== victim) { k.kills++; NET.score[k.team]++; }
@@ -13032,12 +13146,12 @@
             }
         }
         function hostSendScore() {
-            const m = { t: 'score', s: NET.score, k: allPlayers().map(p => [p.id, p.kills, p.deaths]) };
+            const m = { t: 'score', s: NET.score, k: allPlayers().map(p => [p.id, p.kills, p.deaths, p.pts | 0]) };
             netBroadcast(m); netOnScore(m);
         }
         function netOnScore(m) {
             NET.score = m.s;
-            for (const [id, k, d] of m.k) { const p = playerById(id); if (p) { p.kills = k; p.deaths = d; } }
+            for (const [id, k, d, pts] of m.k) { const p = playerById(id); if (p) { p.kills = k; p.deaths = d; p.pts = pts | 0; } }
         }
         function netOnFeed(m) {
             const v = playerById(m.v), k = playerById(m.k);
@@ -13046,7 +13160,8 @@
             else if (k) netFeed(`${nm(k)} <span class="text-gray-300">[${escHtml(killerName(NET_SRC[m.s] || 'explosive'))}]</span> ${nm(v)}`);
             else netFeed(`${nm(v)} <span class="text-gray-300">died</span>`);
             // their body bursts
-            if (v && v.av && v.id !== NET.id) { const P = v.av.g.position; spawnParticles(new V3(P.x, P.y + 1, P.z), NET.pvp ? TEAM_COLORS[v.team] : v.color, 12, 8, 1.1, 0.3, true, { bounce: true, spin: 12, grav: 26, jitterY: 0.8, up: 1.3 }); }
+            if (v && v.av && v.id !== NET.id) { const P = v.av.g.position; spawnParticles(new V3(P.x, P.y + 1, P.z), pcol(v), 12, 8, 1.1, 0.3, true, { bounce: true, spin: 12, grav: 26, jitterY: 0.8, up: 1.3 }); }
+            if (m.v === NET.id && NET.pvp) NET.killedBy = m.k;
             if (m.k === NET.id && m.v !== NET.id) { gainXP(25); toast(`YOU ELIMINATED ${v ? v.name.toUpperCase() : 'SOMEONE'}`, '#fca5a5', 1.6); sfx('headkill'); runStats.kills++; }
             if (v && v !== NET.me) v.alive = false;
         }
@@ -13065,6 +13180,7 @@
         }
         function netRespawn(xz, hp, feet = 0) {
             NET.dead = false; NET.me.alive = true; currentHp = hp;
+            if (NET.pvp && !NET.spec) { NET.protT = SPAWN_PROT_MS / 1000; if (NET.host) NET.me.protUntil = performance.now() + SPAWN_PROT_MS; }
             if (xz.length > 2 && !feet) feet = xz[2];
             // land on whatever is at that height (ground by default), not the top of a crane above it
             camera.position.set(xz[0], EYE_STAND, xz[1]); feetY = groundAt(xz[0], xz[1], 0.3, feet + 0.5);
@@ -13085,24 +13201,63 @@
             return best;
         }
         function netPvpRespawn() {
-            const list = NET.spawns[NET.team] || [];
-            const s = list.length ? list[Math.floor(Math.random() * list.length)] : [0, 0];
+            const s = pickSpawn(NET.team, NET.id);
+            modeLoadout();
             resetAmmo(); secondaryCooldown = 0; cancelReload();
             netRespawn(s, maxHp);
-            NET.lastBy = -1;
-            camera.quaternion.setFromEuler(new THREE.Euler(0, NET.team ? 0 : Math.PI, 0, 'YXZ'));
+            NET.lastBy = -1; NET.killedBy = undefined;
+            updateGunModel();
+            // face the middle of the map
+            camera.quaternion.setFromEuler(new THREE.Euler(0, Math.atan2(s[0], s[1]), 0, 'YXZ'));
+        }
+        // 5.3 safe spawns: of the spawn points open to you, take one of the three furthest from every living enemy
+        // (so nobody respawns in front of a gun); ties broken at random
+        const SPAWN_PROT_MS = 2500;
+        function spawnList(team) { return isFfaMode() ? NET.spawns[0].concat(NET.spawns[1]) : (NET.spawns[team & 1] || []); }
+        function pickSpawn(team, id) {
+            const list = spawnList(team);
+            if (!list.length) return [0, 0];
+            const foes = [];
+            for (const q of allPlayers()) { if (q.id === id || q.team === team || !q.alive || q.spec) continue; const P = netPosOf(q); if (P) foes.push(P); }
+            if (!foes.length) return list[Math.floor(Math.random() * list.length)];
+            const scored = list.map(s => { let d = 1e9; for (const f of foes) d = Math.min(d, (f.x - s[0]) ** 2 + (f.z - s[1]) ** 2); return [s, d + Math.random() * 30]; }).sort((a, b) => b[1] - a[1]);
+            return scored[Math.floor(Math.random() * Math.min(3, scored.length))][0];
+        }
+        // where someone is right now (feet position) - the host knows everyone, guests use what they see
+        function netPosOf(q) {
+            if (!q) return null;
+            if (q.id === NET.id) return { x: camera.position.x, y: feetY, z: camera.position.z };
+            if (q.bot && q.bot.x !== undefined && NET.host) return { x: q.bot.x, y: q.bot.feet, z: q.bot.z };
+            if (NET.host && q.last) return { x: q.last[0], y: q.last[3], z: q.last[2] };
+            if (q.av) return { x: q.av.g.position.x, y: q.av.g.position.y, z: q.av.g.position.z };
+            return null;
         }
         const _spec = new V3();
+        const _kq = new THREE.Quaternion(), _km = new THREE.Matrix4();
         function netSpectate(dt) {
-            if (NET.pvp) return;       // PvP: short death cam, you respawn in 3s
+            if (NET.pvp && NET.mode === 'tourney') return;
+            if (NET.pvp && NET.mode !== 'lts') {
+                // 5.3 kill cam: stay where you fell and turn to look at whoever got you
+                const k = NET.killedBy >= 0 ? playerById(NET.killedBy) : null;
+                if (k && k.av && k.id !== NET.id && k.av.g.visible) {
+                    const P = k.av.g.position;
+                    if (NET.deathPos) camera.position.lerp(_spec.set(NET.deathPos.x, NET.deathPos.y + 0.8, NET.deathPos.z), 1 - Math.exp(-3 * dt));
+                    _km.lookAt(camera.position, _spec.set(P.x, P.y + 1.5, P.z), camera.up); _kq.setFromRotationMatrix(_km);
+                    camera.quaternion.slerp(_kq, 1 - Math.exp(-5 * dt));
+                }
+                return;
+            }
             let t = null;
-            for (const p of netPlayers.values()) if (p.alive && p.av && p.av.g.visible) { t = p; break; }
+            // Last Team Standing: watch a teammate who is still standing (the first one, or the one you clicked to)
+            const list = [...netPlayers.values()].filter(p => p.alive && p.av && p.av.g.visible && (!NET.pvp || p.team === NET.team));
+            if (list.length) t = list[((NET.specIdx | 0) % list.length + list.length) % list.length];
             if (!t) return;
             const P = t.av.g.position, yaw = t.cur[4];
             _spec.set(P.x + Math.sin(yaw) * 4.5, P.y + 3.2, P.z + Math.cos(yaw) * 4.5);
             camera.position.lerp(_spec, 1 - Math.exp(-6 * dt));
             camera.lookAt(P.x, P.y + 1.6, P.z);
-            ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">YOU'RE DOWN</div><div class="text-lg font-bold text-gray-200">Watching <span style="color:${hex(t.color)}">${escHtml(t.name)}</span> - you'll be back next wave</div>`;
+            ui.netDown.innerHTML = NET.pvp ? `<div class="text-4xl font-black text-red-400">ELIMINATED</div><div class="text-lg font-bold text-gray-200">Watching <span style="color:${hex(pcol(t))}">${escHtml(t.name)}</span> - back next round${list.length > 1 ? ' (click: next teammate)' : ''}</div>`
+                : `<div class="text-4xl font-black text-red-400">YOU'RE DOWN</div><div class="text-lg font-bold text-gray-200">Watching <span style="color:${hex(t.color)}">${escHtml(t.name)}</span> - you'll be back next wave</div>`;
         }
 
 
@@ -13117,24 +13272,30 @@
             const tz = mode === 'tourney';
             const map = tz ? 'tourney' : L.map === 'random' ? maps[Math.floor(Math.random() * maps.length)] : L.map;
             const themeIds = Object.keys(THEMES);
-            const cfg = { t: 'start', seed: Math.floor(Math.random() * 1e9), map, theme: tz ? (Math.random() < 0.5 ? 'day' : 'sunset') : themeIds[Math.floor(Math.random() * themeIds.length)], mode, diff: L.diff,
-                          players: allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, look: lookOf(p) || null })) };
+            for (const p of allPlayers()) p.lobbyTeam = p.team;          // 5.3: put back after the match (free-for-all / infection deal their own)
+            modeDealTeams(mode);
+            const cfg = { t: 'start', seed: Math.floor(Math.random() * 1e9), map, theme: tz ? (Math.random() < 0.5 ? 'night' : 'sunset') : themeIds[Math.floor(Math.random() * themeIds.length)], mode, diff: L.diff,
+                          players: allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, look: lookOf(p) || null, bot: p.bot ? 1 : undefined })) };
             for (const p of netPlayers.values()) p.pending = false;
             NET.cfg = cfg;
             netBroadcast(cfg);
             netBeginGame(cfg);
             if (tz) tourneyHostStart(cfg);
+            if (MP_MODES[mode].rules) modeHostStart(cfg);
+            if (mode !== 'coop') botsMatchStart();
         }
         function hostLateJoin(p) {
             if (!NET.cfg) return;
-            autoTeam(p);
-            p.kills = 0; p.deaths = 0; p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
-            const players = allPlayers().map(q => ({ id: q.id, name: q.name, team: q.team, color: q.color, look: lookOf(q) || null }));
+            p.kills = 0; p.deaths = 0; p.pts = 0; p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
+            if (!netGhostLoad(p)) autoTeam(p);           // 5.3: back after a drop = same team and score as before
+            if (NET.mode === 'lts') p.alive = false;      // sits out until the next round
+            const players = allPlayers().map(q => ({ id: q.id, name: q.name, team: q.team, color: q.color, look: lookOf(q) || null, bot: q.bot ? 1 : undefined }));
             sendRel(p.peer, Object.assign({}, NET.cfg, { players, late: { level: playerStats.level, wave: waveActive, inter: intermission, score: NET.score, kd: allPlayers().map(q => [q.id, q.kills, q.deaths]) } }));
             if (NET.mode === 'tourney') { p.spec = true; if (TN.on) { TN.names[p.id] = p.name; sendRel(p.peer, tourneySnapshot(Math.max(0, (TN.until - performance.now()) / 1000), TN.phase, TN.phaseId)); } }
             netBroadcast({ t: 'pj', id: p.id, name: p.name, team: p.team, color: p.color, look: p.look || null }, p.id);
+            if (MP_MODES[NET.mode].rules) { sendRel(p.peer, modeSnapshot()); hostSendScore(); }
             if (!p.av) { p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
-            netFeed(`<span style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}</span> joined the match`);
+            netFeed(`<span style="color:${hex(pcol(p))}">${escHtml(p.name)}</span> joined the match`);
         }
         // a guest who joined mid-match catches up with the wave / score
         function netApplyLate(L) {
@@ -13144,32 +13305,34 @@
                 if (waveActive) scheduleSupply();
             } else NET.score = L.score || [0, 0];
             for (const [id, k, d] of L.kd || []) { const q = playerById(id); if (q) { q.kills = k; q.deaths = d; } }
+            if (NET.pvp && NET.mode === 'lts' && MD.phase === 'live') netSitOut();      // 5.3: wait for the next round
             toast('Joined a match in progress!', '#c4b5fd', 2.2);
             updateHUD();
         }
         function startProblem() {
             const mode = NET.lobby.mode, all = allPlayers();
             if (mode === 'coop') return all.length > 10 ? 'Co-op is capped at 10 players.' : '';
-            if (mode === 'tourney') return all.length < 4 ? `A tournament needs 4 to 8 players (you have ${all.length}).` : all.length > 8 ? 'A tournament is limited to 8 players.' : '';
+            if (mode === 'tourney') return all.length < 4 ? `A tournament needs 4 to 8 players (you have ${all.length}). Add bots to fill it up.` : all.length > 8 ? 'A tournament is limited to 8 players.' : '';
+            if (!lobbyTeams(mode)) return all.length < 2 ? `${MP_MODES[mode].name} needs at least 2 players - add a bot or invite a friend.` : all.length > 10 ? 'At most 10 players.' : '';
             const size = MP_MODES[mode].team, n = [0, 0];
             for (const p of all) n[p.team]++;
-            if (all.length < 2) return 'You need at least one other player for ' + MP_MODES[mode].name + '.';
+            if (all.length < 2) return 'You need at least one other player (or a bot) for ' + MP_MODES[mode].name + '.';
             if (n[0] > size || n[1] > size) return `Too many on one team for ${MP_MODES[mode].name} (max ${size} each). Click a player to move them.`;
             if (!n[0] || !n[1]) return 'Both teams need at least one player. Click a player to move them.';
             return '';
         }
         function netBeginGame(cfg) {
             NET.inGame = true; NET.mode = cfg.mode; NET.pvp = cfg.mode !== 'coop'; NET.dead = false; NET.over = false;
-            NET.score = [0, 0]; NET.target = PVP_TARGET[cfg.mode] || 0; NET.feed = []; NET.feedDirty = true; NET.slowT = 0;
+            NET.score = [0, 0]; NET.target = PVP_TARGET[cfg.mode] || MP_MODES[cfg.mode].target || 0; NET.feed = []; NET.feedDirty = true; NET.slowT = 0; NET.protT = 0; NET.killedBy = undefined; NET.specIdx = 0;
             // everybody in the match
             for (const q of cfg.players) {
                 if (q.id === NET.id) { NET.team = q.team; NET.color = q.color; continue; }
                 let p = netPlayers.get(q.id);
                 if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
-                Object.assign(p, { name: q.name, team: q.team, color: q.color, kills: 0, deaths: 0, alive: true, f: 1, fireT: 0 }); if (q.look) p.look = cleanLook(q.look);
+                Object.assign(p, { name: q.name, team: q.team, color: q.color, kills: 0, deaths: 0, pts: 0, alive: true, f: 1, fireT: 0, protUntil: 0, bot: p.bot || !!q.bot }); if (q.look) p.look = cleanLook(q.look);
                 p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
             }
-            NET.me = { id: NET.id, name: NET.name, team: NET.team, color: NET.color || COOP_COLORS[0], kills: 0, deaths: 0, alive: true, rtt: 0 };
+            NET.me = { id: NET.id, name: NET.name, team: NET.team, color: NET.color || COOP_COLORS[0], kills: 0, deaths: 0, pts: 0, alive: true, rtt: 0 };
             // a fresh run on the same map as everyone else
             resetRun(); needsNewWorld = false;
             run = { mode: 'classic', map: cfg.map, diff: cfg.diff || 'normal' };
@@ -13177,9 +13340,9 @@
             netEnemySeq = 0; enemyById.clear(); NET.deadIds.clear();
             applyTheme(cfg.theme); buildWorld(cfg.map, cfg.seed);
             for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
+            if (MP_MODES[cfg.mode].rules) modeBegin(cfg); else modeReset();
             if (NET.pvp) {
-                playerStats.weapons = WEAPON_ORDER.slice(); playerStats.currentWeapon = 'ar';
-                playerStats.secondaries = ['grenade']; playerStats.currentSecondary = 'grenade';
+                maxHp = 100; modeLoadout(true);
                 resetAmmo();
                 if (cfg.mode === 'tourney') { NET.spawns = [[TOURNEY.spawns[0]], [TOURNEY.spawns[1]]]; tourneyInit(cfg); for (const p of netPlayers.values()) p.spec = true; tourneyGoSeat(); }
                 else { pickTeamSpawns(cfg.seed); netPvpRespawn(); }
@@ -13193,7 +13356,7 @@
             netHud(true);
             changeGameState('playing');
             if (NET.host) startHiddenTicker();
-            toast(cfg.mode === 'tourney' ? 'TOURNAMENT - win your duels to become champion' : NET.pvp ? `${MP_MODES[cfg.mode].name} TEAM DEATHMATCH - first team to ${NET.target} wins` : 'CO-OP - first wave in a few seconds', '#c4b5fd', 3);
+            toast(cfg.mode === 'tourney' ? 'TOURNAMENT - win your duels to become champion' : MP_MODES[cfg.mode].rules ? modeIntro() : NET.pvp ? `${MP_MODES[cfg.mode].name} TEAM DEATHMATCH - first team to ${NET.target} wins` : 'CO-OP - first wave in a few seconds', '#c4b5fd', 3);
         }
         function pickTeamSpawns(seed) {
             const rnd = mulberry32(seed + 7);
@@ -13218,6 +13381,13 @@
                 }
                 if (!NET.spawns[team].length) NET.spawns[team].push([0, zc * 0.8]);
             }
+            // 5.3 free-for-all: spawn points all over the map, not just at the two ends
+            if (isFfaMode()) for (let tries = 0, k = 0; tries < 600 && k < 10; tries++) {
+                const x = (rnd() * 2 - 1) * ARENA * 0.7, z = (rnd() * 2 - 1) * ARENA * 0.45;
+                const n = navNodeAt(x, z, 0.2);
+                if (n < 0 || nav.Y[n] > 0.1 || nav.ceil[n] < 5 || pointInSolid(new V3(x, 1, z), 1.2)) continue;
+                NET.spawns[k++ & 1].push([x, z]);
+            }
         }
         function netShowEnd(m) {
             if (!NET.inGame) return;
@@ -13227,20 +13397,26 @@
             let title, line;
             if (m.t === 'tend') {
                 title = 'CHAMPION'; line = `${tnName(m.champ)} wins the tournament`;
+            } else if (m.t === 'end' && m.wid !== undefined) {          // 5.3 free-for-all / gun game: one winner
+                const w = playerById(m.wid);
+                title = m.wid === NET.id ? 'VICTORY' : 'DEFEAT'; line = m.line ? String(m.line).slice(0, 90) : `${w ? w.name : '?'} WINS`;
             } else if (m.t === 'end') {
                 const won = m.win === NET.team;
-                title = won ? 'VICTORY' : 'DEFEAT'; line = `${TEAM_NAMES[m.win]} TEAM WINS  ${m.score[0]} - ${m.score[1]}`;
+                title = m.win < 0 ? 'DRAW' : won ? 'VICTORY' : 'DEFEAT'; line = m.line ? String(m.line).slice(0, 90) : `${TEAM_NAMES[m.win]} TEAM WINS  ${m.score[0]} - ${m.score[1]}`;
             } else { title = 'SQUAD WIPED'; line = `Your squad made it to wave ${playerStats.level}`; }
             h.textContent = title; sub.textContent = line;
             $('gameover-stats').textContent = 'Back to the party lobby in a few seconds...';
-            $('gameover-grid').innerHTML = allPlayers().sort((a, b) => b.kills - a.kills).map(p => `<div class="stat"><div class="v" style="color:${hex(NET.pvp ? TEAM_COLORS[p.team] : p.color)}">${escHtml(p.name)}</div><div class="k">${NET.pvp ? `${p.kills} KILLS - ${p.deaths} DEATHS` : `${p.deaths} TIMES DOWNED`}</div></div>`).join('');
+            const mvp = NET.pvp ? allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills || a.deaths - b.deaths)[0] : null;
+            $('gameover-grid').innerHTML = allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills).map(p => `<div class="stat"><div class="v" style="color:${hex(pcol(p))}">${p === mvp ? '&#9733; ' : ''}${escHtml(p.name)}${p.bot ? ' <span style="font-size:10px;color:#9ca3af">BOT</span>' : ''}</div><div class="k">${NET.pvp ? `${p.kills} KILLS - ${p.deaths} DEATHS${modeStatLine(p)}${p === mvp ? ' - MVP' : ''}` : `${p.deaths} TIMES DOWNED`}</div></div>`).join('');
             $('gameover-xp').innerHTML = `<div class="text-green-300 font-black">+${runXP} XP</div>`;
             ui.btnRespawn.classList.add('hidden'); $('btn-go-continue').classList.add('hidden'); $('btn-go-menu').textContent = 'LEAVE PARTY';
             changeGameState('gameover');
             setTimeout(() => { if (NET.on && !NET.inGame) netBackToLobby(); }, 7000);
         }
         function netBackToLobby() {
-            tourneyReset();
+            tourneyReset(); modeReset();
+            for (const p of allPlayers()) { if (p.lobbyTeam !== undefined) p.team = p.lobbyTeam; p.pts = 0; }
+            if (NET.me) NET.team = NET.me.team; maxHp = 100;
             for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = null; p.tgt.alive = false; p.tgt.feet = -100; }
             h2Reset();
             resetRun();
@@ -13279,12 +13455,16 @@
                 netUpdateAvatars(dt);
                 if (TN.on) tourneyTick(dt);
                 if (NET.fireT > 0) NET.fireT -= dt;
-                if (NET.pvp && NET.dead && NET.mode === 'tourney') {
+                if (NET.host && NET.pvp) botsTick(dt);          // 5.3
+                if (MD.on) modeTick(dt);
+                if (NET.protT > 0) NET.protT -= dt;
+                if (NET.pvp && NET.dead && NET.mode === 'lts') { /* netSpectate writes the banner */ }
+                else if (NET.pvp && NET.dead && NET.mode === 'tourney') {
                     ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">ELIMINATED</div><div class="text-lg font-bold text-gray-200">Watch the rest of the tournament from the stands</div>`;
                 } else if (NET.pvp && NET.dead) {
                     NET.respawnT -= dt;
                     const k = playerById(NET.lastBy);
-                    ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">ELIMINATED</div><div class="text-lg font-bold text-gray-200">${k && k.id !== NET.id ? 'by <span style="color:' + hex(TEAM_COLORS[k.team]) + '">' + escHtml(k.name) + '</span> - ' : ''}back in ${Math.max(0, Math.ceil(NET.respawnT))}</div>`;
+                    ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">ELIMINATED</div><div class="text-lg font-bold text-gray-200">${k && k.id !== NET.id ? 'by <span style="color:' + hex(pcol(k)) + '">' + escHtml(k.name) + '</span>' + (k.alive ? ` <span class="text-gray-400">(${Math.max(1, Math.round(k.id === NET.id ? currentHp : k.hp))} HP left)</span>` : '') + ' - ' : ''}back in ${Math.max(0, Math.ceil(NET.respawnT))}</div>${NET.mode === 'infect' && NET.team === 1 ? '<div class="text-lg font-black text-lime-300">YOU ARE INFECTED</div>' : ''}`;
                     if (NET.respawnT <= 0) netPvpRespawn();
                 }
                 // hits happen every frame; send them right away so the host hears about them fast
@@ -13318,14 +13498,14 @@
             for (const p of netPlayers.values()) sendRel(p.peer, { t: 'pi', ts: now });
             netBroadcast({ t: 'rt', l: [...netPlayers.values()].map(p => [p.id, Math.round(p.rtt)]) });
             // the launcher lists an open party (same Wi-Fi, or everyone): every 30 s while there is room
-            if (now - (NET.partyAt || 0) > 30000) { NET.partyAt = now; try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyOpen && /^\d{6}$/.test(NET.code || '') && allPlayers().length < 10)
-              lp.HG_partyOpen({ game: 'blocky', code: NET.code, n: allPlayers().length, max: 10, mode: (MP_MODES[NET.lobby.mode] || {}).name || NET.lobby.mode }); } catch (e) {} }
+            if (now - (NET.partyAt || 0) > 30000) { NET.partyAt = now; try { const lp = window.parent; if (lp && lp !== window && lp.HG_partyOpen && /^\d{6}$/.test(NET.code || '') && allPlayers().filter(q => !q.bot).length < 10)
+              lp.HG_partyOpen({ game: 'blocky', code: NET.code, n: allPlayers().filter(q => !q.bot).length, max: 10, mode: ((MP_MODES[NET.inGame ? NET.mode : NET.lobby.mode] || {}).name || NET.lobby.mode) + (NET.inGame ? ' (playing)' : '') }); } catch (e) {} }
             if (!NET.inGame && !document.hidden) renderMPPlayers();
         }
         function myState() {
             _eul.setFromQuaternion(camera.quaternion);
             const alive = currentHp > 0 && !NET.dead && !NET.spec;
-            const f = (alive ? 1 : 0) | (aimHeld ? 2 : 0) | (NET.fireT > 0 ? 4 : 0) | (slideT > 0 ? 8 : 0) | (isReloading ? 16 : 0) | (currentGameState !== 'playing' ? 32 : 0);
+            const f = (alive ? 1 : 0) | (aimHeld ? 2 : 0) | (NET.fireT > 0 ? 4 : 0) | (slideT > 0 ? 8 : 0) | (isReloading ? 16 : 0) | (currentGameState !== 'playing' ? 32 : 0) | (NET.protT > 0 ? 64 : 0);
             return { p: [r2(camera.position.x), r2(camera.position.y), r2(camera.position.z), r2(feetY), r3(_eul.y), r3(_eul.x)], w: Math.max(0, WEAPON_ORDER.indexOf(playerStats.currentWeapon)), f, hp: Math.max(0, Math.ceil(currentHp)) };
         }
         function clientSend(now) {
@@ -13640,7 +13820,7 @@
         const _flashGeo = new THREE.BoxGeometry(0.16, 0.16, 0.1);
         const _avUp = new V3(0, 0, 1), _avD = new V3(), _avQ = new THREE.Quaternion();
 
-        function pcol(p) { return NET.mode === 'tourney' ? (p.spec ? p.color : TEAM_COLORS[p.team]) : (NET.pvp ? TEAM_COLORS[p.team] : p.color); }
+        function pcol(p) { return NET.mode === 'tourney' ? (p.spec ? p.color : TEAM_COLORS[p.team & 1]) : !NET.pvp || isFfaMode() ? p.color : modeTeamCol(p.team); }
         function makeAvatar(p) {
             const col = pcol(p), l = lookOf(p) || null, ge = avGeos(l && l.av), mat = lookMat(l && l.sk, col);
             const g = new THREE.Group(), hip = new THREE.Group(), inner = new THREE.Group();
@@ -13671,7 +13851,7 @@
             for (const p of netPlayers.values()) {
                 if (!p.av) continue;
                 const src = NET.host ? p.peer : NET.hostPeer;
-                const rt = now + (src && src.off !== undefined ? src.off : 0) - INTERP_MS;
+                const rt = now + (src && src.off !== undefined ? src.off : 0) - (p.bot && NET.host ? 40 : netDelay(src, now));
                 const a = p.av;
                 let pitch = 0;
                 if (p.buf.sample(rt, p.cur)) {
@@ -13695,14 +13875,11 @@
                     a.w = p.w; const id = WEAPON_ORDER[p.w] || 'ar', geo = weaponAsset(id);
                     a.gun.geometry = geo; a.fore = geo.userData.fore; a.melee = geo.userData.melee; a.flash.position.set(0, 0.04, geo.userData.mz - 0.05);
                 }
+                // 5.3: tournament spectators are invisible to everyone: no body, name tag, gun, shadow or sound, and nothing to hit
                 const spec = tz && p.spec;
-                a.wp.visible = !spec;
                 const kick = p.fireT > 0 ? p.fireT / 0.08 : 0;
-                if (spec) {         // audience: arms down by the sides, clapping now and then
-                    const cl = Math.max(0, Math.sin(gameTime * 3 + p.id)) * 0.25;
-                    a.aim.rotation.x = 0; a.aim.position.y = 1.4;
-                    pointArm(a.armR, SH_R, _t1.set(0.3, -0.5 + cl, -0.12 - cl)); pointArm(a.armL, SH_L, _t2.set(-0.3, -0.5 + cl, -0.12 - cl));
-                } else {
+                if (spec) { a.g.visible = false; if (p.fireT > 0) p.fireT -= dt; continue; }
+                {
                     a.aim.position.y = 1.4;
                     a.aim.rotation.x = pitch * 0.85 - 0.32 * (1 - a.aimK) - 0.35 * a.slK;
                     const sway = Math.sin(a.phase * 0.5) * 0.012 * walk;
@@ -13717,7 +13894,7 @@
                 }
                 a.g.scale.y = 1;
                 // in PvP dead players vanish (burst of blocks); in co-op a downed player lies on the floor; tournament audience stays in the stands
-                if (NET.pvp) a.g.visible = alive || !!spec;
+                if (NET.pvp) a.g.visible = alive && !((f & 64) && Math.floor(now / 110) % 3 === 0);       // 5.3: spawn-protected players flicker
                 else { a.g.visible = true; a.g.rotation.x = alive ? 0 : -1.4; }
                 if (p.fireT > 0) p.fireT -= dt;
                 // host: remote positions also drive the enemy AI, blocked when they've gone quiet
@@ -13729,6 +13906,253 @@
         setInterval(() => { try { updateMyLook(); } catch (e) {} }, 2500);
         setInterval(() => { try { refreshStanding(); } catch (e) {} }, 60000);
         setTimeout(() => { try { updateMyLook(); refreshStanding(); } catch (e) {} }, 400);
+
+        // ---- 27c-mp-bots.js ----
+        // ---------- 5.3 BOTS: computer players for every PvP mode (host only) ----------
+        // A bot is an ordinary player record with no connection. The host runs it like the zombies: it walks the nav grid,
+        // looks for enemies it can actually see, and shoots with a skill-based chance to hit. Its position goes out in the normal
+        // player snapshot, its shots in the shot list and its hits through hostApplyPvpHits, so guests see and fight a bot exactly
+        // like a person and need no bot code at all.
+        const BOT_NAMES = ['Blocko', 'Cubert', 'Pixel', 'Brick', 'Voxel', 'Chunk', 'Tetra', 'Boxy', 'Nugget', 'Dice', 'Cobble', 'Slab', 'Pebble', 'Crate'];
+        const BOT_SKILL = { easy: { acc: 0.32, react: 0.8, dmg: 0.5, speed: 0.82 }, normal: { acc: 0.5, react: 0.5, dmg: 0.72, speed: 0.92 }, hard: { acc: 0.7, react: 0.28, dmg: 0.92, speed: 1 } };
+        const BOT_GUNS = ['ar', 'smg', 'shotgun', 'burst', 'lmg', 'dmr', 'carbine', 'ar'];
+        const botSkill = () => BOT_SKILL[settings.mpBotSkill] ? settings.mpBotSkill : 'normal';
+        const isBot = (p) => !!(p && p.bot && typeof p.bot === 'object');
+        function botCap() { const m = NET.lobby.mode; return m === 'tourney' ? 8 : lobbyTeams(m) ? Math.min(10, MP_MODES[m].team * 2) : 10; }
+        function botAdd() {
+            if (!NET.host || NET.inGame || allPlayers().length >= botCap()) return false;
+            const used = new Set(allPlayers().map(p => p.name));
+            const nm = BOT_NAMES.find(n => !used.has('BOT ' + n)) || ('Bot' + (NET.botSeq | 0));
+            NET.botSeq = Math.max(100, NET.botSeq | 0);
+            const id = NET.botSeq++;
+            const p = makePlayer(id, 'BOT ' + nm, 0, COOP_COLORS[(id * 3 + 1) % COOP_COLORS.length]);
+            p.bot = { skill: botSkill(), gun: BOT_GUNS[id % BOT_GUNS.length] };
+            netPlayers.set(id, p);
+            autoTeam(p);
+            return true;
+        }
+        function botFill() { let n = 0; const want = NET.lobby.mode === 'tourney' ? 8 : lobbyTeams(NET.lobby.mode) ? botCap() : 6; while (allPlayers().length < want && botAdd() && n++ < 10); }
+        function botMakeRoom() { for (const p of netPlayers.values()) if (isBot(p)) { netRemovePlayer(p.id, 'made room'); return true; } return false; }
+        function botsClear() { NET.botSeq = 100; }
+        function teamsShuffle() {       // 5.3 balanced teams: shuffle, then deal out alternately (so 3 bots don't all land on one side)
+            const all = allPlayers().slice().sort(() => Math.random() - 0.5);
+            all.forEach((p, i) => { p.team = i & 1; });
+        }
+
+        // ----- match lifecycle -----
+        function botsMatchStart() {
+            for (const p of netPlayers.values()) {
+                if (!isBot(p)) continue;
+                const b = p.bot;
+                Object.assign(b, { x: 0, z: 0, feet: -100, vy: 0, yaw: 0, pitch: 0, hp: 100, path: null, pathT: 0, goal: null, tgt: -1, seeT: 0, aimT: 0, fireCd: 0, fireT: 0, ammo: 0, reloadT: 0,
+                                   thinkT: Math.random() * 0.3, strafe: Math.random() < 0.5 ? 1 : -1, strafeT: 0, stuckT: 0, lx: 0, lz: 0, respawnT: 0, onGround: true, wander: null });
+                p.alive = false; p.spec = NET.mode === 'tourney';
+                if (NET.mode !== 'tourney') botRespawn(p);
+                else botPark(p);
+            }
+        }
+        function botPark(p) {        // tournament spectator: invisible, out of the way, not alive
+            const b = p.bot, [x, z, y] = tourneySeat(tourneySeatIndex(p.id), 8);
+            b.x = x; b.z = z; b.feet = y || 0; b.vy = 0; p.alive = false; b.path = null;
+            botWrite(p, performance.now());
+        }
+        function botRespawn(p, at) {
+            const b = p.bot, now = performance.now();
+            const s = at || pickSpawn(p.team, p.id);
+            b.x = s[0]; b.z = s[1]; b.feet = groundAt(s[0], s[1], 0.3, (s[2] || 0) + 0.5); b.vy = 0; b.onGround = true;
+            b.hp = modeMaxHp(p.team); p.hp = b.hp; p.alive = true; p.spec = false;
+            b.w = modeBotWeapon(p); const W0 = weaponsDb[b.w] || weaponsDb.ar; b.ammo = W0.magSize; b.reloadT = 0; b.fireCd = 0.4;
+            b.path = null; b.pathT = 0; b.tgt = -1; b.aimT = 0; b.yaw = Math.atan2(b.x, b.z); b.pitch = 0; b.stuckT = 0; b.lx = b.x; b.lz = b.z;
+            p.protUntil = now + SPAWN_PROT_MS;
+            p.buf.clear(); botWrite(p, now);
+        }
+        function botDamaged(p, d, by, si) {
+            if (!isBot(p) || !p.alive) return;
+            const b = p.bot;
+            b.hp -= d; p.hp = Math.max(0, Math.ceil(b.hp));
+            if (b.tgt < 0 && by !== p.id) { b.tgt = by; b.aimT = BOT_SKILL[b.skill].react * 0.8; }     // turn on whoever shot it
+            if (b.hp <= 0) {
+                p.alive = false; p.hp = 0; b.respawnT = modeRespawnDelay(p.team);
+                botWrite(p, performance.now());
+                hostOnDeath(p.id, by, si);
+            }
+        }
+
+        // ----- path finding: a plain breadth-first search over the same nav grid the zombies use -----
+        let _bfsPrev = null, _bfsMark = null, _bfsQ = null, _bfsStamp = 0;
+        function botPath(x, z, feet, gx, gz, gy) {
+            if (!nav || !nav.Y.length) return null;
+            const n0 = navNear(x, z, feet + 0.3), n1 = navNear(gx, gz, (gy || 0) + 0.3);
+            if (n0 < 0 || n1 < 0) return null;
+            const L = nav.Y.length;
+            if (!_bfsPrev || _bfsPrev.length !== L) { _bfsPrev = new Int32Array(L); _bfsMark = new Uint32Array(L); _bfsQ = new Int32Array(L); _bfsStamp = 0; }
+            const st = ++_bfsStamp, { N, start, cell } = nav;
+            let h = 0, t = 0, found = n0 === n1;
+            _bfsQ[t++] = n0; _bfsMark[n0] = st; _bfsPrev[n0] = -1;
+            while (h < t && !found) {
+                const n = _bfsQ[h++], c = cell[n], ci = c % N, cj = (c - ci) / N;
+                for (let k = 0; k < 4 && !found; k++) {
+                    const ni = ci + DX4[k], nj = cj + DZ4[k];
+                    if (ni < 0 || nj < 0 || ni >= N || nj >= N) continue;
+                    const cn = nj * N + ni;
+                    for (let m = start[cn]; m < start[cn + 1]; m++) {
+                        if (_bfsMark[m] === st || !navEdge(n, k, m)) continue;
+                        _bfsMark[m] = st; _bfsPrev[m] = n; _bfsQ[t++] = m;
+                        if (m === n1) { found = true; break; }
+                    }
+                }
+            }
+            if (!found) return null;
+            const path = [];
+            for (let n = n1; n !== -1 && n !== n0 && path.length < 400; n = _bfsPrev[n]) path.push(n);
+            return path.reverse();
+        }
+        const nodeX = (n) => -nav.A + nav.cell[n] % nav.N + 0.5, nodeZ = (n) => { const c = nav.cell[n]; return -nav.A + (c - c % nav.N) / nav.N + 0.5; };
+
+        // ----- per frame -----
+        function botsTick(dt) {
+            const now = performance.now();
+            for (const p of netPlayers.values()) if (isBot(p) && p.bot.feet !== undefined) botThink(p, dt, now);
+        }
+        function botEnemyOk(p, q) {
+            if (!q || q === p || !q.alive || q.spec || q.team === p.team) return false;
+            if (NET.mode === 'tourney' && !(tnIsDuelist(q.id) && tnIsDuelist(p.id))) return false;
+            return true;
+        }
+        function botThink(p, dt, now) {
+            const b = p.bot, S = BOT_SKILL[b.skill] || BOT_SKILL.normal;
+            if (b.fireT > 0) b.fireT -= dt;
+            if (!p.alive) {
+                if (NET.mode !== 'tourney' && modeCanRespawn(p) && (b.respawnT -= dt) <= 0) botRespawn(p);
+                botWrite(p, now); return;
+            }
+            if (NET.mode === 'tourney' && (p.spec || TN.phase !== 'duel')) { botWrite(p, now); return; }       // frozen in the pit until FIGHT
+            if (MD.on && MD.phase !== 'live') { botWrite(p, now); return; }
+            const w = weaponsDb[b.w] || weaponsDb.ar, melee = !!w.melee;
+            const eye = b.feet + 1.55;
+            // --- look around (5x a second): the closest enemy it can see
+            if ((b.thinkT -= dt) <= 0) {
+                b.thinkT = 0.2 + Math.random() * 0.1;
+                let best = null, bd = 1e9, near = null, nd = 1e9;
+                for (const q of allPlayers()) {
+                    if (!botEnemyOk(p, q)) continue;
+                    const P = netPosOf(q); if (!P) continue;
+                    const d = Math.hypot(P.x - b.x, P.z - b.z, (P.y - b.feet) * 0.5);
+                    if (d < nd) { nd = d; near = q; }
+                    if (d > 70 || d >= bd) continue;
+                    if (losClear(b.x, eye, b.z, P.x, P.y + 1.2, P.z)) { bd = d; best = q; }
+                }
+                const was = b.tgt;
+                b.tgt = best ? best.id : (b.tgt >= 0 && now - b.seeT < 1500 ? b.tgt : -1);
+                if (best) b.seeT = now;
+                if (best && best.id !== was) b.aimT = S.react * (0.7 + Math.random() * 0.6);
+                b.hunt = near ? near.id : -1;
+            }
+            const T = b.tgt >= 0 ? playerById(b.tgt) : null, TP = T && botEnemyOk(p, T) ? netPosOf(T) : null;
+            const seen = !!(TP && now - b.seeT < 260);
+            // --- where to go
+            let goal = modeBotGoal(p);
+            let dist = TP ? Math.hypot(TP.x - b.x, TP.z - b.z) : 1e9;
+            let fight = false;
+            if (!goal) {
+                if (TP && (melee || dist > Math.min(22, (w.range || 60) * 0.6) || !seen)) goal = TP;
+                else if (TP) fight = true;                     // in range: strafe and shoot
+                else { const H = b.hunt >= 0 ? netPosOf(playerById(b.hunt)) : null; goal = H || b.wander; }
+                if (!goal || (goal === b.wander && Math.hypot(goal.x - b.x, goal.z - b.z) < 2)) { const s = pickSpawn(1 - (p.team & 1), -1); goal = b.wander = { x: s[0], y: s[2] || 0, z: s[1] }; }
+            }
+            let mx = 0, mz = 0;
+            if (goal && !fight) {
+                if (!b.path || (b.pathT -= dt) <= 0 || !b.goal || Math.hypot(goal.x - b.goal.x, goal.z - b.goal.z) > 3) {
+                    b.path = botPath(b.x, b.z, b.feet, goal.x, goal.z, goal.y); b.pathT = 0.9 + Math.random() * 0.4; b.goal = { x: goal.x, z: goal.z };
+                }
+                const path = b.path;
+                if (path && path.length) {
+                    // skip waypoints we can walk straight to (smoother, less zig-zag)
+                    const n0 = navNear(b.x, b.z, b.feet + 0.3);
+                    for (let k = 0; k < 3 && path.length > 1 && n0 >= 0; k++) {
+                        if (Math.abs(nav.Y[path[1]] - nav.Y[n0]) > 0.3 || !navLine(n0, b.x, b.z, nodeX(path[1]), nodeZ(path[1]), 10)) break;
+                        path.shift();
+                    }
+                    const wx = nodeX(path[0]) - b.x, wz = nodeZ(path[0]) - b.z, wd = Math.hypot(wx, wz);
+                    if (wd < 0.45 && Math.abs(nav.Y[path[0]] - b.feet) < 0.7) path.shift();
+                    if (wd > 1e-3) { mx = wx / wd; mz = wz / wd; }
+                    if (b.onGround && nav.Y[path[0]] > b.feet + 0.45 && wd < 1.9) { b.vy = JUMP_V; b.onGround = false; }
+                } else { const gx = goal.x - b.x, gz = goal.z - b.z, gd = Math.hypot(gx, gz); if (gd > 0.5) { mx = gx / gd; mz = gz / gd; } }
+            }
+            if (TP && seen && !melee) {
+                // side-step while shooting (a sitting duck is no fun), switching direction now and then
+                if ((b.strafeT -= dt) <= 0) { b.strafeT = 0.6 + Math.random() * 1.2; b.strafe = Math.random() < 0.15 ? 0 : (Math.random() < 0.5 ? 1 : -1); }
+                const tx = TP.x - b.x, tz = TP.z - b.z, td = Math.hypot(tx, tz) || 1;
+                const k = fight ? 1 : 0.45, back = fight && td < 6 ? -0.6 : 0;
+                mx += (-tz / td * b.strafe + tx / td * back) * k; mz += (tx / td * b.strafe + tz / td * back) * k;
+            }
+            const ml = Math.hypot(mx, mz);
+            if (ml > 1e-3) {
+                const sp = (melee ? 6.6 : 5.3) * S.speed * (w.moveMult || 1) * (b.onGround ? 1 : 0.85) / ml;
+                let nx = b.x + mx * sp * dt, nz = b.z + mz * sp * dt;
+                // don't stroll off a cloud (Sky Islands)
+                if (VOID && !skyOK(nx, nz, b.feet)) { nx = b.x; nz = b.z; b.strafe = -b.strafe; b.pathT = 0; }
+                const pos = { x: nx, z: nz };
+                pushOut(pos, 0.4, b.feet, b.feet + 1.75);
+                b.x = clamp(pos.x, -ARENA + 1, ARENA - 1); b.z = clamp(pos.z, -ARENA + 1, ARENA - 1);
+            }
+            // stuck against something: hop, and find a new way
+            if ((b.stuckT += dt) > 1.2) {
+                if (ml > 1e-3 && Math.hypot(b.x - b.lx, b.z - b.lz) < 0.5) { if (b.onGround) { b.vy = JUMP_V; b.onGround = false; } b.path = null; b.wander = null; b.strafe = -b.strafe; }
+                b.stuckT = 0; b.lx = b.x; b.lz = b.z;
+            }
+            // gravity / landing
+            b.vy -= GRAVITY * dt;
+            let nf = b.feet + b.vy * dt;
+            if (b.vy > 0) { const c = ceilingAt(b.x, b.z, 0.25, b.feet + 1.75); if (nf + 1.75 > c) { nf = c - 1.75; b.vy = 0; } }
+            const g = groundAt(b.x, b.z, 0.2, b.feet);
+            if (nf <= g) { nf = g; b.vy = 0; b.onGround = true; } else b.onGround = false;
+            b.feet = nf;
+            if (b.feet < (VOID ? FALL_DEATH_Y : -5)) { botDamaged(p, 9999, p.id, srcIdx('explosive')); return; }
+            // --- aim and shoot
+            if (TP) {
+                const ty = TP.y + 1.25 - (b.feet + 1.55), td = Math.hypot(TP.x - b.x, TP.z - b.z);
+                b.yaw = turnTo(b.yaw, Math.atan2(-(TP.x - b.x), -(TP.z - b.z)), dt * 9);
+                b.pitch = Math.atan2(ty, td);
+            } else if (ml > 1e-3) { b.yaw = turnTo(b.yaw, Math.atan2(-mx, -mz), dt * 7); b.pitch *= 0.9; }
+            if (b.reloadT > 0) { if ((b.reloadT -= dt) <= 0) b.ammo = w.magSize; }
+            if (b.fireCd > 0) b.fireCd -= dt;
+            if (b.aimT > 0) b.aimT -= dt;
+            if (TP && seen && b.aimT <= 0 && b.fireCd <= 0 && b.reloadT <= 0 && dist < (melee ? 2.7 : Math.min(w.range || 60, 80))) botFire(p, T, TP, dist, w, S);
+            botWrite(p, now);
+        }
+        function turnTo(a, b, k) { let d = b - a; d = Math.atan2(Math.sin(d), Math.cos(d)); return a + d * Math.min(1, k); }
+        const _bA = new V3(), _bB = new V3();
+        function botFire(p, T, TP, dist, w, S) {
+            const b = p.bot;
+            b.fireCd = Math.max(w.fireRate || 200, w.melee ? 450 : 130) / 1000 * (b.skill === 'easy' ? 1.6 : b.skill === 'normal' ? 1.25 : 1.05) * (0.85 + Math.random() * 0.3);
+            if (!w.melee && --b.ammo <= 0) b.reloadT = Math.min(3, (w.reloadTime || 1500) / 1000 + (w.shellTime ? w.magSize * w.shellTime / 2000 : 0));
+            b.fireT = 0.1;
+            const range = w.range || 60;
+            let chance = w.melee ? 0.8 : clamp(S.acc * (1.15 - dist / Math.min(range, 90)) + 0.12, 0.06, 0.9);
+            if (w.pellets > 1) chance = clamp(chance + 0.2, 0, 0.95);
+            const hit = Math.random() < chance, head = hit && !w.melee && Math.random() < 0.12 + S.acc * 0.1;
+            _bA.set(b.x - Math.sin(b.yaw) * 0.4, b.feet + 1.45, b.z - Math.cos(b.yaw) * 0.4);
+            if (!w.melee) {
+                const miss = hit ? 0 : 0.8 + Math.random() * 1.2, a = Math.random() * 6.28;
+                _bB.set(TP.x + Math.cos(a) * miss, TP.y + (head ? 1.75 : 1.1) + (hit ? 0 : (Math.random() - 0.3) * miss), TP.z + Math.sin(a) * miss);
+                if (!hit) { _dir.copy(_bB).sub(_bA).normalize(); const e = raySolids(_bA, _dir, 90); _bB.copy(e ? e.point : _bA.clone().addScaledVector(_dir, 80)); }
+                const seg = [r2(_bA.x), r2(_bA.y), r2(_bA.z), r2(_bB.x), r2(_bB.y), r2(_bB.z)];
+                NET.shotOut.push([p.id, ...seg]); netShowShot(p, seg);
+            } else p.fireT = 0.12;
+            if (!hit) return;
+            let dmg = w.melee ? w.damage : w.damage * (w.pellets > 1 ? w.pellets * clamp(1 - dist / range, 0.15, 0.75) : 1);
+            dmg = Math.min(dmg, w.melee ? 80 : 95) * S.dmg * (head ? Math.min(2, w.hsMult || 1.5) : 1);
+            hostApplyPvpHits(p, [[T.id, r2(dmg), head ? 1 : 0, 0, srcIdx(w.melee ? 'melee' : b.w)]]);
+        }
+        function botWrite(p, now) {
+            const b = p.bot;
+            p.last = [r2(b.x), r2(b.feet + EYE_STAND), r2(b.z), r2(b.feet), r3(b.yaw), r3(b.pitch)];
+            p.buf.push(now, p.last.slice());
+            p.f = (p.alive && !p.spec ? 1 : 0) | (b.fireT > 0 ? 4 : 0) | (b.reloadT > 0 ? 16 : 0) | (p.protUntil > now ? 64 : 0);
+            p.w = Math.max(0, WEAPON_ORDER.indexOf(b.w || 'ar')); p.hp = Math.max(0, Math.ceil(b.hp)); p.seenT = now;
+            p.tgt.pos.set(b.x, b.feet + EYE_STAND, b.z); p.tgt.feet = b.feet; p.tgt.alive = false;
+        }
 
         // ---- 28-mp-ui.js ----
         // ---------- HUD ----------
@@ -13742,7 +14166,8 @@
         function netHudDown() { ui.netDown.classList.remove('hidden'); if (!NET.pvp) ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">YOU'RE DOWN</div><div class="text-lg font-bold text-gray-200">${lastHurtBy ? 'Killed by ' + escHtml(lastHurtBy) + ' - ' : ''}you'll be back next wave</div>`; }
         function netHudUpdate() {
             const now = performance.now();
-            if (NET.mode === 'tourney') {
+            if (MD.on) modeHud();
+            else if (NET.mode === 'tourney') {
                 setText(ui.txtLevel, 'TOURNAMENT'); setText(ui.txtEnemies, NET.spec ? 'Spectating' : 'In the duel'); ui.txtEnemies.style.color = NET.spec ? '#9ca3af' : '#fca5a5';
             } else if (NET.pvp) {
                 ui.netScore.innerHTML = `<span style="color:${hex(TEAM_COLORS[0])}">RED ${NET.score[0]}</span><span class="text-base text-gray-300">first to ${NET.target}</span><span style="color:${hex(TEAM_COLORS[1])}">${NET.score[1]} BLUE</span>`;
@@ -13764,9 +14189,16 @@
             ui.netPing.style.color = quiet > 1500 ? '#fca5a5' : '';
             if (!ui.netBoard.classList.contains('hidden')) renderBoard();
         }
+        // 5.3: ping in colour (green / amber / red) so a laggy player is easy to spot; bots and the host show a dash
+        function pingCell(p) {
+            const ms = p.id === NET.id ? (NET.host ? -1 : NET.rtt) : (p.id === 0 || p.bot ? -1 : p.rtt);
+            if (ms < 0) return '-';
+            return `<span style="color:${ms < 90 ? '#86efac' : ms < 200 ? '#fcd34d' : '#fca5a5'}">${Math.round(ms)}</span>`;
+        }
         function renderBoard() {
             if (NET.mode === 'tourney') { ui.netBoardInner.innerHTML = tourneyBoardHtml(); return; }
-            const rows = (list) => list.map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${tagSub(p)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td class="text-gray-400">${p.id === NET.id ? (NET.host ? '-' : Math.round(NET.rtt)) : (p.id === 0 ? '-' : Math.round(p.rtt))}</td></tr>`).join('');
+            if (MD.on) { ui.netBoardInner.innerHTML = modeBoardHtml(); return; }
+            const rows = (list) => list.map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${tagSub(p)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.bot ? ' <span class="text-[10px] text-gray-400">BOT</span>' : ''}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td class="text-gray-400">${pingCell(p)}</td></tr>`).join('');
             const head = `<tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">${NET.pvp ? 'KILLS' : 'KILLS'}</td><td class="pr-6">${NET.pvp ? 'DEATHS' : 'DOWNS'}</td><td>PING</td></tr>`;
             const all = allPlayers();
             ui.netBoardInner.innerHTML = `<div class="text-2xl font-black mb-3">${escHtml(netModeName())} <span class="text-sm text-gray-400">${MAPS[run.map] ? MAPS[run.map].name : ''}</span></div>` +
@@ -13780,7 +14212,7 @@
                 if (!p.av || !p.av.g.visible) continue;
                 if (NET.pvp && p.team !== NET.team) continue;          // don't give away where the other team is
                 const P = p.av.g.position, x = (P.x + off) * scale, y = (P.z + off) * scale;
-                c.fillStyle = (p.f & 1) ? hex(NET.pvp ? TEAM_COLORS[p.team] : p.color) : '#6b7280';
+                c.fillStyle = (p.f & 1) ? hex(pcol(p)) : '#6b7280';
                 c.strokeStyle = '#fff'; c.lineWidth = 1.5;
                 c.beginPath(); c.arc(x, y, 4, 0, Math.PI * 2); c.fill(); c.stroke();
             }
@@ -13807,7 +14239,7 @@
                         <button id="mp-join" class="hbtn card">JOIN A PARTY<div class="text-xs font-bold text-gray-400 mt-1">Type in the host's 6-digit code.</div></button>
                       </div>`;
                 h += `<div id="mp-lan-list" class="mt-6">${LAN.html()}</div>`;
-                h += `<div class="mdesc mt-6">Modes: CO-OP waves (up to 10 players), or team deathmatch 1v1, 2v2, 3v3, 4v4 and 5v5. Tip: the host should keep the game window open - it's running the match for everyone.</div>`;
+                h += `<div class="mdesc mt-6">Modes: CO-OP waves (up to 10 players), team deathmatch 1v1 to 5v5, Free-for-all, Gun Game, Kill Confirmed, Capture the Flag, King of the Hill, Last Team Standing, Infection and the Tournament. The host can fill empty spots with bots. Tip: the host should keep the game window open - it's running the match for everyone.</div>`;
             } else if (v === 'host') {
                 const cs = NET.codeState, codeTxt = cs === 'ready' ? NET.code.slice(0, 3) + ' ' + NET.code.slice(3) : '--- ---';
                 h += `<div class="panel p-4 flex items-center gap-6 flex-wrap">
@@ -13865,19 +14297,23 @@
             const el = $('mp-settings'); if (!el) return;
             const L = NET.lobby;
             let h = `<div class="mlabel">MODE</div><div class="flex flex-wrap gap-2">${Object.entries(MP_MODES).map(([k, m]) => chip(L.mode === k, `data-mpset="mode" data-val="${k}"`, m.name)).join('')}</div>`;
-            h += `<div class="mdesc">${L.mode === 'coop' ? MP_MODES.coop.desc : L.mode === 'tourney' ? MP_MODES.tourney.desc + ' Needs 4 to 8 players; the Tournament Arena is used whatever map is picked.' : `Team deathmatch, ${MP_MODES[L.mode].team} per team. First team to ${PVP_TARGET[L.mode]} kills wins. Everyone gets every gun; respawn after 3s.`}</div>`;
+            h += `<div class="mdesc">${L.mode === 'coop' ? MP_MODES.coop.desc : L.mode === 'tourney' ? MP_MODES.tourney.desc + ' Needs 4 to 8 players; the Tournament Arena is used whatever map is picked.' : MP_MODES[L.mode].desc ? MP_MODES[L.mode].desc + (lobbyTeams(L.mode) ? ` Up to ${MP_MODES[L.mode].team} per team.` : '') : `Team deathmatch, ${MP_MODES[L.mode].team} per team. First team to ${PVP_TARGET[L.mode]} kills wins. Everyone gets every gun; respawn after 3s.`}</div>`;
             h += `<div class="mlabel">MAP</div><div class="flex flex-wrap gap-2">${chip(L.map === 'random', 'data-mpset="map" data-val="random"', 'RANDOM')}${Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => chip(L.map === k, `data-mpset="map" data-val="${k}"`, m.name)).join('')}</div>`;
+            if (L.mode !== 'coop') {       // 5.3 bots
+                const sk = botSkill();
+                h += `<div class="mlabel">BOTS <span class="text-gray-500">- FILL EMPTY SPOTS, ANY PVP MODE</span></div><div class="flex flex-wrap gap-2 items-center"><button class="chip" id="mp-addbot">+ ADD BOT</button><button class="chip" id="mp-fillbots">FILL WITH BOTS</button><button class="chip" id="mp-clearbots">REMOVE BOTS</button>${lobbyTeams(L.mode) ? '<button class="chip" id="mp-shuffle">SHUFFLE TEAMS</button>' : ''}<span class="text-xs text-gray-400 ml-2">SKILL</span>${['easy', 'normal', 'hard'].map(k => chip(sk === k, `data-botskill="${k}"`, k.toUpperCase())).join('')}</div>`;
+            }
             if (L.mode === 'coop') h += `<div class="mlabel">DIFFICULTY</div><div class="flex flex-wrap gap-2">${Object.entries(DIFFICULTIES).map(([k, d]) => chip(L.diff === k, `data-mpset="diff" data-val="${k}"`, d.name, d.color)).join('')}</div>`;
             el.innerHTML = h;
         }
         function renderMPPlayers() {
             const el = $('mp-players'); if (!el) return;
-            const pvp = NET.lobby.mode !== 'coop' && NET.lobby.mode !== 'tourney';
+            const pvp = lobbyTeams(NET.lobby.mode);
             const list = [{ id: NET.id, name: NET.name, team: NET.host && NET.me ? NET.me.team : NET.team, color: NET.host ? COOP_COLORS[0] : (NET.color || 0x888888), rtt: 0, me: true, gv: GVL.on() }]
-                .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv, look: p.look })));
+                .concat([...netPlayers.values()].map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, rtt: p.rtt, pending: p.pending, gv: p.gv, look: p.look, bot: p.bot })));
             el.innerHTML = list.sort((a, b) => a.id - b.id).map(p => {
-                const col = pvp ? TEAM_COLORS[p.team] : p.color;
-                return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${tagHtml(p)}${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}${tagSub(p)}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 ? '' : Math.round(p.rtt) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
+                const col = pvp ? TEAM_COLORS[p.team & 1] : p.color;
+                return `<div class="bcard items-center${NET.host && pvp ? ' cursor-pointer hover:border-white/40' : ''}" ${NET.host && pvp ? `data-mpteam="${p.id}"` : ''}><span class="pdot" style="background:${hex(col)};color:${hex(col)}"></span><div class="flex-1 font-black">${tagHtml(p)}${escHtml(p.name)}${p.gv ? ' <span class="text-xs text-green-300" title="Verified Grapevine account">&#10003;</span>' : ''}${p.me ? ' <span class="text-xs text-gray-400">(you)</span>' : ''}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.pending ? ' <span class="text-xs text-gray-400">joining...</span>' : ''}${p.bot ? ' <span class="text-[10px] font-black text-gray-300 bg-white/10 rounded px-1">BOT</span>' : ''}${tagSub(p)}</div>${pvp ? `<div class="text-xs font-black" style="color:${hex(col)}">${TEAM_NAMES[p.team & 1]}${NET.host ? ' <span class="text-gray-400">(click to swap)</span>' : ''}</div>` : ''}<div class="text-xs text-gray-400 w-16 text-right">${p.me || p.id === 0 || p.bot ? '' : pingCell(p) + ' ms'}</div>${p.gv && !p.me ? GVL.friendBtn(p.name) : ''}${NET.host && !p.me ? `<button class="chip" data-mpkick="${p.id}">KICK</button>` : ''}</div>`;
             }).join('');
         }
         function renderMPInvites() {
@@ -13923,13 +14359,19 @@
             else if (b.id === 'mp-invite') hostCreateInvite();
             else if (b.id === 'mp-start') { initAudio(); hostStartGame(); }
             else if (b.dataset.mpcls) { settings.cls = validClass(b.dataset.mpcls); saveSettings(); if (!NET.inGame) playerStats.cls = settings.cls; sfx('click'); renderMP(); if (currentGameState === 'main') renderMenu(); }
-            else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
+            else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode' && b.dataset.val === 'coop') for (const p of [...netPlayers.values()]) if (p.bot) netRemovePlayer(p.id, 'was removed');      // no bots in co-op
+                if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
+            else if (b.id === 'mp-addbot' && NET.host) { if (!botAdd()) NET.hostMsg = 'The party is full.'; else NET.hostMsg = ''; hostLobbyUpdate(); }
+            else if (b.id === 'mp-fillbots' && NET.host) { botFill(); NET.hostMsg = ''; hostLobbyUpdate(); }
+            else if (b.id === 'mp-clearbots' && NET.host) { for (const p of [...netPlayers.values()]) if (p.bot) netRemovePlayer(p.id, 'was removed'); NET.hostMsg = ''; hostLobbyUpdate(); }
+            else if (b.id === 'mp-shuffle' && NET.host) { teamsShuffle(); NET.hostMsg = ''; hostLobbyUpdate(); }
+            else if (b.dataset.botskill) { settings.mpBotSkill = b.dataset.botskill; saveJSON('blocky21_settings', settings); for (const p of netPlayers.values()) if (isBot(p)) p.bot.skill = botSkill(); renderMPSettings(); }
             else if (b.dataset.mpteam !== undefined && NET.host) {
-                const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - p.team;
+                const p = playerById(+b.dataset.mpteam); if (p) p.team = 1 - (p.team & 1);
                 NET.hostMsg = ''; hostLobbyUpdate();
             }
             else if (b.dataset.gvfriend) { const L = GVL.L, who = b.dataset.gvfriend; if (L) { b.disabled = true; L.addFriend(who).then(renderMPPlayers, (e) => { b.disabled = false; netFeed(escHtml(e.message || 'Could not send that request')); }); } }
-            else if (b.dataset.mpkick) { const id = +b.dataset.mpkick; const p = netPlayers.get(id); if (p) { sendRel(p.peer, { t: 'bye' }); netRemovePlayer(id, 'was kicked'); } }
+            else if (b.dataset.mpkick) { const id = +b.dataset.mpkick; const p = netPlayers.get(id); if (p) { sendRel(p.peer, { t: 'bye' }); netRemovePlayer(id, p.bot ? 'was removed' : 'was kicked'); } }
             else if (b.dataset.invcopy) { const i = inv(b.dataset.invcopy); if (i && i.code) copyText(i.code); }
             else if (b.dataset.invcancel) { const i = inv(b.dataset.invcancel); if (i) { try { i.peer.pc.close(); } catch (e) {} NET.invites = NET.invites.filter(x => x !== i); renderMPInvites(); } }
             else if (b.dataset.invgo) { const i = inv(b.dataset.invgo); const ta = ui.mp.querySelector(`[data-invreply="${b.dataset.invgo}"]`); if (i && ta && ta.value.trim()) { i.reply = ta.value; hostAcceptReply(i, ta.value); } }
@@ -14162,7 +14604,8 @@
         // The host is the referee. The flow, for 4 to 8 players (byes fill the bracket when the number is not 4 or 8):
         //   bracket (everyone in the stands, the bracket on screen) -> ready (the two duelists drop into the pit, 4 second countdown, nobody can shoot)
         //   -> duel (first death wins; after 2 minutes the one with more health wins) -> over (who beat whom) -> bracket again ... -> champ.
-        // Everyone who is not in the duel is a spectator: standing on the terrace, unhurtable, unable to shoot, and counted as "not alive" by everyone else.
+        // Everyone who is not in the duel is a spectator: unhurtable, unable to shoot, counted as "not alive" by everyone else and (5.3) INVISIBLE:
+        // no body, name tag, gun, shadow or sound, nothing to bump into. Spectators fly a free camera or follow either duelist (click to switch).
         const TN = { on: false, ids: [], names: {}, n: 0, rounds: [], phase: '', phaseId: 0, until: 0, a: -1, b: -1, r: 0, m: 0, champ: -1, msg: '', wins: {}, fightAt: 0 };
         const TN_BYE = -1, TN_TBD = -2;
         const TN_SECS = { bracket: 6, ready: 4, duel: 120, over: 4, champ: 12 };
@@ -14170,7 +14613,7 @@
         { const st = document.createElement('style'); st.textContent = '.tn-spec #hud-slots, .tn-spec #hud-sec, .tn-spec #hud-ammo-card, .tn-spec #hud-abil, .tn-spec #crosshair { display: none !important; }'; document.head.appendChild(st); }
 
         function tourneyReset() {
-            document.body.classList.remove('tn-spec'); TN.on = false; TN.phase = ''; TN.rounds = []; TN.champ = -1; TN.a = TN.b = -1; NET.spec = false; NET.lockT = 0;
+            document.body.classList.remove('tn-spec'); TN.on = false; TSC.mode = 0; TN.phase = ''; TN.rounds = []; TN.champ = -1; TN.a = TN.b = -1; NET.spec = false; NET.lockT = 0;
             if (_tnEl) { _tnEl.remove(); _tnEl = null; _tnHtml = ''; }
         }
         const tnName = (id) => { const p = playerById(id); return p ? p.name : (TN.names[id] || '?'); };
@@ -14290,9 +14733,9 @@
         function tnSetSpec(id, spec) { if (id === NET.id) NET.spec = spec; else { const p = netPlayers.get(id); if (p) p.spec = spec; } }
         function tourneySeatIndex(id) { const i = TN.ids.indexOf(id); return i >= 0 ? i : Math.abs(id | 0) % 8; }
         function tourneyGoSeat() {
-            const [x, z] = tourneySeat(tourneySeatIndex(NET.id), 8);
+            const [x, z, y] = tourneySeat(tourneySeatIndex(NET.id), 8);
             NET.spec = true; NET.lockT = 0; cancelReload(); isMouseDown = false;
-            netRespawn([x, z], maxHp, TOURNEY.deckY);
+            netRespawn([x, z], maxHp, y);
             camera.quaternion.setFromEuler(new THREE.Euler(-0.3, Math.atan2(x, z), 0, 'YXZ'));
             if (vmModel) vmModel.root.visible = false;
         }
@@ -14310,10 +14753,14 @@
             if (ph === 'bracket') {
                 for (const id of [NET.id, ...netPlayers.keys()]) tnSetSpec(id, true);
                 tourneyGoSeat();
+                if (NET.host) for (const p of netPlayers.values()) if (isBot(p) && p.bot.feet !== undefined) botPark(p);
             } else if (ph === 'ready') {
                 for (const id of [NET.id, ...netPlayers.keys()]) { tnSetSpec(id, !tnIsDuelist(id)); const p = playerById(id); if (p && tnIsDuelist(id)) p.team = id === TN.a ? 0 : 1; }
                 NET.lockT = Math.max(0, (TN.until - performance.now()) / 1000);
                 if (tnIsDuelist(NET.id)) tourneyGoPit();
+                else TSC.mode = 1;                           // spectators start by following the first duelist
+                // the host drops bot duelists into the pit (the others stay parked, invisible)
+                if (NET.host) for (const p of netPlayers.values()) if (isBot(p) && p.bot.feet !== undefined) { if (tnIsDuelist(p.id)) botRespawn(p, TOURNEY.spawns[p.team & 1]); else botPark(p); }
                 sfx('wave');
             } else if (ph === 'duel') {
                 NET.lockT = 0; TN.fightAt = performance.now(); toast('FIGHT!', '#fca5a5', 1.2); sfx('boom');
@@ -14349,6 +14796,7 @@
             if (TN.a >= 0 && ph !== 'champ') head = `<span style="color:#fca5a5">${escHtml(tnName(TN.a))}</span> <span style="color:#9ca3af">vs</span> <span style="color:#93c5fd">${escHtml(tnName(TN.b))}</span>`;
             const mm = Math.floor(left / 60), ss = String(Math.floor(left % 60)).padStart(2, '0');
             let h = `<div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);border-radius:10px;padding:6px 16px;text-align:center"><div style="font-size:11px;letter-spacing:3px;color:#fbbf24;font-weight:900">TOURNAMENT${TN.r === lastR && ph !== 'champ' ? ' - THE FINAL' : ' - ROUND ' + (TN.r + 1)}${NET.spec && ph !== 'champ' ? ' - SPECTATING' : ''}</div><div style="font-size:20px;font-weight:900">${head}${ph === 'duel' ? ` <span style="color:#e5e7eb;font-size:15px">${mm}:${ss}</span>` : ''}</div></div>`;
+            if (NET.spec && ph !== 'champ' && ph !== 'bracket') h += `<div style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.5);border-radius:8px;padding:4px 14px;font-size:13px;font-weight:800;color:#e5e7eb">${TSC.mode ? 'FOLLOWING ' + escHtml(tnName(TSC.mode === 1 ? TN.a : TN.b)) : 'FREE CAMERA - WASD, SPACE up, SHIFT fast'} <span style="color:#9ca3af">- click to switch camera</span></div>`;
             if (ph === 'ready') h += `<div style="position:absolute;top:30%;left:0;right:0"><div style="${big}">${Math.max(1, Math.ceil(left))}</div><div style="text-align:center;font-size:22px;font-weight:900;margin-top:8px">${tnIsDuelist(NET.id) ? 'GET READY' : 'THE DUEL STARTS'}</div></div>`;
             else if (ph === 'duel' && TN.fightAt && performance.now() - TN.fightAt < 1300) h += `<div style="position:absolute;top:30%;left:0;right:0"><div style="${big};color:#fca5a5">FIGHT!</div></div>`;
             else if (ph === 'over') h += `<div style="position:absolute;top:34%;left:0;right:0;text-align:center;font-size:32px;font-weight:900;color:#fde047">${escHtml(TN.msg)}</div>`;
@@ -14363,6 +14811,34 @@
             return `<div class="text-2xl font-black mb-3">TOURNAMENT <span class="text-sm text-gray-400">${TN.n} players</span></div>${tourneyBracketHtml()}
                 <table class="w-full text-sm font-bold mt-4"><tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">DUELS WON</td><td>PING</td></tr>${allPlayers().map(p => `<tr><td class="py-1 pr-6 font-black" style="color:${hex(p.color)}">${tagHtml(p)}${escHtml(p.name)}</td><td class="pr-6">${TN.wins[p.id] | 0}</td><td class="text-gray-400">${p.id === NET.id ? '-' : Math.round(p.rtt)}</td></tr>`).join('')}</table>`;
         }
+        // ----- 5.3 spectator camera: free flight, or a chase camera behind either duelist (click to cycle) -----
+        const TSC = { mode: 0 };
+        const _tsc = new V3(), _tscF = new V3();
+        function tnSpecCam(dt) {        // from the frame loop instead of the normal walking; true = it moved the camera
+            if (!TN.on || !NET.spec || !NET.inGame) return false;
+            const id = TSC.mode === 1 ? TN.a : TSC.mode === 2 ? TN.b : -1, p = id >= 0 && id !== NET.id ? playerById(id) : null;
+            if (p && p.av && p.av.g.visible) {
+                const P = p.av.g.position, yaw = p.cur[4];
+                _tsc.set(P.x + Math.sin(yaw) * 4.2, P.y + 2.7, P.z + Math.cos(yaw) * 4.2);
+                if (pointInSolid(_tsc, 0.2)) _tsc.set(P.x, P.y + 5, P.z);      // never inside a wall
+                camera.position.lerp(_tsc, 1 - Math.exp(-7 * dt));
+                camera.lookAt(P.x, P.y + 1.5, P.z);
+            } else {
+                camera.getWorldDirection(_tscF);
+                const sp = (sprintHeld ? 26 : 12) * dt, r = new V3().crossVectors(_tscF, camera.up).normalize();
+                const f = (moveForward ? 1 : 0) - (moveBackward ? 1 : 0), s = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
+                camera.position.addScaledVector(_tscF, f * sp).addScaledVector(r, s * sp);
+                if (jumpHeld) camera.position.y += sp;
+                camera.position.x = clamp(camera.position.x, -ARENA + 1, ARENA - 1); camera.position.z = clamp(camera.position.z, -ARENA + 1, ARENA - 1);
+                camera.position.y = clamp(camera.position.y, 1, 30);
+            }
+            feetY = camera.position.y - EYE_STAND;
+            return true;
+        }
+        document.addEventListener('mousedown', () => {
+            if (!TN.on || !NET.spec || !NET.inGame || currentGameState !== 'playing' || TN.phase === 'bracket' || TN.phase === 'champ') return;
+            TSC.mode = (TSC.mode + 1) % 3; sfx('click');
+        });
         // per frame, from netTick
         function tourneyTick(dt) {
             if (!TN.on) return;
@@ -14386,9 +14862,500 @@
                 TN, secs: TN_SECS, state: () => ({ on: TN.on, phase: TN.phase, a: TN.a, b: TN.b, r: TN.r, m: TN.m, champ: TN.champ, spec: NET.spec, lock: NET.lockT, n: TN.n, rounds: TN.rounds.map(R => R.map(x => [x.a, x.b, x.w])) }),
                 win: (id) => { if (!NET.host || TN.phase !== 'duel') return false; tourneyDecide(id, id === TN.a ? TN.b : TN.a, 'test'); return true; },
                 build: (ids) => { tourneyBuild(ids); const r = TN.rounds.map(R => R.map(x => [x.a, x.b, x.w])); TN.rounds = []; return r; },
-                seat: (i, n) => tourneySeat(i, n || 8)
+                seat: (i, n) => tourneySeat(i, n || 8), cam: () => TSC.mode, setCam: (m) => { TSC.mode = m; }
             },
             flash: { screenFlash: (c, h) => screenFlash(c, h), opacity: () => +ui.flash.style.opacity, bg: () => ui.flash.style.background, fxVisible: (x, y, z) => fxVisible(new V3(x, y, z)), lightning: () => ({ t: lightningT, f: lightningFlash, hemi: hemi.intensity }), allowFx: (m) => netFxAllowed(m), ex: () => explosions.map(e => [+e.ball.material.opacity.toFixed(3), +e.core.material.opacity.toFixed(3), e.radius]), boomLights: () => boomLights.map(b => Math.round(b.light.intensity)), cam: () => [camera.position.x, camera.position.y, camera.position.z] }
+        });
+
+        // ---- 28d-mp-modes.js ----
+        // ---------- 5.3 MORE PVP MODES: Free-for-all, Gun Game, Kill Confirmed, Capture the Flag, King of the Hill, Last Team Standing, Infection ----------
+        // The host is the referee for all of them, as for team deathmatch: it sees everyone's position (their snapshots), so it decides
+        // pick-ups, captures, hill time, rounds and infections, and sends the state out in one small 'mst' message whenever it changes
+        // (and once a second, which also catches up a player who joined late). Guests only draw it.
+        const MD = { on: false, mode: '', phase: '', until: 0, gg: {}, tags: [], flags: null, bases: null, hill: null, hills: [], hillIdx: 0, hillAt: 0, holder: -1,
+                     round: 0, rs: 0, sendT: 0, tickT: 0, tagSeq: 1, g: null, vis: null, alive: [0, 0] };
+        const GG_LIST = ['lmg', 'ar', 'burst', 'smg', 'shotgun', 'lever', 'dmr', 'sniper', 'revolver', 'pistol', 'katana'];
+        const INF_COLORS = [0x3b82f6, 0x84cc16];
+        const LTS_ROUND_S = 150, KC_TAG_S = 30, CTF_RETURN_S = 20, HILL_MOVE_S = 60, HILL_R = 5;
+        function isFfaMode(m) { m = m || NET.mode; return !!(MP_MODES[m] && MP_MODES[m].ffa); }
+        function modeTeamName(t) { return NET.mode === 'infect' ? (t & 1 ? 'INFECTED' : 'SURVIVORS') : TEAM_NAMES[t & 1]; }
+        function modeTeamCol(t) { return NET.mode === 'infect' ? INF_COLORS[t & 1] : TEAM_COLORS[t & 1]; }
+        const mmss = (s) => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+        // ----- teams and loadouts -----
+        function modeDealTeams(mode) {          // host, just before the start message
+            const all = allPlayers();
+            if (isFfaMode(mode)) all.forEach((p, i) => { p.team = 2 + i; p.color = COOP_COLORS[i % COOP_COLORS.length]; });
+            else if (mode === 'infect') {
+                all.forEach(p => { p.team = 0; });
+                const sh = all.slice().sort(() => Math.random() - 0.5);
+                for (let i = 0; i < (all.length >= 8 ? 2 : 1); i++) sh[i].team = 1;
+            }
+            if (NET.me) NET.team = NET.me.team;
+        }
+        function modeLateTeam(p) {
+            if (isFfaMode()) { let t = 2; for (const q of allPlayers()) if (q !== p) t = Math.max(t, q.team + 1); p.team = t; }
+            else if (NET.mode === 'infect') p.team = 1;          // late to the party: you join the horde
+        }
+        function modeMaxHp(team) { return NET.mode === 'infect' && (team & 1) ? 150 : 100; }
+        function modeRespawnDelay(team) { return NET.mode === 'lts' ? 1e9 : NET.mode === 'infect' && (team === undefined ? NET.team : team) === 1 ? 2 : 3; }
+        function modeCanRespawn(p) { return NET.mode !== 'lts' && !NET.over; }
+        function modeHitOk(shooter, target) { return !(MD.on && MD.phase !== 'live'); }
+        function modeLoadout(fresh) {
+            const m = NET.mode;
+            maxHp = modeMaxHp(NET.team);
+            let list, cur, sec = ['grenade'];
+            if (m === 'gungame') { cur = GG_LIST[Math.min(GG_LIST.length - 1, MD.gg[NET.id] | 0)]; list = [cur]; sec = []; }
+            else if (m === 'infect' && NET.team === 1) { list = ['katana']; cur = 'katana'; sec = []; }
+            else if (m === 'infect') { list = ['pistol', 'smg', 'shotgun', 'ar']; cur = !fresh && list.includes(playerStats.currentWeapon) ? playerStats.currentWeapon : 'ar'; }
+            else { list = WEAPON_ORDER.slice(); cur = !fresh && list.includes(playerStats.currentWeapon) ? playerStats.currentWeapon : 'ar'; }
+            playerStats.weapons = list; playerStats.currentWeapon = cur;
+            playerStats.secondaries = sec; playerStats.currentSecondary = sec[0] || null;
+        }
+        function modeBotWeapon(p) {
+            const m = NET.mode;
+            if (m === 'gungame') return GG_LIST[Math.min(GG_LIST.length - 1, MD.gg[p.id] | 0)];
+            if (m === 'infect') return p.team === 1 ? 'katana' : ['ar', 'shotgun', 'smg'][p.id % 3];
+            if (m === 'tourney') return 'ar';
+            return (p.bot && p.bot.gun) || 'ar';
+        }
+        // where a bot should head for the objective (null = just hunt enemies)
+        function modeBotGoal(p) {
+            const m = NET.mode, b = p.bot;
+            if (!MD.on) return null;
+            if (m === 'ctf' && MD.flags) {
+                const t = p.team & 1, mine = MD.flags[t], theirs = MD.flags[1 - t];
+                if (theirs.s === 'carried' && theirs.by === p.id) return MD.bases[t];                         // run it home
+                if (mine.s === 'dropped' || (mine.s === 'carried' && p.id % 2 === 0)) return mine;              // return it / chase the thief
+                if (p.id % 3 === 0 && mine.s === 'home') return MD.bases[t];                                    // a defender
+                return theirs.s === 'carried' ? (b.tgt >= 0 ? null : MD.bases[t]) : theirs;                     // attack (or escort the carrier home)
+            }
+            if (m === 'koth' && MD.hill) { const a = p.id * 2.4; return { x: MD.hill.x + Math.cos(a) * 2, y: MD.hill.y, z: MD.hill.z + Math.sin(a) * 2 }; }
+            if (m === 'kc' && MD.tags.length) {
+                let best = null, bd = 30 * 30;
+                for (const t of MD.tags) { const d = (t.x - b.x) ** 2 + (t.z - b.z) ** 2; if (d < bd) { bd = d; best = t; } }
+                return best;
+            }
+            return null;
+        }
+        function modeIntro() {
+            const M = MP_MODES[NET.mode];
+            switch (NET.mode) {
+                case 'ffa': return `FREE-FOR-ALL - first to ${M.target} kills`;
+                case 'gungame': return 'GUN GAME - every kill gives you the next gun';
+                case 'kc': return `KILL CONFIRMED - grab the tags, first to ${M.target}`;
+                case 'ctf': return `CAPTURE THE FLAG - first to ${M.target} captures`;
+                case 'koth': return `KING OF THE HILL - hold the hill, first to ${M.target}`;
+                case 'lts': return `LAST TEAM STANDING - no respawns, first to ${M.target} rounds`;
+                case 'infect': return NET.team === 1 ? 'INFECTION - you are INFECTED: get them all!' : 'INFECTION - survive for 3 minutes!';
+            }
+            return M.name;
+        }
+
+        // ----- start / stop -----
+        function modeReset() {
+            MD.on = false; MD.mode = ''; MD.phase = ''; MD.gg = {}; MD.tags = []; MD.flags = null; MD.bases = null; MD.hill = null; MD.hills = []; MD.round = 0; MD.rs = 0; MD.holder = -1; MD.until = 0; MD.rsSeen = undefined; MD.myLv = undefined; MD.alive = [0, 0];
+            if (MD.g) { scene.remove(MD.g); MD.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); MD.g = null; MD.vis = null; }
+        }
+        function modeBegin(cfg) {               // everyone, when the match starts (after the map is built)
+            modeReset();
+            MD.on = true; MD.mode = cfg.mode; MD.phase = 'live';
+            const mins = MP_MODES[cfg.mode].mins; MD.until = mins ? performance.now() + mins * 60000 : 0;
+            MD.g = new THREE.Group(); scene.add(MD.g); MD.vis = { flags: [], tags: new Map(), hill: null };
+        }
+        function modeHostStart(cfg) {           // host: set up the objectives
+            const m = cfg.mode;
+            if (m === 'ctf') {
+                MD.bases = [0, 1].map(t => {
+                    const L = NET.spawns[t]; let cx = 0, cz = 0; for (const s of L) { cx += s[0]; cz += s[1]; } cx /= L.length; cz /= L.length;
+                    let best = L[0], bd = 1e9; for (const s of L) { const d = (s[0] - cx) ** 2 + (s[1] - cz) ** 2; if (d < bd) { bd = d; best = s; } }
+                    return { x: best[0], y: best[2] !== undefined ? best[2] : groundAt(best[0], best[1], 0.3, 0.5), z: best[1] };
+                });
+                MD.flags = [0, 1].map(t => ({ t, s: 'home', by: -1, x: MD.bases[t].x, y: MD.bases[t].y, z: MD.bases[t].z, dropT: 0 }));
+            } else if (m === 'koth') {
+                const A = ARENA * 0.38;
+                MD.hills = [[0, 0], [A, 0], [-A, 0], [0, A], [0, -A], [A * 0.7, -A * 0.7], [-A * 0.7, A * 0.7]].map(([x, z]) => openSpotNear(x, z)).filter(Boolean);
+                if (!MD.hills.length) MD.hills = [[spawnPt[0], 0, spawnPt[1]]];
+                MD.hillIdx = 0; modeHillAt(0);
+            } else if (m === 'lts') { MD.round = 0; ltsNextRound(); return; }
+            modeSend();
+        }
+        function openSpotNear(x, z) {           // somewhere open to stand near (x, z): [x, y, z]
+            if (VOID) { const s = nearestSafe(x, z); return s ? [s[0], s[1], s[2]] : null; }
+            for (let r = 0; r <= 24; r += 2) for (let k = 0; k < (r ? 10 : 1); k++) {
+                const a = k / 10 * Math.PI * 2, px = clamp(x + Math.cos(a) * r, -ARENA + 4, ARENA - 4), pz = clamp(z + Math.sin(a) * r, -ARENA + 4, ARENA - 4);
+                const n = navNodeAt(px, pz, 0.2);
+                if (n < 0 || nav.Y[n] > 0.1 || nav.ceil[n] < 5 || pointInSolid(new V3(px, 1, pz), 1.6)) continue;
+                return [px, 0, pz];
+            }
+            return null;
+        }
+        function modeHillAt(i) { const h = MD.hills[i % MD.hills.length]; MD.hill = { x: h[0], y: h[1], z: h[2], r: HILL_R }; MD.hillAt = performance.now(); MD.holder = -1; }
+
+        // ----- the host's referee work -----
+        function modeEnd(win, wid, line) {
+            if (NET.over) return;
+            NET.over = true; MD.phase = 'over';
+            const e = { t: 'end', win, score: NET.score, line };
+            if (wid !== undefined) e.wid = wid;
+            modeSend();
+            setTimeout(() => { netBroadcast(e); netShowEnd(e); }, 1500);
+        }
+        function modeHostDeath(v, k, si) {
+            const m = NET.mode, now = performance.now();
+            if (m === 'ffa') {
+                if (k) { k.pts = k.kills; if (k.kills >= NET.target) modeEnd(-1, k.id, `${k.name} WINS WITH ${k.kills} KILLS`); }
+            } else if (m === 'gungame') {
+                if (k) {
+                    const lv = (MD.gg[k.id] | 0) + 1;
+                    if (lv >= GG_LIST.length) { k.pts = lv; modeEnd(-1, k.id, `${k.name} WINS THE GUN GAME`); }
+                    else { MD.gg[k.id] = lv; k.pts = lv; }
+                    if (si === srcIdx('melee') && (MD.gg[v.id] | 0) > 0 && lv < GG_LIST.length) { MD.gg[v.id]--; v.pts = MD.gg[v.id]; modeSend(`${k.name} HUMILIATED ${v.name} (-1 gun)`, '#fca5a5'); return; }
+                }
+                modeSend();
+            } else if (m === 'kc') {
+                const P = netPosOf(v);
+                if (P) { MD.tags.push({ id: MD.tagSeq++, x: P.x, y: P.y, z: P.z, team: v.team & 1, t: now }); if (MD.tags.length > 30) MD.tags.shift(); }
+                modeSend();
+            } else if (m === 'ctf') {
+                for (const f of MD.flags || []) if (f.s === 'carried' && f.by === v.id) ctfDrop(f, netPosOf(v));
+                modeSend();
+            } else if (m === 'lts') ltsCheck();
+            else if (m === 'infect') {
+                if ((v.team & 1) === 0) {
+                    if (k && k.team === 1) k.pts = (k.pts | 0) + 1;
+                    modeSetTeam(v, 1);
+                    modeSend(`${v.name} ${k ? 'was infected by ' + k.name : 'turned'}`, '#bef264');
+                } else if (k) k.pts = (k.pts | 0) + 1;
+                infectCheck();
+            }
+        }
+        function modeSetTeam(p, team) {
+            p.team = team;
+            const m = { t: 'tm', id: p.id, team };
+            netBroadcast(m); modeTeamMsg(m);
+        }
+        function modeTeamMsg(m) {
+            const q = playerById(m.id); if (!q) return;
+            q.team = m.team;
+            if (m.id === NET.id) { NET.team = m.team; if (NET.mode === 'infect' && m.team === 1) toast('YOU ARE INFECTED - get the survivors!', '#bef264', 2.4); }
+            else if (q.av) rebuildAvatar(q);
+        }
+        function infectCheck() {
+            if (NET.over) return;
+            const all = allPlayers(), surv = all.filter(p => (p.team & 1) === 0), inf = all.filter(p => p.team === 1);
+            if (!surv.length) { modeEnd(1, undefined, 'THE INFECTED GOT EVERYONE'); return; }
+            if (!inf.length) { const p = surv[Math.floor(Math.random() * surv.length)]; modeSetTeam(p, 1); modeSend(`${p.name} IS THE NEW INFECTED`, '#bef264'); }
+        }
+        function ltsAlive() { const n = [0, 0]; for (const p of allPlayers()) if (p.alive && !p.spec && p.team <= 1) n[p.team]++; return n; }
+        function ltsCheck() {
+            if (NET.over || MD.phase !== 'live') return;
+            const n = ltsAlive(); MD.alive = n;
+            if (n[0] && n[1]) return;
+            ltsRoundWon(n[0] ? 0 : n[1] ? 1 : -1, n[0] || n[1] ? 'wiped out the other team' : 'both teams fell');
+        }
+        function ltsRoundWon(w, why) {
+            if (w >= 0) NET.score[w]++;
+            hostSendScore();
+            if (w >= 0 && NET.score[w] >= NET.target) { modeEnd(w, undefined, `${TEAM_NAMES[w]} TEAM WINS ${NET.score[0]} - ${NET.score[1]}`); return; }
+            MD.phase = 'break'; MD.until = performance.now() + 5000;
+            modeSend(w >= 0 ? `ROUND ${MD.round}: ${TEAM_NAMES[w]} ${why}` : `ROUND ${MD.round}: DRAW (${why})`, w >= 0 ? hex(TEAM_COLORS[w]) : '#e5e7eb');
+        }
+        function ltsNextRound() {
+            MD.round++; MD.rs++; MD.phase = 'live'; MD.until = performance.now() + LTS_ROUND_S * 1000;
+            for (const p of netPlayers.values()) if (isBot(p)) botRespawn(p);
+            modeSend(`ROUND ${MD.round} - FIGHT!`, '#fde047');
+        }
+        function ctfDrop(f, P) {
+            f.s = 'dropped'; f.by = -1; f.dropT = performance.now();
+            if (P) { f.x = P.x; f.z = P.z; f.y = VOID ? P.y : groundAt(P.x, P.z, 0.2, P.y + 0.3); }
+        }
+        const near2 = (P, x, y, z, r) => (P.x - x) ** 2 + (P.z - z) ** 2 < r * r && Math.abs(P.y - y) < 2.4;
+        function modeHostTick(dt) {
+            const now = performance.now(), m = NET.mode;
+            if (NET.over) return;
+            // the clock
+            if (MD.until && now > MD.until) {
+                if (m === 'lts') {
+                    if (MD.phase === 'break') { ltsNextRound(); return; }
+                    const n = ltsAlive();
+                    if (n[0] !== n[1]) ltsRoundWon(n[0] > n[1] ? 0 : 1, 'had more players left');
+                    else ltsRoundWon(-1, 'time ran out');
+                    return;
+                }
+                if (m === 'infect') { const s = allPlayers().filter(p => (p.team & 1) === 0).length; modeEnd(0, undefined, `SURVIVORS WIN - ${s} MADE IT`); return; }
+                if (isFfaMode()) { const lvl = (p) => m === 'gungame' ? MD.gg[p.id] | 0 : p.kills, w = allPlayers().sort((a, b) => lvl(b) - lvl(a) || b.kills - a.kills)[0]; modeEnd(-1, w.id, `TIME! ${w.name} WINS`); return; }
+                const w = NET.score[0] === NET.score[1] ? -1 : NET.score[0] > NET.score[1] ? 0 : 1;
+                modeEnd(w, undefined, w < 0 ? `TIME! A DRAW  ${NET.score[0]} - ${NET.score[1]}` : `TIME! ${TEAM_NAMES[w]} TEAM WINS  ${NET.score[0]} - ${NET.score[1]}`);
+                return;
+            }
+            if ((MD.tickT -= dt) > 0) return;
+            MD.tickT = 0.1;
+            let changed = false, ev = '', evc = '';
+            const live = allPlayers().filter(p => p.alive && !p.spec).map(p => [p, netPosOf(p)]).filter(x => x[1]);
+            if (m === 'kc') {
+                for (let i = MD.tags.length - 1; i >= 0; i--) {
+                    const t = MD.tags[i];
+                    if (now - t.t > KC_TAG_S * 1000) { MD.tags.splice(i, 1); changed = true; continue; }
+                    const who = live.find(([p, P]) => near2(P, t.x, t.y, t.z, 1.5));
+                    if (!who) continue;
+                    const p = who[0]; MD.tags.splice(i, 1); changed = true; p.pts = (p.pts | 0) + 1;
+                    if ((p.team & 1) !== t.team) { NET.score[p.team & 1]++; ev = `${p.name} confirmed a kill`; evc = hex(TEAM_COLORS[p.team & 1]); }
+                    else { ev = `${p.name} denied a kill`; evc = '#e5e7eb'; }
+                    hostSendScore();
+                    if (NET.score[p.team & 1] >= NET.target) { modeEnd(p.team & 1, undefined, `${TEAM_NAMES[p.team & 1]} TEAM WINS  ${NET.score[0]} - ${NET.score[1]}`); return; }
+                }
+            } else if (m === 'ctf' && MD.flags) {
+                for (const f of MD.flags) {
+                    if (f.s === 'carried') {
+                        const c = playerById(f.by), P = c && c.alive ? netPosOf(c) : null;
+                        if (!P) { ctfDrop(f, c ? netPosOf(c) : null); changed = true; ev = `The ${TEAM_NAMES[f.t]} flag was dropped`; evc = '#e5e7eb'; continue; }
+                        f.x = P.x; f.y = P.y; f.z = P.z;
+                        const home = MD.bases[c.team & 1], mine = MD.flags[c.team & 1];
+                        if (mine.s === 'home' && near2(P, home.x, home.y, home.z, 2.6)) {
+                            NET.score[c.team & 1]++; c.pts = (c.pts | 0) + 3;
+                            f.s = 'home'; f.by = -1; f.x = MD.bases[f.t].x; f.y = MD.bases[f.t].y; f.z = MD.bases[f.t].z;
+                            changed = true; ev = `${c.name} CAPTURED THE ${TEAM_NAMES[f.t]} FLAG!`; evc = hex(TEAM_COLORS[c.team & 1]);
+                            hostSendScore();
+                            if (NET.score[c.team & 1] >= NET.target) { modeSend(ev, evc); modeEnd(c.team & 1, undefined, `${TEAM_NAMES[c.team & 1]} TEAM WINS  ${NET.score[0]} - ${NET.score[1]}`); return; }
+                        }
+                        continue;
+                    }
+                    if (f.s === 'dropped' && now - f.dropT > CTF_RETURN_S * 1000) { f.s = 'home'; f.x = MD.bases[f.t].x; f.y = MD.bases[f.t].y; f.z = MD.bases[f.t].z; changed = true; ev = `The ${TEAM_NAMES[f.t]} flag went home`; evc = '#e5e7eb'; continue; }
+                    const who = live.find(([p, P]) => near2(P, f.x, f.y, f.z, 1.5) && (f.s === 'dropped' || (p.team & 1) !== f.t));
+                    if (!who) continue;
+                    const p = who[0];
+                    if ((p.team & 1) === f.t) { f.s = 'home'; f.x = MD.bases[f.t].x; f.y = MD.bases[f.t].y; f.z = MD.bases[f.t].z; p.pts = (p.pts | 0) + 1; ev = `${p.name} returned the ${TEAM_NAMES[f.t]} flag`; }
+                    else { f.s = 'carried'; f.by = p.id; ev = `${p.name} TOOK THE ${TEAM_NAMES[f.t]} FLAG`; }
+                    changed = true; evc = hex(TEAM_COLORS[p.team & 1]);
+                }
+            } else if (m === 'koth' && MD.hill) {
+                if (now - MD.hillAt > HILL_MOVE_S * 1000) { MD.hillIdx++; modeHillAt(MD.hillIdx); changed = true; ev = 'THE HILL MOVED'; evc = '#fde047'; }
+                const H = MD.hill, inside = live.filter(([p, P]) => near2(P, H.x, H.y, H.z, H.r)), n = [0, 0];
+                for (const [p] of inside) n[p.team & 1]++;
+                const holder = n[0] && n[1] ? 2 : n[0] ? 0 : n[1] ? 1 : -1;
+                if (holder !== MD.holder) { MD.holder = holder; changed = true; }
+                MD.kAcc = (MD.kAcc || 0) + 0.1;
+                if (MD.kAcc >= 1) {
+                    MD.kAcc = 0;
+                    if (holder === 0 || holder === 1) {
+                        NET.score[holder]++; for (const [p] of inside) p.pts = (p.pts | 0) + 1;
+                        hostSendScore();
+                        if (NET.score[holder] >= NET.target) { modeEnd(holder, undefined, `${TEAM_NAMES[holder]} TEAM WINS  ${NET.score[0]} - ${NET.score[1]}`); return; }
+                    }
+                }
+            } else if (m === 'lts' && MD.phase === 'live') {
+                const n = ltsAlive(); if (n[0] !== MD.alive[0] || n[1] !== MD.alive[1]) { MD.alive = n; changed = true; ltsCheck(); }
+            } else if (m === 'infect') infectCheck();
+            if (changed || ev) modeSend(ev, evc);
+            else if ((MD.sendT -= 0.1) <= 0) modeSend();
+        }
+        function modeSnapshot(ev, evc) {
+            const m = { t: 'mst', ph: MD.phase, rem: MD.until ? Math.max(0, (MD.until - performance.now()) / 1000) : -1, round: MD.round, rs: MD.rs, alive: MD.alive };
+            if (NET.mode === 'gungame') m.gg = MD.gg;
+            if (MD.tags.length || NET.mode === 'kc') m.tags = MD.tags.map(t => [t.id, r2(t.x), r2(t.y), r2(t.z), t.team]);
+            if (MD.flags) { m.flags = MD.flags.map(f => [f.s === 'home' ? 0 : f.s === 'carried' ? 1 : 2, f.by, r2(f.x), r2(f.y), r2(f.z)]); m.bases = MD.bases.map(b => [r2(b.x), r2(b.y), r2(b.z)]); }
+            if (MD.hill) m.hill = [r2(MD.hill.x), r2(MD.hill.y), r2(MD.hill.z), MD.hill.r, MD.holder, Math.max(0, HILL_MOVE_S - (performance.now() - MD.hillAt) / 1000)];
+            if (ev) { m.ev = String(ev).slice(0, 80); m.evc = evc || '#fff'; }
+            return m;
+        }
+        function modeSend(ev, evc) {
+            if (!NET.host || !MD.on) return;
+            MD.sendT = 1;
+            const m = modeSnapshot(ev, evc);
+            netBroadcast(m); modeEffects(m);
+        }
+
+        // ----- everyone: take in the host's state -----
+        function modeApply(m) {
+            if (!MD.on || NET.host) return;
+            MD.phase = m.ph; MD.until = m.rem >= 0 ? performance.now() + m.rem * 1000 : 0; MD.round = m.round | 0; MD.alive = m.alive || [0, 0];
+            if (m.gg) MD.gg = m.gg;
+            if (m.tags) MD.tags = m.tags.map(([id, x, y, z, team]) => ({ id, x, y, z, team }));
+            if (m.flags) { MD.flags = m.flags.map(([s, by, x, y, z], t) => ({ t, s: s === 0 ? 'home' : s === 1 ? 'carried' : 'dropped', by, x, y, z })); MD.bases = m.bases.map(([x, y, z]) => ({ x, y, z })); }
+            if (m.hill) { MD.hill = { x: m.hill[0], y: m.hill[1], z: m.hill[2], r: m.hill[3] }; MD.holder = m.hill[4]; MD.hillAt = performance.now() - (HILL_MOVE_S - m.hill[5]) * 1000; }
+            modeEffects(m);
+        }
+        function modeEffects(m) {
+            // gun game: you moved up (or down) a gun
+            if (NET.mode === 'gungame' && m.gg) {
+                const lv = MD.gg[NET.id] | 0;
+                if (MD.myLv !== undefined && lv !== MD.myLv && !NET.dead) {
+                    modeLoadout(); ammoState[playerStats.currentWeapon] = W(playerStats.currentWeapon).magSize; updateGunModel(); updateHUD();
+                    if (lv > MD.myLv) { toast(`NEXT GUN: ${W(playerStats.currentWeapon).name.toUpperCase()}${lv === GG_LIST.length - 1 ? ' - LAST ONE!' : ''}`, '#fde047', 1.6); sfx('level'); }
+                }
+                MD.myLv = lv;
+            }
+            // last team standing: a new round puts everyone back at their spawn with full health
+            if (NET.mode === 'lts' && m.rs !== undefined && m.rs !== MD.rsSeen) {
+                const sat = MD.rsSeen === undefined && NET.dead;          // joined mid-round: keep waiting
+                MD.rsSeen = m.rs; MD.rs = m.rs; if (m.ph === 'live' && !sat) netPvpRespawn();
+            }
+            if (m.ev) { netFeed(`<span style="color:${escHtml(m.evc || '#fff')}">${escHtml(m.ev)}</span>`); toast(m.ev, m.evc || '#fff', 1.8); }
+            modeVisuals();
+        }
+        function netSitOut() {          // Last Team Standing: joined mid-round, so wait for the next one
+            NET.dead = true; currentHp = 0; NET.me.alive = false; NET.respawnT = 1e9;
+            if (vmModel) vmModel.root.visible = false;
+            ui.netDown.classList.remove('hidden');
+        }
+
+        // ----- the objects on the map: flags, the hill, dog tags (unlit, a handful of draw calls) -----
+        const _mdMats = {};
+        const mdMat = (col, op) => { const k = col + ':' + (op || 1); return _mdMats[k] || (_mdMats[k] = new THREE.MeshBasicMaterial(op ? { color: col, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide } : { color: col })); };
+        function modeVisuals() {
+            if (!MD.g) return;
+            const V = MD.vis;
+            if (MD.flags && !V.flags.length) {
+                for (const t of [0, 1]) {
+                    const g = new THREE.Group();
+                    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 6), mdMat(0xe5e7eb)); pole.position.y = 1.3; g.add(pole);
+                    const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 0.05), mdMat(TEAM_COLORS[t])); cloth.position.set(0.47, 2.25, 0); g.add(cloth);
+                    const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 3.2, 12, 1, true), mdMat(TEAM_COLORS[t], 0.18)); glow.position.y = 1.6; g.add(glow);
+                    MD.g.add(g);
+                    const base = new THREE.Mesh(new THREE.RingGeometry(2.0, 2.6, 28), mdMat(TEAM_COLORS[t], 0.55)); base.rotation.x = -Math.PI / 2;
+                    base.position.set(MD.bases[t].x, MD.bases[t].y + 0.06, MD.bases[t].z); MD.g.add(base);
+                    V.flags.push(g);
+                }
+            }
+            if (MD.hill) {
+                if (!V.hill) {
+                    const g = new THREE.Group();
+                    const ring = new THREE.Mesh(new THREE.RingGeometry(HILL_R - 0.35, HILL_R, 40), mdMat(0xffffff, 0.85)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.07; g.add(ring);
+                    const disc = new THREE.Mesh(new THREE.CircleGeometry(HILL_R - 0.35, 40), mdMat(0xffffff, 0.14)); disc.rotation.x = -Math.PI / 2; disc.position.y = 0.05; g.add(disc);
+                    const wall = new THREE.Mesh(new THREE.CylinderGeometry(HILL_R, HILL_R, 3, 40, 1, true), mdMat(0xffffff, 0.12)); wall.position.y = 1.5; g.add(wall);
+                    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 40, 8, 1, true), mdMat(0xffffff, 0.22)); beam.position.y = 20; g.add(beam);
+                    MD.g.add(g); V.hill = g;
+                }
+                V.hill.position.set(MD.hill.x, MD.hill.y, MD.hill.z);
+                const col = MD.holder === 0 || MD.holder === 1 ? TEAM_COLORS[MD.holder] : MD.holder === 2 ? 0xfde047 : 0xffffff;
+                V.hill.children.forEach((o, i) => { o.material = mdMat(col, [0.85, 0.14, 0.12, 0.22][i]); });
+            }
+            // dog tags: keep one little spinning tag per live tag
+            const seen = new Set();
+            for (const t of MD.tags) {
+                seen.add(t.id);
+                if (!V.tags.has(t.id)) { const o = new THREE.Mesh(_tagGeo || (_tagGeo = new THREE.BoxGeometry(0.32, 0.46, 0.06)), mdMat(t.team ? 0x93c5fd : 0xfca5a5)); o.position.set(t.x, t.y + 0.9, t.z); MD.g.add(o); V.tags.set(t.id, o); }
+            }
+            for (const [id, o] of V.tags) if (!seen.has(id)) { MD.g.remove(o); V.tags.delete(id); }
+        }
+        let _tagGeo = null;
+        const _fp = new V3();
+        function modeTick(dt) {           // per frame, everyone
+            if (NET.host) modeHostTick(dt);
+            if (!MD.g) return;
+            const V = MD.vis, t = gameTime;
+            if (MD.flags) MD.flags.forEach((f, i) => {
+                const g = V.flags[i]; if (!g) return;
+                if (f.s === 'carried') {
+                    const c = playerById(f.by);
+                    if (f.by === NET.id) { g.visible = false; return; }
+                    g.visible = true;
+                    if (c && c.av) { g.position.copy(c.av.g.position); g.position.y += 0.9; g.scale.setScalar(0.6); }
+                    else g.position.set(f.x, f.y, f.z);
+                } else { g.visible = true; g.scale.setScalar(1); g.position.set(f.x, f.y, f.z); g.rotation.y = t * 0.8; }
+            });
+            for (const o of V.tags.values()) { o.rotation.y = t * 3; o.position.y += Math.sin(t * 3 + o.id) * 0.002; }
+            if (V.hill) V.hill.children[3].material.opacity = 0.16 + 0.08 * Math.sin(t * 3);
+        }
+
+        // ----- HUD, scoreboard, end screen -----
+        function modeHud() {
+            const m = NET.mode, rem = MD.until ? (MD.until - performance.now()) / 1000 : -1, me = NET.me;
+            const clock = rem >= 0 && MD.phase !== 'over' ? `<span class="text-base text-gray-300">${mmss(rem)}</span>` : '';
+            const prot = NET.protT > 0 ? ' <span class="text-sm text-cyan-300">SPAWN PROTECTED</span>' : '';
+            const T = (t, s) => `<span style="color:${hex(modeTeamCol(t))}">${s}</span>`;
+            let sc = '', lv = MP_MODES[m].name, line = '', col = '';
+            if (isFfaMode()) {
+                const all = allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills), lead = all[0];
+                if (m === 'gungame') {
+                    const my = MD.gg[NET.id] | 0, lw = lead ? MD.gg[lead.id] | 0 : 0;
+                    sc = `<span>GUN ${my + 1}/${GG_LIST.length}</span>${clock}<span style="color:${hex(lead ? pcol(lead) : 0xffffff)}">${lead ? escHtml(lead.id === NET.id ? 'YOU' : lead.name) + ' ' + (lw + 1) : ''}</span>`;
+                    line = `${W(playerStats.currentWeapon).name}${my < GG_LIST.length - 1 ? ' - next: ' + W(GG_LIST[my + 1]).name : ' - LAST GUN!'}`;
+                } else {
+                    sc = `<span>YOU ${me ? me.kills : 0}</span>${clock}<span class="text-base text-gray-300">first to ${NET.target}</span><span style="color:${hex(lead ? pcol(lead) : 0xffffff)}">${lead ? escHtml(lead.id === NET.id ? 'YOU' : lead.name) + ' ' + lead.kills : ''}</span>`;
+                    line = lead && lead.id === NET.id ? 'You are in the lead!' : `Leader: ${lead ? lead.name : '-'}`;
+                }
+                col = hex(NET.color || 0xffffff);
+            } else if (m === 'infect') {
+                const all = allPlayers(), s = all.filter(p => (p.team & 1) === 0).length;
+                sc = `${T(0, 'SURVIVORS ' + s)}${clock}${T(1, (all.length - s) + ' INFECTED')}`;
+                line = NET.team === 1 ? 'INFECTED - get them!' : 'SURVIVE!'; col = hex(modeTeamCol(NET.team));
+            } else {
+                sc = `${T(0, 'RED ' + NET.score[0])}<span class="text-base text-gray-300">first to ${NET.target}</span>${clock}${T(1, NET.score[1] + ' BLUE')}`;
+                col = hex(TEAM_COLORS[NET.team & 1]);
+                if (m === 'ctf' && MD.flags) {
+                    const theirs = MD.flags[1 - (NET.team & 1)], mine = MD.flags[NET.team & 1];
+                    line = theirs.s === 'carried' && theirs.by === NET.id ? (mine.s === 'home' ? 'YOU HAVE THE FLAG - RUN HOME!' : 'YOU HAVE THE FLAG - get yours back to score') : mine.s === 'carried' ? 'YOUR FLAG IS TAKEN!' : mine.s === 'dropped' ? 'Your flag is down - touch it to return it' : 'Grab the enemy flag';
+                } else if (m === 'koth') line = `HILL: ${MD.holder === 0 ? 'RED' : MD.holder === 1 ? 'BLUE' : MD.holder === 2 ? 'CONTESTED' : 'nobody'} - moves in ${mmss(HILL_MOVE_S - (performance.now() - MD.hillAt) / 1000)}`;
+                else if (m === 'kc') line = `${MD.tags.length} tag${MD.tags.length === 1 ? '' : 's'} on the ground`;
+                else if (m === 'lts') line = MD.phase === 'break' ? 'Next round in ' + Math.max(0, Math.ceil(rem)) : `ROUND ${MD.round} - alive ${MD.alive[0]} v ${MD.alive[1]}`;
+                else line = `Your team: ${TEAM_NAMES[NET.team & 1]}`;
+            }
+            ui.netScore.innerHTML = sc + prot;
+            setText(ui.txtLevel, lv); setText(ui.txtEnemies, line); ui.txtEnemies.style.color = col;
+        }
+        function modeStatLine(p) {
+            switch (NET.mode) {
+                case 'gungame': return ` - GUN ${Math.min(GG_LIST.length, (MD.gg[p.id] | 0) + 1)}/${GG_LIST.length}`;
+                case 'kc': return ` - ${p.pts | 0} TAGS`;
+                case 'ctf': return ` - ${p.pts | 0} PTS`;
+                case 'koth': return ` - ${p.pts | 0}s ON THE HILL`;
+                case 'infect': return ` - ${p.team === 1 ? 'INFECTED' : 'SURVIVED'}`;
+            }
+            return '';
+        }
+        function modeBoardHtml() {
+            const col = { ffa: 'KILLS', gungame: 'GUN', kc: 'TAGS', ctf: 'POINTS', koth: 'HILL', lts: 'KILLS', infect: 'POINTS' }[NET.mode] || 'SCORE';
+            const val = (p) => NET.mode === 'gungame' ? (MD.gg[p.id] | 0) + 1 : NET.mode === 'ffa' || NET.mode === 'lts' ? p.kills : p.pts | 0;
+            const head = `<tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">${col}</td><td class="pr-6">KILLS</td><td class="pr-6">DEATHS</td><td>PING</td></tr>`;
+            const rows = (list) => list.sort((a, b) => val(b) - val(a) || b.kills - a.kills).map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.bot ? ' <span class="text-[10px] text-gray-400">BOT</span>' : ''}${p.alive ? '' : ' <span class="text-[10px] text-red-300">DEAD</span>'}</td><td class="pr-6">${val(p)}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td>${pingCell(p)}</td></tr>`).join('');
+            const all = allPlayers();
+            let h = `<div class="text-2xl font-black mb-3">${escHtml(MP_MODES[NET.mode].name)} <span class="text-sm text-gray-400">${MAPS[run.map] ? MAPS[run.map].name : ''}${MD.until ? ' - ' + mmss((MD.until - performance.now()) / 1000) : ''}</span></div>`;
+            if (isFfaMode()) h += `<table class="w-full text-sm font-bold">${head}${rows(all)}</table>`;
+            else h += [0, 1].map(t => `<div class="font-black mt-2" style="color:${hex(modeTeamCol(t))}">${modeTeamName(t)}${NET.mode === 'infect' ? '' : ' - ' + NET.score[t]}</div><table class="w-full text-sm font-bold">${head}${rows(all.filter(p => (p.team & 1) === t))}</table>`).join('');
+            return h;
+        }
+
+        // ----- rejoining: the host keeps a dropped player's score for 5 minutes, by name -----
+        function netGhostSave(p) {
+            if (!NET.ghosts) NET.ghosts = new Map();
+            NET.ghosts.set(p.name, { t: performance.now(), mode: NET.mode, team: p.team, kills: p.kills, deaths: p.deaths, pts: p.pts | 0, gg: MD.gg[p.id] | 0 });
+        }
+        function netGhostLoad(p) {
+            const g = NET.ghosts && NET.ghosts.get(p.name);
+            if (!g || g.mode !== NET.mode || performance.now() - g.t > 300000) return false;
+            NET.ghosts.delete(p.name);
+            Object.assign(p, { team: g.team, kills: g.kills, deaths: g.deaths, pts: g.pts });
+            if (NET.mode === 'gungame') { MD.gg[p.id] = g.gg; modeSend(); }
+            netFeed(`<span class="text-green-300">${escHtml(p.name)} is back - score kept</span>`);
+            return true;
+        }
+
+        // Last Team Standing: click to watch the next teammate
+        document.addEventListener('mousedown', () => { if (NET.inGame && NET.dead && NET.mode === 'lts') NET.specIdx = (NET.specIdx | 0) + 1; });
+
+        // test hooks (5.3)
+        Object.assign(window.__blocky, {
+            modes: {
+                MD, GG_LIST, state: () => ({ on: MD.on, mode: MD.mode, phase: MD.phase, gg: MD.gg, tags: MD.tags.length, flags: MD.flags && MD.flags.map(f => f.s + ':' + f.by), hill: MD.hill && [MD.hill.x, MD.hill.z, MD.holder], round: MD.round, score: NET.score.slice(), over: NET.over, team: NET.team, rem: MD.until ? Math.round((MD.until - performance.now()) / 1000) : -1 }),
+                players: () => allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, alive: !!p.alive, kills: p.kills, deaths: p.deaths, pts: p.pts | 0, bot: !!p.bot, spec: !!p.spec, vis: p.av ? p.av.g.visible : null, hp: p.hp })),
+                addBots: (n) => { let k = 0; for (let i = 0; i < n; i++) if (botAdd()) k++; hostLobbyUpdate(); return k; },
+                setMode: (m) => { NET.lobby.mode = m; for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); hostLobbyUpdate(); },
+                start: () => hostStartGame(), problem: () => startProblem(),
+                endIn: (s) => { MD.until = performance.now() + s * 1000; },
+                kill: (victim, by) => { const v = playerById(victim); if (!v) return false; if (victim === NET.id) { NET.lastBy = by; takeDamage(9999); } else if (isBot(v)) botDamaged(v, 9999, by, srcIdx('ar')); else hostOnDeath(victim, by, srcIdx('ar')); return true; },
+                botState: (id) => { const p = netPlayers.get(id); return p && isBot(p) ? { x: p.bot.x, z: p.bot.z, feet: p.bot.feet, hp: p.bot.hp, w: p.bot.w, tgt: p.bot.tgt, alive: p.alive } : null; },
+                tp: (x, z) => { camera.position.set(x, groundAt(x, z, 0.3, 50) + EYE_STAND, z); feetY = groundAt(x, z, 0.3, 50); },
+                weapons: () => ({ list: playerStats.weapons.slice(), cur: playerStats.currentWeapon, maxHp, prot: NET.protT }),
+                delay: () => [...netPlayers.values()].map(p => Math.round((NET.host ? p.peer : NET.hostPeer) ? netDelay(NET.host ? p.peer : NET.hostPeer, performance.now()) : -1)),
+                ghost: () => NET.ghosts ? [...NET.ghosts.keys()] : [],
+                // run the game n frames of `ms` each, right now (tests: the headless browser draws far too slowly to play in real time)
+                step: (n, ms = 50) => { for (let i = 0; i < n; i++) frame((prevTime || performance.now()) + ms); prevTime = performance.now(); return gameTime; },
+                noRender: () => { renderer.render = () => {}; },
+                get camera() { return camera; },
+                invite: () => hostCreateInvite(), accept: (key, reply) => { const i = NET.invites.find(x => x.key === key); if (i) hostAcceptReply(i, reply); return !!i; }, dropLink: () => { try { NET.hostPeer.pc.close(); } catch (e) {} }
+            }
         });
 
         // ---- 29-start-screen.js ----

@@ -254,7 +254,7 @@ const MAPS = {
     mall:      { name: 'MALL',      size: 72,  desc: 'NEW! Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
     subway:    { name: 'SUBWAY', size: 64, desc: 'NEW! A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
     biolab:    { name: 'BIOLAB', size: 46, hidden: true, desc: 'Campaign finale arena: a sunken containment pit ringed by catwalks, vents and quarantine pods.' },
-    tourney:   { name: 'TOURNAMENT ARENA', size: 34, hidden: true, desc: 'Colosseum for tournament duels: a round sand pit with cover pillars, ringed by stands, banners and torches.' },
+    tourney:   { name: 'TOURNAMENT ARENA', size: 34, hidden: true, desc: 'Floodlit duel stadium: a symmetric pit with a central pillar, flank catwalks and cover at three heights, ringed by stands and big screens.' },
     military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'NEW! Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
 };
 // maps with hidden: true are campaign-only arenas (never in the map pickers, random picks or challenges)

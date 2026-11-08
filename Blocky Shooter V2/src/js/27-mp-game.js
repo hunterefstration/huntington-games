@@ -509,6 +509,7 @@ function hostLateJoin(p) {
     if (!NET.cfg) return;
     p.kills = 0; p.deaths = 0; p.pts = 0; p.buf.clear(); p.tgt.feet = -100; p.tgt.alive = false;
     if (!netGhostLoad(p)) autoTeam(p);           // 5.3: back after a drop = same team and score as before
+    if (NET.mode === 'lts') p.alive = false;      // sits out until the next round
     const players = allPlayers().map(q => ({ id: q.id, name: q.name, team: q.team, color: q.color, look: lookOf(q) || null, bot: q.bot ? 1 : undefined }));
     sendRel(p.peer, Object.assign({}, NET.cfg, { players, late: { level: playerStats.level, wave: waveActive, inter: intermission, score: NET.score, kd: allPlayers().map(q => [q.id, q.kills, q.deaths]) } }));
     if (NET.mode === 'tourney') { p.spec = true; if (TN.on) { TN.names[p.id] = p.name; sendRel(p.peer, tourneySnapshot(Math.max(0, (TN.until - performance.now()) / 1000), TN.phase, TN.phaseId)); } }
@@ -562,7 +563,7 @@ function netBeginGame(cfg) {
     for (const p of netPlayers.values()) { if (p.av) scene.remove(p.av.g); p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
     if (MP_MODES[cfg.mode].rules) modeBegin(cfg); else modeReset();
     if (NET.pvp) {
-        maxHp = 100; modeLoadout();
+        maxHp = 100; modeLoadout(true);
         resetAmmo();
         if (cfg.mode === 'tourney') { NET.spawns = [[TOURNEY.spawns[0]], [TOURNEY.spawns[1]]]; tourneyInit(cfg); for (const p of netPlayers.values()) p.spec = true; tourneyGoSeat(); }
         else { pickTeamSpawns(cfg.seed); netPvpRespawn(); }
