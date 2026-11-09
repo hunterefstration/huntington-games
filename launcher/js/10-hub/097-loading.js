@@ -33,7 +33,14 @@ function glShow(g) {
 function glHide() {
   var d = GL.el; if (!d || d.hidden || d.classList.contains('out')) return;
   var wait = Math.max(0, 900 - (Date.now() - GL.t0));        // never just a flash
-  setTimeout(function () { d.classList.add('out'); clearInterval(GL.quipT); setTimeout(function () { if (d.classList.contains('out')) d.hidden = true; }, 450); }, wait);
+  setTimeout(function () { d.classList.add('out'); clearInterval(GL.quipT); glFocus(); setTimeout(function () { if (d.classList.contains('out')) d.hidden = true; }, 450); }, wait);
+}
+// hand the keyboard to the game once it is showing: a game started without a click inside it (an invite, Join, a
+// party) otherwise kept the keyboard on the launcher, and you spawned in unable to move until you clicked
+function glFocus() {
+  var a = document.activeElement;
+  if (a && a !== document.body && a !== frame && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;      // typing in the chat dock
+  try { frame.focus(); frame.contentWindow.focus(); } catch (e) {}
 }
 // the real game page has been put into the frame: from now on its load counts
 function glArm() {
