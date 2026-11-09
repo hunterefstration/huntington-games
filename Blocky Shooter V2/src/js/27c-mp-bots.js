@@ -105,7 +105,7 @@ function botsTick(dt) {
     for (const p of netPlayers.values()) if (isBot(p) && p.bot.feet !== undefined) botThink(p, dt, now);
 }
 function botEnemyOk(p, q) {
-    if (!q || q === p || !q.alive || q.spec || q.team === p.team) return false;
+    if (!q || q === p || !q.alive || q.spec || q.lag || q.team === p.team) return false;      // (not someone frozen by a dropped link)
     if (NET.mode === 'tourney' && !(tnIsDuelist(q.id) && tnIsDuelist(p.id))) return false;
     return true;
 }

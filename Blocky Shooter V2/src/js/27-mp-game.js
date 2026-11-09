@@ -2,7 +2,7 @@
 const _targets = [];
 function netAiTargets(localT) {
     _targets.length = 0; _targets.push(localT);
-    if (!NET.pvp) for (const p of netPlayers.values()) if (p.tgt.feet > -50) _targets.push(p.tgt);
+    if (!NET.pvp) for (const p of netPlayers.values()) if (p.tgt.feet > -50 && !p.lag) _targets.push(p.tgt);      // zombies leave a reconnecting player alone
     return _targets;
 }
 function netSendDamage(pid, amount, from, kb, by, jam) {
@@ -307,6 +307,7 @@ function hostApplyPvpHits(shooter, list) {
         const target = playerById(pid);
         if (!target || target.team === shooter.team || !target.alive || target.spec) continue;
         if (target.protUntil > now) continue;          // 5.3: spawn protection (host's clock)
+        if (target.lag) continue;                      // frozen by a dropped link: not a free kill
         if (!modeHitOk(shooter, target)) continue;     // 5.3: e.g. Last Team Standing between rounds
         if (NET.mode === 'tourney' && (TN.phase !== 'duel' || !tnIsDuelist(shooter.id) || !tnIsDuelist(pid) || !shooter.alive)) continue;      // 5.2: only the two duelists, only while the fight is on
         const d = Math.min(+dmg || 0, 1500);
@@ -406,7 +407,8 @@ function netRespawn(xz, hp, feet = 0) {
     // land on whatever is at that height (ground by default), not the top of a crane above it
     camera.position.set(xz[0], EYE_STAND, xz[1]); feetY = groundAt(xz[0], xz[1], 0.3, feet + 0.5);
     // Sky Islands: never respawn over thin air or inside a block (that was the die-again-straight-away / can't-move bug)
-    if (VOID && (feetY < feet - 3 || pointInSolid(new V3(xz[0], feetY + 1, xz[1]), 0.4))) { const s = nearestSafe(xz[0], xz[1]); if (s) { camera.position.x = s[0]; camera.position.z = s[2]; feetY = s[1]; } }
+    // Any map: never inside the zombie-ram cage (a co-op revive lands 1.5m from a teammate, who may be standing right by it)
+    if ((VOID && (feetY < feet - 3 || pointInSolid(new V3(xz[0], feetY + 1, xz[1]), 0.4))) || inCage(xz[0], xz[1], 0.6)) { const s = nearestSafe(xz[0], xz[1]); if (s) { camera.position.x = s[0]; camera.position.z = s[2]; feetY = s[1]; } }
     camera.position.y = feetY + EYE_STAND;
     velocity.set(0, 0, 0); push.set(0, 0, 0);
     if (vmModel) vmModel.root.visible = true;
@@ -656,6 +658,89 @@ function h2Reset() {
 }
 
 
+// ---------- link health (school Wi-Fi) ----------
+// The transport rides out outages of up to ~90 s (relay fail-over, PeerJS reconnect), so a quiet link is not a dead one:
+// after LINK_QUIET_MS a player shows as RECONNECTING (guest: a banner; host: a tag on their name), and only after
+// LINK_DROP_MS are they removed / does the guest give up. When messages flow again the host resends the match state.
+const LINK_QUIET_MS = 5000, LINK_DROP_MS = 75000;
+function hostLinkCheck(now) {
+    for (const p of [...netPlayers.values()]) {
+        if (!p.peer || !p.peer.lastMsg) continue;
+        const quiet = now - p.peer.lastMsg;
+        if (quiet > LINK_DROP_MS) { netRemovePlayer(p.id, 'lost connection'); continue; }
+        if ((quiet > LINK_QUIET_MS) !== !!p.lag) netSetLag(p, quiet > LINK_QUIET_MS);
+    }
+}
+function clientLinkCheck(now) {          // true = gave up on the host
+    const pr = NET.hostPeer;
+    if (!pr || NET.joinState !== 'connected' || !pr.lastMsg) return false;
+    const quiet = now - pr.lastMsg;
+    if (quiet > LINK_DROP_MS) { NET.lagging = false; lostBanner(0); netHostGone('Lost connection to the host. Type the code again to rejoin.'); return true; }
+    const lag = quiet > LINK_QUIET_MS;
+    if (lag !== !!NET.lagging) { NET.lagging = lag; if (!lag && NET.inGame) sendRel(pr, { t: 'rsq' }); }     // back: ask for the match state
+    lostBanner(lag && NET.inGame ? quiet : 0);
+    return false;
+}
+// someone's link went quiet (on) or came back (off). The host tells everyone else and, on the way back, resyncs that player.
+function netSetLag(p, on) {
+    p.lag = on;
+    if (p.av) lagTag(p.av, on);
+    if (NET.host) { netBroadcast({ t: 'lag', id: p.id, on: on ? 1 : 0 }, p.id); if (!on) hostResync(p); }
+    if (NET.inGame) netFeed(`<span style="color:${hex(pcol(p))}">${escHtml(p.name)}</span> <span class="text-gray-300">${on ? 'is reconnecting...' : 'is back'}</span>`);
+    if (!ui.netBoard.classList.contains('hidden')) renderBoard();
+}
+// a guest whose link came back may have missed messages: the roster, wave, score and mode state, all in one go
+function hostResync(p) {
+    if (!NET.inGame || !p || !p.peer) return;
+    const all = allPlayers();
+    sendRel(p.peer, { t: 'rsy', players: all.map(q => ({ id: q.id, name: q.name, team: q.team, color: q.color, look: lookOf(q) || null, bot: q.bot ? 1 : undefined, lag: q.lag ? 1 : undefined })),
+        level: playerStats.level, wave: waveActive, inter: intermission, score: NET.score, kd: all.map(q => [q.id, q.kills, q.deaths, q.pts | 0]) });
+    if (MP_MODES[NET.mode].rules) sendRel(p.peer, modeSnapshot());
+    if (NET.mode === 'tourney' && TN.on) sendRel(p.peer, tourneySnapshot(Math.max(0, (TN.until - performance.now()) / 1000), TN.phase, TN.phaseId));
+}
+function netApplyResync(m) {
+    const seen = new Set();
+    for (const q of m.players || []) {
+        seen.add(q.id); if (q.id === NET.id) continue;
+        let p = netPlayers.get(q.id);
+        if (!p) { p = makePlayer(q.id, q.name, q.team, q.color); netPlayers.set(q.id, p); }
+        Object.assign(p, { name: q.name, team: q.team, color: q.color, bot: !!q.bot }); if (q.look) p.look = cleanLook(q.look);
+        if (!p.av) { p.av = makeAvatar(p); p.av.g.position.set(spawnPt[0], -50, spawnPt[1]); }
+        p.lag = !!q.lag;
+    }
+    for (const id of [...netPlayers.keys()]) if (!seen.has(id)) netRemovePlayer(id, 'left the party');
+    if (!NET.pvp) {
+        const missedWave = (m.level | 0) > playerStats.level && m.wave;
+        playerStats.level = m.level | 0 || playerStats.level; waveActive = !!m.wave; intermission = m.inter || 0;
+        if (missedWave) netReviveIfDown();          // a wave started while we were cut off: that's when the downed get back up
+    }
+    netOnScore({ s: m.score || NET.score, k: m.kd || [] });
+    updateHUD();
+}
+let _lostEl = null, _lostS = -1;
+function lostBanner(quiet) {
+    if (!quiet) { if (_lostEl) _lostEl.style.display = 'none'; _lostS = -1; return; }
+    if (!_lostEl) {
+        _lostEl = document.createElement('div'); _lostEl.id = 'net-lost';
+        _lostEl.style.cssText = 'position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:60;pointer-events:none;background:rgba(0,0,0,0.7);border:2px solid #fb923c;border-radius:10px;padding:10px 18px;text-align:center;font-family:inherit';
+        document.body.appendChild(_lostEl);
+    }
+    _lostEl.style.display = '';
+    const s = Math.floor(quiet / 1000);
+    if (s !== _lostS) { _lostS = s; _lostEl.innerHTML = `<div style="color:#fdba74;font-weight:900;font-size:22px">Connection lost, reconnecting...</div><div style="color:#d1d5db;font-weight:700;font-size:13px">${s}s - keep playing, the match is still on</div>`; }
+}
+function lagTag(av, on) {               // "RECONNECTING..." over someone's head
+    if (on && !av.lag) {
+        const c = document.createElement('canvas'); c.width = 256; c.height = 48; const g = c.getContext('2d');
+        g.font = '900 26px Segoe UI, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 5; g.strokeStyle = 'rgba(0,0,0,0.85)';
+        g.strokeText('RECONNECTING...', 128, 24); g.fillStyle = '#fdba74'; g.fillText('RECONNECTING...', 128, 24);
+        av.lag = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTex(c), transparent: true, depthWrite: false }));
+        av.lag.scale.set(2, 0.375, 1); av.lag.position.y = 3.2; av.lag.renderOrder = 5; av.g.add(av.lag);
+    }
+    if (av.lag) av.lag.visible = on;
+}
+
+
 // ---------- the per-frame network work ----------
 const _eul = new THREE.Euler(0, 0, 0, 'YXZ');
 function netTick(dt) {
@@ -665,12 +750,10 @@ function netTick(dt) {
     // only judge the link on a normal frame: right after this page was frozen (hidden tab, loading a map)
     // the messages that queued up meanwhile haven't been read yet
     if (gap < 1500) {
-        if (NET.host) {
-            for (const p of [...netPlayers.values()]) if (p.peer && p.peer.lastMsg && now - p.peer.lastMsg > 15000) netRemovePlayer(p.id, 'lost connection');
-        } else if (NET.hostPeer && NET.joinState === 'connected' && NET.hostPeer.lastMsg && now - NET.hostPeer.lastMsg > 12000) {
-            netHostGone('Lost connection to the host. Type the code again to rejoin.'); return;
-        }
+        if (NET.host) hostLinkCheck(now);
+        else if (clientLinkCheck(now)) return;
     }
+    for (const p of netPlayers.values()) if (p.av && !!p.lag !== !!(p.av.lag && p.av.lag.visible)) lagTag(p.av, !!p.lag);
     netKeepAlive(now);
     if (NET.inGame) {
         netUpdateAvatars(dt);

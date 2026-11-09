@@ -90,7 +90,7 @@ function disposeAvatar(a) { try { if (a.tag) { a.tag.material.map.dispose(); a.t
 const TIER_COL = ['', '#fbbf24', '#e5e7eb', '#d6a06a', '#93c5fd', '#9ca3af'];
 function tagHtml(p) {
     const l = lookOf(p); if (!p) return '';
-    let h = '';
+    let h = p.lag ? '<span class="text-[10px] font-black" style="color:#fdba74">RECONNECTING</span> ' : '';
     if (CROWNED.has(p.name)) h += '<span title="Tournament winner" style="color:#fbbf24">&#9819;</span> ';
     if (l && l.r) h += `<span style="background:${TIER_COL[l.r]};color:#111;border-radius:4px;padding:0 4px;font-size:10px;font-weight:900;margin-right:4px" title="Blocky Shooter rank tier">R${l.r}</span>`;
     return h;

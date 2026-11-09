@@ -1,5 +1,16 @@
 # Handoff (updated 2026-11-04)
 
+## Reliability round (r64)
+- **Root cause of "server unreliable"**: the flood ladder. A real player on a new device sent every leaderboard score and achievement claim at once. That got refused frames, then strikes, then "Too much, too fast", then a 10-minute disconnect, and on the third time an automatic permanent ban.
+  - Now the launcher-traffic classes (saves, eco, query) are `soft`: refused, never a strike, never half-rated for new accounts. eco is burst 150 at 5/s, saves burst 40 at 3/s.
+  - Frames of an unknown type no longer count as strikes. A flood on the third strike now means 1 hour away, never a permanent ban, and old `automatic: flooding` bans are deleted at boot.
+  - The client paces `lbSubmit`/`ecoClaim` (3/s) and save rpcs (350 ms apart). Tests: `tools/tests/gv-flood.mjs` (also with `OLD_GV=<old account.js>`) and `gv-merge.mjs`.
+- **Save sync is a three-way merge** (gv/core.js syncRun; `meta[k].b` = the base hash both sides agreed on). If only this device changed a save, push (resets and deletes included). If only the cloud changed it, pull. If both changed it, the copy with more progress wins (`saveScore`: true flags, log of positive numbers, ignoring timestamps and ids); a tie goes to the newest copy.
+  - A deletion travels as an empty value (H0 = sha256('')).
+  - The server refuses a put with clearly less progress unless `base` equals the current hash (`saveLess` in 070-peer.js); the reply's `regress` counts them.
+- **Multiplayer drops**: Blocky waits 75 s (it used to be 12/15 s) and shows RECONNECTING, then resyncs. Frontline re-subscribes after a relay reconnect (it used to go silent) and waits 60 s (it used to be 9 s). The other games use hgnet's 90 s.
+- **Sky Islands "can't move"**: not reproduced in about 1,000 spawns. Fixed: a co-op revive could land inside the zombie cage.
+
 ## Round 5 (r63)
 - **Blocky 5.3 multiplayer**: host-side bots for every PvP mode (`27c-mp-bots.js`); 7 new modes, with their rules in `28d-mp-modes.js` (ffa, gungame, kc, ctf, koth, lts, infect) and one host `mst` state message; tournament spectators are hidden and fly or follow; Tournament Arena rebuilt (`07c-map-tourney.js`); spawn protection, adaptive interpolation (55-260 ms), rejoin keeps stats for 5 min, kill cam. Debug hook: `__blocky.modes`.
   - The automatic reconnect on 6-digit codes is untested: it needs PeerJS, which can't be reached offline.

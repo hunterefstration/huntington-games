@@ -3,7 +3,7 @@ Object.assign(ui, { netScore: $('net-score'), netFeed: $('net-feed'), netTeam: $
 function netHud(on) {
     ui.netScore.classList.toggle('hidden', !on || !NET.pvp || NET.mode === 'tourney');
     ui.netFeed.innerHTML = ''; ui.netTeam.innerHTML = ''; ui.netPing.textContent = '';
-    ui.netDown.classList.add('hidden'); ui.netBoard.classList.add('hidden');
+    ui.netDown.classList.add('hidden'); ui.netBoard.classList.add('hidden'); NET.lagging = false; lostBanner(0);
     ui.txtMoney.classList.toggle('hidden', !!(on && NET.pvp));
 }
 function netHudDown() { ui.netDown.classList.remove('hidden'); if (!NET.pvp) ui.netDown.innerHTML = `<div class="text-4xl font-black text-red-400">YOU'RE DOWN</div><div class="text-lg font-bold text-gray-200">${lastHurtBy ? 'Killed by ' + escHtml(lastHurtBy) + ' - ' : ''}you'll be back next wave</div>`; }

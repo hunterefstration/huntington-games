@@ -495,6 +495,7 @@ function hostMessage(p, peer, m) {
         case 'bye': netRemovePlayer(p.id, 'left the party'); break;
         case 'look': applyPlayerLook(p, m.look); if (NET.inGame) netBroadcast({ t: 'plook', id: p.id, look: p.look }); else hostLobbyUpdate(); break;
         case 'po': p.rtt = now - m.ts; break;
+        case 'rsq': hostResync(p); break;           // a guest whose link came back wants the match state
         case 'S': {
             clockSample(peer, m.ct, now);
             const s = m.p; if (!s) break;
@@ -557,6 +558,8 @@ function clientMessage(m) {
         case 'bye': netHostGone('', true); break;
         case 'left': netRemovePlayer(m.id, 'left the party'); break;
         case 'pi': sendRel(NET.hostPeer, { t: 'po', ts: m.ts }); break;
+        case 'rsy': if (NET.inGame) netApplyResync(m); break;
+        case 'lag': { const q = netPlayers.get(m.id); if (q && !!q.lag !== !!m.on) netSetLag(q, !!m.on); break; }
         case 'rt': for (const [id, rtt] of m.l) { const p = playerById(id); if (p) p.rtt = rtt; if (id === NET.id) NET.rtt = rtt; } break;
         case 'P': {
             clockSample(NET.hostPeer, m.ht, now);
