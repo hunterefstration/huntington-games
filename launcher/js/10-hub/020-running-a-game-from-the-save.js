@@ -218,7 +218,7 @@ document.getElementById('newtab').onclick = function () {
   }
   if (!local) setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
 };
-document.getElementById('back').onclick = closePlayer;
+document.getElementById('back').onclick = function () { closePlayer(); };      // (by name: later pieces wrap closePlayer)
 document.getElementById('full').onclick = function () { var p = document.getElementById('player'); if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(function () {}); };
 document.addEventListener('fullscreenchange', function () { document.getElementById('ptop').classList.toggle('hide', !!document.fullscreenElement); });
 document.getElementById('exp-btn').onclick = function () { document.getElementById('exp').classList.add('open'); };

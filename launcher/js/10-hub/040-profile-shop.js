@@ -159,7 +159,8 @@ function lbView(c) {
   var top = d.rows.slice(0, 3), order = [1, 0, 2];
   h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
     return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + profPfp(cs.p, i ? 46 : 60, cs.img) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
-  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button></div>';
+  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button>' +
+    (d.rows.length > 6 ? '<input id="lb-find" class="lbfind" type="search" placeholder="Find a player..." autocomplete="off" spellcheck="false">' : '') + '</div>';
   var rest = d.rows.slice(3);
   if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
     return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
@@ -176,8 +177,17 @@ function lbRender() {
   var box = document.getElementById('view-lb'); if (!box || box.hidden) return;
   var L = window.HGGrapevine, c = L && L.me() && L.eco && L.eco.catalog();
   if (!c) { box.innerHTML = '<div class="pempty">' + (L && L.me() ? 'Loading the leaderboards...' : 'Sign in to see the leaderboards.') + '</div>'; return; }
+  var had = document.activeElement && document.activeElement.id === 'lb-find';
   box.innerHTML = lbView(c);
+  var f = document.getElementById('lb-find'); if (f && PROF.lbFind) { f.value = PROF.lbFind; lbFindApply(); } if (f && had) { f.focus(); try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} }
 }
+// "Find a player": hide the rows that do not match (the podium stays)
+function lbFindApply() {
+  var q = String(PROF.lbFind || '').trim().toLowerCase();
+  [].forEach.call(document.querySelectorAll('#view-lb .plb tr'), function (tr, i) { if (!i) return; var td = tr.children[1]; tr.hidden = !!q && !(td && td.textContent.toLowerCase().indexOf(q) >= 0); });
+  [].forEach.call(document.querySelectorAll('#view-lb .lbp'), function (p) { var b = p.querySelector('b'); p.classList.toggle('dim', !!q && !(b && b.textContent.toLowerCase().indexOf(q) >= 0)); });
+}
+document.addEventListener('input', function (e) { if (e.target && e.target.id === 'lb-find') { PROF.lbFind = e.target.value; lbFindApply(); } });
 function profEarn(e) {
   var rows = [['📅', 'Open the launcher every day', '1 goon a day, 3 on every 7th day in a row' + (e.streak ? ' (you: ' + e.streak + ' in a row)' : '')], ['🏆', 'Every achievement', '1 goon each (the Account tab lists them all)'], ['🌊', 'Clear 15 waves in Blocky Shooter', '1 goon'],
     ['⬆️', 'Rank up in Blocky Shooter', '1 goon per rank'], ['⏱️', '15 minutes of active play, any game', '1 goon'],
