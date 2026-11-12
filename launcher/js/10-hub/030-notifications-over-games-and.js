@@ -490,6 +490,7 @@ window.HG_hub = { go: mpGo, leave: hubLeave, state: function () { return { room:
 function gvBeforePlay(g, go, fast) {
   var L = window.HGGrapevine;
   if (!(L && L.me())) return go();
+  if (typeof prefetchGame === 'function') prefetchGame(g);      // the download starts now, alongside the save check below (it used to wait for it)
   // multiplayer (an invite, a hub room): straight in. Saves still sync in the background, and anything newer from the
   // account waits until the game closes, the same as "Play without waiting".
   if (fast) { L.sync.setGameOpen(true); if (L.online()) L.sync.run().catch(function () {}); return go(); }
