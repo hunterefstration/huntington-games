@@ -414,7 +414,7 @@ function career(variant, who, days) {
     const tot = Object.values(sim.src).reduce((a, b) => a + b, 0);
     const share = {}; for (const k in sim.src) share[k] = sim.src[k] / Math.max(1, tot);
     return { variant, who, ascents: sim.ascents.map(a => ({ n: a.n, playMin: +(a.play / 60).toFixed(1), day: +(a.cal / 86400).toFixed(2), runMin: +(a.run / 60).toFixed(1), unlockMin: a.unlock == null ? null : +(a.unlock / 60).toFixed(1), gain: a.gain, total: a.total, bps: a.bps, clickShare: +a.clickShare.toFixed(3), why: a.why })),
-        share, wins: sim.wins, dayLog, life: sim.state().life.earned, maxBank: sim.maxBank };
+        share, wins: sim.wins, winDays: sim.log.filter(l => l.ev === 'win').map(l => +(l.cal / 86400).toFixed(1)), dayLog, life: sim.state().life.earned, maxBank: sim.maxBank };
 }
 
 // Offline strength: E/hour away vs E/hour playing (active player, at the end of a run hour)

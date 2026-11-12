@@ -26,3 +26,5 @@
                ? 'You are playing Rebalanced (beta): new numbers and its own save. Your Classic save is kept.'
                : 'Rebalanced (beta) is a test version with new numbers and its own save. Your Classic save is kept.');
        })();
+       // the panel title says what one general upgrade level gives in this variant
+       (function () { const e = document.getElementById('gen-step-label'); if (e) e.textContent = '+' + Math.round(BAL.gen.step * 100) + '%'; })();

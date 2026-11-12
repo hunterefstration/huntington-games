@@ -7,9 +7,10 @@
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Brown E Clicker 2.0</title>
-   <!-- Tailwind, built ahead of time by tools/tailwind.sh (it used to be compiled in the browser at every start) -->
-   <style><!--@inline css/05-tailwind.css--></style>
    <style><!--@inline css/10-style.css--></style>
+   <!-- Tailwind, built ahead of time by tools/tailwind.sh (it used to be compiled in the browser at every start). It comes
+        AFTER the game's own styles, where the browser-side compiler put its rules: .hidden must beat e.g. .golden-e { display: flex }. -->
+   <style><!--@inline css/05-tailwind.css--></style>
 </head>
 <body class="bg-stone-900 text-stone-100 h-screen w-screen font-sans overflow-hidden">
 
@@ -363,7 +364,7 @@
 
                <!-- GENERAL UPGRADES PANEL -->
                <div class="bg-stone-800 rounded-xl p-2 border border-[#8B4513]/50 shadow-inner mb-2 flex-shrink-0">
-                   <h3 class="text-xs font-black text-stone-400 uppercase tracking-widest mb-1 text-center">General Upgrades (+10%)</h3>
+                   <h3 class="text-xs font-black text-stone-400 uppercase tracking-widest mb-1 text-center">General Upgrades (<span id="gen-step-label">+10%</span>)</h3>
                    <div class="flex gap-2">
                        <button id="upgrade-click-btn" class="flex-1 bg-stone-700 hover:bg-stone-600 disabled:opacity-50 disabled:cursor-not-allowed border border-stone-600 rounded-lg px-2 py-1.5 text-left transition-colors active:scale-95 flex flex-col justify-between">
                            <span class="text-white font-bold text-sm">Click Power <span class="text-green-400 text-xs ml-1" id="click-multi-display">x1.0</span></span>

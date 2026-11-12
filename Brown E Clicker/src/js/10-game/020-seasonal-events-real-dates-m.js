@@ -146,7 +146,7 @@
            { id: 'eco4', x: 5, y: 8, p: 'eco3', cost: 600, br: 'eco', icon: '💰', name: 'Trust Fund', desc: 'Start every run with 1T Brown E\'s.', fx: { startE: 1e12 } },
            { id: 'haggle', x: 4, y: 7, p: 'eco3', cost: 100, br: 'eco', icon: '🤝', name: 'Haggler', desc: 'One-time upgrades cost 10% less.', fx: { upgDisc: 0.9 } },
            { id: 'wholesale', x: 6, y: 7, p: 'eco3', cost: 1500, br: 'eco', icon: '📦', name: 'Wholesale', desc: 'Buildings cost another 7% less.', fx: { buildDisc: 0.93 } },
-           { id: 'head', x: 4, y: 6, p: 'eco2', cost: 40, br: 'eco', icon: '🎚️', name: 'Head Start', desc: 'Both general upgrades start every run at x2.0.', fx: { genStart: 10 } },
+           { id: 'head', x: 4, y: 6, p: 'eco2', cost: 40, br: 'eco', icon: '🎚️', name: 'Head Start', desc: 'Both general upgrades start every run at x' + (1 + 10 * BAL.gen.step).toFixed(1) + '.', fx: { genStart: 10 } },
            { id: 'heir', x: 6, y: 6, p: 'eco2', cost: 250, br: 'eco', icon: '🧳', name: 'Heirlooms', desc: 'Golden E and offline upgrades stay bought when you ascend.', fx: { keepUpg: 1 } },
            { id: 'gold1', x: 6, y: 4, p: 'root', cost: 2, br: 'gold', icon: '💫', name: 'Golden Halo', desc: 'Golden E\'s appear 10% more often.', fx: { goldFreq: 1.1 } },
            { id: 'gold2', x: 7, y: 4, p: 'gold1', cost: 12, br: 'gold', icon: '⏳', name: 'Lingering Gold', desc: 'Golden E\'s stay on screen 50% longer.', fx: { goldLife: 1.5 } },

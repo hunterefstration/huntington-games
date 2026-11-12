@@ -1086,6 +1086,33 @@
      "gift": 5.638432656688057e-19
     },
     "wins": 25,
+    "winDays": [
+     7.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     8.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     9.8,
+     10.8,
+     10.8,
+     10.8,
+     10.8
+    ],
     "dayLog": [
      {
       "d": 1,
@@ -1308,7 +1335,7 @@
      {
       "n": 1,
       "playMin": 6,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 6,
       "unlockMin": 5,
       "gain": 2,
@@ -1320,7 +1347,7 @@
      {
       "n": 2,
       "playMin": 9,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 3,
       "unlockMin": 2,
       "gain": 6,
@@ -1332,7 +1359,7 @@
      {
       "n": 3,
       "playMin": 12,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 3,
       "unlockMin": 2,
       "gain": 16,
@@ -1344,7 +1371,7 @@
      {
       "n": 4,
       "playMin": 15,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 3,
       "unlockMin": 2,
       "gain": 27,
@@ -1356,7 +1383,7 @@
      {
       "n": 5,
       "playMin": 18,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 3,
       "unlockMin": 1,
       "gain": 74,
@@ -1368,7 +1395,7 @@
      {
       "n": 6,
       "playMin": 20,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 2,
       "unlockMin": 1,
       "gain": 106,
@@ -1380,7 +1407,7 @@
      {
       "n": 7,
       "playMin": 21,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 1,
       "unlockMin": 1,
       "gain": 2417,
@@ -1392,7 +1419,7 @@
      {
       "n": 8,
       "playMin": 22,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 1,
       "unlockMin": 1,
       "gain": 5133,
@@ -1404,7 +1431,7 @@
      {
       "n": 9,
       "playMin": 23,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 1,
       "unlockMin": 1,
       "gain": 129222,
@@ -1416,7 +1443,7 @@
      {
       "n": 10,
       "playMin": 23.4,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 0.4,
       "unlockMin": null,
       "gain": 2352055,
@@ -1428,7 +1455,7 @@
      {
       "n": 11,
       "playMin": 23.8,
-      "day": 0.35,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1256398,
@@ -1440,7 +1467,7 @@
      {
       "n": 12,
       "playMin": 24.1,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.2,
       "gain": 2505652,
@@ -1452,7 +1479,7 @@
      {
       "n": 13,
       "playMin": 24.4,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 4423077,
@@ -1464,7 +1491,7 @@
      {
       "n": 14,
       "playMin": 24.8,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 8446011,
@@ -1476,7 +1503,7 @@
      {
       "n": 15,
       "playMin": 25.1,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.2,
       "gain": 15021323,
@@ -1488,7 +1515,7 @@
      {
       "n": 16,
       "playMin": 25.4,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 408846,
@@ -1500,7 +1527,7 @@
      {
       "n": 17,
       "playMin": 25.7,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 26345433,
@@ -1512,7 +1539,7 @@
      {
       "n": 18,
       "playMin": 26,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.3,
       "gain": 48230904,
@@ -1524,7 +1551,7 @@
      {
       "n": 19,
       "playMin": 26.4,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 86502516,
@@ -1536,7 +1563,7 @@
      {
       "n": 20,
       "playMin": 26.6,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1192176,
@@ -1548,7 +1575,7 @@
      {
       "n": 21,
       "playMin": 26.9,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1468675,
@@ -1560,7 +1587,7 @@
      {
       "n": 22,
       "playMin": 27.1,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.1,
       "gain": 1473678,
@@ -1572,7 +1599,7 @@
      {
       "n": 23,
       "playMin": 27.4,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1731975,
@@ -1584,7 +1611,7 @@
      {
       "n": 24,
       "playMin": 27.6,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1829870,
@@ -1596,7 +1623,7 @@
      {
       "n": 25,
       "playMin": 27.9,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2103103,
@@ -1608,7 +1635,7 @@
      {
       "n": 26,
       "playMin": 28.1,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.1,
       "gain": 1972270,
@@ -1620,7 +1647,7 @@
      {
       "n": 27,
       "playMin": 28.4,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2024111,
@@ -1632,7 +1659,7 @@
      {
       "n": 28,
       "playMin": 28.6,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2091485,
@@ -1644,7 +1671,7 @@
      {
       "n": 29,
       "playMin": 28.9,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2652704,
@@ -1656,7 +1683,7 @@
      {
       "n": 30,
       "playMin": 29.1,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.1,
       "gain": 2712887,
@@ -1668,7 +1695,7 @@
      {
       "n": 31,
       "playMin": 29.4,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2784194,
@@ -1680,7 +1707,7 @@
      {
       "n": 32,
       "playMin": 29.6,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 3402429,
@@ -1692,7 +1719,7 @@
      {
       "n": 33,
       "playMin": 29.9,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 3580101,
@@ -1704,7 +1731,7 @@
      {
       "n": 34,
       "playMin": 30.1,
-      "day": 0.35,
+      "day": 0.73,
       "runMin": 0.3,
       "unlockMin": 0.1,
       "gain": 3692425,
@@ -1723,6 +1750,33 @@
      "gift": 3.0288444530215654e-19
     },
     "wins": 25,
+    "winDays": [
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7
+    ],
     "dayLog": [
      {
       "d": 1,
@@ -2300,6 +2354,33 @@
      "gift": 1.2759261294735717e-20
     },
     "wins": 25,
+    "winDays": [
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3,
+     0.3
+    ],
     "dayLog": [
      {
       "d": 1,
@@ -2522,7 +2603,7 @@
      {
       "n": 1,
       "playMin": 3,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 3,
       "unlockMin": 2,
       "gain": 5,
@@ -2534,7 +2615,7 @@
      {
       "n": 2,
       "playMin": 4,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 1,
       "unlockMin": 1,
       "gain": 357,
@@ -2546,7 +2627,7 @@
      {
       "n": 3,
       "playMin": 5,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 1,
       "unlockMin": 1,
       "gain": 360,
@@ -2558,7 +2639,7 @@
      {
       "n": 4,
       "playMin": 7,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 2,
       "unlockMin": 1,
       "gain": 2341,
@@ -2570,7 +2651,7 @@
      {
       "n": 5,
       "playMin": 8,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 1,
       "unlockMin": 1,
       "gain": 259721,
@@ -2582,7 +2663,7 @@
      {
       "n": 6,
       "playMin": 8.3,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1328154,
@@ -2594,7 +2675,7 @@
      {
       "n": 7,
       "playMin": 8.7,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 836648,
@@ -2606,7 +2687,7 @@
      {
       "n": 8,
       "playMin": 9,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 0.3,
       "unlockMin": 0.3,
       "gain": 1783448,
@@ -2618,7 +2699,7 @@
      {
       "n": 9,
       "playMin": 9.3,
-      "day": 0.34,
+      "day": 0.71,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 3249439,
@@ -2630,7 +2711,7 @@
      {
       "n": 10,
       "playMin": 9.7,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 4680287,
@@ -2642,7 +2723,7 @@
      {
       "n": 11,
       "playMin": 10,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": 0.3,
       "gain": 8071006,
@@ -2654,7 +2735,7 @@
      {
       "n": 12,
       "playMin": 10.3,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 11513372,
@@ -2666,7 +2747,7 @@
      {
       "n": 13,
       "playMin": 10.7,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 17783090,
@@ -2678,7 +2759,7 @@
      {
       "n": 14,
       "playMin": 11,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": 0.3,
       "gain": 26811182,
@@ -2690,7 +2771,7 @@
      {
       "n": 15,
       "playMin": 11.3,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 36822241,
@@ -2702,7 +2783,7 @@
      {
       "n": 16,
       "playMin": 11.6,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 375851,
@@ -2714,7 +2795,7 @@
      {
       "n": 17,
       "playMin": 11.9,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 56826710,
@@ -2726,7 +2807,7 @@
      {
       "n": 18,
       "playMin": 12.3,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": 0.1,
       "gain": 86811439,
@@ -2738,7 +2819,7 @@
      {
       "n": 19,
       "playMin": 12.5,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2197250,
@@ -2750,7 +2831,7 @@
      {
       "n": 20,
       "playMin": 12.8,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1966114,
@@ -2762,7 +2843,7 @@
      {
       "n": 21,
       "playMin": 13,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": 0.2,
       "gain": 2018202,
@@ -2774,7 +2855,7 @@
      {
       "n": 22,
       "playMin": 13.3,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 2387801,
@@ -2786,7 +2867,7 @@
      {
       "n": 23,
       "playMin": 13.5,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1118643,
@@ -2798,7 +2879,7 @@
      {
       "n": 24,
       "playMin": 13.8,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 1149570,
@@ -2810,7 +2891,7 @@
      {
       "n": 25,
       "playMin": 14,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": 0.2,
       "gain": 1157918,
@@ -2822,7 +2903,7 @@
      {
       "n": 26,
       "playMin": 14.3,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 980366,
@@ -2834,7 +2915,7 @@
      {
       "n": 27,
       "playMin": 14.5,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 999231,
@@ -2846,7 +2927,7 @@
      {
       "n": 28,
       "playMin": 14.8,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 202448645,
@@ -2858,7 +2939,7 @@
      {
       "n": 29,
       "playMin": 15.1,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": 0.1,
       "gain": 4018093,
@@ -2870,7 +2951,7 @@
      {
       "n": 30,
       "playMin": 15.3,
-      "day": 0.34,
+      "day": 0.72,
       "runMin": 0.3,
       "unlockMin": null,
       "gain": 3512366,
@@ -2889,6 +2970,33 @@
      "gift": 2.4761910794373658e-20
     },
     "wins": 25,
+    "winDays": [
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7,
+     0.7
+    ],
     "dayLog": [
      {
       "d": 1,
@@ -3086,7 +3194,7 @@
     }
    }
   },
-  "ms": 45296
+  "ms": 41476
  },
  "rb": {
   "variant": "rb",
@@ -3094,66 +3202,66 @@
    "casual": {
     "variant": "rb",
     "who": "casual",
-    "unlockAt": 3298,
+    "unlockAt": 3861,
     "shareAt": {
      "300": {
-      "click": 0.03955463649982475,
-      "bps": 346.62,
-      "cp": 5,
-      "earned": 33169.30999999995
+      "click": 0.05031224394661564,
+      "bps": 533.337,
+      "cp": 14,
+      "earned": 44800.22799999999
      },
      "600": {
-      "click": 0.011147302402482765,
-      "bps": 3265.05816,
-      "cp": 45,
-      "earned": 794093.4658800008
+      "click": 0.014421701307827908,
+      "bps": 19412.542749600005,
+      "cp": 114,
+      "earned": 2540893.0068542
      },
      "1200": {
-      "click": 0.050501486097032186,
-      "bps": 208368.90708480004,
-      "cp": 5494,
-      "earned": 72673108.92492093
+      "click": 0.06787971361983554,
+      "bps": 1415692.27357404,
+      "cp": 16735,
+      "earned": 424014694.0099853
      },
      "1800": {
-      "click": 0.02182919809625651,
-      "bps": 1307360.6786625,
-      "cp": 20194,
-      "earned": 917544836.5844836
+      "click": 0.029521637879713188,
+      "bps": 9927173.6006058,
+      "cp": 193254,
+      "earned": 7375340991.822888
      },
      "3600": {
-      "click": 0.03901832895086383,
-      "bps": 5942969.6253727805,
-      "cp": 124423,
-      "earned": 11812276547.783735
+      "click": 0.03650244854213953,
+      "bps": 51447080.885363854,
+      "cp": 1434153,
+      "earned": 96877954143.75035
      },
      "5400": {
-      "click": 0.06318550884582579,
-      "bps": 10439584.560543602,
-      "cp": 240219,
-      "earned": 34831809384.809525
+      "click": 0.0684563900164851,
+      "bps": 194995208.44387585,
+      "cp": 4058047,
+      "earned": 443401533365.8477
      },
      "7200": {
-      "click": 0.050248378571522034,
-      "bps": 19894140.025341123,
-      "cp": 830891,
-      "earned": 107639094151.0965
+      "click": 0.03823508245933452,
+      "bps": 556969305.6762912,
+      "cp": 9806591,
+      "earned": 2350579531810.542
      },
      "10800": {
-      "click": 0.05854395817111878,
-      "bps": 41390038.29391201,
-      "cp": 1346575,
-      "earned": 315106228179.50586
+      "click": 0.049807212803363365,
+      "bps": 1409730171.1397703,
+      "cp": 32720470,
+      "earned": 11574970957721.793
      }
     },
     "gaps10": {
      "max": 60,
-     "n": 23,
+     "n": 31,
      "median": 30
     },
     "gaps60": {
-     "max": 180,
-     "n": 114,
-     "median": 30
+     "max": 210,
+     "n": 145,
+     "median": 0
     },
     "buyGap": [
      31,
@@ -3165,32 +3273,32 @@
      "pointer": 31,
      "crayon": 61,
      "mouse": 121,
-     "farm": 211,
-     "mech": 541,
-     "factory": 331,
-     "bakery": 481,
-     "gaming": 631,
-     "router": 571,
-     "glove": 691,
-     "bank": 661,
-     "implant": 901,
-     "temple": 871,
-     "school": 1081,
-     "corp": 1231,
-     "stadium": 1471,
-     "planet": 1741,
-     "robohand": 2701,
-     "rocket": 2251,
-     "galaxy": 2521,
-     "moonbase": 3361,
-     "blackhole": 3991,
-     "timemachine": 5941,
-     "dimension": 7201,
-     "clonelab": 13201,
-     "dyson": null,
-     "telekinesis": null,
-     "nebula": null,
-     "pulsar": null,
+     "farm": 151,
+     "mech": 241,
+     "factory": 241,
+     "bakery": 391,
+     "gaming": 421,
+     "router": 421,
+     "glove": 631,
+     "bank": 631,
+     "implant": 661,
+     "temple": 661,
+     "school": 691,
+     "corp": 841,
+     "stadium": 991,
+     "planet": 1261,
+     "robohand": 1741,
+     "rocket": 1291,
+     "galaxy": 1561,
+     "moonbase": 1741,
+     "blackhole": 2281,
+     "timemachine": 3091,
+     "dimension": 3811,
+     "clonelab": 5251,
+     "dyson": 6421,
+     "telekinesis": 12151,
+     "nebula": 9391,
+     "pulsar": 13171,
      "multiverse": null,
      "timeline": null,
      "simulation": null,
@@ -3207,501 +3315,175 @@
      "author": null
     },
     "neverBuildings": [
-     "dyson",
-     "telekinesis",
-     "nebula",
-     "pulsar",
-     "multiverse"
-    ],
-    "clickBuild": [
-     {
-      "id": "mouse",
-      "owned": 56
-     },
-     {
-      "id": "mech",
-      "owned": 49
-     },
-     {
-      "id": "gaming",
-      "owned": 44
-     },
-     {
-      "id": "glove",
-      "owned": 40
-     },
-     {
-      "id": "implant",
-      "owned": 35
-     },
-     {
-      "id": "robohand",
-      "owned": 21
-     },
-     {
-      "id": "telekinesis",
-      "owned": 0
-     }
-    ],
-    "earned": 616386560194.6439,
-    "bps": 54600100.34016384,
-    "cp": 2055285,
-    "nBuys": 1656,
-    "genLevels": [
-     22,
-     25
-    ],
-    "upgradesNeverBought": 20
-   },
-   "active": {
-    "variant": "rb",
-    "who": "active",
-    "unlockAt": 2012,
-    "shareAt": {
-     "300": {
-      "click": 0.35260987660645865,
-      "bps": 831.0400000000001,
-      "cp": 109,
-      "earned": 131051.34900000015
-     },
-     "600": {
-      "click": 0.05247406244866903,
-      "bps": 145816.73568000004,
-      "cp": 9763,
-      "earned": 41374917.41036469
-     },
-     "1200": {
-      "click": 0.3746821069644702,
-      "bps": 1357789.64908125,
-      "cp": 56792,
-      "earned": 970463516.2481362
-     },
-     "1800": {
-      "click": 0.3283128177140782,
-      "bps": 3559501.220351999,
-      "cp": 328495,
-      "earned": 5080666775.711063
-     },
-     "3600": {
-      "click": 0.20299819710585656,
-      "bps": 14832952.343193602,
-      "cp": 732006,
-      "earned": 51805032310.29238
-     },
-     "5400": {
-      "click": 0.17426538184610643,
-      "bps": 43215120.32584824,
-      "cp": 5179445,
-      "earned": 248419285066.21085
-     },
-     "7200": {
-      "click": 0.14202387178027284,
-      "bps": 69498151.04910587,
-      "cp": 2024373,
-      "earned": 550051627453.5966
-     },
-     "10800": {
-      "click": 0.17787449003222033,
-      "bps": 113476148.93194273,
-      "cp": 3326870,
-      "earned": 1727576930842.286
-     }
-    },
-    "gaps10": {
-     "max": 65,
-     "n": 62,
-     "median": 6
-    },
-    "gaps60": {
-     "max": 395,
-     "n": 135,
-     "median": 10
-    },
-    "buyGap": [
-     45,
-     80,
-     320,
-     255
-    ],
-    "tiers": {
-     "pointer": 6,
-     "crayon": 41,
-     "mouse": 26,
-     "farm": 111,
-     "mech": 156,
-     "factory": 236,
-     "bakery": 406,
-     "gaming": 216,
-     "router": 431,
-     "glove": 446,
-     "bank": 466,
-     "implant": 486,
-     "temple": 576,
-     "school": 611,
-     "corp": 731,
-     "stadium": 1031,
-     "planet": 1176,
-     "robohand": 1236,
-     "rocket": 1326,
-     "galaxy": 1671,
-     "moonbase": 2236,
-     "blackhole": 3351,
-     "timemachine": 4476,
-     "dimension": 5341,
-     "clonelab": 9411,
-     "dyson": null,
-     "telekinesis": null,
-     "nebula": null,
-     "pulsar": null,
-     "multiverse": null,
-     "timeline": null,
-     "simulation": null,
-     "quantum": null,
-     "cosmicstring": null,
-     "paradox": null,
-     "bigbang": null,
-     "omniverse": null,
-     "entropy": null,
-     "archive": null,
-     "dreamforge": null,
-     "concept": null,
-     "alphabet": null,
-     "author": null
-    },
-    "neverBuildings": [
-     "dyson",
-     "telekinesis",
-     "nebula",
-     "pulsar",
-     "multiverse"
-    ],
-    "clickBuild": [
-     {
-      "id": "mouse",
-      "owned": 47
-     },
-     {
-      "id": "mech",
-      "owned": 44
-     },
-     {
-      "id": "gaming",
-      "owned": 42
-     },
-     {
-      "id": "glove",
-      "owned": 39
-     },
-     {
-      "id": "implant",
-      "owned": 34
-     },
-     {
-      "id": "robohand",
-      "owned": 22
-     },
-     {
-      "id": "telekinesis",
-      "owned": 0
-     }
-    ],
-    "earned": 1727576930842.286,
-    "bps": 113476148.93194273,
-    "cp": 3326870,
-    "nBuys": 1613,
-    "genLevels": [
-     23,
-     27
-    ],
-    "upgradesNeverBought": 13
-   },
-   "optimizer": {
-    "variant": "rb",
-    "who": "optimizer",
-    "unlockAt": 1817,
-    "shareAt": {
-     "300": {
-      "click": 0.5087985026103147,
-      "bps": 620.1600000000001,
-      "cp": 369,
-      "earned": 401133.25599999994
-     },
-     "600": {
-      "click": 0.6389173295730562,
-      "bps": 151794.37350000002,
-      "cp": 6281,
-      "earned": 39797048.5743298
-     },
-     "1200": {
-      "click": 0.31513303292397027,
-      "bps": 2442047.9779703706,
-      "cp": 103007,
-      "earned": 2795095746.793737
-     },
-     "1800": {
-      "click": 0.226946798891561,
-      "bps": 3827260.8060825597,
-      "cp": 573533,
-      "earned": 9473488740.53648
-     },
-     "3600": {
-      "click": 0.28659953059805504,
-      "bps": 18423289.141044483,
-      "cp": 896313,
-      "earned": 72497123706.52782
-     },
-     "5400": {
-      "click": 0.2040858901978405,
-      "bps": 46057882.1788008,
-      "cp": 5888775,
-      "earned": 321488217967.42834
-     },
-     "7200": {
-      "click": 0.20004252837393033,
-      "bps": 73611176.018688,
-      "cp": 7357695,
-      "earned": 702509001652.4415
-     },
-     "10800": {
-      "click": 0.36280876203193246,
-      "bps": 306947005.0894447,
-      "cp": 47687614,
-      "earned": 5724143925876.89
-     }
-    },
-    "gaps10": {
-     "max": 38,
-     "n": 62,
-     "median": 4
-    },
-    "gaps60": {
-     "max": 206,
-     "n": 138,
-     "median": 10
-    },
-    "buyGap": [
-     34,
-     138,
-     128,
-     302
-    ],
-    "tiers": {
-     "pointer": 3,
-     "crayon": 33,
-     "mouse": 15,
-     "farm": 139,
-     "mech": 81,
-     "factory": 267,
-     "bakery": 321,
-     "gaming": 149,
-     "router": 329,
-     "glove": 271,
-     "bank": 495,
-     "implant": 419,
-     "temple": 521,
-     "school": 633,
-     "corp": 743,
-     "stadium": 919,
-     "planet": 957,
-     "robohand": 949,
-     "rocket": 1143,
-     "galaxy": 1573,
-     "moonbase": 2293,
-     "blackhole": 3067,
-     "timemachine": 4257,
-     "dimension": 5149,
-     "clonelab": 7941,
-     "dyson": 9517,
-     "telekinesis": null,
-     "nebula": null,
-     "pulsar": null,
-     "multiverse": null,
-     "timeline": null,
-     "simulation": null,
-     "quantum": null,
-     "cosmicstring": null,
-     "paradox": null,
-     "bigbang": null,
-     "omniverse": null,
-     "entropy": null,
-     "archive": null,
-     "dreamforge": null,
-     "concept": null,
-     "alphabet": null,
-     "author": null
-    },
-    "neverBuildings": [
-     "telekinesis",
-     "nebula",
-     "pulsar",
      "multiverse",
-     "timeline"
-    ],
-    "clickBuild": [
-     {
-      "id": "mouse",
-      "owned": 51
-     },
-     {
-      "id": "mech",
-      "owned": 51
-     },
-     {
-      "id": "gaming",
-      "owned": 48
-     },
-     {
-      "id": "glove",
-      "owned": 44
-     },
-     {
-      "id": "implant",
-      "owned": 39
-     },
-     {
-      "id": "robohand",
-      "owned": 27
-     },
-     {
-      "id": "telekinesis",
-      "owned": 0
-     }
-    ],
-    "earned": 5724143925876.89,
-    "bps": 306947005.0894447,
-    "cp": 47687614,
-    "nBuys": 1805,
-    "genLevels": [
-     26,
-     29
-    ],
-    "upgradesNeverBought": 10
-   },
-   "autoclick15": {
-    "variant": "rb",
-    "who": "autoclick15",
-    "unlockAt": 1500,
-    "shareAt": {
-     "300": {
-      "click": 0.9595597954945541,
-      "bps": 334.02000000000004,
-      "cp": 1188,
-      "earned": 1325732.91
-     },
-     "600": {
-      "click": 0.4012807336228457,
-      "bps": 110908.20856500001,
-      "cp": 22460,
-      "earned": 80977984.43157053
-     },
-     "1200": {
-      "click": 0.7523645070500264,
-      "bps": 1862275.8672718203,
-      "cp": 142748,
-      "earned": 3080619604.3029013
-     },
-     "1800": {
-      "click": 0.8077103453042541,
-      "bps": 6887400.467547601,
-      "cp": 1299734,
-      "earned": 26887995419.71846
-     },
-     "3600": {
-      "click": 0.49819457015612467,
-      "bps": 28073859.680340942,
-      "cp": 1485958,
-      "earned": 165217017598.5771
-     },
-     "5400": {
-      "click": 0.4533574308237844,
-      "bps": 61043403.293694355,
-      "cp": 3903064,
-      "earned": 655197911602.0183
-     },
-     "7200": {
-      "click": 0.384269570043181,
-      "bps": 104530641.48361298,
-      "cp": 5280968,
-      "earned": 1469518936723.365
-     },
-     "10800": {
-      "click": 0.5169510473550458,
-      "bps": 356153684.062176,
-      "cp": 12594925,
-      "earned": 7107648330087.3545
-     }
-    },
-    "gaps10": {
-     "max": 35,
-     "n": 66,
-     "median": 5
-    },
-    "gaps60": {
-     "max": 460,
-     "n": 146,
-     "median": 10
-    },
-    "buyGap": [
-     30,
-     105,
-     220,
-     310
-    ],
-    "tiers": {
-     "pointer": 1,
-     "crayon": 31,
-     "mouse": 11,
-     "farm": 156,
-     "mech": 41,
-     "factory": 316,
-     "bakery": 316,
-     "gaming": 96,
-     "router": 326,
-     "glove": 176,
-     "bank": 461,
-     "implant": 281,
-     "temple": 586,
-     "school": 676,
-     "corp": 811,
-     "stadium": 946,
-     "planet": 1116,
-     "robohand": 716,
-     "rocket": 1501,
-     "galaxy": 1531,
-     "moonbase": 1756,
-     "blackhole": 2066,
-     "timemachine": 3426,
-     "dimension": 4311,
-     "clonelab": 6981,
-     "dyson": 8816,
-     "telekinesis": 8816,
-     "nebula": null,
-     "pulsar": null,
-     "multiverse": null,
-     "timeline": null,
-     "simulation": null,
-     "quantum": null,
-     "cosmicstring": null,
-     "paradox": null,
-     "bigbang": null,
-     "omniverse": null,
-     "entropy": null,
-     "archive": null,
-     "dreamforge": null,
-     "concept": null,
-     "alphabet": null,
-     "author": null
-    },
-    "neverBuildings": [
-     "nebula",
-     "pulsar",
-     "multiverse",
-     "timeline"
+     "timeline",
+     "simulation",
+     "quantum"
     ],
     "clickBuild": [
      {
       "id": "mouse",
       "owned": 54
+     },
+     {
+      "id": "mech",
+      "owned": 54
+     },
+     {
+      "id": "gaming",
+      "owned": 52
+     },
+     {
+      "id": "glove",
+      "owned": 47
+     },
+     {
+      "id": "implant",
+      "owned": 42
+     },
+     {
+      "id": "robohand",
+      "owned": 30
+     },
+     {
+      "id": "telekinesis",
+      "owned": 3
+     }
+    ],
+    "earned": 32490161708251.33,
+    "bps": 3094113052.7943397,
+    "cp": 444088265,
+    "nBuys": 2269,
+    "genLevels": [
+     51,
+     62
+    ],
+    "upgradesNeverBought": 10
+   },
+   "active": {
+    "variant": "rb",
+    "who": "active",
+    "unlockAt": 2122,
+    "shareAt": {
+     "300": {
+      "click": 0.3579963968225589,
+      "bps": 1786.6038960000008,
+      "cp": 241,
+      "earned": 264737.30138400046
+     },
+     "600": {
+      "click": 0.0767489063708816,
+      "bps": 535416.2725180502,
+      "cp": 40121,
+      "earned": 161597807.53182784
+     },
+     "1200": {
+      "click": 0.26200133436041007,
+      "bps": 8897218.011779329,
+      "cp": 289432,
+      "earned": 6179518985.856916
+     },
+     "1800": {
+      "click": 0.3790959342920718,
+      "bps": 22853501.901945792,
+      "cp": 3310259,
+      "earned": 38803625888.181
+     },
+     "3600": {
+      "click": 0.1426361224233134,
+      "bps": 365585281.3369311,
+      "cp": 7785872,
+      "earned": 1063483198770.7385
+     },
+     "5400": {
+      "click": 0.17787082170617158,
+      "bps": 1223417281.269063,
+      "cp": 178125470,
+      "earned": 8807590135822.953
+     },
+     "7200": {
+      "click": 0.1360631700566041,
+      "bps": 3313671833.354907,
+      "cp": 75133228,
+      "earned": 27042147785799.08
+     },
+     "10800": {
+      "click": 0.20759018979406865,
+      "bps": 6731265993.289439,
+      "cp": 145081593,
+      "earned": 98928347211626.17
+     }
+    },
+    "gaps10": {
+     "max": 40,
+     "n": 79,
+     "median": 5
+    },
+    "gaps60": {
+     "max": 350,
+     "n": 167,
+     "median": 5
+    },
+    "buyGap": [
+     35,
+     45,
+     65,
+     99
+    ],
+    "tiers": {
+     "pointer": 6,
+     "crayon": 41,
+     "mouse": 26,
+     "farm": 96,
+     "mech": 86,
+     "factory": 191,
+     "bakery": 326,
+     "gaming": 161,
+     "router": 351,
+     "glove": 406,
+     "bank": 441,
+     "implant": 441,
+     "temple": 471,
+     "school": 491,
+     "corp": 576,
+     "stadium": 631,
+     "planet": 771,
+     "robohand": 831,
+     "rocket": 916,
+     "galaxy": 961,
+     "moonbase": 1226,
+     "blackhole": 1501,
+     "timemachine": 1951,
+     "dimension": 2166,
+     "clonelab": 3181,
+     "dyson": 3691,
+     "telekinesis": 8526,
+     "nebula": 5426,
+     "pulsar": 6481,
+     "multiverse": 8706,
+     "timeline": null,
+     "simulation": null,
+     "quantum": null,
+     "cosmicstring": null,
+     "paradox": null,
+     "bigbang": null,
+     "omniverse": null,
+     "entropy": null,
+     "archive": null,
+     "dreamforge": null,
+     "concept": null,
+     "alphabet": null,
+     "author": null
+    },
+    "neverBuildings": [
+     "timeline",
+     "simulation",
+     "quantum"
+    ],
+    "clickBuild": [
+     {
+      "id": "mouse",
+      "owned": 52
      },
      {
       "id": "mech",
@@ -3728,15 +3510,337 @@
       "owned": 2
      }
     ],
-    "earned": 7107648330087.3545,
-    "bps": 356153684.062176,
-    "cp": 12594925,
-    "nBuys": 1859,
+    "earned": 98928347211626.17,
+    "bps": 6731265993.289439,
+    "cp": 145081593,
+    "nBuys": 2256,
     "genLevels": [
-     27,
-     30
+     50,
+     65
     ],
-    "upgradesNeverBought": 12
+    "upgradesNeverBought": 8
+   },
+   "optimizer": {
+    "variant": "rb",
+    "who": "optimizer",
+    "unlockAt": 1836,
+    "shareAt": {
+     "300": {
+      "click": 0.32715696192864996,
+      "bps": 6277.080902400002,
+      "cp": 1740,
+      "earned": 1519661.9905904003
+     },
+     "600": {
+      "click": 0.5129640458893006,
+      "bps": 2864245.730379265,
+      "cp": 305277,
+      "earned": 1169708412.9157193
+     },
+     "1200": {
+      "click": 0.3867445292104999,
+      "bps": 18631532.97286697,
+      "cp": 1263134,
+      "earned": 30132320309.196022
+     },
+     "1800": {
+      "click": 0.23210444029066357,
+      "bps": 71359766.511264,
+      "cp": 2389059,
+      "earned": 108235510016.69714
+     },
+     "3600": {
+      "click": 0.36893957230828844,
+      "bps": 555598923.7359054,
+      "cp": 82168067,
+      "earned": 2826256524373.8555
+     },
+     "5400": {
+      "click": 0.21089279739506878,
+      "bps": 2191078881.478207,
+      "cp": 53173783,
+      "earned": 15578463845768.215
+     },
+     "7200": {
+      "click": 0.16792784450430318,
+      "bps": 4878630288.2059145,
+      "cp": 5549722737,
+      "earned": 65934931562658.57
+     },
+     "10800": {
+      "click": 0.3364575364195737,
+      "bps": 13821697341.287758,
+      "cp": 2443222480,
+      "earned": 358235355345067.56
+     }
+    },
+    "gaps10": {
+     "max": 34,
+     "n": 98,
+     "median": 2
+    },
+    "gaps60": {
+     "max": 338,
+     "n": 178,
+     "median": 6
+    },
+    "buyGap": [
+     24,
+     84,
+     166,
+     128
+    ],
+    "tiers": {
+     "pointer": 3,
+     "crayon": 33,
+     "mouse": 15,
+     "farm": 129,
+     "mech": 65,
+     "factory": 215,
+     "bakery": 279,
+     "gaming": 121,
+     "router": 299,
+     "glove": 207,
+     "bank": 327,
+     "implant": 297,
+     "temple": 409,
+     "school": 497,
+     "corp": 499,
+     "stadium": 501,
+     "planet": 577,
+     "robohand": 501,
+     "rocket": 613,
+     "galaxy": 721,
+     "moonbase": 923,
+     "blackhole": 1071,
+     "timemachine": 1549,
+     "dimension": 1881,
+     "clonelab": 2409,
+     "dyson": 3223,
+     "telekinesis": 4941,
+     "nebula": 4873,
+     "pulsar": 5459,
+     "multiverse": 6885,
+     "timeline": null,
+     "simulation": null,
+     "quantum": null,
+     "cosmicstring": null,
+     "paradox": null,
+     "bigbang": null,
+     "omniverse": null,
+     "entropy": null,
+     "archive": null,
+     "dreamforge": null,
+     "concept": null,
+     "alphabet": null,
+     "author": null
+    },
+    "neverBuildings": [
+     "timeline",
+     "simulation",
+     "quantum",
+     "cosmicstring"
+    ],
+    "clickBuild": [
+     {
+      "id": "mouse",
+      "owned": 55
+     },
+     {
+      "id": "mech",
+      "owned": 57
+     },
+     {
+      "id": "gaming",
+      "owned": 55
+     },
+     {
+      "id": "glove",
+      "owned": 52
+     },
+     {
+      "id": "implant",
+      "owned": 47
+     },
+     {
+      "id": "robohand",
+      "owned": 35
+     },
+     {
+      "id": "telekinesis",
+      "owned": 5
+     }
+    ],
+    "earned": 358235355345067.56,
+    "bps": 13821697341.287758,
+    "cp": 2443222480,
+    "nBuys": 2431,
+    "genLevels": [
+     55,
+     70
+    ],
+    "upgradesNeverBought": 4
+   },
+   "autoclick15": {
+    "variant": "rb",
+    "who": "autoclick15",
+    "unlockAt": 1635,
+    "shareAt": {
+     "300": {
+      "click": 0.9897983135411815,
+      "bps": 343.476,
+      "cp": 5384,
+      "earned": 4914819.446999998
+     },
+     "600": {
+      "click": 0.577366535531694,
+      "bps": 530725.2783386401,
+      "cp": 138513,
+      "earned": 360800058.8537137
+     },
+     "1200": {
+      "click": 0.8081249699260832,
+      "bps": 14927017.907850046,
+      "cp": 1272478,
+      "earned": 22602113435.09244
+     },
+     "1800": {
+      "click": 0.6844118577157665,
+      "bps": 89461230.78816,
+      "cp": 11567132,
+      "earned": 159209819192.30972
+     },
+     "3600": {
+      "click": 0.420795893269913,
+      "bps": 544547637.6181935,
+      "cp": 19416551,
+      "earned": 2782518690846.543
+     },
+     "5400": {
+      "click": 0.39562319688723097,
+      "bps": 3297555570.8718348,
+      "cp": 478932225,
+      "earned": 27682927262709.97
+     },
+     "7200": {
+      "click": 0.3284405747509241,
+      "bps": 4759919428.298948,
+      "cp": 118820849,
+      "earned": 72000166084408.14
+     },
+     "10800": {
+      "click": 0.48653153224986506,
+      "bps": 12098518364.239698,
+      "cp": 331058330,
+      "earned": 272987187796915.56
+     }
+    },
+    "gaps10": {
+     "max": 35,
+     "n": 83,
+     "median": 5
+    },
+    "gaps60": {
+     "max": 295,
+     "n": 180,
+     "median": 5
+    },
+    "buyGap": [
+     30,
+     160,
+     90,
+     339
+    ],
+    "tiers": {
+     "pointer": 1,
+     "crayon": 91,
+     "mouse": 11,
+     "farm": 136,
+     "mech": 36,
+     "factory": 301,
+     "bakery": 311,
+     "gaming": 81,
+     "router": 316,
+     "glove": 136,
+     "bank": 351,
+     "implant": 216,
+     "temple": 501,
+     "school": 531,
+     "corp": 581,
+     "stadium": 626,
+     "planet": 736,
+     "robohand": 541,
+     "rocket": 941,
+     "galaxy": 1121,
+     "moonbase": 1126,
+     "blackhole": 1251,
+     "timemachine": 1631,
+     "dimension": 1821,
+     "clonelab": 2366,
+     "dyson": 3351,
+     "telekinesis": 3691,
+     "nebula": 4341,
+     "pulsar": 4996,
+     "multiverse": 6546,
+     "timeline": null,
+     "simulation": null,
+     "quantum": null,
+     "cosmicstring": null,
+     "paradox": null,
+     "bigbang": null,
+     "omniverse": null,
+     "entropy": null,
+     "archive": null,
+     "dreamforge": null,
+     "concept": null,
+     "alphabet": null,
+     "author": null
+    },
+    "neverBuildings": [
+     "timeline",
+     "simulation",
+     "quantum",
+     "cosmicstring"
+    ],
+    "clickBuild": [
+     {
+      "id": "mouse",
+      "owned": 56
+     },
+     {
+      "id": "mech",
+      "owned": 58
+     },
+     {
+      "id": "gaming",
+      "owned": 57
+     },
+     {
+      "id": "glove",
+      "owned": 53
+     },
+     {
+      "id": "implant",
+      "owned": 48
+     },
+     {
+      "id": "robohand",
+      "owned": 36
+     },
+     {
+      "id": "telekinesis",
+      "owned": 9
+     }
+    ],
+    "earned": 272987187796915.56,
+    "bps": 12098518364.239698,
+    "cp": 331058330,
+    "nBuys": 2399,
+    "genLevels": [
+     57,
+     68
+    ],
+    "upgradesNeverBought": 4
    }
   },
   "career": {
@@ -3746,300 +3850,341 @@
     "ascents": [
      {
       "n": 1,
-      "playMin": 23,
-      "day": 2.75,
-      "runMin": 23,
-      "unlockMin": 23,
+      "playMin": 31,
+      "day": 3.75,
+      "runMin": 31,
+      "unlockMin": 31,
       "gain": 1,
       "total": 1,
-      "bps": 5498197.795915442,
-      "clickShare": 0.009,
+      "bps": 339542233.42923576,
+      "clickShare": 0.002,
       "why": "ratio"
      },
      {
       "n": 2,
-      "playMin": 41,
-      "day": 4.75,
-      "runMin": 18,
-      "unlockMin": 18,
+      "playMin": 51,
+      "day": 5.75,
+      "runMin": 20,
+      "unlockMin": 20,
       "gain": 1,
       "total": 2,
-      "bps": 13904167.448081836,
-      "clickShare": 0.002,
+      "bps": 262787419.589432,
+      "clickShare": 0.003,
       "why": "ratio"
      },
      {
       "n": 3,
-      "playMin": 71,
-      "day": 7.75,
+      "playMin": 81,
+      "day": 8.75,
       "runMin": 30,
-      "unlockMin": 14,
-      "gain": 3,
-      "total": 5,
-      "bps": 104783197.18913655,
-      "clickShare": 0.004,
+      "unlockMin": 20,
+      "gain": 2,
+      "total": 4,
+      "bps": 2521008786.155477,
+      "clickShare": 0.003,
       "why": "ratio"
      },
      {
       "n": 4,
-      "playMin": 121,
-      "day": 12.75,
-      "runMin": 50,
-      "unlockMin": 20,
-      "gain": 5,
-      "total": 10,
-      "bps": 474814292.53299165,
-      "clickShare": 0.004,
+      "playMin": 111,
+      "day": 11.75,
+      "runMin": 30,
+      "unlockMin": 10,
+      "gain": 4,
+      "total": 8,
+      "bps": 18100916659.507854,
+      "clickShare": 0.002,
       "why": "ratio"
      },
      {
       "n": 5,
-      "playMin": 181,
-      "day": 18.75,
-      "runMin": 60,
-      "unlockMin": 14,
-      "gain": 11,
-      "total": 21,
-      "bps": 3981108515.9415026,
-      "clickShare": 0.002,
+      "playMin": 151,
+      "day": 15.75,
+      "runMin": 40,
+      "unlockMin": 10,
+      "gain": 10,
+      "total": 18,
+      "bps": 811896678811.4496,
+      "clickShare": 0.001,
       "why": "ratio"
      },
      {
       "n": 6,
-      "playMin": 261,
-      "day": 26.75,
-      "runMin": 80,
+      "playMin": 182.8,
+      "day": 18.75,
+      "runMin": 31.9,
       "unlockMin": 10,
-      "gain": 21,
-      "total": 42,
-      "bps": 19275394395.086147,
-      "clickShare": 0.002,
+      "gain": 12,
+      "total": 30,
+      "bps": 2106316066494.543,
+      "clickShare": 0.006,
+      "why": "win"
+     },
+     {
+      "n": 7,
+      "playMin": 221,
+      "day": 22.75,
+      "runMin": 38.1,
+      "unlockMin": 6.2,
+      "gain": 32,
+      "total": 62,
+      "bps": 177390736832816.3,
+      "clickShare": 0.003,
       "why": "ratio"
+     },
+     {
+      "n": 8,
+      "playMin": 245.2,
+      "day": 24.75,
+      "runMin": 24.2,
+      "unlockMin": 3,
+      "gain": 35,
+      "total": 97,
+      "bps": 694764275804264.4,
+      "clickShare": 0.026,
+      "why": "win"
+     },
+     {
+      "n": 9,
+      "playMin": 274.4,
+      "day": 27.75,
+      "runMin": 29.3,
+      "unlockMin": 2.8,
+      "gain": 87,
+      "total": 184,
+      "bps": 19304509958110830,
+      "clickShare": 0.007,
+      "why": "win"
      }
     ],
     "share": {
-     "click": 0.0016855947618071689,
-     "prod": 0.023057112023071452,
-     "golden": 0.00010755444681364901,
-     "offline": 0.9744454233658744,
-     "auto": 0.0007043148426669885,
-     "gift": 5.597663090947517e-10
+     "click": 0.007575944706158275,
+     "prod": 0.08368170166155753,
+     "golden": 0.00009234883767459942,
+     "offline": 0.9048620451277917,
+     "auto": 0.0037879596668140775,
+     "gift": 3.952542052145128e-15
     },
-    "wins": 0,
+    "wins": 3,
+    "winDays": [
+     18.8,
+     24.8,
+     27.8
+    ],
     "dayLog": [
      {
       "d": 1,
       "asc": 0,
       "chips": 0,
-      "bps": 7371.800435999999,
-      "life": 794093.4658800008
+      "bps": 31468.965828300006,
+      "life": 2540893.0068542
      },
      {
       "d": 2,
       "asc": 0,
       "chips": 0,
-      "bps": 490481.9562258,
-      "life": 295450482.4783014
+      "bps": 4514142.198651624,
+      "life": 1966389014.7851474
      },
      {
       "d": 3,
-      "asc": 1,
-      "chips": 1,
-      "bps": 52117.18326460801,
-      "life": 10264240919.704586
+      "asc": 0,
+      "chips": 0,
+      "bps": 72661695.10338816,
+      "life": 110645976061.47565
      },
      {
       "d": 4,
       "asc": 1,
       "chips": 1,
-      "bps": 2443795.3159716097,
-      "life": 12246976834.149818
+      "bps": 303104.9538693792,
+      "life": 1282179811576.0203
      },
      {
       "d": 5,
-      "asc": 2,
-      "chips": 2,
-      "bps": 414097.8047990787,
-      "life": 48410681079.46087
+      "asc": 1,
+      "chips": 1,
+      "bps": 26555485.252288613,
+      "life": 1303183285837.9163
      },
      {
       "d": 6,
       "asc": 2,
       "chips": 2,
-      "bps": 6932963.0535208285,
-      "life": 60587145206.774445
+      "bps": 1063705.839030173,
+      "life": 1740105903762.5083
      },
      {
       "d": 7,
       "asc": 2,
       "chips": 2,
-      "bps": 33532892.276625764,
-      "life": 190226854128.5538
+      "bps": 44903738.23101865,
+      "life": 1776347058503.4304
      },
      {
       "d": 8,
-      "asc": 3,
-      "chips": 5,
-      "bps": 112306.99009622404,
-      "life": 921206622581.3538
+      "asc": 2,
+      "chips": 2,
+      "bps": 612473482.012758,
+      "life": 2929695556602.6826
      },
      {
       "d": 9,
       "asc": 3,
-      "chips": 5,
-      "bps": 5528690.131792767,
-      "life": 927400718275.787
+      "chips": 4,
+      "bps": 14523394.843941987,
+      "life": 12791131283207.146
      },
      {
       "d": 10,
       "asc": 3,
-      "chips": 5,
-      "bps": 31787069.61766468,
-      "life": 1038019919478.5991
+      "chips": 4,
+      "bps": 414560211.28745747,
+      "life": 13253900795490.717
      },
      {
       "d": 11,
       "asc": 3,
-      "chips": 5,
-      "bps": 123959301.19854245,
-      "life": 1961808505395.7842
+      "chips": 4,
+      "bps": 3451480208.893525,
+      "life": 24997042680984.582
      },
      {
       "d": 12,
-      "asc": 3,
-      "chips": 5,
-      "bps": 305966876.498223,
-      "life": 5278507612116.861
+      "asc": 4,
+      "chips": 8,
+      "bps": 205414552.70524192,
+      "life": 189075020102028.84
      },
      {
       "d": 13,
       "asc": 4,
-      "chips": 10,
-      "bps": 411558.11467848,
-      "life": 12077236248722.117
+      "chips": 8,
+      "bps": 6985267152.117994,
+      "life": 201397622736256.94
      },
      {
       "d": 14,
       "asc": 4,
-      "chips": 10,
-      "bps": 14727683.128435202,
-      "life": 12096609715676.654
+      "chips": 8,
+      "bps": 51594388490.08316,
+      "life": 604363905495632.9
      },
      {
       "d": 15,
       "asc": 4,
-      "chips": 10,
-      "bps": 117603769.2653489,
-      "life": 12581941575811.645
+      "chips": 8,
+      "bps": 256161790088.4836,
+      "life": 3313075723577108.5
      },
      {
       "d": 16,
-      "asc": 4,
-      "chips": 10,
-      "bps": 397035344.00382656,
-      "life": 16274646998629.85
+      "asc": 5,
+      "chips": 18,
+      "bps": 277637097.96428955,
+      "life": 15451967798857410
      },
      {
       "d": 17,
-      "asc": 4,
-      "chips": 10,
-      "bps": 834677668.7258043,
-      "life": 27460371466909.37
+      "asc": 5,
+      "chips": 18,
+      "bps": 19057596209.535484,
+      "life": 15473733533732566
      },
      {
       "d": 18,
-      "asc": 4,
-      "chips": 10,
-      "bps": 2059551325.7832305,
-      "life": 79724998796370.53
+      "asc": 5,
+      "chips": 18,
+      "bps": 301695719172.4931,
+      "life": 16859072906907228
      },
      {
       "d": 19,
-      "asc": 5,
-      "chips": 21,
-      "bps": 918274.0048274103,
-      "life": 204242533613579.03
+      "asc": 6,
+      "chips": 30,
+      "bps": 7175882742.369356,
+      "life": 34391890561427028
      },
      {
       "d": 20,
-      "asc": 5,
-      "chips": 21,
-      "bps": 19499113.085382316,
-      "life": 204271986790410.12
+      "asc": 6,
+      "chips": 30,
+      "bps": 249116718880.97586,
+      "life": 34656345178356370
      },
      {
       "d": 21,
-      "asc": 5,
-      "chips": 21,
-      "bps": 160545195.25165942,
-      "life": 204897494331816.66
+      "asc": 6,
+      "chips": 30,
+      "bps": 7062897098057.194,
+      "life": 56899174686147620
      },
      {
       "d": 22,
-      "asc": 5,
-      "chips": 21,
-      "bps": 663120937.5450209,
-      "life": 210366905985206.3
+      "asc": 6,
+      "chips": 30,
+      "bps": 40962012420080.3,
+      "life": 544522940153720800
      },
      {
       "d": 23,
-      "asc": 5,
-      "chips": 21,
-      "bps": 1451875610.2219546,
-      "life": 229309060287651.38
+      "asc": 7,
+      "chips": 62,
+      "bps": 1037307683899.4084,
+      "life": 2840794338587717600
      },
      {
       "d": 24,
-      "asc": 5,
-      "chips": 21,
-      "bps": 3381277600.6004987,
-      "life": 321490578860300.94
+      "asc": 7,
+      "chips": 62,
+      "bps": 66103398771788.13,
+      "life": 3009525516187741000
      },
      {
       "d": 25,
-      "asc": 5,
-      "chips": 21,
-      "bps": 7312979755.310364,
-      "life": 537038827234398.5
+      "asc": 8,
+      "chips": 97,
+      "bps": 6753902613900.168,
+      "life": 7012797919229073000
      },
      {
       "d": 26,
-      "asc": 5,
-      "chips": 21,
-      "bps": 12839500908.855225,
-      "life": 990940373214581.8
+      "asc": 8,
+      "chips": 97,
+      "bps": 543516340477626.7,
+      "life": 8123064736624957000
      },
      {
       "d": 27,
-      "asc": 6,
-      "chips": 42,
-      "bps": 8321439.169846688,
-      "life": 1763331235997740.2
+      "asc": 8,
+      "chips": 97,
+      "bps": 5740143580056134,
+      "life": 57079314356340460000
      },
      {
       "d": 28,
-      "asc": 6,
-      "chips": 42,
-      "bps": 136315517.19794038,
-      "life": 1763616539027061.8
+      "asc": 9,
+      "chips": 184,
+      "bps": 17903377761459.355,
+      "life": 392422857462909000000
      },
      {
       "d": 29,
-      "asc": 6,
-      "chips": 42,
-      "bps": 683289713.4664952,
-      "life": 1768026446589963.5
+      "asc": 9,
+      "chips": 184,
+      "bps": 5890450220653981,
+      "life": 400202981912010200000
      },
      {
       "d": 30,
-      "asc": 6,
-      "chips": 42,
-      "bps": 1872221760.185515,
-      "life": 1786459784650463.2
+      "asc": 9,
+      "chips": 184,
+      "bps": 43264424812554870,
+      "life": 759005207388473300000
      }
     ],
-    "life": 1786459784650463.2,
-    "maxBank": 771643452381848.6
+    "life": 759005207388473300000,
+    "maxBank": 328629582520256200000
    },
    "active": {
     "variant": "rb",
@@ -4047,372 +4192,466 @@
     "ascents": [
      {
       "n": 1,
-      "playMin": 58,
-      "day": 0.72,
-      "runMin": 58,
-      "unlockMin": 34,
+      "playMin": 61,
+      "day": 1.73,
+      "runMin": 61,
+      "unlockMin": 36,
       "gain": 2,
       "total": 2,
-      "bps": 30955260.156925112,
-      "clickShare": 0.103,
+      "bps": 731520266.2669439,
+      "clickShare": 0.108,
       "why": "ratio"
      },
      {
       "n": 2,
-      "playMin": 94,
-      "day": 1.35,
-      "runMin": 36,
-      "unlockMin": 13,
+      "playMin": 93,
+      "day": 2.72,
+      "runMin": 32,
+      "unlockMin": 15,
       "gain": 2,
       "total": 4,
-      "bps": 35028131.56481936,
-      "clickShare": 0.173,
+      "bps": 1164924103.858515,
+      "clickShare": 0.142,
       "why": "ratio"
      },
      {
       "n": 3,
-      "playMin": 143,
-      "day": 2.34,
-      "runMin": 49,
-      "unlockMin": 14,
-      "gain": 3,
-      "total": 7,
-      "bps": 85841491.91344091,
-      "clickShare": 0.062,
+      "playMin": 141,
+      "day": 4.71,
+      "runMin": 48,
+      "unlockMin": 13,
+      "gain": 4,
+      "total": 8,
+      "bps": 21485268340.144123,
+      "clickShare": 0.018,
       "why": "ratio"
      },
      {
       "n": 4,
-      "playMin": 243,
-      "day": 3.36,
-      "runMin": 100,
-      "unlockMin": 22,
+      "playMin": 186,
+      "day": 5.72,
+      "runMin": 45,
+      "unlockMin": 11,
       "gain": 6,
-      "total": 13,
-      "bps": 837010355.8631439,
-      "clickShare": 0.209,
+      "total": 14,
+      "bps": 103424804689.30608,
+      "clickShare": 0.131,
       "why": "ratio"
      },
      {
       "n": 5,
-      "playMin": 351,
-      "day": 5.33,
-      "runMin": 108,
-      "unlockMin": 17,
-      "gain": 12,
-      "total": 25,
-      "bps": 2838863306.1852384,
-      "clickShare": 0.054,
-      "why": "ratio"
+      "playMin": 245,
+      "day": 7.71,
+      "runMin": 59,
+      "unlockMin": 8,
+      "gain": 15,
+      "total": 29,
+      "bps": 3425722145346.1587,
+      "clickShare": 0.022,
+      "why": "win"
      },
      {
       "n": 6,
-      "playMin": 542,
-      "day": 7.72,
-      "runMin": 191,
-      "unlockMin": 18,
-      "gain": 19,
-      "total": 44,
-      "bps": 15308669219.131693,
-      "clickShare": 0.08,
+      "playMin": 284,
+      "day": 8.71,
+      "runMin": 39,
+      "unlockMin": 3,
+      "gain": 23,
+      "total": 52,
+      "bps": 39879236232161.65,
+      "clickShare": 0.063,
       "why": "ratio"
      },
      {
       "n": 7,
-      "playMin": 783,
-      "day": 11.34,
-      "runMin": 241,
-      "unlockMin": 11,
-      "gain": 31,
-      "total": 75,
-      "bps": 73084841096.97527,
-      "clickShare": 0.072,
-      "why": "long"
+      "playMin": 315,
+      "day": 9.71,
+      "runMin": 31,
+      "unlockMin": 2,
+      "gain": 39,
+      "total": 91,
+      "bps": 483637148315098.4,
+      "clickShare": 0.018,
+      "why": "win"
      },
      {
       "n": 8,
-      "playMin": 1024,
-      "day": 14.71,
-      "runMin": 241,
-      "unlockMin": 3,
-      "gain": 52,
-      "total": 127,
-      "bps": 603454055457.1918,
-      "clickShare": 0.081,
-      "why": "long"
+      "playMin": 350,
+      "day": 10.71,
+      "runMin": 35,
+      "unlockMin": 1,
+      "gain": 95,
+      "total": 186,
+      "bps": 21081433616406292,
+      "clickShare": 0.046,
+      "why": "win"
      },
      {
       "n": 9,
-      "playMin": 1265,
-      "day": 18.34,
-      "runMin": 241,
-      "unlockMin": 5,
-      "gain": 71,
-      "total": 198,
-      "bps": 1672300731324.535,
-      "clickShare": 0.113,
-      "why": "long"
+      "playMin": 388,
+      "day": 11.71,
+      "runMin": 38,
+      "unlockMin": 1,
+      "gain": 148,
+      "total": 334,
+      "bps": 314574501148025660,
+      "clickShare": 0.408,
+      "why": "ratio"
      },
      {
       "n": 10,
-      "playMin": 1506,
-      "day": 21.71,
-      "runMin": 241,
-      "unlockMin": 2,
-      "gain": 94,
-      "total": 292,
-      "bps": 4430535945882.269,
-      "clickShare": 0.198,
-      "why": "long"
+      "playMin": 420,
+      "day": 12.71,
+      "runMin": 32,
+      "unlockMin": 1,
+      "gain": 238,
+      "total": 572,
+      "bps": 2424282246765899300,
+      "clickShare": 0.059,
+      "why": "win"
      },
      {
       "n": 11,
-      "playMin": 1747,
-      "day": 24.73,
-      "runMin": 241,
-      "unlockMin": 3,
-      "gain": 126,
-      "total": 418,
-      "bps": 11991714660792.342,
-      "clickShare": 0.293,
-      "why": "long"
+      "playMin": 456,
+      "day": 13.71,
+      "runMin": 36,
+      "unlockMin": 1,
+      "gain": 446,
+      "total": 1018,
+      "bps": 19146287648279417000,
+      "clickShare": 0.058,
+      "why": "ratio"
      },
      {
       "n": 12,
-      "playMin": 1988,
-      "day": 28.35,
-      "runMin": 241,
-      "unlockMin": 2,
-      "gain": 186,
-      "total": 604,
-      "bps": 53932393436759.04,
-      "clickShare": 0.275,
+      "playMin": 486.6,
+      "day": 13.73,
+      "runMin": 30.6,
+      "unlockMin": 1,
+      "gain": 738,
+      "total": 1756,
+      "bps": 603973518174426800000,
+      "clickShare": 0.364,
+      "why": "win"
+     },
+     {
+      "n": 13,
+      "playMin": 511,
+      "day": 14.72,
+      "runMin": 24.4,
+      "unlockMin": 0.4,
+      "gain": 1596,
+      "total": 3352,
+      "bps": 1.2033977943084507e+22,
+      "clickShare": 0.925,
+      "why": "ratio"
+     },
+     {
+      "n": 14,
+      "playMin": 526.6,
+      "day": 15.71,
+      "runMin": 15.6,
+      "unlockMin": 1,
+      "gain": 2484,
+      "total": 5836,
+      "bps": 5.9716758527880836e+22,
+      "clickShare": 0.093,
+      "why": "win"
+     },
+     {
+      "n": 15,
+      "playMin": 596,
+      "day": 17.71,
+      "runMin": 69.4,
+      "unlockMin": 0.4,
+      "gain": 4648,
+      "total": 10484,
+      "bps": 2.7486253223084855e+23,
+      "clickShare": 0.237,
+      "why": "ratio"
+     },
+     {
+      "n": 16,
+      "playMin": 630,
+      "day": 18.71,
+      "runMin": 34,
+      "unlockMin": 1,
+      "gain": 8958,
+      "total": 19442,
+      "bps": 1.7768308080147954e+24,
+      "clickShare": 0.245,
+      "why": "win"
+     },
+     {
+      "n": 17,
+      "playMin": 652,
+      "day": 18.72,
+      "runMin": 22,
+      "unlockMin": 1,
+      "gain": 15779,
+      "total": 35221,
+      "bps": 9.043370499513464e+24,
+      "clickShare": 0.472,
+      "why": "ratio"
+     },
+     {
+      "n": 18,
+      "playMin": 712.4,
+      "day": 20.72,
+      "runMin": 60.4,
+      "unlockMin": 1,
+      "gain": 20855,
+      "total": 56076,
+      "bps": 3.8549574967690807e+25,
+      "clickShare": 0.335,
+      "why": "win"
+     },
+     {
+      "n": 19,
+      "playMin": 953,
+      "day": 27.71,
+      "runMin": 240.6,
+      "unlockMin": 0.6,
+      "gain": 34299,
+      "total": 90375,
+      "bps": 8.878671431929801e+25,
+      "clickShare": 0.371,
       "why": "long"
      }
     ],
     "share": {
-     "click": 0.28341103385388383,
-     "prod": 0.28484883626709956,
-     "golden": 0.04479797817166673,
-     "offline": 0.3509887231971747,
-     "auto": 0.03595342850970747,
-     "gift": 4.676156946951087e-13
+     "click": 0.23222842121165385,
+     "prod": 0.295444969707256,
+     "golden": 0.05076250117043681,
+     "offline": 0.28654758761603055,
+     "auto": 0.13501652029462266,
+     "gift": 3.1153348785966213e-20
     },
-    "wins": 0,
+    "wins": 8,
+    "winDays": [
+     7.7,
+     9.7,
+     10.7,
+     12.7,
+     13.7,
+     15.7,
+     18.7,
+     20.7
+    ],
     "dayLog": [
      {
       "d": 1,
-      "asc": 1,
-      "chips": 2,
-      "bps": 1520440.2775281724,
-      "life": 160907121780.04306
+      "asc": 0,
+      "chips": 0,
+      "bps": 71407512.1683,
+      "life": 108069317667.86546
      },
      {
       "d": 2,
-      "asc": 2,
-      "chips": 4,
-      "bps": 30741735.31197067,
-      "life": 451197415835.2187
+      "asc": 1,
+      "chips": 2,
+      "bps": 3583215.4783471203,
+      "life": 3914603282483.2295
      },
      {
       "d": 3,
-      "asc": 3,
-      "chips": 7,
-      "bps": 181580123.9833929,
-      "life": 2866658493087.0234
+      "asc": 2,
+      "chips": 4,
+      "bps": 31220330.420233797,
+      "life": 8128160808234.19
      },
      {
       "d": 4,
-      "asc": 4,
-      "chips": 13,
-      "bps": 53534330.134654805,
-      "life": 14254088691416.715
+      "asc": 2,
+      "chips": 4,
+      "bps": 5379861353.127689,
+      "life": 28480145223947.773
      },
      {
       "d": 5,
-      "asc": 4,
-      "chips": 13,
-      "bps": 2184989452.1270742,
-      "life": 81614376144929.27
+      "asc": 3,
+      "chips": 8,
+      "bps": 10718088006.638542,
+      "life": 303179805306052.75
      },
      {
       "d": 6,
-      "asc": 5,
-      "chips": 25,
-      "bps": 1370262404.0442715,
-      "life": 177627328793325.03
+      "asc": 4,
+      "chips": 14,
+      "bps": 53124387463.5846,
+      "life": 1438691431881909
      },
      {
       "d": 7,
-      "asc": 5,
-      "chips": 25,
-      "bps": 5593900749.185549,
-      "life": 382054548482289.2
+      "asc": 4,
+      "chips": 14,
+      "bps": 1022167593104.6865,
+      "life": 10611170788484088
      },
      {
       "d": 8,
-      "asc": 6,
-      "chips": 44,
-      "bps": 36506922.38774381,
-      "life": 1053217450759751.1
+      "asc": 5,
+      "chips": 29,
+      "bps": 5728046223694.331,
+      "life": 81338837501225420
      },
      {
       "d": 9,
       "asc": 6,
-      "chips": 44,
-      "bps": 5246153625.890858,
-      "life": 1197908881535017
+      "chips": 52,
+      "bps": 117591205120133.06,
+      "life": 1436162752414018800
      },
      {
       "d": 10,
-      "asc": 6,
-      "chips": 44,
-      "bps": 26089703632.82089,
-      "life": 2287711652792215.5
+      "asc": 7,
+      "chips": 91,
+      "bps": 9020014190030216,
+      "life": 96046367951232250000
      },
      {
       "d": 11,
-      "asc": 6,
-      "chips": 44,
-      "bps": 52671814974.695305,
-      "life": 5139541528030539
+      "asc": 8,
+      "chips": 186,
+      "bps": 51008839793187360,
+      "life": 974056985498471200000
      },
      {
       "d": 12,
-      "asc": 7,
-      "chips": 75,
-      "bps": 15892633397.270473,
-      "life": 7804036471541038
+      "asc": 9,
+      "chips": 334,
+      "bps": 877770425808027600,
+      "life": 1.5348766890910688e+22
      },
      {
       "d": 13,
-      "asc": 7,
-      "chips": 75,
-      "bps": 106697565267.01793,
-      "life": 11756129804649840
+      "asc": 10,
+      "chips": 572,
+      "bps": 6754544595799381000,
+      "life": 1.2214322399999254e+23
      },
      {
       "d": 14,
-      "asc": 7,
-      "chips": 75,
-      "bps": 245666936817.8629,
-      "life": 25515407178931376
+      "asc": 12,
+      "chips": 1756,
+      "bps": 2329594219276068400,
+      "life": 5.84436765439422e+24
      },
      {
       "d": 15,
-      "asc": 8,
-      "chips": 127,
-      "bps": 2422952682.840205,
-      "life": 59608622351713820
+      "asc": 13,
+      "chips": 3352,
+      "bps": 2.5323025885900126e+22,
+      "life": 6.378230431201232e+26
      },
      {
       "d": 16,
-      "asc": 8,
-      "chips": 127,
-      "bps": 146534170577.00046,
-      "life": 63173713044700664
+      "asc": 14,
+      "chips": 5836,
+      "bps": 1.5110484188333295e+23,
+      "life": 9.392020688229765e+27
      },
      {
       "d": 17,
-      "asc": 8,
-      "chips": 127,
-      "bps": 655444575782.7948,
-      "life": 93072891339984930
+      "asc": 14,
+      "chips": 5836,
+      "bps": 2.1072738654085155e+23,
+      "life": 3.909096216608411e+28
      },
      {
       "d": 18,
-      "asc": 8,
-      "chips": 127,
-      "bps": 1383229555555.1367,
-      "life": 181930202527194980
+      "asc": 15,
+      "chips": 10484,
+      "bps": 1.5516697736274423e+24,
+      "life": 1.2335096154717605e+29
      },
      {
       "d": 19,
-      "asc": 9,
-      "chips": 198,
-      "bps": 207710907779.95584,
-      "life": 236773120420789920
+      "asc": 17,
+      "chips": 35221,
+      "bps": 3.0868881943114956e+25,
+      "life": 5.282239036543079e+30
      },
      {
       "d": 20,
-      "asc": 9,
-      "chips": 198,
-      "bps": 1316558723654.7485,
-      "life": 291885301107006460
+      "asc": 17,
+      "chips": 35221,
+      "bps": 3.7122902062834624e+25,
+      "life": 1.2305944499937574e+31
      },
      {
       "d": 21,
-      "asc": 9,
-      "chips": 198,
-      "bps": 2962305026239.4155,
-      "life": 515775776950302140
+      "asc": 18,
+      "chips": 56076,
+      "bps": 4.996142510367692e+25,
+      "life": 1.6919643228020077e+31
      },
      {
       "d": 22,
-      "asc": 10,
-      "chips": 292,
-      "bps": 68646268979.78999,
-      "life": 783246517754408400
+      "asc": 18,
+      "chips": 56076,
+      "bps": 7.933041900512518e+25,
+      "life": 6.022457833265424e+31
      },
      {
       "d": 23,
-      "asc": 10,
-      "chips": 292,
-      "bps": 2484435310281.2812,
-      "life": 875006184832532000
+      "asc": 18,
+      "chips": 56076,
+      "bps": 8.159771755483685e+25,
+      "life": 7.51116402526235e+31
      },
      {
       "d": 24,
-      "asc": 10,
-      "chips": 292,
-      "bps": 6651259177980.875,
-      "life": 1394479461104828400
+      "asc": 18,
+      "chips": 56076,
+      "bps": 8.319174130211705e+25,
+      "life": 8.997923333164937e+31
      },
      {
       "d": 25,
-      "asc": 11,
-      "chips": 418,
-      "bps": 5855092514.827306,
-      "life": 2521808674695312400
+      "asc": 18,
+      "chips": 56076,
+      "bps": 8.49840977714226e+25,
+      "life": 1.08214660909281e+32
      },
      {
       "d": 26,
-      "asc": 11,
-      "chips": 418,
-      "bps": 5398786125645.08,
-      "life": 2679733693976878000
+      "asc": 18,
+      "chips": 56076,
+      "bps": 8.616067049036334e+25,
+      "life": 1.280387383795563e+32
      },
      {
       "d": 27,
-      "asc": 11,
-      "chips": 418,
-      "bps": 16507686763890.17,
-      "life": 3611186667952909300
+      "asc": 18,
+      "chips": 56076,
+      "bps": 8.821884551128989e+25,
+      "life": 1.5832423017122845e+32
      },
      {
       "d": 28,
-      "asc": 11,
-      "chips": 418,
-      "bps": 44197986016093.94,
-      "life": 7859818481554896000
+      "asc": 19,
+      "chips": 90375,
+      "bps": 1.0438382714637074e+26,
+      "life": 1.7584655693679876e+32
      },
      {
       "d": 29,
-      "asc": 12,
-      "chips": 604,
-      "bps": 11049917146385.834,
-      "life": 11125566285141662000
+      "asc": 19,
+      "chips": 90375,
+      "bps": 1.2087460385074958e+26,
+      "life": 1.9631302703388903e+32
      },
      {
       "d": 30,
-      "asc": 12,
-      "chips": 604,
-      "bps": 54030395532865.72,
-      "life": 14969557436613257000
+      "asc": 19,
+      "chips": 90375,
+      "bps": 1.3057473775519916e+26,
+      "life": 2.246951699508054e+32
      }
     ],
-    "life": 14969557436613257000,
-    "maxBank": 1695546290349698000
+    "life": 2.246951699508054e+32,
+    "maxBank": 1.1912545857208422e+31
    },
    "optimizer": {
     "variant": "rb",
@@ -4420,576 +4659,587 @@
     "ascents": [
      {
       "n": 1,
-      "playMin": 94,
-      "day": 0.82,
-      "runMin": 94,
+      "playMin": 61,
+      "day": 1.33,
+      "runMin": 61,
       "unlockMin": 31,
       "gain": 3,
       "total": 3,
-      "bps": 74259428.60885473,
-      "clickShare": 0.156,
+      "bps": 3524936442.5679245,
+      "clickShare": 0.069,
       "why": "ratio"
      },
      {
       "n": 2,
-      "playMin": 151,
+      "playMin": 91,
       "day": 1.79,
-      "runMin": 57,
-      "unlockMin": 16,
+      "runMin": 30,
+      "unlockMin": 17,
       "gain": 3,
       "total": 6,
-      "bps": 121060297.62159283,
-      "clickShare": 0.126,
+      "bps": 7465754428.024033,
+      "clickShare": 0.049,
       "why": "ratio"
      },
      {
       "n": 3,
-      "playMin": 201,
-      "day": 2.33,
-      "runMin": 50,
-      "unlockMin": 18,
-      "gain": 4,
-      "total": 10,
-      "bps": 294540656.6620814,
-      "clickShare": 0.108,
+      "playMin": 116,
+      "day": 1.81,
+      "runMin": 25,
+      "unlockMin": 12,
+      "gain": 3,
+      "total": 9,
+      "bps": 11149205626.629074,
+      "clickShare": 0.144,
       "why": "ratio"
      },
      {
       "n": 4,
-      "playMin": 262,
-      "day": 2.8,
-      "runMin": 61,
-      "unlockMin": 13,
-      "gain": 5,
+      "playMin": 151,
+      "day": 2.79,
+      "runMin": 35,
+      "unlockMin": 5,
+      "gain": 6,
       "total": 15,
-      "bps": 562659076.9364685,
-      "clickShare": 0.362,
+      "bps": 154845316320.20062,
+      "clickShare": 0.056,
       "why": "ratio"
      },
      {
       "n": 5,
-      "playMin": 351,
-      "day": 3.79,
-      "runMin": 89,
-      "unlockMin": 11,
-      "gain": 9,
-      "total": 24,
-      "bps": 2114689666.107679,
-      "clickShare": 0.181,
+      "playMin": 181,
+      "day": 3.33,
+      "runMin": 30,
+      "unlockMin": 5,
+      "gain": 10,
+      "total": 25,
+      "bps": 1031458048319.8966,
+      "clickShare": 0.058,
       "why": "ratio"
      },
      {
       "n": 6,
-      "playMin": 458,
-      "day": 4.8,
-      "runMin": 107,
-      "unlockMin": 7,
-      "gain": 12,
+      "playMin": 210,
+      "day": 3.79,
+      "runMin": 29,
+      "unlockMin": 2,
+      "gain": 11,
       "total": 36,
-      "bps": 3679806168.9533825,
-      "clickShare": 0.167,
-      "why": "ratio"
+      "bps": 1922424303362.1875,
+      "clickShare": 0.03,
+      "why": "win"
      },
      {
       "n": 7,
-      "playMin": 601,
-      "day": 6.33,
-      "runMin": 143,
-      "unlockMin": 6,
-      "gain": 18,
-      "total": 54,
-      "bps": 15299549730.9304,
-      "clickShare": 0.194,
+      "playMin": 241,
+      "day": 4.33,
+      "runMin": 31,
+      "unlockMin": 3,
+      "gain": 23,
+      "total": 59,
+      "bps": 53299139635869.74,
+      "clickShare": 0.109,
       "why": "ratio"
      },
      {
       "n": 8,
-      "playMin": 790,
-      "day": 7.82,
-      "runMin": 189,
-      "unlockMin": 6,
-      "gain": 27,
-      "total": 81,
-      "bps": 56619196486.95419,
-      "clickShare": 0.255,
-      "why": "ratio"
+      "playMin": 261,
+      "day": 4.35,
+      "runMin": 20,
+      "unlockMin": 1,
+      "gain": 28,
+      "total": 87,
+      "bps": 381553486959937.75,
+      "clickShare": 0.487,
+      "why": "win"
      },
      {
       "n": 9,
-      "playMin": 958,
-      "day": 9.8,
-      "runMin": 168,
-      "unlockMin": 3,
-      "gain": 41,
-      "total": 122,
-      "bps": 327624316990.677,
-      "clickShare": 0.229,
+      "playMin": 275,
+      "day": 4.8,
+      "runMin": 14,
+      "unlockMin": 1,
+      "gain": 44,
+      "total": 131,
+      "bps": 2436514930157531.5,
+      "clickShare": 0.085,
       "why": "ratio"
      },
      {
       "n": 10,
-      "playMin": 1181,
-      "day": 11.81,
-      "runMin": 223,
-      "unlockMin": 2,
-      "gain": 61,
-      "total": 183,
-      "bps": 1142657869178.9053,
-      "clickShare": 0.196,
+      "playMin": 296,
+      "day": 4.81,
+      "runMin": 21,
+      "unlockMin": 1,
+      "gain": 67,
+      "total": 198,
+      "bps": 13114779670826472,
+      "clickShare": 0.505,
       "why": "ratio"
      },
      {
       "n": 11,
-      "playMin": 1401,
-      "day": 14.33,
-      "runMin": 220,
-      "unlockMin": 3,
-      "gain": 94,
-      "total": 277,
-      "bps": 4115543440184.0923,
-      "clickShare": 0.329,
-      "why": "ratio"
+      "playMin": 303.2,
+      "day": 5.34,
+      "runMin": 7.2,
+      "unlockMin": 1,
+      "gain": 74,
+      "total": 272,
+      "bps": 24047297932931644,
+      "clickShare": 0.927,
+      "why": "win"
      },
      {
       "n": 12,
-      "playMin": 1590,
-      "day": 15.82,
-      "runMin": 189,
-      "unlockMin": 2,
-      "gain": 139,
-      "total": 416,
-      "bps": 13487896441166.092,
-      "clickShare": 0.595,
+      "playMin": 325,
+      "day": 5.35,
+      "runMin": 21.8,
+      "unlockMin": 0.8,
+      "gain": 153,
+      "total": 425,
+      "bps": 482153147781953400,
+      "clickShare": 0.657,
       "why": "ratio"
      },
      {
       "n": 13,
-      "playMin": 1751,
-      "day": 17.79,
-      "runMin": 161,
+      "playMin": 331.8,
+      "day": 5.79,
+      "runMin": 6.8,
       "unlockMin": 1,
-      "gain": 213,
-      "total": 629,
-      "bps": 67530028725650.98,
-      "clickShare": 0.543,
-      "why": "ratio"
+      "gain": 159,
+      "total": 584,
+      "bps": 980867158777280100,
+      "clickShare": 0.686,
+      "why": "win"
      },
      {
       "n": 14,
-      "playMin": 1933,
-      "day": 19.36,
-      "runMin": 182,
-      "unlockMin": 1,
-      "gain": 316,
-      "total": 945,
-      "bps": 201432438686375.2,
-      "clickShare": 0.539,
+      "playMin": 351,
+      "day": 5.81,
+      "runMin": 19.2,
+      "unlockMin": 0.2,
+      "gain": 317,
+      "total": 901,
+      "bps": 7391859308598578000,
+      "clickShare": 0.911,
       "why": "ratio"
      },
      {
       "n": 15,
-      "playMin": 2027,
-      "day": 20.35,
-      "runMin": 94,
+      "playMin": 361.9,
+      "day": 6.33,
+      "runMin": 10.9,
       "unlockMin": 1,
-      "gain": 473,
-      "total": 1418,
-      "bps": 1497203902663087.8,
-      "clickShare": 0.388,
-      "why": "ratio"
+      "gain": 626,
+      "total": 1527,
+      "bps": 330443040896126500000,
+      "clickShare": 0.88,
+      "why": "win"
      },
      {
       "n": 16,
-      "playMin": 2124,
-      "day": 21.35,
-      "runMin": 97,
-      "unlockMin": 1,
-      "gain": 712,
-      "total": 2130,
-      "bps": 4995214196214001,
-      "clickShare": 0.482,
+      "playMin": 376,
+      "day": 6.34,
+      "runMin": 14.1,
+      "unlockMin": 0.1,
+      "gain": 1149,
+      "total": 2676,
+      "bps": 4.5364990112298975e+21,
+      "clickShare": 0.53,
       "why": "ratio"
      },
      {
       "n": 17,
-      "playMin": 2164,
-      "day": 21.8,
-      "runMin": 40,
+      "playMin": 391,
+      "day": 6.79,
+      "runMin": 15,
       "unlockMin": 1,
-      "gain": 1072,
-      "total": 3202,
-      "bps": 24037289598700000,
-      "clickShare": 0.645,
+      "gain": 1725,
+      "total": 4401,
+      "bps": 1.9842955119410555e+22,
+      "clickShare": 0.09,
       "why": "ratio"
      },
      {
       "n": 18,
-      "playMin": 2198,
-      "day": 21.82,
-      "runMin": 34,
+      "playMin": 396.6,
+      "day": 6.8,
+      "runMin": 5.6,
       "unlockMin": 1,
-      "gain": 1615,
-      "total": 4817,
-      "bps": 69024606176988500,
-      "clickShare": 0.82,
-      "why": "ratio"
+      "gain": 2046,
+      "total": 6447,
+      "bps": 6.375709382654237e+22,
+      "clickShare": 0.525,
+      "why": "win"
      },
      {
       "n": 19,
-      "playMin": 2306,
-      "day": 23.34,
-      "runMin": 108,
-      "unlockMin": 1,
-      "gain": 2410,
-      "total": 7227,
-      "bps": 441696445755423000,
-      "clickShare": 0.459,
+      "playMin": 407,
+      "day": 6.8,
+      "runMin": 10.4,
+      "unlockMin": 0.4,
+      "gain": 3285,
+      "total": 9732,
+      "bps": 5.290013577711329e+23,
+      "clickShare": 0.838,
       "why": "ratio"
      },
      {
       "n": 20,
-      "playMin": 2310.8,
-      "day": 23.34,
-      "runMin": 4.8,
+      "playMin": 420,
+      "day": 7.33,
+      "runMin": 13,
       "unlockMin": 1,
-      "gain": 8666,
-      "total": 15893,
-      "bps": 43260754142284550000,
-      "clickShare": 0.989,
+      "gain": 5205,
+      "total": 14937,
+      "bps": 1.4906586686805896e+24,
+      "clickShare": 0.225,
       "why": "win"
      },
      {
       "n": 21,
-      "playMin": 2335,
-      "day": 23.36,
-      "runMin": 24.2,
-      "unlockMin": 0.2,
-      "gain": 8117,
-      "total": 24010,
-      "bps": 45720654248704240000,
-      "clickShare": 0.726,
+      "playMin": 433,
+      "day": 7.34,
+      "runMin": 13,
+      "unlockMin": 1,
+      "gain": 8389,
+      "total": 23326,
+      "bps": 2.763369915776555e+24,
+      "clickShare": 0.557,
       "why": "ratio"
      },
      {
       "n": 22,
-      "playMin": 2351,
-      "day": 23.79,
-      "runMin": 16,
+      "playMin": 448,
+      "day": 7.35,
+      "runMin": 15,
       "unlockMin": 1,
-      "gain": 12827,
-      "total": 36837,
-      "bps": 526601859476051850000,
-      "clickShare": 0.224,
+      "gain": 13514,
+      "total": 36840,
+      "bps": 1.987032541202612e+25,
+      "clickShare": 0.633,
       "why": "ratio"
      },
      {
       "n": 23,
-      "playMin": 2372,
-      "day": 23.81,
-      "runMin": 21,
+      "playMin": 481,
+      "day": 8.33,
+      "runMin": 33,
       "unlockMin": 1,
-      "gain": 19140,
-      "total": 55977,
-      "bps": 2.739827022559386e+21,
-      "clickShare": 0.512,
+      "gain": 18581,
+      "total": 55421,
+      "bps": 3.7827281883155205e+25,
+      "clickShare": 0.565,
       "why": "ratio"
      },
      {
       "n": 24,
-      "playMin": 2385,
-      "day": 23.82,
-      "runMin": 13,
+      "playMin": 514.4,
+      "day": 8.79,
+      "runMin": 33.4,
       "unlockMin": 1,
-      "gain": 42992,
-      "total": 98969,
-      "bps": 1.2300550176131806e+22,
-      "clickShare": 0.976,
-      "why": "ratio"
-     },
-     {
-      "n": 25,
-      "playMin": 2402.2,
-      "day": 24.33,
-      "runMin": 17.2,
-      "unlockMin": 1,
-      "gain": 48583,
-      "total": 147552,
-      "bps": 2.252129301365642e+22,
-      "clickShare": 0.377,
+      "gain": 21144,
+      "total": 76565,
+      "bps": 6.1118057709992624e+25,
+      "clickShare": 0.543,
       "why": "win"
      },
      {
-      "n": 26,
-      "playMin": 2430,
-      "day": 24.35,
-      "runMin": 27.8,
-      "unlockMin": 0.8,
-      "gain": 103869,
-      "total": 251421,
-      "bps": 1.438015984401049e+23,
-      "clickShare": 0.953,
+      "n": 25,
+      "playMin": 719,
+      "day": 11.81,
+      "runMin": 204.7,
+      "unlockMin": 0.7,
+      "gain": 41079,
+      "total": 117644,
+      "bps": 1.3322438585880323e+26,
+      "clickShare": 0.652,
       "why": "ratio"
+     },
+     {
+      "n": 26,
+      "playMin": 960,
+      "day": 15.81,
+      "runMin": 241,
+      "unlockMin": 1,
+      "gain": 42034,
+      "total": 159678,
+      "bps": 2.0627571680247634e+26,
+      "clickShare": 0.482,
+      "why": "long"
      },
      {
       "n": 27,
-      "playMin": 2456,
-      "day": 24.8,
-      "runMin": 26,
+      "playMin": 1201,
+      "day": 20.33,
+      "runMin": 241,
       "unlockMin": 1,
-      "gain": 160891,
-      "total": 412312,
-      "bps": 3.927188605658915e+23,
-      "clickShare": 0.948,
-      "why": "ratio"
+      "gain": 52764,
+      "total": 212442,
+      "bps": 3.095933173319922e+26,
+      "clickShare": 0.666,
+      "why": "long"
      },
      {
       "n": 28,
-      "playMin": 2674,
-      "day": 26.81,
-      "runMin": 218,
+      "playMin": 1442,
+      "day": 24.33,
+      "runMin": 241,
       "unlockMin": 1,
-      "gain": 206459,
-      "total": 618771,
-      "bps": 7.294705944128993e+23,
-      "clickShare": 0.542,
-      "why": "ratio"
+      "gain": 55975,
+      "total": 268417,
+      "bps": 4.2835968596893935e+26,
+      "clickShare": 0.758,
+      "why": "long"
      },
      {
       "n": 29,
-      "playMin": 2801,
-      "day": 28.33,
-      "runMin": 127,
+      "playMin": 1646.6,
+      "day": 27.35,
+      "runMin": 204.6,
       "unlockMin": 1,
-      "gain": 310674,
-      "total": 929445,
-      "bps": 2.1273664706276725e+24,
-      "clickShare": 0.638,
-      "why": "ratio"
+      "gain": 58206,
+      "total": 326623,
+      "bps": 5.5557754227955185e+26,
+      "clickShare": 0.664,
+      "why": "win"
      }
     ],
     "share": {
-     "click": 0.4598613262887427,
-     "prod": 0.29052265407397826,
-     "golden": 0.04449867397264263,
-     "offline": 0.038016573032063794,
-     "auto": 0.1671007726325726,
-     "gift": 9.0775282111739e-19
+     "click": 0.5053974000909857,
+     "prod": 0.20401262925235109,
+     "golden": 0.04144214802240087,
+     "offline": 0.06550051163281732,
+     "auto": 0.18364731100144505,
+     "gift": 1.866675315739164e-21
     },
-    "wins": 2,
+    "wins": 9,
+    "winDays": [
+     3.8,
+     4.3,
+     5.3,
+     5.8,
+     6.3,
+     6.8,
+     7.3,
+     8.8,
+     27.4
+    ],
     "dayLog": [
      {
       "d": 1,
-      "asc": 1,
-      "chips": 3,
-      "bps": 165220.35255042242,
-      "life": 817764867877.798
+      "asc": 0,
+      "chips": 0,
+      "bps": 1004132815.5748702,
+      "life": 7326282152417.796
      },
      {
       "d": 2,
-      "asc": 2,
-      "chips": 6,
-      "bps": 103284421.78735916,
-      "life": 3044525001994.326
+      "asc": 3,
+      "chips": 9,
+      "bps": 76100141.43699327,
+      "life": 114257442439905.47
      },
      {
       "d": 3,
       "asc": 4,
       "chips": 15,
-      "bps": 88604076.15443884,
-      "life": 11949785912571.492
+      "bps": 252825039381.25458,
+      "life": 2514136425653485
      },
      {
       "d": 4,
-      "asc": 5,
-      "chips": 24,
-      "bps": 436535567.73297024,
-      "life": 74752859480789.9
+      "asc": 6,
+      "chips": 36,
+      "bps": 15848530034069.383,
+      "life": 96294003833478060
      },
      {
       "d": 5,
-      "asc": 6,
-      "chips": 36,
-      "bps": 512323930.61843896,
-      "life": 217056767883740.6
+      "asc": 10,
+      "chips": 198,
+      "bps": 20851164993391.973,
+      "life": 116964703975510900000
      },
      {
       "d": 6,
-      "asc": 6,
-      "chips": 36,
-      "bps": 10191239400.042255,
-      "life": 638080400021383
+      "asc": 14,
+      "chips": 901,
+      "bps": 7790908758441942000,
+      "life": 1.025301956721856e+23
      },
      {
       "d": 7,
-      "asc": 7,
-      "chips": 54,
-      "bps": 12384252458.61559,
-      "life": 1285433413907242
+      "asc": 19,
+      "chips": 9732,
+      "bps": 1.3249109008362996e+24,
+      "life": 5.0278899542781555e+28
      },
      {
       "d": 8,
-      "asc": 8,
-      "chips": 81,
-      "bps": 264854687.61966932,
-      "life": 4590538839913198
+      "asc": 22,
+      "chips": 36840,
+      "bps": 3.690662193008978e+25,
+      "life": 7.282187281522617e+30
      },
      {
       "d": 9,
-      "asc": 8,
-      "chips": 81,
-      "bps": 84682439860.49036,
-      "life": 7281975136333860
+      "asc": 24,
+      "chips": 76565,
+      "bps": 1.0798666602283416e+26,
+      "life": 6.6355491000028595e+31
      },
      {
       "d": 10,
-      "asc": 9,
-      "chips": 122,
-      "bps": 37007125801.13449,
-      "life": 24467978732675230
+      "asc": 24,
+      "chips": 76565,
+      "bps": 1.1595051926938423e+26,
+      "life": 1.0878993510534759e+32
      },
      {
       "d": 11,
-      "asc": 9,
-      "chips": 122,
-      "bps": 342294011984.0369,
-      "life": 42785053158235520
+      "asc": 24,
+      "chips": 76565,
+      "bps": 1.2730385244765148e+26,
+      "life": 2.430843142176805e+32
      },
      {
       "d": 12,
-      "asc": 10,
-      "chips": 183,
-      "bps": 21053110516.998665,
-      "life": 119083980277469980
+      "asc": 25,
+      "chips": 117644,
+      "bps": 9.010738840235959e+24,
+      "life": 3.9854840309737145e+32
      },
      {
       "d": 13,
-      "asc": 10,
-      "chips": 183,
-      "bps": 1150572427609.5286,
-      "life": 169145399653690400
+      "asc": 25,
+      "chips": 117644,
+      "bps": 1.661032054810623e+26,
+      "life": 4.3948262334536734e+32
      },
      {
       "d": 14,
-      "asc": 10,
-      "chips": 183,
-      "bps": 3560235314204.066,
-      "life": 545904781751193660
+      "asc": 25,
+      "chips": 117644,
+      "bps": 1.941939670891265e+26,
+      "life": 5.960959460343076e+32
      },
      {
       "d": 15,
-      "asc": 11,
-      "chips": 277,
-      "bps": 3962349208473.5835,
-      "life": 927907468334732700
+      "asc": 25,
+      "chips": 117644,
+      "bps": 2.0037692992438712e+26,
+      "life": 6.969179948483463e+32
      },
      {
       "d": 16,
-      "asc": 12,
-      "chips": 416,
-      "bps": 588867995436.4027,
-      "life": 3220096978860945000
+      "asc": 26,
+      "chips": 159678,
+      "bps": 1783093432.9725003,
+      "life": 8.204781547861893e+32
      },
      {
       "d": 17,
-      "asc": 12,
-      "chips": 416,
-      "bps": 35997565948407.87,
-      "life": 8176748864617292000
+      "asc": 26,
+      "chips": 159678,
+      "bps": 2.4348238258334094e+26,
+      "life": 9.074975261738788e+32
      },
      {
       "d": 18,
-      "asc": 13,
-      "chips": 629,
-      "bps": 7945388874147.603,
-      "life": 17608210042582671000
+      "asc": 26,
+      "chips": 159678,
+      "bps": 3.053261334372228e+26,
+      "life": 1.7327298302395554e+33
      },
      {
       "d": 19,
-      "asc": 13,
-      "chips": 629,
-      "bps": 101470449110040.67,
-      "life": 30922110330315223000
+      "asc": 26,
+      "chips": 159678,
+      "bps": 3.0698768993797488e+26,
+      "life": 1.9701139612059177e+33
      },
      {
       "d": 20,
-      "asc": 14,
-      "chips": 945,
-      "bps": 759378044267872.4,
-      "life": 95089806413885690000
+      "asc": 26,
+      "chips": 159678,
+      "bps": 3.0750951615764217e+26,
+      "life": 2.1229504048576422e+33
      },
      {
       "d": 21,
-      "asc": 15,
-      "chips": 1418,
-      "bps": 3096393088476183,
-      "life": 466501794366534800000
+      "asc": 27,
+      "chips": 212442,
+      "bps": 3.758095855288292e+26,
+      "life": 2.5129169670951117e+33
      },
      {
       "d": 22,
-      "asc": 18,
-      "chips": 4817,
-      "bps": 2977801658193082.5,
-      "life": 2.3664035291778043e+22
+      "asc": 27,
+      "chips": 212442,
+      "bps": 3.892228948847927e+26,
+      "life": 2.707493892493318e+33
      },
      {
       "d": 23,
-      "asc": 18,
-      "chips": 4817,
-      "bps": 403110277803973500,
-      "life": 9.916102224447322e+22
+      "asc": 27,
+      "chips": 212442,
+      "bps": 4.267855777978745e+26,
+      "life": 3.605066201159535e+33
      },
      {
       "d": 24,
-      "asc": 24,
-      "chips": 98969,
-      "bps": 2.252129301365642e+22,
-      "life": 4.125478933505974e+27
+      "asc": 27,
+      "chips": 212442,
+      "bps": 4.282407369447311e+26,
+      "life": 3.883266201998185e+33
      },
      {
       "d": 25,
-      "asc": 27,
-      "chips": 412312,
-      "bps": 5.2077775043671796e+23,
-      "life": 5.223069451212444e+29
+      "asc": 28,
+      "chips": 268417,
+      "bps": 4.3641913009854704e+26,
+      "life": 4.0572978398483716e+33
      },
      {
       "d": 26,
-      "asc": 27,
-      "chips": 412312,
-      "bps": 6.913207232351988e+23,
-      "life": 1.0609595013370042e+30
+      "asc": 28,
+      "chips": 268417,
+      "bps": 4.759758984313571e+26,
+      "life": 4.277840655338405e+33
      },
      {
       "d": 27,
       "asc": 28,
-      "chips": 618771,
-      "bps": 5.694801023895489e+23,
-      "life": 1.4849649046126287e+30
+      "chips": 268417,
+      "bps": 5.492098435962425e+26,
+      "life": 5.584868502895866e+33
      },
      {
       "d": 28,
-      "asc": 28,
-      "chips": 618771,
-      "bps": 2.1239195597037183e+24,
-      "life": 6.503105104115451e+30
+      "asc": 29,
+      "chips": 326623,
+      "bps": 5.765625553474139e+26,
+      "life": 6.170038397711754e+33
      },
      {
       "d": 29,
       "asc": 29,
-      "chips": 929445,
-      "bps": 3.033235410521981e+24,
-      "life": 9.577476657909263e+30
+      "chips": 326623,
+      "bps": 6.655805774148474e+26,
+      "life": 6.59907075941684e+33
      },
      {
       "d": 30,
       "asc": 29,
-      "chips": 929445,
-      "bps": 3.414923079117583e+24,
-      "life": 1.5422711639460099e+31
+      "chips": 326623,
+      "bps": 7.298004892603599e+26,
+      "life": 7.49997060654323e+33
      }
     ],
-    "life": 1.5422711639460099e+31,
-    "maxBank": 6.882167148639046e+29
+    "life": 7.49997060654323e+33,
+    "maxBank": 1.207663893969985e+32
    },
    "autoclick15": {
     "variant": "rb",
@@ -4997,295 +5247,349 @@
     "ascents": [
      {
       "n": 1,
-      "playMin": 36,
-      "day": 0.71,
-      "runMin": 36,
-      "unlockMin": 25,
+      "playMin": 44,
+      "day": 1.71,
+      "runMin": 44,
+      "unlockMin": 28,
       "gain": 2,
       "total": 2,
-      "bps": 38517442.27980265,
-      "clickShare": 0.108,
+      "bps": 707426022.8040389,
+      "clickShare": 0.117,
       "why": "ratio"
      },
      {
       "n": 2,
-      "playMin": 69,
-      "day": 0.73,
-      "runMin": 33,
-      "unlockMin": 17,
+      "playMin": 68,
+      "day": 1.73,
+      "runMin": 24,
+      "unlockMin": 14,
       "gain": 2,
       "total": 4,
-      "bps": 19275191.462028906,
-      "clickShare": 0.86,
+      "bps": 1030790403.4523404,
+      "clickShare": 0.786,
       "why": "ratio"
      },
      {
       "n": 3,
-      "playMin": 113,
-      "day": 1.71,
-      "runMin": 44,
-      "unlockMin": 13,
-      "gain": 3,
-      "total": 7,
-      "bps": 57908725.489711754,
-      "clickShare": 0.291,
+      "playMin": 106,
+      "day": 3.71,
+      "runMin": 38,
+      "unlockMin": 11,
+      "gain": 4,
+      "total": 8,
+      "bps": 19431758544.88244,
+      "clickShare": 0.048,
       "why": "ratio"
      },
      {
       "n": 4,
-      "playMin": 176,
-      "day": 2.71,
-      "runMin": 63,
-      "unlockMin": 17,
+      "playMin": 145,
+      "day": 4.71,
+      "runMin": 39,
+      "unlockMin": 9,
       "gain": 6,
-      "total": 13,
-      "bps": 724673052.7954167,
-      "clickShare": 0.243,
+      "total": 14,
+      "bps": 173041813288.83087,
+      "clickShare": 0.485,
       "why": "ratio"
      },
      {
       "n": 5,
-      "playMin": 281,
-      "day": 4.33,
-      "runMin": 105,
-      "unlockMin": 7,
-      "gain": 11,
+      "playMin": 185.2,
+      "day": 5.72,
+      "runMin": 40.2,
+      "unlockMin": 6,
+      "gain": 10,
       "total": 24,
-      "bps": 2539241237.785049,
-      "clickShare": 0.173,
-      "why": "ratio"
+      "bps": 987844911373.231,
+      "clickShare": 0.374,
+      "why": "win"
      },
      {
       "n": 6,
-      "playMin": 444,
-      "day": 6.35,
-      "runMin": 163,
-      "unlockMin": 11,
-      "gain": 18,
-      "total": 42,
-      "bps": 12357190721.963213,
-      "clickShare": 0.225,
+      "playMin": 211,
+      "day": 6.71,
+      "runMin": 25.8,
+      "unlockMin": 1.8,
+      "gain": 26,
+      "total": 50,
+      "bps": 53355134725599.36,
+      "clickShare": 0.086,
       "why": "ratio"
      },
      {
       "n": 7,
-      "playMin": 685,
-      "day": 9.72,
-      "runMin": 241,
-      "unlockMin": 8,
-      "gain": 29,
-      "total": 71,
-      "bps": 50341577252.81271,
-      "clickShare": 0.203,
-      "why": "long"
+      "playMin": 247.6,
+      "day": 7.71,
+      "runMin": 36.6,
+      "unlockMin": 2,
+      "gain": 32,
+      "total": 82,
+      "bps": 302145564600494.6,
+      "clickShare": 0.038,
+      "why": "win"
+     },
+     {
+      "n": 8,
+      "playMin": 281,
+      "day": 8.71,
+      "runMin": 33.4,
+      "unlockMin": 1.4,
+      "gain": 82,
+      "total": 164,
+      "bps": 13450885184759808,
+      "clickShare": 0.07,
+      "why": "ratio"
+     },
+     {
+      "n": 9,
+      "playMin": 303.3,
+      "day": 8.72,
+      "runMin": 22.3,
+      "unlockMin": 1,
+      "gain": 75,
+      "total": 239,
+      "bps": 20204329401394332,
+      "clickShare": 0.489,
+      "why": "win"
+     },
+     {
+      "n": 10,
+      "playMin": 316,
+      "day": 9.71,
+      "runMin": 12.7,
+      "unlockMin": 0.7,
+      "gain": 180,
+      "total": 419,
+      "bps": 778391282788149900,
+      "clickShare": 0.064,
+      "why": "ratio"
+     },
+     {
+      "n": 11,
+      "playMin": 339.8,
+      "day": 9.73,
+      "runMin": 23.8,
+      "unlockMin": 1,
+      "gain": 242,
+      "total": 661,
+      "bps": 4039172134940243500,
+      "clickShare": 0.961,
+      "why": "win"
      }
     ],
     "share": {
-     "click": 0.1923844781538339,
-     "prod": 0.2708183036338082,
-     "golden": 0.034652255549909736,
-     "offline": 0.4895818458649323,
-     "auto": 0.012563116475453176,
-     "gift": 3.2206274194929183e-10
+     "click": 0.7616383655034601,
+     "prod": 0.04842429322768179,
+     "golden": 0.00023353331513114575,
+     "offline": 0.15984611180862934,
+     "auto": 0.02985769614509765,
+     "gift": 7.668425647686223e-17
     },
-    "wins": 0,
+    "wins": 4,
+    "winDays": [
+     5.7,
+     7.7,
+     8.7,
+     9.7
+    ],
     "dayLog": [
      {
       "d": 1,
-      "asc": 2,
-      "chips": 4,
-      "bps": 246.48624000000004,
-      "life": 442513819168.21246
+      "asc": 0,
+      "chips": 0,
+      "bps": 158349096.67344767,
+      "life": 405101288130.5818
      },
      {
       "d": 2,
-      "asc": 3,
-      "chips": 7,
-      "bps": 25760249.640825644,
-      "life": 1382863216420.4138
+      "asc": 2,
+      "chips": 4,
+      "bps": 210435.9095659591,
+      "life": 7873727741808.439
      },
      {
       "d": 3,
-      "asc": 4,
-      "chips": 13,
-      "bps": 87329161.14467463,
-      "life": 15225966687833.703
+      "asc": 2,
+      "chips": 4,
+      "bps": 4590509495.573872,
+      "life": 31499772442307.434
      },
      {
       "d": 4,
-      "asc": 4,
-      "chips": 13,
-      "bps": 1737486359.0468185,
-      "life": 71414823422830.34
+      "asc": 3,
+      "chips": 8,
+      "bps": 15557312522.911043,
+      "life": 294830489852112.3
      },
      {
       "d": 5,
-      "asc": 5,
-      "chips": 24,
-      "bps": 1473387374.8371215,
-      "life": 161188673883874.53
+      "asc": 4,
+      "chips": 14,
+      "bps": 45924794056.85606,
+      "life": 2093967017187296.5
      },
      {
       "d": 6,
       "asc": 5,
       "chips": 24,
-      "bps": 6990858218.42759,
-      "life": 447196248126446.2
+      "bps": 15697679959624.451,
+      "life": 143763505425323490
      },
      {
       "d": 7,
       "asc": 6,
-      "chips": 42,
-      "bps": 919560357.7292742,
-      "life": 861040664535308.1
+      "chips": 50,
+      "bps": 41461837378505.67,
+      "life": 1194623462727154400
      },
      {
       "d": 8,
-      "asc": 6,
-      "chips": 42,
-      "bps": 6562774661.32284,
-      "life": 1090794323852244.6
+      "asc": 7,
+      "chips": 82,
+      "bps": 4411518474981219.5,
+      "life": 43695448519791990000
      },
      {
       "d": 9,
-      "asc": 6,
-      "chips": 42,
-      "bps": 27601994875.887157,
-      "life": 2850941134325009
+      "asc": 9,
+      "chips": 239,
+      "bps": 223778840643570460,
+      "life": 2.2124569637442308e+21
      },
      {
       "d": 10,
-      "asc": 7,
-      "chips": 71,
-      "bps": 439122975.06457627,
-      "life": 6209970106740661
+      "asc": 11,
+      "chips": 661,
+      "bps": 455684603129525400,
+      "life": 7.824291811201835e+22
      }
     ],
-    "life": 6209970106740661,
-    "maxBank": 1135298912242920
+    "life": 7.824291811201835e+22,
+    "maxBank": 1.4564155796115308e+22
    }
   },
   "offline": [
    {
     "atMin": 30,
-    "playHour": 243338618290.4998,
-    "offlinePerHour": 5125681757.306879,
-    "ratio": 0.021063988089172904,
-    "eff": 0.4,
-    "capHours": 10
+    "playHour": 8768786509934.772,
+    "offlinePerHour": 45249933765.85266,
+    "ratio": 0.005160341595109636,
+    "eff": 0.55,
+    "capHours": 8
    },
    {
     "atMin": 60,
-    "playHour": 498246595143.3042,
-    "offlinePerHour": 32039177061.298183,
-    "ratio": 0.06430385550769929,
-    "eff": 0.6000000000000001,
-    "capHours": 10
+    "playHour": 25978664587028.34,
+    "offlinePerHour": 723858857047.1237,
+    "ratio": 0.02786358993250795,
+    "eff": 0.55,
+    "capHours": 8
    },
    {
     "atMin": 120,
-    "playHour": 1177525303388.6895,
-    "offlinePerHour": 150116006266.06866,
-    "ratio": 0.12748431463346385,
-    "eff": 0.6000000000000001,
-    "capHours": 10
+    "playHour": 71886199425827.1,
+    "offlinePerHour": 6561070230042.717,
+    "ratio": 0.09127023382022714,
+    "eff": 0.55,
+    "capHours": 24
    }
   ],
   "challenges": {
    "asc": 5,
-   "chipsTotal": 24,
+   "chipsTotal": 36,
    "days": 4,
    "res": {
     "noclick": {
-     "goal": 200000000000,
-     "min": 33,
+     "goal": 10000000000000000,
+     "min": 35.6,
      "limitMin": null,
      "at": {
-      "10": 1855345094.7779052,
-      "60": 650898893973.2948,
-      "180": 26887669730442.92
+      "10": 8970766551612.762,
+      "60": 30074542667508404,
+      "180": 483009866827911040
      }
     },
     "clicksonly": {
-     "goal": 10000000000,
-     "min": 26,
+     "goal": 30000000000000,
+     "min": 43.8,
      "limitMin": null,
      "at": {
-      "10": 273602151,
-      "60": 159387771293,
-      "180": 2220743006333
+      "10": 123490255719,
+      "60": 66934408283423,
+      "180": 347114817771011
      }
     },
     "noupgrades": {
-     "goal": 1000000000,
-     "min": 85.8,
+     "goal": 200000000000,
+     "min": 100.7,
      "limitMin": null,
      "at": {
-      "10": 11105555.980749993,
-      "60": 518122742.1770059,
-      "180": 4661141361.069957
+      "10": 1265238355.7291505,
+      "60": 64610303497.1656,
+      "180": 723308247122
      }
     },
     "nogold": {
-     "goal": 1000000000000,
-     "min": 143.1,
+     "goal": 1000000000000000,
+     "min": 109.8,
      "limitMin": null,
      "at": {
-      "10": 716909292.1840878,
-      "60": 118387137057.91469,
-      "180": 1719149479839.8428
+      "10": 1039006758155.7229,
+      "60": 199880403025517.94,
+      "180": 5415201859318721
      }
     },
     "inflation": {
-     "goal": 100000000000,
-     "min": 38.4,
+     "goal": 1000000000000000,
+     "min": 49.5,
      "limitMin": null,
      "at": {
-      "10": 447285098.2072114,
-      "60": 298166631423.18665,
-      "180": 7906921031764.906
+      "10": 1998216651537.3328,
+      "60": 2435452299888364.5,
+      "180": 78253341437450770
      }
     },
     "speedrun": {
-     "goal": 1000000000,
-     "min": 7.8,
+     "goal": 20000000000000,
+     "min": 9.3,
      "limitMin": 10,
      "at": {
-      "10": 5059877031.287446
+      "10": 31626425533709.06
      }
     },
     "minimal": {
-     "goal": 10000000000,
-     "min": 31,
+     "goal": 100000000000000,
+     "min": 50.1,
      "limitMin": null,
      "at": {
-      "10": 227697058.8954311,
-      "60": 47203733200.0784,
-      "180": 661229192596.871
+      "10": 280853940489.2086,
+      "60": 216303820000337.88,
+      "180": 8453727371243026
      }
     },
     "slowmo": {
-     "goal": 10000000000,
-     "min": 105.5,
+     "goal": 100000000000000,
+     "min": 99.9,
      "limitMin": null,
      "at": {
-      "10": 85381.56615625002,
-      "60": 1122160329.24608,
-      "180": 44420900379.3858
+      "10": 4517322843.942498,
+      "60": 21005403932801.58,
+      "180": 505470756040417.6
      }
     },
     "amnesia": {
-     "goal": 1000000000000,
-     "min": 105.5,
+     "goal": 10000000000000000,
+     "min": 102.7,
      "limitMin": null,
      "at": {
-      "10": 393166979.28451794,
-      "60": 215112922410.6802,
-      "180": 6047627724606.637
+      "10": 1510209684153.7842,
+      "60": 2257595278290091.5,
+      "180": 44197457278899624
      }
     }
    }
   },
-  "ms": 73387
+  "ms": 74194
  }
 }

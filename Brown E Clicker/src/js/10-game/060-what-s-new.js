@@ -16,7 +16,7 @@
            ['🛒', 'Better shop', 'Buy x1/x10/x100, detailed tooltips and much bigger numbers.']
        ];
        NEWS_ITEMS.unshift(IS_RB
-           ? ['⚖️', 'Rebalanced (beta)', 'New numbers tested with a simulator: bigger buildings pay back slower, so the game no longer explodes in the first hour. Clicking helps (most at the start) but is not everything. Ascension unlocks at 10 B (about an hour), each chip gives +2% (4th root of the run), the tree is cheaper, challenge goals fit the new pace and every Final E costs 1000x the last. Its own save: your Classic save is untouched.']
+           ? ['⚖️', 'Rebalanced (beta)', 'New numbers tested with a simulator: bigger buildings pay back slower, so the game no longer explodes in the first hour. Clicking helps (most at the start) but is not everything. Ascension unlocks at 120 B (about an hour), each chip gives +20% (5th root of the run), the tree is cheaper, upgrades come steadily, challenge goals fit the new pace, the first Final E costs 300 T and each one after it 150x more, and offline earns 20%. Its own save: your Classic save is untouched.']
            : ['⚖️', 'Try Rebalanced (beta)', 'A test version of the game with new, smoother numbers and its own save. Switch on the main menu or in Settings; your Classic save stays safe and you can switch back any time.']);
        const newsModal = document.getElementById('news-modal');
        document.getElementById('news-btn').addEventListener('click', () => {
@@ -246,7 +246,7 @@
                    const pct = Math.min(100, state.run.earned / CHIP_BASE * 100);
                    html += `<div class="text-stone-300">Earn <b class="text-white">${formatNumber(CHIP_BASE)}</b> Brown E's in one run to unlock ascension.</div><div class="h-2 bg-stone-800 rounded mt-2 overflow-hidden"><div class="h-2 bg-purple-500" style="width:${pct.toFixed(1)}%"></div></div><div class="text-xs text-stone-500 mt-1">${pct.toFixed(1)}% there this run</div>`;
                }
-               html += `<div class="text-xs text-stone-400 mt-2">A run is worth more chips the further you get: ${CHIP_POW === 1 / 3 ? 'the cube root of what you earned, in Qa.' : `the ${CHIP_POW === 0.25 ? '4th' : CHIP_POW === 0.5 ? 'square' : ''} root of what you earned, over ${formatShort(CHIP_BASE)}.`} Buying The Final E ascends you too.</div>`;
+               html += `<div class="text-xs text-stone-400 mt-2">A run is worth more chips the further you get: ${CHIP_POW === 1 / 3 ? 'the cube root of what you earned, in Qa.' : `the ${CHIP_POW === 0.25 ? '4th' : CHIP_POW === 0.2 ? '5th' : CHIP_POW === 0.5 ? 'square' : (1 / CHIP_POW).toFixed(1) + 'th'} root of what you earned, over ${formatShort(CHIP_BASE)}.`} Buying The Final E ascends you too.</div>`;
                if (c) html += `<div class="mt-3 p-2 rounded-xl border border-red-800 bg-red-950/40 text-xs"><div class="font-black text-red-200 text-sm">${c.icon} Challenge: ${c.name}</div><div class="text-stone-300 mt-1">${c.rule}</div><div class="text-green-300 mt-1">Reward: ${c.reward}</div></div>`;
                if (PRES.trial) {
                    html += `<div class="text-xs font-black uppercase tracking-widest text-red-300 mt-3 mb-1">⚔️ Challenge rewards (${challengesDone()}/${CHALLENGES.length})</div>`;

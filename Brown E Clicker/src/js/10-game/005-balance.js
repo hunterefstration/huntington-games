@@ -83,7 +83,7 @@
                    luck: 200, twins: 450, festive: 40, chip1: 3, chip2: 100, chip3: 2500, trophy: 12, trial: 2, off1: 2, off2: 20, off3: 150,
                    gard1: 5, gard2: 25, gard3: 120, gard4: 600, mkt1: 10, mkt2: 75, mkt3: 500 },
                offline: { eff: 0.2 },
-               challengeGoals: { noclick: 2e11, clicksonly: 1e10, noupgrades: 1e9, nogold: 1e12, inflation: 1e11, minimal: 1e10, slowmo: 1e10, amnesia: 1e12 },
+               challengeGoals: { noclick: 1e16, clicksonly: 3e13, noupgrades: 2e11, nogold: 1e15, inflation: 1e15, speedrun: 2e13, minimal: 1e14, slowmo: 1e14, amnesia: 1e16 },
                // First Final E at 300 T (about a week for a 35 min/day player), each next one 150x pricier
                winCost: 3e14, winGrowth: 150
            }
