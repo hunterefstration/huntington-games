@@ -1,0 +1,15 @@
+#!/bin/bash
+# Refuse a commit whose built files do not match their sources (the classic mistake: src edited, index.html not rebuilt,
+# or the other way round). Only the games (and the hub) touched by this commit are checked, so work in progress in
+# another game does not get in the way. Takes a second. Skip once with: git commit --no-verify
+cd "$(git rev-parse --show-toplevel)" || exit 0
+command -v node >/dev/null || exit 0
+mapfile -t games < <(git diff --cached --name-only | awk -F/ '
+  $1=="launcher" || $0=="index.html" { print "."; next }
+  $1=="Minigames" && NF>2 && $2!="_shared" { print $1"/"$2; next }
+  NF>1 { print $1 }' | sort -u | while read -r d; do [ "$d" = "." ] || [ -f "$d/src/shell.html" ] && echo "$d"; done)
+[ ${#games[@]} -eq 0 ] && exit 0
+out=$(node tools/check.js "${games[@]}" 2>&1) && exit 0
+echo "$out" | grep -E '^FAIL|problem' >&2
+echo "pre-commit: fix with  node tools/check.js --fix  (then git add the rebuilt files), or commit with --no-verify" >&2
+exit 1
