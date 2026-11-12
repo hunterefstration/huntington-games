@@ -736,23 +736,30 @@
            // Rebalanced beta: only what differs from classic. Evidence and before/after numbers: tools/BALANCE-REPORT.md
            rb: {
                // Building outputs follow a payback curve (bigger buildings pay back slower), so growth no longer runs away
-               payback: { p0: 15, k: 0.5, p0Click: 50, kClick: 0.6 },
+               payback: { p0: 15, k: 0.45, p0Click: 50, kClick: 0.6 },
                // Click buildings: the curve rounds the small ones to the same +1, so they are listed: [cost, click power]
-               buildings: { mouse: [100, 1], mech: [800, 2], gaming: [4000, 4], glove: [15000, 7], implant: [60000, 12], robohand: [5000000, 60], telekinesis: [25000000000, 1500] },
+               buildings: { mouse: [100, 1], mech: [800, 4], gaming: [4000, 8], glove: [15000, 13], implant: [60000, 24], robohand: [5000000, 120], telekinesis: [25000000000, 3000] },
                clickUpgMult: 1.5,
                tierAt: { bps: [1, 10, 25, 50, 100], click: [1, 5, 15, 25, 40] },
-               tierCostX: { bps: [10, 50, 500, 50000, 5000000], click: [20, 200, 5000, 200000, 20000000] },
+               // Cheaper tiers, synergies, flavor and trophy upgrades: no long saving-up waits in the mid game
+               tierCostX: { bps: [10, 25, 100, 1000, 100000], click: [20, 200, 5000, 200000, 20000000] },
+               synCostX: 15,
+               globCostX: 0.05,
+               upgCost: { achup2: 1e10, achup3: 1e15, gold4: 7777777777, off3: 250000000000 },
                clickUpg: [[100, 2000], [1000, 100000], [3000, 1e7], [6000, 1e9], [12000, 1e11], [25000, 1e13], [50000, 1e15], [100000, 1e17]],
                touchPct: 0.005,
+               gen: { growth: 1.35, step: 0.05 },        // smaller, more frequent general multiplier steps
                golden: { click: [77, 13] },
-               chips: { base: 1e10, power: 0.25, bonus: 0.02 },
+               // 5th root of the run (chips grow slower than the production they give: no runaway), +20% each
+               chips: { base: 1.2e11, power: 0.2, bonus: 0.2 },
                tree: { prod1: 2, prod2: 15, prod3: 150, prod4: 1500, syn: 75, tierup: 250, capstone: 10000, click2: 5, click3: 25, click4: 200, click5: 2000, crit: 60,
                    eco1: 1, eco2: 8, eco3: 30, eco4: 300, haggle: 50, wholesale: 750, head: 20, heir: 120, gold1: 1, gold2: 6, gold3: 30, gold4: 120, gold5: 1200,
                    luck: 200, twins: 450, festive: 40, chip1: 3, chip2: 100, chip3: 2500, trophy: 12, trial: 2, off1: 2, off2: 20, off3: 150,
                    gard1: 5, gard2: 25, gard3: 120, gard4: 600, mkt1: 10, mkt2: 75, mkt3: 500 },
-               offline: { capHours: 10 },
+               offline: { eff: 0.2 },
                challengeGoals: { noclick: 2e11, clicksonly: 1e10, noupgrades: 1e9, nogold: 1e12, inflation: 1e11, minimal: 1e10, slowmo: 1e10, amnesia: 1e12 },
-               winGrowth: 1000
+               // First Final E at 300 T (about a week for a 35 min/day player), each next one 150x pricier
+               winCost: 3e14, winGrowth: 150
            }
        };
        // The active table: classic with the variant's overrides on top (one level deep for objects)
