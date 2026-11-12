@@ -180,11 +180,12 @@ function qolPlayerBar() {
 })();
 // --- what's new: once after an update, on the Games page ---
 var WHATSNEW = { id: 'r65', items: [
-  ['Leaderboards fixed', 'Brown E Clicker ranks by every E you ever made, Tetris by your real best score, and boards refresh by themselves.'],
-  ['Find games faster', 'Search (press /), filter by tag, sort, and star your favourites to keep them first.'],
+  ['Leaderboards fixed', 'Brown E Clicker ranks by every E you ever made, Tetris by your real best score, and an open board refreshes by itself. New boards for Tetris, Tower Defense, Steel Storm and Market & Life.'],
+  ['Find games faster', 'Search (press /), filter by tag, sort, and star your favourites to keep them first. Cards show how long you have played.'],
   ['Faster, sturdier loading', 'Games you hover or played last are fetched ahead, slow servers are skipped, and a failed load has a Try again button.'],
-  ['Brown E Clicker: Rebalanced beta', 'A smoother version of the game with its own save and leaderboard. Classic is untouched.'],
-  ['Last Light 1.4', 'The final boss no longer hurts you when you stomp it, and it has six new attacks.']
+  ['Brown E Clicker: Rebalanced beta', 'A re-tuned version where buildings matter and the game lasts, with its own save and leaderboard. Classic is untouched. Auto-clickers are caught in both.'],
+  ['Last Light 1.4', 'The final boss no longer hurts you when you stomp it, and it has six new attacks.'],
+  ['Little things in the games', 'Games pause when you click away, mute keys and buttons that are remembered, and one-click rematches in the minigames.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;

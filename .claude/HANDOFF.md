@@ -20,6 +20,18 @@
   A card can have `alt: { label, go }` (Brown E Clicker's Rebalanced beta sets `brownEClicker_variant = 'rb'`).
 - **Last Light 1.4**: `bodyPush` + a hit grace window in `45-boss.js`/`47-guard.js`; The Gloom's moves per phase are in
   `GLOOM_PLAN`. Repro/regression script: `/home/user/tmp-tests/ll-gloom.mjs` (not in the repo).
+- **Brown E Clicker** (helper): every number is in `src/js/10-game/005-balance.js` (`BALANCE`, classic defaults + `rb`
+  overrides); the variant is `localStorage brownEClicker_variant = 'rb'` with its own save `brownEClickerSave_rb`.
+  `tools/sim.js` + `tools/BALANCE-REPORT.md` re-test the balance (4 model players). The auto-click guard is
+  `095-autoclick-guard.js` (strikes in `brownEClicker_ac`; 3+ leaves the boards via `lbLeave`).
+  Its Tailwind CSS is prebuilt (`tools/tailwind.sh`) and must stay AFTER the game's own styles in shell.html.
+- **In-game QoL** (helper): focus-loss pauses (Tetris, TD, Market Life, Spikes solo), mute toggles, remembered speeds,
+  minigame lobby rematch/copy code/ready hint. New keys: `huntingtonTetrisMute`, `hgmini_mute`, `hgmini_bots_<id>`.
+- **Sign-out** (gv/core.js): waits for a running sync and a short reconnect, then runs its own sync, before wiping.
+- **Known test debt**: Grapevine's battery (`tools/rig/gv-battery.sh`) has 13 failures that also fail on the released
+  code: the app's "New here?" offer (`#guideOffer`) covers buttons the old suites click (core, friends, actions, ops
+  crash on it), plus polish/a11y/redial/hostile/operator checks that went stale. None come from this round. Fix the
+  suites (dismiss the offer in their sign-up helpers) before trusting the battery as a gate again.
 - **Tooling**: see CLAUDE.md ("Checking and testing", "Releasing", "Things that have bitten before").
 
 ## Reliability round (r64)
