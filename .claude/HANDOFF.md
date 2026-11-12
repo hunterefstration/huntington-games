@@ -28,10 +28,8 @@
 - **In-game QoL** (helper): focus-loss pauses (Tetris, TD, Market Life, Spikes solo), mute toggles, remembered speeds,
   minigame lobby rematch/copy code/ready hint. New keys: `huntingtonTetrisMute`, `hgmini_mute`, `hgmini_bots_<id>`.
 - **Sign-out** (gv/core.js): waits for a running sync and a short reconnect, then runs its own sync, before wiping.
-- **Known test debt**: Grapevine's battery (`tools/rig/gv-battery.sh`) has 13 failures that also fail on the released
-  code: the app's "New here?" offer (`#guideOffer`) covers buttons the old suites click (core, friends, actions, ops
-  crash on it), plus polish/a11y/redial/hostile/operator checks that went stale. None come from this round. Fix the
-  suites (dismiss the offer in their sign-up helpers) before trusting the battery as a gate again.
+- **Grapevine's battery passes again** (708/0, `tools/rig/gv-battery.sh`): the stale suites were repaired after r65
+  (tests only). Keep it green: run it before any Grapevine release that touches the client or the server's frames.
 - **Tooling**: see CLAUDE.md ("Checking and testing", "Releasing", "Things that have bitten before").
 
 ## Reliability round (r64)
