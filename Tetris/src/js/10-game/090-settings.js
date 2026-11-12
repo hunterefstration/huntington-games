@@ -347,6 +347,32 @@ function ovBack(){
   if(ovState==='pause'){resumeGame();return;}
   if(ovBackFn)ovBackFn();
 }
+// QoL: second press confirms a run-abandoning button (4 s window)
+function qolArm(el,label){
+  if(!el)return true;
+  var t=+(el.getAttribute('data-arm')||0);
+  if(t&&Date.now()-t<4000)return true;
+  el.setAttribute('data-arm',Date.now());
+  if(!el.getAttribute('data-lbl'))el.setAttribute('data-lbl',el.textContent);
+  el.textContent=label;el.classList.add('pri');
+  setTimeout(function(){if(el.isConnected&&Date.now()-(+el.getAttribute('data-arm'))>=3900){el.textContent=el.getAttribute('data-lbl');el.classList.remove('pri');el.removeAttribute('data-arm');}},4000);
+  return false;
+}
+// QoL: M toggles all sound; the old volumes are kept so unmuting restores them
+var MUTEKEY='huntingtonTetrisMute';
+function isMuted(){return S.set.sfx===0&&S.set.music===0&&!!lsGet(MUTEKEY);}
+function toggleMute(){
+  if(isMuted()){
+    var o={};try{o=JSON.parse(lsGet(MUTEKEY))||{};}catch(e){}
+    S.set.sfx=o.sfx>0?o.sfx:70;S.set.music=o.music>=0?o.music:50;lsSet(MUTEKEY,'');
+    initAudio();applyVol();save();if(G&&G.state==='play'&&S.set.music>0&&!mus.on)musicStart();toast('Sound on','Press M to mute');
+  }else{
+    lsSet(MUTEKEY,JSON.stringify({sfx:S.set.sfx,music:S.set.music}));
+    S.set.sfx=0;S.set.music=0;applyVol();musicStop();save();toast('Sound off','Press M to unmute');
+  }
+  if(ovState==='settings')showSettings(ovBackFn,true);
+  var mb=document.querySelector('#ov [data-a=mute]');if(mb)mb.textContent=isMuted()?'Sound: Off (M)':'Sound: On (M)';
+}
 function act(a,el){
   var p=a.split(':'),k=p[0],v=p[1];
   sfx.click();
@@ -366,10 +392,13 @@ function act(a,el){
     case 'promo':showResult(true);break;
     case 'menu':goMenu();break;
     case 'resume':resumeGame();break;
+    case 'mute':toggleMute();break;
     case 'restart':
+      if(ovState==='pause'&&G&&!G.pz&&G.pieces>3&&!qolArm(el,'Press again to restart'))break;
       if(G&&G.pz){if(G.mode==='puzzle')startGame('puzzle',{pz:G.pz.d.id,quick:true});else startGame('tutorial',{les:G.pz.l.id});break;}
       startGame(G.daily?'daily':G.mode,{level:G.startLevel});break;
     case 'quit':
+      if(ovState==='pause'&&G&&!G.pz&&G.pieces>3&&!qolArm(el,G.mode==='sprint'?'Press again to quit':'Press again to end run'))break;
       if(G.mode==='sprint'){goMenu();}
       else{closeOv();endGame('quit');}
       break;

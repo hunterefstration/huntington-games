@@ -111,11 +111,11 @@
     <div id="pauseScreen" class="overlay hidden">
         <h1>Paused</h1>
         <div class="menu-row">
-            <button onclick="resumeGame()">Resume</button>
+            <button onclick="resumeGame()" title="Esc or P">Resume (Esc)</button>
         </div>
         <div class="menu-row">
             <button id="pauseRestartBtn" class="btn-small btn-grey" onclick="restartFromPause()">Restart Level</button>
-            <button id="pauseBackBtn" class="btn-small btn-grey" onclick="goBack()">Main Menu</button>
+            <button id="pauseBackBtn" class="btn-small btn-grey" onclick="qolPauseBack(this)">Main Menu</button>
         </div>
     </div>
 

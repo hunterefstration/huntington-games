@@ -463,11 +463,11 @@
     <div id="pauseScreen" class="overlay hidden">
         <h1>Paused</h1>
         <div class="menu-row">
-            <button onclick="resumeGame()">Resume</button>
+            <button onclick="resumeGame()" title="Esc or P">Resume (Esc)</button>
         </div>
         <div class="menu-row">
             <button id="pauseRestartBtn" class="btn-small btn-grey" onclick="restartFromPause()">Restart Level</button>
-            <button id="pauseBackBtn" class="btn-small btn-grey" onclick="goBack()">Main Menu</button>
+            <button id="pauseBackBtn" class="btn-small btn-grey" onclick="qolPauseBack(this)">Main Menu</button>
         </div>
     </div>
 
@@ -1594,7 +1594,20 @@ window.addEventListener('keydown', (e) => {
     }
 });
 window.addEventListener('keyup', (e) => handleKey(e, false));
-window.addEventListener('blur', () => { keys.left = keys.right = keys.jump = false; });
+// QoL: clicking away or switching tabs pauses a solo run (never in multiplayer, where the race goes on)
+function qolAutoPause() { if (gameState === 'PLAYING' && !(typeof mpActive === 'function' && mpActive())) pauseGame(); }
+window.addEventListener('blur', () => { keys.left = keys.right = keys.jump = false; qolAutoPause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) qolAutoPause(); });
+// QoL: leaving a One Life or Endless run from the pause menu ends it, so ask once more
+function qolPauseBack(btn) {
+    const risky = playMode === 'campaign' && (isOneLife || isEndless) && !(typeof mpActive === 'function' && mpActive());
+    if (risky && !(btn.dataset.arm && Date.now() - +btn.dataset.arm < 4000)) {
+        btn.dataset.arm = Date.now(); btn.textContent = 'Press again to end run';
+        setTimeout(() => { if (Date.now() - +btn.dataset.arm >= 3900) { btn.textContent = backLabel(); delete btn.dataset.arm; } }, 4000);
+        return;
+    }
+    delete btn.dataset.arm; goBack();
+}
 
 
 function setupTouch(id, keyProp) {
@@ -2547,7 +2560,7 @@ function pauseGame() {
     if (gameState !== 'PLAYING') return;
     gameState = 'PAUSED';
     keys.left = keys.right = keys.jump = false;
-    document.getElementById('pauseBackBtn').textContent = backLabel();
+    document.getElementById('pauseBackBtn').textContent = backLabel(); delete document.getElementById('pauseBackBtn').dataset.arm;
     // restarting a One Life run would just re-roll the level, so it is not offered there
     document.getElementById('pauseRestartBtn').classList.toggle('hidden', playMode === 'campaign' && isOneLife);
     pauseScreen.classList.remove('hidden');

@@ -319,5 +319,6 @@ function buyUpgrade(id) {
   Snd.play('upgrade'); tutorialCheck(); updateUI(); refreshDlg(); requestSave();
 }
 function togglePause() { paused = !paused; if (!paused) lastSim = performance.now(); updateUI(); Snd.play('click'); }
-function cycleSpeed() { speed = speed === 1 ? 2 : (speed === 2 ? 3 : 1); updateUI(); Snd.play('click'); }
+function cycleSpeed() { speed = speed === 1 ? 2 : (speed === 2 ? 3 : 1); settings.speed = speed; saveSettings(); updateUI(); Snd.play('click'); }
+function toggleSound() { settings.sound = !settings.sound; saveSettings(); Snd.apply(); toast(settings.sound ? 'Sound on' : 'Sound off', 'info', settings.sound ? 'volume' : 'mute'); updateUI(); }
 

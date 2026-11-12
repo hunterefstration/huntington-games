@@ -29,7 +29,7 @@ const store = {
 // ======================================================================
 // SETTINGS
 // ======================================================================
-const DEFAULT_SETTINGS = { sound: true, volume: 0.6, lowfx: false, confirm: true, numbers: true, daynight: true, seenVer: '' };
+const DEFAULT_SETTINGS = { sound: true, volume: 0.6, lowfx: false, confirm: true, numbers: true, daynight: true, seenVer: '', speed: 1 };   // speed: QoL, the game speed you used last
 let settings = Object.assign({}, DEFAULT_SETTINGS);
 function loadSettings() {
   try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) settings.lowfx = true; } catch (e) { /* ignore */ }
@@ -41,6 +41,7 @@ function loadSettings() {
         if (typeof o[k] === typeof DEFAULT_SETTINGS[k]) settings[k] = o[k];
       }
       settings.volume = clamp(settings.volume, 0, 1);
+      if (![1, 2, 3].includes(settings.speed)) settings.speed = 1;
     }
   } catch (e) { /* ignore */ }
 }

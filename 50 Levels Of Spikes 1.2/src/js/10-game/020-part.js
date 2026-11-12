@@ -517,7 +517,20 @@ window.addEventListener('keydown', (e) => {
     }
 });
 window.addEventListener('keyup', (e) => handleKey(e, false));
-window.addEventListener('blur', () => { keys.left = keys.right = keys.jump = false; });
+// QoL: clicking away or switching tabs pauses a solo run (never in multiplayer, where the race goes on)
+function qolAutoPause() { if (gameState === 'PLAYING' && !(typeof mpActive === 'function' && mpActive())) pauseGame(); }
+window.addEventListener('blur', () => { keys.left = keys.right = keys.jump = false; qolAutoPause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) qolAutoPause(); });
+// QoL: leaving a One Life or Endless run from the pause menu ends it, so ask once more
+function qolPauseBack(btn) {
+    const risky = playMode === 'campaign' && (isOneLife || isEndless) && !(typeof mpActive === 'function' && mpActive());
+    if (risky && !(btn.dataset.arm && Date.now() - +btn.dataset.arm < 4000)) {
+        btn.dataset.arm = Date.now(); btn.textContent = 'Press again to end run';
+        setTimeout(() => { if (Date.now() - +btn.dataset.arm >= 3900) { btn.textContent = backLabel(); delete btn.dataset.arm; } }, 4000);
+        return;
+    }
+    delete btn.dataset.arm; goBack();
+}
 
 
 function setupTouch(id, keyProp) {

@@ -160,7 +160,7 @@
        // E's needed this run for one more chip than you'd get now
        function nextChipAt() {
            const n = pendingChips() + 1;
-           return CHIP_BASE * Math.pow(n / PRES.chipX, 3);
+           return CHIP_BASE * Math.pow(n / PRES.chipX, CHIP_POW === 1 / 3 ? 3 : 1 / CHIP_POW);
        }
 
        function buildTree() {

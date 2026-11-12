@@ -475,7 +475,7 @@ body.lowfx .toast{animation:none!important}
   #status{min-height:22px;padding:2px 8px 4px}
   #toasts{top:48px}
 }
-
+@media (max-width:640px){.tbtns .qol-mute{display:none}}
 </style>
 </head>
 <body>
@@ -570,7 +570,8 @@ body.lowfx .toast{animation:none!important}
   <div class="spacer"></div>
   <div class="tbtns">
     <button class="ib" data-act="pause" id="b-pause" title="Pause (Space)" aria-label="Pause"><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg></button>
-    <button class="ib txt" data-act="speed" id="b-speed" title="Game speed" aria-label="Game speed">1x</button>
+    <button class="ib txt" data-act="speed" id="b-speed" title="Game speed (F)" aria-label="Game speed">1x</button>
+    <button class="ib qol-mute" data-act="mute" id="b-mute" title="Sound on (M to mute)" aria-label="Sound"><svg class="i" aria-hidden="true"><use href="#i-volume"/></svg></button>
     <button class="ib" data-act="dlg" data-d="career" id="b-career" title="Career story and championships (K)" aria-label="Career"><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg><em id="b-car-n" class="hidden">!</em></button>
     <button class="ib" data-act="dlg" data-d="goals" id="b-goals" title="Goals (G)" aria-label="Goals"><svg class="i" aria-hidden="true"><use href="#i-trophy"/></svg></button>
     <button class="ib" data-act="dlg" data-d="upgrades" id="b-upg" title="Upgrades (U)" aria-label="Upgrades"><svg class="i" aria-hidden="true"><use href="#i-upgrade"/></svg></button>
@@ -1015,7 +1016,7 @@ const store = {
 // ======================================================================
 // SETTINGS
 // ======================================================================
-const DEFAULT_SETTINGS = { sound: true, volume: 0.6, lowfx: false, confirm: true, numbers: true, daynight: true, seenVer: '' };
+const DEFAULT_SETTINGS = { sound: true, volume: 0.6, lowfx: false, confirm: true, numbers: true, daynight: true, seenVer: '', speed: 1 };   // speed: QoL, the game speed you used last
 let settings = Object.assign({}, DEFAULT_SETTINGS);
 function loadSettings() {
   try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) settings.lowfx = true; } catch (e) { /* ignore */ }
@@ -1027,6 +1028,7 @@ function loadSettings() {
         if (typeof o[k] === typeof DEFAULT_SETTINGS[k]) settings[k] = o[k];
       }
       settings.volume = clamp(settings.volume, 0, 1);
+      if (![1, 2, 3].includes(settings.speed)) settings.speed = 1;
     }
   } catch (e) { /* ignore */ }
 }
@@ -3852,6 +3854,7 @@ function updateUI() {
   // pause / speed
   const bp = $('b-pause'); if (V.paused !== paused) { V.paused = paused; bp.innerHTML = icon(paused ? 'play' : 'pause'); bp.classList.toggle('on', paused); $('pausedtag').classList.toggle('hidden', !paused); }
   T('b-speed', speed + 'x');
+  { const bm = $('b-mute'); if (bm && V.snd !== settings.sound) { V.snd = settings.sound; bm.innerHTML = icon(settings.sound ? 'volume' : 'mute'); bm.title = settings.sound ? 'Sound on (M to mute)' : 'Sound off (M to unmute)'; bm.classList.toggle('on', !settings.sound); } }
   uiShops(); uiBuild(loc, cc); uiStaff(loc); uiSupply(loc, cc); uiEventBar(); uiGoalBar();
   gfx.arrow = tutArrow(loc);
   if (!gfx.hover && performance.now() - (V.statusAt || 0) > 7000) { V.tipI = ((V.tipI || 0) + 1) % TIPS.length; T('status-text', TIPS[V.tipI]); V.statusAt = performance.now() - 2000; }
@@ -4412,7 +4415,8 @@ function buyUpgrade(id) {
   Snd.play('upgrade'); tutorialCheck(); updateUI(); refreshDlg(); requestSave();
 }
 function togglePause() { paused = !paused; if (!paused) lastSim = performance.now(); updateUI(); Snd.play('click'); }
-function cycleSpeed() { speed = speed === 1 ? 2 : (speed === 2 ? 3 : 1); updateUI(); Snd.play('click'); }
+function cycleSpeed() { speed = speed === 1 ? 2 : (speed === 2 ? 3 : 1); settings.speed = speed; saveSettings(); updateUI(); Snd.play('click'); }
+function toggleSound() { settings.sound = !settings.sound; saveSettings(); Snd.apply(); toast(settings.sound ? 'Sound on' : 'Sound off', 'info', settings.sound ? 'volume' : 'mute'); updateUI(); }
 
 // ----- dialogs -----
 function bar(p) { return '<div class="bar"><i style="width:' + clamp(p, 0, 100).toFixed(0) + '%"></i></div>'; }
@@ -4883,7 +4887,7 @@ function beginPlay(isNew, imported) {
   if ($('dlg') && !imported) { $('dlg').classList.add('hidden'); dlgKind = null; }
   rt.startTick = state.tick; rt.rank = rankIdx(); rt.inc.fill(0); rt.incIdx = Math.floor(state.tick / 25) % 12;
   rt.rankUp = null; rt.away = null; rt.latte = null; rt.careerJust = null; rt.careerPop = false;
-  paused = false; speed = 1; acc = 0; tool = 'cursor';
+  paused = false; speed = [1, 2, 3].includes(settings.speed) ? settings.speed : 1; acc = 0; tool = 'cursor';
   lastSim = performance.now();
   for (const k in V) delete V[k];
   fxClear(); gfx.staticDirty = true; gfx.hover = null;
@@ -4944,6 +4948,7 @@ function onAction(act, d, el) {
     case 'tool': selectTool(d.tool); break;
     case 'pause': togglePause(); break;
     case 'speed': cycleSpeed(); break;
+    case 'mute': toggleSound(); break;
     case 'dlg': openDlg(d.d); break;
     case 'close': closeDlg(); break;
     case 'tab': setTab(d.tab); Snd.play('click'); document.querySelectorAll('#tabs .pulse').forEach(x => x.classList.remove('pulse')); break;
@@ -5129,7 +5134,8 @@ function setupEvents() {
     else if (k === 'c') (dlgKind === 'chain' ? closeDlg() : openDlg('chain'));
     else if (k === 'k') (dlgKind === 'career' ? closeDlg() : openDlg('career'));
     else if (k === 'l') openLatte('serve');
-    else if (k === 'm') { settings.sound = !settings.sound; saveSettings(); Snd.apply(); toast(settings.sound ? 'Sound on' : 'Sound off', 'info', settings.sound ? 'volume' : 'mute'); }
+    else if (k === 'm') toggleSound();
+    else if (k === 'f') cycleSpeed();
   });
   window.addEventListener('resize', applyLayout);
   window.addEventListener('orientationchange', () => setTimeout(applyLayout, 120));

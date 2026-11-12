@@ -90,6 +90,7 @@ window.addEventListener('keydown',function(e){
   var tg=e.target,tn=tg&&tg.tagName;
   if(listening){e.preventDefault();e.stopPropagation();doRebind(e.code);return;}
   if(tn==='INPUT'&&tg.type==='text'){if(e.code==='Enter'||e.code==='Escape'){tg.blur();}return;}
+  if(e.code==='KeyM'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!codeMap.KeyM){e.preventDefault();toggleMute();return;}
   if(ovOpen()){menuKey(e);return;}
   if(!G)return;
   var a=codeMap[e.code];
@@ -99,7 +100,7 @@ window.addEventListener('keyup',function(e){
   var a=codeMap[e.code];
   if(a)release(a,e.code);
 },true);
-window.addEventListener('blur',function(){for(var k in held)held[k]=false;srcs={};});
+window.addEventListener('blur',function(){for(var k in held)held[k]=false;srcs={};if(G&&!(G.pz&&G.pz.demo))pauseGame();});
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){pauseGame();musicStop();if(AC&&AC.suspend){try{AC.suspend();}catch(e){}}}
   else if(AC&&AC.resume){try{AC.resume();}catch(e){}}
@@ -320,6 +321,7 @@ function showPause(){
   h+='<button class="btn" data-a="settings">Settings</button>';
   h+='<button class="btn" data-a="controls">Controls</button>';
   h+='<button class="btn" data-a="how">How to Play</button>';
+  h+='<button class="btn" data-a="mute" title="Toggle all sound (M)">'+(isMuted()?'Sound: Off (M)':'Sound: On (M)')+'</button>';
   h+='<button class="btn" data-a="quit">'+(G.mode==='sprint'?'Quit to Menu':'End Run (save score)')+'</button>';
   h+='</div></div>';
   openOv(h,'pause',resumeGame);

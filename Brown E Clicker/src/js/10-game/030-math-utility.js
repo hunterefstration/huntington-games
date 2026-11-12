@@ -1,10 +1,10 @@
        // --- MATH / UTILITY ---
        // Every win adds +100% to ALL production (1 win = 2x, 2 wins = 3x, 3 wins = 4x...)
-       function winBoost(wins) { return 1 + wins; }
+       function winBoost(wins) { return 1 + wins * BAL.winBoost; }
 
        function getMultiplierCost(level) {
            // Lowered growth from 3.0 to 1.8 so upgrades don't instantly cost 1Q!
-           return Math.floor(10000 * Math.pow(1.8, level));
+           return Math.floor(BAL.gen.base * Math.pow(BAL.gen.growth, level));
        }
 
        // Price of the next `n` copies of a building (each copy costs costMultiplier more than the last)
@@ -46,7 +46,7 @@
                const u = UPGRADES[i];
                if (u.kind === 'ach' && state.upgrades[u.id]) boost += u.pct;
            }
-           return (0.01 + PRES.achEach) * boost;
+           return (BAL.achEach + PRES.achEach) * boost;
        }
        function achievementMultiplier() {
            if (challengeIs('amnesia')) return 1;
@@ -60,15 +60,17 @@
            if (state.upgrades.gold2) freq *= 1.2;
            if (state.upgrades.gold3) freq *= 1.2;
            if (state.upgrades.gold4) dur *= 2;
-           return { minGap: 75 / freq, maxGap: 165 / freq, life: 13 * life, dur };
+           const G = BAL.golden;
+           return { minGap: G.minGap / freq, maxGap: G.maxGap / freq, life: G.life * life, dur };
        }
 
        // Offline earnings: a share of E's per second while the game is closed, capped in hours
        function offlineSettings() {
-           let eff = 0.25 + PRES.offEff + (GFX.offEff || 0), capHours = 8 + PRES.offCap;
-           if (state.upgrades.off1) eff += 0.15;
-           if (state.upgrades.off2) eff += 0.20;
-           if (state.upgrades.off3) capHours = 24;
+           const O = BAL.offline;
+           let eff = O.eff + PRES.offEff + (GFX.offEff || 0), capHours = O.capHours + PRES.offCap;
+           if (state.upgrades.off1) eff += O.off1;
+           if (state.upgrades.off2) eff += O.off2;
+           if (state.upgrades.off3) capHours = O.off3Cap;
            return { eff, capHours };
        }
 
@@ -92,7 +94,7 @@
                if (u.kind === 'tier') BUILDING[u.b].mult *= PRES.tierX;
                else if (u.kind === 'syn') BUILDING[u.t].mult *= 1 + u.pct * PRES.synX * (u.s === 'all' ? totalBuildings() : BUILDING[u.s].owned);
                else if (u.kind === 'global') globalMult *= 1 + u.pct;
-               else if (u.kind === 'click') clickUpg *= 2;
+               else if (u.kind === 'click') clickUpg *= BAL.clickUpgMult;
                else if (u.kind === 'touch') touch += u.pct;
            }
            touch += PRES.touch;
@@ -113,8 +115,8 @@
                if (item.type === 'bps') baseBps += item.amount * item.mult * item.owned;
            }
 
-           const clickMulti = 1 + (state.clickMultiLevel * 0.10);
-           const bpsMulti = 1 + (state.bpsMultiLevel * 0.10);
+           const clickMulti = 1 + (state.clickMultiLevel * BAL.gen.step);
+           const bpsMulti = 1 + (state.bpsMultiLevel * BAL.gen.step);
            // 2.0: Heavenly Chips, the Prestige Tree / challenge rewards, the garden, Egg Hunt eggs, and challenge handicaps
            const chipMult = chipMultiplier();
            const gardenProd = GFX.prod || 1, gardenClick = GFX.click || 1;
@@ -146,8 +148,8 @@
 
        // Lucky Golden E: 15% of your bank or 15 minutes of production, whichever is smaller
        function luckyAmount() {
-           const big = PRES.luckBig;
-           return Math.min(state.brownEs * (big ? 0.25 : 0.15), state.bps * (big ? 1800 : 900)) * (GFX.lucky || 1) + 13;
+           const big = PRES.luckBig, L = BAL.golden.lucky;
+           return Math.min(state.brownEs * (big ? L.bankBig : L.bank), state.bps * (big ? L.secsBig : L.secs)) * (GFX.lucky || 1) + L.flat;
        }
 
        // === PURE GAME LOGIC END ===
@@ -290,8 +292,8 @@
            setText(clickPowerEl, formatNumber(state.clickPower));
 
            // Update Multiplier UI
-           setText(clickMultiDisplay, `x${(1 + state.clickMultiLevel * 0.1).toFixed(1)}`);
-           setText(bpsMultiDisplay, `x${(1 + state.bpsMultiLevel * 0.1).toFixed(1)}`);
+           setText(clickMultiDisplay, `x${(1 + state.clickMultiLevel * BAL.gen.step).toFixed(1)}`);
+           setText(bpsMultiDisplay, `x${(1 + state.bpsMultiLevel * BAL.gen.step).toFixed(1)}`);
 
            const nextClickCost = getMultiplierCost(state.clickMultiLevel);
            const nextBpsCost = getMultiplierCost(state.bpsMultiLevel);

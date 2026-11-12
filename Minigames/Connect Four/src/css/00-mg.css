@@ -23,3 +23,9 @@ label { color: var(--dim); font-size: 14px; display: inline-flex; gap: 6px; alig
 .mg-hud { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font: 800 14px system-ui; pointer-events: none; }
 .mg-hud span { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
 canvas { display: block; }
+.mg-btn.sm { padding: 4px 10px; font-size: 13px; border-radius: 9px; vertical-align: middle; }
+#mg-snd { position: fixed; top: 10px; right: 10px; z-index: 70; min-width: 40px; min-height: 36px; font-size: 16px; }
+#mg-name { width: 170px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: #fff; font: 700 15px system-ui; user-select: text; }
+#mg-ready { color: #bbf7d0; margin: 2px 0 6px; }
+#mg-confirm { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 8, 16, .72); }
+#mg-confirm .mg-card { max-width: 420px; } #mg-confirm h2 { margin: 4px 0; }

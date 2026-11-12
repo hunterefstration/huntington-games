@@ -316,4 +316,9 @@
             .srow { grid-template-columns: minmax(0, 1fr) 82px auto; }
             .srow .spark, .srow .own { display: none; }
         }
-    
+        #qol-away { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(2,6,23,0.55); cursor: pointer; user-select: none; }
+        #qol-away.hidden { display: none; }
+        #qol-away > div { background: var(--card); border: 1px solid #475569; border-radius: 16px; padding: 18px 26px; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+        #qol-away b { font-size: 1.3rem; color: var(--sky); }
+        #qol-away span { color: var(--text); }
+        #qol-away small { color: var(--muted); }

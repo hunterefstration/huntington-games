@@ -462,4 +462,4 @@ body.lowfx .toast{animation:none!important}
   #status{min-height:22px;padding:2px 8px 4px}
   #toasts{top:48px}
 }
-
+@media (max-width:640px){.tbtns .qol-mute{display:none}}

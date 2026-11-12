@@ -496,6 +496,8 @@ function startGame(opts, loading) {
   setAbilityMode(own(GAME_MODES, opts.gm) ? opts.gm : 'legacy'); applyModeCosts(own(GAME_MODES, opts.gm) ? opts.gm : 'legacy');
   if (opts.mode === 'daily' && opts.daily && opts.daily.mods.indexOf('cheap') >= 0) for (const t of TOWERS) t.cost = Math.max(5, Math.round(t.cost * 0.75 / 5) * 5);     // Daily: Lend-Lease
   G = newGameState(opts); enemyUid = 1; parts.length = 0;
+  G.speed = S.lastSpeed || 1;     // QoL: keep the speed you used last time
+  if (typeof qolSyncMute === 'function') qolSyncMute();
   setupMap(G);
   $('menu-screen').classList.add('hidden'); $('editor-screen').classList.add('hidden'); $('game-screen').classList.remove('hidden');
   paused = false; ['pause', 'end', 'confirm', 'share'].forEach(closeModal);

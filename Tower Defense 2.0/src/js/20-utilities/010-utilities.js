@@ -67,7 +67,8 @@ const DEFAULT_SETTINGS = {
   variance: true,             // tower damage rolls +-10%
   enemyVariety: true,         // random enemy stat jitter + affixes
   confirmSell: true, autoPauseHidden: true, showTips: true, autoWaveDefault: false,
-  hoverRange: true
+  hoverRange: true,
+  lastSpeed: 1                // QoL: the game speed you used last (1-3)
 };
 function cleanSettings(raw) {
   const out = Object.assign({}, DEFAULT_SETTINGS);
@@ -85,10 +86,11 @@ function cleanSettings(raw) {
   if (![0, 30, 60].includes(out.fpsCap)) out.fpsCap = 0;
   if (!['always', 'damaged', 'off'].includes(out.healthBars)) out.healthBars = 'damaged';
   out.volume = clamp(out.volume, 0, 1);
+  out.lastSpeed = [1, 2, 3].includes(out.lastSpeed) ? out.lastSpeed : 1;
   return out;
 }
 let S = cleanSettings(store.get(KEYS.settings, {}));
-function saveSettings() { store.set(KEYS.settings, S); }
+function saveSettings() { store.set(KEYS.settings, S); if (typeof qolSyncMute === 'function') qolSyncMute(); }
 function applyQualityPreset(q) {
   S.quality = q;
   if (q === 'low' || q === 'medium' || q === 'high') {

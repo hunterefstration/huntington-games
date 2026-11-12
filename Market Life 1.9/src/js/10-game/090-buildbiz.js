@@ -415,6 +415,38 @@
     window.addEventListener('pointerup', () => { pointerDown = 0; setTimeout(() => { if (L && !pointerDown) renderPanel(); }, 0); }, true);
     window.addEventListener('pointercancel', () => { pointerDown = 0; }, true);
     window.addEventListener('blur', () => { pointerDown = 0; });
+    // QoL: days stop while you are away (tab hidden or window loses focus); click or Space carries on at the old speed
+    let qolAway = 0, qolLast = 1;
+    function qolAwayPause() {
+        if (!L || L.phase !== 'play' || modalOpen || !L.speed || qolAway) return;
+        qolAway = L.speed; setSpeed(0);
+        let el = $('qol-away');
+        if (!el) { el = document.createElement('div'); el.id = 'qol-away'; el.innerHTML = '<div><b>⏸ Paused</b><span>Time stopped while you were away.</span><small>Click or press Space to continue</small></div>'; el.addEventListener('click', qolAwayResume); document.body.appendChild(el); }
+        el.classList.remove('hidden');
+    }
+    function qolAwayResume() {
+        const el = $('qol-away'); if (el) el.classList.add('hidden');
+        const s = qolAway; qolAway = 0;
+        if (s && L && L.speed === 0) setSpeed(s);
+    }
+    function qolTogglePause() {
+        if (!L || L.phase !== 'play' || modalOpen) return;
+        if (qolAway) { qolAwayResume(); return; }
+        if (L.speed) { qolLast = L.speed; setSpeed(0); } else setSpeed(qolLast || 1);
+    }
+    document.addEventListener('visibilitychange', () => { if (document.hidden) qolAwayPause(); });
+    window.addEventListener('blur', qolAwayPause);
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+        if (e.code !== 'Space' && e.code !== 'KeyP') return;
+        const t = e.target, tn = t && t.tagName;
+        if (tn === 'INPUT' || tn === 'TEXTAREA' || tn === 'SELECT') return;
+        if (tn === 'BUTTON' && !t.closest('#speed') && e.code === 'Space') return;     // Space still presses a focused button
+        if (modalOpen) return;
+        e.preventDefault(); qolTogglePause();
+    });
+    // the away-pause must not be saved as the player's chosen speed
+    window.addEventListener('pagehide', () => { if (L && qolAway) L.speed = qolAway; });
     window.addEventListener('pagehide', () => { if (L) saveGame(netWorth()); });
 
     // test / debug hook

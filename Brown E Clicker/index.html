@@ -665,6 +665,85 @@
 
 
    <script>
+       // === BALANCE === (pure data: every tunable number of the economy lives here)
+       // Two variants share all code: 'classic' (the original numbers, the default) and 'rb' (Rebalanced beta).
+       // The beta is picked with localStorage brownEClicker_variant = 'rb' (or ?variant=rb in the URL, which is then remembered).
+       // Each variant keeps its own progress: every progress key gets KEY_SUFFIX ('' or '_rb').
+       // Re-test the numbers with: node "Brown E Clicker/tools/sim.js" (see tools/BALANCE-REPORT.md).
+       const VARIANT_KEY = 'brownEClicker_variant';
+       const VARIANT = (function () {
+           if (typeof __BEC_VARIANT__ !== 'undefined') return __BEC_VARIANT__ === 'rb' ? 'rb' : 'classic'; // the node simulator
+           let v = '';
+           try {
+               const q = new URLSearchParams(location.search).get('variant');
+               if (q === 'rb') { v = 'rb'; localStorage.setItem(VARIANT_KEY, 'rb'); }
+               else if (q === 'classic') { v = 'classic'; localStorage.removeItem(VARIANT_KEY); }
+           } catch (e) { /* no URL or storage */ }
+           try { if (!v) v = localStorage.getItem(VARIANT_KEY) || ''; } catch (e) { /* storage blocked */ }
+           return v === 'rb' ? 'rb' : 'classic';
+       })();
+       const IS_RB = VARIANT === 'rb';
+       const KEY_SUFFIX = IS_RB ? '_rb' : '';
+
+       const BALANCE = {
+           classic: {
+               // Buildings: costs and outputs are in the shop list; null = use them as they are
+               buildings: null,
+               growth: { bps: 1.15, click: 1.35 },        // each copy costs this much more than the last
+               // Per-building tier upgrades: owned needed, cost (x base cost), output multiplier
+               tierAt: { bps: [1, 10, 25, 50, 100], click: [1, 5, 10, 20, 35] },
+               tierCostX: { bps: [10, 50, 500, 50000, 5000000], click: [10, 40, 400, 10000, 300000] },
+               tierMult: 2,
+               // Synergies: cost = (pricier building's base cost) x synCostX; 'all' synergy cost; bonus scale
+               synCostX: 75, synAllCost: 100000, synPctX: 1,
+               // Click upgrades: [lifetime clicks needed, cost], each one multiplies click power
+               clickUpg: [[100, 500], [500, 10000], [1000, 300000], [2500, 20000000], [5000, 2000000000], [10000, 300000000000], [25000, 50000000000000], [50000, 1e16]],
+               clickUpgMult: 2,
+               // E-ssence Touch: [E's earned this run needed, cost]; each click also gives touchPct of E/s
+               touch: [[50000, 100000], [5000000, 10000000], [500000000, 1000000000], [50000000000, 100000000000], [5000000000000, 10000000000000], [500000000000000, 1e15]],
+               touchPct: 0.01,
+               // Global flavor upgrades: [E's earned this run needed, E/s bonus]; cost = needed x globCostX
+               glob: [[1000, 0.05], [100000, 0.10], [10000000, 0.15], [1000000000, 0.20], [100000000000, 0.25], [10000000000000, 0.30], [1e15, 0.40], [1e18, 0.50], [1e21, 0.75], [1e24, 1.00]],
+               globCostX: 5,
+               // Fixed-price upgrades (golden, trophy, offline)
+               upgCost: { gold1: 7777, gold2: 777777, gold3: 777777777, gold4: 77777777777, achup1: 1000000, achup2: 1000000000000, achup3: 1e18, off1: 250000, off2: 2500000000, off3: 2500000000000 },
+               // The two general multiplier buttons: cost = base x growth^level, each level +step
+               gen: { base: 10000, growth: 1.8, step: 0.10 },
+               achEach: 0.01,                              // production per achievement
+               // Golden E: seconds between (min/max), seconds on screen, first one after first[0] + random first[1]
+               golden: {
+                   first: [25, 20], minGap: 75, maxGap: 165, life: 13,
+                   weights: [0.42, 0.77, 0.88],            // cumulative: frenzy, lucky, click frenzy, rest = building rush
+                   frenzy: [7, 66], click: [777, 13], elder: [111, 6], rush: [0.1, 30], // [multiplier (rush: per copy), seconds]
+                   lucky: { bank: 0.15, secs: 900, bankBig: 0.25, secsBig: 1800, flat: 13 }
+               },
+               // Heavenly chips: floor((E's this run / base) ^ power x chip upgrades); each chip ever earned gives +bonus production
+               chips: { base: 1e9, power: 1 / 3, bonus: 0.01 },
+               // Offline: share of E/s while away and hours counted; upgrades add to them
+               offline: { eff: 0.25, capHours: 8, off1: 0.15, off2: 0.20, off3Cap: 24 },
+               tree: null,                                  // { nodeId: chip cost } overrides
+               challengeGoals: null,                        // { challengeId: goal } overrides
+               winCost: 1e24, winBoost: 1                   // The Final E, and +production per win
+           },
+           // Rebalanced beta: only what differs from classic. Evidence and before/after numbers: tools/BALANCE-REPORT.md
+           rb: {
+           }
+       };
+       // The active table: classic with the variant's overrides on top (one level deep for objects)
+       const BAL = (function () {
+           const base = BALANCE.classic, over = IS_RB ? BALANCE.rb : {};
+           const out = {};
+           for (const k in base) {
+               const b = base[k], o = over[k];
+               if (o === undefined) out[k] = b;
+               else if (b && o && typeof b === 'object' && typeof o === 'object' && !Array.isArray(b) && !Array.isArray(o)) out[k] = Object.assign({}, b, o);
+               else out[k] = o;
+           }
+           for (const k in over) if (!(k in out)) out[k] = over[k];
+           return out;
+       })();
+
+
        // === PURE GAME LOGIC START === (no DOM in this section)
 
        // --- NUMBER FORMATTING ---
@@ -844,6 +923,21 @@
            { id: 'god', name: 'The Final E', desc: 'Buy this to beat the game.', cost: 1e24, type: 'win', amount: 0, owned: 0, costMultiplier: 1, icon: '🏆' }
        ];
 
+       // Balance: cost growth per type, building overrides (or a payback curve), the price of The Final E
+       shopItems.forEach(item => {
+           if (item.type === 'win') { item.cost = BAL.winCost; return; }
+           item.costMultiplier = BAL.growth[item.type];
+           const o = BAL.buildings && BAL.buildings[item.id];
+           if (o) { item.cost = o[0]; item.amount = o[1]; }
+           else if (BAL.payback) item.amount = paybackAmount(item);
+       });
+       // Payback curve (rb): a copy's base output = cost / (p0 x (cost / 15)^k), k = exponent for that type
+       function paybackAmount(item) {
+           const pb = BAL.payback, k = item.type === 'click' ? pb.kClick : pb.k, p0 = item.type === 'click' ? pb.p0Click : pb.p0;
+           const a = item.cost / (p0 * Math.pow(item.cost / 15, k));
+           const mag = Math.pow(10, Math.floor(Math.log10(a)) - 1);
+           return a < 10 ? Math.max(1, Math.round(a)) : Math.round(a / mag) * mag; // 2 significant digits
+       }
        const BUILDING = {};
        shopItems.forEach(item => { BUILDING[item.id] = item; item.mult = 1; item.eff = 0; });
        const BASE_COSTS = shopItems.map(i => i.cost);
@@ -858,8 +952,8 @@
        const TIER_FLAVOR = ['A fresh coat of brown paint.', 'Now with racing stripes.', 'Gold-plated, obviously.', 'Unbreakable and extremely shiny.', 'Powered by the heart of the universe.'];
        const TIER_STYLE = ['border-amber-700', 'border-sky-400', 'border-yellow-400', 'border-cyan-300', 'border-fuchsia-400'];
        const TIER_BADGE = ['I', 'II', 'III', 'IV', 'V'];
-       const TIER_AT = { bps: [1, 10, 25, 50, 100], click: [1, 5, 10, 20, 35] };
-       const TIER_COST_X = { bps: [10, 50, 500, 50000, 5000000], click: [10, 40, 400, 10000, 300000] };
+       const TIER_AT = BAL.tierAt;
+       const TIER_COST_X = BAL.tierCostX;
 
        // Per-building upgrades: each tier doubles that building's output
        shopItems.forEach((item, index) => {
@@ -870,7 +964,7 @@
                    id: `t_${item.id}_${t + 1}`, kind: 'tier', b: item.id, tier: t,
                    name: `${TIER_NAMES[t]} ${item.name}`, icon: item.icon, style: TIER_STYLE[t], badge: TIER_BADGE[t],
                    cost: BASE_COSTS[index] * costX[t],
-                   desc: `${item.name} ${item.type === 'click' ? 'click power' : 'output'} x2.`,
+                   desc: `${item.name} ${item.type === 'click' ? 'click power' : 'output'} x${BAL.tierMult}.`,
                    flavor: TIER_FLAVOR[t],
                    req: `Own ${at[t]} ${item.name}`,
                    unlock: () => item.owned >= at[t]
@@ -919,14 +1013,15 @@
            ['implant', 'gaming', 0.03, 'Neural RGB', 'Your thoughts glow in rainbow colors.'],
            ['robohand', 'glove', 0.03, 'Robo-Gloves', 'Grippy gloves on a hydraulic hand.']
        ];
-       SYNERGIES.forEach(([t, s, pct, name, flavor]) => {
+       SYNERGIES.forEach(([t, s, pct0, name, flavor]) => {
+           const pct = pct0 * BAL.synPctX;
            const target = BUILDING[t];
            const source = s === 'all' ? null : BUILDING[s];
            const base = Math.max(target.cost, source ? source.cost : 0);
            UPGRADES.push({
                id: `s_${t}_${s}`, kind: 'syn', t, s, pct,
                name, icon: target.icon, style: 'border-purple-400', badge: source ? source.icon : '🏘️', badgeIcon: true,
-               cost: source ? base * 75 : 100000,
+               cost: source ? base * BAL.synCostX : BAL.synAllCost,
                desc: source
                    ? `${target.name} +${Math.round(pct * 100)}% for every ${source.name} you own.`
                    : `${target.name} +${Math.round(pct * 100)}% for every building you own.`,
@@ -938,44 +1033,47 @@
 
        // Click upgrades: each one doubles click power (unlocked by lifetime clicks)
        [
-           [100, 500, 'Calloused Fingertip', '☝️', 'Tough skin for tough clicking.'],
-           [500, 10000, 'Ambidextrous', '🙌', 'Two hands, twice the E.'],
-           [1000, 300000, 'Wrist Brace', '💪', 'Safety first. Clicking second.'],
-           [2500, 20000000, 'Turbo Knuckles', '👊', 'Vroom vroom.'],
-           [5000, 2000000000, 'Finger Gym Membership', '🏋️', 'Never skip finger day.'],
-           [10000, 300000000000, 'Hydraulic Knuckles', '🦿', 'Pssssht. Click. Pssssht. Click.'],
-           [25000, 50000000000000, 'Ludicrous Clicking', '⚡', 'Your mouse is starting to smoke.'],
-           [50000, 1e16, 'The Clicking Hand of E', '🖐️', 'Legends say it never stopped clicking.']
-       ].forEach(([n, cost, name, icon, flavor], i) => {
-           UPGRADES.push({ id: `clk${i + 1}`, kind: 'click', name, icon, style: 'border-orange-400', cost, desc: 'Click power x2.', flavor, req: `Click the E ${n} times (all time)`, unlock: () => state.life.clicks >= n });
+           ['Calloused Fingertip', '☝️', 'Tough skin for tough clicking.'],
+           ['Ambidextrous', '🙌', 'Two hands, twice the E.'],
+           ['Wrist Brace', '💪', 'Safety first. Clicking second.'],
+           ['Turbo Knuckles', '👊', 'Vroom vroom.'],
+           ['Finger Gym Membership', '🏋️', 'Never skip finger day.'],
+           ['Hydraulic Knuckles', '🦿', 'Pssssht. Click. Pssssht. Click.'],
+           ['Ludicrous Clicking', '⚡', 'Your mouse is starting to smoke.'],
+           ['The Clicking Hand of E', '🖐️', 'Legends say it never stopped clicking.']
+       ].forEach(([name, icon, flavor], i) => {
+           const [n, cost] = BAL.clickUpg[i];
+           UPGRADES.push({ id: `clk${i + 1}`, kind: 'click', name, icon, style: 'border-orange-400', cost, desc: `Click power x${BAL.clickUpgMult}.`, flavor, req: `Click the E ${n} times (all time)`, unlock: () => state.life.clicks >= n });
        });
 
        // E-ssence Touch: clicks also earn a % of your E's per second
        [
-           [50000, 100000, 'Brown Touch', '🤎'],
-           [5000000, 10000000, 'Cocoa Contact', '🍫'],
-           [500000000, 1000000000, 'Mocha Momentum', '☕'],
-           [50000000000, 100000000000, 'Espresso Strike', '🥤'],
-           [5000000000000, 10000000000000, 'Dark Roast Smash', '🔥'],
-           [500000000000000, 1e15, 'Black Hole Brew', '🕳️']
-       ].forEach(([n, cost, name, icon], i) => {
-           UPGRADES.push({ id: `touch${i + 1}`, kind: 'touch', pct: 0.01, name, icon, style: 'border-amber-500', cost, desc: 'Each click also gives +1% of your E\'s per second.', flavor: 'Your fingers smell like chocolate.', req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
+           ['Brown Touch', '🤎'],
+           ['Cocoa Contact', '🍫'],
+           ['Mocha Momentum', '☕'],
+           ['Espresso Strike', '🥤'],
+           ['Dark Roast Smash', '🔥'],
+           ['Black Hole Brew', '🕳️']
+       ].forEach(([name, icon], i) => {
+           const [n, cost] = BAL.touch[i];
+           UPGRADES.push({ id: `touch${i + 1}`, kind: 'touch', pct: BAL.touchPct, name, icon, style: 'border-amber-500', cost, desc: `Each click also gives +${Math.round(BAL.touchPct * 1000) / 10}% of your E's per second.`, flavor: 'Your fingers smell like chocolate.', req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
        });
 
        // Flavor upgrades that boost ALL E's per second
        [
-           [1000, 0.05, 'Brown Sugar', '🍬', 'Sweet, sweet production.'],
-           [100000, 0.10, 'Cocoa Beans', '🌰', 'The building blocks of brown.'],
-           [10000000, 0.15, 'Milk Chocolate', '🍫', 'Smooth and creamy E\'s.'],
-           [1000000000, 0.20, 'Dark Chocolate', '🍫', 'For sophisticated E connoisseurs.'],
-           [100000000000, 0.25, 'Fudge Core', '🧁', 'Gooey in the middle.'],
-           [10000000000000, 0.30, 'Molten Mocha', '🌋', 'Hot enough to melt a planet.'],
-           [1e15, 0.40, 'Mud Pie Supreme', '🥧', 'Do not actually eat this.'],
-           [1e18, 0.50, 'Brownie Singularity', '🌑', 'A brownie so dense, light cannot escape.'],
-           [1e21, 0.75, 'The Brownest Brown', '🟤', 'Scientists say it can\'t get browner.'],
-           [1e24, 1.00, 'E Pluribus E', '🌟', 'Out of many E\'s, one E.']
-       ].forEach(([n, pct, name, icon, flavor], i) => {
-           UPGRADES.push({ id: `glob${i + 1}`, kind: 'global', pct, name, icon, style: 'border-green-500', cost: n * 5, desc: `All E's per second +${Math.round(pct * 100)}%.`, flavor, req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
+           ['Brown Sugar', '🍬', 'Sweet, sweet production.'],
+           ['Cocoa Beans', '🌰', 'The building blocks of brown.'],
+           ['Milk Chocolate', '🍫', 'Smooth and creamy E\'s.'],
+           ['Dark Chocolate', '🍫', 'For sophisticated E connoisseurs.'],
+           ['Fudge Core', '🧁', 'Gooey in the middle.'],
+           ['Molten Mocha', '🌋', 'Hot enough to melt a planet.'],
+           ['Mud Pie Supreme', '🥧', 'Do not actually eat this.'],
+           ['Brownie Singularity', '🌑', 'A brownie so dense, light cannot escape.'],
+           ['The Brownest Brown', '🟤', 'Scientists say it can\'t get browner.'],
+           ['E Pluribus E', '🌟', 'Out of many E\'s, one E.']
+       ].forEach(([name, icon, flavor], i) => {
+           const [n, pct] = BAL.glob[i];
+           UPGRADES.push({ id: `glob${i + 1}`, kind: 'global', pct, name, icon, style: 'border-green-500', cost: n * BAL.globCostX, desc: `All E's per second +${Math.round(pct * 100)}%.`, flavor, req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
        });
 
        // Golden E upgrades
@@ -995,13 +1093,14 @@
 
        // Offline earnings upgrades
        UPGRADES.push(
-           { id: 'off1', kind: 'offline', effect: 'eff', pct: 0.15, name: 'Night Shift', icon: '🌃', style: 'border-indigo-400', cost: 250000, desc: 'While you\'re away, buildings work at 40% instead of 25%.', flavor: 'Somebody has to watch the E\'s.', req: 'Earn 100K E\'s this run', unlock: () => state.run.earned >= 100000 },
-           { id: 'off2', kind: 'offline', effect: 'eff', pct: 0.20, name: 'Sleepwalking Fingers', icon: '😴', style: 'border-indigo-400', cost: 2500000000, desc: 'While you\'re away, buildings work at 60%.', flavor: 'Click... click... zzz... click.', req: 'Earn 1B E\'s this run', unlock: () => state.run.earned >= 1000000000 },
-           { id: 'off3', kind: 'offline', effect: 'cap', name: 'Dream Factory', icon: '💤', style: 'border-indigo-400', cost: 2500000000000, desc: 'Away earnings count for up to 24 hours (was 8).', flavor: 'The night shift never ends.', req: 'Earn 1T E\'s this run', unlock: () => state.run.earned >= 1000000000000 }
+           { id: 'off1', kind: 'offline', effect: 'eff', pct: BAL.offline.off1, name: 'Night Shift', icon: '🌃', style: 'border-indigo-400', cost: 250000, desc: `While you're away, buildings work at ${Math.round((BAL.offline.eff + BAL.offline.off1) * 100)}% instead of ${Math.round(BAL.offline.eff * 100)}%.`, flavor: 'Somebody has to watch the E\'s.', req: 'Earn 100K E\'s this run', unlock: () => state.run.earned >= 100000 },
+           { id: 'off2', kind: 'offline', effect: 'eff', pct: BAL.offline.off2, name: 'Sleepwalking Fingers', icon: '😴', style: 'border-indigo-400', cost: 2500000000, desc: `While you're away, buildings work at ${Math.round((BAL.offline.eff + BAL.offline.off1 + BAL.offline.off2) * 100)}%.`, flavor: 'Click... click... zzz... click.', req: 'Earn 1B E\'s this run', unlock: () => state.run.earned >= 1000000000 },
+           { id: 'off3', kind: 'offline', effect: 'cap', name: 'Dream Factory', icon: '💤', style: 'border-indigo-400', cost: 2500000000000, desc: `Away earnings count for up to ${BAL.offline.off3Cap} hours (was ${BAL.offline.capHours}).`, flavor: 'The night shift never ends.', req: 'Earn 1T E\'s this run', unlock: () => state.run.earned >= 1000000000000 }
        );
 
        const UPGRADE_BY_ID = {};
        UPGRADES.forEach(u => { UPGRADE_BY_ID[u.id] = u; });
+       for (const id in BAL.upgCost) if (UPGRADE_BY_ID[id]) UPGRADE_BY_ID[id].cost = BAL.upgCost[id];
 
 
        // --- SEASONAL EVENTS --- (real dates, month/day, inclusive; winter wraps past New Year)
@@ -1117,11 +1216,13 @@
        // --- ASCENSION 2.0: HEAVENLY CHIPS ---
        // A run is worth cbrt(E's earned this run / 1 B) chips, so ascending unlocks at 1 B (1 billion).
        // Every chip ever earned gives +1% production; chips are also spent in the Prestige Tree.
-       const CHIP_BASE = 1e9;
-       const CHIP_BONUS = 0.01;
+       const CHIP_BASE = BAL.chips.base;
+       const CHIP_BONUS = BAL.chips.bonus;
+       const CHIP_POW = BAL.chips.power;
+       function chipRoot(x) { return CHIP_POW === 1 / 3 ? Math.cbrt(x) : Math.pow(x, CHIP_POW); }
        function chipsForRun(earned) {
            if (!(earned >= CHIP_BASE)) return 0;
-           return Math.floor(Math.cbrt(earned / CHIP_BASE) * PRES.chipX);
+           return Math.floor(chipRoot(earned / CHIP_BASE) * PRES.chipX);
        }
        function chipMultiplier() { return 1 + state.meta.chipsTotal * CHIP_BONUS; }
 
@@ -1176,7 +1277,7 @@
            { id: 'mkt3', x: 0, y: 7, p: 'mkt2', cost: 1000, br: 'market', icon: '📣', name: 'Market Hype', desc: 'Goods sell for 5% more.', fx: { mktSell: 1.05 } }
        ];
        const TREE_BY_ID = {};
-       TREE.forEach(n => { TREE_BY_ID[n.id] = n; });
+       TREE.forEach(n => { TREE_BY_ID[n.id] = n; if (BAL.tree && BAL.tree[n.id]) n.cost = BAL.tree[n.id]; });
 
        // --- CHALLENGE RUNS --- (chosen when you begin a run after ascending; beat the goal for a permanent reward)
        const CHALLENGES = [
@@ -1191,7 +1292,7 @@
            { id: 'amnesia', icon: '🫥', name: 'Amnesia', rule: 'Achievements give no production bonus.', goal: 1e15, reward: 'Total Recall: every achievement gives +1% more production.', fx: { achEach: 0.01 } }
        ];
        const CHALLENGE_BY_ID = {};
-       CHALLENGES.forEach(c => { CHALLENGE_BY_ID[c.id] = c; });
+       CHALLENGES.forEach(c => { CHALLENGE_BY_ID[c.id] = c; if (BAL.challengeGoals && BAL.challengeGoals[c.id]) c.goal = BAL.challengeGoals[c.id]; });
        function activeChallenge() { return state.meta.challenge ? CHALLENGE_BY_ID[state.meta.challenge] || null : null; }
        function challengeIs(id) { return state.meta.challenge === id; }
        function challengesDone() { let n = 0; for (const id in state.meta.challengesDone) if (CHALLENGE_BY_ID[id]) n++; return n; }
@@ -1202,7 +1303,7 @@
        const PRES = {};
        function recalcPrestige() {
            const p = { prodX: 1, clickX: 1, autoClick: 0, touch: 0, crit: 0, start: {}, startE: 0, buildDisc: 1, upgDisc: 1, genStart: 0, keepUpg: 0,
-               goldFreq: 1, goldLife: 1, goldDur: 1, elder: 0, doubleGold: 0, luckBig: 0, twins: 0, festive: 1, chipX: 1, achX: 0, achEach: 0, synX: 1, tierX: 2,
+               goldFreq: 1, goldLife: 1, goldDur: 1, elder: 0, doubleGold: 0, luckBig: 0, twins: 0, festive: 1, chipX: 1, achX: 0, achEach: 0, synX: 1, tierX: BAL.tierMult,
                trial: 0, offEff: 0, offCap: 0, gardenPlots: 0, gardenSpeed: 1, mutation: 1, mktFee0: 0, mktCap: 1, mktSell: 1 };
            const add = (fx) => {
                for (const k in fx) {
@@ -1341,11 +1442,11 @@
 
        // --- MATH / UTILITY ---
        // Every win adds +100% to ALL production (1 win = 2x, 2 wins = 3x, 3 wins = 4x...)
-       function winBoost(wins) { return 1 + wins; }
+       function winBoost(wins) { return 1 + wins * BAL.winBoost; }
 
        function getMultiplierCost(level) {
            // Lowered growth from 3.0 to 1.8 so upgrades don't instantly cost 1Q!
-           return Math.floor(10000 * Math.pow(1.8, level));
+           return Math.floor(BAL.gen.base * Math.pow(BAL.gen.growth, level));
        }
 
        // Price of the next `n` copies of a building (each copy costs costMultiplier more than the last)
@@ -1387,7 +1488,7 @@
                const u = UPGRADES[i];
                if (u.kind === 'ach' && state.upgrades[u.id]) boost += u.pct;
            }
-           return (0.01 + PRES.achEach) * boost;
+           return (BAL.achEach + PRES.achEach) * boost;
        }
        function achievementMultiplier() {
            if (challengeIs('amnesia')) return 1;
@@ -1401,15 +1502,17 @@
            if (state.upgrades.gold2) freq *= 1.2;
            if (state.upgrades.gold3) freq *= 1.2;
            if (state.upgrades.gold4) dur *= 2;
-           return { minGap: 75 / freq, maxGap: 165 / freq, life: 13 * life, dur };
+           const G = BAL.golden;
+           return { minGap: G.minGap / freq, maxGap: G.maxGap / freq, life: G.life * life, dur };
        }
 
        // Offline earnings: a share of E's per second while the game is closed, capped in hours
        function offlineSettings() {
-           let eff = 0.25 + PRES.offEff + (GFX.offEff || 0), capHours = 8 + PRES.offCap;
-           if (state.upgrades.off1) eff += 0.15;
-           if (state.upgrades.off2) eff += 0.20;
-           if (state.upgrades.off3) capHours = 24;
+           const O = BAL.offline;
+           let eff = O.eff + PRES.offEff + (GFX.offEff || 0), capHours = O.capHours + PRES.offCap;
+           if (state.upgrades.off1) eff += O.off1;
+           if (state.upgrades.off2) eff += O.off2;
+           if (state.upgrades.off3) capHours = O.off3Cap;
            return { eff, capHours };
        }
 
@@ -1433,7 +1536,7 @@
                if (u.kind === 'tier') BUILDING[u.b].mult *= PRES.tierX;
                else if (u.kind === 'syn') BUILDING[u.t].mult *= 1 + u.pct * PRES.synX * (u.s === 'all' ? totalBuildings() : BUILDING[u.s].owned);
                else if (u.kind === 'global') globalMult *= 1 + u.pct;
-               else if (u.kind === 'click') clickUpg *= 2;
+               else if (u.kind === 'click') clickUpg *= BAL.clickUpgMult;
                else if (u.kind === 'touch') touch += u.pct;
            }
            touch += PRES.touch;
@@ -1454,8 +1557,8 @@
                if (item.type === 'bps') baseBps += item.amount * item.mult * item.owned;
            }
 
-           const clickMulti = 1 + (state.clickMultiLevel * 0.10);
-           const bpsMulti = 1 + (state.bpsMultiLevel * 0.10);
+           const clickMulti = 1 + (state.clickMultiLevel * BAL.gen.step);
+           const bpsMulti = 1 + (state.bpsMultiLevel * BAL.gen.step);
            // 2.0: Heavenly Chips, the Prestige Tree / challenge rewards, the garden, Egg Hunt eggs, and challenge handicaps
            const chipMult = chipMultiplier();
            const gardenProd = GFX.prod || 1, gardenClick = GFX.click || 1;
@@ -1487,8 +1590,8 @@
 
        // Lucky Golden E: 15% of your bank or 15 minutes of production, whichever is smaller
        function luckyAmount() {
-           const big = PRES.luckBig;
-           return Math.min(state.brownEs * (big ? 0.25 : 0.15), state.bps * (big ? 1800 : 900)) * (GFX.lucky || 1) + 13;
+           const big = PRES.luckBig, L = BAL.golden.lucky;
+           return Math.min(state.brownEs * (big ? L.bankBig : L.bank), state.bps * (big ? L.secsBig : L.secs)) * (GFX.lucky || 1) + L.flat;
        }
 
        // === PURE GAME LOGIC END ===
@@ -1631,8 +1734,8 @@
            setText(clickPowerEl, formatNumber(state.clickPower));
 
            // Update Multiplier UI
-           setText(clickMultiDisplay, `x${(1 + state.clickMultiLevel * 0.1).toFixed(1)}`);
-           setText(bpsMultiDisplay, `x${(1 + state.bpsMultiLevel * 0.1).toFixed(1)}`);
+           setText(clickMultiDisplay, `x${(1 + state.clickMultiLevel * BAL.gen.step).toFixed(1)}`);
+           setText(bpsMultiDisplay, `x${(1 + state.bpsMultiLevel * BAL.gen.step).toFixed(1)}`);
 
            const nextClickCost = getMultiplierCost(state.clickMultiLevel);
            const nextBpsCost = getMultiplierCost(state.bpsMultiLevel);
@@ -2596,7 +2699,7 @@
        // E's needed this run for one more chip than you'd get now
        function nextChipAt() {
            const n = pendingChips() + 1;
-           return CHIP_BASE * Math.pow(n / PRES.chipX, 3);
+           return CHIP_BASE * Math.pow(n / PRES.chipX, CHIP_POW === 1 / 3 ? 3 : 1 / CHIP_POW);
        }
 
        function buildTree() {
@@ -3446,8 +3549,8 @@
                return { title: 'GOLDEN EGG!', sub: `+2% E/s for the rest of this run (${state.run.eggs}/10 eggs)` };
            }
            if (e.id === 'eday') {
-               addBuff('frenzy', '🔥', 'Frenzy', 7, Math.round(66 * g.dur));
-               addBuff('click', '👆', 'Click Frenzy', 777, Math.round(13 * g.dur));
+               addBuff('frenzy', '🔥', 'Frenzy', BAL.golden.frenzy[0], Math.round(BAL.golden.frenzy[1] * g.dur));
+               addBuff('click', '👆', 'Click Frenzy', BAL.golden.click[0], Math.round(BAL.golden.click[1] * g.dur));
                return { title: 'PARTY TIME!', sub: 'Frenzy and Click Frenzy at the same time!' };
            }
            if (e.id === 'summer') {
@@ -3603,7 +3706,7 @@
 
        // --- GOLDEN E ---
        const golden = { timer: 0, life: 0, shownAt: 0 };
-       function firstGoldenDelay() { return 25 + Math.random() * 20; }
+       function firstGoldenDelay() { return BAL.golden.first[0] + Math.random() * BAL.golden.first[1]; }
        function nextGoldenDelay() {
            const g = goldenSettings();
            return g.minGap + Math.random() * (g.maxGap - g.minGap);
@@ -3655,7 +3758,8 @@
            if (typeof eventGoldenChance === 'function' && Math.random() < eventGoldenChance()) return 'event';
            if (PRES.elder && Math.random() < 0.08) return 'elder';
            const r = Math.random();
-           let type = r < 0.42 ? 'frenzy' : r < 0.77 ? 'lucky' : r < 0.88 ? 'click' : 'rush';
+           const w = BAL.golden.weights;
+           let type = r < w[0] ? 'frenzy' : r < w[1] ? 'lucky' : r < w[2] ? 'click' : 'rush';
            if (type === 'rush' && !shopItems.some(i => i.type === 'bps' && i.owned > 0)) type = 'lucky';
            return type;
        }
@@ -3694,33 +3798,34 @@
                type = 'frenzy';
            }
            let title = '', sub = '';
+           const GB = BAL.golden;
            if (type === 'elder') {
-               const dur = Math.round(6 * g.dur);
-               addBuff('elder', '🌋', 'Elder Frenzy', 111, dur);
+               const dur = Math.round(GB.elder[1] * g.dur);
+               addBuff('elder', '🌋', 'Elder Frenzy', GB.elder[0], dur);
                state.life.elder++;
                title = 'ELDER FRENZY!';
-               sub = `E's per second x111 for ${dur} seconds`;
+               sub = `E's per second x${GB.elder[0]} for ${dur} seconds`;
            } else if (type === 'frenzy') {
-               const dur = Math.round(66 * g.dur);
-               addBuff('frenzy', '🔥', 'Frenzy', 7, dur);
+               const dur = Math.round(GB.frenzy[1] * g.dur);
+               addBuff('frenzy', '🔥', 'Frenzy', GB.frenzy[0], dur);
                state.life.frenzy++;
                title = 'FRENZY!';
-               sub = `E's per second x7 for ${dur} seconds`;
+               sub = `E's per second x${GB.frenzy[0]} for ${dur} seconds`;
            } else if (type === 'click') {
-               const dur = Math.round(13 * g.dur);
-               addBuff('click', '👆', 'Click Frenzy', 777, dur);
+               const dur = Math.round(GB.click[1] * g.dur);
+               addBuff('click', '👆', 'Click Frenzy', GB.click[0], dur);
                state.life.clickFrenzy++;
                title = 'CLICK FRENZY!';
-               sub = `Click power x777 for ${dur} seconds - click fast!`;
+               sub = `Click power x${GB.click[0]} for ${dur} seconds - click fast!`;
            } else if (type === 'rush') {
                const owned = shopItems.filter(i => i.type === 'bps' && i.owned > 0);
                const item = owned[Math.floor(Math.random() * owned.length)];
-               const mult = 1 + item.owned * 0.1;
-               const dur = Math.round(30 * g.dur);
+               const mult = 1 + item.owned * GB.rush[0];
+               const dur = Math.round(GB.rush[1] * g.dur);
                addBuff('rush', item.icon, `${item.name} Rush`, mult, dur, item.id);
                state.life.rush++;
                title = `${item.name.toUpperCase()} RUSH!`;
-               sub = `E's per second x${mult.toFixed(1)} for ${dur} seconds (+10% per ${item.name})`;
+               sub = `E's per second x${mult.toFixed(1)} for ${dur} seconds (+${Math.round(GB.rush[0] * 100)}% per ${item.name})`;
            } else {
                const amount = luckyAmount();
                earn(amount, 'golden');

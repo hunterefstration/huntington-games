@@ -261,7 +261,10 @@ canvas.addEventListener('pointerleave', () => { mouse.in = false; $('tooltip').c
 document.addEventListener('keydown', (ev) => {
   if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT' || ev.target.tagName === 'TEXTAREA') && !(ev.key === 'Escape' && ev.target.closest('.modal'))) return;
   const k = ev.key.toLowerCase();
-  if (k === 'escape') { if (!$('modal-confirm').classList.contains('hidden')) { closeModal('confirm'); return; } const open = document.querySelector('.modal:not(.hidden)'); if (open && open.id !== 'modal-end') { if (open.id === 'modal-pause') setPaused(false); else open.classList.add('hidden'); return; } if (G) deselectAll(); return; }
+  if ((k === 'enter' || k === 'r') && !$('modal-end').classList.contains('hidden') && $('modal-confirm').classList.contains('hidden') && !(ev.target && ev.target.tagName === 'BUTTON' && k === 'enter')) {   // QoL: keyboard "next map / play again"
+    const b = ['b-end-next', 'b-end-retry'].map($).find(x => x && !x.classList.contains('hidden') && x.offsetParent !== null && !x.disabled); if (b) { ev.preventDefault(); b.click(); } return;
+  }
+  if (k === 'escape') { if (!$('modal-confirm').classList.contains('hidden')) { closeModal('confirm'); return; } const open = document.querySelector('.modal:not(.hidden)'); if (open && open.id !== 'modal-end') { if (open.id === 'modal-pause') setPaused(false); else open.classList.add('hidden'); return; } if (G) { if ($('b-deselect').disabled && !G.over && !$('game-screen').classList.contains('hidden')) setPaused(true); else deselectAll(); } return; }
   if (!G || G.over || !$('game-screen') || $('game-screen').classList.contains('hidden')) return;
   if (document.querySelector('.modal:not(.hidden)')) return;
   if (k === ' ') { ev.preventDefault(); startWave(); }
@@ -279,6 +282,13 @@ document.addEventListener('keydown', (ev) => {
   else if (k === 'v') selectHero();
   else { const a = ABILITIES.find(x => x.key.toLowerCase() === k); if (a) armAbility(a.id); }
 });
+function qolCanAutoPause() { return G && !G.over && S.autoPauseHidden && !paused && !$('game-screen').classList.contains('hidden') && !document.querySelector('.modal:not(.hidden)'); }
+window.addEventListener('blur', () => { if (qolCanAutoPause()) setPaused(true); });     // QoL: clicking out of the game (chat dock, another window) pauses too
+function qolSaveBetweenWaves() { if (G && !G.over && !G.waveActive) { try { saveGame(); } catch (e) {} } }     // only between waves: a save is a wave boundary
+window.addEventListener('pagehide', qolSaveBetweenWaves);
+document.addEventListener('visibilitychange', () => { if (document.hidden) qolSaveBetweenWaves(); });
+function qolSyncMute() { const b = $('b-mute'); if (!b) return; const on = S.sfx && S.volume > 0; b.innerHTML = on ? '&#128266;' : '&#128263;'; b.classList.toggle('on', !on); b.title = on ? 'Sound on (click to mute)' : 'Sound off (click to unmute)'; }
+if ($('b-mute')) { $('b-mute').onclick = () => { S.sfx = !(S.sfx && S.volume > 0); if (S.sfx && S.volume <= 0) S.volume = 0.5; saveSettings(); qolSyncMute(); if (S.sfx) { initAudio(); sfx('click'); } }; qolSyncMute(); }
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && !G.over && S.autoPauseHidden && !paused && !$('game-screen').classList.contains('hidden')) setPaused(true); });
 
 // =====================================================================
@@ -313,7 +323,7 @@ function updateHUD(force) {
     }
   }
 }
-function cycleSpeed() { G.speed = G.speed >= 3 ? 1 : G.speed + 1; updateHUD(); }
+function cycleSpeed() { G.speed = G.speed >= 3 ? 1 : G.speed + 1; S.lastSpeed = G.speed; saveSettings(); updateHUD(); }
 function toggleRanges() { G.showRanges = !G.showRanges; updateHUD(); }
 function setPaused(p) {
   paused = p; $('modal-pause').classList.toggle('hidden', !p);

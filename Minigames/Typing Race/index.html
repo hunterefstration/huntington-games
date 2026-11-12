@@ -32,6 +32,12 @@ label { color: var(--dim); font-size: 14px; display: inline-flex; gap: 6px; alig
 .mg-hud { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; font: 800 14px system-ui; pointer-events: none; }
 .mg-hud span { background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
 canvas { display: block; }
+.mg-btn.sm { padding: 4px 10px; font-size: 13px; border-radius: 9px; vertical-align: middle; }
+#mg-snd { position: fixed; top: 10px; right: 10px; z-index: 70; min-width: 40px; min-height: 36px; font-size: 16px; }
+#mg-name { width: 170px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.35); color: #fff; font: 700 15px system-ui; user-select: text; }
+#mg-ready { color: #bbf7d0; margin: 2px 0 6px; }
+#mg-confirm { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5, 8, 16, .72); }
+#mg-confirm .mg-card { max-width: 420px; } #mg-confirm h2 { margin: 4px 0; }
 
 #tr { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px; }
 #tr-cars { width: min(900px, 96vw); display: flex; flex-direction: column; gap: 6px; }
@@ -66,10 +72,12 @@ function mgHG() {
     if (h) return Promise.resolve(h);
     return new Promise(res => { const s = document.createElement('script'); s.src = '../../gv/vendor/hgnet.js'; s.onload = () => res(window.HGNet || null); s.onerror = () => res(null); document.head.appendChild(s); });
 }
+function mgLauncherName() { try { const L = window.parent && window.parent.HGGrapevine, me = L && L.me(); if (me) return me.name; } catch (e) {} return ''; }
 function mgMyName() {
-    try { const L = window.parent && window.parent.HGGrapevine, me = L && L.me(); if (me) return me.name; } catch (e) {}
-    try { return localStorage.getItem('hgmini_name') || 'Player ' + (100 + Math.floor(Math.random() * 900)); } catch (e) { return 'Player'; }
+    const ln = mgLauncherName(); if (ln) return ln;
+    try { let n = localStorage.getItem('hgmini_name'); if (!n) { n = 'Player ' + (100 + Math.floor(Math.random() * 900)); localStorage.setItem('hgmini_name', n); } return n; } catch (e) { return 'Player'; }
 }
+function mgLs(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 function mgSay(t, bad) { const e = mgEl('mg-st'); if (e) { e.textContent = t; e.className = bad ? 'bad' : ''; } }
 // ---- the lobby screen
 MG.init = function (cfg) {
@@ -80,15 +88,25 @@ MG.init = function (cfg) {
       <div class="mg-how">${cfg.howto || ''}</div>
       <div class="mg-row">${MG.cfg.solo ? '<button class="mg-btn big" id="mg-solo">Play vs bots</button>' : ''}<button class="mg-btn" id="mg-host">Open a room</button>
         <input id="mg-code" maxlength="7" inputmode="numeric" placeholder="6-digit code" autocomplete="off"><button class="mg-btn" id="mg-join">Join</button></div>
+      <div class="mg-row hidden" id="mg-namerow"><label>Your name <input id="mg-name" maxlength="16" autocomplete="off"></label></div>
       <div id="mg-st"></div>
-      <div id="mg-room" class="hidden"><div class="mg-code">Room code <b id="mg-codev"></b></div><div id="mg-people"></div>
-        <div class="mg-row" id="mg-hostrow"><label>Bots <select id="mg-bots"></select></label><button class="mg-btn big" id="mg-start">Start</button></div>
+      <div id="mg-room" class="hidden"><div class="mg-code">Room code <b id="mg-codev"></b> <button class="mg-btn sm" id="mg-copy" title="Copy the room code">Copy</button></div><div id="mg-people"></div>
+        <div class="mg-row" id="mg-hostrow"><label>Bots <select id="mg-bots"></select></label><button class="mg-btn big" id="mg-start" title="Start (Enter)">Start</button></div>
+        <div id="mg-ready" class="mg-sub hidden"></div>
         <div id="mg-wait" class="mg-sub hidden">Waiting for the host to start...</div></div></div>`;
     document.body.appendChild(d);
     const r = document.createElement('div'); r.id = 'mg-res'; r.className = 'hidden'; document.body.appendChild(r);
     const sel = mgEl('mg-bots'); for (let i = 0; i <= MG.cfg.bots; i++) sel.add(new Option(String(i), i)); sel.value = MG.cfg.defBots;
-    sel.onchange = () => { MG.bots = +sel.value; mgLobbySend(); };
-    MG.bots = MG.cfg.defBots;
+    const bk = 'hgmini_bots_' + MG.cfg.id, sb = parseInt(mgLs(bk), 10);     // the bot count you picked last time
+    sel.onchange = () => { MG.bots = +sel.value; mgLs(bk, String(MG.bots)); mgLobbySend(); };
+    MG.bots = sb >= 0 && sb <= MG.cfg.bots ? sb : MG.cfg.defBots; sel.value = MG.bots;
+    if (!mgLauncherName()) {     // not signed in to the launcher: the name can be changed here and is remembered
+        const ni = mgEl('mg-name'); mgEl('mg-namerow').classList.remove('hidden'); ni.value = mgMyName();
+        ni.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') ni.blur(); };
+        ni.onchange = () => { const v = ni.value.replace(/\s+/g, ' ').trim().slice(0, 16); if (v) mgLs('hgmini_name', v); ni.value = mgMyName(); };
+    }
+    mgEl('mg-copy').onclick = () => mgCopyCode();
+    mgQolInit();
     if (mgEl('mg-solo')) mgEl('mg-solo').onclick = () => mgSolo();
     mgEl('mg-host').onclick = () => mgHost();
     mgEl('mg-join').onclick = () => mgJoin(mgEl('mg-code').value);
@@ -118,14 +136,14 @@ function mgSolo() {
 function mgWire(net) {
     net.on('message', (peer, m) => {
         if (!m || typeof m !== 'object') return;
-        if (m.t === '_lobby' && !MG.host) { MG.roster = m.roster; MG.bots = m.bots; mgPaint(); return; }
+        if (m.t === '_lobby' && !MG.host) { MG.roster = m.roster; MG.bots = m.bots; if (m.room && !MG.started) mgShowLobby(); mgPaint(); return; }
         if (m.t === '_start' && !MG.host) return mgBegin(m);
         if (m.t === '_end' && !MG.host) return mgShowEnd(m.html);
         if (m.t === 'g' && MG.cfg.onMsg) MG.cfg.onMsg(peer.id, m.d);
     });
     net.on('join', () => { if (MG.host) mgLobbySend(); });
     net.on('leave', peer => { if (MG.host) { if (!MG.started) mgLobbySend(); else if (MG.cfg.onLeave) MG.cfg.onLeave(peer.id); } mgPaint(); });
-    net.on('closed', (r, t) => { if (MG.net !== net) return; MG.net = null; MG.code = ''; MG.started = false; mgShowLobby(); mgEl('mg-room').classList.add('hidden'); mgSay(r === 'host-left' ? 'The host left.' : 'Disconnected' + (t ? ': ' + t : '.'), true); if (MG.cfg.onQuit) MG.cfg.onQuit(); });
+    net.on('closed', (r, t) => { if (MG.net !== net) return; MG.net = null; MG.code = ''; MG.started = false; mgShowLobby(); mgEl('mg-room').classList.add('hidden'); mgConfirmClose(); mgSay(r === 'host-left' ? 'The host left, so the room closed. Open your own room or play vs bots.' : 'Disconnected' + (t ? ': ' + t : '.'), true); if (MG.cfg.onQuit) MG.cfg.onQuit(); });
 }
 function mgHost() {
     if (MG.net) return; mgSay('Opening a room...');
@@ -152,7 +170,7 @@ function mgAdvertise() {
     const ad = () => { try { const p = window.parent; if (p && p !== window && p.HG_partyOpen && MG.host && MG.net && !MG.started) p.HG_partyOpen({ game: MG.cfg.id, code: MG.code, n: mgHumans().length, max: MG.cfg.max, mode: MG.cfg.title }); } catch (e) {} };
     ad(); MG.adT = setInterval(ad, 30000);
 }
-function mgLobbySend() { if (!MG.host || !MG.net) return; MG.roster = mgRosterNow(); MG.net.send('all', { t: '_lobby', roster: MG.roster, bots: MG.bots }); mgPaint(); }
+function mgLobbySend(room) { if (!MG.host || !MG.net) return; MG.roster = mgRosterNow(); MG.net.send('all', room ? { t: '_lobby', roster: MG.roster, bots: MG.bots, room: 1 } : { t: '_lobby', roster: MG.roster, bots: MG.bots }); mgPaint(); }
 function mgPaint() {
     const room = mgEl('mg-room'); room.classList.toggle('hidden', !MG.code);
     if (!MG.code) return;
@@ -162,6 +180,9 @@ function mgPaint() {
     mgEl('mg-hostrow').classList.toggle('hidden', !MG.host); mgEl('mg-wait').classList.toggle('hidden', MG.host);
     mgEl('mg-bots').value = MG.bots;
     const need = MG.cfg.min - roster.length; mgEl('mg-start').disabled = need > 0; mgEl('mg-start').textContent = need > 0 ? 'Need ' + need + ' more (add bots)' : 'Start';
+    const humans = roster.filter(r => !r.bot).length, rd = mgEl('mg-ready');
+    rd.classList.toggle('hidden', !MG.host);
+    rd.textContent = need > 0 ? 'Waiting for players: share the code, or add bots.' : 'Ready! ' + humans + (humans === 1 ? ' player' : ' players') + ' here. Press Start or Enter when everyone has joined.';
 }
 function mgStart() {
     if (!MG.host) return;
@@ -187,20 +208,73 @@ MG.end = html => { if (!MG.isHost()) return; if (MG.net) MG.net.send('all', { t:
 function mgShowEnd(html) {
     MG.started = false; if (MG.cfg.onEnd) MG.cfg.onEnd();
     const r = mgEl('mg-res'); r.classList.remove('hidden');
-    r.innerHTML = `<div class="mg-card">${html}<div class="mg-row">${MG.isHost() ? '<button class="mg-btn big" id="mg-again">Play again</button>' : '<span class="mg-sub">The host can start another round.</span>'}<button class="mg-btn" id="mg-leave">${MG.solo ? 'Menu' : 'Leave'}</button></div></div>`;
-    if (mgEl('mg-again')) mgEl('mg-again').onclick = () => { r.classList.add('hidden'); if (MG.solo) mgSolo(); else { mgShowLobby(); mgLobbySend(); mgAdvertise(); } };
+    const room = !MG.solo && MG.isHost();
+    r.innerHTML = `<div class="mg-card">${html}<div class="mg-row">${MG.isHost() ? '<button class="mg-btn big" id="mg-again" title="Enter or R">Play again</button>' : '<span class="mg-sub">Waiting for the host to start another round...</span>'}${room ? '<button class="mg-btn" id="mg-room-back" title="Change bots or wait for more people">Back to room</button>' : ''}<button class="mg-btn" id="mg-leave">${MG.solo ? 'Menu' : 'Leave'}</button></div>${room ? '<div class="mg-sub">Play again starts a new round for everyone in the room.</div>' : ''}</div>`;
+    const toRoom = () => { r.classList.add('hidden'); mgShowLobby(); mgLobbySend(true); mgAdvertise(); };
+    if (mgEl('mg-again')) mgEl('mg-again').onclick = () => {     // a rematch with the same people in one click
+        if (MG.solo) { r.classList.add('hidden'); mgSolo(); return; }
+        if (mgRosterNow().length >= MG.cfg.min) { r.classList.add('hidden'); mgStart(); } else toRoom();
+    };
+    if (mgEl('mg-room-back')) mgEl('mg-room-back').onclick = toRoom;
     mgEl('mg-leave').onclick = () => { r.classList.add('hidden'); mgLeave(); };
 }
 function mgLeave() {
     const net = MG.net; MG.net = null; try { net && net.close(); } catch (e) {}
     Object.assign(MG, { host: false, solo: false, code: '', started: false, roster: [] }); clearInterval(MG.adT);
-    mgEl('mg-room').classList.add('hidden'); mgSay(''); mgShowLobby(); if (MG.cfg.onQuit) MG.cfg.onQuit();
+    mgEl('mg-room').classList.add('hidden'); mgSay(''); mgConfirmClose(); mgShowLobby(); if (MG.cfg.onQuit) MG.cfg.onQuit();
+}
+// ---- quality of life: sound toggle (M), copy code, keyboard, leave confirm (Esc)
+function mgCopyCode() {
+    const b = mgEl('mg-copy'), done = ok => { b.textContent = ok ? 'Copied!' : 'Copy failed'; setTimeout(() => { b.textContent = 'Copy'; }, 1500); };
+    const fallback = () => { try { const t = document.createElement('textarea'); t.value = MG.code; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); done(ok); } catch (e) { done(false); } };
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(MG.code).then(() => done(true), fallback); else fallback(); } catch (e) { fallback(); }
+}
+function mgPaintSnd() { const b = mgEl('mg-snd'); if (b) { b.textContent = MGS.muted ? '🔇' : '🔊'; b.title = MGS.muted ? 'Sound off (M)' : 'Sound on (M)'; } }
+function mgToggleSnd() { MGS.muted = !MGS.muted; mgLs('hgmini_mute', MGS.muted ? '1' : '0'); mgPaintSnd(); if (!MGS.muted) MGS.blip(); }
+function mgVisible(id) { const e = mgEl(id); return !!e && !e.classList.contains('hidden'); }
+function mgConfirmClose() { const c = mgEl('mg-confirm'); if (c) c.classList.add('hidden'); }
+function mgConfirmLeave() {
+    let c = mgEl('mg-confirm');
+    if (!c) {
+        c = document.createElement('div'); c.id = 'mg-confirm'; c.className = 'hidden';
+        c.innerHTML = '<div class="mg-card"><h2>Leave this match?</h2><p class="mg-sub" id="mg-confirm-t"></p><div class="mg-row"><button class="mg-btn big" id="mg-confirm-stay" title="Esc">Keep playing</button><button class="mg-btn" id="mg-confirm-go" title="Enter">Leave</button></div></div>';
+        document.body.appendChild(c);
+        mgEl('mg-confirm-stay').onclick = mgConfirmClose;
+        mgEl('mg-confirm-go').onclick = () => { mgConfirmClose(); mgLeave(); };
+    }
+    mgEl('mg-confirm-t').textContent = MG.solo ? 'This round ends and you go back to the menu.' : MG.host ? 'You are the host: leaving ends the game for everyone.' : 'You leave the room; the others keep playing.';
+    c.classList.remove('hidden');
+}
+function mgQolInit() {
+    MGS.muted = mgLs('hgmini_mute') === '1';
+    const b = document.createElement('button'); b.id = 'mg-snd'; b.className = 'mg-btn sm'; b.onclick = e => { e.stopPropagation(); mgToggleSnd(); b.blur(); };
+    document.body.appendChild(b); mgPaintSnd();
+    addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
+        if (mgVisible('mg-confirm')) {     // the leave question takes every key while it is up
+            if (e.code === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); mgConfirmClose(); }
+            else if (e.code === 'Enter' && !(t && t.tagName === 'BUTTON')) { e.preventDefault(); e.stopImmediatePropagation(); mgConfirmClose(); mgLeave(); }
+            return;
+        }
+        if (typing) return;
+        if (e.code === 'KeyM' && !e.repeat) { mgToggleSnd(); return; }
+        if (mgVisible('mg-res')) {
+            if ((e.code === 'Enter' || e.code === 'KeyR') && !e.repeat && !(t && t.tagName === 'BUTTON' && e.code === 'Enter') && mgEl('mg-again')) { e.preventDefault(); e.stopImmediatePropagation(); mgEl('mg-again').click(); }
+            return;
+        }
+        if (mgVisible('mg-lobby')) {
+            if (e.code === 'Enter' && !e.repeat && MG.host && MG.code && !(t && t.tagName === 'BUTTON') && !mgEl('mg-start').disabled) { e.preventDefault(); e.stopImmediatePropagation(); mgStart(); }
+            return;
+        }
+        if (e.code === 'Escape' && MG.started && !e.repeat) { e.preventDefault(); e.stopImmediatePropagation(); mgConfirmLeave(); }
+    }, true);
 }
 MG.leave = mgLeave;
 // a seeded random (the same on every screen when the host sends the seed)
 function mgRng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // tiny sounds
-const MGS = (() => { let ac = null; const c = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) {} return ac; };
+const MGS = (() => { let ac = null; const c = () => { if (MGS.muted) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) {} return ac; };
     const tone = (f, len, type = 'square', vol = 0.06, f2) => { const a = c(); if (!a) return; const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f, a.currentTime); if (f2) o.frequency.exponentialRampToValueAtTime(f2, a.currentTime + len); g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + len); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + len + 0.02); };
     return { blip: () => tone(660, 0.08), hit: () => tone(220, 0.12, 'square', 0.08, 110), win: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'triangle', 0.08), i * 110)), lose: () => [392, 330, 262].forEach((f, i) => setTimeout(() => tone(f, 0.22, 'triangle', 0.07), i * 140)), go: () => tone(880, 0.25, 'sawtooth', 0.07, 1320) }; })();
 

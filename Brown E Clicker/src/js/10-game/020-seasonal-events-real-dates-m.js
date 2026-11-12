@@ -111,11 +111,13 @@
        // --- ASCENSION 2.0: HEAVENLY CHIPS ---
        // A run is worth cbrt(E's earned this run / 1 B) chips, so ascending unlocks at 1 B (1 billion).
        // Every chip ever earned gives +1% production; chips are also spent in the Prestige Tree.
-       const CHIP_BASE = 1e9;
-       const CHIP_BONUS = 0.01;
+       const CHIP_BASE = BAL.chips.base;
+       const CHIP_BONUS = BAL.chips.bonus;
+       const CHIP_POW = BAL.chips.power;
+       function chipRoot(x) { return CHIP_POW === 1 / 3 ? Math.cbrt(x) : Math.pow(x, CHIP_POW); }
        function chipsForRun(earned) {
            if (!(earned >= CHIP_BASE)) return 0;
-           return Math.floor(Math.cbrt(earned / CHIP_BASE) * PRES.chipX);
+           return Math.floor(chipRoot(earned / CHIP_BASE) * PRES.chipX);
        }
        function chipMultiplier() { return 1 + state.meta.chipsTotal * CHIP_BONUS; }
 
@@ -170,7 +172,7 @@
            { id: 'mkt3', x: 0, y: 7, p: 'mkt2', cost: 1000, br: 'market', icon: '📣', name: 'Market Hype', desc: 'Goods sell for 5% more.', fx: { mktSell: 1.05 } }
        ];
        const TREE_BY_ID = {};
-       TREE.forEach(n => { TREE_BY_ID[n.id] = n; });
+       TREE.forEach(n => { TREE_BY_ID[n.id] = n; if (BAL.tree && BAL.tree[n.id]) n.cost = BAL.tree[n.id]; });
 
        // --- CHALLENGE RUNS --- (chosen when you begin a run after ascending; beat the goal for a permanent reward)
        const CHALLENGES = [
@@ -185,7 +187,7 @@
            { id: 'amnesia', icon: '🫥', name: 'Amnesia', rule: 'Achievements give no production bonus.', goal: 1e15, reward: 'Total Recall: every achievement gives +1% more production.', fx: { achEach: 0.01 } }
        ];
        const CHALLENGE_BY_ID = {};
-       CHALLENGES.forEach(c => { CHALLENGE_BY_ID[c.id] = c; });
+       CHALLENGES.forEach(c => { CHALLENGE_BY_ID[c.id] = c; if (BAL.challengeGoals && BAL.challengeGoals[c.id]) c.goal = BAL.challengeGoals[c.id]; });
        function activeChallenge() { return state.meta.challenge ? CHALLENGE_BY_ID[state.meta.challenge] || null : null; }
        function challengeIs(id) { return state.meta.challenge === id; }
        function challengesDone() { let n = 0; for (const id in state.meta.challengesDone) if (CHALLENGE_BY_ID[id]) n++; return n; }
@@ -196,7 +198,7 @@
        const PRES = {};
        function recalcPrestige() {
            const p = { prodX: 1, clickX: 1, autoClick: 0, touch: 0, crit: 0, start: {}, startE: 0, buildDisc: 1, upgDisc: 1, genStart: 0, keepUpg: 0,
-               goldFreq: 1, goldLife: 1, goldDur: 1, elder: 0, doubleGold: 0, luckBig: 0, twins: 0, festive: 1, chipX: 1, achX: 0, achEach: 0, synX: 1, tierX: 2,
+               goldFreq: 1, goldLife: 1, goldDur: 1, elder: 0, doubleGold: 0, luckBig: 0, twins: 0, festive: 1, chipX: 1, achX: 0, achEach: 0, synX: 1, tierX: BAL.tierMult,
                trial: 0, offEff: 0, offCap: 0, gardenPlots: 0, gardenSpeed: 1, mutation: 1, mktFee0: 0, mktCap: 1, mktSell: 1 };
            const add = (fx) => {
                for (const k in fx) {
@@ -221,7 +223,7 @@
        function repriceBuildings() {
            const disc = buildingDiscount();
            shopItems.forEach((item, i) => {
-               if (item.type === 'win') { item.cost = BASE_COSTS[i]; return; }
+               if (item.type === 'win') { item.cost = BASE_COSTS[i] * Math.pow(BAL.winGrowth, state.wins); return; }
                let c = Math.ceil(BASE_COSTS[i] * disc);
                const g = buildingGrowth(item);
                for (let k = 0; k < item.owned; k++) c = Math.ceil(c * g);

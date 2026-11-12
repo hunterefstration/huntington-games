@@ -490,7 +490,7 @@ function pauseGame() {
     if (gameState !== 'PLAYING') return;
     gameState = 'PAUSED';
     keys.left = keys.right = keys.jump = false;
-    document.getElementById('pauseBackBtn').textContent = backLabel();
+    document.getElementById('pauseBackBtn').textContent = backLabel(); delete document.getElementById('pauseBackBtn').dataset.arm;
     // restarting a One Life run would just re-roll the level, so it is not offered there
     document.getElementById('pauseRestartBtn').classList.toggle('hidden', playMode === 'campaign' && isOneLife);
     pauseScreen.classList.remove('hidden');

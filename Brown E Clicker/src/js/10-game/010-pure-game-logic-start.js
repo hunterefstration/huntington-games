@@ -178,6 +178,21 @@
            { id: 'god', name: 'The Final E', desc: 'Buy this to beat the game.', cost: 1e24, type: 'win', amount: 0, owned: 0, costMultiplier: 1, icon: '🏆' }
        ];
 
+       // Balance: cost growth per type, building overrides (or a payback curve), the price of The Final E
+       shopItems.forEach(item => {
+           if (item.type === 'win') { item.cost = BAL.winCost; return; }
+           item.costMultiplier = BAL.growth[item.type];
+           const o = BAL.buildings && BAL.buildings[item.id];
+           if (o) { item.cost = o[0]; item.amount = o[1]; }
+           else if (BAL.payback) item.amount = paybackAmount(item);
+       });
+       // Payback curve (rb): a copy's base output = cost / (p0 x (cost / 15)^k), k = exponent for that type
+       function paybackAmount(item) {
+           const pb = BAL.payback, k = item.type === 'click' ? pb.kClick : pb.k, p0 = item.type === 'click' ? pb.p0Click : pb.p0;
+           const a = item.cost / (p0 * Math.pow(item.cost / 15, k));
+           const mag = Math.pow(10, Math.floor(Math.log10(a)) - 1);
+           return a < 10 ? Math.max(1, Math.round(a)) : Math.round(a / mag) * mag; // 2 significant digits
+       }
        const BUILDING = {};
        shopItems.forEach(item => { BUILDING[item.id] = item; item.mult = 1; item.eff = 0; });
        const BASE_COSTS = shopItems.map(i => i.cost);
@@ -192,8 +207,8 @@
        const TIER_FLAVOR = ['A fresh coat of brown paint.', 'Now with racing stripes.', 'Gold-plated, obviously.', 'Unbreakable and extremely shiny.', 'Powered by the heart of the universe.'];
        const TIER_STYLE = ['border-amber-700', 'border-sky-400', 'border-yellow-400', 'border-cyan-300', 'border-fuchsia-400'];
        const TIER_BADGE = ['I', 'II', 'III', 'IV', 'V'];
-       const TIER_AT = { bps: [1, 10, 25, 50, 100], click: [1, 5, 10, 20, 35] };
-       const TIER_COST_X = { bps: [10, 50, 500, 50000, 5000000], click: [10, 40, 400, 10000, 300000] };
+       const TIER_AT = BAL.tierAt;
+       const TIER_COST_X = BAL.tierCostX;
 
        // Per-building upgrades: each tier doubles that building's output
        shopItems.forEach((item, index) => {
@@ -204,7 +219,7 @@
                    id: `t_${item.id}_${t + 1}`, kind: 'tier', b: item.id, tier: t,
                    name: `${TIER_NAMES[t]} ${item.name}`, icon: item.icon, style: TIER_STYLE[t], badge: TIER_BADGE[t],
                    cost: BASE_COSTS[index] * costX[t],
-                   desc: `${item.name} ${item.type === 'click' ? 'click power' : 'output'} x2.`,
+                   desc: `${item.name} ${item.type === 'click' ? 'click power' : 'output'} x${BAL.tierMult}.`,
                    flavor: TIER_FLAVOR[t],
                    req: `Own ${at[t]} ${item.name}`,
                    unlock: () => item.owned >= at[t]
@@ -253,14 +268,15 @@
            ['implant', 'gaming', 0.03, 'Neural RGB', 'Your thoughts glow in rainbow colors.'],
            ['robohand', 'glove', 0.03, 'Robo-Gloves', 'Grippy gloves on a hydraulic hand.']
        ];
-       SYNERGIES.forEach(([t, s, pct, name, flavor]) => {
+       SYNERGIES.forEach(([t, s, pct0, name, flavor]) => {
+           const pct = pct0 * BAL.synPctX;
            const target = BUILDING[t];
            const source = s === 'all' ? null : BUILDING[s];
            const base = Math.max(target.cost, source ? source.cost : 0);
            UPGRADES.push({
                id: `s_${t}_${s}`, kind: 'syn', t, s, pct,
                name, icon: target.icon, style: 'border-purple-400', badge: source ? source.icon : '🏘️', badgeIcon: true,
-               cost: source ? base * 75 : 100000,
+               cost: source ? base * BAL.synCostX : BAL.synAllCost,
                desc: source
                    ? `${target.name} +${Math.round(pct * 100)}% for every ${source.name} you own.`
                    : `${target.name} +${Math.round(pct * 100)}% for every building you own.`,
@@ -272,44 +288,47 @@
 
        // Click upgrades: each one doubles click power (unlocked by lifetime clicks)
        [
-           [100, 500, 'Calloused Fingertip', '☝️', 'Tough skin for tough clicking.'],
-           [500, 10000, 'Ambidextrous', '🙌', 'Two hands, twice the E.'],
-           [1000, 300000, 'Wrist Brace', '💪', 'Safety first. Clicking second.'],
-           [2500, 20000000, 'Turbo Knuckles', '👊', 'Vroom vroom.'],
-           [5000, 2000000000, 'Finger Gym Membership', '🏋️', 'Never skip finger day.'],
-           [10000, 300000000000, 'Hydraulic Knuckles', '🦿', 'Pssssht. Click. Pssssht. Click.'],
-           [25000, 50000000000000, 'Ludicrous Clicking', '⚡', 'Your mouse is starting to smoke.'],
-           [50000, 1e16, 'The Clicking Hand of E', '🖐️', 'Legends say it never stopped clicking.']
-       ].forEach(([n, cost, name, icon, flavor], i) => {
-           UPGRADES.push({ id: `clk${i + 1}`, kind: 'click', name, icon, style: 'border-orange-400', cost, desc: 'Click power x2.', flavor, req: `Click the E ${n} times (all time)`, unlock: () => state.life.clicks >= n });
+           ['Calloused Fingertip', '☝️', 'Tough skin for tough clicking.'],
+           ['Ambidextrous', '🙌', 'Two hands, twice the E.'],
+           ['Wrist Brace', '💪', 'Safety first. Clicking second.'],
+           ['Turbo Knuckles', '👊', 'Vroom vroom.'],
+           ['Finger Gym Membership', '🏋️', 'Never skip finger day.'],
+           ['Hydraulic Knuckles', '🦿', 'Pssssht. Click. Pssssht. Click.'],
+           ['Ludicrous Clicking', '⚡', 'Your mouse is starting to smoke.'],
+           ['The Clicking Hand of E', '🖐️', 'Legends say it never stopped clicking.']
+       ].forEach(([name, icon, flavor], i) => {
+           const [n, cost] = BAL.clickUpg[i];
+           UPGRADES.push({ id: `clk${i + 1}`, kind: 'click', name, icon, style: 'border-orange-400', cost, desc: `Click power x${BAL.clickUpgMult}.`, flavor, req: `Click the E ${n} times (all time)`, unlock: () => state.life.clicks >= n });
        });
 
        // E-ssence Touch: clicks also earn a % of your E's per second
        [
-           [50000, 100000, 'Brown Touch', '🤎'],
-           [5000000, 10000000, 'Cocoa Contact', '🍫'],
-           [500000000, 1000000000, 'Mocha Momentum', '☕'],
-           [50000000000, 100000000000, 'Espresso Strike', '🥤'],
-           [5000000000000, 10000000000000, 'Dark Roast Smash', '🔥'],
-           [500000000000000, 1e15, 'Black Hole Brew', '🕳️']
-       ].forEach(([n, cost, name, icon], i) => {
-           UPGRADES.push({ id: `touch${i + 1}`, kind: 'touch', pct: 0.01, name, icon, style: 'border-amber-500', cost, desc: 'Each click also gives +1% of your E\'s per second.', flavor: 'Your fingers smell like chocolate.', req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
+           ['Brown Touch', '🤎'],
+           ['Cocoa Contact', '🍫'],
+           ['Mocha Momentum', '☕'],
+           ['Espresso Strike', '🥤'],
+           ['Dark Roast Smash', '🔥'],
+           ['Black Hole Brew', '🕳️']
+       ].forEach(([name, icon], i) => {
+           const [n, cost] = BAL.touch[i];
+           UPGRADES.push({ id: `touch${i + 1}`, kind: 'touch', pct: BAL.touchPct, name, icon, style: 'border-amber-500', cost, desc: `Each click also gives +${Math.round(BAL.touchPct * 1000) / 10}% of your E's per second.`, flavor: 'Your fingers smell like chocolate.', req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
        });
 
        // Flavor upgrades that boost ALL E's per second
        [
-           [1000, 0.05, 'Brown Sugar', '🍬', 'Sweet, sweet production.'],
-           [100000, 0.10, 'Cocoa Beans', '🌰', 'The building blocks of brown.'],
-           [10000000, 0.15, 'Milk Chocolate', '🍫', 'Smooth and creamy E\'s.'],
-           [1000000000, 0.20, 'Dark Chocolate', '🍫', 'For sophisticated E connoisseurs.'],
-           [100000000000, 0.25, 'Fudge Core', '🧁', 'Gooey in the middle.'],
-           [10000000000000, 0.30, 'Molten Mocha', '🌋', 'Hot enough to melt a planet.'],
-           [1e15, 0.40, 'Mud Pie Supreme', '🥧', 'Do not actually eat this.'],
-           [1e18, 0.50, 'Brownie Singularity', '🌑', 'A brownie so dense, light cannot escape.'],
-           [1e21, 0.75, 'The Brownest Brown', '🟤', 'Scientists say it can\'t get browner.'],
-           [1e24, 1.00, 'E Pluribus E', '🌟', 'Out of many E\'s, one E.']
-       ].forEach(([n, pct, name, icon, flavor], i) => {
-           UPGRADES.push({ id: `glob${i + 1}`, kind: 'global', pct, name, icon, style: 'border-green-500', cost: n * 5, desc: `All E's per second +${Math.round(pct * 100)}%.`, flavor, req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
+           ['Brown Sugar', '🍬', 'Sweet, sweet production.'],
+           ['Cocoa Beans', '🌰', 'The building blocks of brown.'],
+           ['Milk Chocolate', '🍫', 'Smooth and creamy E\'s.'],
+           ['Dark Chocolate', '🍫', 'For sophisticated E connoisseurs.'],
+           ['Fudge Core', '🧁', 'Gooey in the middle.'],
+           ['Molten Mocha', '🌋', 'Hot enough to melt a planet.'],
+           ['Mud Pie Supreme', '🥧', 'Do not actually eat this.'],
+           ['Brownie Singularity', '🌑', 'A brownie so dense, light cannot escape.'],
+           ['The Brownest Brown', '🟤', 'Scientists say it can\'t get browner.'],
+           ['E Pluribus E', '🌟', 'Out of many E\'s, one E.']
+       ].forEach(([name, icon, flavor], i) => {
+           const [n, pct] = BAL.glob[i];
+           UPGRADES.push({ id: `glob${i + 1}`, kind: 'global', pct, name, icon, style: 'border-green-500', cost: n * BAL.globCostX, desc: `All E's per second +${Math.round(pct * 100)}%.`, flavor, req: `Earn ${formatShort(n)} E's this run`, unlock: () => state.run.earned >= n });
        });
 
        // Golden E upgrades
@@ -329,12 +348,13 @@
 
        // Offline earnings upgrades
        UPGRADES.push(
-           { id: 'off1', kind: 'offline', effect: 'eff', pct: 0.15, name: 'Night Shift', icon: '🌃', style: 'border-indigo-400', cost: 250000, desc: 'While you\'re away, buildings work at 40% instead of 25%.', flavor: 'Somebody has to watch the E\'s.', req: 'Earn 100K E\'s this run', unlock: () => state.run.earned >= 100000 },
-           { id: 'off2', kind: 'offline', effect: 'eff', pct: 0.20, name: 'Sleepwalking Fingers', icon: '😴', style: 'border-indigo-400', cost: 2500000000, desc: 'While you\'re away, buildings work at 60%.', flavor: 'Click... click... zzz... click.', req: 'Earn 1B E\'s this run', unlock: () => state.run.earned >= 1000000000 },
-           { id: 'off3', kind: 'offline', effect: 'cap', name: 'Dream Factory', icon: '💤', style: 'border-indigo-400', cost: 2500000000000, desc: 'Away earnings count for up to 24 hours (was 8).', flavor: 'The night shift never ends.', req: 'Earn 1T E\'s this run', unlock: () => state.run.earned >= 1000000000000 }
+           { id: 'off1', kind: 'offline', effect: 'eff', pct: BAL.offline.off1, name: 'Night Shift', icon: '🌃', style: 'border-indigo-400', cost: 250000, desc: `While you're away, buildings work at ${Math.round((BAL.offline.eff + BAL.offline.off1) * 100)}% instead of ${Math.round(BAL.offline.eff * 100)}%.`, flavor: 'Somebody has to watch the E\'s.', req: 'Earn 100K E\'s this run', unlock: () => state.run.earned >= 100000 },
+           { id: 'off2', kind: 'offline', effect: 'eff', pct: BAL.offline.off2, name: 'Sleepwalking Fingers', icon: '😴', style: 'border-indigo-400', cost: 2500000000, desc: `While you're away, buildings work at ${Math.round((BAL.offline.eff + BAL.offline.off1 + BAL.offline.off2) * 100)}%.`, flavor: 'Click... click... zzz... click.', req: 'Earn 1B E\'s this run', unlock: () => state.run.earned >= 1000000000 },
+           { id: 'off3', kind: 'offline', effect: 'cap', name: 'Dream Factory', icon: '💤', style: 'border-indigo-400', cost: 2500000000000, desc: `Away earnings count for up to ${BAL.offline.off3Cap} hours (was ${BAL.offline.capHours}).`, flavor: 'The night shift never ends.', req: 'Earn 1T E\'s this run', unlock: () => state.run.earned >= 1000000000000 }
        );
 
        const UPGRADE_BY_ID = {};
        UPGRADES.forEach(u => { UPGRADE_BY_ID[u.id] = u; });
+       for (const id in BAL.upgCost) if (UPGRADE_BY_ID[id]) UPGRADE_BY_ID[id].cost = BAL.upgCost[id];
 
 

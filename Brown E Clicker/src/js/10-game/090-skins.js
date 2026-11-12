@@ -87,7 +87,7 @@
 
        // --- GOLDEN E ---
        const golden = { timer: 0, life: 0, shownAt: 0 };
-       function firstGoldenDelay() { return 25 + Math.random() * 20; }
+       function firstGoldenDelay() { return BAL.golden.first[0] + Math.random() * BAL.golden.first[1]; }
        function nextGoldenDelay() {
            const g = goldenSettings();
            return g.minGap + Math.random() * (g.maxGap - g.minGap);
@@ -139,7 +139,8 @@
            if (typeof eventGoldenChance === 'function' && Math.random() < eventGoldenChance()) return 'event';
            if (PRES.elder && Math.random() < 0.08) return 'elder';
            const r = Math.random();
-           let type = r < 0.42 ? 'frenzy' : r < 0.77 ? 'lucky' : r < 0.88 ? 'click' : 'rush';
+           const w = BAL.golden.weights;
+           let type = r < w[0] ? 'frenzy' : r < w[1] ? 'lucky' : r < w[2] ? 'click' : 'rush';
            if (type === 'rush' && !shopItems.some(i => i.type === 'bps' && i.owned > 0)) type = 'lucky';
            return type;
        }
@@ -178,33 +179,34 @@
                type = 'frenzy';
            }
            let title = '', sub = '';
+           const GB = BAL.golden;
            if (type === 'elder') {
-               const dur = Math.round(6 * g.dur);
-               addBuff('elder', '🌋', 'Elder Frenzy', 111, dur);
+               const dur = Math.round(GB.elder[1] * g.dur);
+               addBuff('elder', '🌋', 'Elder Frenzy', GB.elder[0], dur);
                state.life.elder++;
                title = 'ELDER FRENZY!';
-               sub = `E's per second x111 for ${dur} seconds`;
+               sub = `E's per second x${GB.elder[0]} for ${dur} seconds`;
            } else if (type === 'frenzy') {
-               const dur = Math.round(66 * g.dur);
-               addBuff('frenzy', '🔥', 'Frenzy', 7, dur);
+               const dur = Math.round(GB.frenzy[1] * g.dur);
+               addBuff('frenzy', '🔥', 'Frenzy', GB.frenzy[0], dur);
                state.life.frenzy++;
                title = 'FRENZY!';
-               sub = `E's per second x7 for ${dur} seconds`;
+               sub = `E's per second x${GB.frenzy[0]} for ${dur} seconds`;
            } else if (type === 'click') {
-               const dur = Math.round(13 * g.dur);
-               addBuff('click', '👆', 'Click Frenzy', 777, dur);
+               const dur = Math.round(GB.click[1] * g.dur);
+               addBuff('click', '👆', 'Click Frenzy', GB.click[0], dur);
                state.life.clickFrenzy++;
                title = 'CLICK FRENZY!';
-               sub = `Click power x777 for ${dur} seconds - click fast!`;
+               sub = `Click power x${GB.click[0]} for ${dur} seconds - click fast!`;
            } else if (type === 'rush') {
                const owned = shopItems.filter(i => i.type === 'bps' && i.owned > 0);
                const item = owned[Math.floor(Math.random() * owned.length)];
-               const mult = 1 + item.owned * 0.1;
-               const dur = Math.round(30 * g.dur);
+               const mult = 1 + item.owned * GB.rush[0];
+               const dur = Math.round(GB.rush[1] * g.dur);
                addBuff('rush', item.icon, `${item.name} Rush`, mult, dur, item.id);
                state.life.rush++;
                title = `${item.name.toUpperCase()} RUSH!`;
-               sub = `E's per second x${mult.toFixed(1)} for ${dur} seconds (+10% per ${item.name})`;
+               sub = `E's per second x${mult.toFixed(1)} for ${dur} seconds (+${Math.round(GB.rush[0] * 100)}% per ${item.name})`;
            } else {
                const amount = luckyAmount();
                earn(amount, 'golden');

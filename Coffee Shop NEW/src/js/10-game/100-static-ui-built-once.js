@@ -77,6 +77,7 @@ function updateUI() {
   // pause / speed
   const bp = $('b-pause'); if (V.paused !== paused) { V.paused = paused; bp.innerHTML = icon(paused ? 'play' : 'pause'); bp.classList.toggle('on', paused); $('pausedtag').classList.toggle('hidden', !paused); }
   T('b-speed', speed + 'x');
+  { const bm = $('b-mute'); if (bm && V.snd !== settings.sound) { V.snd = settings.sound; bm.innerHTML = icon(settings.sound ? 'volume' : 'mute'); bm.title = settings.sound ? 'Sound on (M to mute)' : 'Sound off (M to unmute)'; bm.classList.toggle('on', !settings.sound); } }
   uiShops(); uiBuild(loc, cc); uiStaff(loc); uiSupply(loc, cc); uiEventBar(); uiGoalBar();
   gfx.arrow = tutArrow(loc);
   if (!gfx.hover && performance.now() - (V.statusAt || 0) > 7000) { V.tipI = ((V.tipI || 0) + 1) % TIPS.length; T('status-text', TIPS[V.tipI]); V.statusAt = performance.now() - 2000; }

@@ -279,8 +279,8 @@
                return { title: 'GOLDEN EGG!', sub: `+2% E/s for the rest of this run (${state.run.eggs}/10 eggs)` };
            }
            if (e.id === 'eday') {
-               addBuff('frenzy', '🔥', 'Frenzy', 7, Math.round(66 * g.dur));
-               addBuff('click', '👆', 'Click Frenzy', 777, Math.round(13 * g.dur));
+               addBuff('frenzy', '🔥', 'Frenzy', BAL.golden.frenzy[0], Math.round(BAL.golden.frenzy[1] * g.dur));
+               addBuff('click', '👆', 'Click Frenzy', BAL.golden.click[0], Math.round(BAL.golden.click[1] * g.dur));
                return { title: 'PARTY TIME!', sub: 'Frenzy and Click Frenzy at the same time!' };
            }
            if (e.id === 'summer') {

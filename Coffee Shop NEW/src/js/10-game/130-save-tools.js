@@ -58,7 +58,7 @@ function beginPlay(isNew, imported) {
   if ($('dlg') && !imported) { $('dlg').classList.add('hidden'); dlgKind = null; }
   rt.startTick = state.tick; rt.rank = rankIdx(); rt.inc.fill(0); rt.incIdx = Math.floor(state.tick / 25) % 12;
   rt.rankUp = null; rt.away = null; rt.latte = null; rt.careerJust = null; rt.careerPop = false;
-  paused = false; speed = 1; acc = 0; tool = 'cursor';
+  paused = false; speed = [1, 2, 3].includes(settings.speed) ? settings.speed : 1; acc = 0; tool = 'cursor';
   lastSim = performance.now();
   for (const k in V) delete V[k];
   fxClear(); gfx.staticDirty = true; gfx.hover = null;
@@ -119,6 +119,7 @@ function onAction(act, d, el) {
     case 'tool': selectTool(d.tool); break;
     case 'pause': togglePause(); break;
     case 'speed': cycleSpeed(); break;
+    case 'mute': toggleSound(); break;
     case 'dlg': openDlg(d.d); break;
     case 'close': closeDlg(); break;
     case 'tab': setTab(d.tab); Snd.play('click'); document.querySelectorAll('#tabs .pulse').forEach(x => x.classList.remove('pulse')); break;
@@ -304,7 +305,8 @@ function setupEvents() {
     else if (k === 'c') (dlgKind === 'chain' ? closeDlg() : openDlg('chain'));
     else if (k === 'k') (dlgKind === 'career' ? closeDlg() : openDlg('career'));
     else if (k === 'l') openLatte('serve');
-    else if (k === 'm') { settings.sound = !settings.sound; saveSettings(); Snd.apply(); toast(settings.sound ? 'Sound on' : 'Sound off', 'info', settings.sound ? 'volume' : 'mute'); }
+    else if (k === 'm') toggleSound();
+    else if (k === 'f') cycleSpeed();
   });
   window.addEventListener('resize', applyLayout);
   window.addEventListener('orientationchange', () => setTimeout(applyLayout, 120));

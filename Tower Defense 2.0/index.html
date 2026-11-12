@@ -449,7 +449,8 @@ table.stats th { color: var(--dim); font-weight: 700; }
     <button class="btn btn-green" id="b-wave" title="Start the next wave (Space)">&#9654; Start Wave</button>
     <button class="btn btn-purple" id="b-auto" title="Start waves automatically">Auto: Off</button>
     <button class="btn btn-gold" id="b-speed" title="Game speed (F)">1x</button>
-    <button class="btn" id="b-pause" title="Pause (P)">&#10073;&#10073;</button>
+    <button class="btn" id="b-mute" title="Sound on (click to mute)">&#128266;</button>
+    <button class="btn" id="b-pause" title="Pause (P or Esc)">&#10073;&#10073;</button>
     <button class="btn" data-open="codex" title="Codex: every tower and enemy">Codex</button>
     <button class="btn" data-open="settings" title="Settings">&#9881;</button>
   </div>
@@ -1427,7 +1428,8 @@ const DEFAULT_SETTINGS = {
   variance: true,             // tower damage rolls +-10%
   enemyVariety: true,         // random enemy stat jitter + affixes
   confirmSell: true, autoPauseHidden: true, showTips: true, autoWaveDefault: false,
-  hoverRange: true
+  hoverRange: true,
+  lastSpeed: 1                // QoL: the game speed you used last (1-3)
 };
 function cleanSettings(raw) {
   const out = Object.assign({}, DEFAULT_SETTINGS);
@@ -1445,10 +1447,11 @@ function cleanSettings(raw) {
   if (![0, 30, 60].includes(out.fpsCap)) out.fpsCap = 0;
   if (!['always', 'damaged', 'off'].includes(out.healthBars)) out.healthBars = 'damaged';
   out.volume = clamp(out.volume, 0, 1);
+  out.lastSpeed = [1, 2, 3].includes(out.lastSpeed) ? out.lastSpeed : 1;
   return out;
 }
 let S = cleanSettings(store.get(KEYS.settings, {}));
-function saveSettings() { store.set(KEYS.settings, S); }
+function saveSettings() { store.set(KEYS.settings, S); if (typeof qolSyncMute === 'function') qolSyncMute(); }
 function applyQualityPreset(q) {
   S.quality = q;
   if (q === 'low' || q === 'medium' || q === 'high') {
@@ -5503,7 +5506,10 @@ canvas.addEventListener('pointerleave', () => { mouse.in = false; $('tooltip').c
 document.addEventListener('keydown', (ev) => {
   if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'SELECT' || ev.target.tagName === 'TEXTAREA') && !(ev.key === 'Escape' && ev.target.closest('.modal'))) return;
   const k = ev.key.toLowerCase();
-  if (k === 'escape') { if (!$('modal-confirm').classList.contains('hidden')) { closeModal('confirm'); return; } const open = document.querySelector('.modal:not(.hidden)'); if (open && open.id !== 'modal-end') { if (open.id === 'modal-pause') setPaused(false); else open.classList.add('hidden'); return; } if (G) deselectAll(); return; }
+  if ((k === 'enter' || k === 'r') && !$('modal-end').classList.contains('hidden') && $('modal-confirm').classList.contains('hidden') && !(ev.target && ev.target.tagName === 'BUTTON' && k === 'enter')) {   // QoL: keyboard "next map / play again"
+    const b = ['b-end-next', 'b-end-retry'].map($).find(x => x && !x.classList.contains('hidden') && x.offsetParent !== null && !x.disabled); if (b) { ev.preventDefault(); b.click(); } return;
+  }
+  if (k === 'escape') { if (!$('modal-confirm').classList.contains('hidden')) { closeModal('confirm'); return; } const open = document.querySelector('.modal:not(.hidden)'); if (open && open.id !== 'modal-end') { if (open.id === 'modal-pause') setPaused(false); else open.classList.add('hidden'); return; } if (G) { if ($('b-deselect').disabled && !G.over && !$('game-screen').classList.contains('hidden')) setPaused(true); else deselectAll(); } return; }
   if (!G || G.over || !$('game-screen') || $('game-screen').classList.contains('hidden')) return;
   if (document.querySelector('.modal:not(.hidden)')) return;
   if (k === ' ') { ev.preventDefault(); startWave(); }
@@ -5521,6 +5527,13 @@ document.addEventListener('keydown', (ev) => {
   else if (k === 'v') selectHero();
   else { const a = ABILITIES.find(x => x.key.toLowerCase() === k); if (a) armAbility(a.id); }
 });
+function qolCanAutoPause() { return G && !G.over && S.autoPauseHidden && !paused && !$('game-screen').classList.contains('hidden') && !document.querySelector('.modal:not(.hidden)'); }
+window.addEventListener('blur', () => { if (qolCanAutoPause()) setPaused(true); });     // QoL: clicking out of the game (chat dock, another window) pauses too
+function qolSaveBetweenWaves() { if (G && !G.over && !G.waveActive) { try { saveGame(); } catch (e) {} } }     // only between waves: a save is a wave boundary
+window.addEventListener('pagehide', qolSaveBetweenWaves);
+document.addEventListener('visibilitychange', () => { if (document.hidden) qolSaveBetweenWaves(); });
+function qolSyncMute() { const b = $('b-mute'); if (!b) return; const on = S.sfx && S.volume > 0; b.innerHTML = on ? '&#128266;' : '&#128263;'; b.classList.toggle('on', !on); b.title = on ? 'Sound on (click to mute)' : 'Sound off (click to unmute)'; }
+if ($('b-mute')) { $('b-mute').onclick = () => { S.sfx = !(S.sfx && S.volume > 0); if (S.sfx && S.volume <= 0) S.volume = 0.5; saveSettings(); qolSyncMute(); if (S.sfx) { initAudio(); sfx('click'); } }; qolSyncMute(); }
 document.addEventListener('visibilitychange', () => { if (document.hidden && G && !G.over && S.autoPauseHidden && !paused && !$('game-screen').classList.contains('hidden')) setPaused(true); });
 
 // =====================================================================
@@ -5555,7 +5568,7 @@ function updateHUD(force) {
     }
   }
 }
-function cycleSpeed() { G.speed = G.speed >= 3 ? 1 : G.speed + 1; updateHUD(); }
+function cycleSpeed() { G.speed = G.speed >= 3 ? 1 : G.speed + 1; S.lastSpeed = G.speed; saveSettings(); updateHUD(); }
 function toggleRanges() { G.showRanges = !G.showRanges; updateHUD(); }
 function setPaused(p) {
   paused = p; $('modal-pause').classList.toggle('hidden', !p);
@@ -7118,6 +7131,8 @@ function startGame(opts, loading) {
   setAbilityMode(own(GAME_MODES, opts.gm) ? opts.gm : 'legacy'); applyModeCosts(own(GAME_MODES, opts.gm) ? opts.gm : 'legacy');
   if (opts.mode === 'daily' && opts.daily && opts.daily.mods.indexOf('cheap') >= 0) for (const t of TOWERS) t.cost = Math.max(5, Math.round(t.cost * 0.75 / 5) * 5);     // Daily: Lend-Lease
   G = newGameState(opts); enemyUid = 1; parts.length = 0;
+  G.speed = S.lastSpeed || 1;     // QoL: keep the speed you used last time
+  if (typeof qolSyncMute === 'function') qolSyncMute();
   setupMap(G);
   $('menu-screen').classList.add('hidden'); $('editor-screen').classList.add('hidden'); $('game-screen').classList.remove('hidden');
   paused = false; ['pause', 'end', 'confirm', 'share'].forEach(closeModal);
