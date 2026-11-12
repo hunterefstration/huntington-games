@@ -10,4 +10,7 @@ suite="$1"; shift
 test/up.sh stop a >/dev/null 2>&1; sleep 1; test/up.sh reset >/dev/null
 DATABASE_URL="$RIG_DB_URL" test/up.sh a $RIG_ARCHIVE_ENV "$@" >/dev/null
 sleep 1
-PID_A=$(cat .a.pid) DATABASE_URL="$ADMIN_URL" timeout 600 node "$suite" 2>&1 | grep -E "^(PASS|FAIL)|ERROR|Error|    at " | grep -v "^PASS"
+PID_A=$(cat .a.pid) DATABASE_URL="$ADMIN_URL" timeout 600 node "$suite" > /tmp/rig-gv-suite.log 2>&1; rc=$?
+grep -E "^FAIL|ERROR|Error|    at " /tmp/rig-gv-suite.log | head -12
+echo "== $suite  pass $(grep -c '^PASS' /tmp/rig-gv-suite.log)  fail $(grep -c '^FAIL' /tmp/rig-gv-suite.log)$([ $rc -ne 0 ] && echo "  (exit $rc: /tmp/rig-gv-suite.log)")"
+exit $rc
