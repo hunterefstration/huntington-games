@@ -36,29 +36,33 @@ async function inlineLibs(html, g) {
   if (mapText) html = html.replace(holder, function () { return mapText; });
   return html;
 }
-// Saved copy first (instant, no network). Fall back to the network, and to the saved copy if the network is slow.
-function loadGameHtml(g) {
+// Saved copy first (instant, no network), but only THIS release's copy: every release re-keys the licence inside each
+// game, so a copy from an older release is refused by the game itself. (It used to be the fallback when the network was
+// slow or down right after an update, and showed the "not licensed" screen instead of the game.) Otherwise the network,
+// with retries; a download a hover already started is waited for instead of started twice.
+var PRE = {};
+function loadGameHtml(g, alive) {
   var key = gkey(g);
   if (BUNDLE) return getRec(key).then(function (r) { if (!r) throw new Error('missing'); return { html: r.text, base: '' }; });
   return versionReady.then(function (v) {
     if (!MIRRORS.length) setVersion(v);
-    return getRec(key).then(function (rec) {
+    return (PRE[g.dir] || Promise.resolve()).then(function () { return getRec(key); }).then(function (rec) {
       if (rec && rec.rel === v) return { html: rec.text, base: MIRRORS[0], cached: true };
-      return new Promise(function (resolve, reject) {
-        var done = false, timer = setTimeout(function () { if (rec && !done) { done = true; resolve({ html: rec.text, base: MIRRORS[0], cached: true }); } }, 4000);
-        fetchGame(g).then(function (r) {
-          clearTimeout(timer);
-          if (!rec || rec.text !== r.html) { var nr = { text: r.html, rel: v, sha: null }; MEM[key] = nr; idbPut(key, nr); }
-          if (!done) { done = true; resolve(r); }
-        }, function (err) {
-          clearTimeout(timer);
-          if (done) return;
-          done = true;
-          if (rec) resolve({ html: rec.text, base: MIRRORS[0], cached: true }); else reject(err);
-        });
+      return fetchRepoRetry(path(g), false, alive).then(function (r) {
+        var nr = { text: r.html, rel: v, sha: null }; MEM[key] = nr; idbPut(key, nr);
+        return r;
       });
     });
   });
+}
+// Start fetching a game (and its libraries) before it is asked for: when the pointer rests on its card, and for the
+// games played last. Quiet: a failure here only means the real load does the work.
+function prefetchGame(g) {
+  if (local || BUNDLE || !g || PRE[g.dir]) return PRE[g && g.dir] || Promise.resolve();
+  return PRE[g.dir] = versionReady.then(function (v) {
+    if (!MIRRORS.length) setVersion(v);
+    return cacheGame(g, v, null).then(function (ok) { if (ok) { OFF.done[g.dir] = 1; getMeta().then(function (m) { idbPut('meta', m); }); } });
+  }).catch(function () {}).then(function () { delete PRE[g.dir]; });
 }
 function prepare(html, g, base) {
   return inlineLibs(html, g).catch(function () { return html; }).then(function (h) { h = HG_withHub(h, g); return BUNDLE ? h : withBase(h, base + encodeURI(g.dir) + '/'); });
@@ -157,8 +161,11 @@ function playNow(g) {
   try { history.replaceState(null, '', '#' + encodeURIComponent(g.dir)); } catch (e) {}
   if (local) { HG_set(g); frame.removeAttribute('srcdoc'); frame.src = path(g) + (window.HG_TEST_QUERY || ''); return; }   // HG_TEST_QUERY: tests only (local copies)
   frame.srcdoc = message('Loading ' + g.name + '...');
-  loadGameHtml(g).then(function (r) {
+  var alive = function () { return id === loadId; };
+  if (typeof glStage === 'function') glStage('Downloading');
+  loadGameHtml(g, alive).then(function (r) {
     if (id !== loadId) return;
+    if (typeof glStage === 'function') glStage('Starting');
     return prepare(r.html, g, r.base).then(function (h) {
       if (id !== loadId) return;
       current.html = h;
@@ -167,9 +174,15 @@ function playNow(g) {
     });
   }).catch(function () {
     if (id !== loadId) return;
-    frame.srcdoc = message('Could not load ' + g.name + '.<br>' + (BUNDLE ? 'This game is missing from the offline copy.' : 'The game CDN (cdn.jsdelivr.net) may be blocked on this network, or you are offline and this game is not saved yet.'));
+    var why = BUNDLE ? 'This game is missing from the offline copy.' : navigator.onLine === false ? 'You are offline and this game is not saved on this device yet.' : 'The game server (cdn.jsdelivr.net) did not answer. It may be blocked on this network, or the connection dropped.';
+    frame.srcdoc = message('Could not load ' + g.name + '.<br>' + why);
+    if (typeof glFail === 'function') glFail(g, why);
+    // back online: try again by itself
+    var again = function () { removeEventListener('online', again); if (id === loadId && current && current.game === g && !current.html) playNow(g); };
+    if (!BUNDLE) addEventListener('online', again);
   });
 }
+window.HG_retryGame = function () { if (current && current.game && !current.html) playNow(current.game); };
 function closePlayer() {
   if (typeof DOCK !== 'undefined' && DOCK && DOCK.open) dockClose();      // (closePlayer also runs while the page is still loading)
   setTimeout(function () { if (typeof feedNow === 'function') feedNow(); }, 4000);      // new bests and achievements -> goons and leaderboards
@@ -240,7 +253,7 @@ render();
 // is connected, with a limit of 30 seconds either way.
 var cacheTimer = 0;
 function startCacheLater(ms) { if (cacheTimer < 0) return; clearTimeout(cacheTimer); cacheTimer = setTimeout(function () { cacheTimer = -1; startCache(); }, ms); }
-if (!local && !BUNDLE) startCacheLater(30000);
+if (!local && !BUNDLE) startCacheLater(12000);      // (was 30 s: the first game someone picks is usually picked sooner than that)
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
 

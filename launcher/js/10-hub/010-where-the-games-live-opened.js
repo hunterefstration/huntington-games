@@ -94,6 +94,10 @@ function render() {
     shot.appendChild(img); shot.appendChild(el('div', 'playov', '&#9654; Play')); b.appendChild(shot); b.title = g.name + ' - ' + String(g.desc || '').replace(/<[^>]+>/g, '');
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { homeRecent(g); play(g); };
+    b.dataset.dir = g.dir;
+    var hov = 0, warm = function () { clearTimeout(hov); hov = setTimeout(function () { if (typeof prefetchGame === 'function') prefetchGame(g); }, 150); };
+    b.addEventListener('pointerenter', warm); b.addEventListener('focus', warm); b.addEventListener('touchstart', warm, { passive: true });
+    b.addEventListener('pointerleave', function () { clearTimeout(hov); });
     (g.cat === 'mini' ? mini : grid).appendChild(b);
   });
   var list = document.getElementById('exp-list');
@@ -114,18 +118,50 @@ function timedFetch(url, ms, opts) {
   t = setTimeout(function () { if (c) c.abort(); }, ms);
   return fetch(url, o).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
 }
+// One file from the CDN. The mirrors are tried in order, but a mirror that is only SLOW (school Wi-Fi) no longer holds
+// everything up for 25 s: after 3.5 s the next one is started alongside and the first to answer wins. The mirror that
+// answered goes to the front for the rest of the visit. A release's files never change (the address has its tag in it),
+// so the browser's own cache may be used; only the unnumbered fallback ('main') is always re-checked.
 function fetchRepo(p, asBlob) {
-  var i = 0;
-  function next() {
-    if (i >= MIRRORS.length) return Promise.reject(new Error('all mirrors failed'));
-    var base = MIRRORS[i++];
-    // no-cache: the CDN tells browsers to keep files for 7 days; always revalidate so updates show up.
-    return timedFetch(base + p, 25000, { cache: 'no-cache' }).then(function (r) {
+  function one(base) {
+    return timedFetch(base + p, 25000, /@r\d+\/$/.test(base) ? {} : { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return asBlob ? r.blob() : r.text();
-    }).then(function (body) { return { html: body, base: base }; }, next);
+    }).then(function (body) { return { html: body, base: base }; });
   }
-  return versionReady.then(function (v) { if (!MIRRORS.length) setVersion(v); return next(); });
+  function race() {
+    return new Promise(function (resolve, reject) {
+      var list = MIRRORS.slice(), i = 0, live = 0, done = false, timer = 0, lastErr = null;
+      function launch() {
+        clearTimeout(timer);
+        if (done || i >= list.length) return;
+        var base = list[i++]; live++;
+        one(base).then(function (r) {
+          if (done) return; done = true; clearTimeout(timer);
+          var k = MIRRORS.indexOf(base); if (k > 0) { MIRRORS.splice(k, 1); MIRRORS.unshift(base); }
+          resolve(r);
+        }, function (e) {
+          lastErr = e; live--; if (done) return;
+          if (i < list.length) launch(); else if (!live) { done = true; reject(lastErr || new Error('all mirrors failed')); }
+        });
+        if (i < list.length) timer = setTimeout(launch, 3500);
+      }
+      if (!list.length) return reject(new Error('no mirrors'));
+      launch();
+    });
+  }
+  return versionReady.then(function (v) { if (!MIRRORS.length) setVersion(v); return race(); });
+}
+// ...and again, twice, a little later each time, before giving up: a dropped connection usually comes back in seconds
+function fetchRepoRetry(p, asBlob, alive) {
+  var n = 0;
+  function go() {
+    return fetchRepo(p, asBlob).catch(function (e) {
+      if (++n >= 3 || (alive && !alive())) throw e;
+      return new Promise(function (res) { setTimeout(res, n * 2000); }).then(go);
+    });
+  }
+  return go();
 }
 function fetchGame(g) { return fetchRepo(path(g)); }
 function withBase(html, href) {
@@ -304,6 +340,11 @@ async function cacheGame(g, v, hashes) {
 }
 async function runCache() {
   var all = GAMES.concat(EXPERIMENTAL);
+  // the games this player opens first: the ones played last and the starred ones, then the rest in page order
+  try {
+    var first = JSON.parse(localStorage.getItem('hgv:recent') || '[]').concat(JSON.parse(localStorage.getItem('gv:set:fav') || '[]'));
+    all.sort(function (a, b) { var x = first.indexOf(a.dir), y = first.indexOf(b.dir); return (x < 0 ? 999 : x) - (y < 0 ? 999 : y); });
+  } catch (e) {}
   var db = await openDB();
   if (!db) { offText('Offline saving is not available in this browser.'); return; }
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}

@@ -16,23 +16,35 @@ function glEl() {
   var d = document.createElement('div'); d.id = 'gload'; d.hidden = true;
   d.innerHTML = '<div class="gl-bg"></div><div class="gl-in"><div class="gl-name"></div>' +
     '<div class="gl-stage"><div class="gl-track"></div><i class="gl-spike s1"></i><i class="gl-spike s2"></i><i class="gl-spike s3"></i><div class="gl-cube"><b></b><b></b></div></div>' +
-    '<div class="gl-bar"><span></span></div><div class="gl-quip"></div></div>';
+    '<div class="gl-bar"><span></span></div><div class="gl-stage-txt"></div><div class="gl-quip"></div><div class="gl-err" hidden></div></div>';
   document.getElementById('player').appendChild(d);
   return (GL.el = d);
 }
 function glThumb(g) { try { return BUNDLE ? (BUNDLE.files['img:' + g.img] || '') : (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg'; } catch (e) { return ''; } }
+// what is really happening, under the bar ("Downloading", "Starting"), and a failed load with a way to try again
+function glStage(t) { var e = GL.el && GL.el.querySelector('.gl-stage-txt'); if (e) e.textContent = t ? t + '...' : ''; }
+function glFail(g, why) {
+  var d = glEl(); clearInterval(GL.quipT); clearTimeout(GL.timer); d.classList.add('fail');
+  d.querySelector('.gl-quip').textContent = '';
+  d.querySelector('.gl-stage-txt').innerHTML = '';
+  var box = d.querySelector('.gl-err'); box.hidden = false;
+  box.innerHTML = '<b>Could not load ' + String(g.name).replace(/[<&]/g, '') + '</b><span></span><button class="mbtn" id="gl-retry">Try again</button><button class="mbtn ghost" id="gl-back">Back to the games</button>';
+  box.querySelector('span').textContent = why;
+  box.querySelector('#gl-retry').onclick = function () { window.HG_retryGame(); };
+  box.querySelector('#gl-back').onclick = function () { document.getElementById('back').click(); };
+}
 function glQuip() { var q = GL.el && GL.el.querySelector('.gl-quip'); if (q) { q.classList.remove('in'); void q.offsetWidth; q.textContent = GL_QUIPS[Math.floor(Math.random() * GL_QUIPS.length)] + '...'; q.classList.add('in'); } }
 function glShow(g) {
   var d = glEl(); GL.id++; GL.armed = false; GL.t0 = Date.now(); GL.game = g;
   d.querySelector('.gl-name').textContent = g.name;
   var t = g.img ? glThumb(g) : ''; d.querySelector('.gl-bg').style.backgroundImage = t ? 'url("' + t + '")' : '';
-  d.style.top = (document.getElementById('ptop').offsetHeight || 41) + 'px'; d.hidden = false; d.classList.remove('out');
+  d.style.top = (document.getElementById('ptop').offsetHeight || 41) + 'px'; d.hidden = false; d.classList.remove('out'); d.classList.remove('fail'); d.querySelector('.gl-err').hidden = true; glStage('');
   glQuip(); clearInterval(GL.quipT); GL.quipT = setInterval(glQuip, 2200);
   clearTimeout(GL.timer); GL.timer = setTimeout(glHide, 45000);
 }
 function glHide() {
   var d = GL.el; if (!d || d.hidden || d.classList.contains('out')) return;
-  var wait = Math.max(0, 900 - (Date.now() - GL.t0));        // never just a flash
+  var wait = Math.max(0, 450 - (Date.now() - GL.t0));        // never just a flash (was 900 ms: a saved game is ready sooner than that)
   setTimeout(function () { d.classList.add('out'); clearInterval(GL.quipT); glFocus(); setTimeout(function () { if (d.classList.contains('out')) d.hidden = true; }, 450); }, wait);
 }
 // hand the keyboard to the game once it is showing: a game started without a click inside it (an invite, Join, a
@@ -81,7 +93,7 @@ window.HG_gameReady = function () { if (GL.armed) glHide(); };
   var b = document.getElementById('boot'); if (!b) return;
   var first = false; try { first = !localStorage.getItem('hgv:booted'); localStorage.setItem('hgv:booted', '1'); } catch (e) {}
   if (first) b.classList.add('first');
-  var t0 = (window.HG_BOOT_T0 || Date.now()), min = first ? 2600 : 1300;
+  var t0 = (window.HG_BOOT_T0 || Date.now()), min = first ? 2000 : 600;      // (was 2600 / 1300 ms)
   var go = function () { setTimeout(function () { b.classList.add('out'); setTimeout(function () { b.remove(); }, 700); }, Math.max(0, min - (Date.now() - t0))); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
   setTimeout(function () { if (document.getElementById('boot')) go(); }, 8000);

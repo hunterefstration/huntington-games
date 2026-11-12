@@ -458,6 +458,13 @@ html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, htm
 /* the Minigames section under the main games */
 .gsec { margin: 28px 0 12px; font: 800 20px var(--sans); letter-spacing: .02em; color: var(--text); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .gsec span { font: 500 13px var(--sans); color: var(--dim); }
+/* loading screen: the real stage, and a failed load */
+.gl-stage-txt { margin-top: 10px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.55); min-height: 16px; }
+.gl-err { margin-top: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; max-width: 460px; text-align: center; }
+.gl-err[hidden] { display: none; } .gl-err b { font-size: 18px; } .gl-err span { color: rgba(255,255,255,.7); font-size: 14px; line-height: 1.4; }
+#gload.fail .gl-stage, #gload.fail .gl-bar { display: none; }
+.gl-err button, .pempty button.mbtn { font: inherit; font-weight: 700; padding: 9px 18px; border-radius: 10px; border: 0; cursor: pointer; background: var(--accent, #f6c945); color: #111; }
+.gl-err button.ghost { background: transparent; border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.8); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -665,6 +672,10 @@ function render() {
     shot.appendChild(img); shot.appendChild(el('div', 'playov', '&#9654; Play')); b.appendChild(shot); b.title = g.name + ' - ' + String(g.desc || '').replace(/<[^>]+>/g, '');
     b.appendChild(el('div', 'info', '<div class="name">' + g.name + '</div><div class="desc">' + g.desc + '</div>' + (g.credit ? '<div class="credit">' + g.credit + '</div>' : '') + '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag' + (t === 'New' ? ' new' : '') + '">' + t + '</span>'; }).join('') + '</div>'));
     b.onclick = function () { homeRecent(g); play(g); };
+    b.dataset.dir = g.dir;
+    var hov = 0, warm = function () { clearTimeout(hov); hov = setTimeout(function () { if (typeof prefetchGame === 'function') prefetchGame(g); }, 150); };
+    b.addEventListener('pointerenter', warm); b.addEventListener('focus', warm); b.addEventListener('touchstart', warm, { passive: true });
+    b.addEventListener('pointerleave', function () { clearTimeout(hov); });
     (g.cat === 'mini' ? mini : grid).appendChild(b);
   });
   var list = document.getElementById('exp-list');
@@ -685,18 +696,50 @@ function timedFetch(url, ms, opts) {
   t = setTimeout(function () { if (c) c.abort(); }, ms);
   return fetch(url, o).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
 }
+// One file from the CDN. The mirrors are tried in order, but a mirror that is only SLOW (school Wi-Fi) no longer holds
+// everything up for 25 s: after 3.5 s the next one is started alongside and the first to answer wins. The mirror that
+// answered goes to the front for the rest of the visit. A release's files never change (the address has its tag in it),
+// so the browser's own cache may be used; only the unnumbered fallback ('main') is always re-checked.
 function fetchRepo(p, asBlob) {
-  var i = 0;
-  function next() {
-    if (i >= MIRRORS.length) return Promise.reject(new Error('all mirrors failed'));
-    var base = MIRRORS[i++];
-    // no-cache: the CDN tells browsers to keep files for 7 days; always revalidate so updates show up.
-    return timedFetch(base + p, 25000, { cache: 'no-cache' }).then(function (r) {
+  function one(base) {
+    return timedFetch(base + p, 25000, /@r\d+\/$/.test(base) ? {} : { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return asBlob ? r.blob() : r.text();
-    }).then(function (body) { return { html: body, base: base }; }, next);
+    }).then(function (body) { return { html: body, base: base }; });
   }
-  return versionReady.then(function (v) { if (!MIRRORS.length) setVersion(v); return next(); });
+  function race() {
+    return new Promise(function (resolve, reject) {
+      var list = MIRRORS.slice(), i = 0, live = 0, done = false, timer = 0, lastErr = null;
+      function launch() {
+        clearTimeout(timer);
+        if (done || i >= list.length) return;
+        var base = list[i++]; live++;
+        one(base).then(function (r) {
+          if (done) return; done = true; clearTimeout(timer);
+          var k = MIRRORS.indexOf(base); if (k > 0) { MIRRORS.splice(k, 1); MIRRORS.unshift(base); }
+          resolve(r);
+        }, function (e) {
+          lastErr = e; live--; if (done) return;
+          if (i < list.length) launch(); else if (!live) { done = true; reject(lastErr || new Error('all mirrors failed')); }
+        });
+        if (i < list.length) timer = setTimeout(launch, 3500);
+      }
+      if (!list.length) return reject(new Error('no mirrors'));
+      launch();
+    });
+  }
+  return versionReady.then(function (v) { if (!MIRRORS.length) setVersion(v); return race(); });
+}
+// ...and again, twice, a little later each time, before giving up: a dropped connection usually comes back in seconds
+function fetchRepoRetry(p, asBlob, alive) {
+  var n = 0;
+  function go() {
+    return fetchRepo(p, asBlob).catch(function (e) {
+      if (++n >= 3 || (alive && !alive())) throw e;
+      return new Promise(function (res) { setTimeout(res, n * 2000); }).then(go);
+    });
+  }
+  return go();
 }
 function fetchGame(g) { return fetchRepo(path(g)); }
 function withBase(html, href) {
@@ -875,6 +918,11 @@ async function cacheGame(g, v, hashes) {
 }
 async function runCache() {
   var all = GAMES.concat(EXPERIMENTAL);
+  // the games this player opens first: the ones played last and the starred ones, then the rest in page order
+  try {
+    var first = JSON.parse(localStorage.getItem('hgv:recent') || '[]').concat(JSON.parse(localStorage.getItem('gv:set:fav') || '[]'));
+    all.sort(function (a, b) { var x = first.indexOf(a.dir), y = first.indexOf(b.dir); return (x < 0 ? 999 : x) - (y < 0 ? 999 : y); });
+  } catch (e) {}
   var db = await openDB();
   if (!db) { offText('Offline saving is not available in this browser.'); return; }
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
@@ -948,29 +996,33 @@ async function inlineLibs(html, g) {
   if (mapText) html = html.replace(holder, function () { return mapText; });
   return html;
 }
-// Saved copy first (instant, no network). Fall back to the network, and to the saved copy if the network is slow.
-function loadGameHtml(g) {
+// Saved copy first (instant, no network), but only THIS release's copy: every release re-keys the licence inside each
+// game, so a copy from an older release is refused by the game itself. (It used to be the fallback when the network was
+// slow or down right after an update, and showed the "not licensed" screen instead of the game.) Otherwise the network,
+// with retries; a download a hover already started is waited for instead of started twice.
+var PRE = {};
+function loadGameHtml(g, alive) {
   var key = gkey(g);
   if (BUNDLE) return getRec(key).then(function (r) { if (!r) throw new Error('missing'); return { html: r.text, base: '' }; });
   return versionReady.then(function (v) {
     if (!MIRRORS.length) setVersion(v);
-    return getRec(key).then(function (rec) {
+    return (PRE[g.dir] || Promise.resolve()).then(function () { return getRec(key); }).then(function (rec) {
       if (rec && rec.rel === v) return { html: rec.text, base: MIRRORS[0], cached: true };
-      return new Promise(function (resolve, reject) {
-        var done = false, timer = setTimeout(function () { if (rec && !done) { done = true; resolve({ html: rec.text, base: MIRRORS[0], cached: true }); } }, 4000);
-        fetchGame(g).then(function (r) {
-          clearTimeout(timer);
-          if (!rec || rec.text !== r.html) { var nr = { text: r.html, rel: v, sha: null }; MEM[key] = nr; idbPut(key, nr); }
-          if (!done) { done = true; resolve(r); }
-        }, function (err) {
-          clearTimeout(timer);
-          if (done) return;
-          done = true;
-          if (rec) resolve({ html: rec.text, base: MIRRORS[0], cached: true }); else reject(err);
-        });
+      return fetchRepoRetry(path(g), false, alive).then(function (r) {
+        var nr = { text: r.html, rel: v, sha: null }; MEM[key] = nr; idbPut(key, nr);
+        return r;
       });
     });
   });
+}
+// Start fetching a game (and its libraries) before it is asked for: when the pointer rests on its card, and for the
+// games played last. Quiet: a failure here only means the real load does the work.
+function prefetchGame(g) {
+  if (local || BUNDLE || !g || PRE[g.dir]) return PRE[g && g.dir] || Promise.resolve();
+  return PRE[g.dir] = versionReady.then(function (v) {
+    if (!MIRRORS.length) setVersion(v);
+    return cacheGame(g, v, null).then(function (ok) { if (ok) { OFF.done[g.dir] = 1; getMeta().then(function (m) { idbPut('meta', m); }); } });
+  }).catch(function () {}).then(function () { delete PRE[g.dir]; });
 }
 function prepare(html, g, base) {
   return inlineLibs(html, g).catch(function () { return html; }).then(function (h) { h = HG_withHub(h, g); return BUNDLE ? h : withBase(h, base + encodeURI(g.dir) + '/'); });
@@ -1069,8 +1121,11 @@ function playNow(g) {
   try { history.replaceState(null, '', '#' + encodeURIComponent(g.dir)); } catch (e) {}
   if (local) { HG_set(g); frame.removeAttribute('srcdoc'); frame.src = path(g) + (window.HG_TEST_QUERY || ''); return; }   // HG_TEST_QUERY: tests only (local copies)
   frame.srcdoc = message('Loading ' + g.name + '...');
-  loadGameHtml(g).then(function (r) {
+  var alive = function () { return id === loadId; };
+  if (typeof glStage === 'function') glStage('Downloading');
+  loadGameHtml(g, alive).then(function (r) {
     if (id !== loadId) return;
+    if (typeof glStage === 'function') glStage('Starting');
     return prepare(r.html, g, r.base).then(function (h) {
       if (id !== loadId) return;
       current.html = h;
@@ -1079,9 +1134,15 @@ function playNow(g) {
     });
   }).catch(function () {
     if (id !== loadId) return;
-    frame.srcdoc = message('Could not load ' + g.name + '.<br>' + (BUNDLE ? 'This game is missing from the offline copy.' : 'The game CDN (cdn.jsdelivr.net) may be blocked on this network, or you are offline and this game is not saved yet.'));
+    var why = BUNDLE ? 'This game is missing from the offline copy.' : navigator.onLine === false ? 'You are offline and this game is not saved on this device yet.' : 'The game server (cdn.jsdelivr.net) did not answer. It may be blocked on this network, or the connection dropped.';
+    frame.srcdoc = message('Could not load ' + g.name + '.<br>' + why);
+    if (typeof glFail === 'function') glFail(g, why);
+    // back online: try again by itself
+    var again = function () { removeEventListener('online', again); if (id === loadId && current && current.game === g && !current.html) playNow(g); };
+    if (!BUNDLE) addEventListener('online', again);
   });
 }
+window.HG_retryGame = function () { if (current && current.game && !current.html) playNow(current.game); };
 function closePlayer() {
   if (typeof DOCK !== 'undefined' && DOCK && DOCK.open) dockClose();      // (closePlayer also runs while the page is still loading)
   setTimeout(function () { if (typeof feedNow === 'function') feedNow(); }, 4000);      // new bests and achievements -> goons and leaderboards
@@ -1152,7 +1213,7 @@ render();
 // is connected, with a limit of 30 seconds either way.
 var cacheTimer = 0;
 function startCacheLater(ms) { if (cacheTimer < 0) return; clearTimeout(cacheTimer); cacheTimer = setTimeout(function () { cacheTimer = -1; startCache(); }, ms); }
-if (!local && !BUNDLE) startCacheLater(30000);
+if (!local && !BUNDLE) startCacheLater(12000);      // (was 30 s: the first game someone picks is usually picked sooner than that)
 var start = decodeURIComponent(location.hash.slice(1));
 GAMES.concat(EXPERIMENTAL).forEach(function (g) { if (g.dir === start) play(g); });
 
@@ -2605,23 +2666,35 @@ function glEl() {
   var d = document.createElement('div'); d.id = 'gload'; d.hidden = true;
   d.innerHTML = '<div class="gl-bg"></div><div class="gl-in"><div class="gl-name"></div>' +
     '<div class="gl-stage"><div class="gl-track"></div><i class="gl-spike s1"></i><i class="gl-spike s2"></i><i class="gl-spike s3"></i><div class="gl-cube"><b></b><b></b></div></div>' +
-    '<div class="gl-bar"><span></span></div><div class="gl-quip"></div></div>';
+    '<div class="gl-bar"><span></span></div><div class="gl-stage-txt"></div><div class="gl-quip"></div><div class="gl-err" hidden></div></div>';
   document.getElementById('player').appendChild(d);
   return (GL.el = d);
 }
 function glThumb(g) { try { return BUNDLE ? (BUNDLE.files['img:' + g.img] || '') : (local ? '' : MIRRORS[0]) + 'hub/' + g.img + '.jpg'; } catch (e) { return ''; } }
+// what is really happening, under the bar ("Downloading", "Starting"), and a failed load with a way to try again
+function glStage(t) { var e = GL.el && GL.el.querySelector('.gl-stage-txt'); if (e) e.textContent = t ? t + '...' : ''; }
+function glFail(g, why) {
+  var d = glEl(); clearInterval(GL.quipT); clearTimeout(GL.timer); d.classList.add('fail');
+  d.querySelector('.gl-quip').textContent = '';
+  d.querySelector('.gl-stage-txt').innerHTML = '';
+  var box = d.querySelector('.gl-err'); box.hidden = false;
+  box.innerHTML = '<b>Could not load ' + String(g.name).replace(/[<&]/g, '') + '</b><span></span><button class="mbtn" id="gl-retry">Try again</button><button class="mbtn ghost" id="gl-back">Back to the games</button>';
+  box.querySelector('span').textContent = why;
+  box.querySelector('#gl-retry').onclick = function () { window.HG_retryGame(); };
+  box.querySelector('#gl-back').onclick = function () { document.getElementById('back').click(); };
+}
 function glQuip() { var q = GL.el && GL.el.querySelector('.gl-quip'); if (q) { q.classList.remove('in'); void q.offsetWidth; q.textContent = GL_QUIPS[Math.floor(Math.random() * GL_QUIPS.length)] + '...'; q.classList.add('in'); } }
 function glShow(g) {
   var d = glEl(); GL.id++; GL.armed = false; GL.t0 = Date.now(); GL.game = g;
   d.querySelector('.gl-name').textContent = g.name;
   var t = g.img ? glThumb(g) : ''; d.querySelector('.gl-bg').style.backgroundImage = t ? 'url("' + t + '")' : '';
-  d.style.top = (document.getElementById('ptop').offsetHeight || 41) + 'px'; d.hidden = false; d.classList.remove('out');
+  d.style.top = (document.getElementById('ptop').offsetHeight || 41) + 'px'; d.hidden = false; d.classList.remove('out'); d.classList.remove('fail'); d.querySelector('.gl-err').hidden = true; glStage('');
   glQuip(); clearInterval(GL.quipT); GL.quipT = setInterval(glQuip, 2200);
   clearTimeout(GL.timer); GL.timer = setTimeout(glHide, 45000);
 }
 function glHide() {
   var d = GL.el; if (!d || d.hidden || d.classList.contains('out')) return;
-  var wait = Math.max(0, 900 - (Date.now() - GL.t0));        // never just a flash
+  var wait = Math.max(0, 450 - (Date.now() - GL.t0));        // never just a flash (was 900 ms: a saved game is ready sooner than that)
   setTimeout(function () { d.classList.add('out'); clearInterval(GL.quipT); glFocus(); setTimeout(function () { if (d.classList.contains('out')) d.hidden = true; }, 450); }, wait);
 }
 // hand the keyboard to the game once it is showing: a game started without a click inside it (an invite, Join, a
@@ -2670,7 +2743,7 @@ window.HG_gameReady = function () { if (GL.armed) glHide(); };
   var b = document.getElementById('boot'); if (!b) return;
   var first = false; try { first = !localStorage.getItem('hgv:booted'); localStorage.setItem('hgv:booted', '1'); } catch (e) {}
   if (first) b.classList.add('first');
-  var t0 = (window.HG_BOOT_T0 || Date.now()), min = first ? 2600 : 1300;
+  var t0 = (window.HG_BOOT_T0 || Date.now()), min = first ? 2000 : 600;      // (was 2600 / 1300 ms)
   var go = function () { setTimeout(function () { b.classList.add('out'); setTimeout(function () { b.remove(); }, 700); }, Math.max(0, min - (Date.now() - t0))); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
   setTimeout(function () { if (document.getElementById('boot')) go(); }, 8000);
