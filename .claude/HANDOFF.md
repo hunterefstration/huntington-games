@@ -1,4 +1,26 @@
-# Handoff (updated 2026-11-04)
+# Handoff (updated 2026-11-12)
+
+## Round 7 (r65): leaderboards, loading, QoL, tooling
+- **Leaderboards** (server `075-economy.js`, launcher `050-goons-feed.js`, test `tools/tests/gv-lb.mjs`):
+  - What was broken: Brown E Clicker sent the current balance, not `life.earned`; the server refused scores over 1e15;
+    Tetris read fields that do not exist (its bests are `best[mode][0].s`); Market "net worth" took the bigger of net
+    worth and life score; a submit the server dropped was remembered as sent for ever (per device, not per account);
+    an open board never refreshed.
+  - Now: one `lbBatch` frame with every board, answered by `lbAck` (what the server holds); sent-memory is per account
+    and per visit; `lbLeave` (auto-clicker strikes), `lbDrop` on ban and `ecoAdmin op lbRemove`; per-board `max`.
+  - New boards: tetris:floor, tetris:sprint, market:score, td:best, steel:wins, steel:kills, clicker:asc, clicker:rb.
+    `market:worth` was cleared once (`lbMeta.r65`).
+- **Loading** (launcher 010/020/097, test `tools/tests/load.mjs`): a game copy from an older release is never run (the
+  licence refuses it; it used to be the slow-network fallback); `fetchRepo` races the next mirror after 3.5 s and
+  remembers the winner; `fetchRepoRetry`; the loading screen shows Downloading/Starting and an error with Try again;
+  `prefetchGame` on card hover, for recents first, and during the pre-play save check.
+- **QoL** (`launcher/js/10-hub/096-qol.js`, test `gv-qol.mjs`): search, tag chips, favourites (`hgq:fav`), sort, small
+  cards, Surprise me, play log (`hgq:play`: sec, n, last, ver), Updated badge, player star and Restart, What's new card
+  (`WHATSNEW` in 096: change its `id` and items every release), offline bar, find-a-player on boards.
+  A card can have `alt: { label, go }` (Brown E Clicker's Rebalanced beta sets `brownEClicker_variant = 'rb'`).
+- **Last Light 1.4**: `bodyPush` + a hit grace window in `45-boss.js`/`47-guard.js`; The Gloom's moves per phase are in
+  `GLOOM_PLAN`. Repro/regression script: `/home/user/tmp-tests/ll-gloom.mjs` (not in the repo).
+- **Tooling**: see CLAUDE.md ("Checking and testing", "Releasing", "Things that have bitten before").
 
 ## Reliability round (r64)
 - **Root cause of "server unreliable"**: the flood ladder. A real player on a new device sent every leaderboard score and achievement claim at once. That got refused frames, then strikes, then "Too much, too fast", then a 10-minute disconnect, and on the third time an automatic permanent ban.
