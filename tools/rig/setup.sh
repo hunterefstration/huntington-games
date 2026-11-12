@@ -20,7 +20,7 @@ if ! pg_lsclusters -h 2>/dev/null | awk '{print $3}' | grep -qx 55432; then
   else say "creating a Postgres cluster on 55432"; pg_createcluster "$V" main --port 55432 >/dev/null; fi
 fi
 V=$(pg_lsclusters -h | awk '$3==55432{print $1}' | head -1); C=$(pg_lsclusters -h | awk '$3==55432{print $2}' | head -1)
-pg_ctlcluster "$V" "$C" start 2>/dev/null; sleep 2
+pg_ctlcluster "$V" "$C" start >/dev/null 2>&1; sleep 2
 PSQL() { su postgres -c "psql -p 55432 -v ON_ERROR_STOP=1 -q $*"; }
 PSQL "-c \"ALTER USER postgres PASSWORD '$PGPASSWORD'\"" >/dev/null 2>&1 || { say "Postgres is not answering on 55432"; exit 1; }
 DB="${RIG_DB:-grapevine_test}"

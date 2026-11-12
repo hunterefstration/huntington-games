@@ -5,7 +5,7 @@
 . "$(dirname "$0")/env.sh"
 V=$(pg_lsclusters -h 2>/dev/null | awk '$3==55432{print $1}' | head -1); C=$(pg_lsclusters -h 2>/dev/null | awk '$3==55432{print $2}' | head -1)
 [ -n "$V" ] || { echo "[rig] no Postgres on 55432: run tools/rig/setup.sh first"; exit 1; }
-pg_ctlcluster "$V" "$C" start 2>/dev/null; sleep 1
+pg_ctlcluster "$V" "$C" start >/dev/null 2>&1; sleep 1
 mkdir -p "$RIG_HOME/node_modules"; ln -sfn /opt/node22/lib/node_modules/playwright "$RIG_HOME/node_modules/playwright" 2>/dev/null
 cd "$GV" || exit 1
 rig_up http://127.0.0.1:9000/gv/ || { nohup node test/broker.mjs > /tmp/rig-peerbroker.log 2>&1 & }
