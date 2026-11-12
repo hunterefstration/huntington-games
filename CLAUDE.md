@@ -38,8 +38,8 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
 - The rig (Postgres, brokers, a Grapevine server, this repo on :8090) is scripted in `tools/rig/`:
   `setup.sh` once per container (the session-start hook runs it), `up.sh` after a restart, `reset.sh` before each launcher
   suite, `test.sh [suite...]` runs suites with one summary line each, `gv-suite.sh test/e2e-eco.mjs` runs one of Grapevine's.
-  Grapevine's full battery is `grapevine/test/battery.sh` (it runs suites that need their own server correctly; stop the
-  rig's server first, and run `tools/rig/up.sh` after).
+  Grapevine's full battery (35 min): `bash tools/rig/gv-battery.sh` (sets the database password the battery needs,
+  stops the rig's server first, brings the rig back after). Never run launcher suites while it runs.
 - Launcher suites are `tools/tests/gv*.mjs` (copy the first 61 lines of `gv-saves.mjs` for the rig helpers).
   New launcher feature = a new or extended suite; a leaderboard change must keep `gv-lb.mjs` passing (it plants each
   game's save and checks the number on each board).
