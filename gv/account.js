@@ -593,7 +593,15 @@ const GVLink = (() => {
   // Chromebook starts clean and nobody's progress leaks into somebody else's account. Returns { saved: bool }.
   async function signOut(opts) {
     var saved = false;
-    if (st.ready) { try { await syncRun({ noApply: true }); saved = true; } catch (e) {} }
+    // Everything on this device must be in the account before it is cleared. A sync already under way started before
+    // the latest changes, so it is let to end and one of our own is run; and a connection that is only switching over
+    // (the launcher moves to the direct link a moment after it connects) is waited for, up to 10 s in all.
+    var until = Date.now() + 10000;
+    while (!saved && Date.now() < until && st.status !== 'signed-out') {
+      if (sy.running) { try { await sy.running; } catch (e0) {} }
+      if (!st.ready) { if (st.status !== 'connecting' && st.status !== 'online') break; await wait(250); continue; }
+      try { await syncRun({ noApply: true }); saved = true; } catch (e) { await wait(400); }
+    }
     if (!saved && !(opts && opts.force)) return { saved: false };
     drop(); st.key = ''; st.userId = ''; st.name = ''; st.pub = ''; st.kp = null; st.friends = []; st.incoming = []; st.outgoing = []; st.haveFriends = false;
     wipeDevice();
