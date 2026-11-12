@@ -242,7 +242,7 @@
                statRow('Challenges beaten', `${challengesDone()} / ${CHALLENGES.length}${activeChallenge() ? ` <span class="text-red-300">(${activeChallenge().name} now)</span>` : ''}`)
            ].join('');
            const mult = [
-               statRow(`Heavenly Chips (${formatNumber(M.chipsTotal)} x 1%)`, `x${formatShort(MULTS.chips)}`),
+               statRow(`Heavenly Chips (${formatNumber(M.chipsTotal)} x ${CHIP_PCT}%)`, `x${formatShort(MULTS.chips)}`),
                statRow('Prestige Tree & challenge rewards', `x${formatShort(MULTS.treeProd)} E/s &middot; x${formatShort(MULTS.treeClick)} clicks`),
                statRow('Wins boost', `x${formatShort(MULTS.win)}`),
                statRow(`Achievements (${achievementCount()} / ${ACHIEVEMENTS.length})`, `x${MULTS.ach.toFixed(2)}`),
@@ -346,6 +346,11 @@
                text = decodeURIComponent(escape(atob(code)));
                const data = JSON.parse(text);
                if (!data || typeof data !== 'object' || (!data.state && !data.shopItems)) throw new Error('not a save');
+               // Classic and Rebalanced saves never mix (codes from before the beta are classic)
+               if ((data.variant === 'rb' ? 'rb' : 'classic') !== VARIANT) {
+                   setText(msg, data.variant === 'rb' ? 'That code is from Rebalanced (beta). Switch to Rebalanced first, then load it there.' : 'That code is from the Classic game. Switch back to Classic first, then load it there.');
+                   return;
+               }
            } catch (e) {
                setText(msg, 'That code doesn\'t look like a Brown E Clicker save.');
                return;

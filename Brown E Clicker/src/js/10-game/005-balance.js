@@ -61,7 +61,10 @@
            },
            // Rebalanced beta: only what differs from classic. Evidence and before/after numbers: tools/BALANCE-REPORT.md
            rb: {
-               payback: { p0: 15, k: 0.5, p0Click: 100, kClick: 0.6 },
+               // Building outputs follow a payback curve (bigger buildings pay back slower), so growth no longer runs away
+               payback: { p0: 15, k: 0.5, p0Click: 50, kClick: 0.6 },
+               // Click buildings: the curve rounds the small ones to the same +1, so they are listed: [cost, click power]
+               buildings: { mouse: [100, 1], mech: [800, 2], gaming: [4000, 4], glove: [15000, 7], implant: [60000, 12], robohand: [5000000, 60], telekinesis: [25000000000, 1500] },
                clickUpgMult: 1.5,
                tierAt: { bps: [1, 10, 25, 50, 100], click: [1, 5, 15, 25, 40] },
                tierCostX: { bps: [10, 50, 500, 50000, 5000000], click: [20, 200, 5000, 200000, 20000000] },

@@ -63,6 +63,21 @@ try {
     if (fs.existsSync(f) && read(f) !== read(path.join(sh, a))) problems.push(`${g}: ${b} differs from Minigames/_shared/${a} (edit the shared file, then: bash Minigames/build.sh)`);
   }
 } catch (e) {}
+// --- 3b. Brown E Clicker's Tailwind CSS is built ahead of time: is it what the sources ask for? ---
+try {
+  const tw = path.join(process.env.HG_TOOLS || '/tmp/hg-tools', 'node_modules/tailwindcss/package.json'), bd = path.join(ROOT, 'Brown E Clicker');
+  if (fs.existsSync(tw) && fs.existsSync(path.join(bd, 'tools/tailwind.sh')) && (!only.length || only.includes('Brown E Clicker'))) {
+    const tmp = path.join(require('os').tmpdir(), 'hg-tw-' + process.pid + '.css');
+    const r = cp.spawnSync('bash', [path.join(bd, 'tools/tailwind.sh')], { encoding: 'utf8', env: Object.assign({}, process.env, { OUT: tmp }) });
+    if (r.status === 0 && fs.existsSync(tmp)) {
+      if (read(tmp) !== read(path.join(bd, 'src/css/05-tailwind.css'))) {
+        if (FIX) { fs.copyFileSync(tmp, path.join(bd, 'src/css/05-tailwind.css')); cp.spawnSync(process.execPath, [path.join(__dirname, 'build-game.js'), 'Brown E Clicker', '--check']); notes.push('Brown E Clicker: Tailwind CSS rebuilt'); }
+        else problems.push('Brown E Clicker: its Tailwind classes changed but src/css/05-tailwind.css was not rebuilt (bash "Brown E Clicker/tools/tailwind.sh", then build the game; or node tools/check.js --fix)');
+      }
+      fs.unlinkSync(tmp);
+    }
+  }
+} catch (e) {}
 // --- 4. Grapevine's copies ---
 try {
   const gv = path.join(ROOT, '..', 'grapevine');

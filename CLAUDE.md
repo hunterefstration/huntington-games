@@ -61,6 +61,8 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
 - The launcher wraps `playNow`/`closePlayer`/`render` in later pieces: call them by name, never keep a reference.
 - Leaderboard feeds (launcher `050-goons-feed.js`) read each game's save: when a game's save format changes, update the
   feed and `gv-lb.mjs` in the same commit.
+- Brown E Clicker's Tailwind CSS is built ahead of time (`Brown E Clicker/tools/tailwind.sh`); a new Tailwind class
+  there needs that script run (check.js notices). No game may load `cdn.tailwindcss.com` any more.
 - Rate limits: launcher traffic classes are `soft` (refused, never punished). Pace bursts on the client (`paced`, `rpc`).
 
 Current state and next steps: `.claude/HANDOFF.md`.

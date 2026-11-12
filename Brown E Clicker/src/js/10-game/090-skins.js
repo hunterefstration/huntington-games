@@ -228,13 +228,14 @@
        goldenEl.addEventListener('mousedown', (e) => {
            e.preventDefault();
            e.stopPropagation();
-           clickGolden(e);
+           if (acceptClick(e, 'golden')) clickGolden(e);
        });
        goldenEl.addEventListener('touchstart', (e) => {
            e.preventDefault();
            e.stopPropagation();
-           clickGolden(e.touches[0]);
+           if (acceptClick(e, 'golden')) clickGolden(e.touches[0] || e.changedTouches[0]);
        });
+       goldenEl.addEventListener('click', (e) => { if (!e.isTrusted) acUntrusted(); });
 
 
        // --- BUFFS (Golden E effects with timers) ---

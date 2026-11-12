@@ -25,6 +25,7 @@ for (const who of ['casual', 'active', 'optimizer', 'autoclick15']) {
     const c = (v) => R[v].career[who];
     row(`**${who}: career (${who === 'autoclick15' ? 10 : 30} days)**`, ...vs.map(() => ''));
     for (const n of [1, 2, 5, 10]) row(`ascension #${n}: play min (run min, chips)`, ...vs.map(v => { const a = c(v).ascents.find(x => x.n === n); return a ? `${a.playMin} (${a.runMin}, +${e(a.gain)})` : '-'; }));
+    row('min into the run until ascension unlocks, runs #1 / #2 / #5 / #10', ...vs.map(v => [1, 2, 5, 10].map(n => { const a = c(v).ascents.find(x => x.n === n); return a && a.unlockMin != null ? a.unlockMin : '-'; }).join(' / ')));
     row('wins (The Final E) / ascensions', ...vs.map(v => `${c(v).wins} / ${c(v).ascents.length}`));
     row('income share click / buildings / golden / offline', ...vs.map(v => ['click', 'prod', 'golden', 'offline'].map(k => Math.round(((c(v).share[k] || 0) + (k === 'click' ? c(v).share.auto || 0 : 0)) * 100) + '%').join(' / ')));
     row('chips after day 1 / 7 / 30', ...vs.map(v => [1, 7, 30].map(d => { const x = c(v).dayLog[d - 1] || c(v).dayLog[c(v).dayLog.length - 1]; return x ? e(x.chips) : '-'; }).join(' / ')));

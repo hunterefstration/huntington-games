@@ -40,7 +40,7 @@
 
 
        // --- LOCAL STORAGE SAVING ---
-       const SAVE_KEY = 'brownEClickerSave';
+       const SAVE_KEY = 'brownEClickerSave' + KEY_SUFFIX; // brownEClickerSave (classic) or brownEClickerSave_rb (Rebalanced beta)
        function saveGame(quiet) {
            try {
                localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData()));
@@ -54,7 +54,9 @@
            return {
                v: 3,
                t: Date.now(),
+               variant: VARIANT,
                state: {
+                   allTime: state.life.earned, // all-time E's earned (same as life.earned), for leaderboards
                    brownEs: state.brownEs,
                    clickMultiLevel: state.clickMultiLevel,
                    bpsMultiLevel: state.bpsMultiLevel,
@@ -78,6 +80,8 @@
            };
        }
 
+       // Upper limits for counts read from a save (well above anything reachable in play)
+       const LOAD_MAX = { owned: 6000, level: 2000, wins: 100000, buffTime: 3600, buffMult: 100000 };
        // Copy only valid, finite numbers out of a saved object
        function cleanNum(v, fallback) {
            return (typeof v === 'number' && isFinite(v) && v >= 0) ? v : (fallback || 0);
@@ -101,9 +105,10 @@
                    // Merge state, ensuring new variables are captured if undefined in old save
                    if (data.state) {
                        state.brownEs = cleanNum(data.state.brownEs);
-                       state.clickMultiLevel = Math.floor(cleanNum(data.state.clickMultiLevel));
-                       state.bpsMultiLevel = Math.floor(cleanNum(data.state.bpsMultiLevel));
-                       state.wins = Math.floor(cleanNum(data.state.wins));
+                       // Clamp counts so an edited save can't freeze the game (prices loop once per level / copy)
+                       state.clickMultiLevel = Math.min(LOAD_MAX.level, Math.floor(cleanNum(data.state.clickMultiLevel)));
+                       state.bpsMultiLevel = Math.min(LOAD_MAX.level, Math.floor(cleanNum(data.state.bpsMultiLevel)));
+                       state.wins = Math.min(LOAD_MAX.wins, Math.floor(cleanNum(data.state.wins)));
                        state.pendingWin = !!data.state.pendingWin;
                        // Ignore saved clickPower and bps, we recalculate them
                    }
@@ -113,7 +118,7 @@
                            if (!savedItem) return;
                            const id = savedItem.id || (isOldSave ? OLD_SHOP_ORDER[index] : null);
                            const item = BUILDING[id];
-                           if (item && item.type !== 'win') item.owned = Math.floor(cleanNum(savedItem.owned));
+                           if (item && item.type !== 'win') item.owned = Math.min(LOAD_MAX.owned, Math.floor(cleanNum(savedItem.owned)));
                        });
                    }
                    if (typeof loadGarden === 'function') loadGarden(data.garden);
@@ -139,11 +144,14 @@
                    if (Array.isArray(data.buffs)) {
                        data.buffs.forEach(b => {
                            if (b && BUFF_TYPES.includes(b.type) && cleanNum(b.time) > 0 && cleanNum(b.mult) > 0) {
-                               state.buffs.push({ type: b.type, icon: String(b.icon || '✨'), name: String(b.name || 'Buff'), mult: b.mult, time: b.time, max: cleanNum(b.max, b.time) || b.time, building: b.building || null });
+                               const time = Math.min(LOAD_MAX.buffTime, b.time);
+                               state.buffs.push({ type: b.type, icon: String(b.icon || '✨').slice(0, 8), name: String(b.name || 'Buff').slice(0, 40), mult: Math.min(LOAD_MAX.buffMult, b.mult), time, max: Math.min(LOAD_MAX.buffTime, cleanNum(b.max, time) || time), building: typeof b.building === 'string' ? b.building : null });
                            }
                        });
                    }
-                   if (data.buyAmount) buyAmount = Number(data.buyAmount) || 1;
+                   if (data.buyAmount) buyAmount = [1, 10, 100].includes(Number(data.buyAmount)) ? Number(data.buyAmount) : 1;
+                   // life.earned is the all-time total: never below what this run alone earned
+                   if (state.life.earned < state.run.earned) state.life.earned = state.run.earned;
                    if (typeof data.t === 'number' && isFinite(data.t)) awaySeconds = (Date.now() - data.t) / 1000;
                }
            } catch (e) {
@@ -175,7 +183,7 @@
            const m = state.meta;
            const d = data.meta;
            if (d && typeof d === 'object') {
-               m.chips = Math.floor(cleanNum(d.chips));
+               m.chips = Math.floor(Math.min(Number.MAX_VALUE, cleanNum(d.chips)));
                m.chipsTotal = Math.max(m.chips, Math.floor(cleanNum(d.chipsTotal)));
                m.ascensions = Math.floor(cleanNum(d.ascensions));
                m.bestRunChips = Math.floor(cleanNum(d.bestRunChips));
@@ -278,6 +286,7 @@
        function everySecond() {
            if (state.meta.heaven) { tickerSecond(); return; }
            if (state.bps > state.life.bestBps) state.life.bestBps = state.bps;
+           if (!document.hidden && !gameScreen.classList.contains('hidden')) acSecond();
            if (state.bpsBase > state.run.bestBase) state.run.bestBase = state.bpsBase;
            if (PRES.autoClick > 0 && !challengeIs('noclick') && !settings.reduced && !gameScreen.classList.contains('hidden')) createFloatingText(null, `👼 +${formatShort(state.clickPower * PRES.autoClick)}`);
            checkChallenge();
@@ -313,17 +322,31 @@
 
        // --- EVENT LISTENERS ---
        // Mouse/Touch events for the Big E
+       // Every paid click goes through the auto-clicker guard (095-autoclick-guard.js)
        bigEContainer.addEventListener('mousedown', (e) => {
            e.preventDefault();
-           clickBigE(e);
+           if (e.button > 0) return; // left button only
+           if (acceptClick(e, 'mouse')) clickBigE(e);
        });
 
 
        bigEContainer.addEventListener('touchstart', (e) => {
            e.preventDefault();
-           const touch = e.touches[0];
-           clickBigE(touch);
+           if (acceptClick(e, 'touch')) clickBigE(e.touches[0] || e.changedTouches[0]);
        });
+       // element.click() from a script never pays (real clicks are handled on mousedown)
+       bigEContainer.addEventListener('click', (e) => { if (!e.isTrusted) acUntrusted(); });
+       // Keyboard: Enter / Space on the focused E, one click per real key press (holding the key does nothing more)
+       bigEContainer.addEventListener('keydown', (e) => {
+           if (e.key !== 'Enter' && e.key !== ' ') return;
+           e.preventDefault();
+           if (!e.isTrusted) { acUntrusted(); return; }
+           if (e.repeat || ac.keysDown[e.code || e.key]) return;
+           ac.keysDown[e.code || e.key] = true;
+           if (acceptClick(e, 'key')) clickBigE(null);
+       });
+       bigEContainer.addEventListener('keyup', (e) => { delete ac.keysDown[e.code || e.key]; });
+       bigEContainer.addEventListener('blur', () => { for (const k in ac.keysDown) delete ac.keysDown[k]; });
 
 
        // Initialize the game
@@ -347,6 +370,8 @@
        // --- DEBUG / TEST HOOK ---
        window.__clicker = {
            get state() { return state; },
+           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, AC_RULES,
+           click(n) { n = n || 1; for (let i = 0; i < n; i++) clickBigE(null); }, // bypasses the auto-clicker guard (tests only)
            shopItems, UPGRADES, ACHIEVEMENTS, BUILDING, MULTS,
            formatNumber, formatShort,
            give(n) { earn(n, 'debug'); updateDisplay(); },

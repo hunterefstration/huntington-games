@@ -11,6 +11,8 @@ mkdir -p "$T/cdn" "$T/tests"
 cd "$T"
 [ -f package.json ] || npm init -y >/dev/null
 [ -d node_modules/javascript-obfuscator ] || npm install --no-audit --no-fund javascript-obfuscator@4 tailwindcss-cdn@3 >/dev/null
+# the real Tailwind compiler: Brown E Clicker's CSS is built ahead of time (its tools/tailwind.sh; tools/check.js compares)
+[ -d node_modules/tailwindcss ] || npm install --no-audit --no-fund tailwindcss@3.4.17 >/dev/null 2>&1 || true
 if [ ! -f cdn/package/build/three.module.js ]; then
   cd cdn && npm pack three@0.160.0 >/dev/null 2>&1 && tar xzf three-0.160.0.tgz && rm three-0.160.0.tgz
 fi

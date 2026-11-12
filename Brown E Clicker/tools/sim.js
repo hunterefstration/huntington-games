@@ -26,6 +26,8 @@ function loadPure(variant) {
         repriceBuildings, recalculateStats, bulkCost, buildingGrowth, upgCost, getMultiplierCost, chipsForRun, luckyAmount,
         goldenSettings, offlineSettings, achievementCount, totalBuildings, freshRun, freshLife, freshMeta, treeAvailable, challengeIs,
         CHIP_BASE, B: typeof BAL !== 'undefined' ? BAL : null };`;
+    // tuning: BEC_RB_PATCH='{"chips":{...}}' replaces those keys of BALANCE.rb for this run (the game files are not changed)
+    if (process.env.BEC_RB_PATCH) src = src.replace('const BAL = (function', 'Object.assign(BALANCE.rb, ' + process.env.BEC_RB_PATCH + '); const BAL = (function');
     const ctx = { console, __BEC_VARIANT__: variant, performance: { now: () => 0 } };
     vm.createContext(ctx);
     vm.runInContext(src, ctx, { filename: 'brown-e-pure.js' });
@@ -36,10 +38,10 @@ function loadPure(variant) {
 // sessions: [startHourOfDay, minutes]; catch = share of golden E's clicked; policy: greedy (affordable only) or payback (waits for the best)
 const PLAYERS = {
     casual: { cps: 2, sessions: [[18, 10]], catch: 0.4, policy: 'greedy', ascend: [1, 1], checkEvery: 30 },
-    active: { cps: 5, sessions: [[8, 35], [17, 35]], catch: 0.75, policy: 'payback', ascend: [2, 0.75], checkEvery: 5 },
-    optimizer: { cps: 8, sessions: [[8, 50], [19, 50]], catch: 0.97, policy: 'payback', ascend: [3, 0.5], checkEvery: 2 },
+    active: { cps: 5, sessions: [[17, 35]], catch: 0.75, policy: 'payback', ascend: [2, 0.75], checkEvery: 5 },
+    optimizer: { cps: 8, sessions: [[8, 30], [19, 30]], catch: 0.97, policy: 'payback', ascend: [3, 0.5], checkEvery: 2 },
     // same as active but an auto-clicker at the guard's limit (15/s) the whole session, to see if it dominates
-    autoclick15: { cps: 15, sessions: [[8, 35], [17, 35]], catch: 0.75, policy: 'payback', ascend: [2, 0.75], checkEvery: 5 }
+    autoclick15: { cps: 15, sessions: [[17, 35]], catch: 0.75, policy: 'payback', ascend: [2, 0.75], checkEvery: 5 }
 };
 const TREE_SKIP = { gard1: 1, gard2: 1, gard3: 1, gard4: 1, mkt1: 1, mkt2: 1, mkt3: 1, festive: 1 }; // minigame nodes do nothing here
 
@@ -246,7 +248,7 @@ function makeSim(variant, P, opts) {
             if (sim.winAt == null) sim.winAt = st.run.time;
             if (opts.noAscend) return;
             st.brownEs -= w.cost; st.wins++; sim.wins++;
-            sim.log.push({ ev: 'win', play: sim.play, run: st.run.time });
+            sim.log.push({ ev: 'win', play: sim.play, cal: sim.cal, run: st.run.time });
             ascend('win');
         }
     }

@@ -114,6 +114,7 @@
        const CHIP_BASE = BAL.chips.base;
        const CHIP_BONUS = BAL.chips.bonus;
        const CHIP_POW = BAL.chips.power;
+       const CHIP_PCT = Math.round(CHIP_BONUS * 100); // % production per chip, for texts
        function chipRoot(x) { return CHIP_POW === 1 / 3 ? Math.cbrt(x) : Math.pow(x, CHIP_POW); }
        function chipsForRun(earned) {
            if (!(earned >= CHIP_BASE)) return 0;

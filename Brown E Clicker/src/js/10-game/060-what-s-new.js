@@ -15,6 +15,9 @@
            ['🌙', 'Offline earnings', 'Your buildings keep working while you\'re away.'],
            ['🛒', 'Better shop', 'Buy x1/x10/x100, detailed tooltips and much bigger numbers.']
        ];
+       NEWS_ITEMS.unshift(IS_RB
+           ? ['⚖️', 'Rebalanced (beta)', 'New numbers tested with a simulator: bigger buildings pay back slower, so the game no longer explodes in the first hour. Clicking helps (most at the start) but is not everything. Ascension unlocks at 10 B (about an hour), each chip gives +2% (4th root of the run), the tree is cheaper, challenge goals fit the new pace and every Final E costs 1000x the last. Its own save: your Classic save is untouched.']
+           : ['⚖️', 'Try Rebalanced (beta)', 'A test version of the game with new, smoother numbers and its own save. Switch on the main menu or in Settings; your Classic save stays safe and you can switch back any time.']);
        const newsModal = document.getElementById('news-modal');
        document.getElementById('news-btn').addEventListener('click', () => {
            document.getElementById('news-body').innerHTML = NEWS_ITEMS.map(([icon, title, text]) =>
@@ -187,7 +190,7 @@
            const m = state.meta;
            const heaven = m.heaven;
            setText(document.getElementById('tree-chips'), formatNumber(m.chips));
-           setText(document.getElementById('tree-total'), `${formatNumber(m.chipsTotal)} earned in total = +${formatNumber(m.chipsTotal)}% production · ${treeOwned()}/${TREE.length} upgrades`);
+           setText(document.getElementById('tree-total'), `${formatNumber(m.chipsTotal)} earned in total = +${formatNumber(m.chipsTotal * CHIP_PCT)}% production · ${treeOwned()}/${TREE.length} upgrades`);
            setText(document.getElementById('tree-title'), heaven ? '👼 You ascended!' : '👼 Prestige Tree');
            const ascBtn = document.getElementById('tree-ascend');
            ascBtn.classList.toggle('hidden', heaven);
@@ -238,12 +241,12 @@
                const gain = pendingChips();
                html += `<div class="text-purple-200 font-black text-lg mb-1">Ascension</div>`;
                if (gain >= 1) {
-                   html += `<div class="text-stone-300">Ascending now gives <b class="text-purple-300">+${formatNumber(gain)} Heavenly Chips</b> (+${formatNumber(gain)}% production forever).</div><div class="text-xs text-stone-500 mt-1">Next chip at ${formatShort(nextChipAt())} E's earned this run.</div>`;
+                   html += `<div class="text-stone-300">Ascending now gives <b class="text-purple-300">+${formatNumber(gain)} Heavenly Chips</b> (+${formatNumber(gain * CHIP_PCT)}% production forever).</div><div class="text-xs text-stone-500 mt-1">Next chip at ${formatShort(nextChipAt())} E's earned this run.</div>`;
                } else {
                    const pct = Math.min(100, state.run.earned / CHIP_BASE * 100);
                    html += `<div class="text-stone-300">Earn <b class="text-white">${formatNumber(CHIP_BASE)}</b> Brown E's in one run to unlock ascension.</div><div class="h-2 bg-stone-800 rounded mt-2 overflow-hidden"><div class="h-2 bg-purple-500" style="width:${pct.toFixed(1)}%"></div></div><div class="text-xs text-stone-500 mt-1">${pct.toFixed(1)}% there this run</div>`;
                }
-               html += `<div class="text-xs text-stone-400 mt-2">A run is worth more chips the further you get: the cube root of what you earned, in Qa. Buying The Final E ascends you too.</div>`;
+               html += `<div class="text-xs text-stone-400 mt-2">A run is worth more chips the further you get: ${CHIP_POW === 1 / 3 ? 'the cube root of what you earned, in Qa.' : `the ${CHIP_POW === 0.25 ? '4th' : CHIP_POW === 0.5 ? 'square' : ''} root of what you earned, over ${formatShort(CHIP_BASE)}.`} Buying The Final E ascends you too.</div>`;
                if (c) html += `<div class="mt-3 p-2 rounded-xl border border-red-800 bg-red-950/40 text-xs"><div class="font-black text-red-200 text-sm">${c.icon} Challenge: ${c.name}</div><div class="text-stone-300 mt-1">${c.rule}</div><div class="text-green-300 mt-1">Reward: ${c.reward}</div></div>`;
                if (PRES.trial) {
                    html += `<div class="text-xs font-black uppercase tracking-widest text-red-300 mt-3 mb-1">⚔️ Challenge rewards (${challengesDone()}/${CHALLENGES.length})</div>`;
@@ -335,6 +338,7 @@
        function openAscendConfirm() {
            if (!canAscend()) return;
            setText(document.getElementById('asc-gain'), formatNumber(pendingChips()));
+           setText(document.getElementById('asc-chip-pct'), String(CHIP_PCT));
            ascendModal.classList.remove('hidden');
        }
        document.getElementById('tree-ascend').addEventListener('click', openAscendConfirm);
