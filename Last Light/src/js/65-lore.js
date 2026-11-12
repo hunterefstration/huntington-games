@@ -140,6 +140,9 @@ const GLOOM_TALK = {
     pre: [['gloom', 'Who... is there? Another light. Come closer. Come INTO the lantern.'], ['gloom', 'I need every one. Every one. She is fading. She is...'],
         ['gloom', '...Wren?'], ['gloom', 'NO. Wren is gone. Wren is IN HERE. And you will be too!']],
     mid: ['Give it BACK!', 'I only wanted to keep her...', 'Why do you burn so bright...', 'Not again... not you too...', 'The light is MINE!', 'Wren... is that you?', 'Please... stay...', 'Let me hold on...'],
+    // 1.4: a line for each of its new moves (said while the warning shows)
+    moves: { ring: 'Round and round... find the way out, little light.', beam: 'There is nowhere the dark cannot see!', charge: 'Out of my WAY!',
+        rain: 'Let it all come down.', double: 'AGAIN!', lumen: 'Here... a little light. Take it.', reflect: 'My light! It BURNS!' },
     end: [['orin', '...The dark is lifting. I can see again.'], ['orin', 'Little light. I know you now. You were the one I could not take, because she gave you away.'],
         ['orin', 'I am so sorry, my girl. I held on so tight that I put out everything I loved.'], ['orin', 'Take them home, Wren. All of them. Light them all.']]
 };

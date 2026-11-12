@@ -39,12 +39,13 @@ function guardReset(G) {
 }
 function guardHit(G, B) {
     const p = G.p;
-    B.hp--; B.hitT = 0.8; B.open = false; G.shake(10); G.hitstop = 0.09; Sound.play('stomp'); Sound.play('hurtBoss');
+    B.hp--; B.hitT = 1; B.open = false; G.shake(10); G.hitstop = 0.09; Sound.play('stomp'); Sound.play('hurtBoss');
     burst(G, B.x, B.y - 10, '#fff2c4', 26, 280, true); burst(G, B.x, B.y, B.D.col, 18, 240); ring(G, B.x, B.y + B.D.r * 0.6, B.D.col);
     p.vy = -PH.stomp * 1.15; p.vx = sign(p.x - B.x || 1) * 240; p.air = SAVE.d.abilities.double ? 1 : 0; p.canDash = true; p.cut = false; p.sx = 1.3; p.sy = 0.75;
     UI.bossbar(B);
     if (B.hp <= 0) { B.state = 'dying'; B.t = 1.8; B.fx = []; B.say = null; Sound.play('boss'); return; }
     B.phase = B.max - B.hp; B.n = 0;
+    B.rx = clamp(B.x - sign(p.x - B.x || 1) * 200, B.x0 + B.D.r + 20, B.x1 - B.D.r - 20);     // 1.4: flyers back off sideways as they rise, not up into you
     const mid = GUARD_TALK[B.kind].mid; B.say = { text: mid[(B.phase - 1) % mid.length], t: 2.6 };
     const alive = G.L.ents.filter(e => e.spawned && !e.gone).length;
     if (B.kind === 'shard' && B.phase >= 3 && alive < 3) for (let i = 0; i < 2; i++) G.L.ents.push({ kind: 'bat', x: B.x, y: B.top + 60, sx: B.x0 + 120 + i * (B.x1 - B.x0 - 240), sy: B.top + 70 + i * 30, seed: rand(9), spawned: true });
@@ -155,7 +156,7 @@ const GUARD_AI = {
                 break;
             }
             case 'dazed': if (B.t <= 0) { B.open = false; B.state = 'rise'; B.t = 0.9; } break;
-            case 'rise': B.y = lerp(B.y, hy, dt * 3); if (B.t <= 0) { B.state = 'hover'; B.t = 2 / sp; } break;
+            case 'rise': B.y = lerp(B.y, hy, dt * 3); if (B.rx !== undefined) B.x = lerp(B.x, B.rx, dt * 3); if (B.t <= 0) { B.state = 'hover'; B.t = 2 / sp; B.rx = undefined; } break;
         }
     },
     bell(G, B, dt) {
@@ -185,7 +186,8 @@ const GUARD_AI = {
                 }
                 break;
             case 'stuck': if (B.t <= 0) { B.open = false; B.state = 'lift'; B.t = 0.8; } break;
-            case 'lift': B.y = lerp(B.y, hy, dt * 3); if (B.t <= 0) { B.state = 'move'; B.t = 0.9; B.tx = spots[Math.floor(rand(3))]; } break;
+            case 'lift': B.y = lerp(B.y, hy, dt * 3); if (B.rx !== undefined) B.x = lerp(B.x, B.rx, dt * 3);
+                if (B.t <= 0) { B.state = 'move'; B.t = 0.9; B.rx = undefined; B.tx = spots.reduce((a, b) => Math.abs(b - p.x) > Math.abs(a - p.x) ? b : a); } break;      // 1.4: then off to the spot farthest from you
         }
         B.glow = Math.max(0, B.glow - dt * 2);
     },
@@ -246,7 +248,10 @@ function guardUpdate(G, dt) {
     if (Math.abs(p.x - B.x) < B.D.r + 10 && Math.abs(p.y - B.y) < B.D.r + 14) {
         const above = p.vy > 60 && p.y < B.y - B.D.r * 0.35;
         if ((B.open || B.kind === 'moss') && B.hitT <= 0 && (above || (B.open && p.dashT > 0))) guardHit(G, B);
-        else if (p.dashT <= 0 && p.hurtT <= 0 && B.hitT <= 0.4) hurt(G, 'enemy', B);
+        // 1.4: just after a hit (and while it is open) touching it never hurts: you are pushed off instead.
+        // Before, a guardian that rose or turned after a stomp could hurt you before you had any way to get clear.
+        else if (B.hitT > 0 || B.open || (p.vy > -60 && p.y < B.y - B.D.r * 0.35)) bodyPush(p, B.x, B.y, B.D.r + 10, B.hitT > 0);
+        else if (p.dashT <= 0 && p.hurtT <= 0) hurt(G, 'enemy', B);
     }
 }
 

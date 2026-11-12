@@ -87,7 +87,7 @@ try {
   console.log('\n=== 5. resting on a card starts the download ===');
   P = await hub({ cdn: 300 });
   const n0 = P.reqs.filter(r => r.endsWith('Imposter/index.html')).length;
-  await P.hover('.game[data-dir="Imposter"]');
+  await P.evaluate(() => document.querySelector('.game[data-dir="Imposter"]').dispatchEvent(new PointerEvent('pointerenter')));      // (the gate covers the page here, so no real hover)
   check('hovering a card fetches the game', !!(await until(() => P.reqs.filter(r => r.endsWith('Imposter/index.html')).length > n0, 4000)));
   await play(P, 'Imposter'); await until(() => P.evaluate(() => !!(current && current.html)));
   check('...and opening it does not download it twice', P.reqs.filter(r => r.endsWith('Imposter/index.html')).length === n0 + 1, String(P.reqs.filter(r => r.endsWith('Imposter/index.html')).length - n0));
