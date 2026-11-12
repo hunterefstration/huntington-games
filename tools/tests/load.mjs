@@ -16,6 +16,9 @@ const browser = await chromium.launch({ args: ['--no-sandbox'] });
 // mode per mirror host: 'ok' | 'dead' (fails at once) | 'hang' (never answers) | a number (answers after that many ms)
 async function hub(mirrors) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  // In a dev tree the hub and the games carry licence keys from different releases (only tools/build-release.py makes
+  // them agree, and tools/tests/gate*.js test that), so the games' own licence check is switched off here.
+  await ctx.addInitScript(() => { window.HG_DEV = 1; });
   const page = await ctx.newPage(); page.reqs = []; page.errs = [];
   page.on('pageerror', e => page.errs.push(e.message));
   await page.route('**/*', async r => {
