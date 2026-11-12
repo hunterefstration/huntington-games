@@ -435,6 +435,7 @@ html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, htm
 .lbp .lbstep { width: 100%; border-radius: 10px 10px 0 0; background: linear-gradient(180deg, rgba(246,201,69,.35), rgba(246,201,69,.05)); border: 1px solid rgba(246,201,69,.35); border-bottom: 0; }
 .lbp.p1 .lbstep { height: 70px; } .lbp.p2 .lbstep { height: 48px; opacity: .8; } .lbp.p3 .lbstep { height: 32px; opacity: .65; }
 .lbme { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: var(--raise); border: 1px solid var(--line2); } .lbme .dimtxt { color: var(--dim); font-size: 12px; float: right; }
+.lbre { float: right; margin-left: 10px; border: 1px solid var(--line2); background: transparent; color: var(--dim); border-radius: 8px; padding: 2px 9px; font-size: 12px; cursor: pointer; } .lbre:hover { color: var(--ink, #fff); border-color: var(--line); }
 @media (max-width: 760px) { .lbwrap { grid-template-columns: 1fr; } .lbside { flex-direction: row; overflow-x: auto; position: static; } .lbside button { flex: none; } .lbp { width: 30%; } }
 
 /* one line for the top bar on laptops and Chromebooks: the title and tabs tighten up as the screen narrows */

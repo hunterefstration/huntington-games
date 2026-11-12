@@ -31,7 +31,12 @@ function profFmt(v, f) {
   if (f === 'time') { var m = Math.floor(v / 60), s = v - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(2); }
   if (f === 'dur') { var h = Math.floor(v / 3600), mm = Math.floor(v % 3600 / 60); return h ? h + 'h ' + mm + 'm' : mm + 'm'; }
   if (f === 'money') return '$' + Math.round(v).toLocaleString();
-  if (f === 'big') return v >= 1e12 ? (v / 1e12).toFixed(2) + 'T' : v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : Math.round(v).toLocaleString();
+  if (f === 'big') {      // a million and up: 12.34 M / B / T / Qa / Qi / Sx / Sp / Oc / No / Dc, then 1.23e45
+    if (v < 1e6) return Math.round(v).toLocaleString();
+    var names = ['M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'], i = Math.floor(Math.log10(v) / 3) - 2;
+    if (i >= names.length) return v.toExponential(2).replace('e+', 'e');
+    return (v / Math.pow(10, (i + 2) * 3)).toFixed(2) + ' ' + names[i];
+  }
   return Math.round(v).toLocaleString();
 }
 function profOwns(e, it) { return !!(e && (it.custom ||it.free || e.dev || e.owned.indexOf(it.id) >= 0 || e.earned.indexOf(it.id) >= 0)); }
@@ -107,9 +112,23 @@ function profBoards(c) {
   }).join('') + '</table>';
   return h;
 }
-function profLoadBoard(k) {
-  window.HGGrapevine.eco.lbGet(k).then(function (m) { PROF.lbData = m; profRender(); lbRender(); }, function () { PROF.lbAsked = ''; });
+function profLoadBoard(k, quiet) {
+  PROF.lbAt = Date.now();
+  window.HGGrapevine.eco.lbGet(k).then(function (m) {
+    if (m.board !== PROF.lbBoard) return;
+    var same = quiet && PROF.lbData && JSON.stringify(PROF.lbData.rows) === JSON.stringify(m.rows);
+    PROF.lbData = m; PROF.lbErr = ''; if (!same) { profRender(); lbRender(); }
+  }, function (e) { if (!quiet) { PROF.lbErr = k; lbRender(); profRender(); } });
 }
+// keep an open board fresh: when the server took new scores of ours, when the tab is opened, and every 45 s while it shows
+function lbRefresh(boards) {
+  if (!PROF.lbBoard || !window.HGGrapevine || !window.HGGrapevine.online()) return;
+  var box = document.getElementById('view-lb'), showing = (box && !box.hidden) || (document.getElementById('view-prof') && !document.getElementById('view-prof').hidden && PROF.tab === 'lb');
+  if (!showing) { if (!boards || boards.indexOf(PROF.lbBoard) >= 0) PROF.lbData = null, PROF.lbAsked = ''; return; }
+  if (boards && boards.indexOf(PROF.lbBoard) < 0) return;
+  profLoadBoard(PROF.lbBoard, true);
+}
+setInterval(function () { if (!document.hidden && Date.now() - (PROF.lbAt || 0) > 44000) lbRefresh(); }, 15000);
 // the Leaderboards tab, laid out: games down the side, the game's main boards as tabs (single levels tucked in a picker),
 // a podium for the top three, your own place, then everyone else
 function lbView(c) {
@@ -127,21 +146,30 @@ function lbView(c) {
     (levels.length ? '<select id="lb-level" class="' + (/^lumi:lv/.test(PROF.lbBoard) ? 'on' : '') + '"><option value="">Single level...</option>' + levels.map(function (k) { return '<option value="' + k + '"' + (PROF.lbBoard === k ? ' selected' : '') + '>' + profEsc(c.boards[k].n) + '</option>'; }).join('') + '</select>' : '') + '</div>';
   if (/^lumi:lv/.test(PROF.lbBoard)) h += '<div class="pnote">Single-level boards are just for fun: they give no tag or rank.</div>';
   var d = PROF.lbData && PROF.lbData.board === PROF.lbBoard ? PROF.lbData : null;
-  if (!d) { if (PROF.lbAsked !== PROF.lbBoard) { PROF.lbAsked = PROF.lbBoard; profLoadBoard(PROF.lbBoard); } return '<div class="lbwrap">' + side + h + '<div class="pempty">Loading...</div></div></div>'; }
+  if (!d) {
+    if (PROF.lbErr === PROF.lbBoard) return '<div class="lbwrap">' + side + h + '<div class="pempty">Could not load this board (no answer from the server). <button class="mbtn" data-lbretry="1">Try again</button></div></div></div>';
+    if (PROF.lbAsked !== PROF.lbBoard) { PROF.lbAsked = PROF.lbBoard; profLoadBoard(PROF.lbBoard); }
+    return '<div class="lbwrap">' + side + h + '<div class="pempty">Loading...</div></div></div>';
+  }
   var def = d.def || c.boards[PROF.lbBoard], L = window.HGGrapevine;
   if (!d.rows.length) return '<div class="lbwrap">' + side + h + '<div class="pempty">Nobody on this board yet. Be the first!</div></div></div>';
   L.eco.cos(d.rows.slice(0, 60).map(function (r) { return r.u; }));
   var cosOfU = function (u) { return L.eco.cos([])[u] || {}; };
-  var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { return profEsc(k) + ': ' + profEsc(r.d[k]); }).join(', ') : ''; };
+  var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { var v = r.d[k]; return profEsc(k) + ': ' + profEsc(typeof v === 'number' ? profFmt(v, v >= 1e6 ? 'big' : 'int') : v); }).join(', ') : ''; };
   var top = d.rows.slice(0, 3), order = [1, 0, 2];
   h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
     return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + profPfp(cs.p, i ? 46 : 60, cs.img) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
-  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span></div>';
+  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button></div>';
   var rest = d.rows.slice(3);
   if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
     return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
   return '<div class="lbwrap">' + side + h + '</div></div>';
 }
+document.addEventListener('click', function (e) {
+  var b = e.target && e.target.closest && e.target.closest('[data-lbretry]'); if (!b) return;
+  PROF.lbErr = ''; if (typeof feedNow === 'function') feedNow();
+  if (PROF.lbData && PROF.lbData.board === PROF.lbBoard) profLoadBoard(PROF.lbBoard, false); else { PROF.lbAsked = ''; lbRender(); profRender(); }
+});
 document.addEventListener('change', function (e) { if (e.target && e.target.id === 'lb-level' && e.target.value) { PROF.lbBoard = e.target.value; PROF.lbData = null; lbRender(); } });
 // the Leaderboards tab: every game's boards (the same boards the Profile used to show)
 function lbRender() {

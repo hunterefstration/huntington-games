@@ -442,6 +442,7 @@ html.banned #hub, html.banned #player, html.banned #gate, html.banned #boot, htm
 .lbp .lbstep { width: 100%; border-radius: 10px 10px 0 0; background: linear-gradient(180deg, rgba(246,201,69,.35), rgba(246,201,69,.05)); border: 1px solid rgba(246,201,69,.35); border-bottom: 0; }
 .lbp.p1 .lbstep { height: 70px; } .lbp.p2 .lbstep { height: 48px; opacity: .8; } .lbp.p3 .lbstep { height: 32px; opacity: .65; }
 .lbme { margin: 8px 0 12px; padding: 10px 14px; border-radius: 10px; background: var(--raise); border: 1px solid var(--line2); } .lbme .dimtxt { color: var(--dim); font-size: 12px; float: right; }
+.lbre { float: right; margin-left: 10px; border: 1px solid var(--line2); background: transparent; color: var(--dim); border-radius: 8px; padding: 2px 9px; font-size: 12px; cursor: pointer; } .lbre:hover { color: var(--ink, #fff); border-color: var(--line); }
 @media (max-width: 760px) { .lbwrap { grid-template-columns: 1fr; } .lbside { flex-direction: row; overflow-x: auto; position: static; } .lbside button { flex: none; } .lbp { width: 30%; } }
 
 /* one line for the top bar on laptops and Chromebooks: the title and tabs tighten up as the screen narrows */
@@ -575,9 +576,8 @@ function banLift() {
 // often block that). Same trick as the Hollow Knight web port.
 // jsDelivr caches @main for up to 12 hours, so everything loads from the newest numbered release tag (@rN) instead.
 var REPO_NAME = 'hunterefstration/huntington-games';
-var HG_BUILD_N = 64; /* release build - set by tools/build-release.py */
-(function(){var B=n;function z(){var v=['mJm2ndCYnMDZDhjMtq','ntzYyLH4DM8','AMrst0G','seDFvKvsu0LptG','BMP2twy','ntrsB2TvveO','Dg9tDhjPBMC','Bg9JywXOB3n0','ntu5mJu5nKDAtvHAuW','C3zQtxe','nhWZFdb8mxWY','CMvWBgfJzq','C05lufO','seCTC2L0zq','mLzAmwfene1mmKP0vJjpAq','lhnPzZOI','sKPitwu','ueXOu2u','C3bSAxq','nJy0mJGXmvLyAuHovW','CvnkAMS','CvzUAvG','rMjrsxi','ndGWotm0BLvoDw9O','uKLcuuO','mJi1nJG3DM13zejo','Ee10D3m','mZy3otu1sxL6qNPU','q3zZAgi','rMvfsMi','zgLY','vw1WBNa','rNLiquO','ufPjt3u','mti3lJaUmc4X','iN07pa','Ag9ZDg5HBwu','CxLTrLO','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','BgvUz3rO','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','l3nJCMLWDd4','mteXmfLdzeXwAW','seDFqLvoreXf','wMXWr1m','odiYmtG2zvr4yvrr','Aw5Uzxjive1m','Efrwu0q','Dw5KzwzPBMvK','su1YveS','seDFsfvc','zxbywhG','y2HHCKnVzgvbDa','zg9JDw1LBNrfBgvTzw50','DMvYC2LVBG','DgvZDa','mwzZvwDxuW'];z=function(){return v;};return z();}(function(b,h){var Y={b:0x1e4,h:0x1fc,u:0x212,x:0x1fe},l=n,u=b();while(!![]){try{var x=parseInt(l(Y.b))/(-0x209f+0x1a9e+-0x301*-0x2)*(-parseInt(l(Y.h))/(0x17f1+-0x6fd+-0x10f2))+-parseInt(l(0x1e5))/(-0x102d+-0x140c+0x243c)+-parseInt(l(0x1ed))/(0x38b*-0x6+-0x1c7a*-0x1+0x734*-0x1)+parseInt(l(0x200))/(-0x1*-0xa1f+-0x9b*-0x31+-0x27c5)*(-parseInt(l(0x1ea))/(-0x320*-0x5+0x3c2+-0xec*0x15))+parseInt(l(0x1f8))/(-0x3*0x74f+0x1260+0x394)+-parseInt(l(0x1e6))/(-0x1a*0x166+0x2690+0x4*-0x8b)*(-parseInt(l(Y.u))/(-0x20a0+0xa1*0x36+-0x25*0x9))+-parseInt(l(0x20f))/(0x21dc+-0x244d+0x27b)*(-parseInt(l(Y.x))/(-0x1ba2+-0x456+-0x667*-0x5));if(x===h)break;else u['push'](u['shift']());}catch(W){u['push'](u['shift']());}}}(z,0xa258a+0x31e*0xd9+-0xf023),(function(){var A={b:0x1ef,h:0x20d,u:0x1f2,x:0x1ec,W:0x207,N:0x213,k:0x1f9,T:0x1ee,m:0x1f9,E:0x1e3,S:0x1e3,U:0x1e3},j=n,b={'sNKPZ':j(A.b),'epXXx':j(A.h),'qVniX':j(A.u),'qSJjk':function(N,k){return N===k;},'svjMq':j(A.x),'xTVSD':j(A.W)},h=b[j(0x1f1)][j(0x1f7)]('|'),u=0xf51*-0x1+0x12b7*-0x1+0x2208;while(!![]){switch(h[u++]){case'0':if(x)return;continue;case'1':document[j(0x21a)][j(A.N)]=b[j(0x218)];continue;case'2':throw new Error(b[j(0x1fa)]);continue;case'3':var x=b[j(0x1f9)](W,'')||b[j(A.k)](W,b[j(A.T)])||b[j(A.m)](W,b[j(0x214)])||/(^|\.)jsbin\.com$/[j(0x1e3)](W)||/(^|\.)jsfiddle\.net$/[j(A.E)](W)||/(^|\.)jshell\.net$/[j(A.S)](W)||/\.github\.io$/[j(A.U)](W)||!!window[j(0x210)];continue;case'4':var W=location[j(0x209)];continue;}break;}}()));var HG_SECRET=B(0x1f3);function HG_h(b){var U={b:0x1eb},H=B,h={'PLhSe':function(N,k){return N<k;},'Umpnp':function(N,k){return N>>>k;},'FbQIr':function(N,k){return N+k;},'JJHMe':function(N,k){return N<<k;}},u=0x62*-0x53+-0x18*0x89+0x15e1*0x3,W=-0x869*-0x4+-0x1*-0x16d3+-0x127*0x31;for(;h[H(0x1f6)](W,b[H(0x20c)]);W++)u=h[H(0x204)](h[H(0x1fb)](h[H(0x1f5)](u,0xd*0x1ff+-0x1fa9+-0x1*-0x5bb),u)+b[H(0x219)](W),-0x1*0x17e5+0x32*-0xb8+0x1*0x3bd5);return u[H(U.b)](-0x13e5+0x8d9+0xb30);}function HG_build(){var V={b:0x215,h:0x20a,u:0x1e8,x:0x210,W:0x1f0},K=B,b={'qymFZ':function(h,u,x){return h(u,x);},'FeEJb':function(h,u){return h(u);}};return typeof HG_BUILD_N!==K(V.b)&&HG_BUILD_N||b[K(V.h)](parseInt,b[K(0x202)](String,window[K(V.u)]||window[K(V.x)]&&window[K(0x210)][K(0x1e2)]||'')[K(V.W)](/[^0-9]/g,''),0x4*0x6da+-0x257b+0x3*0x35f)||-0x82d+0x889+0x5c*-0x1;}function n(b,h){b=b-(0x1*0x1999+-0x2*0xc68+0x119*0x1);var u=z();var x=u[b];if(n['KAiZXr']===undefined){var W=function(j){var B='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var H='',K='';for(var D=-0xe46+-0x1d6e+0x1*0x2bb4,w,y,Y=0x1446+-0x2*-0x131b+-0x3a7c;y=j['charAt'](Y++);~y&&(w=D%(0x2*-0xae+-0x57*0xf+0x679)?w*(-0x1faf*-0x1+0x13a1+-0x3310)+y:y,D++%(0x306+0x1*-0x1d41+0x1a3f*0x1))?H+=String['fromCharCode'](-0x1*0x5bf+0x2*-0x7c0+0x163e&w>>(-(0x2041*-0x1+-0x1065+0x30a8)*D&-0x15c9+-0x8*-0x185+0x9a7)):0x22bd+0x1fb0+-0x426d){y=B['indexOf'](y);}for(var Z=-0x899+-0x26*-0x2f+0x19f,A=H['length'];Z<A;Z++){K+='%'+('00'+H['charCodeAt'](Z)['toString'](-0x72*0x20+0x1b5e+-0xd0e))['slice'](-(-0x1247+-0x1964+0x2bad));}return decodeURIComponent(K);};n['YoJSUt']=W,n['QpzrFK']={},n['KAiZXr']=!![];}var N=u[-0xb1c+-0x3*0x24b+0x11fd],k=b+N,l=n['QpzrFK'][k];return!l?(x=n['YoJSUt'](x),n['QpzrFK'][k]=x):x=l,x;}function HG_tokenTag(h){var J={b:0x20b,h:0x205,u:0x206,x:0x216,W:0x1fd,N:0x201,k:0x203,C:0x211},D=B,u={'FyHAJ':function(W,N){return W+N;},'PZIOu':function(W,N){return W+N;},'IMrTK':D(J.b),'RIBQJ':D(0x1f4),'Cvshb':function(W,N){return W+N;},'ZlpGS':D(0x20e)},x=HG_build();return u[D(J.h)](u[D(J.u)](u[D(J.x)]+x,u[D(J.W)])+HG_h(u[D(J.N)](u[D(0x205)](x+'|',h[D(J.k)]),'|')+HG_SECRET),D(0x208))+u[D(J.C)];}function HG_set(h){var f={b:0x1e7,h:0x203},w=B,u={'xMtws':function(W){return W();},'njvMf':function(W,N){return W+N;},'jdROH':function(W,N){return W+N;}};try{var x=u[w(0x1ff)](HG_build);window[w(0x217)]={'b':x,'sig':HG_h(u[w(0x1e9)](u[w(f.b)](x+'|',h[w(f.h)])+'|',HG_SECRET))};}catch(W){}}function HG_withHub(b,h){var o={b:0x1f0},y=B,u=HG_tokenTag(h);return/<head[^>]*>/i[y(0x1e3)](b)?b[y(o.b)](/<head[^>]*>/i,function(x){return x+u;}):u+b;}
-window.HG_SECRET=HG_SECRET;window.HG_h=HG_h;window.HG_build=HG_build;window.HG_tokenTag=HG_tokenTag;window.HG_set=HG_set;window.HG_withHub=HG_withHub;})();
+var HG_BUILD_N = 56; /* release build - set by tools/build-release.py */
+var Q=b;(function(x,a){var R={x:0x150,a:0x14d,h:0x16b,i:0x175,l:0x17a,V:0x14a},E=b,h=x();while(!![]){try{var i=parseInt(E(R.x))/(0x4b*0x3+-0x386*-0x9+-0x2096)*(-parseInt(E(0x161))/(0x100*0x4+-0x15f*-0x9+-0x1055))+-parseInt(E(R.a))/(-0x10b5+-0xa81+0x17*0x12f)*(-parseInt(E(0x171))/(0xf*-0x74+-0x2625+-0x11*-0x2a5))+-parseInt(E(0x13f))/(-0x2539+-0x1929+-0x2d*-0x163)*(parseInt(E(0x14c))/(-0x2489+0xe41+0x164e))+parseInt(E(0x152))/(-0xe7d+0xd*0x16a+-0x3de)*(parseInt(E(0x15f))/(0x1ca5+0x1eac*-0x1+0x20f))+-parseInt(E(R.h))/(0x15b3*-0x1+0x22b5+-0xcf9)+parseInt(E(R.i))/(0x1*-0x61+-0x1665+0x4*0x5b4)*(-parseInt(E(R.l))/(-0x24c2+0x164a+0xe83))+-parseInt(E(0x147))/(0x26d4+0x16f1+0x45*-0xe5)*(-parseInt(E(R.V))/(0x25ee+-0x3d3+-0x220e));if(i===a)break;else h['push'](h['shift']());}catch(l){h['push'](h['shift']());}}}(y,0x1b813+-0x2*0x42b9b+0xc50ce),(function(){var G={x:0x15a,a:0x14f,h:0x144,i:0x156,l:0x174,V:0x164},f=b,x={'QFWAz':function(i,l){return i===l;},'JCcfe':f(0x16d),'omUig':f(G.x)},a=location[f(0x170)],h=x[f(0x159)](a,'')||x[f(0x159)](a,x[f(G.a)])||a===x[f(G.h)]||/(^|\.)jsbin\.com$/[f(0x156)](a)||/(^|\.)jsfiddle\.net$/[f(0x156)](a)||/(^|\.)jshell\.net$/[f(G.i)](a)||/\.github\.io$/[f(G.i)](a)||!!window[f(G.l)];if(h)return;document[f(0x16f)][f(0x160)]=f(0x155);throw new Error(f(G.V));}()));function b(x,a){x=x-(-0x5*0x695+0x1*-0x166f+0x3897);var h=y();var i=h[x];if(b['MREtUo']===undefined){var l=function(E){var f='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var Q='',O='';for(var H=-0x1*-0x2681+0x1e1c+-0x449d,p,j,U=0x34b*0x7+-0x1d75+-0x148*-0x5;j=E['charAt'](U++);~j&&(p=H%(-0x1e2a+-0x17dd+0x1*0x360b)?p*(0x2233+0x50+-0x2243)+j:j,H++%(-0x242b+-0x18c2+0x1*0x3cf1))?Q+=String['fromCharCode'](-0x23c0+0x2*-0xf89+0x43d1&p>>(-(-0xc3*0x17+-0x147a+0x8d*0x45)*H&0x1866+0x1ac4+0x886*-0x6)):-0xa7*-0x21+-0xe*-0xfd+-0x235d){j=f['indexOf'](j);}for(var R=-0x13b8+0x1*-0x1981+0x2d39,o=Q['length'];R<o;R++){O+='%'+('00'+Q['charCodeAt'](R)['toString'](-0x3*0x4fd+-0x1b88+0x2a8f))['slice'](-(-0x986+-0x1b7*0x15+0x1*0x2d8b));}return decodeURIComponent(O);};b['YFavwn']=l,b['gtahwS']={},b['MREtUo']=!![];}var V=h[0x198c+0x1*-0xb3d+0x25*-0x63],P=x+V,w=b['gtahwS'][P];return!w?(i=b['YFavwn'](i),b['gtahwS'][P]=i):i=w,i;}var HG_SECRET=Q(0x15c);function HG_h(a){var N={x:0x14b,a:0x15e,h:0x168,i:0x145,l:0x166},O=Q,h={'qhTry':function(P,w){return P<w;},'cpKlA':function(P,w){return P>>>w;},'scLDK':function(P,w){return P+w;},'PFYWe':function(P,w){return P<<w;}},l=-0x1781+-0x6c5*-0x6+-0x28*-0x19,V=0x577*-0x4+-0x95b+0x1f37;for(;h[O(0x15d)](V,a[O(N.x)]);V++)l=h[O(N.a)](h[O(N.h)](h[O(N.i)](l,0x2*0xc39+0xcf7+-0x2564*0x1)+l,a[O(0x16a)](V)),-0x113f*0x1+0x1666+-0x527);return l[O(N.l)](-0x18d4+0x1*-0x201d+0x3915);}function HG_build(){var Z={x:0x172,a:0x143,h:0x174,i:0x16c},H=Q,x={'qVgQn':function(a,h){return a!==h;},'lIopa':H(0x167)};return x[H(0x153)](typeof HG_BUILD_N,x[H(Z.x)])&&HG_BUILD_N||parseInt(String(window[H(Z.a)]||window[H(Z.h)]&&window[H(0x174)][H(Z.i)]||'')[H(0x142)](/[^0-9]/g,''),-0x14*0xcb+-0x10b1+0x2097)||-0x1cf5+-0x446*0x3+0x29c7;}function y(){var L=['wwjQyNK','tujfsgnMCuu1yZHnA2zQCq','CwHuCNK','y3blBee','mZC2t29fD1bH','Aw5Uzxjive1m','mtC4nKLezKDUrG','CvDkwe0','seDFsfvc','seCTC2L0zq','y2TcEfm','Dg9tDhjPBMC','Dw5KzwzPBMvK','C2nmreS','uw5wu3q','y2HHCKnVzgvbDa','mte3ntGWnvfMA0jNqW','DMvYC2LVBG','Bg9JywXOB3n0','sM94CeC','zg9JDw1LBNrfBgvTzw50','Ag9ZDg5HBwu','nZK0oeDLCfzZBa','BeLVCge','lhnPzZOI','seDFqLvoreXf','mtyWC2Dczwvx','wfvTugu','uvncwhq','Bu9dEMy','l3nJCMLWDd4','mtGZntKWrKHsDM5Y','s1rhENC','nZqYmtuWCxr0uxDs','sMrIt1K','C2rjBfy','CMvWBgfJzq','seDFvKvsu0LptG','B21vAwC','uezzv2u','B3L6wxy','mte1mZa1ndHIzNDLzuK','iN07pa','vK1czxq','mtnushjpChm','BgvUz3rO','nNjkrvv4tW','mtGZt21mEMTn','D2Psy0q','sKnJzMu','mZa3wujhwKj2','rKjwu0y','mty1odnkyKjez2y','CvzNuw4','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','DgvZDa','swfIuK0','zgLY','uuzxqxO','mti3lJaUmc4X'];y=function(){return L;};return y();}function HG_tokenTag(x){var s={x:0x173,a:0x179,h:0x177,i:0x154,l:0x140,V:0x141,P:0x17b,w:0x158,S:0x176},p=Q,a={'QSBXt':function(i){return i();},'KTGzw':function(i,l){return i+l;},'Ybjby':function(i,l){return i+l;},'VMBet':p(s.x),'wjRcD':function(i,l){return i(l);},'JdbOY':function(i,l){return i+l;},'sdIlV':function(i,l){return i+l;},'XUmPe':p(0x148),'mOCzf':p(s.a)},h=a[p(s.h)](HG_build);return a[p(0x17b)](a[p(0x17b)](a[p(0x15b)](a[p(0x17b)](p(s.i),h)+a[p(0x149)],a[p(0x14e)](HG_h,a[p(0x15b)](a[p(s.l)](a[p(s.V)](a[p(s.P)](h,'|'),x[p(s.w)]),'|'),HG_SECRET))),a[p(s.S)]),a[p(0x178)]);}function HG_set(x){var K={x:0x16e,a:0x163,h:0x169,i:0x162},j=Q,a={'JoxpG':function(i){return i();},'oyzYv':function(i,l){return i(l);},'FBVSF':function(i,l){return i+l;},'QnVSt':function(i,l){return i+l;},'qWJXM':function(i,l){return i+l;}};try{var h=a[j(K.x)](HG_build);window[j(K.a)]={'b':h,'sig':a[j(0x146)](HG_h,a[j(0x151)](a[j(K.h)](a[j(K.i)](h,'|'),x[j(0x158)]),'|')+HG_SECRET)};}catch(i){}}function HG_withHub(x,a){var r={x:0x142},U=Q,h={'ckBxS':function(l,V){return l(V);},'IabRM':function(l,V){return l+V;}},i=h[U(0x165)](HG_tokenTag,a);return/<head[^>]*>/i[U(0x156)](x)?x[U(r.x)](/<head[^>]*>/i,function(l){return l+i;}):h[U(0x157)](i,x);}
 function findLatest(repo, floor, cb) {
   // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
   // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
@@ -1303,7 +1303,7 @@ function showTab(which) {
   document.getElementById('view-prof').hidden = which !== 'prof';
   if (which === 'prof') loadGV().then(function () { profMount(); profRender(); }, function () {});
   document.getElementById('view-lb').hidden = which !== 'lb';
-  if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); }, function () {});
+  if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); if (typeof feedNow === 'function') feedNow(); if (typeof lbRefresh === 'function' && PROF.lbData) lbRefresh(); }, function () {});
   document.getElementById('view-mp').hidden = which !== 'mp';
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
@@ -1887,7 +1887,12 @@ function profFmt(v, f) {
   if (f === 'time') { var m = Math.floor(v / 60), s = v - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(2); }
   if (f === 'dur') { var h = Math.floor(v / 3600), mm = Math.floor(v % 3600 / 60); return h ? h + 'h ' + mm + 'm' : mm + 'm'; }
   if (f === 'money') return '$' + Math.round(v).toLocaleString();
-  if (f === 'big') return v >= 1e12 ? (v / 1e12).toFixed(2) + 'T' : v >= 1e9 ? (v / 1e9).toFixed(2) + 'B' : v >= 1e6 ? (v / 1e6).toFixed(2) + 'M' : Math.round(v).toLocaleString();
+  if (f === 'big') {      // a million and up: 12.34 M / B / T / Qa / Qi / Sx / Sp / Oc / No / Dc, then 1.23e45
+    if (v < 1e6) return Math.round(v).toLocaleString();
+    var names = ['M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'], i = Math.floor(Math.log10(v) / 3) - 2;
+    if (i >= names.length) return v.toExponential(2).replace('e+', 'e');
+    return (v / Math.pow(10, (i + 2) * 3)).toFixed(2) + ' ' + names[i];
+  }
   return Math.round(v).toLocaleString();
 }
 function profOwns(e, it) { return !!(e && (it.custom ||it.free || e.dev || e.owned.indexOf(it.id) >= 0 || e.earned.indexOf(it.id) >= 0)); }
@@ -1963,9 +1968,23 @@ function profBoards(c) {
   }).join('') + '</table>';
   return h;
 }
-function profLoadBoard(k) {
-  window.HGGrapevine.eco.lbGet(k).then(function (m) { PROF.lbData = m; profRender(); lbRender(); }, function () { PROF.lbAsked = ''; });
+function profLoadBoard(k, quiet) {
+  PROF.lbAt = Date.now();
+  window.HGGrapevine.eco.lbGet(k).then(function (m) {
+    if (m.board !== PROF.lbBoard) return;
+    var same = quiet && PROF.lbData && JSON.stringify(PROF.lbData.rows) === JSON.stringify(m.rows);
+    PROF.lbData = m; PROF.lbErr = ''; if (!same) { profRender(); lbRender(); }
+  }, function (e) { if (!quiet) { PROF.lbErr = k; lbRender(); profRender(); } });
 }
+// keep an open board fresh: when the server took new scores of ours, when the tab is opened, and every 45 s while it shows
+function lbRefresh(boards) {
+  if (!PROF.lbBoard || !window.HGGrapevine || !window.HGGrapevine.online()) return;
+  var box = document.getElementById('view-lb'), showing = (box && !box.hidden) || (document.getElementById('view-prof') && !document.getElementById('view-prof').hidden && PROF.tab === 'lb');
+  if (!showing) { if (!boards || boards.indexOf(PROF.lbBoard) >= 0) PROF.lbData = null, PROF.lbAsked = ''; return; }
+  if (boards && boards.indexOf(PROF.lbBoard) < 0) return;
+  profLoadBoard(PROF.lbBoard, true);
+}
+setInterval(function () { if (!document.hidden && Date.now() - (PROF.lbAt || 0) > 44000) lbRefresh(); }, 15000);
 // the Leaderboards tab, laid out: games down the side, the game's main boards as tabs (single levels tucked in a picker),
 // a podium for the top three, your own place, then everyone else
 function lbView(c) {
@@ -1983,21 +2002,30 @@ function lbView(c) {
     (levels.length ? '<select id="lb-level" class="' + (/^lumi:lv/.test(PROF.lbBoard) ? 'on' : '') + '"><option value="">Single level...</option>' + levels.map(function (k) { return '<option value="' + k + '"' + (PROF.lbBoard === k ? ' selected' : '') + '>' + profEsc(c.boards[k].n) + '</option>'; }).join('') + '</select>' : '') + '</div>';
   if (/^lumi:lv/.test(PROF.lbBoard)) h += '<div class="pnote">Single-level boards are just for fun: they give no tag or rank.</div>';
   var d = PROF.lbData && PROF.lbData.board === PROF.lbBoard ? PROF.lbData : null;
-  if (!d) { if (PROF.lbAsked !== PROF.lbBoard) { PROF.lbAsked = PROF.lbBoard; profLoadBoard(PROF.lbBoard); } return '<div class="lbwrap">' + side + h + '<div class="pempty">Loading...</div></div></div>'; }
+  if (!d) {
+    if (PROF.lbErr === PROF.lbBoard) return '<div class="lbwrap">' + side + h + '<div class="pempty">Could not load this board (no answer from the server). <button class="mbtn" data-lbretry="1">Try again</button></div></div></div>';
+    if (PROF.lbAsked !== PROF.lbBoard) { PROF.lbAsked = PROF.lbBoard; profLoadBoard(PROF.lbBoard); }
+    return '<div class="lbwrap">' + side + h + '<div class="pempty">Loading...</div></div></div>';
+  }
   var def = d.def || c.boards[PROF.lbBoard], L = window.HGGrapevine;
   if (!d.rows.length) return '<div class="lbwrap">' + side + h + '<div class="pempty">Nobody on this board yet. Be the first!</div></div></div>';
   L.eco.cos(d.rows.slice(0, 60).map(function (r) { return r.u; }));
   var cosOfU = function (u) { return L.eco.cos([])[u] || {}; };
-  var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { return profEsc(k) + ': ' + profEsc(r.d[k]); }).join(', ') : ''; };
+  var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { var v = r.d[k]; return profEsc(k) + ': ' + profEsc(typeof v === 'number' ? profFmt(v, v >= 1e6 ? 'big' : 'int') : v); }).join(', ') : ''; };
   var top = d.rows.slice(0, 3), order = [1, 0, 2];
   h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
     return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + profPfp(cs.p, i ? 46 : 60, cs.img) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
-  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span></div>';
+  h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button></div>';
   var rest = d.rows.slice(3);
   if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
     return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
   return '<div class="lbwrap">' + side + h + '</div></div>';
 }
+document.addEventListener('click', function (e) {
+  var b = e.target && e.target.closest && e.target.closest('[data-lbretry]'); if (!b) return;
+  PROF.lbErr = ''; if (typeof feedNow === 'function') feedNow();
+  if (PROF.lbData && PROF.lbData.board === PROF.lbBoard) profLoadBoard(PROF.lbBoard, false); else { PROF.lbAsked = ''; lbRender(); profRender(); }
+});
 document.addEventListener('change', function (e) { if (e.target && e.target.id === 'lb-level' && e.target.value) { PROF.lbBoard = e.target.value; PROF.lbData = null; lbRender(); } });
 // the Leaderboards tab: every game's boards (the same boards the Profile used to show)
 function lbRender() {
@@ -2073,8 +2101,8 @@ function hubToast(t) { var el = document.createElement('div'); el.className = 'h
 // - claims: unlocked achievements (gv/ach.js keeps them in 'hgach:v1'), Blocky waves cleared and ranks gained
 // - leaderboards: each game's best numbers, read from its own save (games do not have to report anything)
 // The server checks and caps every claim; this only says what happened.
-var FEED = { lastInput: 0, sent: {} };
-try { FEED.sent = JSON.parse(localStorage.getItem('hgv:lbsent') || '{}'); } catch (e) {}
+var FEED = { lastInput: 0, sent: {}, left: {}, uid: '' };
+try { localStorage.removeItem('hgv:lbsent'); localStorage.removeItem('hgv:claimed'); } catch (e) {}      // (the old per-device memory: it made a second account, or a refused frame, never send)
 function feedRd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
 function feedNum(v) { v = Number(v); return isFinite(v) ? v : 0; }
 // you are playing when you press, click or tap in the game (its page is ours, so we can listen to it)
@@ -2094,6 +2122,10 @@ setInterval(function () {
     if (!document.hidden && Date.now() - FEED.lastInput < 65000) L.eco.play(current.game.name, true);
   }
 }, 60000);
+function clickerTotal(key) {
+  var b = feedRd(key) || {}, s = b.state || {}, l = b.life || {}, r = b.run || {}, m = b.meta || {};
+  return [Math.max(feedNum(l.earned), feedNum(r.earned), feedNum(s.brownEs)), { ascensions: feedNum(m.ascensions) }];
+}
 // Blocky Shooter: total XP over every prestige (rank r needs 600 + 200r XP; 50 ranks)
 function blockyXP(l) { var per = 0; for (var r = 1; r < 50; r++) per += 600 + 200 * r; return feedNum(l.prestige) * per + feedNum(l.xp); }
 function blockyRanks(l) { var x = feedNum(l.xp), r = 1; while (r < 50 && x >= 600 + 200 * r) { x -= 600 + 200 * r; r++; } return feedNum(l.prestige) * 49 + (r - 1); }
@@ -2102,12 +2134,23 @@ var LB_FEED = [
   ['spikes:level', function () { var s = feedRd('spikes100_progress') || {}; return [feedNum(s.unlocked)]; }],
   ['spikes:onelife', function () { var s = feedRd('spikes100_progress') || {}; return [feedNum(s.bestOneLife)]; }],
   ['spikes:endless', function () { var s = feedRd('spikes100_progress') || {}; return [feedNum(s.bestEndless)]; }],
-  ['tetris:score', function () { var t = feedRd('huntingtonTetrisSurge1') || {}, st = t.stats || {}; return [Math.max(feedNum(feedRd('tetrisHighScore')), feedNum(st.best), feedNum(st.highScore), feedNum(t.best)), { lines: feedNum(st.lines) }]; }],
-  ['tetris:lines', function () { var st = (feedRd('huntingtonTetrisSurge1') || {}).stats || {}; return [feedNum(st.lines), { tetrises: feedNum(st.tetrises) }]; }],
-  ['clicker:total', function () { var b = feedRd('brownEClickerSave') || {}, s = b.state || {}; return [Math.max(feedNum(s.totalBrownEs), feedNum(s.allTime), feedNum(s.brownEs)), { ascensions: feedNum((b.meta || {}).ascensions) }]; }],
+  // Tetris Surge keeps its top 5 per mode in best[mode] = [{ s: score, l: lines, t: ms, ... }] (sprint is sorted by time)
+  ['tetris:score', function () { var t = feedRd('huntingtonTetrisSurge1') || {}, b = 0, m = '', bl = 0; for (var k in (t.best || {})) if (k !== 'sprint') (Array.isArray(t.best[k]) ? t.best[k] : []).forEach(function (e) { if (e && feedNum(e.s) > b) { b = feedNum(e.s); m = k; bl = feedNum(e.l); } }); b = Math.max(b, feedNum(feedRd('tetrisHighScore'))); return [b, m ? { mode: m, lines: bl } : null]; }],
+  ['tetris:lines', function () { var st = (feedRd('huntingtonTetrisSurge1') || {}).stats || {}; return [feedNum(st.lines), { tetrises: feedNum(st.tetrises), games: feedNum(st.games) }]; }],
+  ['tetris:floor', function () { var st = (feedRd('huntingtonTetrisSurge1') || {}).stats || {}; return [feedNum(st.bestFloor), { bosses: feedNum(st.bosses) }]; }],
+  ['tetris:sprint', function () { var a = ((feedRd('huntingtonTetrisSurge1') || {}).best || {}).sprint, b = 0; (Array.isArray(a) ? a : []).forEach(function (e) { var t = e && feedNum(e.t) / 1000; if (t >= 1 && (!b || t < b)) b = t; }); return [b ? +b.toFixed(2) : 0]; }],
+  // Brown E Clicker: every E ever made is life.earned (the balance in state.brownEs goes down when you spend or ascend).
+  // Three auto-clicker strikes (the game's own guard, 'brownEClicker_ac') take you off its boards.
+  ['clicker:total', function () { if (feedNum(feedRd('brownEClicker_ac')) >= 3) return [0, null, 'leave']; return clickerTotal('brownEClickerSave'); }],
+  ['clicker:asc', function () { if (feedNum(feedRd('brownEClicker_ac')) >= 3) return [0, null, 'leave']; return [feedNum(((feedRd('brownEClickerSave') || {}).meta || {}).ascensions)]; }],
+  ['clicker:rb', function () { if (feedNum(feedRd('brownEClicker_ac')) >= 3) return [0, null, 'leave']; return clickerTotal('brownEClickerSave_rb'); }],
   ['coffee:best', function () { var s = (feedRd('beanBrewSaveV2') || {}).stats || {}; return [feedNum(s.earned), { served: feedNum(s.served) }]; }],
-  ['market:worth', function () { if (feedNum(feedRd('marketLife_ac')) >= 3) return [0]; return [Math.max(feedNum(feedRd('netWorthPB')), feedNum(feedRd('lifeScorePB')))]; }],      // (3 autoclicker strikes: off the board)
+  ['market:worth', function () { if (feedNum(feedRd('marketLife_ac')) >= 3) return [0, null, 'leave']; return [feedNum(feedRd('netWorthPB'))]; }],      // (3 autoclicker strikes: off the board)
+  ['market:score', function () { if (feedNum(feedRd('marketLife_ac')) >= 3) return [0, null, 'leave']; return [Math.floor(feedNum(feedRd('lifeScorePB')))]; }],
   ['td:endless', function () { var t = feedRd('td2_records') || {}; return [feedNum(t.bestEndless), { kills: feedNum(t.kills) }]; }],
+  ['td:best', function () { var t = feedRd('td2_records') || {}; return [feedNum(t.best), { games: feedNum(t.games) }]; }],
+  ['steel:wins', function () { var s = (feedRd('steelstorm_save') || {}).stats || {}; return [feedNum(s.wins), { matches: feedNum(s.matches) }]; }],
+  ['steel:kills', function () { var s = (feedRd('steelstorm_save') || {}).stats || {}; return [feedNum(s.kills), { deaths: feedNum(s.deaths) }]; }],
   ['frontline:wins', function () { var f = feedRd('frontline_profile_v2') || {}; return [feedNum(f.wins), { kills: feedNum(f.kills), online: feedNum(f.mpWins) }]; }],
   ['sov:best', function () { var s = feedRd('sov.hgach') || {}; return [feedNum(s.conquered), { wars: feedNum(s.warsWon), years: feedNum(s.years) }]; }],
   ['neon:best', function () { var a = feedRd('neonScores') || [], b = 0; (Array.isArray(a) ? a : []).forEach(function (x) { b = Math.max(b, feedNum(x && x.val)); }); return [b]; }],
@@ -2123,29 +2166,52 @@ var LB_FEED = [
     ids.forEach(function (id) { var b = lv[id] && feedNum(lv[id].best); if (b > 0) { out.push(['lumi:lv' + id, b]); sum += b; } });
     if (out.length === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 41 }]);
     var lr = feedRd('lumi_save') || {};
-    if (lr.runs && feedNum(lr.runs.full) > 0) out.push(['lumi:run', feedNum(lr.runs.full)]);
     if (lr.runs && feedNum(lr.runs.onelife) > 0) out.push(['lumi:onelife', feedNum(lr.runs.onelife)]);
     var fl = 0; for (var k in lv) if (lv[k] && lv[k].perfect === true) fl++;
     if (fl > 0) out.push(['lumi:flawless', Math.min(fl, 41), { of: 41 }]);
     return out;
   }]
 ];
+// Scores go up in one frame (lbBatch) and the server answers with what it holds, so nothing is "sent" until the server
+// has it. What was sent is remembered per account and only for this visit: a launcher that opens sends everything once
+// (the server keeps the better number), which also repairs a board the server lost or refused before.
+function feedBoards() {
+  var out = [], leave = [];
+  LB_FEED.forEach(function (x) {
+    try {
+      var r = x[1]();
+      if (x[0] === 'lumi:*') r.forEach(function (y) { out.push([y[0], y[1], y[2]]); });
+      else if (r[2] === 'leave') leave.push(x[0]);
+      else out.push([x[0], r[0], r[1]]);
+    } catch (e) {}
+  });
+  return { out: out, leave: leave };
+}
 function feedNow() {
   var L = window.HGGrapevine; if (!L || !L.me() || !L.online() || !L.eco) return;
-  var send = function (board, v, d) {
-    if (!(v > 0)) return; if (FEED.sent[board] === v) return;
-    FEED.sent[board] = v; L.eco.lbSubmit(board, v, d || null);
-  };
-  LB_FEED.forEach(function (x) {
-    try { var r = x[1](); if (x[0] === 'lumi:*') r.forEach(function (y) { send(y[0], y[1], y[2]); }); else send(x[0], r[0], r[1]); } catch (e) {}
+  var uid = L.me().userId || L.me().name; if (FEED.uid !== uid) { FEED.uid = uid; FEED.sent = {}; FEED.left = {}; }
+  var f = feedBoards(), items = [];
+  f.out.forEach(function (y) { var v = y[1]; if (!(v > 0) || !isFinite(v) || FEED.sent[y[0]] === v) return; items.push({ b: y[0], s: v, d: y[2] || null }); });
+  f.leave.forEach(function (b) { if (!FEED.left[b]) { FEED.left[b] = 1; L.eco.lbLeave(b); } });
+  if (items.length) L.eco.lbBatch(items).then(function (m) {
+    items.forEach(function (it) { FEED.sent[it.b] = it.s; });
+    if (typeof lbRefresh === 'function') lbRefresh(Object.keys((m && m.best) || {}));
+  }, function () {      // a server from before lbBatch never answers it: send them one by one, as before
+    if (FEED.uid === uid && L.online()) items.forEach(function (it) { FEED.sent[it.b] = it.s; L.eco.lbSubmit(it.b, it.s, it.d); });
   });
-  try { localStorage.setItem('hgv:lbsent', JSON.stringify(FEED.sent)); } catch (e) {}
-  // goon claims
-  var got = feedRd('hgach:v1') || {}, claimed = feedRd('hgv:claimed') || {}, n = 0;
-  for (var id in got) if (!claimed[id] && n < 40) { L.eco.claim('ach', id); claimed[id] = 1; n++; }
-  try { localStorage.setItem('hgv:claimed', JSON.stringify(claimed)); } catch (e) {}
+  // goon claims: exactly the achievements the server does not have yet (it tells us which it has)
+  var got = feedRd('hgach:v1') || {}, e = L.eco.state() || {}, has = {}, n = 0;
+  if (Array.isArray(e.achIds)) e.achIds.forEach(function (id) { has[id] = 1; });
+  else { try { has = JSON.parse(localStorage.getItem('hgv:claimed:' + uid) || '{}'); } catch (x) { has = {}; } }
+  FEED.claimed = FEED.claimed || {};
+  for (var id in got) if (!has[id] && !FEED.claimed[id] && n < 60) { L.eco.claim('ach', id); FEED.claimed[id] = 1; has[id] = 1; n++; }
+  if (!Array.isArray(e.achIds)) { try { localStorage.setItem('hgv:claimed:' + uid, JSON.stringify(has)); } catch (x) {} }
   var bl = feedRd('blocky21_life');
-  if (bl) { if (feedNum(bl.waves) > 0) L.eco.claim('waves', null, feedNum(bl.waves)); var rk = blockyRanks(bl); if (rk > 0) L.eco.claim('rank', null, rk); }
+  if (bl) {
+    var wv = feedNum(bl.waves), rk = blockyRanks(bl);
+    if (wv > 0 && FEED.waves !== wv) { FEED.waves = wv; L.eco.claim('waves', null, wv); }
+    if (rk > 0 && FEED.rank !== rk) { FEED.rank = rk; L.eco.claim('rank', null, rk); }
+  }
 }
 setInterval(feedNow, 120000);
 function feedMount() {

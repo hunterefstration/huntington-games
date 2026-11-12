@@ -190,6 +190,7 @@
         if (m.gained && m.gained.n > 0) emit('notify', { kind: 'goon', title: '+' + m.gained.n + ' goon' + (m.gained.n === 1 ? '' : 's'), text: m.gained.why });
         emit('eco', m); emit('change'); return;
       case 'lb': return rpcDone('lb:' + m.board, m);
+      case 'lbAck': return rpcDone('lbAck', m);
       case 'parties': return rpcDone('parties', m);
       case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
@@ -695,7 +696,14 @@
       slur: function () { if (st.ready) send({ type: 'slur' }); },
       admin: function (op, name, id, n, text) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0, text: text || null }); },
       lbSubmit: function (board, s, d) { if (st.ready && isFinite(s)) paced({ type: 'lbSubmit', board: board, s: s, d: d || null }); },
-      lbGet: function (board) { return st.ready ? rpc({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // every board in one frame; resolves with { best: { board: what the server holds for you } }
+      lbBatch: function (items) {
+        if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
+        var parts = []; for (var i = 0; i < items.length; i += 80) parts.push(items.slice(i, i + 80));
+        return parts.reduce(function (p, part) { return p.then(function (acc) { return rpc({ type: 'lbBatch', items: part }, 'lbAck').then(function (m) { Object.assign(acc.best, (m && m.best) || {}); return acc; }); }); }, Promise.resolve({ best: {} }));
+      },
+      lbLeave: function (board) { if (st.ready) paced({ type: 'lbLeave', board: board }); },
+      lbGet: function (board) { return st.ready ? rpc0({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
       // what other people wear: cached for 10 minutes, fetched in one batch
       cos: function (ids) {
         var want = (ids || []).filter(function (u) { var c = st.cos[u]; return u && !(c && Date.now() - c.at < 600000); });

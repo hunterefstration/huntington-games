@@ -391,7 +391,7 @@ function showTab(which) {
   document.getElementById('view-prof').hidden = which !== 'prof';
   if (which === 'prof') loadGV().then(function () { profMount(); profRender(); }, function () {});
   document.getElementById('view-lb').hidden = which !== 'lb';
-  if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); }, function () {});
+  if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); if (typeof feedNow === 'function') feedNow(); if (typeof lbRefresh === 'function' && PROF.lbData) lbRefresh(); }, function () {});
   document.getElementById('view-mp').hidden = which !== 'mp';
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
