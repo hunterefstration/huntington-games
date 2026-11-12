@@ -19,7 +19,11 @@ const problems = [], notes = [];
 const read = f => fs.readFileSync(f, 'utf8');
 const norm = (html, hub) => {
   html = html.replace(/\n?<!--HG-->[\s\S]*?<!--\/HG-->/g, '');
-  if (hub) { const l = html.split('\n'), k = l.findIndex(x => x.startsWith('var HG_BUILD_N')); if (k >= 0) { l[k] = 'var HG_BUILD_N'; l[k + 1] = '/*licence*/'; } html = l.join('\n'); }
+  if (hub) {      // the build number line, then the obfuscated licence: one very long line in a dev build, two lines in a release
+    const l = html.split('\n'), k = l.findIndex(x => x.startsWith('var HG_BUILD_N'));
+    if (k >= 0) { let e = k + 1; while (e < l.length && (l[e].length > 400 || /^window\.HG_|^\(function\(\)\{/.test(l[e]))) e++; l.splice(k, e - k, 'var HG_BUILD_N', '/*licence*/'); }
+    html = l.join('\n');
+  }
   return html;
 };
 // --- 1. built files ---
