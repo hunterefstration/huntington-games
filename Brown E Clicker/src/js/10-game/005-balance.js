@@ -61,18 +61,20 @@
            },
            // Rebalanced beta: only what differs from classic. Evidence and before/after numbers: tools/BALANCE-REPORT.md
            rb: {
-               payback: { p0: 15, k: 0.5, p0Click: 100, kClick: 0.5 },
+               payback: { p0: 15, k: 0.5, p0Click: 100, kClick: 0.6 },
                clickUpgMult: 1.5,
                tierAt: { bps: [1, 10, 25, 50, 100], click: [1, 5, 15, 25, 40] },
                tierCostX: { bps: [10, 50, 500, 50000, 5000000], click: [20, 200, 5000, 200000, 20000000] },
                clickUpg: [[100, 2000], [1000, 100000], [3000, 1e7], [6000, 1e9], [12000, 1e11], [25000, 1e13], [50000, 1e15], [100000, 1e17]],
                touchPct: 0.005,
                golden: { click: [77, 13] },
-               chips: { base: 5e10, bonus: 0.02 },
+               chips: { base: 1e10, power: 0.25, bonus: 0.02 },
                tree: { prod1: 2, prod2: 15, prod3: 150, prod4: 1500, syn: 75, tierup: 250, capstone: 10000, click2: 5, click3: 25, click4: 200, click5: 2000, crit: 60,
                    eco1: 1, eco2: 8, eco3: 30, eco4: 300, haggle: 50, wholesale: 750, head: 20, heir: 120, gold1: 1, gold2: 6, gold3: 30, gold4: 120, gold5: 1200,
                    luck: 200, twins: 450, festive: 40, chip1: 3, chip2: 100, chip3: 2500, trophy: 12, trial: 2, off1: 2, off2: 20, off3: 150,
                    gard1: 5, gard2: 25, gard3: 120, gard4: 600, mkt1: 10, mkt2: 75, mkt3: 500 },
+               offline: { capHours: 10 },
+               challengeGoals: { noclick: 2e11, clicksonly: 1e10, noupgrades: 1e9, nogold: 1e12, inflation: 1e11, minimal: 1e10, slowmo: 1e10, amnesia: 1e12 },
                winGrowth: 1000
            }
        };

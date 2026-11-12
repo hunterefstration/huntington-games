@@ -35,7 +35,7 @@ function loadPure(variant) {
 // ---------- model players ----------
 // sessions: [startHourOfDay, minutes]; catch = share of golden E's clicked; policy: greedy (affordable only) or payback (waits for the best)
 const PLAYERS = {
-    casual: { cps: 2, sessions: [[18, 10]], catch: 0.4, policy: 'greedy', ascend: [2, 1], checkEvery: 30 },
+    casual: { cps: 2, sessions: [[18, 10]], catch: 0.4, policy: 'greedy', ascend: [1, 1], checkEvery: 30 },
     active: { cps: 5, sessions: [[8, 35], [17, 35]], catch: 0.75, policy: 'payback', ascend: [2, 0.75], checkEvery: 5 },
     optimizer: { cps: 8, sessions: [[8, 50], [19, 50]], catch: 0.97, policy: 'payback', ascend: [3, 0.5], checkEvery: 2 },
     // same as active but an auto-clicker at the guard's limit (15/s) the whole session, to see if it dominates
@@ -49,7 +49,7 @@ function makeSim(variant, P, opts) {
     const S = () => G.state;
     let rng = opts.seed || 12345;
     const rand = () => { rng = (rng * 1103515245 + 12345) % 2147483648; return rng / 2147483648; };
-    const sim = { G, play: 0, cal: 0, log: [], ascents: [], buys: [], src: { click: 0, prod: 0, golden: 0, offline: 0, auto: 0 }, srcWin: [], firstOwn: {}, maxBank: 0, wins: 0 };
+    const sim = { G, day: 0, play: 0, cal: 0, log: [], ascents: [], buys: [], src: { click: 0, prod: 0, golden: 0, offline: 0, auto: 0 }, srcWin: [], firstOwn: {}, maxBank: 0, wins: 0 };
     const gold = { timer: 25 + rand() * 20, life: 0 }; // first golden E (same in both variants)
     let target = null, targetAt = -1, lastAchCheck = 0;
 
@@ -284,14 +284,14 @@ function makeSim(variant, P, opts) {
         G.repriceBuildings(); recalc();
         if (!ch && G.PRES.startE > 0) earn(G.PRES.startE, 'gift');
         gold.timer = 25 + rand() * 20; gold.life = 0;
-        target = null; peak = 0; runStartCal = sim.cal;
+        target = null; peak = 0; runStartCal = sim.cal; unlockAt = null;
     }
     let peak = 0, runStartCal = 0;
     function ascend(why) {
         const st = S();
         const gain = G.chipsForRun(st.run.earned);
         const m = st.meta;
-        sim.ascents.push({ n: m.ascensions + 1, play: sim.play, cal: sim.cal, run: st.run.time, gain, total: m.chipsTotal + gain, bps: st.bpsBase, why,
+        sim.ascents.push({ n: m.ascensions + 1, play: sim.play, cal: sim.cal, run: st.run.time, unlock: unlockAt, gain, total: m.chipsTotal + gain, bps: st.bpsBase, why,
             clickShare: st.run.handmade / Math.max(1, st.run.earned) });
         m.chips += gain; m.chipsTotal += gain; m.ascensions++;
         resetRun(true);
@@ -300,14 +300,18 @@ function makeSim(variant, P, opts) {
         G.recalcPrestige();
         beginRun(null);
     }
+    let unlockAt = null;
     function maybeAscend() {
         const st = S();
+        if (unlockAt == null && G.chipsForRun(st.run.earned) >= 1) unlockAt = st.run.time;
         if (st.meta.challenge || opts.noAscend) return;
         const gain = G.chipsForRun(st.run.earned);
         if (gain < 1) return;
         // ascend: [a, r] = when this run gives at least a chips and at least r x the chips earned so far
+        // and never sit in one run for more than 4 hours of play when it would still add 10%
         const [a, r] = P.ascend;
         if (gain >= Math.max(a, Math.ceil(st.meta.chipsTotal * r))) ascend('ratio');
+        else if (st.run.time > 4 * 3600 && gain >= Math.max(a, st.meta.chipsTotal * 0.1)) ascend('long');
     }
     function offline(sec) {
         const st = S();
@@ -323,7 +327,8 @@ function makeSim(variant, P, opts) {
     // play `days` days; returns sim
     sim.runDays = function (days, onSecond) {
         const sessions = P.sessions;
-        for (let d = 0; d < days; d++) {
+        for (let n = 0; n < days; n++) {
+            const d = sim.day++;
             if (sim.wins >= (opts.maxWins || 25)) { sim.stopped = true; return sim; } // the game is solved: stop simulating
             for (let si = 0; si < sessions.length; si++) {
                 const [hour, mins] = sessions[si];
@@ -406,7 +411,7 @@ function career(variant, who, days) {
     }
     const tot = Object.values(sim.src).reduce((a, b) => a + b, 0);
     const share = {}; for (const k in sim.src) share[k] = sim.src[k] / Math.max(1, tot);
-    return { variant, who, ascents: sim.ascents.map(a => ({ n: a.n, playMin: +(a.play / 60).toFixed(1), day: +(a.cal / 86400).toFixed(2), runMin: +(a.run / 60).toFixed(1), gain: a.gain, total: a.total, bps: a.bps, clickShare: +a.clickShare.toFixed(3), why: a.why })),
+    return { variant, who, ascents: sim.ascents.map(a => ({ n: a.n, playMin: +(a.play / 60).toFixed(1), day: +(a.cal / 86400).toFixed(2), runMin: +(a.run / 60).toFixed(1), unlockMin: a.unlock == null ? null : +(a.unlock / 60).toFixed(1), gain: a.gain, total: a.total, bps: a.bps, clickShare: +a.clickShare.toFixed(3), why: a.why })),
         share, wins: sim.wins, dayLog, life: sim.state().life.earned, maxBank: sim.maxBank };
 }
 
@@ -443,9 +448,14 @@ function challenges(variant, asc) {
         if (!st.meta.tree.trial) st.meta.tree.trial = true; // the snapshot player always has the gate by then
         sim.G.recalcPrestige();
         sim.beginRun(ch.id);
-        let done = null;
-        sim.playFor(3 * 3600, (s) => { const r = s.state(); if (r.run.earned >= ch.goal) { done = r.run.time; return false; } if (ch.limit && r.run.time > ch.limit) return false; });
-        res[ch.id] = { goal: ch.goal, min: done == null ? null : +(done / 60).toFixed(1), limitMin: ch.limit ? ch.limit / 60 : null };
+        let done = null; const at = {};
+        sim.playFor(3 * 3600, (s, t) => {
+            const r = s.state();
+            if (t + 1 === 600 || t + 1 === 3600 || t + 1 === 10800) at[(t + 1) / 60] = r.run.earned;
+            if (done == null && r.run.earned >= ch.goal) done = r.run.time;
+            if (ch.limit && r.run.time > ch.limit) { at[10] = r.run.earned; return false; }
+        });
+        res[ch.id] = { goal: ch.goal, min: done == null ? null : +(done / 60).toFixed(1), limitMin: ch.limit ? ch.limit / 60 : null, at };
     }
     return { asc, chipsTotal: base.state().meta.chipsTotal, days, res };
 }
