@@ -531,6 +531,7 @@ html.gdense .game .desc, html.gdense .game .credit { display: none; } html.gdens
 .gsrow { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; scrollbar-width: thin; }
 .stile { flex: 0 0 176px; scroll-snap-align: start; display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; padding: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: transform .12s, border-color .12s; }
 .stile:hover, .stile:focus-visible { transform: translateY(-2px); border-color: var(--signal); outline: none; }
+.simg i { font-style: normal; } .simg.has i { display: none; }
 .simg { display: flex; align-items: center; justify-content: center; aspect-ratio: 16 / 9; background: var(--ground) center/cover no-repeat; color: var(--dim); font-weight: 800; font-size: 13px; text-align: center; padding: 4px; }
 .stile b { padding: 7px 9px 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sarrow { position: absolute; top: 50%; z-index: 3; width: 30px; height: 46px; border-radius: 8px; border: 1px solid var(--line2); background: rgba(0,0,0,.72); color: #fff; font-size: 22px; cursor: pointer; opacity: 0; transition: opacity .12s; }

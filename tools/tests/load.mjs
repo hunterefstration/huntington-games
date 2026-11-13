@@ -70,6 +70,9 @@ try {
   check('the game still loads', !!ok3, `${took} ms`);
   check('...in a few seconds, not after a 25 s timeout', took < 9000, `${took} ms`);
   await P.evaluate(() => closePlayer());
+  const pics = await until(() => P.evaluate(() => { const h = document.querySelector('#ghero .gh-img'); return h && /url\(/.test(h.style.backgroundImage) ? h.style.backgroundImage : null; }), 9000);
+  check('the banner and tiles get their pictures from the next mirror too', !!pics && !/\/\/cdn\.jsdelivr/.test(pics), String(pics).slice(0, 80));
+  await P.evaluate(() => closePlayer());
   t0 = Date.now(); await P.evaluate(() => { PRE = {}; MEM = {}; return idbDo('readwrite', s => s.clear()); }); await play(P, 'Imposter');
   await until(() => P.evaluate(() => !!(current && current.html)));
   check('the mirror that answered is tried first from then on', Date.now() - t0 < 2500, `${Date.now() - t0} ms`);
