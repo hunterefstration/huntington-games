@@ -1,5 +1,23 @@
 # Handoff (updated 2026-11-13)
 
+## Database egress (r68, 2026-11-13): the free plan's 5 GB a month was used three times over
+Supabase counts every byte the database SENDS (to our one Grapevine server) as egress. Measured with `tools/tests/gv-egress.mjs`
+(5 players, saves, chat, profiles; `bash tools/rig/test.sh gv-egress`): 280 KB per player-minute before, about 12 after.
+What it was, and what keeps it down now (all in grapevine `src/archive/`):
+- **Save lists** (the big one): every sync (every 45 s per open launcher) and every saved game re-read the account's whole list
+  of saves. Now kept in memory (`SAVES` in 070, `listOf`), updated on each write, re-read after 10 minutes.
+- **Backstop** (030): re-read every message of the last minute every 3 s. Now reads only their numbers (`fannedSeq`).
+- **Member lists** (030 `memberIds`): every message, read mark and "is typing" read the full member list of #main (= every
+  account). Now asks only about people connected here, kept 30 s; `MEMBER_CHANGE` in q() drops it on any membership change.
+- **Online list** (030 `rosterRows`): every connect/disconnect re-read it once per connected person (grows with the square of
+  people online). Now one shared read, a burst is one push (`pushRosterSoon`).
+- **Profiles** for names (075 `PROF_C`, 5 min), **room member lists** (`snapMembers`, 1 min), **backlogs** on opening a room
+  (`BACKC`, topped up by new messages in `backlogNote`, dropped by edits/deletes/reactions and `MSG_CHANGE` in q()).
+- Notifications to other archives are skipped while no other archive has anyone on it (`archCheck`).
+- **Meter**: q() weighs every answer (`dbWeigh`, `dbOutTop`); the status line prints MB/h every 5 minutes; admins see it in
+  the launcher (Profile, Admin, "Database use", the `dbOut` request). Rule of thumb: 5 GB a month is about 7 MB an hour.
+Any new query that runs per message, per sync, per connect or on a timer must be weighed against that (run gv-egress).
+
 ## Round 8 (r66): Steel Storm 2.0, Mayhem Marathon, Casino, goon shop, reports, games page, Blocky classes
 - **Casino** (`Casino/`, server `grapevine/src/archive/077-casino.js`, contract in `Casino/API.md`): 1 goon = 100 chips, chips live in
   the `~eco` row (`e.chips`), every outcome is decided on the server. One-shot games, turn games (state in memory, `CAS_T`), and
