@@ -238,7 +238,9 @@ function profAdmin(c) {
     '<button class="pb" data-padm="give">Give title</button><button class="pb ghost" data-padm="take">Take it back</button></div>' +
     '<h4>Give a custom title</h4><p class="pnote">Any words you like (2 to 24 characters), for one person. They wear it like any other title.</p>' +
     '<div class="prow"><input id="pa-ctext" maxlength="24" placeholder="e.g. Pizza Lord" autocomplete="off"><button class="pb" data-padm="custom">Give custom title</button></div>' +
-    '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div></div>';
+    '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div>' +
+    '<h4>Database use</h4><p class="pnote">How much data the database has sent the server since it last started (the free plan allows 5 GB a month, about 7 MB an hour).</p>' +
+    '<div class="prow"><button class="pb" data-padm="dbout">Check now</button></div><pre id="pa-dbout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></pre></div>';
 }
 // developers only: a picture of their own (squeezed to 96 px)
 function profDevUpload(box) {
@@ -269,6 +271,14 @@ document.addEventListener('click', function (ev) {
     if (d.pex === 'crate') { if (confirm('Open a mystery crate?')) L.eco.crate(); }
     else if (d.pex === 'gift') { var fn = document.getElementById('px-friend').value, gn = Math.floor(+document.getElementById('px-n').value || 0); if (gn < 1) return; if (confirm('Give ' + gn + ' goon' + (gn === 1 ? '' : 's') + ' to ' + fn + '?')) L.eco.gift(fn, gn); }
     else if (d.pex === 'casino') { var cg = GAMES.filter(function (g) { return g.dir === 'Casino'; })[0]; if (cg) { homeRecent(cg); play(cg); } }
+    return;
+  }
+  else if (d.padm === 'dbout') {
+    var out = document.getElementById('pa-dbout'); out.textContent = 'Asking...';
+    L.eco.dbOut().then(function (r) {
+      out.textContent = r.mbPerHour + ' MB an hour over the last ' + r.hours + ' hours (' + (r.mbPerHour * 24 * 30 / 1024).toFixed(1) + ' GB a month at this rate), ' + r.sessions + ' people on now.\n' +
+        (r.top || []).map(function (t) { return t.kb + ' KB  ' + t.calls + 'x  ' + t.q; }).join('\n');
+    }, function (e) { out.textContent = String(e && e.message || e); });
     return;
   }
   else if (d.padm) {

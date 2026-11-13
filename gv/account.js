@@ -507,6 +507,7 @@ const GVLink = (() => {
       case 'casinoEv': emit('casino', m); return;
       case 'report': return rpcDone('report', m);
       case 'reports': if (m.ping) { emit('reports', m); return; } return rpcDone('reports', m);
+      case 'dbOut': return rpcDone('dbOut', m);
       case 'parties': return rpcDone('parties', m);
       case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
@@ -1036,6 +1037,7 @@ const GVLink = (() => {
         return rpc0(Object.assign({ type: 'report' }, r), 'report').then(function (m) { if (!m.ok) throw new Error(m.err || 'That did not send.'); return m; });
       },
       // admins: the inbox. op = 'list' | 'close' | 'reopen' | 'note'
+      dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },
       reports: function (op, id, note) { return st.ready ? rpc0({ type: 'reportAdmin', op: op || 'list', id: id || null, note: note || null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },
       // the casino (grapevine 077-casino.js): every bet is a question to the server. Resolves with its answer
       // ({ bal: { chips, goons }, r: result, now }), rejects with the server's words. Live tables arrive as 'casino' events.
