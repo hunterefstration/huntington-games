@@ -1291,6 +1291,13 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
 #wheel .wdisc span{position:absolute;left:50%;top:50%;width:60px;margin:-8px 0 0 -30px;font:900 13px/16px var(--mono);color:#fff;text-shadow:0 1px 2px #000}
 #wheel .wres{min-height:22px;font-weight:800}#wheel .wres.ban{color:#f87171}#wheel .wres.safe{color:#4ade80}
 .pfp.art{padding:0}.pfp.art svg{width:100%;height:100%;display:block}
+/* name colours and picture frames (shop items; the launcher has the same rules) */
+.nc.grad{-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.nc.anim{background-size:200% 100%;animation:ncmove 3s linear infinite}@keyframes ncmove{to{background-position:200% 0}}
+.pfr{display:inline-flex;position:relative;border-radius:50%;padding:2px;vertical-align:-5px;margin-right:5px;background:var(--f)}.pfr .pfp{margin-right:0;vertical-align:0}
+.pfr.st-glow{box-shadow:0 0 8px 1px var(--g)}
+.pfr.st-spin{background:none}.pfr.st-spin::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--f);animation:pfrspin 4s linear infinite}.pfr.st-spin>*{position:relative}
+@keyframes pfrspin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -8521,11 +8528,23 @@ function badgesHtml(c){
   if (r) h += `<span class="gtag rank t${r[1]}" title="${esc('Rank ' + r[1] + ' in ' + r[0] + ' (1 is the best, 5 the lowest)')}">R${r[1]}</span>`;
   return h;
 }
+// a name in its owner's colour and a picture in its frame (shop items of kind 'color' and 'frame'; the launcher draws the same)
+function nameHtml(text, c){
+  const it = c && c.nc && CATALOG && CATALOG.byId.get(c.nc);
+  if (!it || it.k !== 'color') return esc(text);
+  return `<span class="nc${it.c.length > 1 ? ' grad' : ''}${it.an ? ' anim' : ''}" style="${it.c.length === 1 ? 'color:' + it.c[0] : 'background-image:linear-gradient(90deg,' + it.c.join(',') + ')'}">${esc(text)}</span>`;
+}
+function frameHtml(html, c){
+  const it = html && c && c.fr && CATALOG && CATALOG.byId.get(c.fr);
+  if (!it || it.k !== 'frame') return html;
+  const f = it.st === 'spin' ? 'conic-gradient(' + it.c.concat(it.c[0]).join(',') + ')' : it.st === 'double' ? 'linear-gradient(135deg,' + it.c.join(',') + ')' : it.c[0];
+  return `<span class="pfr st-${it.st}" style="--f:${f};--g:${it.c[1] || it.c[0]}">${html}</span>`;
+}
 // the name button on a message row (and anywhere else a name is shown that way)
 function decorateWho(btn, uid, name, heart){
   cosNeed(uid);
   const c = COS.get(uid), nk = nickOf(uid);
-  btn.innerHTML = pfpHtml(c, 18) + `<span class="wn">${esc(nk || name)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
+  btn.innerHTML = frameHtml(pfpHtml(c, 18), c) + `<span class="wn">${nk ? esc(nk) : nameHtml(name, c)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
     + (heart ? '<span class="fh">♡</span>' : '') + badgesHtml(c);
   if (nk) btn.title = name + ' (your nickname for them: ' + nk + ')';
 }

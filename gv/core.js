@@ -209,7 +209,7 @@
 
   function onError(c, m) {
     var code = m.code || '';
-    if (/^(goons|not-owned|not-for-sale|owned|not-admin|bad-title)$/.test(code)) { emit('ecoError', m); return; }
+    if (/^(goons|not-owned|not-for-sale|owned|not-admin|bad-title|gift|no-such-name|self)$/.test(code)) { emit('ecoError', m); return; }
     if (code === 'rate') { rpcFail(new Error('Slow down a little.')); settlePending(new Error('Slow down a little.')); return; }
     if (code === 'rebind' && !st.sendKey && st.auth) { st.sendKey = true; try { c.close(); } catch (e) {} return; }   // retry once, sending the key to bind it
     if (code === 'full') { st.idx++; try { c.close(); } catch (e) {} return; }
@@ -376,7 +376,7 @@
   //  * signing out saves first and then clears the device.
   // Only the games' own keys travel (the launcher's page origin can hold other sites' data too). A new game's keys
   // must be added here: it is the list of prefixes the games write.
-  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|lumi_|imposter_|steelstorm_|elementlab_|hgach|hgq:|hgmini_|gv:set:)/;
+  var GAME_KEYS = CFG.saveKeys || /^(spikes100_|blocky|huntington|brownEClicker|beanBrew|neon|tetrisHighScore|frontline_|lifeScorePB|marketLife|netWorthPB|td2_|td-|sov\.|lumi_|imposter_|steelstorm_|elementlab_|mayhem_|hgach|hgq:|hgmini_|gv:set:)/;
   var SAVE_MAX = 400000;
   var sy = { running: null, state: 'idle', text: '', at: Number(store.get('syncat') || 0), n: 0, timer: null, open: false, first: null, waiters: {}, synced: false };
   function syncMeta() { try { return JSON.parse(store.get('sync') || '{}'); } catch (e) { return {}; } }
@@ -706,6 +706,9 @@
       claim: function (kind, id, n) { if (st.ready) paced({ type: 'ecoClaim', kind: kind, id: id || null, n: n || 0 }); },
       play: function (game, active) { if (st.ready) send({ type: 'play', game: String(game || '').slice(0, 40), active: !!active }); },
       slur: function () { if (st.ready) send({ type: 'slur' }); },
+      custom: function (text) { if (st.ready) send({ type: 'ecoCustom', text: String(text || '').slice(0, 40) }); },
+      gift: function (name, n) { if (st.ready) send({ type: 'ecoGift', name: name, n: n }); },
+      crate: function () { if (st.ready) send({ type: 'ecoCrate' }); },
       admin: function (op, name, id, n, text) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0, text: text || null }); },
       lbSubmit: function (board, s, d) { if (st.ready && isFinite(s)) paced({ type: 'lbSubmit', board: board, s: s, d: d || null }); },
       // every board in one frame; resolves with { best: { board: what the server holds for you } }

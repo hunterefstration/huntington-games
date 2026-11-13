@@ -24,6 +24,16 @@ function profPfp(id, px, img) {
   var inner = it.t ? '<b style="font-size:' + Math.round(s * (it.t.length > 2 ? .34 : .42)) + 'px">' + profEsc(it.t) + '</b>' : profEsc(it.e || '');
   return '<span class="ppfp' + (it.t ? ' team' : '') + '" title="' + profEsc(it.n) + '" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * .6) + 'px;background:linear-gradient(135deg,' + it.c[0] + ',' + it.c[1] + ')">' + inner + '</span>';
 }
+// a name in its owner's colour (a 'color' item: one colour, a gradient, or a moving gradient), and a picture in its frame
+function cosName(name, id) {
+  var it = id && profItem0(id); if (!it || it.k !== 'color') return profEsc(name);
+  return '<span class="nc' + (it.c.length > 1 ? ' grad' : '') + (it.an ? ' anim' : '') + '" style="' + (it.c.length === 1 ? 'color:' + it.c[0] : 'background-image:linear-gradient(90deg,' + it.c.join(',') + ')') + '">' + profEsc(name) + '</span>';
+}
+function cosFrame(html, id) {
+  var it = id && profItem0(id); if (!it || it.k !== 'frame') return html;
+  var f = it.st === 'spin' ? 'conic-gradient(' + it.c.concat(it.c[0]).join(',') + ')' : it.st === 'double' ? 'linear-gradient(135deg,' + it.c.join(',') + ')' : it.c[0];
+  return '<span class="pfr st-' + it.st + '" style="--f:' + f + ';--g:' + (it.c[1] || it.c[0]) + '">' + html + '</span>';
+}
 function profBannerCss(id) { var it = profItem(id); if (!it) return ''; var g = 'linear-gradient(120deg,' + it.c.join(',') + ')'; return it.svg ? profSvgUrl(it.svg) + ' center/cover no-repeat, ' + g : g; }
 var RAR = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', secret: 'Secret' };
 function profFmt(v, f) {
@@ -48,7 +58,7 @@ function profRender() {
   var eq = e.equip || {}, title = profItem(eq.title);
   var mine = L.eco.cos([me.userId])[me.userId] || {}, ranks = Object.keys(mine.ranks || {}).sort(function (a, b) { return mine.ranks[a] - mine.ranks[b]; });
   var h = '<div class="phead" style="background:' + (profBannerCss(eq.banner) || 'linear-gradient(120deg,#1b2440,#2a1b40)') + '">' +
-    profPfp(eq.pfp, 84) + '<div class="pwho"><div class="pnm">' + profEsc(me.name) + '</div>' +
+    cosFrame(profPfp(eq.pfp, 84), eq.frame) + '<div class="pwho"><div class="pnm">' + cosName(me.name, eq.color) + '</div>' +
     (title ? '<span class="ptag r-' + title.r + '">' + profEsc(title.n) + '</span>' : '<span class="ptag dim">no title yet</span>') +
     ((mine.rec || []).length ? '<span class="ptag rec">🏆 Record Holder</span>' : '') +
     ranks.slice(0, 4).map(function (g) { return '<span class="ptag rank t' + mine.ranks[g] + '">R' + mine.ranks[g] + ' · ' + profEsc(g) + '</span>'; }).join('') +
@@ -62,7 +72,7 @@ function profRender() {
   box.innerHTML = h;
   if (e.dev && PROF.tab === 'locker' && PROF.cat === 'pfp') profDevUpload(box);
 }
-var SLOTS = [['pfp', 'Pictures'], ['banner', 'Banners'], ['title', 'Titles'], ['skin', 'Blocky skins'], ['avatar', 'Blocky avatars'], ['music', 'Music']];
+var SLOTS = [['pfp', 'Pictures'], ['frame', 'Picture frames'], ['color', 'Name colours'], ['banner', 'Banners'], ['title', 'Titles'], ['skin', 'Blocky skins'], ['avatar', 'Blocky avatars'], ['music', 'Music'], ['perk', 'Extras']];
 function profItems(e, c, shop) {
   var eq = e.equip || {}, buys = window.HGGrapevine.eco.buys();
   var list = c.items.filter(function (i) { return i.k === PROF.cat && (shop ? i.p > 0 && !profOwns(e, i) || (shop && i.p > 0 && e.dev) : profOwns(e, i) || i.x); });
@@ -73,6 +83,7 @@ function profItems(e, c, shop) {
   if (groups.length > 1) h += '<div class="pgrps"><button data-pgrp="" class="' + (!PROF.grp ? 'on' : '') + '">All</button>' + groups.map(function (g) { return '<button data-pgrp="' + profEsc(g) + '" class="' + (PROF.grp === g ? 'on' : '') + '">' + profEsc(g || 'Other') + '</button>'; }).join('') + '</div>';
   if (PROF.grp) list = list.filter(function (i) { return profSect(i.g) === PROF.grp; });
   if (PROF.cat === 'music' && !shop) h += '<div class="pnote">The track you wear plays on the launcher (never over a game). <button class="pb" data-mtoggle="1">' + (window.HG_music && localStorage.getItem('hgv:music') === 'off' ? 'Music is off: turn on' : 'Music is on: turn off') + '</button></div>';
+  if (PROF.cat === 'perk') return h + profExtras(e, c, shop);
   if (!list.length) return h + '<div class="pempty">' + (shop ? 'You own everything here. Nice.' : 'Nothing here yet: the Goon Shop has plenty.') + '</div>';
   // one grid per group, with the game's name over its pictures ("Games: Last Light" -> "Last Light")
   var blocks = [], at = {};
@@ -81,6 +92,8 @@ function profItems(e, c, shop) {
     var own = profOwns(e, i), on = eq[i.k] === i.id, locked = !own && i.x;
     var prev = i.k === 'pfp' ? profPfp(i.id, 54) : i.k === 'banner' ? '<span class="pban" style="background:' + profBannerCss(i.id) + '"></span>'
       : i.k === 'title' ? '<span class="ptag big r-' + i.r + '">' + profEsc(i.n) + '</span>'
+      : i.k === 'color' ? '<span class="pncs">' + cosName(window.HGGrapevine.me().name, i.id) + '</span>'
+      : i.k === 'frame' ? cosFrame(profPfp(eq.pfp, 46), i.id)
       : '<span class="ppfp" style="width:54px;height:54px;font-size:30px;background:linear-gradient(135deg,' + i.c[0] + ',' + i.c[1] + ')">' + profEsc(i.e || '🎨') + '</span>';
     var btn = locked ? '<span class="plock" title="' + profEsc(i.x) + '">🔒 ' + profEsc(String(i.x).replace(/^(ach|tag):/, '').replace(/^\w/, function (x) { return x.toUpperCase(); })) + '</span>'
       : own ? (on ? '<button data-unequip="' + i.k + '" class="pb on">Wearing</button>' : '<button data-equip="' + i.id + '" class="pb">Wear</button>')
@@ -90,6 +103,22 @@ function profItems(e, c, shop) {
   };
   blocks.forEach(function (b) { h += (blocks.length > 1 && b.g ? '<h4 class="psec">' + profEsc(b.g.replace(/^Games: /, '')) + '</h4>' : '') + '<div class="pgrid">' + b.items.map(card).join('') + '</div>'; });
   return h;
+}
+// Extras: things to do with goons that are not something to wear
+function profExtras(e, c, shop) {
+  var P = c.prices || { crate: 6, customEdit: 5, giftMax: 20 }, L = window.HGGrapevine, own = e.dev || e.owned.indexOf('perk:customtitle') >= 0, mine = (e.ctitles || {})['title:c-own'] || '';
+  var perk = profItem0('perk:customtitle'), friends = []; try { friends = (L.friends().friends || []).map(function (f) { return f.name; }); } catch (x) {}
+  var left = c.items.filter(function (i) { return i.p > 0 && i.k !== 'perk' && !profOwns(e, i); }).length;
+  return '<div class="pextras">' +
+    '<div class="pex"><span class="pexi">&#9997;&#65039;</span><div><b>Your own title</b><p>Write the words under your name yourself (2 to 24 letters; rude ones are refused).' + (own ? ' Changing it later costs ' + P.customEdit + ' goons.' : '') + '</p>' +
+      (own ? '<div class="prow"><input id="px-title" maxlength="24" placeholder="e.g. Pizza Lord" autocomplete="off" value="' + profEsc(mine) + '"><button class="pb" data-pex="custom">' + (mine ? 'Change it (' + P.customEdit + ' goons)' : 'Set my title') + '</button></div>'
+           : '<button class="pb buy" data-buy="perk:customtitle">' + (perk ? perk.p : 30) + ' goons</button>') + '</div></div>' +
+    '<div class="pex"><span class="pexi">&#127873;</span><div><b>Mystery crate</b><p>One random thing from the shop that you do not own yet. Rare things are rarer: about 1 in 30 is legendary. ' + left + ' thing' + (left === 1 ? '' : 's') + ' left for you to find.</p>' +
+      '<button class="pb buy" data-pex="crate"' + (left ? '' : ' disabled') + '>Open a crate (' + P.crate + ' goons)</button></div></div>' +
+    '<div class="pex"><span class="pexi">&#128157;</span><div><b>Give goons to a friend</b><p>A present for a friend, up to ' + P.giftMax + ' goons a day.</p>' +
+      (friends.length ? '<div class="prow"><select id="px-friend">' + friends.map(function (n) { return '<option>' + profEsc(n) + '</option>'; }).join('') + '</select><input id="px-n" type="number" min="1" max="' + P.giftMax + '" value="1" style="width:76px"><button class="pb" data-pex="gift">Give</button></div>' : '<p class="pnote">Add a friend in Grapevine first.</p>') + '</div></div>' +
+    '<div class="pex"><span class="pexi">&#127920;</span><div><b>The casino</b><p>Swap goons for chips (1 goon = 100 chips) and play slots, blackjack, roulette and more, or sit at a live table with everyone. Goons are play money: they are not worth anything outside Huntington Games.</p>' +
+      '<button class="pb" data-pex="casino">Open the casino</button></div></div></div>';
 }
 function profBoards(c) {
   var games = []; Object.keys(c.boards).forEach(function (k) { var g = c.boards[k].g; if (games.indexOf(g) < 0) games.push(g); });
@@ -158,12 +187,12 @@ function lbView(c) {
   var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { var v = r.d[k]; return profEsc(k) + ': ' + profEsc(typeof v === 'number' ? profFmt(v, v >= 1e6 ? 'big' : 'int') : v); }).join(', ') : ''; };
   var top = d.rows.slice(0, 3), order = [1, 0, 2];
   h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
-    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + profPfp(cs.p, i ? 46 : 60, cs.img) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
+    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + cosFrame(profPfp(cs.p, i ? 46 : 60, cs.img), cs.fr) + '<b>' + cosName(r.n, cs.nc) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
   h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button>' +
     (d.rows.length > 6 ? '<input id="lb-find" class="lbfind" type="search" placeholder="Find a player..." autocomplete="off" spellcheck="false">' : '') + '</div>';
   var rest = d.rows.slice(3);
   if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
-    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
+    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + cosName(r.n, cs.nc) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
   return '<div class="lbwrap">' + side + h + '</div></div>';
 }
 document.addEventListener('click', function (e) {
@@ -232,6 +261,13 @@ document.addEventListener('click', function (ev) {
   else if (d.equip) { L.eco.equip(profItem(d.equip).k, d.equip); return; }
   else if (d.unequip) { L.eco.equip(d.unequip, null); return; }
   else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
+  else if (d.pex) {
+    if (d.pex === 'custom') { var tx = (document.getElementById('px-title').value || '').trim(); if (tx.length < 2) { hubToast('Type 2 to 24 letters.'); return; } L.eco.custom(tx); }
+    else if (d.pex === 'crate') { if (confirm('Open a mystery crate?')) L.eco.crate(); }
+    else if (d.pex === 'gift') { var fn = document.getElementById('px-friend').value, gn = Math.floor(+document.getElementById('px-n').value || 0); if (gn < 1) return; if (confirm('Give ' + gn + ' goon' + (gn === 1 ? '' : 's') + ' to ' + fn + '?')) L.eco.gift(fn, gn); }
+    else if (d.pex === 'casino') { var cg = GAMES.filter(function (g) { return g.dir === 'Casino'; })[0]; if (cg) { homeRecent(cg); play(cg); } }
+    return;
+  }
   else if (d.padm) {
     var nm = (document.getElementById('pa-name').value || '').trim(); if (!nm) { hubToast('Type their name first.'); return; }
     if (d.padm === 'custom') { var ct = (document.getElementById('pa-ctext').value || '').trim(); if (ct.length < 2) { hubToast('Type the title first (2 to 24 characters).'); return; } L.eco.admin('custom', nm, null, 0, ct); hubToast('Gave the title "' + ct + '" to ' + nm + '.'); return; }
@@ -244,7 +280,13 @@ document.addEventListener('click', function (ev) {
 });
 function profMount() {
   var L = window.HGGrapevine; if (!L || profMount.done) return; profMount.done = true;
-  L.on('eco', function (m) { profRender(); lbRender(); paintChip(); if (m && m.bought) { var it = profItem(m.bought); if (it) hubToast('Bought ' + it.n + '!'); } });
+  L.on('eco', function (m) {
+    profRender(); lbRender(); paintChip(); if (!m) return;
+    if (m.bought) { var it = profItem(m.bought); if (it) hubToast('Bought ' + it.n + '!'); }
+    if (m.crate) { var ci = profItem0(m.crate); if (ci) { PROF.tab = 'locker'; PROF.cat = ci.k; PROF.grp = ''; profRender(); hubToast('The crate had: ' + ci.n + ' (' + (RAR[ci.r] || ci.r) + ')! It is in your Locker.'); } }
+    if (m.custom) hubToast('Your title is now "' + m.custom + '".');
+    if (m.gifted) hubToast('Gave ' + m.gifted.n + ' goon' + (m.gifted.n === 1 ? '' : 's') + ' to ' + m.gifted.to + '.');
+  });
   L.on('cos', function () { if (PROF.tab === 'lb') profRender(); });
   L.on('ecoError', function (m) { hubToast(m.text || 'That did not work.'); });
 }

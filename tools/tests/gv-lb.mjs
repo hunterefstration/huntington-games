@@ -67,6 +67,7 @@ const plant = P => P.evaluate(() => {
   S('netWorthPB', '250000'); S('lifeScorePB', '9999999');
   S('td2_records', { best: 33, bestEndless: 61, games: 5, kills: 900 });
   S('steelstorm_save', { v: 1, stats: { matches: 9, wins: 6, kills: 77, deaths: 30, caps: 2 } });
+  S('mayhem_save', { v: 1, stats: { crowns: 3, shows: 11, qualified: 29 } });
   S('spikes100_progress', { unlocked: 42, bestOneLife: 9, bestEndless: 17 });
   S('blocky21_life', { xp: 1234.5, prestige: 1, kills: 800, headshots: 90, best: { classic: 22 }, waves: 30 });
   S('neonScores', [{ name: 'x', val: 4321 }]);
@@ -90,6 +91,7 @@ try {
   await want(A, 'market:score', 9999999);
   await want(A, 'td:endless', 61); await want(A, 'td:best', 33);
   await want(A, 'steel:wins', 6); await want(A, 'steel:kills', 77);
+  await want(A, 'mayhem:crowns', 3); await want(A, 'mayhem:qualified', 29);
   await want(A, 'spikes:level', 42); await want(A, 'blocky:wave', 22); await want(A, 'neon:best', 4321);
   check('a fractional XP total is taken (rounded down)', (await board(A, 'blocky:xp')).me > 1000, JSON.stringify(await board(A, 'blocky:xp')));
   console.log('\n=== 2. the tab shows it, and updates by itself ===');

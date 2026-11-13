@@ -542,3 +542,16 @@ html.gdense .game .galt { margin-top: 6px; padding: 2px 8px; font-size: 11px; }
 #gpeek b { font-size: 15px; } #gpeek p { margin: 6px 0; color: var(--dim); font-size: 12.5px; line-height: 1.45; } #gpeek i { display: block; color: var(--dimmer); font-size: 11.5px; margin-bottom: 6px; }
 .gp-tags span { display: inline-block; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,.08); color: var(--dim); margin-right: 4px; } #gpeek small { display: block; margin-top: 8px; color: var(--signal); font-size: 11.5px; }
 @media (max-width: 700px) { #ghero { height: auto; } .gh-img { display: none; } .gh-txt { padding: 16px; } .gh-dots { position: static; padding: 0 16px 12px; } .stile { flex-basis: 140px; } }
+/* name colours and picture frames (the same rules live in Grapevine's own css) */
+.nc.grad { -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+.nc.anim { background-size: 200% 100%; animation: ncmove 3s linear infinite; } @keyframes ncmove { to { background-position: 200% 0; } }
+.pfr { display: inline-flex; position: relative; border-radius: 50%; padding: 3px; vertical-align: middle; background: var(--f); }
+.pfr.st-glow { box-shadow: 0 0 10px 2px var(--g); }
+.pfr.st-spin { background: none; } .pfr.st-spin::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--f); animation: pfrspin 4s linear infinite; } .pfr.st-spin > * { position: relative; }
+@keyframes pfrspin { to { transform: rotate(360deg); } }
+.pncs { display: inline-flex; align-items: center; justify-content: center; height: 54px; font-size: 20px; font-weight: 900; max-width: 100%; overflow: hidden; }
+.pextras { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; margin-top: 12px; }
+.pex { display: flex; gap: 14px; background: var(--raise); border: 1px solid var(--line2); border-radius: 14px; padding: 14px; } .pexi { font-size: 34px; line-height: 1; }
+.pex b { font-size: 15px; } .pex p { margin: 4px 0 10px; color: var(--dim); font-size: 13px; line-height: 1.45; } .pex .prow { display: flex; gap: 8px; flex-wrap: wrap; }
+.pex input, .pex select { background: var(--ground); border: 1px solid var(--line2); color: var(--text); border-radius: 8px; padding: 6px 9px; font: inherit; min-width: 0; }
+.pfr .ppfp.none { background: var(--raise); }
