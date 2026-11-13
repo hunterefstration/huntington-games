@@ -9,7 +9,7 @@ function h(tag, a, ...kids) {
   if (a) for (const k in a) {
     const v = a[k]; if (v == null || v === false) continue;
     if (k === 'class') e.className = v; else if (k === 'html') e.innerHTML = v; else if (k === 'text') e.textContent = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k === 'style' && typeof v === 'object') { for (const p in v) if (p.startsWith('--')) e.style.setProperty(p, v[p]); else e.style[p] = v[p]; }
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
     else e.setAttribute(k, v === true ? '' : v);
   }
@@ -90,7 +90,7 @@ const sfx = (() => {
 // ---------- skippable, fast-able animation ----------
 let skipGen = 0;                                        // bumped by a click while something animates: everything finishes now
 const ease = { out: p => 1 - Math.pow(1 - p, 3), inOut: p => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2, lin: p => p };
-const dur = ms => (S.fast ? ms * 0.25 : ms);
+const dur = ms => (S.instant ? 0 : S.fast ? ms * 0.25 : ms);
 function tween(ms, fn, ez = ease.out) {
   ms = dur(ms); const gen = skipGen;
   return new Promise(res => {

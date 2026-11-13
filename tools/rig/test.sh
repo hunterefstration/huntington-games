@@ -5,7 +5,7 @@
 # Exit code 1 if any check failed. Details of a failing suite: /tmp/rig-<suite>.log
 . "$(dirname "$0")/env.sh"
 cd "$HG" || exit 1
-ALL="gv gv-saves gv-merge gv-flood gv-lb gv-qol gv-hub gv-games gv-ach gv-profile gv-tour gv-dock gv-invite gv-notify gv-ban gv-casino gv-report gv-shop"
+ALL="gv gv-saves gv-merge gv-flood gv-lb gv-qol gv-hub gv-games gv-ach gv-profile gv-tour gv-dock gv-invite gv-notify gv-ban gv-casino gv-casino-ui gv-report gv-shop"
 bad=0
 for s in ${*:-$ALL}; do
   bash "$HG/tools/rig/reset.sh" >/dev/null 2>&1
