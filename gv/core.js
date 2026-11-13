@@ -194,7 +194,7 @@
       case 'casino': return rpcDone('cas:' + m.rid, m);
       case 'casinoEv': emit('casino', m); return;
       case 'report': return rpcDone('report', m);
-      case 'reports': return rpcDone('reports', m);
+      case 'reports': if (m.ping) { emit('reports', m); return; } return rpcDone('reports', m);
       case 'parties': return rpcDone('parties', m);
       case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
@@ -716,6 +716,13 @@
       },
       lbLeave: function (board) { if (st.ready) paced({ type: 'lbLeave', board: board }); },
       lbGet: function (board) { return st.ready ? rpc0({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // reports (grapevine 078-reports.js): tell the admins about a player, a message, a bug. r = { kind, who, game, why, text, msgId }
+      report: function (r) {
+        if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
+        return rpc0(Object.assign({ type: 'report' }, r), 'report').then(function (m) { if (!m.ok) throw new Error(m.err || 'That did not send.'); return m; });
+      },
+      // admins: the inbox. op = 'list' | 'close' | 'reopen' | 'note'
+      reports: function (op, id, note) { return st.ready ? rpc0({ type: 'reportAdmin', op: op || 'list', id: id || null, note: note || null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },
       // the casino (grapevine 077-casino.js): every bet is a question to the server. Resolves with its answer
       // ({ bal: { chips, goons }, r: result, now }), rejects with the server's words. Live tables arrive as 'casino' events.
       casino: function (op, a) {

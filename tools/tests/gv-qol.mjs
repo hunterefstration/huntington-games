@@ -121,16 +121,33 @@ try {
   check('the What\'s new card shows once after an update', await A.evaluate(() => !document.getElementById('whatsnew').hidden && document.querySelectorAll('#whatsnew li').length >= 3));
   await A.click('#wn-x'); await A.reload(); await until(() => A.evaluate(() => document.querySelectorAll('#grid .game').length > 5));
   check('...and stays away after "Got it"', await A.evaluate(() => document.getElementById('whatsnew').hidden));
+  check('small tiles are the normal look', await A.evaluate(() => document.documentElement.classList.contains('gdense') && getComputedStyle(document.querySelector('#grid .game .desc')).display === 'none'));
   await A.click('#gdense');
-  check('small cards', await A.evaluate(() => document.documentElement.classList.contains('gdense')));
+  check('...and big cards with descriptions are one press away', await A.evaluate(() => !document.documentElement.classList.contains('gdense') && getComputedStyle(document.querySelector('#grid .game .desc')).display !== 'none'));
   await A.click('#gdense');
+  console.log('\n=== 5. the front page: banner, shelves, hover card ===');
+  check('a featured banner with a Play button', await A.evaluate(() => !document.getElementById('ghero').hidden && !!document.querySelector('#ghero .gh-play') && document.querySelector('#ghero h2').textContent.length > 2));
+  const sh = await A.evaluate(() => [...document.querySelectorAll('#gshelves .gshelf')].map(s => s.dataset.shelf + ':' + s.querySelectorAll('.stile').length));
+  check('shelves by kind of game, each scrolling sideways', sh.length >= 4 && sh.some(x => /^mp:/.test(x)) && await A.evaluate(() => { const r = document.querySelector('#gshelves .gsrow'); return getComputedStyle(r).overflowX === 'auto' && getComputedStyle(r).display === 'flex'; }), sh.join(' '));
+  check('every game is still listed below as a tile', await A.evaluate(() => document.querySelectorAll('#grid .game').length >= 15 && /All games/.test(document.getElementById('all-h').textContent)));
+  check('more than one row of tiles fits a 1280 screen without scrolling the page sideways', await A.evaluate(() => { const g = [...document.querySelectorAll('#grid .game')]; return g.filter(x => x.getBoundingClientRect().top === g[0].getBoundingClientRect().top).length >= 6 && document.documentElement.scrollWidth <= innerWidth; }));
+  await A.fill('#gq', 'tetris');
+  check('searching hides the banner and shelves and shows the matches', await A.evaluate(() => document.getElementById('ghero').hidden && document.getElementById('gshelves').hidden && /game/.test(document.getElementById('all-h').textContent)));
+  await A.fill('#gq', '');
+  await A.evaluate(() => { const t = document.querySelector('#gshelves .stile'); t.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' })); });
+  check('resting on a tile shows what the game is', !!(await until(() => A.evaluate(() => { const p = document.getElementById('gpeek'); return !p.hidden && p.querySelector('p').textContent.length > 20; }), 3000)));
+  await A.evaluate(() => { document.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' })); });
+  await A.evaluate(() => { document.querySelector('#gshelves .gshelf[data-shelf="mp"] .stile').click(); });
+  await A.waitForSelector('#player.open', { timeout: 20000 });
+  check('a shelf tile opens its game', true);
+  await A.evaluate(() => document.getElementById('back').click()); await A.waitForTimeout(500);
   await A.evaluate(() => { document.querySelector('.game[data-dir="Brown E Clicker"] .galt').click(); });
   await A.waitForSelector('#player.open', { timeout: 20000 });
   await until(async () => /Brown E/.test(await A.title()), 20000);
   check('the Rebalanced beta button opens the game in that mode', await A.evaluate(() => localStorage.getItem('brownEClicker_variant') === 'rb'));
   await A.evaluate(() => document.getElementById('back').click());
   await A.setViewportSize({ width: 1280, height: 900 }); await A.waitForTimeout(500);
-  if (process.env.SHOT) await A.screenshot({ path: process.env.SHOT });
+  if (process.env.SHOT) { await A.evaluate(() => scrollTo(0, 0)); await A.waitForTimeout(600); await A.screenshot({ path: process.env.SHOT }); }
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 await browser.close();
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');

@@ -3458,6 +3458,7 @@ function renderMsg(m){
   }
   if (!S.guest && m.userId !== S.userId) act('👤', () => openUser(m.displayName, m.userId), 'profile, friend request, DM…');
   act('↩', () => setReply(m), 'reply');
+  if (!S.guest && m.userId !== S.userId && !m.deleted) act('🚩', () => reportMessage(m), 'report this message to the admins');
   if (!S.guest && m.userId === S.userId && m.kind === 'text' && !m.deleted) act('✎', () => startEdit(m), 'edit');
   if (!S.guest && m.userId === S.userId && !m.deleted) {
     // Deleting is permanent — same two-press confirm as sign-out and the ops
@@ -4479,6 +4480,21 @@ function paintUserProfile(m){
   }
   holder.style.display = (p2.status || p2.about || (ac && ac.n > 0)) ? 'block' : 'none';
 }
+// ---- reports: tell the admins (the server keeps them; see archive 078-reports.js) ----------------------------
+// Inside the Huntington Games launcher its own Report dialog does the asking (parent.HG_report); on its own this app
+// asks with a plain prompt. Either way a reported message travels as its id, so the admins read what was really sent.
+function launcherReport(pre){ try { if (window.parent !== window && typeof window.parent.HG_report === 'function') { window.parent.HG_report(pre); return true; } } catch (e) {} return false; }
+function reportMessage(m){
+  const snip = m.kind === 'image' ? '[a picture]' : String(m.text || '').slice(0, 200);
+  if (launcherReport({ kind: 'message', msgId: m.msgId, convId: m.convId, who: m.displayName, snip })) return;
+  const why = prompt('Report this message from ' + m.displayName + ' to the admins?\n\nSay why in a few words (or leave it empty):'); if (why === null) return;
+  tell({ type: 'report', kind: 'message', msgId: m.msgId, convId: m.convId, why: 'other', text: why.slice(0, 800) }); toast('Reported to the admins. Thank you.');
+}
+function reportPlayer(name){
+  if (launcherReport({ kind: 'player', who: name })) return;
+  const why = prompt('Report ' + name + ' to the admins?\n\nWhat happened?'); if (why === null) return;
+  tell({ type: 'report', kind: 'player', who: name, why: 'other', text: why.slice(0, 800) }); toast('Reported to the admins. Thank you.');
+}
 function openUser(name, userId){
   if (name === S.name) { openAcct(); return; }
   $('#umName').textContent = name;
@@ -4495,6 +4511,7 @@ function openUser(name, userId){
   row('Send a DM', () => route(name, 'dm'));
   row(S.blocks.has(name) ? 'Unblock' : 'Block', () => localThen('block', name, !S.blocks.has(name)));
   row(S.mutes.has(name) ? 'Unmute' : 'Mute', () => localThen('muteUser', name, !S.mutes.has(name)));
+  row('🚩 Report to the admins', () => reportPlayer(name), true);
   // Moderation from the card: the same power-and-standing rule as the ⋯ menu.
   const target = c && c.members.find(m => m.name === name);
   if (c && c.kind !== 'dm' && target && canModerate(c, target.userId)) {

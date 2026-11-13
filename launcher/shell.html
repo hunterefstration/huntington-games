@@ -22,14 +22,17 @@
   <div id="topbar">
     <h1>HUNTINGTON GAMES</h1>
     <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-lb">Leaderboards</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
-    <button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
+    <button id="reportBtn" title="Report a player, a message or a bug to the admins">&#128681; Report</button><button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
   </div>
   <div id="view-games">
   <div id="whatsnew" hidden></div>
   <div class="sub" id="hello">Pick a game.</div>
   <div id="jump"></div>
   <div id="gbar"></div>
+  <div id="ghero" hidden></div>
+  <div id="gshelves" hidden></div>
   <div id="gnone" hidden>No games match that. <button>Show all games</button></div>
+  <h2 class="gsec" id="all-h">All games <span id="all-n"></span></h2>
   <div class="grid" id="grid"></div>
   <h2 class="gsec" id="mini-h" hidden>Minigames <span>Quick games, mostly for playing with friends</span></h2>
   <div class="grid mini" id="grid-mini"></div>
@@ -72,10 +75,12 @@
 <button id="exp-btn" title="Prototypes and older games">experimental</button>
 <div id="exp"><div class="box"><button class="close" id="exp-close">Close</button><h2>Experimental</h2><div class="rdesc" style="margin-bottom:8px">Prototypes, remixes and side projects.</div><div id="exp-list"></div></div></div>
 <div id="player">
-  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><button id="pfav" title="Add to favourites" hidden>&#9734;</button><span id="chathint"></span><span id="livestat"></span><button id="golive" title="Let friends watch this game with a code">Go live</button><button id="prestart" title="Start this game again from its first screen">Restart</button><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
+  <div id="ptop"><button id="back">&#8592; All games</button><span id="ptitle"></span><button id="pfav" title="Add to favourites" hidden>&#9734;</button><span id="chathint"></span><span id="livestat"></span><button id="golive" title="Let friends watch this game with a code">Go live</button><button id="preport" title="Report a player or a bug in this game to the admins">&#128681; Report</button><button id="prestart" title="Start this game again from its first screen">Restart</button><button id="full" title="Fullscreen">Fullscreen</button><button id="newtab">New tab</button></div>
   <iframe id="frame" allow="fullscreen; pointer-lock; autoplay; gamepad" allowfullscreen></iframe>
 </div>
 <div id="netbar" hidden></div>
+<div id="reportdlg" hidden></div>
+<div id="gpeek" hidden></div>
 <script><!--@inline js/10-hub/--></script>
 </body>
 </html>
