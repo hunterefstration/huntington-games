@@ -17,6 +17,9 @@ function botAdd() {
     const id = NET.botSeq++;
     const p = makePlayer(id, 'BOT ' + nm, 0, COOP_COLORS[(id * 3 + 1) % COOP_COLORS.length]);
     p.bot = { skill: botSkill(), gun: BOT_GUNS[id % BOT_GUNS.length] };
+    // 5.4: bots carry a class too (shown on the scoreboard; HEAVY bots shrug off 10% of each hit, ASSAULT bots hit 10% harder)
+    const bc = CLASS_ORDER[(id * 5 + 3) % CLASS_ORDER.length]; p.bot.cls = bc;
+    p.look = cleanLook({ c: bc, cv: 1 + (id * 7) % 20 });
     netPlayers.set(id, p);
     autoTeam(p);
     return true;
@@ -59,7 +62,7 @@ function botRespawn(p, at) {
 function botDamaged(p, d, by, si) {
     if (!isBot(p) || !p.alive) return;
     const b = p.bot;
-    b.hp -= d; p.hp = Math.max(0, Math.ceil(b.hp));
+    b.hp -= d * (b.cls === 'heavy' ? 0.9 : 1); p.hp = Math.max(0, Math.ceil(b.hp));
     if (b.tgt < 0 && by !== p.id) { b.tgt = by; b.aimT = BOT_SKILL[b.skill].react * 0.8; }     // turn on whoever shot it
     if (b.hp <= 0) {
         p.alive = false; p.hp = 0; b.respawnT = modeRespawnDelay(p.team);
@@ -232,7 +235,7 @@ function botFire(p, T, TP, dist, w, S) {
     } else p.fireT = 0.12;
     if (!hit) return;
     let dmg = w.melee ? w.damage : w.damage * (w.pellets > 1 ? w.pellets * clamp(1 - dist / range, 0.15, 0.75) : 1);
-    dmg = Math.min(dmg, w.melee ? 80 : 95) * S.dmg * (head ? Math.min(2, w.hsMult || 1.5) : 1);
+    dmg = Math.min(dmg, w.melee ? 80 : 95) * S.dmg * (head ? Math.min(2, w.hsMult || 1.5) : 1) * (b.cls === 'assault' ? 1.1 : 1);
     hostApplyPvpHits(p, [[T.id, r2(dmg), head ? 1 : 0, 0, srcIdx(w.melee ? 'melee' : b.w)]]);
 }
 function botWrite(p, now) {

@@ -16,7 +16,7 @@ function railTick(w) {
         if (railC >= 1) { if (was < 1) sfx('railfull'); railHold = gameTime - railStart - railTime(w); if (railHold > 2) railRelease(w); }   // it can't hold a full charge for ever
     } else if (railC > 0) { if (railC >= 0.2) railRelease(w); else railCancel(); }
 }
-const railTime = (w) => w.charge * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
+const railTime = (w) => w.charge * fastFire();
 function railRelease(w) { lastShootTime = gameTime; fireOnce(w); railCancel(); }
 function railCancel() { railC = 0; railHold = 0; railOn = false; stopHum(railHum); railHum = null; setStyle(ui.railRing, 'opacity', '0'); }
 const _rbD = new V3(), _rbU = new V3(), _rbV = new V3(), _rbP = new V3();
@@ -293,7 +293,7 @@ function traceShot(origin, dir, w, perEnemy, dmgMul) {
             end = h.point; break;
         }
         const rec = perEnemy.get(e) || { dmg: 0, head: false, point: h.point.clone(), dir: dir.clone(), hits: 0 };
-        rec.dmg += dmg * (ud.isHead ? w.hsMult * (1 + 0.12 * perk('dead')) : 1) * (u.state === 'stun' ? 1.5 : 1);
+        rec.dmg += dmg * (ud.isHead ? w.hsMult * (1 + 0.12 * perk('dead') + clsHs()) : 1) * (u.state === 'stun' ? 1.5 : 1);
         rec.head = rec.head || !!ud.isHead; rec.hits++;
         perEnemy.set(e, rec);
         spawnParticles(h.point, zLook(u.config).blood, 3, 5, 0.35, 0.1, true, { grav: 20 });

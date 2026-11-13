@@ -7,7 +7,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Blocky Shooter - Version 5.2</title>
+    <title>Blocky Shooter - Version 5.4</title>
     <!-- Tailwind, precompiled (no runtime CSS compiler = less CPU during play) -->
     <!--@css-->
 
@@ -132,8 +132,8 @@
         <div id="home-menu" class="mm-col flex flex-col justify-center h-full">
             <div class="logo-wrap">
                 <div class="logo-kicker">THE ZOMBIE SHOOTER</div>
-                <h1 class="logo"><span class="l1">BLOCKY</span><span class="l2">SHOOTER</span><b class="l3">5.2</b></h1>
-                <button id="menu-version" class="logo-ver">VERSION 5.2 &middot; <span>SEE WHAT'S NEW &rsaquo;</span></button>
+                <h1 class="logo"><span class="l1">BLOCKY</span><span class="l2">SHOOTER</span><b class="l3">5.4</b></h1>
+                <button id="menu-version" class="logo-ver">VERSION 5.4 &middot; <span>SEE WHAT'S NEW &rsaquo;</span></button>
                 <p class="text-amber-300 text-xs font-bold tracking-widest mt-3 h-4" id="menu-best"></p>
                 <div id="menu-rank" class="flex items-center gap-3 mb-3"></div>
             </div>
@@ -142,10 +142,12 @@
                 <button id="btn-continue" class="hbtn cont hidden"></button>
                 <button id="btn-campaign" class="hbtn lg">CAMPAIGN <em>CHAPTER 1</em></button>
                 <button id="btn-mp" class="hbtn lg">MULTIPLAYER</button>
+                <button id="btn-classes" class="hbtn lg">CLASSES <em id="btn-classes-sub"></em></button>
                 <button id="btn-main-shop" class="hbtn lg">ARMORY</button>
                 <button id="btn-main-settings" class="hbtn lg">SETTINGS</button>
                 <button id="btn-delete-save" class="hidden self-start text-xs font-bold text-gray-500 mt-1" style="background:none;text-decoration:underline;cursor:pointer">Delete save</button>
             </div>
+            <div id="news54" class="hidden"></div>
         </div>
         <div id="setup-menu" class="mm-col hidden h-full flex flex-col px-10 py-7" style="width:min(660px,100vw)">
             <div class="flex items-center gap-3 mb-2">
@@ -269,6 +271,8 @@
     <div id="save-badge" style="position:fixed;top:9.5rem;left:50%;transform:translateX(-50%);z-index:60;pointer-events:none;opacity:0;transition:opacity 0.35s;background:rgba(5,46,22,0.85);border:1px solid #22c55e;color:#bbf7d0;font-weight:800;font-size:0.95rem;padding:0.35rem 0.9rem;border-radius:0.5rem;white-space:nowrap"></div>
     <div id="camp-arrow" class="hidden"><b id="camp-arr-i">&#9650;</b><span id="camp-arr-t"></span></div>
     <div id="camp-brief" class="hidden absolute inset-0 z-[60] flex items-center justify-center"></div>
+    <!-- 5.4: the CLASSES screen (levels, skill trees, specialisations, mastery) and the one-time "what's new" note -->
+    <div id="cls-overlay" class="hidden"><div id="cls-box"></div></div>
     <div id="camp-result" class="hidden absolute inset-0 z-50 flex items-center justify-center"></div>
     <div id="gameover-overlay" class="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center z-50 hidden backdrop-blur-md">
         <h2 class="text-7xl font-black text-red-500 mb-4 tracking-widest drop-shadow-[0_0_30px_rgba(255,0,0,0.8)]">WASTED</h2>

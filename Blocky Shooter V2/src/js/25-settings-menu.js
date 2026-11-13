@@ -60,6 +60,7 @@ function renderRankBar() {
         <div class="flex-1"><div class="h-2.5 bg-black/50 rounded overflow-hidden border border-white/10"><div class="h-full bg-gradient-to-r from-amber-500 to-yellow-300" style="width:${ri.rank >= MAX_RANK ? 100 : ri.into / ri.need * 100}%"></div></div>
         <div class="text-[11px] text-gray-400 font-bold mt-1">${after}${next ? `  \u00b7  Next unlock at rank ${next.r}: ${next.u.map(u => unlockLabel(u.kind, u.id)).slice(0, 2).join(', ')}` : (P && ri.rank < MAX_RANK ? `  \u00b7  Prestige ${P + 1 <= MAX_PRESTIGE ? P + 1 + ' at rank ' + MAX_RANK : 'maxed'}  \u00b7  +${5 * P}% XP, +$${100 * P} start cash` : '')}</div></div>` +
         (canPrestige() ? `<button class="chip prest" data-act="goprestige">PRESTIGE</button>` : '');
+    homeClassesLabel();
 }
 // 4.0: the HUD line under the enemy count - your rank and prestige badge
 let rankHudKey = '';
@@ -74,7 +75,7 @@ function renderMenu() {
     const P = $('menu-panel');
     let h = '';
     if (menuTab === 'play') {
-        h += chipRow('CLASS', 'cls', CLASS_ORDER.map(k => [k, CLASSES[k].name, hexC(CLASSES[k].color)]));
+        h += chipRow('CLASS', 'cls', CLASS_ORDER.map(k => [k, `${CLASSES[k].name} <span class="text-[10px] opacity-70">${clsLvl(k)}</span>`, hexC(CLASSES[k].color)]));
         h += classInfoCard(validClass(settings.cls));
         h += chipRow('MODE', 'mode', Object.entries(MODES).map(([k, m]) => [k, m.name, m.color]), MODES[settings.mode].desc);
         h += chipRow('MAP', 'map', [['random', 'RANDOM']].concat(Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => [k, m.chip || m.name])), settings.map === 'random' ? 'A different map every run.' : MAPS[settings.map].desc, ' sm');
@@ -103,7 +104,7 @@ function renderMenu() {
         const tile = (k, v) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`;
         h += `<div class="mlabel">LIFETIME</div><div class="grid grid-cols-3 gap-2">${tile('RUNS', life.runs)}${tile('KILLS', life.kills)}${tile('HEADSHOTS', `${life.headshots} <span class="text-sm text-gray-400">${hs}%</span>`)}${tile('ACCURACY', acc + '%')}${tile('BOSSES', life.bosses)}${tile('WAVES CLEARED', life.waves)}${tile('TIME PLAYED', hrs ? `${hrs}h ${mins}m` : `${mins}m`)}${tile('DAMAGE', life.damage >= 10000 ? Math.round(life.damage / 1000) + 'k' : life.damage)}${tile('AVG WAVE', life.runs ? (life.waves / life.runs + 1).toFixed(1) : '-')}${tile('PRESTIGE', prestigeLvl() ? `<span class="flex items-center gap-2">${prestigeBadge(prestigeLvl(), 24)}${prestigeLvl()}</span>` : '0')}${tile('DAILY CHALLENGES', chState.doneD)}${tile('WEEKLY CHALLENGES', chState.doneW)}</div>`;
         h += `<div class="mlabel">BEST WAVES</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">DIFFICULTY</div><div class="text-gray-400">CLASSIC</div><div class="text-gray-400">RUSH</div><div class="text-gray-400">BOSS RUSH</div>${Object.entries(DIFFICULTIES).map(([k, d]) => `<div style="color:${d.color}">${d.name}</div><div>${life.best[k] || '-'}</div><div>${life.best[k + '_rush'] || '-'}</div><div>${life.best[k + '_boss'] || '-'}</div>`).join('')}</div>`;
-        h += `<div class="mlabel">CLASSES</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">CLASS</div><div class="text-gray-400">RUNS</div><div class="text-gray-400">KILLS</div><div class="text-gray-400">BEST WAVE</div>${CLASS_ORDER.map(k => { const c = life.cls[k] || {}; return `<div style="color:${CLASSES[k].css}">${CLASSES[k].name}</div><div>${c.runs || '-'}</div><div>${c.kills || '-'}</div><div>${c.best || '-'}</div>`; }).join('')}</div>`;
+        h += `<div class="mlabel">CLASSES</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">CLASS</div><div class="text-gray-400">RUNS</div><div class="text-gray-400">KILLS</div><div class="text-gray-400">BEST WAVE</div>${CLASS_ORDER.map(k => { const c = life.cls[k] || {}; return `<div style="color:${CLASSES[k].css}">${CLASSES[k].name} <span class="text-gray-400 text-xs">LV ${clsLvl(k)}</span></div><div>${c.runs || '-'}</div><div>${c.kills || '-'}</div><div>${c.best || '-'}</div>`; }).join('')}</div>`;
         h += `<div class="mlabel">MAPS</div><div class="grid grid-cols-4 gap-y-1 text-sm font-bold bg-black/30 rounded-lg p-3"><div class="text-gray-400">MAP</div><div class="text-gray-400">RUNS</div><div class="text-gray-400">WAVES CLEARED</div><div class="text-gray-400">BEST WAVE</div>${Object.entries(MAPS).filter(([, m]) => !m.hidden).map(([k, m]) => { const c = life.maps[k] || {}; return `<div>${m.name}</div><div>${c.runs || '-'}</div><div>${c.waves || '-'}</div><div>${c.best || '-'}</div>`; }).join('')}</div>`;
         const wk = Object.entries(life.weaponKills).sort((a, b) => b[1] - a[1]).slice(0, 6), top = wk.length ? wk[0][1] : 1;
         h += `<div class="mlabel">FAVORITE WEAPONS</div>` + (wk.length ? wk.map(([k, n]) => `<div class="flex items-center gap-3 text-sm font-bold mb-1"><div class="w-28 truncate">${killerName(k)}</div><div class="flex-1 h-3 bg-black/40 rounded overflow-hidden"><div class="h-full" style="width:${n / top * 100}%;background:${weaponsDb[k] ? hex(weaponsDb[k].color) : '#f97316'}"></div></div><div class="w-12 text-right">${n}</div></div>`).join('') : '<div class="mdesc">Play a run to start tracking.</div>');
@@ -144,10 +145,10 @@ function renderMenu() {
 function classInfoCard(id) {
     const C = CLASSES[id], col = hexC(C.color);
     return `<div class="bcard flex-col mt-2" style="gap:4px;border-color:${col}66">
-        <div class="flex items-baseline justify-between gap-2"><div class="font-black tracking-wide" style="color:${col}">${C.name} <span class="text-[10px] text-gray-400 tracking-widest">${C.role.toUpperCase()}</span></div><div class="text-[10px] font-bold text-gray-400 whitespace-nowrap">OFF IN PVP</div></div>
-        <div class="text-xs text-gray-200"><span class="key">X</span> <b style="color:${col}">${C.ability}</b> - ${C.abilityDesc} <span class="text-gray-400">${C.cd[0]}s cooldown.</span></div>
+        <div class="flex items-baseline justify-between gap-2"><div class="font-black tracking-wide" style="color:${col}">${C.icon} ${C.name} <span class="text-[10px] text-gray-400 tracking-widest">${C.role.toUpperCase()}</span></div><div class="text-[11px] font-black whitespace-nowrap" style="color:${col}">LEVEL ${clsLvl(id)}${clsPts(id) > 0 ? ` <span class="text-amber-300">\u00b7 ${clsPts(id)} POINT${clsPts(id) > 1 ? 'S' : ''} TO SPEND</span>` : ''}</div></div>
+        <div class="text-xs text-gray-200"><span class="key">X</span> <b style="color:${col}">${C.ability}</b> - ${C.abilityDesc} <span class="text-gray-400">${C.cd}s cooldown.</span></div>
         <div class="text-xs text-gray-300"><b class="text-white">PASSIVE</b> - ${C.passive}</div>
-        <div class="text-[11px] text-gray-400"><b class="text-gray-300">UPGRADES</b> (Armory, during a run): ${C.tree.map((t, i) => `<b class="text-gray-200" title="${t.desc}" style="cursor:help">${i + 1}. ${t.name}</b>`).join(' › ')}</div>
+        <div class="flex items-center gap-2 flex-wrap"><button class="chip sm" data-act="openclasses">CLASSES &amp; SKILL TREE &rsaquo;</button><span class="text-[11px] text-gray-400">Level up by playing the class; spend skill points out of game. PvP: level-1 baseline.</span></div>
     </div>`;
 }
 // 4.0 PRESTIGE: the section at the top of the Ranks tab (two clicks to prestige - the first one arms the button)
@@ -171,7 +172,8 @@ function prestigePanel() {
 // 4.0: the version line on the menu opens this - the highlights of the whole update
 function whatsNew() {
     const sec = (title, col, items) => `<div class="mlabel" style="color:${col}">${title}</div><ul class="news text-sm text-gray-200">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
-    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.2</div>` +
+    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.4 - CLASS REWORK</div>` + whatsNew54(sec) +
+        `<div class="text-2xl font-black text-white mt-4">5.2</div>` +
         sec('FIXED: SCREEN FLASHES', '#fca5a5', ['<b>No more surprise flashbangs.</b> Lightning on the Storm lighting was a double 4x-brightness strobe every 7 to 17 seconds, red/white/green hit and pickup flashes could stack and repeat every frame (damage over time, several hits at once), and a big explosion next to your face could fill the screen with white. Lightning is now one soft pulse at least 14 seconds apart, screen flashes never stack or repeat (one at a time, capped in strength, never white), explosions fade near the camera and only light the scene when you could see them, and a replayed or spammed multiplayer explosion is dropped. New setting: <b>Reduce flashes</b> (on by default).']) +
         sec('GOON SHOP SKINS + AVATARS', '#fde047', ['The <b>skin</b> and <b>avatar</b> you wear in your launcher Profile now show up in the game: your first-person sleeves and gloves take the skin colours and pattern (camo, stripes, check, metal, glow), and everyone in multiplayer sees your skin and avatar (robot, knight, astronaut, ninja, pirate, zombie, alien, cowboy, wizard, samurai) on your player model. The CUSTOMIZE tab shows what you wear. Get more in your launcher Profile (Goon Shop).']) +
         sec('BETTER PLAYER MODELS', '#86efac', ['Other players now have a proper head, torso, arms with hands and legs, and they walk, aim, shoot, reload and slide. They hold the weapon they are using in their hands, with a different model for each gun class (pistols, SMG, rifles, shotgun, sniper, LMG, minigun, launchers, tesla, railgun, crossbow, katana), and it changes when they switch.']) +
@@ -236,8 +238,9 @@ $('menu-panel').addEventListener('click', (e) => {
         } else { prestigeArm = performance.now() + 5000; setTimeout(() => { if (menuTab === 'ranks' && currentGameState === 'main') renderMenu(); }, 5100); }
         renderMenu(); return;
     }
+    if (b.dataset.act === 'openclasses') { openClasses(validClass(settings.cls)); return; }
     if (b.dataset.act === 'resetstats') {
-        if (confirm('Reset all lifetime stats and best waves?')) { for (const k of ['runs', 'kills', 'headshots', 'bosses', 'shots', 'hits', 'damage', 'time', 'waves']) life[k] = 0; life.best = {}; life.weaponKills = {}; life.cls = {}; life.maps = {}; saveJSON('blocky21_life', life); }
+        if (confirm('Reset all lifetime stats and best waves?')) { for (const k of ['runs', 'kills', 'headshots', 'bosses', 'shots', 'hits', 'damage', 'time', 'waves']) life[k] = 0; life.best = {}; life.weaponKills = {}; for (const k in life.cls) { const c = life.cls[k]; if (c && typeof c === 'object') { c.runs = 0; c.kills = 0; c.best = 0; } } life.maps = {}; saveJSON('blocky21_life', life); }     // 5.4: class levels and trees are progress, not stats - they stay
         renderMenu(); return;
     }
     const key = b.dataset.set, val = b.dataset.val;
@@ -370,8 +373,14 @@ window.__blocky = {
     rayT: (yaw, maxT = 60) => { const d = new V3(-Math.sin(yaw), 0, -Math.cos(yaw)); const o = new V3(camera.position.x, feetY + 1.2, camera.position.z); const h = raySolids(o, d, maxT); return h ? h.t : maxT; },
     mouse: (btn, down) => (down ? onMouseDown : onMouseUp)({ button: btn }),
     // 4.0 classes
-    cls: (id) => { playerStats.cls = validClass(id); applyMinimapSize(); },
-    clsUp: (id, L) => { playerStats.clsUp[id] = L; },
+    cls: (id) => { playerStats.cls = validClass(id); settings.cls = playerStats.cls; clearWCache(); maxHp = clsMaxHp(); currentHp = Math.min(currentHp, maxHp); applyMinimapSize(); scoutCh = scoutMax(); },
+    // 5.4 class progress
+    clsXP: (id, xp) => { clsP(id).xp = Math.max(0, xp); clsSanitize(id); clsChanged(); return clsLvl(id); },
+    clsGain: (n) => clsGainXP(n), clsBuy: (id, node) => clsBuy(id, node), clsRespec: (id) => clsRespec(id), clsSpec: (id, t, s) => clsPickSpec(id, t, s),
+    clsLvl: (id) => clsLvl(id), clsPts: (id) => clsPts(id), get clsStats() { const s = clsS(); return JSON.parse(JSON.stringify(s)); }, clsTotal: () => clsTotal(), mastery: () => masteryTier(),
+    openClasses: (id) => openClasses(id), get clx() { return JSON.parse(JSON.stringify(CLX)); }, clsSummary: () => clsSummaryHtml(), clsMigrate: () => clsMigrate(),
+    get cls54() { return { scoutCh, slipT, dashDrT, demoQ: demoQ.length, inOwnField, taken: clsTaken(), dmg: clsDmg(), hs: clsHs(), speed: clsSpeed(), maxHp, push: [push.x, push.z], airJumps }; },
+    mfd: () => enemies.filter(e => e.userData.mfdT > gameTime).length,
     ability: () => useAbility(),
     resetCd: () => { abilityCd = 0; },
     pause: () => changeGameState('paused'),

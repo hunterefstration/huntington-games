@@ -1,47 +1,86 @@
-// ---------- 4.0 CLASS ABILITIES (X) ----------
-// ASSAULT Adrenaline, MEDIC Healing Field, ENGINEER Field Kit (mini sentry + ammo crate), RECON Radar Pulse.
-// Multiplayer: the Healing Field heals teammates and Recon's UPLINK shares marks (both ride the existing 'fx' relay, and
-// each computer only ever heals / marks for its own player). Everything else is local to your own computer: Adrenaline,
-// the Engineer's mini sentry and crate (teammates don't see them; the sentry isn't a decoy on the host) and your marks.
+// ---------- 4.0 CLASS ABILITIES (X) - 5.4: eight classes, effects from the permanent tree (02b-class-progress.js) ----------
+// ASSAULT Adrenaline, MEDIC Healing Field, ENGINEER Field Kit, RECON Radar Pulse, HEAVY Bulwark, DEMOLITIONS Cluster Charge,
+// MARKSMAN Mark for Death, SCOUT Dash. Multiplayer: the Healing Field heals teammates and Recon's UPLINK shares marks (both
+// ride the existing 'fx' relay, each computer only ever heals / marks for its own player); Cluster Charge blasts go out like
+// any explosion. Everything else is local to your own computer and applied where your hits are worked out (before a guest
+// sends them to the host) or where your own damage is taken. In PvP the tree and specialisations give nothing (baseline).
 const adrenOn = () => abilityT > 0 && myClass() === 'assault';
-const clsDmg = () => adrenOn() ? (clsUp('assault', 2) ? 1.5 : 1.25) : 1;       // your damage multiplier from the class
-const abilityCooldown = (id = myClass()) => CLASSES[id] ? CLASSES[id].cd[Math.min(3, clsLvl(id))] : 1;
-const gadgetMul = () => myClass() === 'engineer' ? 0.75 : 1;                      // ENGINEER passive: cheaper gadgets
+let ambushUntil = -9, slipT = 0, dashDrT = 0, dashShoveT = 0, scoutCh = 1, airJumps = 0, jumpTap = false, chainAdd = 0, quakeT = 0, thornT = 0, inOwnField = false;
+const demoQ = [];
+const fastFire = () => adrenOn() && clsSp('berserk') ? 0.8 : 1;                                   // BERSERKER: 20% faster fire
+// your damage multiplier from the class (Adrenaline, the tree's FIREPOWER, Marksman focus in PvP, Scout AMBUSH)
+const clsDmg = () => (adrenOn() ? 1 + (clsSp('berserk') ? 0.5 : 0.25) * clsPow() : 1) * (1 + clsS().dmg)
+    * (NET.pvp && abilityT > 0 && myClass() === 'marksman' ? 1.15 : 1) * (gameTime < ambushUntil && myClass() === 'scout' ? 1.6 : 1);
+const abilityCooldown = (id = myClass()) => { const C = CLASSES[id]; if (!C) return 1; const mine = id === myClass(); return C.cd * (mine ? 1 - clsS().cd : 1) * (mine && id === 'demo' && clsSp('fuse') ? 0.7 : 1); };
+const gadgetMul = () => myClass() === 'engineer' ? 0.75 - clsS().disc : 1;                        // ENGINEER passive: cheaper gadgets
 const secCost = (sec) => Math.round(sec.cost * gadgetMul() / 10) * 10;
+const clsHs = () => clsS().hs + (myClass() === 'marksman' ? 0.15 : 0);           // MARKSMAN passive + the tree
+const scoutMax = () => clsSp('twin') ? 2 : 1;
+const clsSpeed = () => clsS().spd + (myClass() === 'scout' ? 0.08 + (slipT > 0 ? 0.25 : 0) : 0);
 const _clsP = new V3(), _clsD = new V3();
 let beatT = 0, healTick = 0, healingNow = 0, radarScan = 0, clsWas = null, fxBeat = 0, abilReadyWas = true;
+const ABILITY_FN = { assault: () => adrenaline(), medic: () => healingField(), engineer: () => fieldKit(), recon: () => radarPulse(),
+                     heavy: () => bulwark(), demo: () => clusterCharge(), marksman: () => markForDeath(), scout: () => dash() };
 function useAbility() {
-    if (currentGameState !== 'playing' || currentHp <= 0 || NET.dead) return;
+    if (currentGameState !== 'playing' || currentHp <= 0 || NET.dead || NET.spec) return;
     const id = myClass();
-    if (!id) { toast('Class abilities are off in PvP', '#9ca3af', 1.2); sfx('deny'); return; }
+    if (!id) return;
     const C = CLASSES[id];
+    if (id === 'scout') {          // DASH has charges (TWIN DASH: 2); the cooldown refills one at a time
+        scoutCh = Math.min(scoutCh, scoutMax());
+        if (scoutCh <= 0) { toast(`${C.ability} RECHARGING - ${Math.ceil(abilityCd)}s`, '#9ca3af', 1); sfx('deny'); return; }
+        if (!dash()) return;
+        scoutCh--; if (abilityCd <= 0) abilityCd = abilityCooldown(id);
+        updateAbilityHUD(); chAdd('ability', 1); return;
+    }
     if (abilityCd > 0) { toast(`${C.ability} RECHARGING - ${Math.ceil(abilityCd)}s`, '#9ca3af', 1); sfx('deny'); return; }
-    const ok = id === 'assault' ? adrenaline() : id === 'medic' ? healingField() : id === 'engineer' ? fieldKit() : radarPulse();
-    if (!ok) return;
+    if (!ABILITY_FN[id]()) return;
     abilityCd = abilityCooldown(id);
     updateAbilityHUD();
     chAdd('ability', 1);
 }
+// what every ability does on top of its own job, from the tree: REARM (gadget recharged), CLEANSE / SHAKE OFF (heal), SHOCKWAVE
+function abilStart(shove = true) {
+    const s = clsS();
+    if (s.topUp) secondaryCooldown = 0;
+    if (s.abilHeal) currentHp = Math.min(maxHp, currentHp + s.abilHeal);
+    if (shove && s.shove) clsShove(s.shove, 0);
+}
+// throw back (and hurt) every zombie within r of you
+function clsShove(r, dmg, k = 1) {
+    const px = camera.position.x, pz = camera.position.z;
+    for (const e of [...enemies]) {
+        const u = e.userData; if (u.dead) continue;
+        const dx = e.position.x - px, dz = e.position.z - pz, d = Math.hypot(dx, dz);
+        if (d > r + u.radius || Math.abs(e.position.y - feetY) > 3) continue;
+        const f = (1 - 0.5 * d / (r + u.radius)) * k / Math.max(0.8, u.config.scale * (u.config.boss ? 3 : 1));
+        _clsD.set(dx, 0, dz); if (_clsD.lengthSq() < 0.01) _clsD.set(1, 0, 0); _clsD.normalize();
+        u.knock.addScaledVector(_clsD, 18 * f); u.velocityY = Math.max(u.velocityY || 0, 9 * f); u.onGround = false;
+        if (dmg > 0) damageEnemy(e, dmg * (1 - 0.4 * d / (r + u.radius)), false, new V3(e.position.x, e.position.y + u.totalHeight * 0.6, e.position.z), true, null, 1, 'melee');
+    }
+}
 // ASSAULT: every gun topped up on the spot, then faster and harder-hitting for a few seconds
 function adrenaline() {
-    abilityDur = abilityT = clsUp('assault', 1) ? 8 : 6;
+    abilityDur = abilityT = clsDur(clsSp('wind') ? 8 : 6); chainAdd = 0;
     cancelReload(); burstLeft = 0;
     for (const w of playerStats.weapons) ammoState[w] = W(w).magSize;
-    if (clsUp('assault', 1)) currentHp = Math.min(maxHp, currentHp + 30);
+    if (clsSp('wind')) currentHp = Math.min(maxHp, currentHp + 30);
+    abilStart();
     beatT = 0.35; fxBeat = 1;
     sfx('adren'); screenFlash('rgba(249,115,22,0.4)'); shake = Math.max(shake, 0.25);
     spawnBlastFx(_clsP.set(camera.position.x, feetY + 0.3, camera.position.z), 6, 0xff7a1a, true, 0.5);
-    toast(clsUp('assault', 3) ? 'ADRENALINE!  UNSTOPPABLE' : 'ADRENALINE!', '#fb923c', 1.4);
+    toast(clsSp('berserk') ? 'ADRENALINE!  BERSERKER' : clsSp('unstop') ? 'ADRENALINE!  UNSTOPPABLE' : 'ADRENALINE!', '#fb923c', 1.4);
     updateHUD();
     return true;
 }
 // MEDIC: a glowing ring on the ground that heals everyone standing in it
-function healStats() { return { r: clsUp('medic', 1) ? 9 : 6, d: clsUp('medic', 1) ? 12 : 8, h: clsUp('medic', 3) ? 14 : 8, a: clsUp('medic', 2) ? 6 : 0 }; }
+function healStats() { const wide = clsSp('wide'), tri = clsSp('triage'); return { r: wide ? 9 : tri ? 4.5 : 6, d: clsDur(wide ? 12 : tri ? 6 : 8), h: Math.round((tri ? 16 : 8) * clsPow()), a: clsSp('farmor') ? 6 : clsS().fieldArm }; }
 function healingField() {
     const s = healStats(), x = camera.position.x, z = camera.position.z;
     let y = groundAt(x, z, 0.3, feetY + 0.5); if (y < feetY - 6) y = feetY;
     addHealField(x, y, z, s.r, s.d, s.h, s.a, true);
     abilityDur = abilityT = s.d;
+    abilStart();
     if (NET.inGame) netSendFx('heal', _clsP.set(x, y, z), s.r, 0x4ade80, { d: s.d, h: s.h, a: s.a });
     sfx('field'); screenFlash('rgba(74,222,128,0.3)');
     toast('HEALING FIELD', '#4ade80', 1.4);
@@ -68,7 +107,7 @@ function removeHealField(i) {
     healFields.splice(i, 1);
 }
 function updateHealFields(dt) {
-    let heal = 0, arm = 0;
+    let heal = 0, arm = 0, own = false;
     for (let i = healFields.length - 1; i >= 0; i--) {
         const f = healFields[i]; f.t -= dt;
         if (f.t <= 0) { removeHealField(i); continue; }
@@ -87,9 +126,9 @@ function updateHealFields(dt) {
             if (Math.hypot(_clsP.x - camera.position.x, _clsP.z - camera.position.z) > 1.8) spawnParticles(_clsP, Math.random() < 0.5 ? 0x4ade80 : 0xbbf7d0, 1, 1.2, 1.1, 0.16, false, _hfOpts);
         }
         // every computer heals its own player when they stand in any field (fields don't stack: the strongest wins)
-        if (currentHp > 0 && !NET.dead && Math.hypot(camera.position.x - f.x, camera.position.z - f.z) < f.r && Math.abs(feetY - f.y) < 3) { heal = Math.max(heal, f.h); arm = Math.max(arm, f.a); }
+        if (currentHp > 0 && !NET.dead && Math.hypot(camera.position.x - f.x, camera.position.z - f.z) < f.r && Math.abs(feetY - f.y) < 3) { heal = Math.max(heal, f.h); arm = Math.max(arm, f.a); if (f.own) own = true; }
     }
-    healingNow = heal;
+    healingNow = heal; inOwnField = own;
     if (!heal) return;
     const before = currentHp;
     currentHp = Math.min(maxHp, currentHp + heal * dt);
@@ -102,8 +141,8 @@ const _kitCrateMat = new THREE.MeshStandardMaterial({ color: 0x4d5a2b, roughness
 const _kitCrateBand = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.5, emissive: 0x3a2a00 });
 const _kitCrateGlow = new THREE.MeshBasicMaterial({ color: 0xfde047, toneMapped: false });
 function miniSentryStats() {
-    const hard = clsUp('engineer', 1);
-    return { hard, damage: 7, hp: hard ? 240 : 150, ammo: hard ? 145 : 90, delay: 0.22, range: 22, cooldown: 0, life: hard ? 35 : 25, aim: 0.72, aggro: 12, rockets: clsUp('engineer', 3) ? 5 : 0, rocketDmg: 45 };
+    const hard = clsSp('hard'), p = clsPow();
+    return { hard, damage: 7 * p, hp: hard ? 240 : 150, ammo: hard ? 145 : 90, delay: clsSp('overclock') ? 0.143 : 0.22, range: 22, cooldown: 0, life: clsDur(hard ? 35 : 25), aim: 0.72, aggro: 12, rockets: clsSp('rocket') ? 5 : 0, rocketDmg: 45 * p };
 }
 function fieldKit() {
     camera.getWorldDirection(_clsD); _clsD.y = 0; if (_clsD.lengthSq() < 1e-4) _clsD.set(0, 0, -1); _clsD.normalize();
@@ -123,6 +162,7 @@ function fieldKit() {
     deployTurret(sx, sy, sz, st);
     makeCrate(cx, cy, cz);
     abilityDur = abilityT = st.life;
+    abilStart();
     sfx('kit'); toast('FIELD KIT DEPLOYED', '#fde047', 1.4);
     return true;
 }
@@ -137,8 +177,8 @@ function makeCrate(x, y, z) {
     for (let i = -1; i <= 1; i++) { B(icon, 0.09, 0.28, 0.09, _kitCrateGlow, i * 0.16, 0, 0, false); B(icon, 0.055, 0.09, 0.055, _kitCrateGlow, i * 0.16, 0.18, 0, false); }
     const ring = new THREE.Mesh(_auraGeo, fxMat(0xfacc15, 0.4)); ring.scale.setScalar(1.9); ring.position.y = 0.05; g.add(ring);
     scene.add(g);
-    const n = clsUp('engineer', 2) ? 5 : 3;
-    crates.push({ g, icon, ring, x, y, z, n, t: 45, cd: 0.6, heal: clsUp('engineer', 2) ? 20 : 0 });
+    const n = (clsSp('medkit') ? 5 : 3) + clsS().crateN;
+    crates.push({ g, icon, ring, x, y, z, n, t: 45, cd: 0.6, heal: clsSp('medkit') ? 20 : 0 });
     spawnParticles(_clsP.set(x, y + 0.5, z), 0xfacc15, 10, 4, 0.5, 0.1);
 }
 function removeCrate(i, poof) {
@@ -178,7 +218,7 @@ function resupply(c) {
     updateHUD();
 }
 // RECON: a sonar pulse that marks zombies (outlined through walls + on the minimap)
-function radarStats() { return { r: clsUp('recon', 1) ? 999 : 70, d: clsUp('recon', 1) ? 9 : 6 }; }
+function radarStats() { const band = clsSp('band'); return { r: band ? 999 : 70 * clsPow(), d: clsDur(band ? 9 : 6) }; }
 function markEnemy(u, until) { if (!(u.markT >= until)) u.markT = until; if (until > markUntil) markUntil = until; }
 function radarMark(x, z, r, d) {
     let n = 0; const until = gameTime + d;
@@ -192,23 +232,159 @@ function radarPulse() {
     const s = radarStats();
     const n = radarMark(camera.position.x, camera.position.z, s.r, s.d);
     abilityDur = abilityT = radarT = s.d; radarScan = 0.5; radarSweep = 1;
+    abilStart();
     spawnBlastFx(_clsP.set(camera.position.x, feetY + 0.2, camera.position.z), Math.min(s.r, 80), 0xa78bfa, true, 1.2);
-    if (NET.inGame && clsUp('recon', 3)) netSendFx('radar', _clsP.set(camera.position.x, feetY, camera.position.z), s.r, 0xa78bfa, { d: s.d });
+    if (NET.inGame && clsSp('uplink')) netSendFx('radar', _clsP.set(camera.position.x, feetY, camera.position.z), s.r, 0xa78bfa, { d: s.d });
     sfx('radar'); screenFlash('rgba(167,139,250,0.22)');
-    toast(n ? `RADAR  ·  ${n} ZOMBIE${n > 1 ? 'S' : ''} MARKED` : 'RADAR  ·  ALL CLEAR', '#c4b5fd', 1.6);
+    toast(NET.pvp ? 'RADAR  ·  ENEMIES ON YOUR MINIMAP' : n ? `RADAR  ·  ${n} ZOMBIE${n > 1 ? 'S' : ''} MARKED` : 'RADAR  ·  ALL CLEAR', '#c4b5fd', 1.6);
     return true;
 }
-// a hit from you (RECON passive: marks it; WEAK SPOT: marked zombies take +15%). Returns the damage to apply.
-function reconHit(u, amount) {
-    if (myClass() !== 'recon') return amount;
-    if (clsUp('recon', 2) && u.markT > gameTime) amount *= 1.15;
-    markEnemy(u, gameTime + 3);
+// a hit from you: RECON (marks it; WEAK SPOT / EXPOSE: marked zombies take more), MARKSMAN (marked targets take more and are
+// finished off low). Runs on the shooter's computer before a guest sends the hit to the host. Returns the damage to apply.
+function clsHit(u, amount) {
+    const k = myClass();
+    if (k === 'recon') {
+        if (u.markT > gameTime) amount *= 1 + (clsSp('weak') ? 0.15 : 0) + clsS().markDmg;
+        markEnemy(u, gameTime + 3 * (1 + clsS().pas));
+    } else if (k === 'marksman' && u.mfdT > gameTime) {
+        amount *= 1 + (clsSp('spot') ? 0.2 : 0.3) * clsPow();
+        if (clsSp('oneshot') && !u.mfdHit) { u.mfdHit = 1; amount *= 2; }
+        const th = clsSp('exec') ? 0.25 : 0.15, left = u.hp - amount;
+        if (!u.config.boss && left > 0 && left < u.maxHp * th) { amount = u.hp * 4 + 10; u.execT = gameTime; }
+    }
     return amount;
+}
+const reconHit = clsHit;
+// every kill you get: cooldown cuts (Assault passive, KILL RUSH, Marksman headshots...), heals (BLOODLUST...), CHAIN RUSH / CHAIN MARK
+function clsOnKill(u, head, c) {
+    const k = myClass(); if (!k) return;
+    const s = clsS();
+    let cut = s.killCd;
+    if (k === 'assault') { cut += 1; if (abilityT > 0 && clsSp('chain') && chainAdd < 4) { abilityT += 0.5; abilityDur += 0.5; chainAdd += 0.5; } }
+    if (k === 'marksman' && head) cut += s.hsKillCd ? 4 : 2;
+    if (cut > 0 && abilityCd > 0 && k !== 'scout') abilityCd = Math.max(0, abilityCd - cut);
+    const heal = s.killHeal + (clsSp('lifeline') && healFields.some(f => f.own) ? 6 : 0);
+    if (heal && currentHp > 0) currentHp = Math.min(maxHp, currentHp + heal);
+    if (k === 'marksman' && clsSp('chainm') && u.mfdT > gameTime) {
+        let best = null, bd = 15;
+        for (const e of enemies) { const v = e.userData; if (v.dead || v === u || v.mfdT > gameTime) continue; const d = Math.hypot(e.position.x - c.x, e.position.z - c.z); if (d < bd) { bd = d; best = v; } }
+        if (best) { best.mfdT = Math.max(u.mfdT, gameTime + 3); best.mfdHit = 0; markEnemy(best, best.mfdT); }
+    }
+}
+// how much of a hit you take (tree armor, Bulwark, Unstoppable, the Heavy passive, a dash, Field Armor)
+function clsTaken() {
+    const k = myClass(), s = clsS();
+    let m = 1 - s.armor;
+    if (k === 'assault' && adrenOn() && clsSp('unstop')) m *= 0.6;
+    if (k === 'heavy') { if (abilityT > 0) m *= clsSp('iron') ? 0.35 : 0.5; if (currentHp > maxHp * 0.5 || s.lowHp) m *= 1 - 0.1 * (1 + s.pas); }
+    if (k === 'scout' && dashDrT > 0) m *= 0.5;
+    if (k === 'medic' && inOwnField && clsSp('farmor')) m *= 0.85;
+    return m;
+}
+// JUGGERNAUT: zombies that hit you during Bulwark take damage back
+function clsThorns(fromPos) {
+    if (myClass() !== 'heavy' || abilityT <= 0 || !clsSp('thorns') || !fromPos || gameTime < thornT) return;
+    let best = null, bd = 4;
+    for (const e of enemies) { const u = e.userData; if (u.dead) continue; const d = Math.hypot(e.position.x - fromPos.x, e.position.z - fromPos.z); if (d < bd) { bd = d; best = e; } }
+    if (best) { thornT = gameTime + 0.25; damageEnemy(best, 25, false, new V3(best.position.x, best.position.y + best.userData.totalHeight * 0.6, best.position.z), true, null, 1, 'melee'); }
+}
+// HEAVY: slam the ground, then a damage cut
+function bulwark() {
+    const s = clsS(), iron = clsSp('iron'), quake = clsSp('quake'), r = 7 + s.shove;
+    clsShove(r, iron ? 0 : 60 * clsPow() * (quake ? 2 : 1), 1.3);
+    if (quake) quakeT = 1;
+    if (clsSp('skin')) { const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null; if (tier) currentArmor = Math.min(tier.max, currentArmor + 40); else currentHp = Math.min(maxHp, currentHp + 25); }
+    abilityDur = abilityT = clsDur(6);
+    abilStart(false);
+    spawnBlastFx(_clsP.set(camera.position.x, feetY + 0.2, camera.position.z), r, 0x60a5fa, true, 0.6);
+    spawnParticles(_clsP.set(camera.position.x, feetY + 0.3, camera.position.z), 0x93c5fd, 14, 9, 0.5, 0.16, true, { jitter: 2, grav: 18 });
+    sfx('melee'); sfx('boom'); shake = Math.max(shake, 0.5); screenFlash('rgba(96,165,250,0.3)');
+    toast(iron ? 'BULWARK  ·  IRON WALL' : 'BULWARK', '#93c5fd', 1.4);
+    updateHUD();
+    return true;
+}
+// DEMOLITIONS: throw a charge where you aim: one blast, then bomblets scatter round it
+function clusterCharge() {
+    const s = clsS(), p = clsPow(), range = s.range ? 45 : 30;
+    camera.getWorldDirection(_clsD);
+    const o = camera.position, hit = raySolids(o, _clsD, range);
+    let t = hit ? Math.max(1.5, hit.t - 0.4) : range;
+    for (const e of enemies) {          // it stops at the first zombie in the way
+        const u = e.userData; if (u.dead || !e.visible) continue;
+        const ex = e.position.x - o.x, ey = e.position.y + u.totalHeight * 0.5 - o.y, ez = e.position.z - o.z, along = ex * _clsD.x + ey * _clsD.y + ez * _clsD.z;
+        if (along < 1 || along > t) continue;
+        const px = ex - _clsD.x * along, py = ey - _clsD.y * along, pz = ez - _clsD.z * along;
+        if (px * px + py * py * 0.25 + pz * pz < (u.radius + 0.9) ** 2) t = along;
+    }
+    const x = o.x + _clsD.x * t, z = o.z + _clsD.z * t, yy = o.y + _clsD.y * t;
+    let y = groundAt(x, z, 0.3, yy + 0.5); if (!(y > -50) || y > yy + 0.5) y = Math.max(feetY, yy - 1);
+    const buster = clsSp('buster'), carpet = clsSp('carpet'), fz = clsSp('fuse') ? 0.85 : 1;
+    const at = new V3(x, Math.max(y + 0.4, Math.min(yy, y + 1.2)), z);
+    spawnTracer(_clsP.copy(o).addScaledVector(_clsD, 1.2).setY(o.y - 0.3), at, 0xef4444, 0.05);
+    explode(at, (buster ? 240 : 120) * p, (buster ? 8 : 6) * fz, { src: 'explosive', color: 0xef4444 });
+    if (clsSp('napalm')) makeFire(x, y, z, { radius: 4, damage: 18 });
+    const n = buster ? 0 : (carpet ? 8 : 4) + s.bomb, bd = (carpet ? 30 : 40) * p;
+    for (let i = 0; i < n; i++) { const a = i / Math.max(1, n) * Math.PI * 2 + Math.random() * 0.6, rr = 2.5 + Math.random() * 2.5; demoQ.push({ x: x + Math.cos(a) * rr, z: z + Math.sin(a) * rr, y, t: 0.35 + i * 0.07, d: bd, r: 3.5 * fz }); }
+    abilityDur = abilityT = 0.35 + n * 0.07 + 0.2;
+    abilStart();
+    sfx('whoosh');
+    toast(buster ? 'BUNKER BUSTER' : 'CLUSTER CHARGE', '#fca5a5', 1.2);
+    return true;
+}
+function updateDemo(dt) {
+    for (let i = demoQ.length - 1; i >= 0; i--) {
+        const b = demoQ[i]; b.t -= dt; if (b.t > 0) continue;
+        demoQ.splice(i, 1);
+        const gy = groundAt(b.x, b.z, 0.3, b.y + 2); const by = gy > -50 && gy < b.y + 2.5 ? gy : b.y;
+        if (pointInSolid(_clsP.set(b.x, by + 0.5, b.z), 0.1)) continue;
+        explode(new V3(b.x, by + 0.4, b.z), b.d, b.r, { src: 'explosive', color: 0xf97316, mini: true });
+    }
+}
+// MARKSMAN: mark the zombies nearest your crosshair (they show through walls like Recon marks)
+function markForDeath() {
+    if (NET.pvp) { abilityDur = abilityT = clsDur(6); abilStart(); sfx('radar'); toast('FOCUS  ·  +15% DAMAGE', '#67e8f9', 1.4); return true; }
+    const n = (clsSp('spot') ? 6 : 3) + clsS().markN, d = clsDur(8);
+    camera.getWorldDirection(_clsD);
+    const o = camera.position, list = [];
+    for (const e of enemies) {
+        const u = e.userData; if (u.dead || !e.visible) continue;
+        _clsP.set(e.position.x - o.x, e.position.y + u.totalHeight * 0.6 - o.y, e.position.z - o.z);
+        const dist = _clsP.length(); if (dist > 90) continue;
+        const dot = _clsP.dot(_clsD) / (dist || 1); if (dot < 0.88) continue;
+        list.push([1 - dot + dist * 0.0004, u]);
+    }
+    if (!list.length) { toast('NO ZOMBIES IN YOUR SIGHTS', '#9ca3af', 1); sfx('deny'); return false; }
+    list.sort((a, b) => a[0] - b[0]);
+    for (const [, u] of list.slice(0, n)) { u.mfdT = gameTime + d; u.mfdHit = 0; markEnemy(u, gameTime + d); }
+    abilityDur = abilityT = d;
+    abilStart();
+    sfx('radar'); screenFlash('rgba(34,211,238,0.2)');
+    toast(`MARKED ${Math.min(n, list.length)} FOR DEATH`, '#67e8f9', 1.4);
+    return true;
+}
+// SCOUT: a burst the way you're moving (or forward), with a short damage cut
+function dash() {
+    const dist = (clsSp('long') ? 14 : 9) * clsPow();
+    camera.getWorldDirection(_clsD); _clsD.y = 0; if (_clsD.lengthSq() < 1e-4) _clsD.set(0, 0, -1); _clsD.normalize();
+    let mx = Number(moveRight) - Number(moveLeft), mz = Number(moveForward) - Number(moveBackward);
+    if (!mx && !mz) mz = 1;
+    _clsP.set(_clsD.x * mz - _clsD.z * mx, 0, _clsD.z * mz + _clsD.x * mx).normalize();
+    push.set(_clsP.x * dist * 5, 0, _clsP.z * dist * 5);
+    velocity.y = Math.max(velocity.y, 3);
+    abilityDur = abilityT = dashDrT = clsDur(0.6);
+    if (clsSp('slip')) slipT = 3;
+    if (clsSp('ambush')) ambushUntil = gameTime + 2;
+    if (clsS().shove) dashShoveT = 0.35;
+    abilStart(false);
+    sfx('whoosh'); fovNow += 6;
+    spawnParticles(_clsP.set(camera.position.x, feetY + 0.4, camera.position.z), 0xf9a8d4, 8, 4, 0.35, 0.12);
+    return true;
 }
 function clearClassFx() {
     while (healFields.length) removeHealField(0);
     while (crates.length) removeCrate(0);
     abilityT = 0; radarT = 0; radarSweep = 0; markUntil = -1; healingNow = 0;
+    demoQ.length = 0; slipT = 0; dashDrT = 0; dashShoveT = 0; quakeT = 0; ambushUntil = -9; inOwnField = false; scoutCh = scoutMax();
 }
 // keep the health + armor bars live every frame (regeneration, healing fields, crates) - only does any work when a number changes
 const hpShown = { hp: -1, max: -1, arm: -1, tier: '' };
@@ -231,9 +407,15 @@ function refreshHealthHUD(force) {
 function updateClass(dt) {
     const id = myClass();
     if (id !== clsWas) { clsWas = id; applyMinimapSize(); }
-    if (abilityCd > 0) abilityCd = Math.max(0, abilityCd - dt);
+    if (abilityCd > 0) { abilityCd = Math.max(0, abilityCd - dt); if (abilityCd <= 0 && id === 'scout') { scoutCh = Math.min(scoutMax(), scoutCh + 1); if (scoutCh < scoutMax()) abilityCd = abilityCooldown(id); } }
+    if (id === 'scout' && scoutCh < scoutMax() && abilityCd <= 0) abilityCd = abilityCooldown(id);
+    if (slipT > 0) slipT -= dt;
+    if (dashDrT > 0) dashDrT -= dt;
+    if (dashShoveT > 0 && (dashShoveT -= dt) <= 0) clsShove(clsS().shove, 0);
+    if (quakeT > 0 && (quakeT -= dt) <= 0 && currentHp > 0) { const r = (7 + clsS().shove) * 0.7; clsShove(r, 60 * clsPow(), 0.8); spawnBlastFx(_clsP.set(camera.position.x, feetY + 0.2, camera.position.z), r, 0x60a5fa, true, 0.5); sfx('boom'); }
+    if (demoQ.length) updateDemo(dt);
     // recharge chime (also when an Assault kill knocks the last second off)
-    const ready = abilityCd <= 0;
+    const ready = id === 'scout' ? scoutCh > 0 : abilityCd <= 0;
     if (ready && !abilReadyWas && id && currentHp > 0) sfx('ready');
     abilReadyWas = ready;
     if (abilityT > 0) abilityT = Math.max(0, abilityT - dt);
@@ -259,8 +441,8 @@ function updateAbilityHUD() {
     const C = CLASSES[id], col = C.css;
     setText(ui.abilCls, C.name); setText(ui.abilName, C.ability); setStyle(ui.abilName, 'color', col);
     let status, pct, bar = col;
-    const ready = abilityCd <= 0;
-    if (ready) { status = 'READY  ·  PRESS X'; pct = 100; bar = '#4ade80'; }
+    const ready = id === 'scout' ? scoutCh > 0 : abilityCd <= 0;
+    if (ready && abilityT <= 0) { status = id === 'scout' && scoutMax() > 1 ? `READY x${scoutCh}  ·  PRESS X` : 'READY  ·  PRESS X'; pct = 100; bar = '#4ade80'; }
     else if (abilityT > 0) {
         const kit = id === 'engineer' ? miniTurret() : null;
         status = kit ? `SENTRY ${Math.ceil(kit.t)}s  ·  ${kit.ammo} AMMO` : `ACTIVE  ${abilityT.toFixed(1)}s`;
@@ -276,6 +458,8 @@ function updateClassFx(dt) {
     fxBeat = Math.max(0, fxBeat - dt * 2.6);
     let op = 0, c = 'rgba(249,115,22,0.6)';
     if (adrenOn()) op = 0.45 + 0.4 * fxBeat;
+    else if (abilityT > 0 && myClass() === 'heavy') { op = 0.4; c = 'rgba(96,165,250,0.55)'; }
+    else if (abilityT > 0 && myClass() === 'marksman') { op = 0.25; c = 'rgba(34,211,238,0.5)'; }
     else if (healingNow > 0 && currentHp < maxHp) { op = 0.38; c = 'rgba(74,222,128,0.5)'; }
     else if (radarSweep > 0) { op = radarSweep * 0.7; c = 'rgba(167,139,250,0.55)'; }
     setStyle(ui.clsFx, '--cfx', c);

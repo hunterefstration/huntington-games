@@ -12,7 +12,7 @@ function onKeyDown(event) {
         case 'ArrowDown': case 'KeyS': moveBackward = true; break;
         case 'ArrowRight': case 'KeyD': moveRight = true; break;
         case 'ShiftLeft': case 'ShiftRight': sprintHeld = true; break;
-        case 'Space': jumpHeld = true; event.preventDefault(); break;
+        case 'Space': jumpHeld = true; if (!event.repeat) jumpTap = true; event.preventDefault(); break;
         case 'KeyR': triggerReload(); break;
         case 'KeyQ': if (!event.repeat) useSecondary(); break;
         case 'KeyC': if (!event.repeat) startSlide(); break;
@@ -225,14 +225,14 @@ function tryFire(w, fresh) {
     if (!canShoot() || burstLeft > 0) return;
     const id = w.id;
     if (w.melee) {       // 4.0 KATANA: no ammo, just swing
-        if (lungeT <= 0 && (gameTime - lastShootTime) * 1000 >= w.fireRate * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1)) { lastShootTime = gameTime; katanaSlash(w); }
+        if (lungeT <= 0 && (gameTime - lastShootTime) * 1000 >= w.fireRate * fastFire()) { lastShootTime = gameTime; katanaSlash(w); }
         return;
     }
     if (isReloading) {
         if (reloadStyle === 'shell' && ammoState[id] > 0) { isReloading = false; reloadEnding = 0.2; ui.txtReloading.classList.add('hidden'); }
         else return;
     }
-    const rate = w.fireRate * (adrenOn() && clsUp('assault', 2) ? 0.8 : 1);
+    const rate = w.fireRate * fastFire();
     if ((gameTime - lastShootTime) * 1000 < rate) return;
     if (vm.bolt >= 0) return;
     if (w.spinUp && spinT < 1) return;

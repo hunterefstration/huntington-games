@@ -106,7 +106,7 @@ function updatePlayer(delta) {
 
 
     const sprinting = sprintHeld && moveForward && !aimHeld && !isMouseDown && !sliding;
-    const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1.35 : 1);
+    const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1 + 0.35 * clsPow() : 1) * (1 + clsSpeed());
     if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
@@ -128,7 +128,10 @@ function updatePlayer(delta) {
 
     // Jump (hold space to keep hopping). Coyote time makes edge jumps forgiving. Slide-jumps keep momentum.
     if (onGround) coyote = 0.12; else coyote -= delta;
-    if (jumpHeld && coyote > 0 && velocity.y <= 0.01) { velocity.y = JUMP_V; coyote = 0; onGround = false; if (sliding) slideT = 0; }
+    if (jumpHeld && coyote > 0 && velocity.y <= 0.01) { velocity.y = JUMP_V; coyote = 0; onGround = false; if (sliding) slideT = 0; jumpTap = false; }
+    // 5.4 SCOUT passive: a second jump in the air
+    if (onGround) airJumps = 1; else if (jumpTap && coyote <= 0 && airJumps > 0 && myClass() === 'scout') { airJumps--; velocity.y = JUMP_V * 0.85; sfx('whoosh'); }
+    jumpTap = false;
 
 
     velocity.y -= GRAVITY * delta;

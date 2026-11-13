@@ -279,7 +279,7 @@ function netTraceAvatars(o, d, maxT, w, dmgMul) {
     }
     if (!best) return null;
     const pt = o.clone().addScaledVector(d, bt);
-    const dmg = w.damage * dmgMul * (head ? w.hsMult : 1);
+    const dmg = w.damage * dmgMul * (head ? w.hsMult * (1 + clsHs()) : 1);      // 5.4: PvP is baseline, so clsHs() is only the Marksman passive
     netQueuePvpHit(best.id, dmg, head, false, w.id);
     showHitMarker(head, false); sfx(head ? 'head' : 'hit');
     spawnDamageNumber(pt, Math.round(dmg), head ? 'head' : '');
@@ -627,11 +627,13 @@ function netShowEnd(m) {
         const won = m.win === NET.team;
         title = m.win < 0 ? 'DRAW' : won ? 'VICTORY' : 'DEFEAT'; line = m.line ? String(m.line).slice(0, 90) : `${TEAM_NAMES[m.win]} TEAM WINS  ${m.score[0]} - ${m.score[1]}`;
     } else { title = 'SQUAD WIPED'; line = `Your squad made it to wave ${playerStats.level}`; }
+    clsMatchBonus(title === 'VICTORY' || (title === 'CHAMPION' && m.champ === NET.id) ? 'win' : title === 'DEFEAT' || title === 'CHAMPION' ? 'lose' : title === 'DRAW' ? 'draw' : 'coop');     // 5.4 class XP for the match
+    saveJSON('blocky21_life', life);
     h.textContent = title; sub.textContent = line;
     $('gameover-stats').textContent = 'Back to the party lobby in a few seconds...';
     const mvp = NET.pvp ? allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills || a.deaths - b.deaths)[0] : null;
     $('gameover-grid').innerHTML = allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills).map(p => `<div class="stat"><div class="v" style="color:${hex(pcol(p))}">${p === mvp ? '&#9733; ' : ''}${escHtml(p.name)}${p.bot ? ' <span style="font-size:10px;color:#9ca3af">BOT</span>' : ''}</div><div class="k">${NET.pvp ? `${p.kills} KILLS - ${p.deaths} DEATHS${modeStatLine(p)}${p === mvp ? ' - MVP' : ''}` : `${p.deaths} TIMES DOWNED`}</div></div>`).join('');
-    $('gameover-xp').innerHTML = `<div class="text-green-300 font-black">+${runXP} XP</div>`;
+    $('gameover-xp').innerHTML = `<div class="text-green-300 font-black">+${runXP} XP</div>` + clsSummaryHtml();
     ui.btnRespawn.classList.add('hidden'); $('btn-go-continue').classList.add('hidden'); $('btn-go-menu').textContent = 'LEAVE PARTY';
     changeGameState('gameover');
     setTimeout(() => { if (NET.on && !NET.inGame) netBackToLobby(); }, 7000);

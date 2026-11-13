@@ -134,6 +134,7 @@ function runStartBonus(fresh) {
     if (run.mode === 'sandbox') return;
     const lines = [];
     if (fresh && prestigeLvl() > 0) { playerStats.money += 100 * prestigeLvl(); lines.push(`PRESTIGE ${prestigeLvl()} BONUS +$${100 * prestigeLvl()}`); }
+    if (fresh && clsS().start > 0) { playerStats.money += clsS().start; lines.push(`${CLASSES[myClass()].name} WAR CHEST +$${clsS().start}`); }     // 5.4 class tree
     if (chState && chState.bank > 0) { playerStats.money += chState.bank; lines.push(`CHALLENGE REWARDS +$${chState.bank}`); chState.bank = 0; chSave(); }
     if (lines.length) showIntel(lines.map(l => `<div class="text-sm font-black hud-text text-green-300">${l}</div>`).join(''), 5);
 }
@@ -170,9 +171,9 @@ function resetRun() {
     waveActive = false; intermission = 0; savedWave = -1;
     playerStats = JSON.parse(JSON.stringify(defaultStats));
     playerStats.cls = validClass(settings.cls);             // 4.0: the class picked on the Play tab (or in the multiplayer menu)
-    abilityCd = 0; abilityT = 0; abilReadyWas = true;
+    abilityCd = 0; abilityT = 0; abilReadyWas = true; clsRunReset(); scoutCh = 2; airJumps = 0;
     resetAmmo();
-    maxHp = 100; currentHp = maxHp; lastHurtBy = ''; currentArmor = 0; secondaryCooldown = 0; activeC4 = null; combo = 0; comboTimer = 0; lastHurtT = -99;
+    maxHp = clsMaxHp(); currentHp = maxHp; lastHurtBy = ''; currentArmor = 0; secondaryCooldown = 0; activeC4 = null; combo = 0; comboTimer = 0; lastHurtT = -99;
     streak = 0; strikeCharges = 0; meleeCd = 0;
     lungeT = 0; lungeCd = 0; slashAt = -1; vm.slashT = 0; vm.lungeK = 0; if (railC > 0) railCancel();      // 4.0 weapons
     enemies.forEach(e => { scene.remove(e); disposeEnemy(e); }); enemies = [];

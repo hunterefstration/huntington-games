@@ -18,7 +18,7 @@ function hgG() {
 }
 const hexNum = (c) => { try { return new THREE.Color(c).getHex(); } catch (e) { return 0x888888; } };
 function readMyLook() {
-    const out = { sk: null, av: '', t: '', r: 0, rec: 0, w: tourneyWins() };
+    const out = Object.assign({ sk: null, av: '', t: '', r: 0, rec: 0, w: tourneyWins() }, clsLookBits());      // 5.4: + class, its level, mastery, specialisations
     try {
         const G = hgG(); if (!G) return out;
         const st = G.eco.state() || {}, eq = st.equip || {};
@@ -62,6 +62,7 @@ function cleanLook(l) {
     if (AVATAR_IDS.includes(l.av)) o.av = l.av;
     if (typeof l.t === 'string') o.t = l.t.replace(/[<>&"']/g, '').slice(0, 28);
     o.r = l.r >= 1 && l.r <= 5 ? l.r | 0 : 0; o.rec = l.rec ? 1 : 0; o.w = clamp(l.w | 0, 0, 999);
+    cleanClsLook(l, o);                 // 5.4: a peer's class report is clamped to what exists (valid class, level 1-30, real specialisations)
     return o;
 }
 const lookOf = (p) => p ? (p.id === NET.id ? LOOK_MINE : p.look) : null;
@@ -92,6 +93,7 @@ function tagHtml(p) {
     const l = lookOf(p); if (!p) return '';
     let h = p.lag ? '<span class="text-[10px] font-black" style="color:#fdba74">RECONNECTING</span> ' : '';
     if (CROWNED.has(p.name)) h += '<span title="Tournament winner" style="color:#fbbf24">&#9819;</span> ';
+    if (l) h += clsBadge(l);              // 5.4: class + level (+ mastery emblem)
     if (l && l.r) h += `<span style="background:${TIER_COL[l.r]};color:#111;border-radius:4px;padding:0 4px;font-size:10px;font-weight:900;margin-right:4px" title="Blocky Shooter rank tier">R${l.r}</span>`;
     return h;
 }

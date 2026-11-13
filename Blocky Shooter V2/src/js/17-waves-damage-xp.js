@@ -197,7 +197,7 @@ function awardKill(u, c, headshot, src) {
     {
         combo++; comboTimer = 3.5;
         const mult = 1 + Math.min(combo - 1, 10) * 0.1;
-        const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (twist && twist.cash || 1));
+        const reward = Math.round(u.reward * mult * DIFF().cash * (run.mode === 'rush' || run.mode === 'bossrush' ? 1.5 : 1) * (twist && twist.cash || 1) * (1 + clsS().cash) * (clsSp('bounty') && u.markT > gameTime ? 1.5 : 1));     // 5.4: SCAVENGER, Recon BOUNTY
         playerStats.money += reward;
         spawnDamageNumber(c.clone().setY(c.y + 0.8), `+$${reward}`, 'cash');
         runStats.kills++;
@@ -208,7 +208,7 @@ function awardKill(u, c, headshot, src) {
         if (u.config.boss) { runStats.bosses++; bossDefeated(u.config); }
         gainXP(u.config.boss ? 200 : 10 + (headshot ? 5 : 0) + (u.config.hp >= 2 ? 10 : 0));
         sfx(headshot ? 'headkill' : 'kill');
-        if (myClass() === 'assault' && abilityCd > 0) abilityCd = Math.max(0, abilityCd - 1);   // 4.0 ASSAULT passive
+        clsOnKill(u, headshot, c);                                                               // 5.4: class kill effects (Assault passive...)
         chKill(u.config, headshot, src);                                                         // 4.0 challenges
     }
 }
@@ -277,7 +277,7 @@ function takeDamage(amount, fromPos, by) {
     if (by) lastHurtBy = by;
     // no one-shots: a single hit from an enemy can never take more than 45% of your max health (PvP excluded)
     if (!NET.pvp) amount = Math.min(amount, maxHp * 0.45);
-    if (adrenOn() && clsUp('assault', 3)) amount *= 0.6;     // 4.0 ASSAULT: UNSTOPPABLE
+    amount *= clsTaken(); clsThorns(fromPos);                 // 5.4: class damage cuts (tree, Bulwark, Unstoppable, dash...)
     if (lungeT > 0) amount *= 0.5;                             // 4.0 KATANA: half damage while lunging
     streak = 0;
     const tier = playerStats.armorTier ? armorDb[playerStats.armorTier] : null;
@@ -346,7 +346,7 @@ function fxVisible(pos, maxDist = 90) {
 // Fold a finished run into the lifetime stats (sandbox runs don't count)
 function commitLife() {
     const s = runStats;
-    if (run.mode === 'sandbox' || s.time < 2) return false;
+    if (run.mode === 'sandbox' || s.time < 2) { if (Object.keys(CLX.gain).length) saveJSON('blocky21_life', life); return false; }      // 5.4: class XP is always banked
     life.runs++; life.kills += s.kills; life.headshots += s.headshots; life.bosses += s.bosses;
     life.shots += s.shots; life.hits += s.hits; life.damage += Math.round(s.damage); life.time += s.time;
     life.waves += Math.max(0, playerStats.level - 1 - (s.waveBase || 0));   // waveBase: waves already counted by a death before a continue
@@ -400,7 +400,7 @@ function die() {
     const ri = rankInfo();
     $('gameover-xp').innerHTML = run.mode === 'sandbox' ? '<div class="text-gray-400 font-bold">Sandbox runs don\'t earn XP.</div>' :
         `<div class="flex items-center gap-3 font-black"><span class="text-amber-300 text-2xl">RANK ${ri.rank}</span><div class="w-72 h-3 bg-black/50 rounded overflow-hidden"><div class="h-full bg-amber-400" style="width:${ri.into / ri.need * 100}%"></div></div><span class="text-green-300">+${runXP} XP</span></div>` +
-        (runUnlocks.length ? `<div class="mt-2 text-sm font-bold text-green-300">UNLOCKED: ${runUnlocks.join(' \u00b7 ')}</div>` : '');
+        (runUnlocks.length ? `<div class="mt-2 text-sm font-bold text-green-300">UNLOCKED: ${runUnlocks.join(' \u00b7 ')}</div>` : '') + clsSummaryHtml();
     resetRun();
     changeGameState('gameover');
 }
@@ -414,6 +414,7 @@ function gainXP(n, raw = false) {
     const before = rankInfo().rank;
     const amt = raw ? Math.round(n) : Math.round(n * (XP_MULT[run.diff] || 1) * (run.mode === 'rush' ? 1.2 : run.mode === 'bossrush' ? 1.3 : 1) * (1 + 0.05 * prestigeLvl()));
     life.xp += amt; runXP += amt;
+    clsGainXP(amt);                    // 5.4: the class you're playing gets the same XP
     const after = rankInfo().rank;
     if (after >= MAX_RANK && before < MAX_RANK && prestigeLvl() < MAX_PRESTIGE) {      // 4.0
         setTimeout(() => showIntel(`<div class="text-sm font-black text-amber-300 hud-text">MAX RANK REACHED!</div><div class="text-xs text-gray-100">You can PRESTIGE from the main menu (RANKS tab): back to rank 1 with a new badge, +5% XP and +$100 starting cash per prestige - and you keep everything you've unlocked.</div>`, 9), 2500);

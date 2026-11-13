@@ -190,7 +190,7 @@ function collectSupply(s) {
 function updateRegen(dt) {
     // REGENERATION upgrade: heal after a few seconds without getting hit
     // 4.0 MEDIC passive: regenerates on its own (2 HP/s, 4 with FIELD ARMOR) and REGENERATION kicks in after 3s instead of 4
-    const medic = myClass() === 'medic', calm = gameTime - lastHurtT > (medic ? 3 : 4);
+    const medic = myClass() === 'medic', calm = gameTime - lastHurtT > (medic ? (clsS().regenFast ? 1.5 : 3) : 4);
     if (perk('regen') && currentHp > 0 && currentHp < maxHp && calm) currentHp = Math.min(maxHp, currentHp + perk('regen') * dt);
-    if (medic && currentHp > 0 && currentHp < maxHp && calm && !NET.dead) currentHp = Math.min(maxHp, currentHp + (clsUp('medic', 2) ? 4 : 2) * dt);
+    if (medic && currentHp > 0 && currentHp < maxHp && calm && !NET.dead) currentHp = Math.min(maxHp, currentHp + (2 + clsS().regen) * dt);
 }

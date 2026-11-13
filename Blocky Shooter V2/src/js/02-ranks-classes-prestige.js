@@ -24,44 +24,43 @@ const PERKS = {
 };
 const PERK_COSTS = [500, 1000, 1800, 2800, 4000];
 const perk = (id) => (playerStats.perks && playerStats.perks[id]) || 0;
-// ---------- 4.0 CLASSES ----------
-// Picked on the Play tab before a run, switched between waves in the Armory. Each class has an ability on X (with a
-// cooldown), a passive, and a 3-step upgrade tree bought with cash during the run. Upgrades are kept per class, so
-// switching back to a class keeps what you bought for it. Off in PvP (like power-ups) so it stays fair.
+// ---------- 4.0 CLASSES (5.4: eight classes, levelled for good out of game - see 02b-class-progress.js) ----------
+// Picked on the Play tab / multiplayer menu (or switched between waves in the Armory). Each class has an ability on X (with a
+// cooldown) and a passive. 5.4: no more cash upgrades during a run - each class has its own level (1-30), a skill tree and
+// two specialisations, all bought with skill points in the CLASSES screen, kept for good. In PvP every class plays at the
+// level-1 baseline (ability + passive, no tree, no specialisations) so it stays fair.
 const CLASSES = {
-    assault:  { name: 'ASSAULT',  color: 0xf97316, role: 'Front-line shooter', ability: 'ADRENALINE', cd: [40, 40, 40, 28],
+    assault:  { name: 'ASSAULT',  color: 0xf97316, role: 'Front-line shooter', ability: 'ADRENALINE', cd: 40, icon: '\u26a1',
                 abilityDesc: 'Instant reload of every gun, +35% speed and +25% damage for 6 seconds.',
-                passive: 'Every kill takes 1s off the Adrenaline cooldown.',
-                tree: [{ name: 'SECOND WIND', desc: 'Adrenaline also heals 30 HP and lasts 8 seconds.' },
-                       { name: 'BERSERKER', desc: 'The damage boost goes up to +50% and you fire 20% faster.' },
-                       { name: 'UNSTOPPABLE', desc: 'Take 40% less damage during Adrenaline. Cooldown 40s to 28s.' }] },
-    medic:    { name: 'MEDIC',    color: 0x4ade80, role: 'Keeps the squad alive', ability: 'HEALING FIELD', cd: [45, 45, 45, 30],
+                passive: 'Every kill takes 1s off the Adrenaline cooldown.' },
+    medic:    { name: 'MEDIC',    color: 0x4ade80, role: 'Keeps the squad alive', ability: 'HEALING FIELD', cd: 45, icon: '\u271a',
                 abilityDesc: 'Drop a field that heals you and co-op teammates 8 HP/s for 8 seconds.',
-                passive: 'Regenerate 2 HP/s after 3 seconds without getting hit.',
-                tree: [{ name: 'WIDE FIELD', desc: 'Field radius 6m to 9m, and it lasts 12 seconds.' },
-                       { name: 'FIELD ARMOR', desc: 'The field also repairs armor, and your passive regen doubles to 4 HP/s.' },
-                       { name: 'TRIAGE', desc: 'The field heals 14 HP/s instead of 8. Cooldown 45s to 30s.' }] },
-    engineer: { name: 'ENGINEER', color: 0xfacc15, role: 'Builds and resupplies', ability: 'FIELD KIT', cd: [45, 45, 45, 32],
+                passive: 'Regenerate 2 HP/s after 3 seconds without getting hit.' },
+    engineer: { name: 'ENGINEER', color: 0xfacc15, role: 'Builds and resupplies', ability: 'FIELD KIT', cd: 45, icon: '\u2692',
                 abilityDesc: 'Deploy a mini sentry and an ammo crate that refills your mags and gadgets.',
-                passive: 'Secondaries and Sentry Turret upgrades cost 25% less.',
-                tree: [{ name: 'HARDENED', desc: 'The mini sentry gets +60% health and ammo and lasts 35 seconds.' },
-                       { name: 'MEDKIT CRATE', desc: 'The crate holds 5 resupplies and each one also heals 20 HP.' },
-                       { name: 'ROCKET SENTRY', desc: 'The mini sentry fires rockets too. Cooldown 45s to 32s.' }] },
-    recon:    { name: 'RECON',    color: 0xa78bfa, role: 'Sees everything', ability: 'RADAR PULSE', cd: [30, 30, 30, 20],
-                abilityDesc: 'A sonar pulse marks every zombie within 70m through walls for 6 seconds.',
-                passive: 'Bigger minimap, and zombies you hit stay marked for 3 seconds.',
-                tree: [{ name: 'WIDE BAND', desc: 'The pulse covers the whole map and marks last 9 seconds.' },
-                       { name: 'WEAK SPOT', desc: 'Marked zombies take +15% damage from you.' },
-                       { name: 'UPLINK', desc: 'Co-op teammates get your marks too. Cooldown 30s to 20s.' }] }
+                passive: 'Secondaries and Sentry Turret upgrades cost 25% less.' },
+    recon:    { name: 'RECON',    color: 0xa78bfa, role: 'Sees everything', ability: 'RADAR PULSE', cd: 30, icon: '\u25ce',
+                abilityDesc: 'A sonar pulse marks every zombie within 70m through walls for 6 seconds (in PvP: shows the other team on your minimap).',
+                passive: 'Bigger minimap, and zombies you hit stay marked for 3 seconds.' },
+    heavy:    { name: 'HEAVY',    color: 0x60a5fa, role: 'Soaks up the horde', ability: 'BULWARK', cd: 40, icon: '\u26e8',
+                abilityDesc: 'Slam the ground: zombies within 7m take 60 damage and are thrown back, then you take 50% less damage for 6 seconds.',
+                passive: 'Armored: 10% less damage from every hit while above half health.' },
+    demo:     { name: 'DEMOLITIONS', color: 0xef4444, role: 'Blows things up', ability: 'CLUSTER CHARGE', cd: 35, icon: '\u2739',
+                abilityDesc: 'Throw a charge up to 30m: it blows up (120 damage, 6m) and scatters 4 bomblets (40 damage each).',
+                passive: 'Your explosions do 15% more damage and are 15% bigger. They still never hurt you.' },
+    marksman: { name: 'MARKSMAN', color: 0x22d3ee, role: 'Picks off big targets', ability: 'MARK FOR DEATH', cd: 30, icon: '\u2316',
+                abilityDesc: 'Mark the 3 zombies nearest your crosshair for 8s: +30% damage from you, and your hits finish them below 15% health (not bosses). In PvP: +15% damage for 6s.',
+                passive: '+15% headshot damage. Headshot kills take 2s off the cooldown.' },
+    scout:    { name: 'SCOUT',    color: 0xf472b6, role: 'Fast flanker', ability: 'DASH', cd: 7, icon: '\u27a4',
+                abilityDesc: 'Dash 9m the way you are moving and take 50% less damage for 0.6 seconds.',
+                passive: '+8% move speed and a double jump (press jump again in the air).' }
 };
 const CLASS_ORDER = Object.keys(CLASSES);
+const OLD_CLASSES = ['assault', 'medic', 'engineer', 'recon'];          // the 4.0 classes (5.4 migration gives them more of your old XP)
 for (const k of CLASS_ORDER) { const C = CLASSES[k]; C.css = hex(C.color); C.glow = `0 0 14px ${C.css}66`; }     // the HUD reads these every frame
-const CLASS_COSTS = [750, 1500, 2750];
 const validClass = (id) => CLASSES[id] ? id : 'assault';
-// the class you're playing right now (null in PvP), and how far its upgrade tree goes
-const myClass = () => (!NET.pvp && CLASSES[playerStats.cls]) ? playerStats.cls : null;
-const clsLvl = (id) => (playerStats.clsUp && playerStats.clsUp[id]) || 0;
-const clsUp = (id, n) => myClass() === id && clsLvl(id) >= n;          // does the current class have upgrade step n?
+// the class you're playing right now (5.4: PvP too, at the baseline)
+const myClass = () => CLASSES[playerStats.cls] ? playerStats.cls : null;
 // weapon camos (upgrade levels 4-5 keep their own gold / plasma look)
 const CAMOS = {
     stock: { name: 'STOCK' }, desert: { name: 'DESERT', c: 0xb89a6a }, forest: { name: 'FOREST', c: 0x3f5a36 }, arctic: { name: 'ARCTIC', c: 0xe5e9f0 },
@@ -133,9 +132,9 @@ const SUPPLY_KINDS = {
 };
 
 
-// cls / clsUp (4.0): your class and the upgrade steps bought for each class this run - saved with the run
+// cls (4.0): your class - saved with the run (5.4: the in-run cash class tree 'clsUp' is gone; old saves get the cash back)
 // atts (4.0): weapon attachments bought this run, { ar: { scope: 1, grip: 1 }, ... } - saved with the run
-const defaultStats = { level: 1, money: 0, weapons: ['pistol'], currentWeapon: 'pistol', secondaries: [], currentSecondary: null, armorTier: null, upgrades: {}, perks: {}, cls: 'assault', clsUp: {}, atts: {} };
+const defaultStats = { level: 1, money: 0, weapons: ['pistol'], currentWeapon: 'pistol', secondaries: [], currentSecondary: null, armorTier: null, upgrades: {}, perks: {}, cls: 'assault', atts: {} };
 let playerStats = JSON.parse(JSON.stringify(defaultStats));
 playerStats.cls = validClass(settings.cls);
 let currentHp = 100;
@@ -155,7 +154,7 @@ function W(id) {
     return (wCache[id] = Object.assign({}, b, {
         // each level: +18% damage (pistol +10% so it still needs 2 headshots), +20% mag, faster reload & fire, tighter spread, less kick
         level: L, damage: b.damage * (1 + (b.dmgUp ?? (id === 'pistol' ? 0.1 : 0.18)) * L) * (1 + 0.08 * perk('dmg')), magSize: Math.round(b.magSize * (1 + 0.2 * L) * (hasAtt(id, 'mag') ? 1.4 : 1)),
-        reloadTime: b.reloadTime * (1 - 0.1 * L) * (1 - 0.08 * perk('reload')), shellTime: (b.shellTime || 0) * (1 - 0.1 * L) * (1 - 0.08 * perk('reload')),
+        reloadTime: b.reloadTime * (1 - 0.1 * L) * (1 - 0.08 * perk('reload')) * (1 - clsS().rel), shellTime: (b.shellTime || 0) * (1 - 0.1 * L) * (1 - 0.08 * perk('reload')) * (1 - clsS().rel),
         fireRate: b.fireRate * (1 - 0.05 * L), spread: b.spread * (1 - 0.08 * L), recoil: b.recoil * (1 - 0.08 * L) * (gr ? 0.7 : 1), punch: b.punch * (1 - 0.08 * L) * (gr ? 0.7 : 1),
         // 4.0 attachments: SCOPE = more zoom + tighter aim + headshots, GRIP = steadier hip fire
         zoomFov: sc ? Math.round(b.zoomFov * 0.72) : b.zoomFov, hsMult: b.hsMult * (sc ? 1.1 : 1), adsMul: sc ? 0.65 : 1, hipMul: gr ? 0.75 : 1,

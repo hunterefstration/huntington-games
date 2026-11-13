@@ -1,9 +1,9 @@
 // ==========================================
-// 1. STATE & CONFIGURATION (Version 5.2)
+// 1. STATE & CONFIGURATION (Version 5.4)
 // ==========================================
 
 
-const VERSION = '5.2';
+const VERSION = '5.4';
 let LOOK_MINE = null;          // 5.2: what you wear (goon-shop skin + avatar + title + rank tier), read from the launcher by 27b-mp-look.js
 const V3 = THREE.Vector3;
 const $ = (id) => document.getElementById(id);

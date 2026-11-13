@@ -108,10 +108,14 @@ function continueRun() {
     camera.quaternion.identity();
     velocity.set(0, 0, 0); push.set(0, 0, 0); slideT = 0;
     playerStats = Object.assign(JSON.parse(JSON.stringify(defaultStats)), s.stats);
-    // 4.0 classes: saves from before classes get the class picked on the Play tab and an empty upgrade tree
+    // 4.0 classes: saves from before classes get the class picked on the Play tab
     playerStats.cls = validClass(s.stats.cls || settings.cls);
-    if (!playerStats.clsUp || typeof playerStats.clsUp !== 'object') playerStats.clsUp = {};
-    for (const k in playerStats.clsUp) playerStats.clsUp[k] = CLASSES[k] ? clamp(playerStats.clsUp[k] | 0, 0, 3) : 0;
+    // 5.4: the in-run cash class tree is gone - a run saved with steps bought gets that cash back
+    if (playerStats.clsUp && typeof playerStats.clsUp === 'object') {
+        let back = 0; for (const k in playerStats.clsUp) back += [0, 750, 2250, 5000][clamp(playerStats.clsUp[k] | 0, 0, 3)];
+        delete playerStats.clsUp;
+        if (back > 0) { playerStats.money += back; setTimeout(() => showIntel(`<div class="text-sm font-black hud-text text-green-300">CLASS UPGRADES REFUNDED +$${back}</div><div class="text-xs text-gray-100">Classes are now levelled for good in the CLASSES screen.</div>`, 6), 800); }
+    }
     // 4.0 weapons: older saves have no attachments; anything unknown (or a gun id this version doesn't have) is dropped
     if (!playerStats.atts || typeof playerStats.atts !== 'object') playerStats.atts = {};
     for (const k in playerStats.atts) { const a = playerStats.atts[k]; if (!weaponsDb[k] || !a || typeof a !== 'object') delete playerStats.atts[k]; }
@@ -119,7 +123,7 @@ function continueRun() {
     if (!playerStats.weapons.includes('pistol')) playerStats.weapons.unshift('pistol');
     if (!weaponsDb[playerStats.currentWeapon] || !playerStats.weapons.includes(playerStats.currentWeapon)) playerStats.currentWeapon = playerStats.weapons[0];
     abilityCd = clamp(+s.abil || 0, 0, 60); abilityT = 0; abilReadyWas = abilityCd <= 0;
-    maxHp = s.maxHp || 100; currentHp = clamp(s.hp || maxHp, 1, maxHp); currentArmor = s.armor || 0;
+    maxHp = Math.max(s.maxHp || 100, clsMaxHp()); currentHp = clamp(s.hp || maxHp, 1, maxHp); currentArmor = s.armor || 0;
     strikeCharges = s.strikes || 0; streak = s.streak || 0; seenTypes = new Set(migEnemyIds(s.seen || []));
     resetAmmo();
     updateGunModel();

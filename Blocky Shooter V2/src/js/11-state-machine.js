@@ -32,7 +32,7 @@ function changeGameState(newState) {
             ui.pauseMenu.classList.remove('hidden');
             ui.pauseStats.textContent = CAMP.on ? `CAMPAIGN \u00b7 ${CAMP.m.name} \u00b7 ${MAPS[run.map].name} \u00b7 ${theme.name}  \u2014  lives left ${campLives()}` : NET.inGame ? `MULTIPLAYER \u00b7 ${netModeName()} \u00b7 ${MAPS[run.map].name}  \u2014  the game keeps running while you're in here!`
                 : `${MODES[run.mode].name} \u00b7 ${DIFF().name} \u00b7 ${MAPS[run.map].name} \u00b7 ${theme.name}  \u2014  Wave ${playerStats.level}, ${runStats.kills} kills`;
-            if (myClass()) ui.pauseStats.textContent += `  \u00b7  ${CLASSES[myClass()].name}${clsLvl(myClass()) ? ' ' + '\u2605'.repeat(clsLvl(myClass())) : ''}`;   // 4.0: your class + upgrade stars
+            if (myClass()) ui.pauseStats.textContent += `  \u00b7  ${CLASSES[myClass()].name} LV ${clsLvl(myClass())}${NET.pvp ? ' (PvP baseline)' : ''}`;   // 5.4: your class + its level
             ui.pauseCh.innerHTML = chPauseList(); ui.pauseCh.classList.toggle('hidden', !ui.pauseCh.innerHTML);    // 4.0 challenges
             ui.btnQuit.textContent = CAMP.on ? 'ABANDON MISSION' : NET.on ? 'LEAVE PARTY' : 'QUIT TO MENU';
             ui.btnPauseShop.classList.toggle('hidden', NET.pvp);

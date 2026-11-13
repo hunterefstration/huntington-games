@@ -208,21 +208,18 @@ function renderShopItems() {
             btnText: L >= 5 ? 'MAXED' : `UPGRADE $${cost}`, btnKind: L >= 5 ? 'off' : (money >= cost ? 'gold' : 'poor'), onclick: L >= 5 ? '' : `window.buyPerk('${id}')`,
             rows: [['NOW', now], ['LEVEL', `${L} / 5`]] });
     });
-    // 4.0 classes: pick / switch (between waves) and the current class's 3-step upgrade tree
-    const cid = validClass(playerStats.cls), CC = CLASSES[cid], CL = clsLvl(cid), canSwitch = classSwitchOK();
+    // 4.0 classes: pick / switch (between waves). 5.4: no cash upgrades here any more - classes level up for good and are
+    // upgraded out of game (CLASSES screen on the main menu); this tab only shows what your class has and lets you switch
+    const cid = validClass(playerStats.cls), CC = CLASSES[cid], canSwitch = classSwitchOK();
     const classCards = CLASS_ORDER.map(id => {
         const c = CLASSES[id], mine = id === cid, L = clsLvl(id);
-        return shopCard({ title: c.name + (L ? ' ' + '\u2605'.repeat(L) : ''), color: hex(c.color), tag: `${c.ability} \u00b7 X \u00b7 ${c.cd[Math.min(3, L)]}s`, desc: c.abilityDesc, tallDesc: true, highlight: mine,
-            btnText: mine ? 'YOUR CLASS' : (canSwitch ? 'SWITCH' : 'SWITCH BETWEEN WAVES'), btnKind: mine ? 'on' : (canSwitch ? 'equip' : 'off'), onclick: mine || !canSwitch ? '' : `window.pickClass('${id}')`,
-            rows: [['ROLE', c.role], ['UPGRADES', `${L} / 3`]] });
+        return shopCard({ title: `${c.icon} ${c.name}`, color: hex(c.color), tag: `${c.ability} \u00b7 X \u00b7 LV ${L}`, desc: c.abilityDesc, tallDesc: true, highlight: mine,
+            btnText: mine ? 'YOUR CLASS' : (canSwitch ? 'SWITCH' : NET.pvp ? 'PICK IN THE LOBBY' : 'SWITCH BETWEEN WAVES'), btnKind: mine ? 'on' : (canSwitch ? 'equip' : 'off'), onclick: mine || !canSwitch ? '' : `window.pickClass('${id}')`,
+            rows: [['ROLE', c.role], ['LEVEL', `${L} / ${CLS_MAX_LV}`]] });
     });
-    const treeCards = CC.tree.map((t, i) => {
-        const own = CL > i, next = CL === i, cost = CLASS_COSTS[i];
-        return shopCard({ title: `${['I', 'II', 'III'][i]} \u00b7 ${t.name}`, color: hex(CC.color), tag: `${CC.name} upgrade \u00b7 step ${i + 1} of 3`, desc: t.desc, tallDesc: true, highlight: own,
-            btnText: own ? 'OWNED' : next ? `UNLOCK $${cost}` : `NEEDS STEP ${['I', 'II', 'III'][i - 1]}`, btnKind: own ? 'on' : next ? (money >= cost ? 'gold' : 'poor') : 'off', onclick: next ? `window.buyClassUp(${i})` : '',
-            rows: [['COST', `$${cost}`], ['STATUS', own ? 'Active' : next ? 'Next up' : 'Locked']] });
-    });
-    const classSub = NET.pvp ? 'Classes are off in PvP.' : `Your ability is on X. ${canSwitch ? 'Switch class any time between waves' : 'You can switch class between waves'} - upgrades stay with each class.`;
+    const myTree = CC.tree.filter(n => clsP(cid).tree[n.id] > 0).map(n => `${n.name}${n.max > 1 ? ' ' + clsP(cid).tree[n.id] + '/' + n.max : ''}`);
+    const mySpecs = clsP(cid).spec.filter(Boolean).map(id => (clsSpecInfo(cid, id) || {}).name);
+    const classSub = `Your ability is on X. ${NET.pvp ? 'In PvP every class plays at the level-1 baseline (no tree, no specialisations).' : canSwitch ? 'Switch class any time between waves.' : 'You can switch class between waves.'}`;
     // 5.2: the armory in tabs (no more scrolling past everything), with a quick-buy bar and, for guns, filters, sort and search
     const wMeta = WEAPON_ORDER.map((id, k) => { const b = weaponsDb[id], w = W(id), owned = playerStats.weapons.includes(id), needR = unlockRank('weapon', id);
         return { id, k, html: weaponCards[k], name: b.name.toLowerCase(), owned, locked: !owned && myRank < needR, cost: b.cost, dmg: (w.damage || 0) * (w.pellets || 1), eq: playerStats.currentWeapon === id }; });
@@ -245,8 +242,8 @@ function renderShopItems() {
             `<div class="text-xs text-gray-400 mb-3">Switch guns in-game with 1-9, 0, - or the scroll wheel. Upgrades: 5 levels each (Tactical, Heavy, Elite, Gold Elite, Plasma Prototype).</div>` +
             `<div id="shop-wgrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">${shopWeaponGrid()}</div>`;
     } else if (SHOPV.tab === 'perks') body = section('PLAYER UPGRADES', 'Tougher, faster and deadlier. 5 levels each, for this run.', perkCards);
-    else if (SHOPV.tab === 'class') body = section(`CLASS \u00b7 <span style="color:${hex(CC.color)}">${CC.name}</span>`, classSub, classCards, 'lg:grid-cols-4') +
-        section(`${CC.name} UPGRADES`, `<b class="text-gray-200">Passive:</b> ${CC.passive} Buy the steps in order: they last until the run ends.`, treeCards, 'lg:grid-cols-3');
+    else if (SHOPV.tab === 'class') body = section(`CLASS \u00b7 <span style="color:${hex(CC.color)}">${CC.name} LV ${clsLvl(cid)}</span>`, classSub, classCards, 'lg:grid-cols-4') +
+        `<div class="cls-armory"><b style="color:${hex(CC.color)}">${CC.name}</b> \u00b7 <b class="text-gray-200">Passive:</b> ${CC.passive}<br><b class="text-gray-200">Skill tree:</b> ${NET.pvp ? 'off in PvP' : myTree.length ? myTree.join(', ') : 'nothing yet'}${mySpecs.length && !NET.pvp ? ` \u00b7 <b class="text-gray-200">Specialisations:</b> ${mySpecs.join(', ')}` : ''}<br><span class="text-gray-400">Class upgrades are no longer bought with cash during a run: classes level up as you play them and you spend skill points in <b class="text-white">CLASSES</b> on the main menu.</span></div>`;
     else if (SHOPV.tab === 'secondary') body = section('SECONDARIES', 'Press Q to use. One equipped at a time, on a cooldown. The Sentry Turret upgrades to level 5.' + (gadgetMul() < 1 ? ' <b class="text-yellow-300">ENGINEER: gadgets and sentry upgrades cost 25% less.</b>' : ''), secCards);
     else body = section('ARMOR & SUPPLIES', 'Armor soaks up part of every hit until it breaks.', armorCards);
     container.innerHTML = bar + quick + body;
@@ -330,7 +327,7 @@ window.buyPerk = (id) => {
     playerStats.money -= cost;
     playerStats.perks = playerStats.perks || {};
     playerStats.perks[id] = L + 1;
-    if (id === 'hp') { maxHp = 100 + 20 * perk('hp'); currentHp = Math.min(maxHp, currentHp + 20); }
+    if (id === 'hp') { maxHp = clsMaxHp(); currentHp = Math.min(maxHp, currentHp + 20); }
     if (id === 'dmg' || id === 'reload') clearWCache();
     renderShopItems(); updateHUD(); sfx('upgrade');
 };
@@ -343,21 +340,14 @@ window.buyHealth = () => {
 };
 
 
-// 4.0 classes: switching is free but only between waves (or from the main menu); each class keeps its own upgrades
-function classSwitchOK() { return !NET.pvp && (returnMenuState === 'main' || !waveActive); }
+// 4.0 classes: switching is free but only between waves (or from the main menu). 5.4 mastery ELITE: any time in solo / co-op
+function classSwitchOK() { return !NET.pvp && (returnMenuState === 'main' || !waveActive || masteryQoL()); }
 window.pickClass = (id) => {
     if (!CLASSES[id] || id === playerStats.cls || !classSwitchOK()) return;
+    const mid = waveActive && returnMenuState !== 'main';
     playerStats.cls = id; settings.cls = id; saveSettings();       // the menu remembers it for the next run too
-    abilityCd = Math.min(abilityCd, abilityCooldown(id)); abilityT = 0; radarT = 0;
+    abilityCd = mid ? abilityCooldown(id) : Math.min(abilityCd, abilityCooldown(id)); abilityT = 0; radarT = 0; scoutCh = mid ? 0 : scoutMax();
+    clearWCache(); const hp = clsMaxHp(); currentHp = Math.min(hp, currentHp + Math.max(0, hp - maxHp)); maxHp = hp;
     applyMinimapSize();
-    renderShopItems(); updateHUD(); sfx('upgrade');
-};
-window.buyClassUp = (i) => {
-    const id = validClass(playerStats.cls), L = clsLvl(id), cost = CLASS_COSTS[i];
-    if (NET.pvp || i !== L || L >= 3 || playerStats.money < cost) return;
-    playerStats.money -= cost;
-    if (!playerStats.clsUp || typeof playerStats.clsUp !== 'object') playerStats.clsUp = {};
-    playerStats.clsUp[id] = L + 1;
-    abilityCd = Math.min(abilityCd, abilityCooldown(id));      // a shorter cooldown applies straight away
     renderShopItems(); updateHUD(); sfx('upgrade');
 };

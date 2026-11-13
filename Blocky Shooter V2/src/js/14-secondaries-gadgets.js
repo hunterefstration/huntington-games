@@ -95,11 +95,13 @@ function explode(pos, damage, radius, opts = {}) {
         sfx('boom');
     }
     if (opts.fxOnly) return;                    // someone else's explosion: just the show
+    const demoP = !opts.hurtsPlayer && opts.src !== 'turret' && myClass() === 'demo';     // 5.4 DEMOLITIONS passive: +15% damage, +15% size
+    if (demoP) radius *= 1.15;
     if (NET.inGame && !opts.hurtsPlayer && !opts.mini) netSendFx('boom', pos, radius, opts.color || 0xffa64d);
     if (NET.pvp) netExplodeAvatars(pos, damage, radius, opts.src);
     if (NET.inGame && NET.host && opts.hurtsPlayer) netExplodeRemotes(pos, damage, radius, opts.by);
     const dmgMul = opts.pre ? 1 : (!opts.hurtsPlayer && opts.src !== 'turret' ? 1 + 0.08 * perk('dmg') : 1)
-                 * (!opts.hurtsPlayer && opts.src !== 'turret' && opts.src !== 'rpg' ? clsDmg() : 1);     // Adrenaline (RPG rockets already have it)
+                 * (!opts.hurtsPlayer && opts.src !== 'turret' && opts.src !== 'rpg' ? clsDmg() : 1) * (demoP ? 1.15 : 1) * (!opts.hurtsPlayer && opts.src !== 'turret' ? 1 + clsS().expl : 1);     // Adrenaline (RPG rockets already have it)
 
 
     // damage enemies (explosions ignore riot shields)

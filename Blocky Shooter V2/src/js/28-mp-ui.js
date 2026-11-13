@@ -53,7 +53,7 @@ document.addEventListener('keyup', (e) => { if (e.code === 'Tab') ui.netBoard.cl
 function netDrawMinimap(c, scale, off) {
     for (const p of netPlayers.values()) {
         if (!p.av || !p.av.g.visible) continue;
-        if (NET.pvp && p.team !== NET.team) continue;          // don't give away where the other team is
+        if (NET.pvp && p.team !== NET.team && !(radarT > 0 && myClass() === 'recon')) continue;          // don't give away where the other team is (5.4: unless a Recon pulse is on)
         const P = p.av.g.position, x = (P.x + off) * scale, y = (P.z + off) * scale;
         c.fillStyle = (p.f & 1) ? hex(pcol(p)) : '#6b7280';
         c.strokeStyle = '#fff'; c.lineWidth = 1.5;
@@ -130,11 +130,11 @@ function renderMP() {
     if (v === 'host') { renderMPSettings(); renderMPPlayers(); renderMPInvites(); }
     if (v === 'join' && NET.joinState === 'connected') renderMPPlayers();
 }
-// 4.0: your class for co-op (the same setting as the Play tab; PvP plays without classes)
+// 4.0: your class (the same setting as the Play tab). 5.4: PvP plays every class at the level-1 baseline
 function mpClassRow() {
     const cur = validClass(settings.cls), C = CLASSES[cur];
-    return `<div class="mlabel">YOUR CLASS <span class="text-gray-500">- CO-OP ONLY, OFF IN PVP</span></div><div class="flex flex-wrap gap-2">${CLASS_ORDER.map(k => chip(k === cur, `data-mpcls="${k}"`, CLASSES[k].name, hex(CLASSES[k].color))).join('')}</div>
-        <div class="mdesc"><b style="color:${hex(C.color)}">${C.ability} (X)</b> - ${C.abilityDesc} <b class="text-gray-300">Passive</b> - ${C.passive}</div>`;
+    return `<div class="mlabel">YOUR CLASS <span class="text-gray-500">- CO-OP: YOUR FULL TREE \u00b7 PVP: LEVEL-1 BASELINE FOR EVERYONE</span></div><div class="flex flex-wrap gap-2">${CLASS_ORDER.map(k => chip(k === cur, `data-mpcls="${k}"`, `${CLASSES[k].name} ${clsLvl(k)}`, hex(CLASSES[k].color))).join('')}<button class="chip" id="mp-classes">CLASSES &amp; SKILL TREE &rsaquo;</button></div>
+        <div class="mdesc"><b style="color:${hex(C.color)}">${C.ability} (X)</b> - ${C.abilityDesc} <b class="text-gray-300">Passive</b> - ${C.passive} <span class="text-gray-400">PvP rule: abilities and passives on, skill trees and specialisations off, so nobody out-levels anyone.</span></div>`;
 }
 function renderMPSettings() {
     const el = $('mp-settings'); if (!el) return;
@@ -201,7 +201,8 @@ ui.mp.addEventListener('click', (ev) => {
     else if (b.id === 'mp-copy-reply') copyText(NET.replyCode);
     else if (b.id === 'mp-invite') hostCreateInvite();
     else if (b.id === 'mp-start') { initAudio(); hostStartGame(); }
-    else if (b.dataset.mpcls) { settings.cls = validClass(b.dataset.mpcls); saveSettings(); if (!NET.inGame) playerStats.cls = settings.cls; sfx('click'); renderMP(); if (currentGameState === 'main') renderMenu(); }
+    else if (b.dataset.mpcls) { settings.cls = validClass(b.dataset.mpcls); saveSettings(); if (!NET.inGame) playerStats.cls = settings.cls; try { updateMyLook(); } catch (x) {} sfx('click'); renderMP(); if (currentGameState === 'main') renderMenu(); }
+    else if (b.id === 'mp-classes') { sfx('click'); openClasses(validClass(settings.cls)); }
     else if (b.dataset.mpset) { NET.lobby[b.dataset.mpset] = b.dataset.val; if (b.dataset.mpset === 'mode' && b.dataset.val === 'coop') for (const p of [...netPlayers.values()]) if (p.bot) netRemovePlayer(p.id, 'was removed');      // no bots in co-op
         if (b.dataset.mpset === 'mode') { for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); } NET.hostMsg = ''; hostLobbyUpdate(); }
     else if (b.id === 'mp-addbot' && NET.host) { if (!botAdd()) NET.hostMsg = 'The party is full.'; else NET.hostMsg = ''; hostLobbyUpdate(); }
