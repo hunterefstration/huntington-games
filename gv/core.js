@@ -191,6 +191,10 @@
         emit('eco', m); emit('change'); return;
       case 'lb': return rpcDone('lb:' + m.board, m);
       case 'lbAck': return rpcDone('lbAck', m);
+      case 'casino': return rpcDone('cas:' + m.rid, m);
+      case 'casinoEv': emit('casino', m); return;
+      case 'report': return rpcDone('report', m);
+      case 'reports': return rpcDone('reports', m);
       case 'parties': return rpcDone('parties', m);
       case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
@@ -712,6 +716,13 @@
       },
       lbLeave: function (board) { if (st.ready) paced({ type: 'lbLeave', board: board }); },
       lbGet: function (board) { return st.ready ? rpc0({ type: 'lbGet', board: board }, 'lb:' + board) : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // the casino (grapevine 077-casino.js): every bet is a question to the server. Resolves with its answer
+      // ({ bal: { chips, goons }, r: result, now }), rejects with the server's words. Live tables arrive as 'casino' events.
+      casino: function (op, a) {
+        if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
+        var rid = randHex(6);
+        return rpc0({ type: 'casino', op: String(op), rid: rid, a: a || {} }, 'cas:' + rid).then(function (m) { if (!m.ok) { var e = new Error(m.err || 'The casino said no.'); e.casino = true; throw e; } return m; });
+      },
       // what other people wear: cached for 10 minutes, fetched in one batch
       cos: function (ids) {
         var want = (ids || []).filter(function (u) { var c = st.cos[u]; return u && !(c && Date.now() - c.at < 600000); });
