@@ -1,5 +1,24 @@
 # Handoff (updated 2026-11-12)
 
+## Round 8 (r66): Steel Storm 2.0, Mayhem Marathon, Casino, goon shop, reports, games page, Blocky classes
+- **Casino** (`Casino/`, server `grapevine/src/archive/077-casino.js`, contract in `Casino/API.md`): 1 goon = 100 chips, chips live in
+  the `~eco` row (`e.chips`), every outcome is decided on the server. One-shot games, turn games (state in memory, `CAS_T`), and
+  live tables on the server clock (`round = floor(now / cycle)`, outcome = sha256(secret|tag)); pending live stakes are mirrored in
+  `e.casp` so a restart refunds them. The developer-only `sim` op measures each game's return (all between 92% and 99%).
+  The page has a practice mode (`?practice=1`, `js/05-mock.js`) that never talks to the server. Suite: `gv-casino.mjs`.
+  Goons have no real-money value: the page says so on the entrance and in the footer; keep it that way.
+- **Reports** (`078-reports.js`, launcher `099-report.js`, Grapevine client `070-reply-edit.js`): one `report` frame, stored in the
+  server-only save user `~reports` (ring of 300), admins read/close with `reportAdmin`. Buttons: top bar, player bar in every game,
+  the flag on every chat message. Suite: `gv-report.mjs`.
+- **Goon shop**: name colours (`color`), picture frames (`frame`), your own title (`ecoCustom`), crates (`ecoCrate`), gifts to
+  friends (`ecoGift`, 20 a day). Catalog in `074-catalog.js`; launcher `040-profile-shop.js` (`profExtras`). Suite: `gv-shop.mjs`.
+- **Games page** (`096-qol.js`: `qolShelves`, `qolHero`, `qolPeek`; `SHELF_OF` maps a tag to a shelf): banner + sideways shelves +
+  compact tiles. A new game only needs its `GAMES` entry with sensible tags; add it to `NEW_NOW` to feature it.
+- **Mayhem Marathon** (new, HGNet id `mayhem`, up to 16, save `mayhem_save`, boards `mayhem:crowns`, `mayhem:qualified`,
+  hook `window.__mayhem`). **Steel Storm 2.0** (save v1 -> v2 in place, 69 vehicles, 4 modes, host migration, hook `window.__steelstorm`;
+  mode keys are `tdm|conq|ctf|ffa`).
+- New server reply types this round (all in `LITE_OK`): `casino`, `casinoEv`, `report`, `reports`, `lbAck`. No SQL to run.
+
 ## Round 7 (r65): leaderboards, loading, QoL, tooling
 - **Leaderboards** (server `075-economy.js`, launcher `050-goons-feed.js`, test `tools/tests/gv-lb.mjs`):
   - What was broken: Brown E Clicker sent the current balance, not `life.earned`; the server refused scores over 1e15;
