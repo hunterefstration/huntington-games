@@ -14,24 +14,35 @@ function angDiff(a, b) { let d = (b - a) % TAU; if (d > PI) d -= TAU; if (d < -P
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmt = n => Math.round(n).toLocaleString('en-US');
 function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-const TEAM_COL = [0x3b9bff, 0xff4d4d];
+const TEAM_COL = [0x3b9bff, 0xff4d4d, 0x4cd964, 0xffd21f, 0xc77dff, 0xff9d3a, 0x3ae0d0, 0xff6ac1, 0xa0e85a, 0xe8e8e8, 0x7a8cff, 0xd08a5a, 0x5ad0ff, 0xffb0b0, 0x9a9a9a, 0xb0ff6a, 0xffe08a, 0x8affd8];
+const teamCol = t => TEAM_COL[((t | 0) % TEAM_COL.length + TEAM_COL.length) % TEAM_COL.length];
+const teamHex = t => '#' + teamCol(t).toString(16).padStart(6, '0');
+const VERSION = '2.0';
 let toastT = 0;
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2600); }
 
-// ---------- the save file: localStorage steelstorm_save = {v:1, ...}. Old saves are migrated, never wiped. ----------
-const SAVE_KEY = 'steelstorm_save', SAVE_V = 1;
+// ---------- the save file: localStorage steelstorm_save = {v:2, ...}. Old saves are migrated, never wiped. ----------
+// v2 (Steel Storm 2.0): + mods (researched vehicle modules), + opts (match length, map size, friendly fire, weather),
+// + stats.flags / stats.mvp, + seenNew. The launcher leaderboard reads stats.wins / kills / matches / deaths: keep them.
+const SAVE_KEY = 'steelstorm_save', SAVE_V = 2;
 let save = null;
 function defaultSave() {
     return {
         v: SAVE_V, name: '', credits: 800, freeRp: 0, rp: {}, researched: {}, owned: {}, target: null,
         lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0, bots: 'match', diff: 'normal',
+        mods: {}, opts: { len: 10, map: 'normal', ff: 0, wx: 'noon' },
         settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false },
-        stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0 }, seenHow: false
+        stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0, flags: 0, mvp: 0 }, seenHow: false, seenNew: ''
     };
 }
 // future versions: add `if (s.v < 2) { ...; s.v = 2; }` steps here, never delete fields
 function migrateSave(s) {
     if (typeof s.v !== 'number') s.v = 1;
+    if (s.v < 2) {      // 1 -> 2: keep everything, add the module list (other new fields come from defaultSave via mergeInto)
+        if (!s.mods || typeof s.mods !== 'object') s.mods = {};
+        if (s.stats && typeof s.stats === 'object') { if (!(s.stats.flags >= 0)) s.stats.flags = 0; if (!(s.stats.mvp >= 0)) s.stats.mvp = 0; }
+        s.migratedFrom = 1; s.v = 2;
+    }
     return s;
 }
 function mergeInto(base, s) {
@@ -58,11 +69,17 @@ function fixSave(s) {      // tier I is always owned; drop unknown ids; keep a u
     s.lineup = (Array.isArray(s.lineup) ? s.lineup : []).filter((id, i, a) => VBY[id] && s.owned[id] && a.indexOf(id) === i).slice(0, 5);
     if (!s.lineup.length) s.lineup = ['g1a'];
     s.sel = clamp(s.sel | 0, 0, s.lineup.length - 1);
-    if (s.target && (!VBY[s.target] || s.researched[s.target])) s.target = null;
+    for (const id of Object.keys(s.mods || {})) if (!MODBY[id]) delete s.mods[id];
+    if (s.target && !(VBY[s.target] ? !s.researched[s.target] : MODBY[s.target] && !s.mods[s.target])) s.target = null;
     if (!(s.credits >= 0)) s.credits = 0;
     if (!(s.freeRp >= 0)) s.freeRp = 0;
-    if (s.mode !== 'tdm' && s.mode !== 'conq') s.mode = 'tdm';
-    s.size = s.size === 3 ? 3 : 5;
+    if (!['tdm', 'conq', 'ctf', 'ffa'].includes(s.mode)) s.mode = 'tdm';
+    s.size = [3, 5, 8].includes(s.size) ? s.size : 5;
+    const o = s.opts; o.len = [5, 10, 15].includes(o.len) ? o.len : 10; if (!['small', 'normal', 'large'].includes(o.map)) o.map = 'normal';
+    o.ff = o.ff ? 1 : 0; if (!['noon', 'evening', 'overcast', 'night', 'random'].includes(o.wx)) o.wx = 'noon';
+    if (!['off', 'match', 'mixed'].includes(s.bots)) s.bots = 'match';
+    if (!['low', 'med', 'high'].includes(s.settings.quality)) s.settings.quality = 'med';
+    s.v = SAVE_V;
     return s;
 }
 let saveT = 0;
@@ -121,6 +138,12 @@ const SFX = {
     click: c => { const t = c.currentTime; tone(c, 'square', 600, 500, 0.04, 0.1, t); },
     ready: c => { const t = c.currentTime; tone(c, 'square', 300, 300, 0.03, 0.08, t); },
     win: c => { const t = c.currentTime; [392, 523, 659, 784].forEach((f, i) => tone(c, 'triangle', f, f, 0.35, 0.3, t + i * 0.14)); },
+    torp: c => { const t = c.currentTime; noiseBurst(c, 0.5, 0.5, 600, 200, 'lowpass', t); tone(c, 'sine', 300, 120, 0.4, 0.2, t); },
+    missile: c => { const t = c.currentTime; noiseBurst(c, 0.9, 0.45, 2500, 800, 'bandpass', t); tone(c, 'sawtooth', 500, 900, 0.5, 0.05, t); },
+    flare: c => { const t = c.currentTime; noiseBurst(c, 0.3, 0.3, 4000, 2000, 'highpass', t); },
+    flag: c => { const t = c.currentTime; [659, 784, 988].forEach((f, i) => tone(c, 'square', f, f, 0.12, 0.12, t + i * 0.07)); },
+    chat: c => { const t = c.currentTime; tone(c, 'sine', 880, 990, 0.06, 0.12, t); },
+    warn: c => { const t = c.currentTime; tone(c, 'square', 1000, 1000, 0.08, 0.1, t); tone(c, 'square', 1000, 1000, 0.08, 0.1, t + 0.15); },
     lose: c => { const t = c.currentTime; [392, 330, 262, 196].forEach((f, i) => tone(c, 'sawtooth', f, f * 0.98, 0.35, 0.18, t + i * 0.16)); }
 };
 // positional: quieter with distance from the camera
