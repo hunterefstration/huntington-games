@@ -40,6 +40,8 @@ function applyQuality() {
     // materials must recompile when shadows toggle
     GFX.scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); });
     TUM.blob.visible = !q.shadows;
+    const lod = TUM.lod[name === 'low' ? 'lo' : 'hi']; TUM.parts.body.geometry = lod.body; TUM.parts.visor.geometry = lod.visor;
+    GFX.balloons.visible = name !== 'low';
     onResize();
 }
 // ---------- sky dome with soft procedural clouds ----------
@@ -214,12 +216,13 @@ function hatGeometry(id) {
     return mergeGeometries(P);
 }
 function initTumblers() {
-    const body = new THREE.SphereGeometry(0.58, 26, 18); body.scale(1, 0.94, 1);
-    body.setAttribute('iCol2', new THREE.InstancedBufferAttribute(new Float32Array(TUM.cap * 3), 3));
-    body.setAttribute('iPat', new THREE.InstancedBufferAttribute(new Float32Array(TUM.cap), 1));
-    instPart('body', body, tumMat(true), 1);
-    const visor = new THREE.SphereGeometry(0.6, 24, 12, PI / 2 - 1.0, 2.0, PI * 0.26, PI * 0.3); visor.scale(1, 0.94, 1);
-    const vm = new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.6 }); instPart('visor', visor, vm, 1, false);
+    // two levels of detail for the big parts: the low tier swaps in the light ones (applyQuality)
+    const iCol2 = new THREE.InstancedBufferAttribute(new Float32Array(TUM.cap * 3), 3), iPat = new THREE.InstancedBufferAttribute(new Float32Array(TUM.cap), 1);
+    const mkBody = (w, h) => { const g = new THREE.SphereGeometry(0.58, w, h); g.scale(1, 0.94, 1); g.setAttribute('iCol2', iCol2); g.setAttribute('iPat', iPat); return g; };
+    const mkVisor = (w, h) => { const g = new THREE.SphereGeometry(0.6, w, h, PI / 2 - 1.0, 2.0, PI * 0.26, PI * 0.3); g.scale(1, 0.94, 1); return g; };
+    TUM.lod = { hi: { body: mkBody(26, 18), visor: mkVisor(24, 12) }, lo: { body: mkBody(14, 10), visor: mkVisor(12, 5) } };
+    instPart('body', TUM.lod.hi.body, tumMat(true), 1);
+    const vm = new THREE.MeshStandardMaterial({ roughness: 0.15, metalness: 0.6 }); instPart('visor', TUM.lod.hi.visor, vm, 1, false);
     const eye = new THREE.CapsuleGeometry(0.055, 0.1, 4, 8), e1 = eye.clone().translate(0.17, 0.12, 0.575), e2 = eye.clone().translate(-0.17, 0.12, 0.575);
     instPart('eyes', mergeGeometries([e1, e2]), new THREE.MeshBasicMaterial(), 1, false);
     const leg = mergeGeometries([new THREE.CylinderGeometry(0.11, 0.12, 0.3, 10).translate(0, -0.15, 0), new THREE.BoxGeometry(0.24, 0.13, 0.34).translate(0, -0.3, 0.05)]);
@@ -260,7 +263,7 @@ function drawTumbler(vs, look, opt) {
     if (vs.grab && st === ST_RUN) { armFwd = -1.45; armOut = 0.1; armA = 0; }
     if (vs.pose) {
         const p = vs.pose, s = t * 4;
-        if (p === 'e0') { armOut = 0.3; PART.identity(); armA = 0; armFwd = 0; hop = 0; }
+        if (p === 'e0') { armOut = 0.3; armA = 0; armFwd = 0; }
         if (p === 'e1') { armOut = 1.5; armFwd = Math.sin(s) * 0.3; }
         if (p === 'e2') { spinY = t * 6; armOut = 1.4; }
         if (p === 'e3') { hop = Math.abs(Math.sin(s * 1.2)) * 0.5; armOut = 2.2; }
@@ -283,7 +286,7 @@ function drawTumbler(vs, look, opt) {
     pushInst(TUM.parts.eyes, M3, st === ST_TUMBLE ? 0xffffff : vis.eye);
     for (let s = -1; s <= 1; s += 2) {
         QA.setFromAxisAngle(XA, legA * s); M1.compose(V3.set(0.22 * s, 0.34, 0), QA, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.legs, M3, 0x3a3d52);
-        QA.setFromAxisAngle(XA, armA * s + armFwd); QB.setFromAxisAngle(ZA, armOut * s); QB.multiply(QA); M1.compose(V3.set(0.55 * s, 0.98, 0), QB, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.arms, M3, col);
+        const ao = vs.pose === 'e0' && s > 0 ? 2.6 + Math.sin(t * 9) * 0.4 : armOut; QA.setFromAxisAngle(XA, armA * s + armFwd); QB.setFromAxisAngle(ZA, ao * s); QB.multiply(QA); M1.compose(V3.set(0.55 * s, 0.98, 0), QB, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.arms, M3, col);
     }
     if (L.hat !== 'h0' && TUM.hats[L.hat]) { PART.makeTranslation(0, 1.36, 0); M3.multiplyMatrices(ROOT, PART); if (L.hat === 'h9') { M2.makeRotationY(t * 12); M3.multiply(M2); } pushInst(TUM.hats[L.hat], M3); }
     if (opt.team != null) { PART.makeTranslation(0, 0.72, 0); M3.multiplyMatrices(ROOT, PART); pushInst(TUM.parts.band, M3, TEAM_COLS[opt.team]); }
@@ -339,6 +342,6 @@ function placeTag(id, text, x, y, z, cls, show) {
 function render() {
     const r = GFX.renderer, t0 = performance.now();
     GFX.sky.position.copy(GFX.cam.position);
-    r.render(GFX.scene, GFX.cam);
+    r.info.autoReset = false; r.info.reset(); r.render(GFX.scene, GFX.cam);
     GFX.info.calls = r.info.render.calls; GFX.info.tris = r.info.render.triangles; GFX.info.ms = performance.now() - t0;
 }

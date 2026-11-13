@@ -15,33 +15,34 @@ ROUNDS.spin = {
             cyl(0, -0.4, z, 4, 0.8, { col: [BLU, PNK, YEL][i], mv: (t, c) => { setRot(c, 0, dir * w * t, 0); c.p[0] = 0; c.p[1] = -0.4; c.p[2] = z; } });
             for (let k = 0; k < 2; k++) cyl(0, 0.6, z, 0.45, 1.2, { col: WHT, mv: (t, c) => { const a = dir * w * t + k * PI; c.p[0] = Math.sin(a) * 2.6; c.p[1] = 0.6; c.p[2] = z + Math.cos(a) * 2.6; } });
         });
-        floorStrip(0, 111.4, 128, 14, 0, 0xfff2b3, 0xffe27a);
-        finishArch(120, 0, 14);
-        cp(44, 0); cp(82, 0); cp(113, 0);
-        L.center = [0, 60]; L.killY = -10;
+        floorStrip(0, 111.4, 150, 14, 0, 0xfff2b3, 0xffe27a);
+        spinner(0, 121, 0, 12.5, 1.4, 0.5, HAZ2); spinner(0, 134, 0, 12.5, -1.6, 2.1, HAZ2);
+        finishArch(144, 0, 14);
+        cp(44, 0); cp(82, 0); cp(113, 0); cp(128, 0);
+        L.center = [0, 70]; L.killY = -10;
         P(3.5, 0, 9, 1.2); P(3.5, 0, 16, 1.2); P(-3.5, 0, 19, 1.2); P(-3.5, 0, 26, 1.2); P(0, 0, 34, 2); P(0, 0, 39, 1); P(0, 0, 45, 1);
         P(0, 0, 49, 3); P(0, 0, 56, 3); P(0, 0, 64, 3); P(0, 0, 72, 3); P(0, 0, 80, 2); P(0, 0, 83.5, 1, true); P(0, 0, 88.6, 1.2); P(0, 0, 92.4, 0.8, true);
-        P(0, 0, 97.8, 1.2); P(0, 0, 101.6, 0.8, true); P(0, 0, 107, 1.2); P(0, 0, 110.8, 0.8, true); P(0, 0, 116, 3); P(0, 0, 124, 3);
+        P(0, 0, 97.8, 1.2); P(0, 0, 101.6, 0.8, true); P(0, 0, 107, 1.2); P(0, 0, 110.8, 0.8, true); P(0, 0, 116, 3); P(0, 0, 125, 3); P(0, 0, 131, 3); P(0, 0, 139, 3); P(0, 0, 148, 3);
     }
 };
 ROUNDS.teeter = {
     build(rnd) {
         startPad();
         const plank = (x, z0, len, w, amp, rate, ph, col) => box(x, -0.3, z0 + len / 2, w, 0.6, len, { col, mv: (t, c) => setPivot(c, x, 0, z0 + len / 2, 0, -0.3, 0, amp * Math.sin(t * rate + ph), 0, 0) });
-        const isl = [18, 36, 54, 72];
-        [5, 23, 41, 59].forEach((z0, i) => {
-            plank(-2.75, z0, 12, 5.4, 0.14, 1.2 + i * 0.1, i * 1.9, i % 2 ? BLU : PNK);
-            plank(2.75, z0, 12, 5.4, 0.14, 1.35 + i * 0.1, i * 1.9 + 2.4, i % 2 ? PNK : BLU);
+        const isl = [18, 36, 54, 72, 90, 108];
+        [5, 23, 41, 59, 77, 95].forEach((z0, i) => {
+            plank(-2.75, z0, 12, 5.4, 0.22, 1.2 + i * 0.1, i * 1.9, i % 2 ? BLU : PNK);
+            plank(2.75, z0, 12, 5.4, 0.22, 1.35 + i * 0.1, i * 1.9 + 2.4, i % 2 ? PNK : BLU);
         });
         isl.forEach((z0, i) => { floorStrip(0, z0, z0 + 4, 12, 0, 0xfff2b3, 0xffe27a); pusher(-5, 5, z0 + 2, 0, 1.3 + i * 0.15, i, 2.2, 1.4); });
-        plank(0, 77, 16, 10, 0.1, 0.9, 1, MOV);
-        floorStrip(0, 94, 110, 14, 0, 0xf3e9ff, 0xd9c8ff);
-        finishArch(100, 0, 14);
-        cp(19, 0); cp(37, 0); cp(55, 0); cp(73, 0); cp(96, 0);
-        L.center = [0, 50]; L.killY = -10;
+        plank(0, 113, 16, 10, 0.12, 0.9, 1, MOV);
+        floorStrip(0, 130, 146, 14, 0, 0xf3e9ff, 0xd9c8ff);
+        finishArch(136, 0, 14);
+        isl.forEach(z => cp(z + 1, 0)); cp(132, 0);
+        L.center = [0, 70]; L.killY = -10;
         P(0, 0, 3.6, 1, true);
-        [5, 23, 41, 59].forEach((z0, i) => { P(0, 0, z0 + 5, 4.2); P(0, 0, z0 + 11.4, 4.2, true); P(0, 0, isl[i] + 2, 3); P(0, 0, isl[i] + 3.6, 4, true); });
-        P(0, 0, 85, 3); P(0, 0, 92.8, 3, true); P(0, 0, 102, 3);
+        [5, 23, 41, 59, 77, 95].forEach((z0, i) => { P(0, 0, z0 + 5, 4.2); P(0, 0, z0 + 11.4, 4.2, true); P(0, 0, isl[i] + 2, 3); P(0, 0, isl[i] + 3.6, 4, true); });
+        P(0, 0, 121, 3); P(0, 0, 128.8, 3, true); P(0, 0, 138, 3);
     }
 };
 const gooY = t => -2.5 + Math.max(0, t) * 0.15;
@@ -65,6 +66,8 @@ ROUNDS.goo = {
         ramp(0, 96, 106, 14, 17, 10, 0xd9c8ff);
         floorStrip(0, 106, 118, 12, 17, 0xfff2b3, 0xffe27a);
         finishArch(112, 17, 12);
+        const rail = (z0, z1, y0, y1, w) => { for (const s of [-1, 1]) ramp(s * (w / 2 + 0.3), z0, z1, y0 + 1, y1 + 1, 0.6, PNK, { th: 2 }); };
+        rail(4, 16, 0, 3, 10); rail(16, 22, 3, 3, 10); rail(22, 34, 3, 6, 10); rail(34, 40, 6, 6, 10); rail(52, 58, 10.8, 10.8, 10); rail(58, 72, 10.8, 14, 10); rail(72, 80, 14, 14, 10); rail(96, 106, 14, 17, 10);
         cp(18, 3); cp(37, 6); cp(55, 10.8); cp(76, 14); cp(94, 14);
         L.center = [0, 55]; L.killY = -30;
         P(0, 0, 3, 2); P(0, 1.5, 10, 3); P(0, 3, 17, 3); P(0, 3, 21.5, 3); P(0, 4.5, 28, 3); P(0, 6, 35, 3); P(0, 6, 39.5, 2, true);
@@ -81,16 +84,16 @@ ROUNDS.doors = {
     build(rnd, R) {
         startPad();
         const PAL = [PNK, BLU, YEL, MOV, 0x9a5cff, HAZ2];
-        const conv = { 18: [0, -3.2], 34: [3.0, 0], 50: [0, -3.6], 66: [-3.0, 0], 82: [0, -4] };
-        for (let z = 4; z < 100; z += 4) {
+        const conv = { 18: [0, -3.2], 34: [3.0, 0], 50: [0, -3.6], 66: [-3.0, 0], 82: [0, -4], 98: [0, -4.2], 114: [3.4, 0] };
+        for (let z = 4; z < 132; z += 4) {
             const cz = conv[z] || conv[z - 4];
             if (cz) box(0, -0.5, z + 2, 20, 1, 4, { col: (z / 4) % 2 ? 0x4b4f6b : 0x5d6283, fx: { conv: cz } });
             else box(0, -0.5, z + 2, 20, 1, 4, { col: (z / 4) % 2 ? 0xf3e9ff : 0xd9c8ff });
         }
-        box(-10.5, 0.6, 52, 1, 1.2, 96, { col: PNK }); box(10.5, 0.6, 52, 1, 1.2, 96, { col: PNK });
+        box(-10.5, 0.6, 68, 1, 1.2, 128, { col: PNK }); box(10.5, 0.6, 68, 1, 1.2, 128, { col: PNK });
         R.rows = [];
-        [14, 30, 46, 62, 78].forEach((z, ri) => {
-            const nf = [2, 2, 3, 3, 4][ri], idx = shuffle([0, 1, 2, 3, 4], rnd), fake = new Set(idx.slice(0, nf));
+        [14, 30, 46, 62, 78, 94, 110].forEach((z, ri) => {
+            const nf = [2, 2, 3, 3, 3, 4, 4][ri], idx = shuffle([0, 1, 2, 3, 4], rnd), fake = new Set(idx.slice(0, nf));
             const row = { z, slots: [] };
             for (let k = -10; k <= 10; k += 4) box(k, 1.7, z, 0.4, 3.4, 0.6, { col: WHT });
             box(0, 3.8, z, 20.4, 0.8, 0.6, { col: 0x9a5cff });
@@ -102,10 +105,10 @@ ROUNDS.doors = {
             }
             R.rows.push(row);
         });
-        finishArch(94, 0, 18);
-        R.rows.forEach(r => cp(r.z + 2, 0)); cp(95, 0);
-        L.center = [0, 50]; L.killY = -10;
-        P(0, 0, 6, 4); [14, 30, 46, 62, 78].forEach(z => { P(0, 0, z - 1.5, 6); P(0, 0, z + 3, 6); P(0, 0, z + 10, 6); }); P(0, 0, 97, 4);
+        finishArch(126, 0, 18);
+        R.rows.forEach(r => cp(r.z + 2, 0)); cp(127, 0);
+        L.center = [0, 65]; L.killY = -10;
+        P(0, 0, 6, 4); [14, 30, 46, 62, 78, 94, 110].forEach(z => { P(0, 0, z - 1.5, 6); P(0, 0, z + 3, 6); P(0, 0, z + 10, 6); }); P(0, 0, 130, 4);
     },
     tick(R, dt) {
         for (const row of R.rows) for (const s of row.slots) {
@@ -169,14 +172,18 @@ ROUNDS.crown = {
         [-2.5, 2.5].forEach((lx, i) => sph(lx, 0, 93, 1.2, { col: 0x9b8a7a, fx: { knock: 8, always: true }, mv: (t, c) => {
             const s = (((t + i * 3) / 6) % 1 + 1) % 1, z = 93 - s * 13; c.p[0] = lx; c.p[2] = z; c.p[1] = z < 81.5 ? 11.2 - (81.5 - z) * 6 : 10 + (z - 81) / 12 * 3 + 1.2;
         } }));
-        floorStrip(0, 93, 103, 12, 13, 0xfff2b3, 0xffe27a);
-        cyl(0, 13.3, 99, 1.4, 0.6, { col: 0xffd23f });
-        cp(18, 3); cp(38, 6); cp(59, 6); cp(77, 10); cp(95, 13);
-        L.center = [0, 50]; L.killY = -10;
-        R.crownPos = { x: 0, y: 15.9, z: 99 };
+        floorStrip(0, 93, 103, 12, 13, 0xfff2b3, 0xffe27a); spinner(0, 98, 13, 11, -1.8, 0.7);
+        [106, 111].forEach((z, k) => box(0, 12.5, z, 8, 1, 4, { col: MOV, mv: (t, c) => { c.p[0] = 0; c.p[1] = 12.5 + 1.2 * Math.sin(t * 1.2 + k * 2.2); c.p[2] = z; } }));
+        floorStrip(0, 114, 120, 12, 13, 0xf3e9ff, 0xd9c8ff); hammer(0, 117, 13, 2.0, 0.85, 1.8);
+        ramp(0, 120, 132, 13, 16, 8, 0x4b4f6b, { fx: { conv: [0, -2.6] } });
+        floorStrip(0, 132, 146, 12, 16, 0xfff2b3, 0xffe27a); pusher(-4.5, 4.5, 135.5, 16, 1.7, 1, 2.4, 1.4);
+        cyl(0, 16.3, 141, 1.4, 0.6, { col: 0xffd23f });
+        cp(18, 3); cp(38, 6); cp(59, 6); cp(77, 10); cp(95, 13); cp(116, 13); cp(134, 16);
+        L.center = [0, 70]; L.killY = -10;
+        R.crownPos = { x: 0, y: 18.9, z: 141 };
         P(0, 0, 3, 2); P(0, 1.5, 10, 3); P(0, 3, 17, 3); P(0, 3, 23, 3); P(0, 4.5, 30, 2.5); P(0, 6, 37, 3); P(0, 6, 41.8, 1, true); P(0, 6, 45.9, 1.2); P(0, 6, 49.2, 0.8, true);
         P(0, 6, 53.3, 1.2); P(0, 6, 56.6, 0.8, true); P(0, 6, 60, 3); P(0, 6, 62.4, 2, true); P(0, 7, 64.6, 2); P(0, 7, 65.5, 2, true); P(0, 8, 67.6, 2); P(0, 8, 68.5, 2, true);
-        P(0, 9, 70.6, 2); P(0, 9, 71.5, 2, true); P(0, 10, 73.6, 2); P(0, 10, 80, 3); P(0, 11.5, 87, 3); P(0, 13, 94, 2); P(0, 13, 97.4, 0.6, true); P(0, 13.6, 99, 0.3, true);
+        P(0, 9, 70.6, 2); P(0, 9, 71.5, 2, true); P(0, 10, 73.6, 2); P(0, 10, 80, 3); P(0, 11.5, 87, 3); P(0, 13, 95, 3); P(0, 13, 101, 3); P(0, 13, 102.6, 2, true); P(0, 13, 106, 2); P(0, 13, 108.6, 2, true); P(0, 13, 111, 2); P(0, 13, 113.6, 2, true); P(0, 13, 119, 3); P(0, 14.5, 126, 2.5); P(0, 16, 133, 3); P(0, 16, 139.4, 0.6, true); P(0, 16.6, 141, 0.3, true);
         const cr = new THREE.Mesh(hatGeometry('crown'), new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.7, roughness: 0.25, emissive: 0x553300 }));
         cr.scale.setScalar(2.2); L.group.add(cr); L.crown = cr;
     },

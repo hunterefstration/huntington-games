@@ -194,7 +194,8 @@ function collideBody(b) {
                     const pl = Math.hypot(PV.x, PV.y, PV.z);
                     if (pl > 1.6 || fx.always) {
                         const k2 = fx.knock, hz = Math.hypot(nx, nz) || 1;
-                        knock(b, PV.x * 1.15 + nx / hz * k2, Math.max(5, PV.y + 4 + k2 * 0.25), PV.z * 1.15 + nz / hz * k2, 1.0 + k2 * 0.04);
+                        let kx = PV.x * 0.55 + nx / hz * k2 * 0.55, kz = PV.z * 0.55 + nz / hz * k2 * 0.55; const kh = Math.hypot(kx, kz); if (kh > 11) { kx *= 11 / kh; kz *= 11 / kh; }
+                        knock(b, kx, Math.max(4, PV.y * 0.5 + 3.5 + k2 * 0.2), kz, 0.9 + k2 * 0.04);
                         continue;
                     }
                 }

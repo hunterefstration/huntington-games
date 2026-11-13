@@ -2,13 +2,13 @@
 // SURVIVAL, TEAM and the Hex Drop final: arena rounds centred on (0,0).
 // ============================================================
 const beamAng = t => t < 0 ? t * 0.3 : 0.9 * t + 0.012 * t * t, beamW = t => t < 0 ? 0.3 : 0.9 + 0.024 * t;
-const highY = t => t < 25 ? 7 : Math.max(1.75, 7 - (t - 25) * 2.6), highAng = t => -0.7 * t + 1.3;
+const highY = t => t < 25 ? 7 : Math.max(1.9, 7 - (t - 25) * 2.6), highAng = t => -0.7 * t + 1.3;
 ROUNDS.beam = {
     build() {
         cyl(0, -0.5, 0, 11, 1, { col: 0x9fe8ff });
         for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; deco(placeGeo(new THREE.BoxGeometry(2.6, 0.3, 0.4), Math.sin(a) * 10.9, -0.05, Math.cos(a) * 10.9, 0, a + PI / 2, 0), i % 2 ? YEL : PNK); }
         cyl(0, 1.3, 0, 1.2, 2.6, { col: 0x8a8fb0 });
-        for (let k = 0; k < 2; k++) box(0, 0, 0, 10.8, 0.6, 0.7, { col: HAZ, fx: { knock: 7, always: true }, mv: (t, c) => setPivot(c, 0, 0.5, 0, 6.6, 0, 0, 0, beamAng(t) + k * PI, 0) });
+        for (let k = 0; k < 2; k++) box(0, 0, 0, 10.8, 0.6, 0.7, { col: HAZ, fx: { knock: 7, always: true }, mv: (t, c) => setPivot(c, 0, t < 0 ? 5 : Math.max(0.5, 5 - t * 9), 0, 6.6, 0, 0, 0, beamAng(t) + k * PI, 0) });
         box(0, 7, 0, 10.8, 0.6, 0.7, { col: HAZ2, fx: { knock: 7, always: true }, mv: (t, c) => setPivot(c, 0, highY(t), 0, 6.6, 0, 0, 0, highAng(t), 0) });
         spawnRing(7, 0); L.killY = -6; L.center = [0, 0];
     },
@@ -17,8 +17,8 @@ ROUNDS.beam = {
         if (ai.rad == null) ai.rad = 4 + Math.random() * 3;
         let tt = 99; for (let k = 0; k < 2; k++) { let d = ((phi - beamAng(t) - k * PI) % TAU + TAU) % TAU; tt = Math.min(tt, d / w); }
         let th = 99; if (highY(t) < 2.2) { const d = ((highAng(t) - phi) % TAU + TAU) % TAU; th = d / 0.7; }
-        const err = [0.16, 0.08, 0.03][C.skill], want = 0.2 + (ai.jerr || 0);
-        if (tt < want && tt > want - 0.12 && !(th < 0.9 && th > 0.05)) { inp.jump = true; ai.jerr = (Math.random() - 0.5) * 2 * err; }
+        const err = [0.12, 0.06, 0.02][C.skill], h = 0.8 / Math.max(2, r) / w, want = h + 0.24 + (ai.jerr || 0);
+        if (tt < want && tt > want - 0.1 && !(th < 0.9 && th > 0.05) && C.b.ground) { inp.jump = true; ai.jerr = (Math.random() - 0.5) * 2 * err; }
         const tx = Math.cos(phi) * ai.rad, tz = -Math.sin(phi) * ai.rad;
         if (Math.abs(r - ai.rad) > 0.6) botSteer(C, inp, tx, tz, 0.3); else { inp.mx = 0; inp.mz = 0; }
         if (r > 9.5) botSteer(C, inp, 0, 0, 0.3);
@@ -27,44 +27,53 @@ ROUNDS.beam = {
 };
 // ---------- tile floors (Vanishing Tiles, Hex Drop) ----------
 function tileBot(C, R, ai, inp) {
-    const p = C.b.p, feet = p.y - PR;
+    const b = C.b, p = b.p, feet = p.y - PR, cur = b.ground && b.gc && b.gc.tag === 'tile' ? b.gc : null;
     const bad = c => !c || !c.on || c.ts;
-    if (!ai.tile || bad(ai.tile) || ai.tt < 0 || (Math.hypot(ai.tile.p[0] - p.x, ai.tile.p[2] - p.z) < 0.5 && C.b.ground)) {
-        const cand = L.tiles.filter(c => !bad(c) && Math.abs(c.p[1] + c.hy - feet) < 1.2);
-        let best = null, bs = -1e9;
-        for (const c of cand) { const d = Math.hypot(c.p[0] - p.x, c.p[2] - p.z); if (d < 1.5 || d > 7) continue; const s = -Math.abs(d - 3) - Math.hypot(c.p[0], c.p[2]) * 0.15 + Math.random() * 2; if (s > bs) { bs = s; best = c; } }
-        ai.tile = best; ai.tt = [2.5, 1.6, 1.1][C.skill] + Math.random();
+    if (cur && (!ai.tile || ai.tile === cur)) {
+        if (ai.margin == null) ai.margin = [0.05 + Math.random() * 0.5, 0.3 + Math.random() * 0.15, 0.42][C.skill];
+        if (!cur.ts || R.t < cur.dropAt - ai.margin) { ai.tile = null; inp.mx = inp.mz = 0; return true; }
+        ai.margin = null;
     }
-    ai.tt -= 0.1;
+    if (!ai.tile || bad(ai.tile)) {
+        let best = null, bs = -1e9;
+        for (const c of L.tiles) {
+            if (bad(c) || c === cur || Math.abs(c.p[1] + c.hy - feet) > 1.2) continue;
+            const d = Math.hypot(c.p[0] - p.x, c.p[2] - p.z); if (d > 6) continue;
+            let crowd = 0; for (const o of R.cs) if (o !== C && !o.hide && Math.hypot(o.vs.x - c.p[0], o.vs.z - c.p[2]) < 1.6) crowd++;
+            const s = -Math.abs(d - 2.3) * 1.5 - crowd * 2 - Math.hypot(c.p[0], c.p[2]) * 0.08 + Math.random() * [3, 1.5, 0.5][C.skill];
+            if (s > bs) { bs = s; best = c; }
+        }
+        ai.tile = best;
+    }
     if (!ai.tile) { inp.mx = inp.mz = 0; return true; }
-    botSteer(C, inp, ai.tile.p[0], ai.tile.p[2], 0.2);
-    if (C.b.ground) { const fx = p.x + inp.mx * 1.2, fz = p.z + inp.mz * 1.2; if (!groundBelow(fx, p.y, fz, 1.0) && C.skill + Math.random() * 2 > 1) inp.jump = true; }
+    const d = botSteer(C, inp, ai.tile.p[0], ai.tile.p[2], 0.25);
+    if (b.ground && d > 1.3) { const fx = p.x + inp.mx * 1.0, fz = p.z + inp.mz * 1.0, under = solidAt(fx, p.y - 0.8, fz, 0.35); if ((!under || under.ts) && C.skill + Math.random() * 2 > 0.8) inp.jump = true; }
     return true;
 }
 ROUNDS.tiles = {
-    tileDelay: 0.8,
+    tileDelay: 1.4,
     build() {
         const cols = [0x9fe8ff, 0xffd6f0, 0xfff2b3];
-        [0, -7, -14].forEach((y, li) => { for (let i = 0; i < 9; i++) for (let j = 0; j < 9; j++) { const c = box(-8.8 + i * 2.2, y - 0.25, -8.8 + j * 2.2, 2.08, 0.5, 2.08, { col: (i + j) % 2 ? cols[li] : 0xffffff, tag: 'tile' }); c.dyn = true; c.base = c.col; L.tiles.push(c); } });
+        [0, -7, -14].forEach((y, li) => { for (let i = 0; i < 11; i++) for (let j = 0; j < 11; j++) { const c = box(-11 + i * 2.2, y - 0.25, -11 + j * 2.2, 2.08, 0.5, 2.08, { col: (i + j) % 2 ? cols[li] : 0xffffff, tag: 'tile' }); c.dyn = true; c.base = c.col; L.tiles.push(c); } });
         spawnRing(6, 0); L.killY = -20; L.center = [0, 0];
     },
     tick(R) { tilesTick(R); },
     bot: tileBot
 };
 ROUNDS.hex = {
-    tileDelay: 0.55,
+    tileDelay: 1.0,
     build() {
         const s = 1.32, cols = [[0xffd23f, 0xffe27a], [0xff8fd8, 0xffb8e6], [0x7fe7ff, 0xb8f2ff]];
-        [0, -8, -16].forEach((y, li) => { for (let q = -4; q <= 4; q++) for (let r = -4; r <= 4; r++) { if (Math.abs(q + r) > 4) continue; const c = cyl(s * Math.sqrt(3) * (q + r / 2), y - 0.25, s * 1.5 * r, 1.12, 0.5, { col: cols[li][(q - r + 99) % 2], tag: 'tile' }); c.hex = true; c.dyn = true; L.tiles.push(c); } });
+        [0, -8, -16].forEach((y, li) => { for (let q = -5; q <= 5; q++) for (let r = -5; r <= 5; r++) { if (Math.abs(q + r) > 5) continue; const c = cyl(s * Math.sqrt(3) * (q + r / 2), y - 0.25, s * 1.5 * r, 1.12, 0.5, { col: cols[li][(q - r + 99) % 2], tag: 'tile' }); c.hex = true; c.dyn = true; L.tiles.push(c); } });
         spawnRing(4.5, 0); L.killY = -24; L.center = [0, 0];
     },
     tick(R) { tilesTick(R); },
     bot: tileBot
 };
-const sqR = t => t < 0 ? 13 : Math.max(3.2, 13 - t * 0.13);
+const sqR = t => t < 0 ? 13 : Math.max(2.6, 13 - t * 0.14);
 function sqWind(t) {
     if (t < 3) return { x: 0, z: 0 };
-    const s = (2.0 + 1.8 * Math.max(0, Math.sin(t * 0.8))) * Math.min(1, (t - 3) / 15) + t * 0.015, a = t * 0.22 + Math.sin(t * 0.13) * 2;
+    const s = (2.6 + 2.4 * Math.max(0, Math.sin(t * 0.8))) * Math.min(1, (t - 3) / 12) + t * 0.03, a = t * 0.22 + Math.sin(t * 0.13) * 2;
     return { x: Math.sin(a) * s, z: Math.cos(a) * s };
 }
 ROUNDS.squeeze = {

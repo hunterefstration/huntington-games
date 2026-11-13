@@ -38,7 +38,7 @@ function pickRound(S) {
 }
 function qualifyTarget(S, alive) {
     if (S.pts) return alive;
-    const F = clamp(Math.round(S.N0 * 0.3), 2, 6), left = Math.max(1, S.len - 1 - S.idx);
+    const F = clamp(Math.round(S.N0 * 0.3), 2, 6), left = S.practice ? 3 : Math.max(1, S.len - 1 - S.idx);
     if (alive <= F) return Math.max(1, alive - 1);
     return clamp(Math.round(alive * Math.pow(F / alive, 1 / left)), F, alive - 1);
 }
@@ -393,7 +393,8 @@ function drawContestants(dt) {
         if (C.hide) { placeTag(C.id, '', 0, 0, 0, '', false); continue; }
         const v = C.vs; v.t = t + C.id * 0.37;
         drawTumbler(v, C.look, { team: C.team, tail: R.tails.has(C.id), crown: R.crownBy === C.id, seed: C.id, blobY: v.ground ? v.y - PR : null });
-        placeTag(C.id, C.name, v.x, v.y + 1.75, v.z, isMe(C) ? 'me' : C.bot ? 'bot' : 'pl', names && (!isMe(C) || R.phase !== 'play'));
+        const cd = G.camPos.distanceToSquared(V3.set(v.x, v.y, v.z));
+        placeTag(C.id, C.name, v.x, v.y + 1.75, v.z, isMe(C) ? 'me' : C.bot ? 'bot' : 'pl', names && (!isMe(C) || R.phase !== 'play') && cd < (C.bot ? 400 : 1600));
         const tr = ITEM[C.look.trail];
         if (tr.hex && v.ground && v.spd > 3 && Math.random() < dt * 14) puff(v.x - Math.sin(v.yaw) * 0.4, v.y - 0.3, v.z - Math.cos(v.yaw) * 0.4, tr.hex, 1, 0.6, 0.6, 0.7, C.look.trail === 't5' ? 1.3 : 0.8);
         if (v.st === ST_SLIDE && Math.random() < 0.4) puff(v.x, v.y - 0.4, v.z, 0xffffff, 1, 1, 0.3, 0.4);

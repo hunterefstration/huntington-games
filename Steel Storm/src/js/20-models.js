@@ -148,7 +148,7 @@ function initMaterials() {
 }
 function setVehicleDetail(q) { const b = q === 'low' ? null : TEX.bump; for (const k in MAT.veh) { const m = MAT.veh[k]; if (m.bumpMap !== b) { m.bumpMap = b; m.needsUpdate = true; } } }
 // ---------- per-class builders ----------
-const DK = 0x2a2c30, MT = 0x4a4d53, GLASS = 0x8fc8f0, LAMP = 0xe8e2c0, WHITE = 0xf0f0ea;
+const DK = 0x2a2c30, MTL = 0x4a4d53, GLASS = 0x8fc8f0, LAMP = 0xe8e2c0, WHITE = 0xf0f0ea;
 function buildTank(m, team) {
     const B = [], BF = flatList(), T = [], TF = flatList(), Gp = [], GF = flatList(), TR = flatList(), KB = [], KT = [], f = flagSet(m.f), tc = teamCol(team);
     const [hw, hh, hl] = m.hull, [tw, th, tl] = m.tur, wl = !!f.wl, c1 = tint(m.c[0]), c2 = tint(m.c[1], .5);
@@ -159,7 +159,7 @@ function buildTank(m, team) {
         for (const s of [-1, 1]) for (let i = 0; i < n; i++) {
             const z = -hl * .36 + i * hl * .72 / (n - 1);
             push(TR, place(new THREE.CylinderGeometry(.62, .62, .5, 12), s * (hw / 2 + .2), .62, z, 0, 0, PI / 2), 0xffffff);
-            cy(BF, .26, .26, .52, 8, s * (hw / 2 + .22), .62, z, MT, 0, 0, PI / 2);
+            cy(BF, .26, .26, .52, 8, s * (hw / 2 + .22), .62, z, MTL, 0, 0, PI / 2);
         }
         tb(B, hw, hh, hl, 0, y0 + hh / 2, 0, c1, { fs: hh * 1.1, rs: hh * .4, bf: hh * .6, br: hh * .4, bx: .78 });
         for (const s of [-1, 1]) bx(B, .12, .22, hl * .9, s * (hw / 2 + .02), y0 + hh * .2, 0, c2);      // wheel arches line
@@ -170,9 +170,9 @@ function buildTank(m, team) {
             const top1 = new THREE.BoxGeometry(trw, .14, L * .86); place(top1, x, 1.06, -L * .02); top1.computeVertexNormals(); trackUV(top1); push(TR, top1, 0xffffff);
             const bot = new THREE.BoxGeometry(trw, .14, L * .74); place(bot, x, .07, 0); trackUV(bot); push(TR, bot, 0xffffff);
             for (const e of [1, -1]) { const sl = new THREE.BoxGeometry(trw, .14, 1.25); place(sl, x, .55, e * L * .43, -e * .78); trackUV(sl); push(TR, sl, 0xffffff); }
-            for (let i = 0; i < n; i++) { const z = -L * .36 + i * L * .72 / Math.max(1, n - 1); cy(BF, wr, wr, trw * .86, 10, x, wr + .05, z, 0x3a3c3f, 0, 0, PI / 2); cy(BF, wr * .45, wr * .45, trw * .9, 8, x, wr + .05, z, MT, 0, 0, PI / 2); }
+            for (let i = 0; i < n; i++) { const z = -L * .36 + i * L * .72 / Math.max(1, n - 1); cy(BF, wr, wr, trw * .86, 10, x, wr + .05, z, 0x3a3c3f, 0, 0, PI / 2); cy(BF, wr * .45, wr * .45, trw * .9, 8, x, wr + .05, z, MTL, 0, 0, PI / 2); }
             cy(BF, .4, .4, trw * .9, 10, x, .78, L * .47, 0x303236, 0, 0, PI / 2); cy(BF, .36, .36, trw * .9, 10, x, .74, -L * .47, 0x303236, 0, 0, PI / 2);
-            if (f.ret) for (let i = 0; i < 3; i++) cy(BF, .13, .13, trw * .5, 6, x, .93, -L * .25 + i * L * .25, MT, 0, 0, PI / 2);
+            if (f.ret) for (let i = 0; i < 3; i++) cy(BF, .13, .13, trw * .5, 6, x, .93, -L * .25 + i * L * .25, MTL, 0, 0, PI / 2);
             if (f.sk) bx(B, .08, .62, L * .82, s * (sx + trw * .5 + .04), .88, 0, c1);
             else bx(KB, .08, .62, L * .82, s * (sx + trw * .5 + .04), .88, 0, c1);
         }
@@ -184,7 +184,7 @@ function buildTank(m, team) {
     // ---- hull details ----
     for (const s of [-1, 1]) {
         cy(BF, .12, .12, .16, 8, s * hw * .38, top - hh * .25, hl / 2 - hh * .7, LAMP, PI / 2);      // headlights
-        bx(BF, .18, .14, .3, s * hw * .3, y0 + hh * .15, hl / 2 + .05, MT);      // tow hooks
+        bx(BF, .18, .14, .3, s * hw * .3, y0 + hh * .15, hl / 2 + .05, MTL);      // tow hooks
         if (f.exh) cy(BF, .1, .12, .5, 6, s * hw * .3, top - hh * .2, -hl / 2 - .1, 0x1d1e20, PI / 2);
         bx(BF, .05, .26, hl * .38, s * (wl ? hw / 2 + .03 : hw / 2 + trw + .01), top - hh * .35, -hl * .05, tc);      // team stripe
     }
@@ -193,7 +193,7 @@ function buildTank(m, team) {
     bx(KB, hw * .9, .1, hh * .6, 0, top - hh * .3, hl / 2 - hh * .3, c2, -.8);      // armour kit: glacis applique
     // ---- casemate ----
     const ty = m.ty || 'box';
-    if (ty === 'cas') { tb(B, hw + trw * 1.6, th, tl, 0, top + th / 2, m.tz, c1, { fs: th * .9, rs: th * .25, tx: .85 }); bx(BF, .5, .1, .5, tw * .25, top + th + .03, m.tz - tl * .25, MT); }
+    if (ty === 'cas') { tb(B, hw + trw * 1.6, th, tl, 0, top + th / 2, m.tz, c1, { fs: th * .9, rs: th * .25, tx: .85 }); bx(BF, .5, .1, .5, tw * .25, top + th + .03, m.tz - tl * .25, MTL); }
     // ---- turret (origin = turret ring) ----
     const front = ty === 'cas' ? tl * .3 : tl * .5;
     if (ty === 'box') { tb(T, tw, th, tl, 0, th / 2, 0, c1, { fs: th * .45, rs: th * .15, tx: .86 }); tb(T, tw * .84, th * .72, tl * .38, 0, th * .55, -tl * .62, c1, { rs: th * .2 }); }
@@ -207,13 +207,13 @@ function buildTank(m, team) {
         cy(T, tw * .5, tw * .52, .3, 12, 0, .15, 0, c1);
         for (const s of [-1, 1]) bx(T, .1, th, tl, s * tw / 2, th / 2 + .2, 0, c1);
         bx(T, tw, th * .8, .1, 0, th * .4 + .2, -tl / 2, c1); bx(T, tw, th * .5, .1, 0, th * .25 + .2, tl / 2, c1, .3);
-        if (f.rad) { cy(TF, .06, .06, 1.2, 5, 0, th + .6, -tl * .45, MT); cy(T, .75, .75, .08, 14, 0, th + 1.25, -tl * .45, c2, PI / 2 - .3); }
+        if (f.rad) { cy(TF, .06, .06, 1.2, 5, 0, th + .6, -tl * .45, MTL); cy(T, .75, .75, .08, 14, 0, th + 1.25, -tl * .45, c2, PI / 2 - .3); }
     }
     else if (ty === 'arty') { tb(T, tw, th, tl, 0, th / 2, 0, c1, { fs: th * .3, rs: 0, tx: .92 }); bx(TF, tw * .9, .06, .3, 0, th * .7, -tl / 2 - .02, 0x1f2023); for (const s of [-1, 1]) bx(T, .12, th * .5, tl * .5, s * (tw / 2 + .06), th * .5, -tl * .1, c2); }
     else if (ty === 'ml') { cy(T, tw * .45, tw * .5, .4, 10, 0, .2, 0, c1); tb(T, tw * .8, th, tl * .7, 0, th / 2 + .2, -tl * .1, c1, { fs: th * .3, tx: .8 }); }
     else if (ty === 'cas') { bx(T, tw * .36, th * .5, .6, 0, th * .1, front - .2, c2); }
     if (ty !== 'cas' && ty !== 'aa') cy(TF, tw * .48, tw * .48, .12, 12, 0, .03, 0, 0x26282b);      // turret ring shadow line
-    if (f.cup && ty !== 'aa') { cy(T, .34, .36, .32, 10, tw * .22, th + .14, -tl * .12, c1); cy(TF, .3, .3, .06, 10, tw * .22, th + .33, -tl * .12, MT); }
+    if (f.cup && ty !== 'aa') { cy(T, .34, .36, .32, 10, tw * .22, th + .14, -tl * .12, c1); cy(TF, .3, .3, .06, 10, tw * .22, th + .33, -tl * .12, MTL); }
     if (f.ant) cy(TF, .025, .03, 2.4, 4, -tw * .34, th + 1.2, -tl * .38, 0x1a1a1a);
     if (f.bins && ty !== 'aa') bx(T, tw * .8, th * .45, .35, 0, th * .45, -tl * (ty === 'cast' ? .72 : .84), c2);
     if (f.ml && ty !== 'ml') for (const s of [-1, 1]) { bx(T, .32, .32, 1.5, s * (tw / 2 + .22), th * .65, -tl * .05, c2); cy(TF, .1, .1, .04, 6, s * (tw / 2 + .22), th * .65, tl * .05 + .7, 0x111111, PI / 2); }
@@ -279,7 +279,7 @@ function buildAir(m, team) {
     if (!prop) cy(BF, fr * .58, fr * .5, L * .06, 10, 0, 0, -L * .51, 0x1b1b1d, PI / 2);      // exhaust nozzle
     // canopy
     if (f.bubble || !f.framed) sph(BF, fr * .62, 0, fr * .72, L * (prop ? .08 : .2), GLASS, .85, .75, 2.2);
-    else { sph(BF, fr * .62, 0, fr * .72, L * .1, GLASS, .85, .7, 2.4); for (let i = 0; i < 3; i++) bx(BF, fr * 1.08, .05, .05, 0, fr * 1.05, L * .03 + i * L * .07, MT); }
+    else { sph(BF, fr * .62, 0, fr * .72, L * .1, GLASS, .85, .7, 2.4); for (let i = 0; i < 3; i++) bx(BF, fr * 1.08, .05, .05, 0, fr * 1.05, L * .03 + i * L * .07, MTL); }
     // ---- wings ----
     const sw = m.sweep || 0, delta = k === 'delta', root = delta ? L * .55 : k === 'heavy' ? L * .24 : k === 'atk' ? L * .17 : L * .2, tip = delta ? L * .04 : root * (prop ? .55 : .4);
     const wz = delta ? -L * .12 : k === 'heavy' ? L * .02 : k === 'atk' ? -L * .02 : L * .02, half = S / 2;
@@ -315,13 +315,13 @@ function buildAir(m, team) {
     if (k === 'prop') props.push({ x: 0, y: 0, z: L * .52 + (f.long ? L * .06 : 0), r: fr * 2.6 + .5, ax: 'z' });
     if (f.side || k === 'heavy' && !f.nose) for (const s of [-1, 1]) tb(BF, fr * .5, fr * .8, L * .22, s * fr * 1.02, -.05, L * .14, 0x1f2124, { fs: .4 });
     if (f.nose) cy(BF, fr * .45, fr * .45, .06, 10, 0, 0, L * .52, 0x111111, PI / 2);
-    if (f.gear) for (const s of [-1, 1]) { bx(BF, .1, fr * 1.4, .1, s * fr * 1.6, -fr * 1.1, L * .06, MT); cy(BF, .32, .32, .16, 10, s * fr * 1.6, -fr * 1.7, L * .06, 0x1d1d1d, 0, 0, PI / 2); }
+    if (f.gear) for (const s of [-1, 1]) { bx(BF, .1, fr * 1.4, .1, s * fr * 1.6, -fr * 1.1, L * .06, MTL); cy(BF, .32, .32, .16, 10, s * fr * 1.6, -fr * 1.7, L * .06, 0x1d1d1d, 0, 0, PI / 2); }
     if (f.belly) bx(B, fr * 1.1, fr * .7, L * .3, 0, -fr * .85, 0, c2);
     dec = f.twin ? [[fr * .9 + .14, fr * 1.6, -L * .4, .5]] : f.twintail || k === 'atk' ? [[S * .1 + .1, fr * .9, -L * .43, .5]] : [[.12, fr * 1.5, -L * .39, .5]];
     return { body: merge2(B, BF, 6), props: props.map(p => ({ geo: propGeo(p.r, prop ? 3 : 2), pos: [p.x, p.y, p.z], ax: p.ax })), muz: [[-1.4, -.3, L * .35], [1.4, -.3, L * .35]], len: L, span: S, dec };
 }
-function propGeo(r, nb) { const g = flatList(); for (let i = 0; i < nb; i++) { const a = i * TAU / nb; bx(g, .14, r, .06, Math.sin(a) * r / 2, Math.cos(a) * r / 2, 0, 0x1e1e1e, 0, 0, -a); } cy(g, .22, .26, .5, 8, 0, 0, 0, MT, PI / 2); return merge(g); }
-function rotorGeo(r, nb) { const g = flatList(); for (let i = 0; i < nb; i++) { const a = i * TAU / nb; bx(g, .32, .06, r, Math.sin(a) * r / 2, 0, Math.cos(a) * r / 2, 0x1c1c1c, 0, a); } cy(g, .3, .3, .4, 8, 0, 0, 0, MT); return merge(g); }
+function propGeo(r, nb) { const g = flatList(); for (let i = 0; i < nb; i++) { const a = i * TAU / nb; bx(g, .14, r, .06, Math.sin(a) * r / 2, Math.cos(a) * r / 2, 0, 0x1e1e1e, 0, 0, -a); } cy(g, .22, .26, .5, 8, 0, 0, 0, MTL, PI / 2); return merge(g); }
+function rotorGeo(r, nb) { const g = flatList(); for (let i = 0; i < nb; i++) { const a = i * TAU / nb; bx(g, .32, .06, r, Math.sin(a) * r / 2, 0, Math.cos(a) * r / 2, 0x1c1c1c, 0, a); } cy(g, .3, .3, .4, 8, 0, 0, 0, MTL); return merge(g); }
 function buildHeli(m, team) {
     const B = [], BF = flatList(), L = m.len, R = m.span / 2, f = flagSet(m.f), c1 = tint(m.c[0], .5), c2 = tint(m.c[1], .45), tc = teamCol(team), props = [];
     const bw = f.tandem ? L * .1 : L * .14;
@@ -336,10 +336,10 @@ function buildHeli(m, team) {
     cy(B, bw * .6, bw * .8, bw * .8, 8, 0, bw * 1.25, L * .02, c2);      // engine hump / mast base
     for (const s of [-1, 1]) { cy(BF, bw * .32, bw * .32, .05, 8, s * bw * .62, bw * 1.3, -L * .06, 0x111111, 0, 0, PI / 2); bx(BF, .05, bw * .7, L * .1, s * (bw * (f.tandem ? 1 : 1.25) + .02), 0, -L * .02, tc); }
     if (f.stubs) for (const s of [-1, 1]) { wing(B, L * .1, L * .07, L * .14, 0, .14, s * bw * .9, -bw * .2, L * .02, c2, s, -.05); cy(BF, .28, .28, 1.4, 8, s * (bw * .9 + L * .12), -bw * .55, L * .02, 0x34373b, PI / 2); }
-    if (f.scout || !f.tandem) for (const s of [-1, 1]) { bx(BF, .1, .1, L * .45, s * bw * 1.1, -bw * 1.45, L * .08, MT); for (const z of [L * .2, -L * .05]) bx(BF, .08, bw * .6, .08, s * bw * 1.05, -bw * 1.15, z, MT); }
+    if (f.scout || !f.tandem) for (const s of [-1, 1]) { bx(BF, .1, .1, L * .45, s * bw * 1.1, -bw * 1.45, L * .08, MTL); for (const z of [L * .2, -L * .05]) bx(BF, .08, bw * .6, .08, s * bw * 1.05, -bw * 1.15, z, MTL); }
     else for (const s of [-1, 1]) cy(BF, .28, .28, .2, 10, s * bw * .9, -bw * 1.35, L * .2, 0x1d1d1d, 0, 0, PI / 2);
     const mastY = bw * 1.7 + .25;
-    cy(BF, .12, .12, .5, 6, 0, mastY - .2, L * .02, MT);
+    cy(BF, .12, .12, .5, 6, 0, mastY - .2, L * .02, MTL);
     props.push({ geo: rotorGeo(R * 2, f.tandem ? 4 : 2), pos: [0, mastY, L * .02], ax: 'y' });
     if (f.coax) props.push({ geo: rotorGeo(R * 2, 4), pos: [0, mastY + .5, L * .02], ax: '-y' });
     else props.push({ geo: propGeo(L * .16, 2), pos: [.2, bw * .3 + L * .08, -L * .54], ax: 'x' });
@@ -399,7 +399,7 @@ function buildShip(m, team) {
         for (const s of [-1, 1]) bx(B, w * .18, .12, .8, s * (sw * .5 + w * .09), deckY + bs * 1.1, bz + w * .2, c2);      // bridge wings
         if (k === 'bb' || k === 'cl') tb(B, sw * .55, bs * 1.4, w * .45, 0, deckY + bs * 2.2, bz - w * .1, c1, { tx: .7, fs: .4 });      // tower
         // mast with yards
-        cy(BF, .09, .12, bs * 2.6, 5, 0, deckY + bs * (k === 'bb' ? 3.6 : 2.6), bz - w * .2, MT); bx(BF, w * .5, .07, .07, 0, deckY + bs * (k === 'bb' ? 4.3 : 3.3), bz - w * .2, MT);
+        cy(BF, .09, .12, bs * 2.6, 5, 0, deckY + bs * (k === 'bb' ? 3.6 : 2.6), bz - w * .2, MTL); bx(BF, w * .5, .07, .07, 0, deckY + bs * (k === 'bb' ? 4.3 : 3.3), bz - w * .2, MTL);
         bx(BF, .05, .55, .9, 0, deckY + bs * (k === 'bb' ? 4.9 : 3.9), bz - w * .2 - .45, tc);
         for (let i = 0; i < (m.fun || 0); i++) { const fz = bz - w * .75 - i * w * .78; cy(B, .62, .72, bs * 1.1, 10, 0, deckY + bs * .9, fz, c2); cy(BF, .64, .64, .25, 10, 0, deckY + bs * 1.5, fz, 0x18191b); }
         // secondary batteries and light AA along the sides of the bigger ships
@@ -408,7 +408,7 @@ function buildShip(m, team) {
     }
     if (k === 'mtb' && m.tp) for (const s of [-1, 1]) cy(B, .26, .26, len * .3, 8, s * w * .36, deckY + .3, -len * .08, c2, PI / 2);
     // radar kit (the Radar module shows it)
-    cy(K, .05, .05, 1.4, 4, 0, deckY + bs * 2.4 + .7, bz - w * .35, MT); bx(K, 1.8, .5, .12, 0, deckY + bs * 2.4 + 1.5, bz - w * .35, c2);
+    cy(K, .05, .05, 1.4, 4, 0, deckY + bs * 2.4 + .7, bz - w * .35, MTL); bx(K, 1.8, .5, .12, 0, deckY + bs * 2.4 + 1.5, bz - w * .35, c2);
     const turs = m.tur.map(([z, s, nb]) => { const t = shipTurret(s, nb, c1, c2), sup = m.tur.some(o => Math.sign(o[0]) === Math.sign(z) && Math.abs(o[0]) > Math.abs(z)); return { geo: t.geo, pos: [0, deckY + .15 + (sup ? s * .75 : 0), z], muz: t.muz }; });
     return { body: merge2(B, BF, 10), turs, kitB: merge2(K, null, 10), len, w, dec: [[w * .5 * (1 - Math.pow(.6, k === 'mtb' ? 1.6 : 2.4)) + .06, h * .62, len * .3, Math.min(1.2, h * .45)]] };
 }
@@ -419,9 +419,9 @@ function buildSub(m, team) {
     tb(B, w * .32, r * 2.4, len * .14, 0, r + r * 1.1, len * .12, c1, { fs: len * .03, tx: .8 });      // sail
     for (const s of [-1, 1]) { wing(B, len * .05, len * .035, w * .55, 0, .1, s * w * .14, r * 1.9, len * .13, c2, s, 0); wing(B, len * .06, len * .04, w * .7, len * .02, .1, s * r * .4, 0, -len * .44, c2, s, 0); bx(BF, .04, r * .7, len * .06, s * (w * .16 + .01), r * 2.1, len * .1, tc); }
     tb(B, .1, w * 1.3, len * .06, 0, 0, -len * .44, c2, { fs: len * .02 });
-    cy(BF, .06, .06, r * 1.6, 4, 0, r * 3.6, len * .1, MT); cy(BF, .05, .05, r * 1.2, 4, .2, r * 3.4, len * .14, MT);
+    cy(BF, .06, .06, r * 1.6, 4, 0, r * 3.6, len * .1, MTL); cy(BF, .05, .05, r * 1.2, 4, .2, r * 3.4, len * .14, MTL);
     cy(BF, r * .55, r * .55, .2, 3, 0, 0, -len * .52, 0x2a2a2a, PI / 2);      // screw
-    cy(K, .05, .05, 1, 4, -.25, r * 3.7, len * .12, MT); bx(K, .7, .25, .08, -.25, r * 4.2, len * .12, c2);
+    cy(K, .05, .05, 1, 4, -.25, r * 3.7, len * .12, MTL); bx(K, .7, .25, .08, -.25, r * 4.2, len * .12, c2);
     const turs = m.tur.map(([z, s, nb]) => { const t = shipTurret(s, nb, c1, c2); return { geo: t.geo, pos: [0, r * 1.02, z + len * .12], muz: t.muz }; });
     return { body: merge2(B, BF, 8), turs, kitB: merge2(K, null, 8), len, w, sub: true, dec: [[w * .17, r * 2, len * .1, .6]] };
 }

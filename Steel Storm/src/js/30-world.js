@@ -112,7 +112,7 @@ function updateFlares(dt) {
         f.y -= dt * 3.2; f.x += Math.sin(simTime * .3 + i) * dt * 2;
         if (f.y < 25) { const a = rnd(0, TAU), r = rnd(60, 260); f.x = cx + Math.cos(a) * r; f.z = cz + Math.sin(a) * r; f.y = rnd(170, 230); }
         flareMesh.setMatrixAt(i, MT.compose(V3.set(f.x, f.y, f.z), QT.identity(), SC.set(1.6, 1.6, 1.6)));
-        if (f.l) { f.l.position.set(f.x, f.y, f.z); f.l.intensity = 9000 * (0.85 + Math.sin(simTime * 23 + i * 5) * .15); }
+        if (f.l) { f.l.position.set(f.x, f.y, f.z); f.l.intensity = 30000 * (0.85 + Math.sin(simTime * 23 + i * 5) * .15); }
     });
     flareMesh.instanceMatrix.needsUpdate = true;
 }
@@ -147,10 +147,10 @@ function initTerrainTextures() {
     for (const t of TOWNS) { const q = P(t.x, t.z); x.beginPath(); x.arc(q[0], q[1], 16 * S * 2, 0, TAU); x.fill(); }
     TT.mask = new THREE.CanvasTexture(cv); TT.mask.colorSpace = THREE.NoColorSpace;
     // water normals: sum of travelling sines + noise, tileable
-    const wn = fbm(61, 4, 4);
+    const wn = fbm(61, 4, 4), wn2 = fbm(71, 16, 2);
     TT.waterN = cvTex(256, (x2, S2) => pixels(x2, S2, S2, (u, v) => {
-        const h = (uu, vv) => Math.sin((uu * 3 + vv * 2) * TAU) * .3 + Math.sin((uu * 5 - vv * 7) * TAU) * .15 + wn(uu, vv) * .8;
-        const e = 1 / 256, dx = (h(u + e, v) - h(u - e, v)) * 40, dy = (h(u, v + e) - h(u, v - e)) * 40, l = Math.hypot(dx, dy, 1);
+        const h = (uu, vv) => Math.sin((uu * 3 + vv * 2) * TAU) * .06 + Math.sin((uu * 5 - vv * 7) * TAU) * .04 + wn(uu, vv) * .9 + wn2(uu, vv) * .35;
+        const e = 1 / 256, dx = (h(u + e, v) - h(u - e, v)) * 26, dy = (h(u, v + e) - h(u, v - e)) * 26, l = Math.hypot(dx, dy, 1);
         return [(-dx / l * .5 + .5) * 255, (-dy / l * .5 + .5) * 255, (1 / l * .5 + .5) * 255];
     }), false);
 }
@@ -181,8 +181,8 @@ function makeTerrainHi() {
     return m;
 }
 function makeWaterHi() {
-    const m = new THREE.MeshPhongMaterial({ color: 0x2f7fb0, normalMap: TT.waterN, normalScale: new THREE.Vector2(.35, .35), shininess: 90, specular: 0x9aa4ad, transparent: true, opacity: .82, depthWrite: false });
-    TT.waterN.repeat.set(140, 140);
+    const m = new THREE.MeshPhongMaterial({ color: 0x2f7fb0, normalMap: TT.waterN, normalScale: new THREE.Vector2(.28, .28), shininess: 90, specular: 0x9aa4ad, transparent: true, opacity: .82, depthWrite: false });
+    TT.waterN.repeat.set(90, 90);
     m.onBeforeCompile = sh => {
         Object.assign(sh.uniforms, waterU);
         sh.fragmentShader = 'uniform float uTime; uniform vec3 uSky;\n' + sh.fragmentShader
@@ -196,7 +196,10 @@ function applyQuality() {
     Q = QUAL[save.settings.quality] || QUAL.med;
     renderer.setPixelRatio(Q.pr * Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.setSize(window.innerWidth, window.innerHeight, false);
-    const was = renderer.shadowMap.enabled, on = !!Q.sh;
+    const changed = applyQuality.q !== Q || !applyQuality.t; applyQuality.q = Q; applyQuality.t = !!terrain;
+    $('#ov').width = Math.floor(window.innerWidth * 0.75); $('#ov').height = Math.floor(window.innerHeight * 0.75);
+    if (!changed) return;      // a window resize: nothing else to redo
+    const on = !!Q.sh;
     renderer.shadowMap.enabled = on; renderer.shadowMap.type = Q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap; sun.castShadow = on;
     if (on && sun.shadow.mapSize.x !== Q.sh) { sun.shadow.mapSize.set(Q.sh, Q.sh); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
     const sc = sun.shadow.camera; sc.left = sc.bottom = -(Q.shR || 100); sc.right = sc.top = Q.shR || 100; sc.near = 20; sc.far = 900; sc.updateProjectionMatrix();
@@ -207,7 +210,6 @@ function applyQuality() {
     if (rain) rain.geometry.setDrawRange(0, Q.rain * 2);
     if (typeof setVehicleDetail === 'function') setVehicleDetail(save.settings.quality);
     scene.traverse(o => { if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.needsUpdate = true); });
-    $('#ov').width = Math.floor(window.innerWidth * 0.75); $('#ov').height = Math.floor(window.innerHeight * 0.75);
 }
 function applyFog() { scene.fog.near = Q.fogN * W0.fogK; scene.fog.far = Q.fogF * Math.max(.6, W0.fogK); }
 function applyWeather(k) {

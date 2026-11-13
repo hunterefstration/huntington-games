@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Mayhem Marathon</title>
+<!--@css-->
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="tags"></div>
+<div id="boot"><div class="logo"><b>MAYHEM</b><i>MARATHON</i></div><div id="boot-s">Loading...</div></div>
+
+<!-- ===== title ===== -->
+<div id="s-title" class="scr hidden">
+  <div class="topbar">
+    <div class="pill" title="Crowns: shows won"><span class="ic crown"></span><b id="t-crowns">0</b></div>
+    <div class="pill" title="Kudos: spend them in the wardrobe"><span class="ic kudos"></span><b class="v-kudos">0</b></div>
+    <div class="pill fame" title="Fame level: play rounds to level up and unlock items"><span>Fame <b id="t-lvl">1</b></span><div class="bar"><i id="t-fame"></i></div></div>
+    <input id="t-name" maxlength="16" spellcheck="false" title="Your name">
+  </div>
+  <div class="logo big"><b>MAYHEM</b><i>MARATHON</i></div>
+  <div class="tagline">16 Tumblers. Wobbly legs. One crown.</div>
+  <div class="menu">
+    <button class="btn huge" id="b-play">PLAY</button>
+    <button class="btn" id="b-ward">Customise</button>
+    <button class="btn" id="b-how">How to play</button>
+    <button class="btn" id="b-set">Settings</button>
+  </div>
+  <div class="foot" id="t-stats"></div>
+</div>
+
+<!-- ===== play menu ===== -->
+<div id="s-play" class="scr dim hidden">
+  <div class="card wide">
+    <div class="ch"><h2>Play</h2><button class="x" data-back>&times;</button></div>
+    <div class="cols">
+      <div class="col">
+        <h3>Solo show</h3>
+        <p class="note">You and 15 bots. Rounds knock out part of the field until one Tumbler wins the crown.</p>
+        <label>Bot skill</label><div class="seg" id="o-skill"><button data-v="0">Easy</button><button data-v="1">Normal</button><button data-v="2">Hard</button><button data-v="3">Mixed</button></div>
+        <label>Show length</label><div class="seg" id="o-len"><button data-v="3">3 rounds</button><button data-v="4">4 rounds</button><button data-v="5">5 rounds</button></div>
+        <button class="btn go" id="b-solo">Start solo show</button>
+        <label>Practice one round</label>
+        <div class="row"><select id="o-prac"></select><button class="btn small" id="b-prac">Go</button></div>
+      </div>
+      <div class="col">
+        <h3>Online with friends</h3>
+        <p class="note">Up to 16 players in a room. Bots fill the empty spots.</p>
+        <button class="btn go" id="b-host">Host a room</button>
+        <label>Join with a code</label>
+        <div class="row"><input id="j-code" maxlength="7" placeholder="6-digit code" inputmode="numeric" autocomplete="off"><button class="btn small" id="b-join">Join</button></div>
+        <button class="btn small hidden" id="b-rejoin">Rejoin last room</button>
+        <div id="p-status" class="note"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== online lobby ===== -->
+<div id="s-lobby" class="scr dim hidden">
+  <div class="card wide">
+    <div class="ch"><h2>Room <span id="l-code" class="code">------</span> <button class="btn small" id="l-copy">Copy</button></h2><button class="x" id="l-leave" title="Leave the room">&times;</button></div>
+    <div class="cols">
+      <div class="col"><h3>Players <span id="l-n"></span></h3><div id="l-list"></div></div>
+      <div class="col">
+        <div id="l-opts">
+          <h3>Show options <small id="l-hostonly"></small></h3>
+          <label>Bots (fill empty spots)</label><div class="seg" id="l-bots"><button data-v="0">None</button><button data-v="4">4</button><button data-v="8">8</button><button data-v="15">Fill to 16</button></div>
+          <label>Bot skill</label><div class="seg" id="l-skill"><button data-v="0">Easy</button><button data-v="1">Normal</button><button data-v="2">Hard</button><button data-v="3">Mixed</button></div>
+          <label>Show length</label><div class="seg" id="l-len"><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div>
+          <label>Scoring</label><div class="seg" id="l-score"><button data-v="auto" title="Points with 2-4 players, knockout with more">Auto</button><button data-v="knockout">Knockout</button><button data-v="points">Points</button></div>
+        </div>
+        <div class="row end"><button class="btn small" id="l-ward">Customise</button><button class="btn" id="l-ready">Ready</button><button class="btn go" id="l-start">Start show</button></div>
+        <div id="l-status" class="note"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== wardrobe ===== -->
+<div id="s-ward" class="scr hidden">
+  <div class="ward">
+    <div class="ch"><h2>Wardrobe</h2><div class="pill"><span class="ic kudos"></span><b class="v-kudos">0</b></div><button class="x" data-back>&times;</button></div>
+    <div class="tabs" id="w-tabs"></div>
+    <div class="grid" id="w-grid"></div>
+    <div class="note" id="w-note">Click an item to wear it. Locked items cost kudos or unlock at a fame level.</div>
+  </div>
+  <div class="ward-hint">Drag to spin your Tumbler</div>
+</div>
+
+<!-- ===== how to play ===== -->
+<div id="s-how" class="scr dim hidden">
+  <div class="card wide">
+    <div class="ch"><h2>How to play</h2><button class="x" data-back>&times;</button></div>
+    <div class="cols">
+      <div class="col keys">
+        <h3>Keyboard + mouse / trackpad</h3>
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> run</div>
+        <div><kbd>Space</kbd> jump</div>
+        <div><kbd>Shift</kbd> or <kbd>C</kbd> dive (a forward lunge)</div>
+        <div><kbd>F</kbd> or hold left click: grab / steal a tail</div>
+        <div>Mouse (click the game first) or <kbd>&larr;</kbd><kbd>&rarr;</kbd> <kbd>Q</kbd><kbd>E</kbd>: turn the camera, <kbd>&uarr;</kbd><kbd>&darr;</kbd> tilt</div>
+        <div><kbd>R</kbd> back to the last checkpoint (races)</div>
+        <div><kbd>Esc</kbd> pause (solo) / menu</div>
+        <div>Spectating: click or <kbd>Space</kbd> to watch someone else</div>
+        <h3>Touch</h3><div>Left stick to run, drag the right side to look, buttons to jump, dive and grab.</div>
+      </div>
+      <div class="col">
+        <h3>The show</h3>
+        <p><b>Races</b>: reach the finish before the spots run out.</p>
+        <p><b>Survival</b>: stay on until the time is up.</p>
+        <p><b>Team</b> rounds: the team with the lowest score is out. In Tail Chase, have a tail when time runs out.</p>
+        <p><b>Final</b>: the winner takes the crown!</p>
+        <p>With 2-4 friends a show can be scored by points, so nobody is knocked out. Every round earns kudos and fame for new looks.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== settings ===== -->
+<div id="s-set" class="scr dim hidden">
+  <div class="card">
+    <div class="ch"><h2>Settings</h2><button class="x" data-back>&times;</button></div>
+    <label>Graphics quality</label><div class="seg" id="s-q"><button data-v="low">Low</button><button data-v="med">Medium</button><button data-v="high">High</button></div>
+    <div class="note" id="s-qnote">Low is fastest on Chromebooks. Smoothing (antialias) changes after a reload.</div>
+    <label>Music <span id="s-musv"></span></label><input type="range" id="s-mus" min="0" max="1" step="0.05">
+    <label>Sound effects <span id="s-sfxv"></span></label><input type="range" id="s-sfx" min="0" max="1" step="0.05">
+    <label class="chk"><input type="checkbox" id="s-mute"> Mute everything</label>
+    <label>Mouse sensitivity <span id="s-sensv"></span></label><input type="range" id="s-sens" min="0.3" max="2.5" step="0.1">
+    <label class="chk"><input type="checkbox" id="s-inv"> Invert camera up/down</label>
+    <label class="chk"><input type="checkbox" id="s-names"> Show name tags</label>
+  </div>
+</div>
+
+<!-- ===== in game ===== -->
+<div id="hud" class="hidden">
+  <div id="h-top"><div id="h-round"></div><div id="h-time"></div></div>
+  <div id="h-stat"></div>
+  <div id="h-teams"></div>
+  <div id="h-fruit"></div>
+  <div id="h-wind"><i></i></div>
+  <div id="h-count"></div>
+  <div id="ann"></div>
+  <div id="h-spec" class="hidden"></div>
+  <div id="h-lock" class="hidden">Click to use the mouse for the camera (or use Q / E)</div>
+  <div id="h-hint">WASD run &middot; Space jump &middot; Shift dive &middot; F grab &middot; R checkpoint &middot; Esc menu</div>
+  <div id="touch" class="hidden"><div id="stick"><i></i></div><button id="t-jump">JUMP</button><button id="t-dive">DIVE</button><button id="t-grab">GRAB</button></div>
+</div>
+<div id="s-intro" class="hidden"><div class="ic-card"><div id="i-kind"></div><div id="i-name"></div><div id="i-desc"></div><div id="i-goal"></div></div></div>
+<div id="s-res" class="scr dim hidden"><div class="card wide" id="r-card"></div></div>
+<div id="s-win" class="scr hidden"><div class="win-box" id="w-box"></div></div>
+<div id="s-pause" class="scr dim hidden">
+  <div class="card"><h2 id="pa-title">Paused</h2><div class="note" id="pa-note"></div>
+    <button class="btn big" id="pa-resume">Resume</button>
+    <button class="btn" id="pa-set">Settings</button>
+    <button class="btn" id="pa-how">How to play</button>
+    <button class="btn danger" id="pa-quit">Leave the show</button></div>
+</div>
+<div id="toast"></div>
+<!--@js-->
+<script>setTimeout(function () { if (!window.__mayhem) { var s = document.getElementById('boot-s'); if (s) s.textContent = 'Mayhem Marathon could not load (it needs cdn.jsdelivr.net for the 3D engine). Check your connection and reload.'; } }, 9000);</script>
+</body>
+</html>
