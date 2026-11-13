@@ -10,8 +10,15 @@
 - **Reports** (`078-reports.js`, launcher `099-report.js`, Grapevine client `070-reply-edit.js`): one `report` frame, stored in the
   server-only save user `~reports` (ring of 300), admins read/close with `reportAdmin`. Buttons: top bar, player bar in every game,
   the flag on every chat message. Suite: `gv-report.mjs`.
-- **Goon shop**: name colours (`color`), picture frames (`frame`), your own title (`ecoCustom`), crates (`ecoCrate`), gifts to
-  friends (`ecoGift`, 20 a day). Catalog in `074-catalog.js`; launcher `040-profile-shop.js` (`profExtras`). Suite: `gv-shop.mjs`.
+- **Goon shop**: picture frames (`frame`), sidekicks (`pet`, a friend on the corner of your picture), chat bubbles (`bubble`, a
+  tint behind your messages), crates (`ecoCrate`), gifts to friends (`ecoGift`, 20 a day). Catalog in `074-catalog.js`; launcher
+  `040-profile-shop.js`; Grapevine client `175-profiles-wheel.js` (`facesHtml`, `bubblePaint`, `titleHtml`). Suite: `gv-shop.mjs`.
+  The owner removed name colours and the buyable "Your Own Title" on 2026-11-13 (r67): do not bring them back. Owners were
+  refunded by `removedPrice()` in `ecoGet` (the way to retire any shop item). Admins can still GIVE a custom title (`ecoAdmin custom`).
+- **Titles won by playing** carry `ra: 1` in the catalog (every earned title except the admin-given ones, Day One and the
+  developers-only one). Nobody owns an `ra` title without earning it, admins included (`ownsItem`, `cosOf`, `ecoView`, launcher
+  `profOwns`), and both clients write them in a moving colour (`.gtag.ra` / `.ptag.ra`). The owner asked that this stays out of the patch notes.
+- `tools/rig/db.sh` stops/starts the rig server and reads or plants a wallet row (the rig's saves are in `grapevine.user_saves`).
 - **Games page** (`096-qol.js`: `qolShelves`, `qolHero`, `qolPeek`; `SHELF_OF` maps a tag to a shelf): banner + sideways shelves +
   compact tiles. A new game only needs its `GAMES` entry with sensible tags; add it to `NEW_NOW` to feature it.
 - **Mayhem Marathon** (new, HGNet id `mayhem`, up to 16, save `mayhem_save`, boards `mayhem:crowns`, `mayhem:qualified`,

@@ -278,7 +278,7 @@ var WHATSNEW = { id: 'r66', items: [
   ['New: Mayhem Marathon', 'A knockout party game for up to 16. Obstacle races and survival arenas until one player takes the crown. Play with friends or bots.'],
   ['New: the Casino', 'Turn goons into chips and play blackjack, roulette, slots, the rocket and more, or sit at the live tables with everyone. Play money only: goons are not worth anything outside Huntington Games.'],
   ['Blocky Shooter 5.4: classes', 'More classes, and each one levels up for good. Spend skill points on big trees from the menu, not in the middle of a run.'],
-  ['More to spend goons on', 'Name colours, picture frames, your own title, mystery crates, and gifts for friends. See Account, Shop.'],
+  ['More to spend goons on', 'Picture frames, mystery crates, and gifts for friends. See Account, Shop.'],
   ['Report button', 'The flag at the top (and in every game and on every chat message) tells the admins about a player, a message or a bug.'],
   ['A games page with room to grow', 'A featured banner, shelves by kind that scroll sideways, smaller tiles, and a card with the details when you rest on a game.']
 ] };

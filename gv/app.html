@@ -1291,9 +1291,15 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
 #wheel .wdisc span{position:absolute;left:50%;top:50%;width:60px;margin:-8px 0 0 -30px;font:900 13px/16px var(--mono);color:#fff;text-shadow:0 1px 2px #000}
 #wheel .wres{min-height:22px;font-weight:800}#wheel .wres.ban{color:#f87171}#wheel .wres.safe{color:#4ade80}
 .pfp.art{padding:0}.pfp.art svg{width:100%;height:100%;display:block}
-/* name colours and picture frames (shop items; the launcher has the same rules) */
-.nc.grad{-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
-.nc.anim{background-size:200% 100%;animation:ncmove 3s linear infinite}@keyframes ncmove{to{background-position:200% 0}}
+/* earned titles in their moving colour; picture frames, sidekicks and chat bubbles (shop items; the launcher has the same rules) */
+.gtag.ra{border-color:#7df9ffaa;background:#0b1020;box-shadow:0 0 6px #7df9ff55;animation:raglow 2.6s ease-in-out infinite}
+.gtag.ra i{font-style:normal;background-image:linear-gradient(90deg,#7df9ff,#b48cff,#ffd84a,#ff8fcf,#7df9ff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:ramove 2.6s linear infinite}
+@keyframes ramove{to{background-position:200% 0}}@keyframes raglow{50%{border-color:#ffd84aaa;box-shadow:0 0 9px #b48cff88}}
+.pface{display:inline-flex;position:relative;vertical-align:-5px;margin-right:5px}.pface .pfp,.pface .pfr{margin-right:0;vertical-align:0}
+.pet{position:absolute;right:-28%;bottom:-22%;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 1px #000a)}.pface.solo .pet{position:static}.pet.anim{animation:petbob 1.4s ease-in-out infinite}@keyframes petbob{50%{transform:translateY(-18%)}}
+.msg>.body.bub{background:var(--bub);border-left:3px solid var(--bubc);border-radius:4px 10px 10px 4px;padding:2px 9px}
+.msg>.body.bub.anim{background-size:200% 100%;animation:ramove 5s linear infinite}
+@media (prefers-reduced-motion:reduce){.gtag.ra,.gtag.ra i,.pet.anim,.msg>.body.bub.anim{animation:none}}
 .pfr{display:inline-flex;position:relative;border-radius:50%;padding:2px;vertical-align:-5px;margin-right:5px;background:var(--f)}.pfr .pfp{margin-right:0;vertical-align:0}
 .pfr.st-glow{box-shadow:0 0 8px 1px var(--g)}
 .pfr.st-spin{background:none}.pfr.st-spin::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--f);animation:pfrspin 4s linear infinite}.pfr.st-spin>*{position:relative}
@@ -8519,7 +8525,7 @@ function badgesHtml(c){
   if (!c) return '';
   let h = '';
   const t = (c.t && CATALOG && CATALOG.byId.get(c.t)) || (c.tn ? { n: c.tn, r: 'secret' } : null);      // (c.tn: a developer-given custom title)
-  if (t) h += `<span class="gtag r-${t.r}" title="title">${esc(t.n)}</span>`;
+  if (t) h += titleHtml(t);
   if (c.rec && c.rec.length) {
     const b = CATALOG && CATALOG.boards[c.rec[0]];
     h += `<span class="gtag rec" title="${esc('Record holder: ' + (b ? b.g + ' — ' + b.n : c.rec[0]))}">🏆 Record Holder</span>`;
@@ -8528,11 +8534,21 @@ function badgesHtml(c){
   if (r) h += `<span class="gtag rank t${r[1]}" title="${esc('Rank ' + r[1] + ' in ' + r[0] + ' (1 is the best, 5 the lowest)')}">R${r[1]}</span>`;
   return h;
 }
-// a name in its owner's colour and a picture in its frame (shop items of kind 'color' and 'frame'; the launcher draws the same)
-function nameHtml(text, c){
-  const it = c && c.nc && CATALOG && CATALOG.byId.get(c.nc);
-  if (!it || it.k !== 'color') return esc(text);
-  return `<span class="nc${it.c.length > 1 ? ' grad' : ''}${it.an ? ' anim' : ''}" style="${it.c.length === 1 ? 'color:' + it.c[0] : 'background-image:linear-gradient(90deg,' + it.c.join(',') + ')'}">${esc(text)}</span>`;
+// a title tag. One that is won by playing (t.ra: an achievement, a record, a rank) is written in a moving colour of its own.
+function titleHtml(t, big){ return `<span class="gtag${big ? ' big' : ''} r-${t.r}${t.ra ? ' ra' : ''}" title="${t.ra ? 'earned by playing' : 'title'}">${t.ra ? '<i>' + esc(t.n) + '</i>' : esc(t.n)}</span>`; }
+// shop items other people see on you: a frame round your picture, a sidekick on its corner, a tint behind what you write
+function petHtml(c, px){
+  const it = c && c.pt && CATALOG && CATALOG.byId.get(c.pt);
+  return it && it.k === 'pet' ? `<span class="pet${it.an ? ' anim' : ''}" title="${esc(it.n)}" style="font-size:${Math.max(10, Math.round(px * 0.5))}px">${esc(it.e)}</span>` : '';
+}
+function facesHtml(c, px){ const p = pfpHtml(c, px), pet = petHtml(c, px); return p ? `<span class="pface">${frameHtml(p, c)}${pet}</span>` : pet ? `<span class="pface solo">${pet}</span>` : ''; }      // (no picture: the sidekick stands by itself)
+function bubblePaint(row, c){
+  const b = row && row.querySelector(':scope > .body'); if (!b) return;
+  const it = c && c.bb && CATALOG && CATALOG.byId.get(c.bb), on = !!(it && it.k === 'bubble');
+  b.classList.toggle('bub', on); b.classList.toggle('anim', on && !!it.an);
+  if (!on) { b.style.removeProperty('--bub'); b.style.removeProperty('--bubc'); return; }
+  const a = it.c.map(x => x + '30');
+  b.style.setProperty('--bub', a.length === 1 ? `linear-gradient(90deg,${a[0]},${it.c[0]}14)` : `linear-gradient(90deg,${a.join(',')})`); b.style.setProperty('--bubc', it.c[0]);
 }
 function frameHtml(html, c){
   const it = html && c && c.fr && CATALOG && CATALOG.byId.get(c.fr);
@@ -8544,9 +8560,10 @@ function frameHtml(html, c){
 function decorateWho(btn, uid, name, heart){
   cosNeed(uid);
   const c = COS.get(uid), nk = nickOf(uid);
-  btn.innerHTML = frameHtml(pfpHtml(c, 18), c) + `<span class="wn">${nk ? esc(nk) : nameHtml(name, c)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
+  btn.innerHTML = facesHtml(c, 18) + `<span class="wn">${esc(nk || name)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
     + (heart ? '<span class="fh">♡</span>' : '') + badgesHtml(c);
   if (nk) btn.title = name + ' (your nickname for them: ' + nk + ')';
+  bubblePaint(btn.closest('.msg'), c);
 }
 function repaintNames(uid){
   for (const row of document.querySelectorAll(`#log .msg[data-uid="${CSS.escape(uid)}"]`)) {
@@ -8565,7 +8582,7 @@ function paintUserCos(uid){
     .map(([g, t]) => `<span class="gtag rank t${t}">R${t} · ${esc(g)}</span>`).join('');
   const recs = ((c && c.rec) || []).map(k => { const d = CATALOG && CATALOG.boards[k]; return `<span class="gtag rec">🏆 ${esc(d ? d.g + ': ' + d.n : k)}</span>`; }).join('');
   const t = (c && c.t && CATALOG && CATALOG.byId.get(c.t)) || (c && c.tn ? { n: c.tn, r: 'secret' } : null);
-  box.innerHTML = `<div class="umpfp">${pfpHtml(c, 56) || ''}</div><div class="umtags">${t ? `<span class="gtag big r-${t.r}">${esc(t.n)}</span>` : ''}${recs}${ranks}</div>`;
+  box.innerHTML = `<div class="umpfp">${facesHtml(c, 56)}</div><div class="umtags">${t ? titleHtml(t, true) : ''}${recs}${ranks}</div>`;
 }
 const _openUser = openUser;
 openUser = function (name, userId){

@@ -1018,7 +1018,6 @@ const GVLink = (() => {
       claim: function (kind, id, n) { if (st.ready) paced({ type: 'ecoClaim', kind: kind, id: id || null, n: n || 0 }); },
       play: function (game, active) { if (st.ready) send({ type: 'play', game: String(game || '').slice(0, 40), active: !!active }); },
       slur: function () { if (st.ready) send({ type: 'slur' }); },
-      custom: function (text) { if (st.ready) send({ type: 'ecoCustom', text: String(text || '').slice(0, 40) }); },
       gift: function (name, n) { if (st.ready) send({ type: 'ecoGift', name: name, n: n }); },
       crate: function () { if (st.ready) send({ type: 'ecoCrate' }); },
       admin: function (op, name, id, n, text) { if (st.ready) send({ type: 'ecoAdmin', op: op, name: name, id: id || null, n: n || 0, text: text || null }); },

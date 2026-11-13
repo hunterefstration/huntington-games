@@ -24,10 +24,16 @@ function profPfp(id, px, img) {
   var inner = it.t ? '<b style="font-size:' + Math.round(s * (it.t.length > 2 ? .34 : .42)) + 'px">' + profEsc(it.t) + '</b>' : profEsc(it.e || '');
   return '<span class="ppfp' + (it.t ? ' team' : '') + '" title="' + profEsc(it.n) + '" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * .6) + 'px;background:linear-gradient(135deg,' + it.c[0] + ',' + it.c[1] + ')">' + inner + '</span>';
 }
-// a name in its owner's colour (a 'color' item: one colour, a gradient, or a moving gradient), and a picture in its frame
-function cosName(name, id) {
-  var it = id && profItem0(id); if (!it || it.k !== 'color') return profEsc(name);
-  return '<span class="nc' + (it.c.length > 1 ? ' grad' : '') + (it.an ? ' anim' : '') + '" style="' + (it.c.length === 1 ? 'color:' + it.c[0] : 'background-image:linear-gradient(90deg,' + it.c.join(',') + ')') + '">' + profEsc(name) + '</span>';
+// a title tag: one that is won by playing (ra: an achievement, a record, a rank) is written in a moving colour of its own
+function cosTitle(it, big) { return '<span class="ptag' + (big ? ' big' : '') + ' r-' + it.r + (it.ra ? ' ra' : '') + '">' + (it.ra ? '<i>' + profEsc(it.n) + '</i>' : profEsc(it.n)) + '</span>'; }
+// shop items other people see on you: a frame round your picture, a sidekick on its corner, a tint behind your chat messages
+function cosPet(html, id, px) {
+  var it = id && profItem0(id); if (!it || it.k !== 'pet') return html;
+  return '<span class="pface">' + html + '<span class="pet' + (it.an ? ' anim' : '') + '" style="font-size:' + Math.max(12, Math.round(px * 0.5)) + 'px">' + profEsc(it.e) + '</span></span>';
+}
+function cosBubble(it, text) {
+  var a = it.c.map(function (x) { return x + '30'; });
+  return '<span class="pbub' + (it.an ? ' anim' : '') + '" style="--bub:' + (a.length === 1 ? 'linear-gradient(90deg,' + a[0] + ',' + it.c[0] + '14)' : 'linear-gradient(90deg,' + a.join(',') + ')') + ';--bubc:' + it.c[0] + '">' + profEsc(text) + '</span>';
 }
 function cosFrame(html, id) {
   var it = id && profItem0(id); if (!it || it.k !== 'frame') return html;
@@ -49,7 +55,8 @@ function profFmt(v, f) {
   }
   return Math.round(v).toLocaleString();
 }
-function profOwns(e, it) { return !!(e && (it.custom ||it.free || e.dev || e.owned.indexOf(it.id) >= 0 || e.earned.indexOf(it.id) >= 0)); }
+// (an admin has everything, except the titles that are won by playing: everyone earns those)
+function profOwns(e, it) { return !!(e && (it.custom || it.free || (e.dev && !it.ra) || e.owned.indexOf(it.id) >= 0 || e.earned.indexOf(it.id) >= 0)); }
 function profRender() {
   var box = document.getElementById('view-prof'); if (!box || box.hidden) return;
   var L = window.HGGrapevine, me = L && L.me(), e = L && L.eco.state(), c = L && L.eco.catalog();
@@ -58,8 +65,8 @@ function profRender() {
   var eq = e.equip || {}, title = profItem(eq.title);
   var mine = L.eco.cos([me.userId])[me.userId] || {}, ranks = Object.keys(mine.ranks || {}).sort(function (a, b) { return mine.ranks[a] - mine.ranks[b]; });
   var h = '<div class="phead" style="background:' + (profBannerCss(eq.banner) || 'linear-gradient(120deg,#1b2440,#2a1b40)') + '">' +
-    cosFrame(profPfp(eq.pfp, 84), eq.frame) + '<div class="pwho"><div class="pnm">' + cosName(me.name, eq.color) + '</div>' +
-    (title ? '<span class="ptag r-' + title.r + '">' + profEsc(title.n) + '</span>' : '<span class="ptag dim">no title yet</span>') +
+    cosPet(cosFrame(profPfp(eq.pfp, 84), eq.frame), eq.pet, 84) + '<div class="pwho"><div class="pnm">' + profEsc(me.name) + '</div>' +
+    (title ? cosTitle(title) : '<span class="ptag dim">no title yet</span>') +
     ((mine.rec || []).length ? '<span class="ptag rec">🏆 Record Holder</span>' : '') +
     ranks.slice(0, 4).map(function (g) { return '<span class="ptag rank t' + mine.ranks[g] + '">R' + mine.ranks[g] + ' · ' + profEsc(g) + '</span>'; }).join('') +
     '</div><div class="pgoons"><b>' + (e.dev ? '∞' : e.goons) + '</b><span>goons</span><small>' + profFmt(e.playSec, 'dur') + ' played</small></div></div>';
@@ -72,7 +79,7 @@ function profRender() {
   box.innerHTML = h;
   if (e.dev && PROF.tab === 'locker' && PROF.cat === 'pfp') profDevUpload(box);
 }
-var SLOTS = [['pfp', 'Pictures'], ['frame', 'Picture frames'], ['color', 'Name colours'], ['banner', 'Banners'], ['title', 'Titles'], ['skin', 'Blocky skins'], ['avatar', 'Blocky avatars'], ['music', 'Music'], ['perk', 'Extras']];
+var SLOTS = [['pfp', 'Pictures'], ['frame', 'Picture frames'], ['pet', 'Sidekicks'], ['bubble', 'Chat bubbles'], ['banner', 'Banners'], ['title', 'Titles'], ['skin', 'Blocky skins'], ['avatar', 'Blocky avatars'], ['music', 'Music'], ['perk', 'Extras']];
 function profItems(e, c, shop) {
   var eq = e.equip || {}, buys = window.HGGrapevine.eco.buys();
   var list = c.items.filter(function (i) { return i.k === PROF.cat && (shop ? i.p > 0 && !profOwns(e, i) || (shop && i.p > 0 && e.dev) : profOwns(e, i) || i.x); });
@@ -91,8 +98,9 @@ function profItems(e, c, shop) {
   var card = function (i) {
     var own = profOwns(e, i), on = eq[i.k] === i.id, locked = !own && i.x;
     var prev = i.k === 'pfp' ? profPfp(i.id, 54) : i.k === 'banner' ? '<span class="pban" style="background:' + profBannerCss(i.id) + '"></span>'
-      : i.k === 'title' ? '<span class="ptag big r-' + i.r + '">' + profEsc(i.n) + '</span>'
-      : i.k === 'color' ? '<span class="pncs">' + cosName(window.HGGrapevine.me().name, i.id) + '</span>'
+      : i.k === 'title' ? cosTitle(i, true)
+      : i.k === 'bubble' ? '<span class="pncs">' + cosBubble(i, 'Hello there!') + '</span>'
+      : i.k === 'pet' ? cosPet(profPfp(eq.pfp, 46), i.id, 46)
       : i.k === 'frame' ? cosFrame(profPfp(eq.pfp, 46), i.id)
       : '<span class="ppfp" style="width:54px;height:54px;font-size:30px;background:linear-gradient(135deg,' + i.c[0] + ',' + i.c[1] + ')">' + profEsc(i.e || '🎨') + '</span>';
     var btn = locked ? '<span class="plock" title="' + profEsc(i.x) + '">🔒 ' + profEsc(String(i.x).replace(/^(ach|tag):/, '').replace(/^\w/, function (x) { return x.toUpperCase(); })) + '</span>'
@@ -106,13 +114,9 @@ function profItems(e, c, shop) {
 }
 // Extras: things to do with goons that are not something to wear
 function profExtras(e, c, shop) {
-  var P = c.prices || { crate: 6, customEdit: 5, giftMax: 20 }, L = window.HGGrapevine, own = e.dev || e.owned.indexOf('perk:customtitle') >= 0, mine = (e.ctitles || {})['title:c-own'] || '';
-  var perk = profItem0('perk:customtitle'), friends = []; try { friends = (L.friends().friends || []).map(function (f) { return f.name; }); } catch (x) {}
+  var P = c.prices || { crate: 6, giftMax: 20 }, L = window.HGGrapevine, friends = []; try { friends = (L.friends().friends || []).map(function (f) { return f.name; }); } catch (x) {}
   var left = c.items.filter(function (i) { return i.p > 0 && i.k !== 'perk' && !profOwns(e, i); }).length;
   return '<div class="pextras">' +
-    '<div class="pex"><span class="pexi">&#9997;&#65039;</span><div><b>Your own title</b><p>Write the words under your name yourself (2 to 24 letters; rude ones are refused).' + (own ? ' Changing it later costs ' + P.customEdit + ' goons.' : '') + '</p>' +
-      (own ? '<div class="prow"><input id="px-title" maxlength="24" placeholder="e.g. Pizza Lord" autocomplete="off" value="' + profEsc(mine) + '"><button class="pb" data-pex="custom">' + (mine ? 'Change it (' + P.customEdit + ' goons)' : 'Set my title') + '</button></div>'
-           : '<button class="pb buy" data-buy="perk:customtitle">' + (perk ? perk.p : 30) + ' goons</button>') + '</div></div>' +
     '<div class="pex"><span class="pexi">&#127873;</span><div><b>Mystery crate</b><p>One random thing from the shop that you do not own yet. Rare things are rarer: about 1 in 30 is legendary. ' + left + ' thing' + (left === 1 ? '' : 's') + ' left for you to find.</p>' +
       '<button class="pb buy" data-pex="crate"' + (left ? '' : ' disabled') + '>Open a crate (' + P.crate + ' goons)</button></div></div>' +
     '<div class="pex"><span class="pexi">&#128157;</span><div><b>Give goons to a friend</b><p>A present for a friend, up to ' + P.giftMax + ' goons a day.</p>' +
@@ -187,12 +191,12 @@ function lbView(c) {
   var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { var v = r.d[k]; return profEsc(k) + ': ' + profEsc(typeof v === 'number' ? profFmt(v, v >= 1e6 ? 'big' : 'int') : v); }).join(', ') : ''; };
   var top = d.rows.slice(0, 3), order = [1, 0, 2];
   h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
-    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + cosFrame(profPfp(cs.p, i ? 46 : 60, cs.img), cs.fr) + '<b>' + cosName(r.n, cs.nc) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
+    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + cosPet(cosFrame(profPfp(cs.p, i ? 46 : 60, cs.img), cs.fr), cs.pt, i ? 46 : 60) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
   h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button>' +
     (d.rows.length > 6 ? '<input id="lb-find" class="lbfind" type="search" placeholder="Find a player..." autocomplete="off" spellcheck="false">' : '') + '</div>';
   var rest = d.rows.slice(3);
   if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
-    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + cosName(r.n, cs.nc) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
+    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
   return '<div class="lbwrap">' + side + h + '</div></div>';
 }
 document.addEventListener('click', function (e) {
@@ -262,8 +266,7 @@ document.addEventListener('click', function (ev) {
   else if (d.unequip) { L.eco.equip(d.unequip, null); return; }
   else if (d.mtoggle) { if (window.HG_music) HG_music.toggle(); }
   else if (d.pex) {
-    if (d.pex === 'custom') { var tx = (document.getElementById('px-title').value || '').trim(); if (tx.length < 2) { hubToast('Type 2 to 24 letters.'); return; } L.eco.custom(tx); }
-    else if (d.pex === 'crate') { if (confirm('Open a mystery crate?')) L.eco.crate(); }
+    if (d.pex === 'crate') { if (confirm('Open a mystery crate?')) L.eco.crate(); }
     else if (d.pex === 'gift') { var fn = document.getElementById('px-friend').value, gn = Math.floor(+document.getElementById('px-n').value || 0); if (gn < 1) return; if (confirm('Give ' + gn + ' goon' + (gn === 1 ? '' : 's') + ' to ' + fn + '?')) L.eco.gift(fn, gn); }
     else if (d.pex === 'casino') { var cg = GAMES.filter(function (g) { return g.dir === 'Casino'; })[0]; if (cg) { homeRecent(cg); play(cg); } }
     return;
@@ -284,7 +287,6 @@ function profMount() {
     profRender(); lbRender(); paintChip(); if (!m) return;
     if (m.bought) { var it = profItem(m.bought); if (it) hubToast('Bought ' + it.n + '!'); }
     if (m.crate) { var ci = profItem0(m.crate); if (ci) { PROF.tab = 'locker'; PROF.cat = ci.k; PROF.grp = ''; profRender(); hubToast('The crate had: ' + ci.n + ' (' + (RAR[ci.r] || ci.r) + ')! It is in your Locker.'); } }
-    if (m.custom) hubToast('Your title is now "' + m.custom + '".');
     if (m.gifted) hubToast('Gave ' + m.gifted.n + ' goon' + (m.gifted.n === 1 ? '' : 's') + ' to ' + m.gifted.to + '.');
   });
   L.on('cos', function () { if (PROF.tab === 'lb') profRender(); });
