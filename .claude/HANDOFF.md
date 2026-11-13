@@ -1,4 +1,4 @@
-# Handoff (updated 2026-11-12)
+# Handoff (updated 2026-11-13)
 
 ## Round 8 (r66): Steel Storm 2.0, Mayhem Marathon, Casino, goon shop, reports, games page, Blocky classes
 - **Casino** (`Casino/`, server `grapevine/src/archive/077-casino.js`, contract in `Casino/API.md`): 1 goon = 100 chips, chips live in
@@ -17,6 +17,13 @@
 - **Mayhem Marathon** (new, HGNet id `mayhem`, up to 16, save `mayhem_save`, boards `mayhem:crowns`, `mayhem:qualified`,
   hook `window.__mayhem`). **Steel Storm 2.0** (save v1 -> v2 in place, 69 vehicles, 4 modes, host migration, hook `window.__steelstorm`;
   mode keys are `tdm|conq|ctf|ffa`).
+- **Blocky Shooter 5.4** (class rework, `02-ranks-classes-prestige.js` and friends): 8 classes, each with a permanent level (cap 30),
+  a 15-node tree and two either/or specialisations, all inside `blocky21_life` (`life.cls[k]` gains `xp`, `tree`, `spec`;
+  `life.clsV` marks the one-time migration; `life.clsTotal` feeds the board `blocky:classes`). Upgrading happens only on the
+  Classes screen; the in-run cash tree is gone. PvP and tournaments play every class at the level-1 baseline. Tree bonuses are
+  capped (+10% damage, +30 HP, -25% cooldown...). Tests without the rig: `tools/tests/blocky-classes-migrate.mjs`, `blocky-classes.mjs`.
+  Not tested in play: most specialisations, bots' class effects, the Elite mid-wave switch.
+- The casino page has its own suite with two real players: `gv-casino-ui.mjs` (4 min; the pot is drawn every 2 minutes).
 - New server reply types this round (all in `LITE_OK`): `casino`, `casinoEv`, `report`, `reports`, `lbAck`. No SQL to run.
 
 ## Round 7 (r65): leaderboards, loading, QoL, tooling

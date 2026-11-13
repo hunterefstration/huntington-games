@@ -12637,7 +12637,7 @@
             clsLvl: (id) => clsLvl(id), clsPts: (id) => clsPts(id), get clsStats() { const s = clsS(); return JSON.parse(JSON.stringify(s)); }, clsTotal: () => clsTotal(), mastery: () => masteryTier(),
             openClasses: (id) => openClasses(id), get clx() { return JSON.parse(JSON.stringify(CLX)); }, clsSummary: () => clsSummaryHtml(), clsMigrate: () => clsMigrate(),
             get cls54() { return { scoutCh, slipT, dashDrT, demoQ: demoQ.length, inOwnField, taken: clsTaken(), dmg: clsDmg(), hs: clsHs(), speed: clsSpeed(), maxHp, push: [push.x, push.z], airJumps }; },
-            mfd: () => enemies.filter(e => e.userData.mfdT > gameTime).length,
+            mfd: () => enemies.filter(e => e.userData.mfdT > gameTime).length, cleanLook: (l) => cleanLook(l),
             ability: () => useAbility(),
             resetCd: () => { abilityCd = 0; },
             pause: () => changeGameState('paused'),
