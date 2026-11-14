@@ -761,6 +761,8 @@
       },
       // admins: the inbox. op = 'list' | 'close' | 'reopen' | 'note'
       acctLook: function (name) { return st.ready ? rpc0({ type: 'acctLook', name: String(name || '') }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      savesAdminGet: function (name, keys) { return st.ready ? rpc0({ type: 'savesAdminGet', name: String(name || ''), keys: keys || [] }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      savesAdminPut: function (name, items) { return st.ready ? rpc0({ type: 'savesAdminPut', name: String(name || ''), items: items || [] }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
       savesRestore: function (name, keys) { return st.ready ? rpc0({ type: 'savesRestore', name: String(name || ''), keys: keys || null }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
       dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },
       reports: function (op, id, note) { return st.ready ? rpc0({ type: 'reportAdmin', op: op || 'list', id: id || null, note: note || null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },

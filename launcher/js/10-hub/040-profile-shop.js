@@ -275,17 +275,26 @@ document.addEventListener('click', function (ev) {
     else if (d.pex === 'casino') { var cg = GAMES.filter(function (g) { return g.dir === 'Casino'; })[0]; if (cg) { homeRecent(cg); play(cg); } }
     return;
   }
+  else if (d.padm === 'rebuild' || d.padm === 'rebuild-go') {
+    var rn = (document.getElementById('pa-look').value || '').trim(), ro = document.getElementById('pa-lookout');
+    if (!PROF.look || PROF.look.name.toLowerCase() !== rn.toLowerCase()) { hubToast('Look them up first.'); return; }
+    if (d.padm === 'rebuild-go' && !confirm('Write the rebuilt saves into ' + PROF.look.name + "'s account?")) return;
+    rbRun(rn, PROF.look, ro, d.padm === 'rebuild-go');
+    return;
+  }
   else if (d.padm === 'look' || d.padm === 'restore') {
     var ln = (document.getElementById('pa-look').value || '').trim(), lo = document.getElementById('pa-lookout'); if (!ln) { hubToast('Type their name first.'); return; }
     if (d.padm === 'restore' && !confirm('Put back every kept copy for ' + ln + '? Their current saves of those games are replaced (each one had less progress).')) return;
     lo.textContent = 'Asking...';
     var show = function (r) {
       if (!r.ok) { lo.textContent = r.err || 'Could not look that up.'; return; }
+      if (r.saves) PROF.look = r;
       if (r.restored != null) { lo.textContent = 'Put back ' + r.restored + ' save(s) for ' + r.name + '. They load on their device within a minute (or when they close the game).'; return; }
       var when = function (t) { return t ? new Date(t).toLocaleString() : '?'; };
       lo.innerHTML = '<b>' + profEsc(r.name) + '</b> \u00b7 last seen ' + profEsc(when(r.lastSeen)) + '<br>' + profFmt(r.goons, 'int') + ' goons, ' + profFmt(r.chips, 'int') + ' chips, ' + r.owned + ' shop items, ' + r.earned + ' earned<br>' +
         r.saves.length + ' saves (' + Math.round(r.saves.reduce(function (t, x) { return t + (x.bytes || 0); }, 0) / 1024) + ' KB), newest ' + profEsc(when(Math.max.apply(null, r.saves.map(function (x) { return x.at; }).concat([0])))) + '<br>' +
         'On ' + r.boards.length + ' leaderboards' + (r.boards.length ? ': ' + r.boards.slice(0, 12).map(function (b) { return profEsc(b.key) + ' #' + b.pos + ' (' + profFmt(b.s, 'int') + ')'; }).join(', ') : '') + '<br>' +
+        '<button class="pb" data-padm="rebuild">Rebuild from leaderboards</button><br>' +
         (r.backups.length ? r.backups.length + ' kept copies: ' + r.backups.map(function (b) { return profEsc(b.k) + ' (' + profEsc(when(b.at)) + ')'; }).join(', ') + '<br><button class="pb" data-padm="restore">Put back the kept copies</button>' : 'No kept copies.') +
         (r.log && r.log.length ? '<br>Recent goons: ' + r.log.map(function (l) { return (l.n > 0 ? '+' : '') + l.n + ' ' + profEsc(l.why); }).join('; ') : '');
     };
