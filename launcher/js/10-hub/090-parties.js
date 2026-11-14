@@ -36,22 +36,22 @@ setInterval(partyActivity, 60000);
 function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }
 function partyJoin(game, code) { if (game === 'hub') { showTab('mp'); document.getElementById('mp-code').value = code; mpGo(); } else joinInvite(game, code); }
 function partyPaint() {
-  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden) return;
+  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden || !hubShown()) return;   // two server asks: only while it shows
   var qk = document.getElementById('mp-quick');
   if (!qk.childElementCount) qk.innerHTML = Object.keys(INVITE_GAMES).map(function (id) { return inviteGame(id) ? '<button class="mp-qm" data-qm="' + id + '">' + profEsc(partyGameName(id)) + '</button>' : ''; }).join('');
-  if (!L || !L.party || !L.online()) { box.innerHTML = '<div class="rdesc">Sign in to see open parties.</div>'; return; }
+  if (!L || !L.party || !L.online()) { setHtml(box, '<div class="rdesc">Sign in to see open parties.</div>'); return; }
   partyNet().then(function (net) {
     L.party.list(net).then(function (m) {
       var row = function (p) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(partyGameName(p.game)) + '</span><span class="mp-ph">' + profEsc(p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span><span class="mp-pn">' + p.n + '/' + p.max + '</span>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + '<button data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div>'; };
       var all = (m.near || []).concat(m.pub || []);
-      box.innerHTML = all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>';
+      setHtml(box, all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>');
       document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public parties)';
     }, function () {});
     L.party.friends().then(function (m) {
       var fr = L.friends().friends, nm = {}; fr.forEach(function (f) { nm[f.userId] = f.name; });
       var fb = document.getElementById('mp-friends');
-      fb.innerHTML = (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
-        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>';
+      setHtml(fb, (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
+        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>');
     }, function () {});
   });
 }
@@ -70,5 +70,5 @@ document.addEventListener('click', function (e) {
   if (b.dataset.qm) quickMatch(b.dataset.qm);
   else if (b.dataset.pj) { var x = b.dataset.pj.split('|'); partyJoin(x[0], x[1]); }
 });
-setInterval(partyPaint, 10000);
+setInterval(partyPaint, 10000); hubWake(partyPaint);
 document.getElementById('tab-mp').addEventListener('click', function () { setTimeout(partyPaint, 50); });
