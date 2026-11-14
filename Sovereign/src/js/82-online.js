@@ -116,7 +116,10 @@ const Online = {
       case 'clk': this.hostClk = m; return;
       case 'nat': {          // another leader's country, as it is in their game
         if (m.idx === G.player.idx || !G.online.humans[m.idx]) return;
-        const n = G.nations[m.idx]; if (n && m.n) { for (const k in m.n) n[k] = m.n[k]; }
+        const n = G.nations[m.idx]; if (n && m.n && typeof m.n === 'object') {      // a peer only overwrites fields the country already has, same type, finite numbers
+          for (const k of Object.keys(m.n)) { if (k === '__proto__' || k === 'constructor' || !(k in n)) continue; const v = m.n[k]; if (typeof v === 'number' ? !Number.isFinite(v) || typeof n[k] !== 'number' : typeof v !== typeof n[k]) continue; n[k] = v; }
+          healNation(n);
+        }
         return;
       }
       case 'declare': if (this.host) this.hostWar(m.a, m.d, m.goal); return;

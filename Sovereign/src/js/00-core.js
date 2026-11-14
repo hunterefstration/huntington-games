@@ -4,14 +4,14 @@ import * as THREE from 'three';
 
 const VERSION = '1.3';
 const DEG = Math.PI / 180;
-const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const clamp = (v, a, b) => v >= a ? (v <= b ? v : b) : a;   // NaN comes out as the low end, never NaN
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const fmtInt = n => Math.round(n).toLocaleString('en-US');
-const fmtBig = n => n >= 1e12 ? (n / 1e12).toFixed(n >= 1e13 ? 0 : 1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+const fmtInt = n => Number.isFinite(n) ? Math.round(n).toLocaleString('en-US') : '0';
+const fmtBig = n => !Number.isFinite(n) ? '0' : n >= 1e12 ? (n / 1e12).toFixed(n >= 1e13 ? 0 : 1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
 
 // Seeded random (mulberry32): every random roll in the simulation goes through one of these.
 function makeRng(seed) {

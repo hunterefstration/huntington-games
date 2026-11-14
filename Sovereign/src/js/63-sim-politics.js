@@ -216,7 +216,7 @@ function initPolitics(g) {
     for (const gr of GROUPS) { const like = -6 * Math.abs(P.econ - gr.lean[0]) - 6 * Math.abs(P.social - gr.lean[1]) + 6; n.groups[gr.id] = clamp(n.approval + like, 5, 95); n.gmem[gr.id] = 0; }
     n.groups0 = Object.assign({}, n.groups);
   }
-  if (n.pc == null) n.pc = 40;
+  if (!Number.isFinite(n.pc)) n.pc = 40;
   if (n.freedom == null) n.freedom = clamp(n.dem * 10, 3, 98), n.freedom0 = n.freedom;
   if (n.polar == null) n.polar = free(n) ? 35 : 15;
   if (!n.parl) n.parl = makeParliament(n, g.player, r);

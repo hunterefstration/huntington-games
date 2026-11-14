@@ -1576,7 +1576,7 @@ ROUNDS.tail = {
         [[-10, -10], [10, -10], [-10, 10], [10, 10]].forEach(([x, z]) => cyl(x, 1.5, z, 1, 3, { col: BLU }));
         bouncePad(-12, 0, 5, 1.3, 14); bouncePad(12, 0, -5, 1.3, 14);
         box(-6, 0.5, 9, 4, 1, 1, { col: PNK }); box(6, 0.5, -9, 4, 1, 1, { col: PNK });
-        spawnRing(14, 0); L.killY = -8; L.center = [0, 0];
+        spawnRing(16, 0); L.killY = -8; L.center = [0, 0];     // radius 16: at 14 the diagonal spawns sat inside the corner pillars and dropped through the floor
     },
     onGrab(R, A, B) {
         if (!R.tails.has(B.id) || R.tails.has(A.id) || (R.imm[B.id] || 0) > R.t) return false;
@@ -1851,8 +1851,8 @@ function beginRound(msg) {
     for (const C of S.cs) { C.inRound = false; C.hide = true; }
     order.forEach((id, i) => {
         const C = byId(id); if (!C) return;
-        const sp = L.spawns[i % L.spawns.length];
-        C.inRound = true; C.hide = false; C.done = null; C.cpi = -1; C.holding = C.heldBy = -1; C.grabHeld = false; C.spawnI = i % L.spawns.length; C.buf = []; C.ai = null; C.sentFin = C.sentFell = false;
+        const si = clearSpawnIndex(i % L.spawns.length), sp = L.spawns[si];
+        C.inRound = true; C.hide = false; C.done = null; C.cpi = -1; C.holding = C.heldBy = -1; C.grabHeld = false; C.spawnI = si; C.spawnY = sp[1]; C.buf = []; C.ai = null; C.sentFin = C.sentFell = false;
         C.team = msg.teams ? msg.teams[id] : null;
         C.sim = G.host ? (C.bot || isMe(C)) : isMe(C);
         const yaw = L.spawns.length && L.center[1] === 0 && info.kind !== 'race' && msg.rid !== 'crown' ? Math.atan2(-sp[0], -sp[2]) : 0;
@@ -1898,6 +1898,8 @@ function tick(dt) {
         if (inp.respawn && !survivalLike(R) && R.phase === 'play') respawnBody(C);
         // checkpoints, falls, finish
         for (let i = C.cpi + 1; i < L.cps.length; i++) if (b.p.z > L.cps[i].z && b.p.y > L.cps[i].y - 2 && b.ground) C.cpi = i;
+        // safety net: a player who ends up under the floor right after the start (bad spawn) goes back to a clear spot
+        if (!survivalLike(R) && !C.done && R.t < 6 && C.spawnY != null && b.p.y < C.spawnY - 1.5 && L.spawns.length && !(C.cpi >= 0)) respawnBody(C);
         if (R.phase === 'play' && !C.done) {
             const feet = b.p.y - PR;
             if (R.def.gooOut ? feet < killY : b.p.y < killY) {
@@ -1928,10 +1930,14 @@ function separateBody(C, R) {
         const d = Math.sqrt(d2), push = (0.9 - d) * (O.sim ? 0.5 : 1); p.x += dx / d * push; p.z += dz / d * push;
     }
 }
+// A spawn is safe when nothing solid overlaps the body and there is floor just below. Falls back to the next clear spawn
+// (never the same bad one twice), so no round can start a player inside a pillar or under the floor.
+function spawnClear(sp) { return !solidAt(sp[0], sp[1], sp[2], PR) && !solidAt(sp[0], sp[1] + PH, sp[2], PR) && groundBelow(sp[0], sp[1], sp[2], 1.5); }
+function clearSpawnIndex(i) { const n = L.spawns.length; for (let j = 0; j < n; j++) if (spawnClear(L.spawns[(i + j) % n])) return (i + j) % n; return i; }
 function respawnBody(C) {
     const R = G.R, b = C.b, cp = C.cpi >= 0 ? L.cps[C.cpi] : null;
     if (R.def.gooOut && cp && cp.y < gooY(R.t) + 0.5) { if (G.host) hostOut(C); else if (!C.sentFell) { C.sentFell = true; netSendHost({ t: 'fell' }); } return; }
-    const sp = cp ? [cp.x + (Math.random() - 0.5) * 3, cp.y + PR + 0.4, cp.z] : L.spawns[C.spawnI];
+    const sp = cp ? [cp.x + (Math.random() - 0.5) * 3, cp.y + PR + 0.4, cp.z] : L.spawns[C.spawnI = clearSpawnIndex(C.spawnI)];
     b.p.x = sp[0]; b.p.y = sp[1]; b.p.z = sp[2]; b.v.x = b.v.y = b.v.z = 0; b.st = ST_RUN; b.t = 0; b.yaw = 0; b.rx = b.rz = 0;
     if (C.ai) { C.ai.wi = Math.max(0, L.path.findIndex(q => q.z > b.p.z - 0.5)); C.ai.wait = 0; C.ai.dodge = null; }
     if (isMe(C)) { G.camYaw = 0; sfx('pop'); }

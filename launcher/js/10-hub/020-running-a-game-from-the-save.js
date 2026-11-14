@@ -184,6 +184,7 @@ function playNow(g) {
 }
 window.HG_retryGame = function () { if (current && current.game && !current.html) playNow(current.game); };
 function closePlayer() {
+  if (document.body.classList.contains('fillpage')) fillPage(false);
   if (typeof DOCK !== 'undefined' && DOCK && DOCK.open) dockClose();      // (closePlayer also runs while the page is still loading)
   setTimeout(function () { if (typeof feedNow === 'function') feedNow(); }, 4000);      // new bests and achievements -> goons and leaderboards
   var wasOpen = !!current;
@@ -210,7 +211,7 @@ document.getElementById('newtab').onclick = function () {
   else { hubToast('The game is still loading. Try again in a moment.'); return; }
   var w = null;
   try { w = window.open(url, '_blank'); } catch (e) {}
-  if (!w) hubToast(g.name + ' opened in a new tab.');        // (some pages open the tab but hand back no window: that is fine now)
+  if (!w) hubToast(ON_JSBIN ? 'jsbin does not let its editor open new tabs. Open the output on its own (the arrow at the top right of jsbin\'s Output panel), or use the launcher on jsfiddle.net.' : g.name + ' opened in a new tab (if nothing opened, this page blocks new tabs: use full screen instead).');        // (some pages open the tab but hand back no window)
   else {
     popup = w; popupGame = g;
     var hook = function () { try { if (w.document && w.document.body) { w.document.title = g.name; attachChat(w.document, g); gvStartApp(); } } catch (e) {} };
@@ -219,7 +220,24 @@ document.getElementById('newtab').onclick = function () {
   if (!local) setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
 };
 document.getElementById('back').onclick = function () { closePlayer(); };      // (by name: later pieces wrap closePlayer)
-document.getElementById('full').onclick = function () { var p = document.getElementById('player'); if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().catch(function () {}); };
+// Full screen. Some pages (jsbin) run the launcher in a frame that may not go full screen: then the game fills the
+// whole page instead (press the button or Esc again to go back).
+var ON_JSBIN = /jsbin/i.test(location.hostname + ' ' + document.referrer);
+function fillPage(on) {
+  document.body.classList.toggle('fillpage', on); document.getElementById('ptop').classList.toggle('hide', on);
+  var x = document.getElementById('fillx');
+  if (on && !x) { x = document.createElement('button'); x.id = 'fillx'; x.textContent = '\u2715 Exit full screen'; x.onclick = function () { fillPage(false); }; document.getElementById('player').appendChild(x); }
+  if (x) x.hidden = !on;
+}
+document.getElementById('full').onclick = function () {
+  var p = document.getElementById('player');
+  if (document.fullscreenElement) return document.exitFullscreen();
+  if (document.body.classList.contains('fillpage')) return fillPage(false);
+  var fallback = function () { fillPage(true); hubToast(ON_JSBIN ? 'jsbin does not allow full screen inside its editor. For real full screen, open the output on its own: the arrow at the top right of jsbin\'s Output panel.' : 'This page does not allow full screen, so the game fills the page instead.'); };
+  if (!document.fullscreenEnabled || !p.requestFullscreen) return fallback();
+  try { p.requestFullscreen().catch(fallback); } catch (e) { fallback(); }
+};
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && document.body.classList.contains('fillpage')) fillPage(false); });
 document.addEventListener('fullscreenchange', function () { document.getElementById('ptop').classList.toggle('hide', !!document.fullscreenElement); });
 document.getElementById('exp-btn').onclick = function () { document.getElementById('exp').classList.add('open'); };
 document.getElementById('exp-close').onclick = function () { document.getElementById('exp').classList.remove('open'); };

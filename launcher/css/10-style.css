@@ -562,3 +562,6 @@ html.gdense .game .galt { margin-top: 6px; padding: 2px 8px; font-size: 11px; }
 .pex b { font-size: 15px; } .pex p { margin: 4px 0 10px; color: var(--dim); font-size: 13px; line-height: 1.45; } .pex .prow { display: flex; gap: 8px; flex-wrap: wrap; }
 .pex input, .pex select { background: var(--ground); border: 1px solid var(--line2); color: var(--text); border-radius: 8px; padding: 6px 9px; font: inherit; min-width: 0; }
 .pfr .ppfp.none { background: var(--raise); }
+
+/* full screen where the page does not allow it (jsbin): the top bar goes, a small button brings it back */
+#fillx { position: absolute; top: 8px; right: 8px; z-index: 30; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.6); color: #fff; font: 600 12px var(--sans); cursor: pointer; opacity: .55; } #fillx:hover { opacity: 1; }

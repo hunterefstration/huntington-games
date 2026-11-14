@@ -339,14 +339,14 @@ import * as THREE from 'three';
 
 const VERSION = '1.3';
 const DEG = Math.PI / 180;
-const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const clamp = (v, a, b) => v >= a ? (v <= b ? v : b) : a;   // NaN comes out as the low end, never NaN
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const fmtInt = n => Math.round(n).toLocaleString('en-US');
-const fmtBig = n => n >= 1e12 ? (n / 1e12).toFixed(n >= 1e13 ? 0 : 1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+const fmtInt = n => Number.isFinite(n) ? Math.round(n).toLocaleString('en-US') : '0';
+const fmtBig = n => !Number.isFinite(n) ? '0' : n >= 1e12 ? (n / 1e12).toFixed(n >= 1e13 ? 0 : 1) + 'T' : n >= 1e9 ? (n / 1e9).toFixed(n >= 1e10 ? 0 : 1) + 'B' : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
 
 // Seeded random (mulberry32): every random roll in the simulation goes through one of these.
 function makeRng(seed) {
@@ -1866,7 +1866,7 @@ function reserveShareOf(n) { const c = G.cur[n.mon.cur]; return c && (n.mon.type
 function reserveAbsorb(n) { return clamp(reserveShareOf(n) * 1.25, 0, 0.8); }
 function gdpL(n) { return n.real * n.P; }
 function gdpUsd(n) { return n.real * n.P * n.fx / 100; }
-function debtPct(n) { return n.debt / gdpL(n) * 100; }
+function debtPct(n) { const g = gdpL(n), v = n.debt / g * 100; return g > 0 && Number.isFinite(v) ? v : 0; }
 function anchorNation(code) { return code === 'EUR' ? null : G.nations[World.byId[CUR_ISSUER[code]] ? World.byId[CUR_ISSUER[code]].idx : 0]; }
 
 // Snapshot of where each nation starts: all effects are relative to this
@@ -2279,13 +2279,14 @@ function healObj(o, keep, depth) {
     const v = o[k];
     if (typeof v === 'number') {
       if (Number.isFinite(v)) { keep[k] = v; continue; }
-      o[k] = typeof keep[k] === 'number' ? keep[k] : 0; fixed++;
+      o[k] = k === 'pc' ? Math.max(40, typeof keep[k] === 'number' ? keep[k] : 0) : typeof keep[k] === 'number' ? keep[k] : (k === 'fx' || k === 'P' || k === 'real' ? 100 : 0); fixed++;      // (broken political capital comes back spendable)
     } else if (v && typeof v === 'object' && depth < 3 && k !== 'rng' && k[0] !== '_' && !Array.isArray(v)) {
       fixed += healObj(v, keep[k] && typeof keep[k] === 'object' ? keep[k] : (keep[k] = {}), depth + 1);
     }
   }
   return fixed;
 }
+function healNation(n) { const K = healNumbers.keep || (healNumbers.keep = new WeakMap()); let kk = K.get(n); if (!kk) K.set(n, kk = {}); return healObj(n, kk, 0); }
 function healNumbers() {
   if (!G) return 0;
   const K = healNumbers.keep || (healNumbers.keep = new WeakMap()), get = o => K.get(o) || (K.set(o, {}), K.get(o));
@@ -2628,7 +2629,7 @@ function initPolitics(g) {
     for (const gr of GROUPS) { const like = -6 * Math.abs(P.econ - gr.lean[0]) - 6 * Math.abs(P.social - gr.lean[1]) + 6; n.groups[gr.id] = clamp(n.approval + like, 5, 95); n.gmem[gr.id] = 0; }
     n.groups0 = Object.assign({}, n.groups);
   }
-  if (n.pc == null) n.pc = 40;
+  if (!Number.isFinite(n.pc)) n.pc = 40;
   if (n.freedom == null) n.freedom = clamp(n.dem * 10, 3, 98), n.freedom0 = n.freedom;
   if (n.polar == null) n.polar = free(n) ? 35 : 15;
   if (!n.parl) n.parl = makeParliament(n, g.player, r);
@@ -5390,8 +5391,8 @@ Bus.on('key', (k, e) => {
 
 // ---- 71-ui-panels.js ----
 // Side panels: Overview, Economy, Budget, Money & Debt, World, Inbox.
-const pct = (v, d = 1) => v.toFixed(d) + '%';
-const sgn = (v, d = 1) => (v >= 0 ? '+' : '') + v.toFixed(d);
+const pct = (v, d = 1) => (Number.isFinite(v) ? v : 0).toFixed(d) + '%';
+const sgn = (v, d = 1) => { if (!Number.isFinite(v)) v = 0; return (v >= 0 ? '+' : '') + v.toFixed(d); };
 const usd = v => '$' + fmtBig(v);
 const me = () => G.nations[G.player.idx];
 const histLabel = (h) => i => { const back = h.length - 1 - i, d = dateOf(G.day); return MONTHS[((d.getUTCMonth() - back) % 12 + 1200) % 12] + ' ' + (d.getUTCFullYear() + Math.floor((d.getUTCMonth() - back) / 12)); };
@@ -6461,7 +6462,10 @@ const Online = {
       case 'clk': this.hostClk = m; return;
       case 'nat': {          // another leader's country, as it is in their game
         if (m.idx === G.player.idx || !G.online.humans[m.idx]) return;
-        const n = G.nations[m.idx]; if (n && m.n) { for (const k in m.n) n[k] = m.n[k]; }
+        const n = G.nations[m.idx]; if (n && m.n && typeof m.n === 'object') {      // a peer only overwrites fields the country already has, same type, finite numbers
+          for (const k of Object.keys(m.n)) { if (k === '__proto__' || k === 'constructor' || !(k in n)) continue; const v = m.n[k]; if (typeof v === 'number' ? !Number.isFinite(v) || typeof n[k] !== 'number' : typeof v !== typeof n[k]) continue; n[k] = v; }
+          healNation(n);
+        }
         return;
       }
       case 'declare': if (this.host) this.hostWar(m.a, m.d, m.goal); return;

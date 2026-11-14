@@ -44,7 +44,7 @@ function reserveShareOf(n) { const c = G.cur[n.mon.cur]; return c && (n.mon.type
 function reserveAbsorb(n) { return clamp(reserveShareOf(n) * 1.25, 0, 0.8); }
 function gdpL(n) { return n.real * n.P; }
 function gdpUsd(n) { return n.real * n.P * n.fx / 100; }
-function debtPct(n) { return n.debt / gdpL(n) * 100; }
+function debtPct(n) { const g = gdpL(n), v = n.debt / g * 100; return g > 0 && Number.isFinite(v) ? v : 0; }
 function anchorNation(code) { return code === 'EUR' ? null : G.nations[World.byId[CUR_ISSUER[code]] ? World.byId[CUR_ISSUER[code]].idx : 0]; }
 
 // Snapshot of where each nation starts: all effects are relative to this

@@ -45,13 +45,14 @@ function healObj(o, keep, depth) {
     const v = o[k];
     if (typeof v === 'number') {
       if (Number.isFinite(v)) { keep[k] = v; continue; }
-      o[k] = typeof keep[k] === 'number' ? keep[k] : 0; fixed++;
+      o[k] = k === 'pc' ? Math.max(40, typeof keep[k] === 'number' ? keep[k] : 0) : typeof keep[k] === 'number' ? keep[k] : (k === 'fx' || k === 'P' || k === 'real' ? 100 : 0); fixed++;      // (broken political capital comes back spendable)
     } else if (v && typeof v === 'object' && depth < 3 && k !== 'rng' && k[0] !== '_' && !Array.isArray(v)) {
       fixed += healObj(v, keep[k] && typeof keep[k] === 'object' ? keep[k] : (keep[k] = {}), depth + 1);
     }
   }
   return fixed;
 }
+function healNation(n) { const K = healNumbers.keep || (healNumbers.keep = new WeakMap()); let kk = K.get(n); if (!kk) K.set(n, kk = {}); return healObj(n, kk, 0); }
 function healNumbers() {
   if (!G) return 0;
   const K = healNumbers.keep || (healNumbers.keep = new WeakMap()), get = o => K.get(o) || (K.set(o, {}), K.get(o));

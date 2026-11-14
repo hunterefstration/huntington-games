@@ -1,6 +1,6 @@
 // Side panels: Overview, Economy, Budget, Money & Debt, World, Inbox.
-const pct = (v, d = 1) => v.toFixed(d) + '%';
-const sgn = (v, d = 1) => (v >= 0 ? '+' : '') + v.toFixed(d);
+const pct = (v, d = 1) => (Number.isFinite(v) ? v : 0).toFixed(d) + '%';
+const sgn = (v, d = 1) => { if (!Number.isFinite(v)) v = 0; return (v >= 0 ? '+' : '') + v.toFixed(d); };
 const usd = v => '$' + fmtBig(v);
 const me = () => G.nations[G.player.idx];
 const histLabel = (h) => i => { const back = h.length - 1 - i, d = dateOf(G.day); return MONTHS[((d.getUTCMonth() - back) % 12 + 1200) % 12] + ' ' + (d.getUTCFullYear() + Math.floor((d.getUTCMonth() - back) / 12)); };

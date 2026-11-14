@@ -190,7 +190,7 @@ ROUNDS.tail = {
         [[-10, -10], [10, -10], [-10, 10], [10, 10]].forEach(([x, z]) => cyl(x, 1.5, z, 1, 3, { col: BLU }));
         bouncePad(-12, 0, 5, 1.3, 14); bouncePad(12, 0, -5, 1.3, 14);
         box(-6, 0.5, 9, 4, 1, 1, { col: PNK }); box(6, 0.5, -9, 4, 1, 1, { col: PNK });
-        spawnRing(14, 0); L.killY = -8; L.center = [0, 0];
+        spawnRing(16, 0); L.killY = -8; L.center = [0, 0];     // radius 16: at 14 the diagonal spawns sat inside the corner pillars and dropped through the floor
     },
     onGrab(R, A, B) {
         if (!R.tails.has(B.id) || R.tails.has(A.id) || (R.imm[B.id] || 0) > R.t) return false;
