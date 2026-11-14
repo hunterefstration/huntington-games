@@ -239,6 +239,8 @@ function profAdmin(c) {
     '<h4>Give a custom title</h4><p class="pnote">Any words you like (2 to 24 characters), for one person. They wear it like any other title.</p>' +
     '<div class="prow"><input id="pa-ctext" maxlength="24" placeholder="e.g. Pizza Lord" autocomplete="off"><button class="pb" data-padm="custom">Give custom title</button></div>' +
     '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div>' +
+    '<h4>Look up an account</h4><p class="pnote">For "I lost everything": their goons, saves and leaderboard places, and any copies the server kept of saves that lost progress (it keeps one per game since r69).</p>' +
+    '<div class="prow"><input id="pa-look" maxlength="40" placeholder="Their exact name" autocomplete="off"><button class="pb" data-padm="look">Look up</button></div><div id="pa-lookout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></div>' +
     '<h4>Database use</h4><p class="pnote">How much data the database has sent the server since it last started (the free plan allows 5 GB a month, about 7 MB an hour).</p>' +
     '<div class="prow"><button class="pb" data-padm="dbout">Check now</button></div><pre id="pa-dbout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></pre></div>';
 }
@@ -271,6 +273,23 @@ document.addEventListener('click', function (ev) {
     if (d.pex === 'crate') { if (confirm('Open a mystery crate?')) L.eco.crate(); }
     else if (d.pex === 'gift') { var fn = document.getElementById('px-friend').value, gn = Math.floor(+document.getElementById('px-n').value || 0); if (gn < 1) return; if (confirm('Give ' + gn + ' goon' + (gn === 1 ? '' : 's') + ' to ' + fn + '?')) L.eco.gift(fn, gn); }
     else if (d.pex === 'casino') { var cg = GAMES.filter(function (g) { return g.dir === 'Casino'; })[0]; if (cg) { homeRecent(cg); play(cg); } }
+    return;
+  }
+  else if (d.padm === 'look' || d.padm === 'restore') {
+    var ln = (document.getElementById('pa-look').value || '').trim(), lo = document.getElementById('pa-lookout'); if (!ln) { hubToast('Type their name first.'); return; }
+    if (d.padm === 'restore' && !confirm('Put back every kept copy for ' + ln + '? Their current saves of those games are replaced (each one had less progress).')) return;
+    lo.textContent = 'Asking...';
+    var show = function (r) {
+      if (!r.ok) { lo.textContent = r.err || 'Could not look that up.'; return; }
+      if (r.restored != null) { lo.textContent = 'Put back ' + r.restored + ' save(s) for ' + r.name + '. They load on their device within a minute (or when they close the game).'; return; }
+      var when = function (t) { return t ? new Date(t).toLocaleString() : '?'; };
+      lo.innerHTML = '<b>' + profEsc(r.name) + '</b> \u00b7 last seen ' + profEsc(when(r.lastSeen)) + '<br>' + profFmt(r.goons, 'int') + ' goons, ' + profFmt(r.chips, 'int') + ' chips, ' + r.owned + ' shop items, ' + r.earned + ' earned<br>' +
+        r.saves.length + ' saves (' + Math.round(r.saves.reduce(function (t, x) { return t + (x.bytes || 0); }, 0) / 1024) + ' KB), newest ' + profEsc(when(Math.max.apply(null, r.saves.map(function (x) { return x.at; }).concat([0])))) + '<br>' +
+        'On ' + r.boards.length + ' leaderboards' + (r.boards.length ? ': ' + r.boards.slice(0, 12).map(function (b) { return profEsc(b.key) + ' #' + b.pos + ' (' + profFmt(b.s, 'int') + ')'; }).join(', ') : '') + '<br>' +
+        (r.backups.length ? r.backups.length + ' kept copies: ' + r.backups.map(function (b) { return profEsc(b.k) + ' (' + profEsc(when(b.at)) + ')'; }).join(', ') + '<br><button class="pb" data-padm="restore">Put back the kept copies</button>' : 'No kept copies.') +
+        (r.log && r.log.length ? '<br>Recent goons: ' + r.log.map(function (l) { return (l.n > 0 ? '+' : '') + l.n + ' ' + profEsc(l.why); }).join('; ') : '');
+    };
+    (d.padm === 'look' ? L.eco.acctLook(ln) : L.eco.savesRestore(ln)).then(show, function (e) { lo.textContent = String(e && e.message || e); });
     return;
   }
   else if (d.padm === 'dbout') {

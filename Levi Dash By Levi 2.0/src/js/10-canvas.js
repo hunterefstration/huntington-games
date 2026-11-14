@@ -9,7 +9,7 @@
    canvas.width = 800;
    canvas.height = 400;
   
-   let score = 0;
+   let score = 0, legendRun = false;
    let gameActive = true;
    let gameSpeed = 6.5;
    let frameCount = 0;
@@ -70,7 +70,8 @@
    setTimeout(updateWorldUI, 1500);
 
    function saveScore(newName, newScore) {
-       const L = hgAcct(); if (L && newScore > 0) { L.eco.lbSubmit('neon:best', newScore); setTimeout(updateWorldUI, 1200); }
+       if (legendRun) return;
+       const L = hgAcct(); if (L && newScore > 0 && newScore < 1e6) { L.eco.lbSubmit('neon:best', newScore); setTimeout(updateWorldUI, 1200); }
        let scores = loadScores();
        scores.push({ name: newName, val: newScore });
        scores.sort((a, b) => b.val - a.val);
@@ -107,8 +108,8 @@
        if (e.key === 'c' || e.key === 'C') {
            score = 100000000000000000;
            player.color = '#ffd700';
-           godMode = true;
-           showLevelUp("LEGEND MODE");
+           godMode = true; legendRun = true;      // a joke mode: its score never counts (it put 100 quadrillion on the world board)
+           showLevelUp("LEGEND MODE (not counted)");
        }
        if (!gameActive && e.code === 'Enter') restart();
    });
@@ -147,7 +148,7 @@
 
 
    function restart() {
-       score = 0;
+       score = 0; legendRun = false;
        obstacles.length = 0;
        particles.length = 0;
        gameSpeed = 6.5;

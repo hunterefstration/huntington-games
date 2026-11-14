@@ -196,6 +196,7 @@
       case 'report': return rpcDone('report', m);
       case 'reports': if (m.ping) { emit('reports', m); return; } return rpcDone('reports', m);
       case 'dbOut': return rpcDone('dbOut', m);
+      case 'acctLook': return rpcDone('acctLook', m);
       case 'parties': return rpcDone('parties', m);
       case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
@@ -387,6 +388,18 @@
     try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && GAME_KEYS.test(k)) out.push(k); } } catch (e) {}
     return out;
   }
+  // Two launcher tabs share one browser's storage. If another tab signs in as someone else (or signs out), it clears the
+  // game saves here; this tab must then never sync again, or it would send that empty or other-account copy into its own
+  // account as if it were the player's (2026-11-14: an account's saves were wiped this way). The stored account id is
+  // read fresh from storage every time, never from this tab's memory.
+  function sameAccount() { try { return !!st.userId && localStorage.getItem('hgv:uid') === st.userId; } catch (e) { return true; } }
+  window.addEventListener('storage', function (e) {
+    if (e.key !== 'hgv:uid' && e.key !== null) return;
+    if (!st.userId || sameAccount()) return;
+    clearInterval(sy.timer); drop(); st.key = ''; st.userId = '';
+    setStatus('signed-out', 'You signed in or out in another tab. Reloading...');
+    if (window.top === window) setTimeout(function () { try { location.reload(); } catch (x) {} }, 1200);
+  });
   function wipeDevice() { try { eligible().forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {} store.del('sync'); store.del('syncat'); sy.at = 0; sy.synced = false; }
   // save frames go out at most ~3 a second (the server's limit is 3 a second with a burst of 40): a big first sync
   // simply takes a few seconds longer instead of being refused
@@ -448,6 +461,7 @@
   function syncRun(opts) {
     if (sy.running) return sy.running;
     if (!st.ready) return Promise.reject(new Error('Not connected to Grapevine.'));
+    if (!sameAccount()) return Promise.reject(new Error('Another tab changed the account on this device.'));
     opts = opts || {};
     var p = (async function () {
       setSync('syncing', 'Syncing your saves...');
@@ -462,7 +476,12 @@
         else if (m0.b === undefined) m0.b = base;
         local[k] = { v: v, h: h, t: meta[k].t, b: base }; seen[k] = 1;
       }
-      // a save this device had synced and that is now gone was deleted here (a game's reset): it syncs as a delete
+      // a save this device had synced and that is now gone was deleted here (a game's reset): it syncs as a delete.
+      // But many saves gone at once is not a game's reset (another tab, a cleared browser, a storage clean-up): then
+      // nothing is deleted from the account, and the account's copies come back to this device instead.
+      var gone = Object.keys(meta).filter(function (k) { var m0 = meta[k], b0 = m0.b !== undefined ? m0.b : m0.h; return !seen[k] && b0 && b0 !== H0 && m0.h !== H0 && GAME_KEYS.test(k); });
+      var massGone = gone.length >= 4 && gone.length * 2 >= Object.keys(meta).length;
+      if (massGone) { gone.forEach(function (k) { delete meta[k]; }); try { console.warn('[saves] ' + gone.length + ' saves vanished from this device at once: taking them back from the account, not deleting them'); } catch (e) {} }
       Object.keys(meta).forEach(function (k) {
         if (seen[k]) return;
         var m0 = meta[k], base = m0.b !== undefined ? m0.b : m0.h;
@@ -510,6 +529,7 @@
       var pushed = 0, batch = [], size = 0;
       async function flush() {
         if (!batch.length) return;
+        if (!sameAccount()) throw new Error('Another tab changed the account on this device.');
         var r = await rpc({ type: 'savesPut', items: batch }, 'savesPut'); pushed += r.stored || 0;
         if (!r.regress) batch.forEach(function (x) { if (meta[x.k]) meta[x.k].b = meta[x.k].h; });   // agreed: the new base
         batch = []; size = 0;
@@ -725,6 +745,8 @@
         return rpc0(Object.assign({ type: 'report' }, r), 'report').then(function (m) { if (!m.ok) throw new Error(m.err || 'That did not send.'); return m; });
       },
       // admins: the inbox. op = 'list' | 'close' | 'reopen' | 'note'
+      acctLook: function (name) { return st.ready ? rpc0({ type: 'acctLook', name: String(name || '') }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      savesRestore: function (name, keys) { return st.ready ? rpc0({ type: 'savesRestore', name: String(name || ''), keys: keys || null }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
       dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },
       reports: function (op, id, note) { return st.ready ? rpc0({ type: 'reportAdmin', op: op || 'list', id: id || null, note: note || null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },
       // the casino (grapevine 077-casino.js): every bet is a question to the server. Resolves with its answer
