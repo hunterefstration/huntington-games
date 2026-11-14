@@ -161,7 +161,7 @@ try {
   if (cash) { await sleep(500); await A.evaluate(() => document.querySelector('.cashbig').click()); }
   const [fa, fb] = await Promise.all([Promise.race([cA, sleep(45000).then(() => null)]), Promise.race([cB, sleep(45000).then(() => null)])]); await sleep(1500);
   check('the flight ends for both (cash-out by hand, and an automatic one at 1.05x)', !!fa && !!fb, JSON.stringify({ fa, fb }));
-  check('...and each balance is bet and win', !!fa && !!fb && (await chips(A)) === c0 - fa.bet + fa.win && (await chips(B)) === d0 - fb.bet + fb.win, JSON.stringify({ a: [c0, await chips(A)], b: [d0, await chips(B)] }));
+  await matches(A, 'after the rocket, A'); await matches(B, 'after the rocket, B');      // (the pot can pay out meanwhile: compare with the server)
 
   console.log('\n=== back to the pot ===');
   const paid = await until(() => A.evaluate(r => __casino.call('live').then(m => m.live.pot.r > r), potRound), 135000, 2500);
