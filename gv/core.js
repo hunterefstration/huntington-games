@@ -519,7 +519,7 @@
         var got = await rpc({ type: 'savesGet', keys: need.slice(j, j + 10) }, 'savesData');
         for (var g = 0; g < (got.items || []).length; g++) {
           var it = got.items[g], old = localStorage.getItem(it.k);
-          if (old != null && old !== it.v) { try { localStorage.setItem('hgv:bak:' + it.k, old); } catch (e) {} }
+          if (old != null && old !== it.v) { try { localStorage.setItem('hgv:bak:' + it.k, old); localStorage.setItem('hgv:bakfor:' + it.k, st.userId); } catch (e) {} }
           try { if (it.v === '') localStorage.removeItem(it.k); else localStorage.setItem(it.k, it.v); } catch (e) { continue; }
           var nh = srv[it.k] ? srv[it.k].h : await sha256hex(it.v);
           meta[it.k] = { h: nh, t: it.at, b: nh };
@@ -682,6 +682,21 @@
     ready: function () { return readyP; },
     sync: {
       run: function () { return syncRun(); },
+      // Older copies this device kept when the account's copy replaced them (hgv:bak:<key>), where the older one has
+      // clearly more progress: a way back after progress was lost. A copy kept for another account is never offered.
+      backups: function () {
+        var out = [];
+        try { for (var i = 0; i < localStorage.length; i++) { var bk = localStorage.key(i); if (!bk || bk.indexOf('hgv:bak:') !== 0) continue;
+          var k = bk.slice(8), was = localStorage.getItem(bk), now = localStorage.getItem(k), who = localStorage.getItem('hgv:bakfor:' + k);
+          if (!GAME_KEYS.test(k) || !was || (who && who !== st.userId)) continue;
+          if (now == null || now === '' || saveLess(k, now, was)) out.push({ k: k, bytes: was.length, nowBytes: now ? now.length : 0, mine: !!who });
+        } } catch (e) {}
+        return out;
+      },
+      restore: function (keys) {
+        (keys || []).forEach(function (k) { try { var v = localStorage.getItem('hgv:bak:' + k); if (v && GAME_KEYS.test(k)) localStorage.setItem(k, v); } catch (e) {} });
+        return syncRun();
+      },
       status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n, synced: sy.synced }; },
       // resolves true once this visit has loaded the account's saves, false after `ms` (or at once when there is no connection to wait for)
       // what this device holds and what the account holds, key by key (the Saves tab shows it, so a problem can be seen)

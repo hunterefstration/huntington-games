@@ -309,7 +309,18 @@
         if (!r.local.length && !(r.cloud || []).length) det.appendChild(h('div', { text: 'Nothing yet. Play a game for a minute first; it saves when the game saves.' }));
       }, function (e) { det.textContent = 'Could not check: ' + (e && e.message || e); }).then(function () { d.disabled = false; });
     } });
-    box.appendChild(h('div', { style: 'margin-top:12px' }, b, d));
+    var rb = h('button', { class: 'mbtn', id: 'gl-saves-older', style: 'margin-left:8px', text: 'Lost progress? Look for older saves', onclick: function () {
+      var list = L.sync.backups(); det.textContent = '';
+      if (!list.length) { det.appendChild(h('div', { text: 'This device has no older copy with more progress than what you have now. (If you played on another computer, try this there.)' })); return; }
+      det.appendChild(h('div', { class: 'sect', text: 'older copies on this device with more progress: ' + list.length }));
+      list.forEach(function (x) { det.appendChild(h('div', null, h('span', { class: 'ok', text: x.k + ' ' }), '(' + x.bytes + ' bytes now ' + x.nowBytes + ')' + (x.mine ? '' : ' - kept before copies were labelled: only put it back if it was yours'))); });
+      det.appendChild(h('button', { class: 'mbtn', id: 'gl-saves-restore', style: 'margin-top:8px', text: 'Put these back', onclick: function (ev) {
+        if (!confirm('Put back ' + list.length + ' older save(s)? They replace what this device and your account have for those games now.')) return;
+        ev.target.disabled = true;
+        L.sync.restore(list.map(function (x) { return x.k; })).then(function () { toast('Put back ' + list.length + ' save(s) and saved them to your account. Reopen the games to see them.'); }, function (e) { toast(e.message || 'Could not save them to your account yet.', true); });
+      } }));
+    } });
+    box.appendChild(h('div', { style: 'margin-top:12px' }, b, d, rb));
     box.appendChild(det);
     return box;
   }

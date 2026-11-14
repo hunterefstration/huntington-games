@@ -831,7 +831,7 @@ const GVLink = (() => {
         var got = await rpc({ type: 'savesGet', keys: need.slice(j, j + 10) }, 'savesData');
         for (var g = 0; g < (got.items || []).length; g++) {
           var it = got.items[g], old = localStorage.getItem(it.k);
-          if (old != null && old !== it.v) { try { localStorage.setItem('hgv:bak:' + it.k, old); } catch (e) {} }
+          if (old != null && old !== it.v) { try { localStorage.setItem('hgv:bak:' + it.k, old); localStorage.setItem('hgv:bakfor:' + it.k, st.userId); } catch (e) {} }
           try { if (it.v === '') localStorage.removeItem(it.k); else localStorage.setItem(it.k, it.v); } catch (e) { continue; }
           var nh = srv[it.k] ? srv[it.k].h : await sha256hex(it.v);
           meta[it.k] = { h: nh, t: it.at, b: nh };
@@ -994,6 +994,21 @@ const GVLink = (() => {
     ready: function () { return readyP; },
     sync: {
       run: function () { return syncRun(); },
+      // Older copies this device kept when the account's copy replaced them (hgv:bak:<key>), where the older one has
+      // clearly more progress: a way back after progress was lost. A copy kept for another account is never offered.
+      backups: function () {
+        var out = [];
+        try { for (var i = 0; i < localStorage.length; i++) { var bk = localStorage.key(i); if (!bk || bk.indexOf('hgv:bak:') !== 0) continue;
+          var k = bk.slice(8), was = localStorage.getItem(bk), now = localStorage.getItem(k), who = localStorage.getItem('hgv:bakfor:' + k);
+          if (!GAME_KEYS.test(k) || !was || (who && who !== st.userId)) continue;
+          if (now == null || now === '' || saveLess(k, now, was)) out.push({ k: k, bytes: was.length, nowBytes: now ? now.length : 0, mine: !!who });
+        } } catch (e) {}
+        return out;
+      },
+      restore: function (keys) {
+        (keys || []).forEach(function (k) { try { var v = localStorage.getItem('hgv:bak:' + k); if (v && GAME_KEYS.test(k)) localStorage.setItem(k, v); } catch (e) {} });
+        return syncRun();
+      },
       status: function () { return { state: sy.state, text: sy.text, at: sy.at, n: sy.n, synced: sy.synced }; },
       // resolves true once this visit has loaded the account's saves, false after `ms` (or at once when there is no connection to wait for)
       // what this device holds and what the account holds, key by key (the Saves tab shows it, so a problem can be seen)
@@ -1558,7 +1573,18 @@ const GVLink = (() => {
         if (!r.local.length && !(r.cloud || []).length) det.appendChild(h('div', { text: 'Nothing yet. Play a game for a minute first; it saves when the game saves.' }));
       }, function (e) { det.textContent = 'Could not check: ' + (e && e.message || e); }).then(function () { d.disabled = false; });
     } });
-    box.appendChild(h('div', { style: 'margin-top:12px' }, b, d));
+    var rb = h('button', { class: 'mbtn', id: 'gl-saves-older', style: 'margin-left:8px', text: 'Lost progress? Look for older saves', onclick: function () {
+      var list = L.sync.backups(); det.textContent = '';
+      if (!list.length) { det.appendChild(h('div', { text: 'This device has no older copy with more progress than what you have now. (If you played on another computer, try this there.)' })); return; }
+      det.appendChild(h('div', { class: 'sect', text: 'older copies on this device with more progress: ' + list.length }));
+      list.forEach(function (x) { det.appendChild(h('div', null, h('span', { class: 'ok', text: x.k + ' ' }), '(' + x.bytes + ' bytes now ' + x.nowBytes + ')' + (x.mine ? '' : ' - kept before copies were labelled: only put it back if it was yours'))); });
+      det.appendChild(h('button', { class: 'mbtn', id: 'gl-saves-restore', style: 'margin-top:8px', text: 'Put these back', onclick: function (ev) {
+        if (!confirm('Put back ' + list.length + ' older save(s)? They replace what this device and your account have for those games now.')) return;
+        ev.target.disabled = true;
+        L.sync.restore(list.map(function (x) { return x.k; })).then(function () { toast('Put back ' + list.length + ' save(s) and saved them to your account. Reopen the games to see them.'); }, function (e) { toast(e.message || 'Could not save them to your account yet.', true); });
+      } }));
+    } });
+    box.appendChild(h('div', { style: 'margin-top:12px' }, b, d, rb));
     box.appendChild(det);
     return box;
   }

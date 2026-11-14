@@ -119,6 +119,15 @@ try {
   r = await look(D, 'RecMain');
   check('the admin lookup shows goons, saves and boards', typeof r.goons === 'number' && r.saves.length >= 6 && Array.isArray(r.boards));
   const notAdmin = await A.evaluate(() => HGGrapevine.eco.acctLook('RecMain').then(x => JSON.stringify(x), e => 'refused: ' + e.message)).catch(() => 'refused');
+  console.log('\n=== 4. older copies kept on a device can be put back by the player ===');
+  await E.evaluate(([k, bigv]) => { localStorage.setItem('hgv:bak:' + k, bigv); localStorage.setItem(k, JSON.stringify({ v: 1, stars: [] })); return HGGrapevine.sync.run(); }, ['lumi_save2', big(80, 'lumi_save2')]);
+  const offered = await E.evaluate(() => HGGrapevine.sync.backups());
+  check('the device offers the older copy with more progress', offered.some(x => x.k === 'lumi_save2'), JSON.stringify(offered));
+  await E.evaluate(() => { localStorage.setItem('hgv:bak:blocky21_life', '{"v":1}'); localStorage.setItem('hgv:bakfor:blocky21_life', 'someone-else'); });
+  check('...but never one kept for another account', !(await E.evaluate(() => HGGrapevine.sync.backups())).some(x => x.k === 'blocky21_life'));
+  await E.evaluate(() => HGGrapevine.sync.restore(['lumi_save2']));
+  r = await look(D, 'RecMain');
+  check('putting it back saves it to the account', (r.saves.find(x => x.k === 'lumi_save2') || {}).bytes === big(80, 'lumi_save2').length, JSON.stringify(r.saves.find(x => x.k === 'lumi_save2')));
   check('only admins can look an account up', !/"saves"/.test(notAdmin), notAdmin.slice(0, 80));
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 await browser.close();
