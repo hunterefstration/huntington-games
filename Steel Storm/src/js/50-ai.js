@@ -6,9 +6,9 @@
 // while it keeps tracking (e1, never zero; tau = seconds to get there), burst / pause lengths, firing range scale, how well it leads
 // a moving target, and a damage scale. Normal is tuned so an average player beats a bot of the same vehicle more often than not.
 const BOTD = {
-    easy: { react: [1.1, 1.8], e0: .075, e1: .03, tau: 4, burst: [.6, 1], cd: [2.4, 3.6], rng: .6, lead: [.3, .6], dmg: .55, turn: .7 },
-    normal: { react: [.6, 1.2], e0: .055, e1: .018, tau: 3.5, burst: [.7, 1.2], cd: [1.8, 2.8], rng: .72, lead: [.5, .8], dmg: .75, turn: .85 },
-    hard: { react: [.35, .7], e0: .035, e1: .009, tau: 3, burst: [.9, 1.5], cd: [.9, 1.6], rng: .85, lead: [.7, .95], dmg: .95, turn: 1 }
+    easy: { react: [1.1, 1.8], e0: .075, e1: .03, tau: 4, burst: [.6, 1], cd: [2.4, 3.6], rng: .6, lead: [.3, .6], dmg: .55, turn: .7, skill: [.4, .7] },
+    normal: { react: [.6, 1.2], e0: .055, e1: .018, tau: 3.5, burst: [.7, 1.2], cd: [1.8, 2.8], rng: .72, lead: [.5, .8], dmg: .75, turn: .85, skill: [.55, .88] },
+    hard: { react: [.3, .6], e0: .03, e1: .007, tau: 2.5, burst: [.9, 1.5], cd: [.8, 1.4], rng: .88, lead: [.8, 1], dmg: 1, turn: 1, skill: [.75, .95] }
 };
 const aiDiff = () => BOTD[M && M.cfg && M.cfg.diff] || BOTD.normal;
 function aiAcquire(e, t) {      // a new target: wait a human-ish moment before shooting, start with a sloppy aim
@@ -32,7 +32,7 @@ function aiTrigger(e, dt, rl, seen, ready) {     // burst fire: reaction time, t
     return true;
 }
 function aiNew(e) {
-    e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(.55, .9), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.6, 1.2), track: 0, lead: .7, bOn: false, bT: 0, cdT: 0, lostT: 0, rkCd: 0, bmCd: 0, rkN: 0, bmN: 0, flee: 0, fcd: 0, gy: 0, gp: 0, msCd: 3, role: Math.random(), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
+    const SK = aiDiff().skill; e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(SK[0], SK[1]), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.6, 1.2), track: 0, lead: .7, bOn: false, bT: 0, cdT: 0, lostT: 0, rkCd: 0, bmCd: 0, rkN: 0, bmN: 0, flee: 0, fcd: 0, gy: 0, gp: 0, msCd: 3, role: Math.random(), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
     e.remote = false;
 }
 const d3 = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);

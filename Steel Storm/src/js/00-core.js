@@ -17,7 +17,7 @@ function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79
 const TEAM_COL = [0x3b9bff, 0xff4d4d, 0x4cd964, 0xffd21f, 0xc77dff, 0xff9d3a, 0x3ae0d0, 0xff6ac1, 0xa0e85a, 0xe8e8e8, 0x7a8cff, 0xd08a5a, 0x5ad0ff, 0xffb0b0, 0x9a9a9a, 0xb0ff6a, 0xffe08a, 0x8affd8];
 const teamCol = t => TEAM_COL[((t | 0) % TEAM_COL.length + TEAM_COL.length) % TEAM_COL.length];
 const teamHex = t => '#' + teamCol(t).toString(16).padStart(6, '0');
-const VERSION = '2.0';
+const VERSION = '2.1';
 let toastT = 0;
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2600); }
 
@@ -131,6 +131,7 @@ const SFX = {
     small: c => { const t = c.currentTime; noiseBurst(c, 0.3, 0.6, 1500, 120, 'lowpass', t); tone(c, 'sine', 100, 30, 0.25, 0.5, t); },
     splash: c => { const t = c.currentTime; noiseBurst(c, 0.4, 0.4, 3000, 400, 'bandpass', t); },
     hit: c => { const t = c.currentTime; tone(c, 'square', 1200, 900, 0.05, 0.12, t); },
+    lock: c => { const t = c.currentTime; tone(c, 'square', 1500, 1500, 0.06, 0.1, t); tone(c, 'square', 1500, 1500, 0.06, 0.1, t + .09); },
     ping: c => { const t = c.currentTime; tone(c, 'triangle', 700, 650, 0.07, 0.25, t); },
     hurt: c => { const t = c.currentTime; noiseBurst(c, 0.25, 0.5, 700, 100, 'lowpass', t); tone(c, 'sawtooth', 160, 60, 0.2, 0.15, t); },
     kill: c => { const t = c.currentTime; tone(c, 'triangle', 660, 660, 0.1, 0.3, t); tone(c, 'triangle', 990, 990, 0.2, 0.3, t + 0.09); },

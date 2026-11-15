@@ -88,7 +88,7 @@ function steerMissile(p, dt) {
     const sp = Math.hypot(p.vx, p.vy, p.vz) || 1, ux = p.vx / sp, uy = p.vy / sp, uz = p.vz / sp;
     let ax = 0, ay = 0, az = 0, R = 1e9;
     const t = p.tg >= 0 ? EN.get(p.tg) : null;
-    if (t && t.alive && t.flareT > 0 && p.fid !== t.flareId) { p.fid = t.flareId; if (p.air && Math.random() < FLARE_SPOOF) { p.tg = -1; p.life = Math.min(p.life, 2); return; } }
+    if (t && t.alive && t.flareT > 0 && p.fid !== t.flareId) { p.fid = t.flareId; if (p.air && Math.random() < FLARE_SPOOF) { p.tg = -1; p.life = Math.min(p.life, 2); p.vx += rnd(-1, 1) * sp * .4; p.vy -= sp * rnd(.2, .4); p.vz += rnd(-1, 1) * sp * .4; const l = Math.hypot(p.vx, p.vy, p.vz) || 1; p.vx *= sp / l; p.vy *= sp / l; p.vz *= sp / l; return; } }      // chases the falling flare
     if (t && t.alive && p.tg >= 0) {
         const air = t.def.ln === 'a', D0 = Math.hypot(t.x - p.x, t.y - p.y, t.z - p.z);
         const loft = !air && !p.air && !p.sea ? clamp((D0 - 70) * .07, 0, 10) : 0;
@@ -229,10 +229,16 @@ function killVisual(e) {
 }
 
 // ---------- physics ----------
+const SLOPE_MAX = .9;        // rise per metre a land vehicle can still climb (about 42 degrees); steeper is a cliff
 function stepSurface(e, c, dt) {
     const d = e.def, sea = d.ln === 'n', R = battleR();
     if (d.sub) { e.dive = clamp(e.dive + (e.diveOn ? dt : -dt) * .35, 0, 1); }
-    const target = c.thr * d.sp * (c.thr < 0 ? .45 : 1) * (d.sub && e.dive > .5 ? .75 : 1);
+    // land: the slope comes from the terrain itself, probed 2 m ahead in the driving direction (frame-rate independent). Climbing
+    // costs speed, only a cliff (steeper than SLOPE_MAX) stops the vehicle. (2.0 compared the next frame's ground with the smoothed hull
+    // height, which lags behind on a climb: at 60 fps every tank stalled and bounced on a 22 degree slope.)
+    const dirS = (e.speed < -.3 || (Math.abs(e.speed) <= .3 && c.thr < 0)) ? -1 : 1;
+    const slope = sea ? 0 : (H(e.x + Math.sin(e.yaw) * 2 * dirS, e.z + Math.cos(e.yaw) * 2 * dirS) - H(e.x, e.z)) / 2;
+    const target = c.thr * d.sp * (c.thr < 0 ? .45 : 1) * (d.sub && e.dive > .5 ? .75 : 1) * (1 - .45 * clamp(slope / SLOPE_MAX, 0, 1));
     const acc = sea ? .45 : (Math.abs(target) < Math.abs(e.speed) ? 3 : 1.5);
     e.speed += (target - e.speed) * Math.min(1, acc * dt);
     const sf = clamp(Math.abs(e.speed) / (d.sp * .35), sea ? .15 : .5, 1);
@@ -243,8 +249,8 @@ function stepSurface(e, c, dt) {
     const h = H(nx, nz);
     let ok;
     if (sea) ok = h < -3.5 && H(nx + sy * 10, nz + cyw * 10) < -2;
-    else { ok = h > .9 && (h - e.y) < Math.abs(step) * .9 + .15; }
-    if (ok) { e.x = nx; e.z = nz; } else { e.speed *= -.2; }
+    else ok = h > .9 && slope < SLOPE_MAX;
+    if (ok) { e.x = nx; e.z = nz; } else e.speed *= sea || h <= .9 ? -.2 : .3;
     if (!sea) { pushOutOfBuildings(e, d.r * .8); }
     if (sea) {
         e.y = Math.sin(simTime * 1.1 + e.id) * .18 * (1 - e.dive) + .1;
@@ -252,7 +258,7 @@ function stepSurface(e, c, dt) {
         e.roll += (clamp(c.steer * e.speed * .012, -.12, .12) + Math.sin(simTime * 1.3 + e.id) * .015 - e.roll) * Math.min(1, dt * 2);
         if (Math.abs(e.speed) > 3 && e.dive < .3 && Math.random() < dt * 8) part(e.x + sy * d.r * 1.4, .2, e.z + cyw * d.r * 1.4, rnd(-1, 1) * 2, rnd(.5, 1.5), rnd(-1, 1) * 2, .6, .6, 0xffffff, 3, .7);
     } else {
-        const gy = GH(e.x, e.z); e.y += (gy - e.y) * Math.min(1, dt * 14);
+        const gy = GH(e.x, e.z); e.y += (gy - e.y) * Math.min(1, dt * (gy > e.y ? 30 : 14));      // rise with the ground quickly (no sinking into a climb)
         const L = d.m.hull[2] * .5, Wd = d.m.hull[0] * .5, s2 = Math.sin(e.yaw), c2 = Math.cos(e.yaw);
         const hf = H(e.x + s2 * L, e.z + c2 * L), hb = H(e.x - s2 * L, e.z - c2 * L), hl = H(e.x + c2 * Wd, e.z - s2 * Wd), hr = H(e.x - c2 * Wd, e.z + s2 * Wd);
         e.pitch += (Math.atan2(hf - hb, L * 2) - e.pitch) * Math.min(1, dt * 6); e.roll += (Math.atan2(hl - hr, Wd * 2) - e.roll) * Math.min(1, dt * 6);
@@ -383,7 +389,7 @@ function weaponFire(e, slot, c) {
     // sound + flash
     const mm = muzzleWorld(e, heli ? (slot === 'w1' ? 0 : 1) : e.muz);
     if (w.k === 'bullet') { sfx(d.ln === 'a' ? 'gun' : 'mg', mm.x, mm.y, mm.z, .7); e.fl |= slot === 'w1' ? 1 : 2; e.flT = .18; if (Math.random() < .25) flash(mm.x, mm.y - 1, mm.z, 0xffc070, 60, .06); }
-    else if (w.k === 'shell') { sfx(w.snd || 'cannon', mm.x, mm.y, mm.z); fxExplosion(mm.x, mm.y, mm.z, d.ln === 'n' ? 2.2 : 1.4, true); for (let i = 0; i < 4; i++) part(mm.x, mm.y, mm.z, rnd(-1, 1) * 3, rnd(0, 2), rnd(-1, 1) * 3, 1, .8, 0x777777, -1, .7); if (e === ME) shakeAmt = Math.max(shakeAmt, d.ln === 'n' ? 2.4 : w.arty ? 2 : 1.4); }
+    else if (w.k === 'shell') { const cal = clamp(1 + w.dmg / 110, 1.2, d.ln === 'n' ? 4 : 3); sfx(w.dmg > 120 ? 'heavy' : w.snd || 'cannon', mm.x, mm.y, mm.z); fxExplosion(mm.x, mm.y, mm.z, cal, true); for (let i = 0; i < 4; i++) part(mm.x, mm.y, mm.z, rnd(-1, 1) * 3, rnd(0, 2), rnd(-1, 1) * 3, 1, .8, 0x777777, -1, .7); if (e === ME) shakeAmt = Math.max(shakeAmt, cal * (d.ln === 'n' ? 1.2 : 1)); }
     else if (w.k === 'rocket') sfx('rocket', mm.x, mm.y, mm.z, .8); else if (w.k === 'missile') sfx('missile', mm.x, mm.y, mm.z, .8); else if (w.k === 'torp') sfx('torp', mm.x, 0, mm.z, .8); else sfx('bomb', mm.x, mm.y, mm.z, .6);
     if (w.k !== 'bullet' && !e.remote) netFire(e, slot, out, tg);
     return true;

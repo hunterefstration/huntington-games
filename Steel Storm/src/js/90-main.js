@@ -3,7 +3,7 @@
 // ============================================================
 const IN = { keys: {}, mb: [0, 0, 0], camYaw: 0, camPitch: .2, zoom: 1 };
 const Cam = {
-    aimD: 0, aim: { x: 0, y: 0, z: 0 }, deadYaw: 0, specId: -1, solOk: true, mlock: null,
+    aimD: 0, aim: { x: 0, y: 0, z: 0 }, deadYaw: 0, specId: -1, solOk: true, mlock: null, mlId: -1, mlT: 0,
     reset() { if (!ME) return; IN.camYaw = ME.yaw; IN.camPitch = ME.def.ln === 'a' && !ME.def.heli ? 0.05 : 0.22; IN.zoom = 1; },
     lock() { try { const r = $('#gl').requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} },
     locked() { return document.pointerLockElement === $('#gl'); }
@@ -32,6 +32,7 @@ function aimRay(e) {
     return { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t };
 }
 // missile lock: the enemy nearest the reticle (within ~14 degrees) that this missile can chase
+const LOCK_T = .5;      // seconds a target must stay in the missile seeker's cone before it locks
 function missileLock(e, w) {
     if (!w || w.k !== 'missile') return null;
     camera.getWorldDirection(V3); let best = null, ba = .25;
@@ -49,6 +50,7 @@ function playerCtrl(e, dt) {
     c.thr = 0; c.steer = 0; c.side = 0; c.up = 0; c.aimYaw = e.tur; c.aimPitch = 0; c.f1 = !!IN.mb[0]; c.f2 = !!(IN.mb[2] || k.Space); c.f3 = !!(k.KeyB || k.ShiftLeft || k.ShiftRight); c.tgt = -1; c.bodyYaw = undefined;
     const W = (k.KeyW ? 1 : 0) - (k.KeyS ? 1 : 0), A = (k.KeyA ? 1 : 0) - (k.KeyD ? 1 : 0);
     const mw = [d.w1, d.w2, d.w3].find(w => w && w.k === 'missile'), ml = missileLock(e, mw); Cam.mlock = ml;
+    if (ml && Cam.mlId === ml.id) { const was = Cam.mlT < LOCK_T; Cam.mlT += dt; if (was && Cam.mlT >= LOCK_T) sfx('lock', e.x, e.y, e.z, .5); } else { Cam.mlId = ml ? ml.id : -1; Cam.mlT = 0; }
     if (d.ln === 'a' && !d.heli) {
         e.thr = clamp(e.thr + W * dt * .6, 0, 1); c.thr = e.thr;
         IN.camYaw += A * dt * 1.5; IN.camPitch = clamp(IN.camPitch + ((k.ArrowUp ? 1 : 0) - (k.ArrowDown ? 1 : 0)) * dt * .9, -1.3, 1.3);
@@ -70,7 +72,7 @@ function playerCtrl(e, dt) {
         const b = w.k === 'missile' ? { yaw: Math.atan2(p.x - m.x, p.z - m.z), pitch: Math.atan2(p.y - m.y, far), ok: true } : ballistic(m.x, m.y, m.z, p.x, p.y, p.z, w.v, w.g, !!w.arty && far > 220);
         Cam.aimD = Math.hypot(p.x - m.x, p.y - m.y, p.z - m.z); Cam.aim.x = p.x; Cam.aim.y = p.y; Cam.aim.z = p.z; Cam.solOk = b.ok; c.aimYaw = b.yaw; c.aimPitch = b.pitch;
     }
-    if (ml) c.tgt = ml.id; else if (Cam.lead) c.tgt = Cam.lead.id;
+    if (ml && Cam.mlT >= LOCK_T) c.tgt = ml.id; else if (Cam.lead && !mw) c.tgt = Cam.lead.id;      // missiles need a lock (LOCK_T seconds on target)
     return c;
 }
 function nextSpec(step) {

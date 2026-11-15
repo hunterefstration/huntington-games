@@ -14,16 +14,25 @@ const MODES = {
 const MAPR = { small: 470, normal: 610, large: 720 };
 let HQ = {}, hqT = 0, sendT = 0, bsT = 0, msT = 0, hpT = 0, pgT = 0;
 
-// Bots: "match" = fight what the humans fly/drive (a random human's domain, battle rating within -1.0 / +0.3 of theirs, often the
-// same class), "mixed" = any domain at a similar battle rating. Battle rating keeps new players away from top-tier vehicles.
-function pickBotDef(refs, mode, k) {
-    const ref = refs.length ? refs[k === undefined ? Math.floor(Math.random() * refs.length) : k % refs.length] : VBY.g1a, br = brOf(ref);
+// Bots: "match" = fight what the humans fly/drive (a random human's domain, often the same class), "mixed" = any domain.
+// The difficulty picks their gear (2.1): easy = lower tiers than the human (BR -0.7 and below), no modules; normal = around the human's
+// tier (BR -0.7 .. +0.3), some modules; hard = the human's tier and one above (BR -0.3 .. +1.0) with most modules.
+const BOT_GEAR = {
+    easy:   { t: [-2, -1], br: [-9, -.7], mods: () => 0 },
+    normal: { t: [-1, 0], br: [-.7, .3], mods: t => (t - 1) * .12 },
+    hard:   { t: [0, 1], br: [-.3, 1], mods: t => .45 + t * .1 }
+};
+function pickBotDef(refs, mode, k, diff) {
+    const ref = refs.length ? refs[k === undefined ? Math.floor(Math.random() * refs.length) : k % refs.length] : VBY.g1a, br = brOf(ref), rt = (ref.base || ref).t;
+    const G = BOT_GEAR[diff || (M && M.cfg && M.cfg.diff)] || BOT_GEAR.normal, t0 = clamp(rt + G.t[0], 1, MAX_TIER), t1 = clamp(rt + G.t[1], 1, MAX_TIER);
     let ln = ref.ln; if (mode === 'mixed') { const r = Math.random(); ln = r < .5 ? 'g' : r < .75 ? 'a' : 'n'; }
-    let L = VEHS.filter(v => v.ln === ln && v.br <= br + .3 && v.br >= br - 1.0);
+    const inT = v => v.ln === ln && v.t >= t0 && v.t <= t1;
+    let L = VEHS.filter(v => inT(v) && v.br <= Math.max(1.3, br + G.br[1]) && v.br >= br + G.br[0]);
+    if (!L.length) L = VEHS.filter(inT);
     if (mode !== 'mixed' && Math.random() < .5) { const same = L.filter(v => v.cls === (ref.base || ref).cls); if (same.length) L = same; }
-    if (!L.length) L = VEHS.filter(v => v.ln === ln && v.t <= Math.max(1, ref.t));
+    if (!L.length) L = VEHS.filter(v => v.ln === ln && v.t <= Math.max(1, rt));
     const b = L[Math.floor(Math.random() * L.length)];
-    let mask = 0; for (let i = 0; i < 5; i++) if (Math.random() < (b.t - 1) * .18) mask |= 1 << i;
+    let mask = 0; const pm = G.mods(b.t); for (let i = 0; i < 5; i++) if (Math.random() < pm) mask |= 1 << i;
     return vdef(b.id, mask);
 }
 // Build the match description (host / solo). players = [{id,name,veh,mm,team?}], returns the cfg every client uses.
@@ -37,7 +46,7 @@ function makeConfig(players, opts) {
     const bm = opts.bots || save.bots || 'match', refs = players.map(p => vdef(p.veh, p.mm)).filter(Boolean);
     const off = Math.floor(Math.random() * Math.max(1, refs.length)); cfg.bm = bm; cfg.diff = opts.diff || save.diff || 'normal';
     let bi = 0; const names = BOT_NAMES.slice().sort(() => Math.random() - .5);
-    const addBot = team => { const d = pickBotDef(refs, bm === 'off' ? 'match' : bm, bi + off); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, mm: d.mask | 0, team }); bi++; };
+    const addBot = team => { const d = pickBotDef(refs, bm === 'off' ? 'match' : bm, bi + off, cfg.diff); cfg.bots.push({ id: 100 + bi, name: 'Bot ' + names[bi % names.length], veh: d.id, mm: d.mask | 0, team }); bi++; };
     if (bm !== 'off') { if (ffa) for (let n = players.length; n < Math.min(12, size * 2); n++) addBot(n); else for (let t = 0; t < 2; t++) for (let n = teams[t].length; n < size; n++) addBot(t); }
     const L = cfg.len * 60;
     cfg.limit = { kills: opts.killLimit || (ffa ? [10, 15, 20][[3, 5, 8].indexOf(size)] : [12, 20, 30][[3, 5, 8].indexOf(size)]) || 20, tickets: opts.tickets || (size === 3 ? 80 : size === 8 ? 160 : 120), caps: opts.caps || 3, time: opts.time || L };
@@ -131,9 +140,23 @@ function onDmg(m) {
     if (!M) return;
     const v = EN.get(m.tg); if (!v) return;
     v.hp = m.hp;
-    if (v === ME) { ME.lastBy = m.by; if (m.e > 0) UI.hurt(); }
-    if (v.alive) { fxSpark(v.x, v.y + 1.5, v.z); sfx('hit', v.x, v.y, v.z, .5); }
+    const k = m.e / (v.def.hp || 1);
+    if (v === ME) { ME.lastBy = m.by; if (m.e > 0) { UI.hurt(); shakeAmt = Math.max(shakeAmt, clamp(k * 30, .4, 5)); stagger(ME, k, m.by); } }
+    else if (v.ai && M.host) stagger(v, k, m.by);
+    if (v.alive) { fxSpark(v.x, v.y + 1.5, v.z); if (k > .08) { fxExplosion(v.x, v.y + 1.5, v.z, clamp(k * 14, 1.2, 4), true); flash(v.x, v.y + 2, v.z, 0xffb060, 300, .15); } sfx('hit', v.x, v.y, v.z, .5); }
+    if (ME && m.by === ME.id && m.e > 0 && v !== ME) UI.dmgNum(v, m.e, k);
     if (ME && m.by === ME.id) { M.my.dmg += m.e; if (!M.host) ME.dmg += m.e; if (!M.host) { UI.hitMarker(false); sfx('hit'); } }
+}
+// a big hit rocks the vehicle: tanks and ships lose speed, pitch back and get shoved away from the shooter; aircraft get knocked off line
+function stagger(e, k, by) {
+    if (!e.alive || k < .05) return;
+    const a = EN.get(by), d = e.def;
+    if (d.ln === 'a') { e.roll += rnd(-1, 1) * Math.min(.5, k * 3); if (d.heli) e.pitch -= Math.min(.25, k * 1.5); return; }
+    e.speed *= 1 - Math.min(.6, k * 2.5); e.pitch -= Math.min(.14, k * .7); e.roll += rnd(-1, 1) * Math.min(.08, k * .4);
+    if (a && d.ln === 'g') {
+        const dx = e.x - a.x, dz = e.z - a.z, L = Math.hypot(dx, dz) || 1, push = Math.min(1.4, k * 7), nx = e.x + dx / L * push, nz = e.z + dz / L * push;
+        if (H(nx, nz) > .9 && Math.abs(H(nx, nz) - H(e.x, e.z)) < push) { e.x = nx; e.z = nz; }
+    }
 }
 function onKill(m) {
     if (!M) return;

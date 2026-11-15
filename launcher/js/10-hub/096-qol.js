@@ -273,14 +273,11 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r66', items: [
-  ['Steel Storm 2.0', '69 vehicles to research, each with its own model and upgrades: helicopters, submarines, artillery, battleships. New lighting, weather and night battles, and a rebuilt multiplayer with a proper lobby, Capture the Flag and Free-for-all.'],
-  ['New: Mayhem Marathon', 'A knockout party game for up to 16. Obstacle races and survival arenas until one player takes the crown. Play with friends or bots.'],
-  ['New: the Casino', 'Turn goons into chips and play blackjack, roulette, slots, the rocket and more, or sit at the live tables with everyone. Play money only: goons are not worth anything outside Huntington Games.'],
-  ['Blocky Shooter 5.4: classes', 'More classes, and each one levels up for good. Spend skill points on big trees from the menu, not in the middle of a run.'],
-  ['More to spend goons on', 'Picture frames, mystery crates, and gifts for friends. See Account, Shop.'],
-  ['Report button', 'The flag at the top (and in every game and on every chat message) tells the admins about a player, a message or a bug.'],
-  ['A games page with room to grow', 'A featured banner, shelves by kind that scroll sideways, smaller tiles, and a card with the details when you rest on a game.']
+var WHATSNEW = { id: 'r71', items: [
+  ['Steel Storm 2.1', 'A full rebalance: every vehicle has a job and every tier hits harder. Guided missiles lock on and hit, bots on hard bring better gear, and tanks climb hills without stalling.'],
+  ['Nicknames', 'Pick a nickname everyone sees (Profile, the pencil next to your name). Your account name is still there when someone hovers over it.'],
+  ['Mayhem Marathon, Sovereign, Neon Dash fixes', 'No more spawning under the map in Tail Grab, no more "InfinityT" money in Sovereign, and impossible Neon Dash scores are gone from the board.'],
+  ['Saves are safer', 'Two tabs signed in as different accounts can no longer wipe each other, and lost progress can now be brought back.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;

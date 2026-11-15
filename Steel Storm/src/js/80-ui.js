@@ -104,7 +104,7 @@ const UI = {
         const id = which === 'rs' ? UIS.rs : UIS.gs, el = which === 'rs' ? $('#rs-info') : $('#g-info'), v = id && VBY[id];
         if (!v) { el.innerHTML = '<h3>Vehicle</h3><div class="note">Click a vehicle to see it.</div>'; return; }
         const d = isOwned(id) ? vdef(id, modMask(id)) : v;
-        let h = '<h2>' + esc(v.n) + '</h2><div class="note">' + LINES[v.ln].tag + ' &middot; ' + CLS_NAME[v.cls] + ' &middot; Tier ' + TIER_ROMAN[v.t] + '</div><p>' + esc(v.desc || '') + '</p><div class="st">' + vStats(d).map(s => '<span>' + s[0] + '</span><b>' + s[1] + '</b>').join('') + '</div>';
+        let h = '<h2>' + esc(v.n) + '</h2><div class="note">' + LINES[v.ln].tag + ' &middot; ' + CLS_NAME[v.cls] + ' &middot; Tier ' + TIER_ROMAN[v.t] + '</div><p>' + esc(v.desc || '') + '</p>' + (v.role ? '<div class="note"><b>Role:</b> ' + esc(v.role) + '</div>' : '') + '<div class="st">' + vStats(d).map(s => '<span>' + s[0] + '</span><b>' + s[1] + '</b>').join('') + '</div>';
         if (isOwned(id)) {
             h += '<div class="note">You own this vehicle.</div><button class="btn big" data-act="line" data-id="' + id + '">' + (save.lineup.includes(id) ? 'Remove from lineup' : 'Add to lineup') + '</button>';
             h += '<h3 style="margin-top:12px">Modules</h3>' + v.mods.map(m => {
@@ -160,6 +160,10 @@ const UI = {
     },
     hitMarker(kill, pred) {
         const e = $('#h-hit'); e.textContent = kill ? '✖' : '✕'; e.style.color = kill ? '#ff4d4d' : pred ? '#ffffffaa' : '#fff'; e.className = 'on'; clearTimeout(UIS.hitT); UIS.hitT = setTimeout(() => { e.className = 'off'; }, kill ? 350 : 120);
+    },
+    dmgNum(v, n, k) {      // floating damage number over what I hit (bigger and orange for a heavy hit)
+        const L = UIS.dn || (UIS.dn = []); if (L.length > 24) L.shift();
+        L.push({ x: v.x + rnd(-1, 1), y: v.y + (v.def.ln === 'a' ? 3 : 4), z: v.z + rnd(-1, 1), n: Math.max(1, Math.round(n)), big: k >= .12 || n >= 120, t0: performance.now() });
     },
     hurt() { const e = $('#h-dmg'); e.style.transition = 'none'; e.style.opacity = '.9'; requestAnimationFrame(() => { e.style.transition = 'opacity .5s'; e.style.opacity = '0'; }); sfx('hurt'); },
     feed(k, v, w) {
@@ -300,6 +304,25 @@ function drawOverlay() {
         const p = proj(f.x, GH(f.x, f.z) + 12, f.z); if (!p) return; c.font = 'bold 13px Trebuchet MS'; c.fillStyle = teamHex(f.t); c.strokeStyle = '#000';
         const t = (f.t === ME.team ? 'YOUR FLAG' : 'ENEMY FLAG') + (f.st === 'drop' ? ' (dropped)' : f.st === 'carry' ? ' (taken)' : ''); c.strokeText(t, p[0], p[1]); c.fillText(t, p[0], p[1]);
     });
+    if (UIS.dn && UIS.dn.length) {
+        const now = performance.now(); UIS.dn = UIS.dn.filter(d => now - d.t0 < 1100);
+        for (const d of UIS.dn) {
+            const a = (now - d.t0) / 1100, p = proj(d.x, d.y, d.z); if (!p) continue;
+            c.globalAlpha = 1 - a * a; c.font = '900 ' + Math.round(d.big ? 22 + Math.min(10, d.n / 40) : 15) + 'px Trebuchet MS,sans-serif';
+            c.lineWidth = 3; c.strokeStyle = '#000'; c.fillStyle = d.big ? '#ffb020' : '#fff'; const y = p[1] - a * 36;
+            c.strokeText(d.n, p[0], y); c.fillText(d.n, p[0], y);
+        }
+        c.globalAlpha = 1; c.lineWidth = 1;
+    }
+    if (ME.alive && Cam.mlock && Cam.mlock.alive) {      // missile seeker: yellow brackets close in while locking, red LOCK when ready
+        const o = Cam.mlock, p = proj(o.x, o.y + (o.def.ln === 'a' ? 0 : 1.5), o.z);
+        if (p) {
+            const k = clamp(Cam.mlT / LOCK_T, 0, 1), lk = k >= 1, s = 30 - 14 * k, L = 8, x = p[0], y = p[1];
+            c.strokeStyle = lk ? '#ff3b30' : '#ffd21f'; c.lineWidth = lk ? 3 : 2; c.beginPath();
+            for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { c.moveTo(x + sx * s, y + sy * (s - L)); c.lineTo(x + sx * s, y + sy * s); c.lineTo(x + sx * (s - L), y + sy * s); }
+            c.stroke(); c.font = 'bold 11px Trebuchet MS,sans-serif'; c.fillStyle = c.strokeStyle; c.fillText(lk ? 'LOCK' : 'LOCKING', x, y + s + 13);
+        }
+    }
     if (ME.alive && Cam.lead) {
         const p = proj(Cam.lead.x, Cam.lead.y, Cam.lead.z);
         if (p) { c.strokeStyle = '#ff5a4a'; c.lineWidth = 2; c.beginPath(); c.moveTo(p[0], p[1] - 9); c.lineTo(p[0] + 9, p[1]); c.lineTo(p[0], p[1] + 9); c.lineTo(p[0] - 9, p[1]); c.closePath(); c.stroke(); }
