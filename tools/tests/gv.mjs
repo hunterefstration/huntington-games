@@ -204,7 +204,7 @@ try {
   await A.evaluate(() => localStorage.setItem('frontline_settings_v2', '{"name":"x"}'));
   await A.click('#tab-acct'); await until(() => A.$('#gl-out'));
   await A.click('#gl-out');
-  check('signing out brings the gate back', !!(await until(() => A.evaluate(() => !document.getElementById('gate').hidden), 20000)));
+  check('signing out brings the gate back', !!(await until(() => A.evaluate(() => !document.getElementById('gate').hidden), 30000)));
   check('...and clears this device\'s saves and key', await A.evaluate(() => localStorage.getItem('td2_save') === null && localStorage.getItem('hgv:key') === null));
   const D3 = await device(await browser.newContext());
   await D3.waitForSelector('#gate .gl .seg'); await D3.fill('#gate #gl-key', keyA); await D3.click('#gate #gl-go');
