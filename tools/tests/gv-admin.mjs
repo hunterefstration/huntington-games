@@ -96,7 +96,8 @@ try {
   console.log('\n=== 2. editing progress, kept off the leaderboards or not ===');
   await A.evaluate(() => { localStorage.setItem('spikes100_progress', JSON.stringify({ unlocked: 5, bestOneLife: 2 })); return HGGrapevine.sync.run(); });
   await A.evaluate(() => feedNow()); await sleep(2500);
-  const board = () => D.evaluate(() => HGGrapevine.eco.lbGet('spikes:level').then(m => ((m.rows || []).find(x => x.n === 'AdmPlayer') || {}).s || 0));
+  const aUid = await A.evaluate(() => HGGrapevine.me().userId);
+  const board = () => D.evaluate(u => HGGrapevine.eco.lbGet('spikes:level').then(m => ((m.rows || []).find(x => x.u === u) || {}).s || 0), aUid);
   check('(the player is on the board with 5)', (await until(async () => (await board()) === 5, 8000)) !== null);
   await D.evaluate(() => document.getElementById('tab-prof').click()); await until(() => D.evaluate(() => !!document.querySelector('[data-ptab="admin"]')), 10000);
   await D.click('[data-ptab="admin"]'); await D.fill('#pa-look', 'AdmPlayer'); await D.click('[data-padm="edit"]');

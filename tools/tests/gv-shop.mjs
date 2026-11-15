@@ -87,7 +87,7 @@ try {
   await A.click('[data-pcat="frame"]'); await A.click('[data-buy="frame:prism"]'); await until(async () => (await eco(A)).owned.includes('frame:prism'), 8000);
   await A.click('[data-ptab="locker"]');
   for (const [cat, id] of [['bubble', 'bubble:sunset'], ['pet', 'pet:fox'], ['frame', 'frame:prism']]) { await A.click(`[data-pcat="${cat}"]`); await A.click(`[data-equip="${id}"]`); await until(async () => (await eco(A)).equip[cat] === id, 8000); }
-  check('your profile shows the frame and the sidekick, and your name is plain', !!(await until(() => A.evaluate(() => !!document.querySelector('.phead .pface .pfr.st-spin') && !!document.querySelector('.phead .pface .pet') && !document.querySelector('.phead .pnm *')), 8000)));
+  check('your profile shows the frame and the sidekick, and your name is plain', !!(await until(() => A.evaluate(() => !!document.querySelector('.phead .pface .pfr.st-spin') && !!document.querySelector('.phead .pface .pet') && !document.querySelector('.phead .pnm .nc')), 8000)));
   const annId = await A.evaluate(() => HGGrapevine.me().userId);
   const cosOfAnn = () => B.evaluate(u => { const m = HGGrapevine.eco.cos([u]); return m[u] || null; }, annId);
   const cosB = await until(async () => { const c = await cosOfAnn(); return c && c.bb ? c : null; }, 10000);

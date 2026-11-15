@@ -294,8 +294,8 @@
     var saved = false;
     // Everything on this device must be in the account before it is cleared. A sync already under way started before
     // the latest changes, so it is let to end and one of our own is run; and a connection that is only switching over
-    // (the launcher moves to the direct link a moment after it connects) is waited for, up to 10 s in all.
-    var until = Date.now() + 10000;
+    // (the launcher moves to the direct link a moment after it connects) is waited for, up to 25 s in all.
+    var until = Date.now() + 25000;      // (a slow school network: a sync already running can take a while)
     while (!saved && Date.now() < until && st.status !== 'signed-out') {
       if (sy.running) { try { await sy.running; } catch (e0) {} }
       if (!st.ready) { if (st.status !== 'connecting' && st.status !== 'online') break; await wait(250); continue; }
