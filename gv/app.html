@@ -1304,6 +1304,8 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
 .pfr.st-glow{box-shadow:0 0 8px 1px var(--g)}
 .pfr.st-spin{background:none}.pfr.st-spin::before{content:'';position:absolute;inset:0;border-radius:50%;background:var(--f);animation:pfrspin 4s linear infinite}.pfr.st-spin>*{position:relative}
 @keyframes pfrspin{to{transform:rotate(360deg)}}
+
+.gtag.role-owner{border-color:#fbbf24;color:#1a1200;background:linear-gradient(90deg,#fde68a,#fbbf24);font-weight:800}.gtag.role-admin{border-color:#60a5fa;color:#04122a;background:#93c5fd;font-weight:800}
 </style>
 </head>
 <body>
@@ -8521,9 +8523,11 @@ function pfpHtml(c, px){
   const inner = it.t ? `<b style="font-size:${Math.round(s * (it.t.length > 2 ? 0.34 : 0.42))}px">${esc(it.t)}</b>` : esc(it.e || '');
   return `<span class="pfp${it.t ? ' team' : ''}" title="${esc(it.n)}" style="width:${s}px;height:${s}px;font-size:${Math.round(s * 0.62)}px;background:${bg}">${inner}</span>`;
 }
+// the Owner / Admin tag: checked by the server every time, so a nickname can never fake it
+function roleTagsHtml(c){ return ((c && c.tg) || []).map(t => `<span class="gtag role-${t}" title="${t === 'owner' ? 'The server owner' : 'An admin'}">${t === 'owner' ? '\u2605 OWNER' : 'ADMIN'}</span>`).join(''); }
 function badgesHtml(c){
   if (!c) return '';
-  let h = '';
+  let h = roleTagsHtml(c);
   const t = (c.t && CATALOG && CATALOG.byId.get(c.t)) || (c.tn ? { n: c.tn, r: 'secret' } : null);      // (c.tn: a developer-given custom title)
   if (t) h += titleHtml(t);
   if (c.rec && c.rec.length) {
@@ -8560,9 +8564,11 @@ function frameHtml(html, c){
 function decorateWho(btn, uid, name, heart){
   cosNeed(uid);
   const c = COS.get(uid), nk = nickOf(uid);
-  btn.innerHTML = facesHtml(c, 18) + `<span class="wn">${esc(nk || name)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
+  const nn = !nk && c && c.nn && c.nn !== name ? c.nn : null;      // their own nickname (yours for them comes first)
+  btn.innerHTML = facesHtml(c, 18) + `<span class="wn"${nn ? ` title="${esc(name)}"` : ''}>${esc(nk || nn || name)}</span>` + (nk ? `<span class="nk" title="their real name">${esc(name)}</span>` : '')
     + (heart ? '<span class="fh">♡</span>' : '') + badgesHtml(c);
   if (nk) btn.title = name + ' (your nickname for them: ' + nk + ')';
+  else if (nn) btn.title = nn + ' is the nickname of ' + name;
   bubblePaint(btn.closest('.msg'), c);
 }
 function repaintNames(uid){
@@ -8582,7 +8588,7 @@ function paintUserCos(uid){
     .map(([g, t]) => `<span class="gtag rank t${t}">R${t} · ${esc(g)}</span>`).join('');
   const recs = ((c && c.rec) || []).map(k => { const d = CATALOG && CATALOG.boards[k]; return `<span class="gtag rec">🏆 ${esc(d ? d.g + ': ' + d.n : k)}</span>`; }).join('');
   const t = (c && c.t && CATALOG && CATALOG.byId.get(c.t)) || (c && c.tn ? { n: c.tn, r: 'secret' } : null);
-  box.innerHTML = `<div class="umpfp">${facesHtml(c, 56)}</div><div class="umtags">${t ? titleHtml(t, true) : ''}${recs}${ranks}</div>`;
+  box.innerHTML = `<div class="umpfp">${facesHtml(c, 56)}</div><div class="umtags">${c && c.nn ? `<span class="gtag big" title="their nickname">\u201c${esc(c.nn)}\u201d</span>` : ''}${roleTagsHtml(c).replace(/gtag /g, 'gtag big ')}${t ? titleHtml(t, true) : ''}${recs}${ranks}</div>`;
 }
 const _openUser = openUser;
 openUser = function (name, userId){

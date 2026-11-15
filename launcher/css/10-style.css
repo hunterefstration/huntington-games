@@ -565,3 +565,9 @@ html.gdense .game .galt { margin-top: 6px; padding: 2px 8px; font-size: 11px; }
 
 /* full screen where the page does not allow it (jsbin): the top bar goes, a small button brings it back */
 #fillx { position: absolute; top: 8px; right: 8px; z-index: 30; padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.6); color: #fff; font: 600 12px var(--sans); cursor: pointer; opacity: .55; } #fillx:hover { opacity: 1; }
+
+/* admin tools, nicknames, Owner / Admin tags */
+.ptag.role-owner { color: #1a1200; background: linear-gradient(90deg,#fde68a,#fbbf24); border-color: #fbbf24; font-weight: 800; } .ptag.role-admin { color: #04122a; background: #93c5fd; border-color: #60a5fa; font-weight: 800; }
+.pnickb { margin-left: 6px; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.3); color: #ddd; font: 600 11px var(--sans); cursor: pointer; vertical-align: middle; } .preal { font-size: 12px; opacity: .7; font-weight: 500; }
+.pacard { border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; margin: 8px 0; } .pagrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 12px; margin: 8px 0; font-size: 13px; } .pagrid label { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; }
+.pafields { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px 14px; max-height: 340px; overflow: auto; margin: 8px 0; padding: 6px; border: 1px solid var(--line2); border-radius: 8px; } .pafields label { display: flex; gap: 8px; align-items: center; justify-content: space-between; font: 12px var(--mono); } .pafields label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pafields input:not([type]) { width: 130px; }

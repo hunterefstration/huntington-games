@@ -197,6 +197,11 @@
       case 'reports': if (m.ping) { emit('reports', m); return; } return rpcDone('reports', m);
       case 'dbOut': return rpcDone('dbOut', m);
       case 'acctLook': return rpcDone('acctLook', m);
+      case 'permsAdmin': return rpcDone('permsAdmin', m);
+      case 'lbAdmin': return rpcDone('lbAdmin', m);
+      case 'nickSet': return rpcDone('nickSet', m);
+      case 'tagSet': return rpcDone('tagSet', m);
+      case 'savesNudge': if (st.ready && !sy.running) syncRun().catch(function () {}); return;      // an admin changed this account's saves
       case 'parties': return rpcDone('parties', m);
       case 'factivity': return rpcDone('factivity', m);
       case 'cos': for (var cu in (m.map || {})) st.cos[cu] = Object.assign({ at: Date.now() }, m.map[cu]); emit('cos', m.map); return;
@@ -762,8 +767,12 @@
       // admins: the inbox. op = 'list' | 'close' | 'reopen' | 'note'
       acctLook: function (name) { return st.ready ? rpc0({ type: 'acctLook', name: String(name || '') }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
       savesAdminGet: function (name, keys) { return st.ready ? rpc0({ type: 'savesAdminGet', name: String(name || ''), keys: keys || [] }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
-      savesAdminPut: function (name, items) { return st.ready ? rpc0({ type: 'savesAdminPut', name: String(name || ''), items: items || [] }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      savesAdminPut: function (name, items, freeze) { return st.ready ? rpc0({ type: 'savesAdminPut', name: String(name || ''), items: items || [], freeze: freeze || null }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
       savesRestore: function (name, keys) { return st.ready ? rpc0({ type: 'savesRestore', name: String(name || ''), keys: keys || null }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      permsAdmin: function (op, name, perms) { return st.ready ? rpc0({ type: 'permsAdmin', op: op, name: name || null, perms: perms || null }, 'permsAdmin') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      lbAdmin: function (op, name, prefix) { return st.ready ? rpc0({ type: 'lbAdmin', op: op, name: String(name || ''), prefix: prefix || null }, 'lbAdmin') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      nickSet: function (nick) { return st.ready ? rpc0({ type: 'nickSet', nick: String(nick || '') }, 'nickSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
+      tagSet: function (tag, on) { return st.ready ? rpc0({ type: 'tagSet', tag: tag, on: !!on }, 'tagSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },
       reports: function (op, id, note) { return st.ready ? rpc0({ type: 'reportAdmin', op: op || 'list', id: id || null, note: note || null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },
       // the casino (grapevine 077-casino.js): every bet is a question to the server. Resolves with its answer

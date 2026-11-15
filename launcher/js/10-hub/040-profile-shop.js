@@ -24,6 +24,9 @@ function profPfp(id, px, img) {
   var inner = it.t ? '<b style="font-size:' + Math.round(s * (it.t.length > 2 ? .34 : .42)) + 'px">' + profEsc(it.t) + '</b>' : profEsc(it.e || '');
   return '<span class="ppfp' + (it.t ? ' team' : '') + '" title="' + profEsc(it.n) + '" style="width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * .6) + 'px;background:linear-gradient(135deg,' + it.c[0] + ',' + it.c[1] + ')">' + inner + '</span>';
 }
+// someone's nickname (their account name on hover), and the Owner / Admin tag the server vouches for
+function lbWho(name, cs) { var nn = cs && cs.nn && cs.nn !== name ? cs.nn : null; return (nn ? '<span title="' + profEsc(name) + '">' + profEsc(nn) + '</span>' : profEsc(name)) + cosRoles(cs); }
+function cosRoles(cs) { return ((cs && cs.tg) || []).map(function (t) { return ' <span class="ptag role-' + t + '">' + (t === 'owner' ? '\u2605 OWNER' : 'ADMIN') + '</span>'; }).join(''); }
 // a title tag: one that is won by playing (ra: an achievement, a record, a rank) is written in a moving colour of its own
 function cosTitle(it, big) { return '<span class="ptag' + (big ? ' big' : '') + ' r-' + it.r + (it.ra ? ' ra' : '') + '">' + (it.ra ? '<i>' + profEsc(it.n) + '</i>' : profEsc(it.n)) + '</span>'; }
 // shop items other people see on you: a frame round your picture, a sidekick on its corner, a tint behind your chat messages
@@ -65,16 +68,16 @@ function profRender() {
   var eq = e.equip || {}, title = profItem(eq.title);
   var mine = L.eco.cos([me.userId])[me.userId] || {}, ranks = Object.keys(mine.ranks || {}).sort(function (a, b) { return mine.ranks[a] - mine.ranks[b]; });
   var h = '<div class="phead" style="background:' + (profBannerCss(eq.banner) || 'linear-gradient(120deg,#1b2440,#2a1b40)') + '">' +
-    cosPet(cosFrame(profPfp(eq.pfp, 84), eq.frame), eq.pet, 84) + '<div class="pwho"><div class="pnm">' + profEsc(me.name) + '</div>' +
+    cosPet(cosFrame(profPfp(eq.pfp, 84), eq.frame), eq.pet, 84) + '<div class="pwho"><div class="pnm">' + profEsc(mine.nn || me.name) + (mine.nn ? ' <small class="preal" title="your account name">(' + profEsc(me.name) + ')</small>' : '') + ' <button class="pnickb" data-pnick="1" title="A nickname everyone sees">\u270e nickname</button></div>' + cosRoles(mine) +
     (title ? cosTitle(title) : '<span class="ptag dim">no title yet</span>') +
     ((mine.rec || []).length ? '<span class="ptag rec">🏆 Record Holder</span>' : '') +
     ranks.slice(0, 4).map(function (g) { return '<span class="ptag rank t' + mine.ranks[g] + '">R' + mine.ranks[g] + ' · ' + profEsc(g) + '</span>'; }).join('') +
     '</div><div class="pgoons"><b>' + (e.dev ? '∞' : e.goons) + '</b><span>goons</span><small>' + profFmt(e.playSec, 'dur') + ' played</small></div></div>';
-  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['earn', 'Earn goons']].concat(e.dev ? [['admin', 'Admin tools']] : []).map(function (t) {
+  h += '<div class="psub">' + [['locker', 'Locker'], ['shop', 'Goon Shop'], ['earn', 'Earn goons']].concat(e.perms && e.perms.length ? [['admin', 'Admin tools']] : []).map(function (t) {
     return '<button data-ptab="' + t[0] + '" class="' + (PROF.tab === t[0] ? 'on' : '') + '">' + t[1] + '</button>'; }).join('') + '</div>';
   if (PROF.tab === 'shop' || PROF.tab === 'locker') h += profItems(e, c, PROF.tab === 'shop');
   else if (PROF.tab === 'lb') h += profBoards(c);
-  else if (PROF.tab === 'admin' && e.dev) h += profAdmin(c);
+  else if (PROF.tab === 'admin' && e.perms && e.perms.length) h += profAdmin(c);
   else h += profEarn(e);
   box.innerHTML = h;
   if (e.dev && PROF.tab === 'locker' && PROF.cat === 'pfp') profDevUpload(box);
@@ -140,7 +143,7 @@ function profBoards(c) {
   h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + d.rows.map(function (r) {
     var cs = window.HGGrapevine.eco.cos([])[r.u] || (window.HGGrapevine.eco.cos([r.u]))[r.u] || {};
     var how = r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { return profEsc(k) + ': ' + profEsc(r.d[k]); }).join(', ') : '';
-    return '<tr class="' + (r.me ? 'me' : '') + (r.pos === 1 ? ' first' : '') + '"><td>' + (r.pos === 1 ? '👑' : r.pos) + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + (r.pos === 1 ? ' <span class="ptag rec">Record Holder</span>' : '') +
+    return '<tr class="' + (r.me ? 'me' : '') + (r.pos === 1 ? ' first' : '') + '"><td>' + (r.pos === 1 ? '👑' : r.pos) + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + lbWho(r.n, cs) + (r.pos === 1 ? ' <span class="ptag rec">Record Holder</span>' : '') +
       '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>';
   }).join('') + '</table>';
   return h;
@@ -191,12 +194,12 @@ function lbView(c) {
   var how = function (r) { return r.d ? Object.keys(r.d).slice(0, 4).map(function (k) { var v = r.d[k]; return profEsc(k) + ': ' + profEsc(typeof v === 'number' ? profFmt(v, v >= 1e6 ? 'big' : 'int') : v); }).join(', ') : ''; };
   var top = d.rows.slice(0, 3), order = [1, 0, 2];
   h += '<div class="lbpod">' + order.filter(function (i) { return top[i]; }).map(function (i) { var r = top[i], cs = cosOfU(r.u);
-    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + cosPet(cosFrame(profPfp(cs.p, i ? 46 : 60, cs.img), cs.fr), cs.pt, i ? 46 : 60) + '<b>' + profEsc(r.n) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
+    return '<div class="lbp p' + (i + 1) + (r.me ? ' me' : '') + '"><div class="lbm">' + ['👑', '🥈', '🥉'][i] + '</div>' + cosPet(cosFrame(profPfp(cs.p, i ? 46 : 60, cs.img), cs.fr), cs.pt, i ? 46 : 60) + '<b>' + lbWho(r.n, cs) + '</b><span class="lbs">' + profFmt(r.s, def.f) + '</span>' + (how(r) ? '<small>' + how(r) + '</small>' : '') + '<div class="lbstep"></div></div>'; }).join('') + '</div>';
   h += '<div class="lbme">' + (d.me ? 'You: <b>#' + d.me.pos + '</b> of ' + d.n + ' · ' + profFmt(d.me.s, def.f) + ' · <span class="ptag rank t' + d.me.tier + '">R' + d.me.tier + '</span>' : 'You are not on this board yet: play to get on it.') + ' <span class="dimtxt">' + d.n + ' on this board</span> <button class="lbre" data-lbretry="1" title="Refresh this board">⟳ Refresh</button>' +
     (d.rows.length > 6 ? '<input id="lb-find" class="lbfind" type="search" placeholder="Find a player..." autocomplete="off" spellcheck="false">' : '') + '</div>';
   var rest = d.rows.slice(3);
   if (rest.length) h += '<table class="plb"><tr><th>#</th><th>Player</th><th>' + profEsc(def.lo ? 'Time' : 'Score') + '</th><th>Rank</th><th>How</th><th>When</th></tr>' + rest.map(function (r) { var cs = cosOfU(r.u);
-    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + profEsc(r.n) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
+    return '<tr class="' + (r.me ? 'me' : '') + '"><td>' + r.pos + '</td><td>' + profPfp(cs.p, 22, cs.img) + ' ' + lbWho(r.n, cs) + '</td><td><b>' + profFmt(r.s, def.f) + '</b></td><td><span class="ptag rank t' + r.tier + '">R' + r.tier + '</span></td><td class="how">' + how(r) + '</td><td class="when">' + new Date(r.at).toLocaleDateString() + '</td></tr>'; }).join('') + '</table>';
   return '<div class="lbwrap">' + side + h + '</div></div>';
 }
 document.addEventListener('click', function (e) {
@@ -230,20 +233,7 @@ function profEarn(e) {
     '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + new Date(l.at).toLocaleString() + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
 }
 // developers only: give someone an admin-only title (Tomato, VIP, Beta Tester...) or goons, or take a title back
-function profAdmin(c) {
-  var titles = c.items.filter(function (i) { return i.k === 'title' && i.x === 'Given by an admin'; });
-  return '<div class="padmin"><h4>Give a special title</h4><p class="pnote">Only admins can hand these out. Type the person\'s exact name.</p>' +
-    '<div class="prow"><input id="pa-name" maxlength="40" placeholder="Their exact name" autocomplete="off"><select id="pa-title">' +
-    titles.map(function (t) { return '<option value="' + profEsc(t.id) + '">' + profEsc(t.n) + '</option>'; }).join('') + '</select>' +
-    '<button class="pb" data-padm="give">Give title</button><button class="pb ghost" data-padm="take">Take it back</button></div>' +
-    '<h4>Give a custom title</h4><p class="pnote">Any words you like (2 to 24 characters), for one person. They wear it like any other title.</p>' +
-    '<div class="prow"><input id="pa-ctext" maxlength="24" placeholder="e.g. Pizza Lord" autocomplete="off"><button class="pb" data-padm="custom">Give custom title</button></div>' +
-    '<h4>Give goons</h4><div class="prow"><input id="pa-n" type="number" min="-100" max="500" value="5" style="width:90px"><button class="pb" data-padm="goons">Give goons</button></div>' +
-    '<h4>Look up an account</h4><p class="pnote">For "I lost everything": their goons, saves and leaderboard places, and any copies the server kept of saves that lost progress (it keeps one per game since r69).</p>' +
-    '<div class="prow"><input id="pa-look" maxlength="40" placeholder="Their exact name" autocomplete="off"><button class="pb" data-padm="look">Look up</button></div><div id="pa-lookout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></div>' +
-    '<h4>Database use</h4><p class="pnote">How much data the database has sent the server since it last started (the free plan allows 5 GB a month, about 7 MB an hour).</p>' +
-    '<div class="prow"><button class="pb" data-padm="dbout">Check now</button></div><pre id="pa-dbout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></pre></div>';
-}
+function profAdmin(c) { return paRender(c); }      // (the admin tools live in 098-admin.js)
 // developers only: a picture of their own (squeezed to 96 px)
 function profDevUpload(box) {
   var d = document.createElement('div'); d.className = 'pnote';
@@ -275,15 +265,22 @@ document.addEventListener('click', function (ev) {
     else if (d.pex === 'casino') { var cg = GAMES.filter(function (g) { return g.dir === 'Casino'; })[0]; if (cg) { homeRecent(cg); play(cg); } }
     return;
   }
+  else if (d.pnick) {
+    var nk = prompt('A nickname everyone sees instead of your account name (2 to 24 letters; empty = none). Your account name stays one click away.', ((L.eco.cos([L.me().userId]) || {})[L.me().userId] || {}).nn || '');
+    if (nk === null) return;
+    L.eco.nickSet(nk.trim()).then(function (r) { hubToast(r.ok ? (r.nick ? 'Everyone sees you as ' + r.nick + ' now.' : 'Nickname removed.') : r.err); setTimeout(function () { L.eco.cos([L.me().userId]); setTimeout(profRender, 600); }, 200); });
+    return;
+  }
+  else if (d.padm && paClick(d)) return;
   else if (d.padm === 'rebuild' || d.padm === 'rebuild-go') {
-    var rn = (document.getElementById('pa-look').value || '').trim(), ro = document.getElementById('pa-lookout');
+    var rn = paName(), ro = document.getElementById('pa-lookout');
     if (!PROF.look || PROF.look.name.toLowerCase() !== rn.toLowerCase()) { hubToast('Look them up first.'); return; }
     if (d.padm === 'rebuild-go' && !confirm('Write the rebuilt saves into ' + PROF.look.name + "'s account?")) return;
     rbRun(rn, PROF.look, ro, d.padm === 'rebuild-go');
     return;
   }
   else if (d.padm === 'look' || d.padm === 'restore') {
-    var ln = (document.getElementById('pa-look').value || '').trim(), lo = document.getElementById('pa-lookout'); if (!ln) { hubToast('Type their name first.'); return; }
+    var ln = paName(), lo = document.getElementById('pa-lookout'); PA.name = ln; if (!ln) { hubToast('Type their name first.'); return; }
     if (d.padm === 'restore' && !confirm('Put back every kept copy for ' + ln + '? Their current saves of those games are replaced (each one had less progress).')) return;
     lo.textContent = 'Asking...';
     var show = function (r) {
@@ -310,7 +307,7 @@ document.addEventListener('click', function (ev) {
     return;
   }
   else if (d.padm) {
-    var nm = (document.getElementById('pa-name').value || '').trim(); if (!nm) { hubToast('Type their name first.'); return; }
+    var nm = paName(); if (!nm) { hubToast('Type their name first.'); return; }
     if (d.padm === 'custom') { var ct = (document.getElementById('pa-ctext').value || '').trim(); if (ct.length < 2) { hubToast('Type the title first (2 to 24 characters).'); return; } L.eco.admin('custom', nm, null, 0, ct); hubToast('Gave the title "' + ct + '" to ' + nm + '.'); return; }
     if (d.padm === 'goons') { var n = Math.round(+document.getElementById('pa-n').value || 0); if (!n) return; L.eco.admin('goons', nm, null, n); hubToast('Sent ' + n + ' goons to ' + nm + '.'); return; }
     var t = document.getElementById('pa-title').value, it = profItem(t);
