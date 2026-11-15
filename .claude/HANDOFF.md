@@ -1,5 +1,21 @@
 # Handoff (updated 2026-11-13)
 
+## Admin powers, progress editor, nicknames, tags (r71, 2026-11-15)
+- **Powers** (`ADMIN_PERMS` in grapevine `020`): reports, moderate, ban, announce, inspect, peek, rooms, titles, goons,
+  accounts, progress, leaderboards, shop, dbuse, admins. The owner (`isFounder`) has all; each admin has a list in the save
+  store (`~perm` / `map`); an admin with no list keeps the old "everything but admins". Check with `adminCan(uid, power)`
+  (cached 30 s, cleared on change), never `isAdmin` for a power. `isDev` = the `shop` power. Handler `permsAdmin`.
+  The eco view carries `perms` and `owner`; the launcher's Admin tools (`098-admin.js`, `paRender`) only draw what you may use.
+- **Progress editor**: `savesAdminGet` (no keys = the list) / `savesAdminPut` (keeps the replaced copy under `~pre:<user>`,
+  `freeze` = board prefixes to keep off the leaderboards, then nudges the player's launcher to sync: `savesNudge`).
+- **Leaderboard freeze** (`lbMeta.freeze[uid][prefix]`, `lbFrozen`, handler `lbAdmin` freeze/unfreeze/remove): a frozen
+  player keeps their places; their game's numbers stop counting until unfrozen.
+- **Nicknames** (`nickSet`, `profile.nick`, cos `nn`): any words, other people's names too; the account name shows on hover
+  and on the profile card. **Tags** (`tagSet`, `profile.tags`, cos `tg`): Owner/Admin, re-checked by `tagsOf` every time,
+  so a nickname can never fake one. Shown in chat (`roleTagsHtml`), the launcher (`cosRoles`, `lbWho`). Games still use
+  account names in their own multiplayer.
+- Suite: `gv-admin.mjs` (22 checks).
+
 ## Database egress (r68, 2026-11-13): the free plan's 5 GB a month was used three times over
 Supabase counts every byte the database SENDS (to our one Grapevine server) as egress. Measured with `tools/tests/gv-egress.mjs`
 (5 players, saves, chat, profiles; `bash tools/rig/test.sh gv-egress`): 280 KB per player-minute before, about 12 after.
