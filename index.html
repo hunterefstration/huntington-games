@@ -654,7 +654,23 @@ html.gdense .game .galt { margin-top: 6px; padding: 2px 8px; font-size: 11px; }
 <div id="netbar" hidden></div>
 <div id="reportdlg" hidden></div>
 <div id="gpeek" hidden></div>
-<script>// ---- bans: a banned device is shut out of the whole launcher (games, chat, accounts), the moment it loads ----------------
+<script>// ---- small shared helpers (used by the pieces after this one) -------------------------------------------------------
+// hubShown(): the launcher page itself is on screen (tab showing, no game over it). A timer that only repaints the hub, or
+// asks the server for something only the hub shows, skips its work otherwise and registers with hubWake(f) to run as soon
+// as the hub is back (tab shown again, game closed).
+function hubShown() { return !document.hidden && !document.documentElement.classList.contains('playing'); }
+var HUB_WAKE = [];
+function hubWake(f) { HUB_WAKE.push(f); }
+(function () {
+  var was = hubShown();
+  function check() { var now = hubShown(); if (now && !was) HUB_WAKE.forEach(function (f) { try { f(); } catch (e) {} }); was = now; }
+  document.addEventListener('visibilitychange', check);
+  new MutationObserver(check).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+})();
+// setHtml(el, html): write innerHTML only when it changed, so a repaint timer does not re-parse the same markup, reload its
+// pictures or drop hover/focus every few seconds. Only for elements whose markup is always written through setHtml.
+function setHtml(el, html) { if (el && el.hgHtml !== html) { el.hgHtml = html; el.innerHTML = html; } }
+// ---- bans: a banned device is shut out of the whole launcher (games, chat, accounts), the moment it loads ----------------
 // The server bans an account together with every device it ever signed in on (any ban, since 2026-11-04). Here:
 // 1. a ban this device already knows about ('hgv:ban') locks the launcher before anything else runs, even offline;
 // 2. as soon as Grapevine's code is in, we ask the server about this device (account or not) and lock, or unlock if it
@@ -1498,6 +1514,11 @@ function startChat() {
     frm.srcdoc = html;
   }, function (e) { chatLoaded = false; frm.srcdoc = '<body style="font:14px sans-serif;background:#0b0b0d;color:#e5484d;padding:30px">' + String(e.message).replace(/</g, '&lt;') + '</body>'; });
 }
+// The app starts in the background and focuses its message box once signed in. While its tab is not showing, take the focus
+// back, or every key pressed on the Games page (and "/" for search) goes into a hidden chat.
+window.addEventListener('blur', function () {
+  setTimeout(function () { var f = document.getElementById('gvapp'); if (document.activeElement === f && document.getElementById('view-chat').hidden) { f.blur(); window.focus(); } }, 0);
+});
 function showTab(which) {
   if (guestMode && which !== 'games' && which !== 'mp') { guestMode = false; onGvChange(); return; }   // those need an account: show the sign-in screen again
   var chat = which === 'chat';
@@ -1523,6 +1544,7 @@ function showTab(which) {
 }
 // What the full app is showing, carried to the launcher: unread chats and friend requests as a badge on its tab.
 setInterval(function () {
+  if (document.hidden) return;
   var t = document.getElementById('tab-chat'), L = window.HGGrapevine, n = 0;
   try { var m = /^\((\d+)\)/.exec(document.getElementById('gvapp').contentDocument.title || ''); if (m) n = +m[1]; } catch (e) {}
   if (L && L.me()) n += L.friends().incoming.length;
@@ -2699,7 +2721,7 @@ function dockPaint(scroll) {
 function dockBadge() {
   var api = chatApi(), b = document.getElementById('dk-btn'); if (!b) return;
   var n = 0; if (api) api.convs().forEach(function (c) { if (!(DOCK.open && c.id === DOCK.cur)) n += c.unread || 0; });
-  b.innerHTML = '💬 Chat' + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '');
+  setHtml(b, '💬 Chat' + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : ''));
 }
 function dockSend(text) {
   var api = chatApi(), inp = document.getElementById('dk-in'); text = String(text == null ? inp.value : text).trim();
@@ -2832,22 +2854,22 @@ setInterval(partyActivity, 60000);
 function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }
 function partyJoin(game, code) { if (game === 'hub') { showTab('mp'); document.getElementById('mp-code').value = code; mpGo(); } else joinInvite(game, code); }
 function partyPaint() {
-  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden) return;
+  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden || !hubShown()) return;   // two server asks: only while it shows
   var qk = document.getElementById('mp-quick');
   if (!qk.childElementCount) qk.innerHTML = Object.keys(INVITE_GAMES).map(function (id) { return inviteGame(id) ? '<button class="mp-qm" data-qm="' + id + '">' + profEsc(partyGameName(id)) + '</button>' : ''; }).join('');
-  if (!L || !L.party || !L.online()) { box.innerHTML = '<div class="rdesc">Sign in to see open parties.</div>'; return; }
+  if (!L || !L.party || !L.online()) { setHtml(box, '<div class="rdesc">Sign in to see open parties.</div>'); return; }
   partyNet().then(function (net) {
     L.party.list(net).then(function (m) {
       var row = function (p) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(partyGameName(p.game)) + '</span><span class="mp-ph">' + profEsc(p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span><span class="mp-pn">' + p.n + '/' + p.max + '</span>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + '<button data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div>'; };
       var all = (m.near || []).concat(m.pub || []);
-      box.innerHTML = all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>';
+      setHtml(box, all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>');
       document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public parties)';
     }, function () {});
     L.party.friends().then(function (m) {
       var fr = L.friends().friends, nm = {}; fr.forEach(function (f) { nm[f.userId] = f.name; });
       var fb = document.getElementById('mp-friends');
-      fb.innerHTML = (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
-        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>';
+      setHtml(fb, (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
+        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>');
     }, function () {});
   });
 }
@@ -2866,23 +2888,23 @@ document.addEventListener('click', function (e) {
   if (b.dataset.qm) quickMatch(b.dataset.qm);
   else if (b.dataset.pj) { var x = b.dataset.pj.split('|'); partyJoin(x[0], x[1]); }
 });
-setInterval(partyPaint, 10000);
+setInterval(partyPaint, 10000); hubWake(partyPaint);
 document.getElementById('tab-mp').addEventListener('click', function () { setTimeout(partyPaint, 50); });
 
 // ===== The Games page: a hello, and the games you played last one press away =====
 function homeRecent(g) { try { var r = JSON.parse(localStorage.getItem('hgv:recent') || '[]').filter(function (d) { return d !== g.dir; }); r.unshift(g.dir); localStorage.setItem('hgv:recent', JSON.stringify(r.slice(0, 6))); } catch (e) {} homePaint(); }
 function homePaint() {
   var L = window.HGGrapevine, me = L && L.me(), e = L && L.eco && L.eco.state(), h = document.getElementById('hello'), j = document.getElementById('jump');
-  if (!h || !j) return;
+  if (!h || !j || !hubShown()) return;
   var hr = new Date().getHours(), part = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
-  h.innerHTML = me ? part + ', <b>' + profEsc(me.name) + '</b>.' + (e ? ' You have <b class="hgoons">' + (e.dev ? '∞' : e.goons) + ' goons</b> to spend in your <a href="#" id="hello-prof">Profile</a>.' : '') + ' Pick a game.' : 'Pick a game.';
+  setHtml(h, me ? part + ', <b>' + profEsc(me.name) + '</b>.' + (e ? ' You have <b class="hgoons">' + (e.dev ? '∞' : e.goons) + ' goons</b> to spend in your <a href="#" id="hello-prof">Profile</a>.' : '') + ' Pick a game.' : 'Pick a game.');
   var hp = document.getElementById('hello-prof'); if (hp) hp.onclick = function (ev) { ev.preventDefault(); showTab('prof'); };
   var r = []; try { r = JSON.parse(localStorage.getItem('hgv:recent') || '[]'); } catch (x) {}
   var gs = r.map(function (d) { return GAMES.filter(function (g) { return g.dir === d; })[0]; }).filter(Boolean).slice(0, 4);
-  j.innerHTML = gs.length ? '<div class="jlbl">Jump back in</div>' + gs.map(function (g, i) { return '<button class="jcard" data-jg="' + i + '"><span class="jimg" style="background-image:url(' + (local ? '' : (MIRRORS[0] || '')) + 'hub/' + g.img + '.jpg)"></span><span>' + profEsc(g.name.replace(/ [\d.]+$/, '')) + '</span></button>'; }).join('') : '';
+  setHtml(j, gs.length ? '<div class="jlbl">Jump back in</div>' + gs.map(function (g, i) { return '<button class="jcard" data-jg="' + i + '"><span class="jimg" style="background-image:url(' + (local ? '' : (MIRRORS[0] || '')) + 'hub/' + g.img + '.jpg)"></span><span>' + profEsc(g.name.replace(/ [\d.]+$/, '')) + '</span></button>'; }).join('') : '');
   [].forEach.call(j.querySelectorAll('[data-jg]'), function (b) { b.onclick = function () { play(gs[+b.dataset.jg]); }; });
 }
-setTimeout(homePaint, 500); setInterval(homePaint, 15000);
+setTimeout(homePaint, 500); setInterval(homePaint, 15000); hubWake(homePaint);
 // ===== Quality of life: find a game fast, keep your favourites, see what changed =====
 // On the Games page: a search box ("/" jumps to it), tag chips, a sort order, favourites (the star on a card, kept
 // first), a "Surprise me" button, smaller cards, and under each game how long you have played it and when. In the
@@ -3158,7 +3180,7 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r71', items: [
+var WHATSNEW = { id: 'r72', items: [
   ['Steel Storm 2.1', 'A full rebalance: every vehicle has a job and every tier hits harder. Guided missiles lock on and hit, bots on hard bring better gear, and tanks climb hills without stalling.'],
   ['Nicknames', 'Pick a nickname everyone sees (Profile, the pencil next to your name). Your account name is still there when someone hovers over it.'],
   ['Mayhem Marathon, Sovereign, Neon Dash fixes', 'No more spawning under the map in Tail Grab, no more "InfinityT" money in Sovereign, and impossible Neon Dash scores are gone from the board.'],

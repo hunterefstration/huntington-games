@@ -1,6 +1,16 @@
-# Handoff (updated 2026-11-13)
+# Handoff (updated 2026-11-14)
+Current state and the facts you need to change things. What each round did and why: `.claude/HISTORY.md` (grep it, do not read it all).
 
-## Admin powers, progress editor, nicknames, tags (r71, 2026-11-15)
+## Where things stand
+- Live: **r72** (`latest.json` on `main`). r72: Steel Storm 2.1, admin powers the owner picks, progress editor, nicknames, Owner/Admin tags (section below). r71: cleanup (below). Every game in the launcher is released.
+- r70: admin "Rebuild from leaderboards" (`launcher/js/10-hub/098-rebuild.js`, suite `gv-rebuild`). r69: saves never lost (other-tab
+  guard, mass-delete guard, server copies, admin lookup/restore, device backups; Saves tab "Look for older saves"; suite `gv-recover`).
+- 2026-11-14 cleanup: launcher `001-util.js` (`hubShown`, `hubWake`, `setHtml`): hub repaint/poll timers skip work while a game is open or
+  the tab is hidden and repaint when the hub is back. Removed the old `release.sh prepare/finish` path and Divergent's stale duplicate files.
+- Back up unreleased work to `wip/content-wave` without touching HEAD or `main`:
+  `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
+
+## Admin powers, progress editor, nicknames, tags (r72, 2026-11-15)
 - **Powers** (`ADMIN_PERMS` in grapevine `020`): reports, moderate, ban, announce, inspect, peek, rooms, titles, goons,
   accounts, progress, leaderboards, shop, dbuse, admins. The owner (`isFounder`) has all; each admin has a list in the save
   store (`~perm` / `map`); an admin with no list keeps the old "everything but admins". Check with `adminCan(uid, power)`
@@ -15,373 +25,62 @@
   so a nickname can never fake one. Shown in chat (`roleTagsHtml`), the launcher (`cosRoles`, `lbWho`). Games still use
   account names in their own multiplayer.
 - Suite: `gv-admin.mjs` (22 checks).
+- Steel Storm 2.1 (r72): BALANCE/ORD/RL_K/CHAR/ROLE tables in `Steel Storm/src/js/10-data.js`, missile steering in 40-sim.js, BOT_GEAR (bot gear by difficulty) in 60-match.js.
 
-## Database egress (r68, 2026-11-13): the free plan's 5 GB a month was used three times over
-Supabase counts every byte the database SENDS (to our one Grapevine server) as egress. Measured with `tools/tests/gv-egress.mjs`
-(5 players, saves, chat, profiles; `bash tools/rig/test.sh gv-egress`): 280 KB per player-minute before, about 12 after.
-What it was, and what keeps it down now (all in grapevine `src/archive/`):
-- **Save lists** (the big one): every sync (every 45 s per open launcher) and every saved game re-read the account's whole list
-  of saves. Now kept in memory (`SAVES` in 070, `listOf`), updated on each write, re-read after 10 minutes.
-- **Backstop** (030): re-read every message of the last minute every 3 s. Now reads only their numbers (`fannedSeq`).
-- **Member lists** (030 `memberIds`): every message, read mark and "is typing" read the full member list of #main (= every
-  account). Now asks only about people connected here, kept 30 s; `MEMBER_CHANGE` in q() drops it on any membership change.
-- **Online list** (030 `rosterRows`): every connect/disconnect re-read it once per connected person (grows with the square of
-  people online). Now one shared read, a burst is one push (`pushRosterSoon`).
-- **Profiles** for names (075 `PROF_C`, 5 min), **room member lists** (`snapMembers`, 1 min), **backlogs** on opening a room
-  (`BACKC`, topped up by new messages in `backlogNote`, dropped by edits/deletes/reactions and `MSG_CHANGE` in q()).
-- Notifications to other archives are skipped while no other archive has anyone on it (`archCheck`).
-- **Meter**: q() weighs every answer (`dbWeigh`, `dbOutTop`); the status line prints MB/h every 5 minutes; admins see it in
-  the launcher (Profile, Admin, "Database use", the `dbOut` request). Rule of thumb: 5 GB a month is about 7 MB an hour.
-Any new query that runs per message, per sync, per connect or on a timer must be weighed against that (run gv-egress).
+## Map
+- **Launcher** = hub `index.html`, built from `launcher/` (shell.html, css/10-style.css, js/10-hub/NNN-*.js joined in name order).
+  010 GAMES list + mirrors; 020 play/close, saves check (`gvBeforePlay`), Grapevine frame; 030 pop-ups over games, invites (`INVITE_GAMES`);
+  040 profile, shop, leaderboards, admin tools; 050 goons/leaderboard feed (reads each game's save); 060 tour; 070 chat dock; 080 music;
+  090 parties; 095 home; 096 games page + QoL (`WHATSNEW`: change its `id` and items every release; `NEW_NOW` features a game);
+  097 loading; 098 game pop-ups, rebuild; 099 reports. A new game needs only its GAMES entry (+ `hub/<img>.jpg`, + `tools/build-release.py` GAMES).
+- **Account layer** `gv/`: `core.js` (connect, save sync, `GAME_KEYS`), `ach.js` (achievements from save keys, one line each), `ui.js`
+  -> `gv/account.js` (`bash tools/build-gv.sh`). `gv/app.html` = Grapevine's client (`bash tools/sync-grapevine.sh`). Games use `parent.HGGrapevine`.
+- **Grapevine** repo (server + client): `src/archive/NNN-*.js` -> `archive.js`, `src/client/` -> `client.html` (`node tools/build.mjs --check`).
+  Server pieces: 030 fan-out, 040 hello (`LITE_OK`), 060/070 saves, 074 catalog, 075 economy + leaderboards, 076 parties, 077 casino
+  (contract `Casino/API.md`), 078 reports. **The server updates itself** from grapevine `main` every ~2 min (`deploy/update.sh`; test changes
+  to it with `bash test/update-test.sh`). Never ask the owner to use a terminal. Migrations run at server start.
+- **Games**: each `<Game>/src/` -> `index.html`. Debug hooks: `__blocky`, `__sov`, `__lumi` (Last Light), `__mayhem`, `__steelstorm`,
+  `__td`, `__fl` (`?debug`), `__tg` (`?debug`), `__clicker`. Per-game tools: Last Light levels are generated (`Last Light/tools/levels.py`,
+  never hand-edit `70-levels.js`); Brown E Clicker numbers in `src/js/10-game/005-balance.js` (`tools/sim.js` re-tests) and prebuilt
+  Tailwind (`tools/tailwind.sh`, must stay after the game's own styles); Element Lab reactions in `data/reactions.tsv`; Sovereign data via
+  `node tools/sovereign-data.js`, systems register with SYSTEM_INITS/DAILY/MONTHLY and `ensureSystems()` keeps old saves working.
+- Divergent Project is the one game outside the build: the launcher loads its self-contained `jsbin.html`.
 
-## Round 8 (r66): Steel Storm 2.0, Mayhem Marathon, Casino, goon shop, reports, games page, Blocky classes
-- **Casino** (`Casino/`, server `grapevine/src/archive/077-casino.js`, contract in `Casino/API.md`): 1 goon = 100 chips, chips live in
-  the `~eco` row (`e.chips`), every outcome is decided on the server. One-shot games, turn games (state in memory, `CAS_T`), and
-  live tables on the server clock (`round = floor(now / cycle)`, outcome = sha256(secret|tag)); pending live stakes are mirrored in
-  `e.casp` so a restart refunds them. The developer-only `sim` op measures each game's return (all between 92% and 99%).
-  The page has a practice mode (`?practice=1`, `js/05-mock.js`) that never talks to the server. Suite: `gv-casino.mjs`.
-  Goons have no real-money value: the page says so on the entrance and in the footer; keep it that way.
-- **Reports** (`078-reports.js`, launcher `099-report.js`, Grapevine client `070-reply-edit.js`): one `report` frame, stored in the
-  server-only save user `~reports` (ring of 300), admins read/close with `reportAdmin`. Buttons: top bar, player bar in every game,
-  the flag on every chat message. Suite: `gv-report.mjs`.
-- **Goon shop**: picture frames (`frame`), sidekicks (`pet`, a friend on the corner of your picture), chat bubbles (`bubble`, a
-  tint behind your messages), crates (`ecoCrate`), gifts to friends (`ecoGift`, 20 a day). Catalog in `074-catalog.js`; launcher
-  `040-profile-shop.js`; Grapevine client `175-profiles-wheel.js` (`facesHtml`, `bubblePaint`, `titleHtml`). Suite: `gv-shop.mjs`.
-  The owner removed name colours and the buyable "Your Own Title" on 2026-11-13 (r67): do not bring them back. Owners were
-  refunded by `removedPrice()` in `ecoGet` (the way to retire any shop item). Admins can still GIVE a custom title (`ecoAdmin custom`).
-- **Titles won by playing** carry `ra: 1` in the catalog (every earned title except the admin-given ones, Day One and the
-  developers-only one). Nobody owns an `ra` title without earning it, admins included (`ownsItem`, `cosOf`, `ecoView`, launcher
-  `profOwns`), and both clients write them in a moving colour (`.gtag.ra` / `.ptag.ra`). The owner asked that this stays out of the patch notes.
-- `tools/rig/db.sh` stops/starts the rig server and reads or plants a wallet row (the rig's saves are in `grapevine.user_saves`).
-- **Games page** (`096-qol.js`: `qolShelves`, `qolHero`, `qolPeek`; `SHELF_OF` maps a tag to a shelf): banner + sideways shelves +
-  compact tiles. A new game only needs its `GAMES` entry with sensible tags; add it to `NEW_NOW` to feature it.
-- **Mayhem Marathon** (new, HGNet id `mayhem`, up to 16, save `mayhem_save`, boards `mayhem:crowns`, `mayhem:qualified`,
-  hook `window.__mayhem`). **Steel Storm 2.0** (save v1 -> v2 in place, 69 vehicles, 4 modes, host migration, hook `window.__steelstorm`;
-  mode keys are `tdm|conq|ctf|ffa`).
-- **Blocky Shooter 5.4** (class rework, `02-ranks-classes-prestige.js` and friends): 8 classes, each with a permanent level (cap 30),
-  a 15-node tree and two either/or specialisations, all inside `blocky21_life` (`life.cls[k]` gains `xp`, `tree`, `spec`;
-  `life.clsV` marks the one-time migration; `life.clsTotal` feeds the board `blocky:classes`). Upgrading happens only on the
-  Classes screen; the in-run cash tree is gone. PvP and tournaments play every class at the level-1 baseline. Tree bonuses are
-  capped (+10% damage, +30 HP, -25% cooldown...). Tests without the rig: `tools/tests/blocky-classes-migrate.mjs`, `blocky-classes.mjs`.
-  Not tested in play: most specialisations, bots' class effects, the Elite mid-wave switch.
-- The casino page has its own suite with two real players: `gv-casino-ui.mjs` (4 min; the pot is drawn every 2 minutes).
-- New server reply types this round (all in `LITE_OK`): `casino`, `casinoEv`, `report`, `reports`, `lbAck`. No SQL to run.
+## Rules that matter
+- **Saves**: only keys matching `GAME_KEYS` sync. Sync is a three-way merge (`meta[k].b` base hash; both changed -> more progress wins,
+  `saveScore`); the server refuses a put with clearly less progress unless `base` matches (`saveLess`). Nothing is written to localStorage
+  while a game is open, and a game never starts before this visit's first sync (`gvBeforePlay`): it would overwrite the account's save.
+  `roomForSaves()` keeps ~1 MB of localStorage free (chat caches share the origin).
+- **Rate limits**: launcher traffic classes are `soft`; clients pace bursts (`lbSubmit`/`ecoClaim` 3/s, save rpcs 350 ms apart).
+- **Archive lists** (`CONFIG.archiveIds` in client.html, `archives` in gv/core.js): only servers that run; a dead one costs seconds.
+- **Owner decisions**: goons have no real-money value (casino says so; keep it). No name colours or buyable custom titles (retire shop items
+  with `removedPrice()`). Earned (`ra`) titles cannot be given, not even to admins; keep them out of patch notes. Real world leaders in Sovereign.
 
-## Round 7 (r65): leaderboards, loading, QoL, tooling
-- **Leaderboards** (server `075-economy.js`, launcher `050-goons-feed.js`, test `tools/tests/gv-lb.mjs`):
-  - What was broken: Brown E Clicker sent the current balance, not `life.earned`; the server refused scores over 1e15;
-    Tetris read fields that do not exist (its bests are `best[mode][0].s`); Market "net worth" took the bigger of net
-    worth and life score; a submit the server dropped was remembered as sent for ever (per device, not per account);
-    an open board never refreshed.
-  - Now: one `lbBatch` frame with every board, answered by `lbAck` (what the server holds); sent-memory is per account
-    and per visit; `lbLeave` (auto-clicker strikes), `lbDrop` on ban and `ecoAdmin op lbRemove`; per-board `max`.
-  - New boards: tetris:floor, tetris:sprint, market:score, td:best, steel:wins, steel:kills, clicker:asc, clicker:rb.
-    `market:worth` was cleared once (`lbMeta.r65`).
-- **Loading** (launcher 010/020/097, test `tools/tests/load.mjs`): a game copy from an older release is never run (the
-  licence refuses it; it used to be the slow-network fallback); `fetchRepo` races the next mirror after 3.5 s and
-  remembers the winner; `fetchRepoRetry`; the loading screen shows Downloading/Starting and an error with Try again;
-  `prefetchGame` on card hover, for recents first, and during the pre-play save check.
-- **QoL** (`launcher/js/10-hub/096-qol.js`, test `gv-qol.mjs`): search, tag chips, favourites (`hgq:fav`), sort, small
-  cards, Surprise me, play log (`hgq:play`: sec, n, last, ver), Updated badge, player star and Restart, What's new card
-  (`WHATSNEW` in 096: change its `id` and items every release), offline bar, find-a-player on boards.
-  A card can have `alt: { label, go }` (Brown E Clicker's Rebalanced beta sets `brownEClicker_variant = 'rb'`).
-- **Last Light 1.4**: `bodyPush` + a hit grace window in `45-boss.js`/`47-guard.js`; The Gloom's moves per phase are in
-  `GLOOM_PLAN`. Repro/regression script: `/home/user/tmp-tests/ll-gloom.mjs` (not in the repo).
-- **Brown E Clicker** (helper): every number is in `src/js/10-game/005-balance.js` (`BALANCE`, classic defaults + `rb`
-  overrides); the variant is `localStorage brownEClicker_variant = 'rb'` with its own save `brownEClickerSave_rb`.
-  `tools/sim.js` + `tools/BALANCE-REPORT.md` re-test the balance (4 model players). The auto-click guard is
-  `095-autoclick-guard.js` (strikes in `brownEClicker_ac`; 3+ leaves the boards via `lbLeave`).
-  Its Tailwind CSS is prebuilt (`tools/tailwind.sh`) and must stay AFTER the game's own styles in shell.html.
-- **In-game QoL** (helper): focus-loss pauses (Tetris, TD, Market Life, Spikes solo), mute toggles, remembered speeds,
-  minigame lobby rematch/copy code/ready hint. New keys: `huntingtonTetrisMute`, `hgmini_mute`, `hgmini_bots_<id>`.
-- **Sign-out** (gv/core.js): waits for a running sync and a short reconnect, then runs its own sync, before wiping.
-- **Grapevine's battery passes again** (708/0, `tools/rig/gv-battery.sh`): the stale suites were repaired after r65
-  (tests only). Keep it green: run it before any Grapevine release that touches the client or the server's frames.
-- **Tooling**: see CLAUDE.md ("Checking and testing", "Releasing", "Things that have bitten before").
+## Database egress (free plan: 5 GB a month, about 7 MB an hour)
+Supabase bills every byte the database sends to our one server. r68 cut it from ~280 KB to ~12 KB per player-minute by keeping things in
+memory (grapevine `src/archive/`): save lists (`SAVES`/`listOf` in 070, 10 min), message backstop reads only numbers (`fannedSeq`, 030),
+member lists only for people connected here (`memberIds`, 30 s, dropped by `MEMBER_CHANGE`), one shared online-list read per burst
+(`pushRosterSoon`), profiles (`PROF_C`, 5 min), room members (`snapMembers`, 1 min), backlogs (`BACKC`, dropped by `MSG_CHANGE`); other
+archives are notified only while someone is on them (`archCheck`). q() weighs every answer (`dbWeigh`); admins see MB/h in Profile, Admin,
+"Database use". **Any new query per message, per sync, per connect or on a timer must be cached; check with `bash tools/rig/test.sh gv-egress`.**
 
-## Reliability round (r64)
-- **Root cause of "server unreliable"**: the flood ladder. A real player on a new device sent every leaderboard score and achievement claim at once. That got refused frames, then strikes, then "Too much, too fast", then a 10-minute disconnect, and on the third time an automatic permanent ban.
-  - Now the launcher-traffic classes (saves, eco, query) are `soft`: refused, never a strike, never half-rated for new accounts. eco is burst 150 at 5/s, saves burst 40 at 3/s.
-  - Frames of an unknown type no longer count as strikes. A flood on the third strike now means 1 hour away, never a permanent ban, and old `automatic: flooding` bans are deleted at boot.
-  - The client paces `lbSubmit`/`ecoClaim` (3/s) and save rpcs (350 ms apart). Tests: `tools/tests/gv-flood.mjs` (also with `OLD_GV=<old account.js>`) and `gv-merge.mjs`.
-- **Save sync is a three-way merge** (gv/core.js syncRun; `meta[k].b` = the base hash both sides agreed on). If only this device changed a save, push (resets and deletes included). If only the cloud changed it, pull. If both changed it, the copy with more progress wins (`saveScore`: true flags, log of positive numbers, ignoring timestamps and ids); a tie goes to the newest copy.
-  - A deletion travels as an empty value (H0 = sha256('')).
-  - The server refuses a put with clearly less progress unless `base` equals the current hash (`saveLess` in 070-peer.js); the reply's `regress` counts them.
-- **Multiplayer drops**: Blocky waits 75 s (it used to be 12/15 s) and shows RECONNECTING, then resyncs. Frontline re-subscribes after a relay reconnect (it used to go silent) and waits 60 s (it used to be 9 s). The other games use hgnet's 90 s.
-- **Sky Islands "can't move"**: not reproduced in about 1,000 spawns. Fixed: a co-op revive could land inside the zombie cage.
+## Releasing
+1. Grapevine changed? Push its HEAD to its `main` first (the server must be ahead of the launcher).
+2. `HG_TRAILER="<trailer lines>" tools/release.sh ship <N> "<message>"` from the clean work branch (does everything; see the script header).
+   A hotfix that must leave out other work: branch from `origin/main`, cherry-pick, ship from there.
+3. Google Doc `1mldLgaLnYbVsh87x216u8YCePpBOO0OgunbunqaWA08`, Information tab `t.spxklapold80` (Patch Notes `t.2nj6za60e3b8`): replace the
+   two lines under "Latest Release" ("Launcher build rN, released <weekday, Month D, YYYY at H:MM AM/PM> Eastern Time (EDT/EST)." and
+   "Newest update: ...") with `replaceAllText` scoped to that tab. Time:
+   `TZ=America/New_York git log -1 --format=%cd --date=format-local:'%A, %B %-d, %Y at %-I:%M %p %Z' rN`.
+   Other tabs: Terms `t.1e55unjqj026`, Launcher code `t.ji1wotvgzga4`, Setup `t.ppvs6ddwlyfo`.
 
-## Round 5 (r63)
-- **Blocky 5.3 multiplayer**: host-side bots for every PvP mode (`27c-mp-bots.js`); 7 new modes, with their rules in `28d-mp-modes.js` (ffa, gungame, kc, ctf, koth, lts, infect) and one host `mst` state message; tournament spectators are hidden and fly or follow; Tournament Arena rebuilt (`07c-map-tourney.js`); spawn protection, adaptive interpolation (55-260 ms), rejoin keeps stats for 5 min, kill cam. Debug hook: `__blocky.modes`.
-  - The automatic reconnect on 6-digit codes is untested: it needs PeerJS, which can't be reached offline.
-- **Storage**: `grapevine/migrate-v15.sql` (the owner runs it once, then `VACUUM FULL;` on its own). It adds `gv_purge_main` (the daily #main wipe for good) and `gv_tidy(saves)`: deleted messages, old edit versions, leftovers, stale presence, and extra save copies, the last only when the server is on the user_saves table. The server retries the purge hourly and tidies daily.
-- **Last Light 1.3 flawless** (`00-core.js` levelNeeds/flawlessMissing; save v3, `rec.perfect`): a clear counts when it has no hits and gets every star and spark that run, with the lantern found and the talk done (ever). Old saves are grandfathered once at boot. The launcher sends `lumi:flawless`; the achievements are luflaw1, luflaw10 (title Spotless) and luflawall (title Flawless).
+## Tests worth knowing
+- Launcher suites (rig): `gv-lb` (every board), `gv-saves`, `gv-recover`, `gv-rebuild`, `gv-qol`, `gv-shop`, `gv-casino` (+ `gv-casino-ui`,
+  4 min), `gv-report`, `gv-flood`, `gv-merge`, `gv-ban`, `gv-hub`, `gv-invite`, `gv-egress`. No rig: `blocky-classes*.mjs`, `load.mjs`, `smoke.mjs`.
+- Known stale Grapevine failures (old code fails them too): e2e-polish (/help, /shrug, new-account offer x2), e2e-v2 (two image tests).
 
-## Round 4 (r62)
-- **Bans** cover the whole platform. Every admin ban is also a device ban: all devices that ever signed in to the account, kept in `server_bans` as `dev:<id>` rows (noteDevice keeps the last 2000).
-  - Launcher `launcher/js/10-hub/005-ban.js` locks the page at load if `localStorage hgv:ban` is set, then asks the server with a `probe` hello (`gv/core.js banCheck`; server `040-hello...js`). A `banned` event locks it while running.
-  - Test: `tools/tests/gv-ban.mjs`.
-- **Custom titles**: ecoAdmin op `custom` with `text` (id `title:c-<hash>`, kept in `e.ctitles`). The admin tools are in Profile → Admin tools.
-- **Daily check-in**: claim `daily` gives 1 goon, or 3 on every 7th day in a row.
-- **Leaderboards tab** (`#tab-lb`, `lbView` in 040): side game list, board tabs, a level picker for Last Light levels, podium. A single Last Light level gives no tag (tagsNow skips `lumi:lv*`).
-- **Market Life auto-click guard** (`090-buildbiz.js`): ignores untrusted clicks and more than 14 a second; strikes for robot-steady timing; the lock grows with strikes (`marketLife_ac`), and goons from Market Life stop at 3 strikes.
-- **Game pop-ups** (`098-gamepops.js`): turn Grapevine pop-ups off in games, or pick channels (`hgv:gamepops`).
-- **Top bar** is one row again (CSS media queries in `css/10-style.css`).
-- **Minigames** (`Minigames/<Name>/src`, category `cat:'mini'` in the 010 piece, ids `mg-*`): Reaction Duel, Snake Arena, Typing Race, Pong, Connect Four, Tic-Tac-Toe.
-  - The shared lobby is `Minigames/_shared/mg.js` + `mg.css`. Edit them there, then run `bash Minigames/build.sh` (it copies them into each game's src and builds every game).
-  - Rooms use hgnet; bots have ids 100+; the launcher invite and party hooks are built in. The server party regex allows `mg-*`.
-- **Element Lab 2.0**: 302 elements, reactions in `Element Lab/data/reactions.tsv` (631 rows), electricity, nuclear, pipes, humans, 6 save slots, 22 challenges. 1.x saves and codes still load.
-  - The reactor scene's water boils off before it can melt down. Meltdown needs a dry uranium + graphite core.
-
-## The UPDATE wave (released as r57; both repos on `main`)
-- **Launcher** (`launcher/` pieces, build with `node tools/build-game.js . --src launcher --check`):
-  - Tabs: Games, Profile, Multiplayer, Grapevine, Account.
-  - Profile has 4 tabs:
-    - Locker: profile picture, banner and title.
-    - Goon Shop.
-    - Leaderboards: every game; the R1-R5 tiers are top 2/10/25/50 %.
-    - Earn.
-  - One tour engine, `060-tour.js`. Grapevine's tutorial hands off to it via `parent.HG_tour`.
-  - Chat dock: T or the 💬 button opens it beside the game. It replaced the in-game T box (the New-tab copy still uses that box).
-  - Music: original tracks. "Tidal Wave" itself is copyrighted, so "Tidal" is an original stand-in.
-  - Multiplayer tab: Quick Match, friends playing, and open parties (same Wi-Fi via a STUN hash, or public).
-  - `INVITE_GAMES` (030 piece) lists the games that take invites and parties: blocky, frontline, imposter, lumi, spikes, sovereign, warpvp.
-  - A game joins the system with these hooks: `window.__hgJoin(code)`, `window.__hgHost(convId)`, `parent.HG_takeJoin(gid)`, `parent.HG_takeHost(gid)`, `parent.HG_partyOpen({...})` every 30 s, `parent.HG_partyClose(code)`.
-- **Goons** (server `grapevine/src/archive/075-economy.js`, catalog `074-catalog.js`):
-  - The server checks every claim.
-  - Developers (admins) get unlimited goons and the "kim jong goon" title, and are left off the goons board.
-  - "Tomato" is admin-only: give it with ecoAdmin `give`.
-  - The first account on a fresh test rig is its owner, so it is a developer (tests make an owner account first).
-- **Grapevine**:
-  - The n-word spins the wheel (1/5 permanent ban) instead of being masked. Set `GV_WHEEL=n` in tests to force the segment.
-  - Also new: about 430 emojis, nicknames only you see, leave or close a chat, custom countdowns up to 7 days, and profile pictures and titles in chat.
-  - Mentions and DMs always get past the 4 s notification limit.
-- **Games**:
-  - Last Light 1.1: One Life, Play together (`48-mp.js`: race and co-op, push and shove on F), and leaderboards.
-  - Spikes 2.2: multiplayer race and co-op with bots (`078-multiplayer.js`; bots plan with the game's own sim snapshot), music and themes (`075-themes-music.js`), and more roasts.
-  - Sovereign 1.3:
-    - Annex or half-annex in the surrender terms.
-    - Simulator (`80-sim-mode.js`; `pIdx()` is -1 while the AI runs everything).
-    - General War (`81-general.js`).
-    - Online (`82-online.js`; `isHuman(idx)`; the host runs wars between players and the clock).
-  - Blocky 5.2: tournaments plus the `tourney` map, new models, skins and avatars from goons, gamer tags, leaderboard, and gentler flashes.
-  - Neon Dash 2.1: World leaderboard.
-  - New games: Imposter, Element Lab, Steel Storm (War PVP).
-- Tests:
-  - Launcher: `tools/tests/gv*.mjs`. Run `bash /home/user/tmp-tests/rigreset.sh` before each one, or the signup limit trips.
-  - Grapevine: `test/e2e-eco.mjs`, `e2e-cos-ui.mjs` and the others.
-
-## Older notes (2026-10-24)
-
-## Where things stand
-- Live: **r46** or newer (check `latest.json` on `main`). r40 added in-game pop-ups and chat on T; r41 fixed game-save sync. r39 made the whole launcher wear
-  Grapevine's theme; r37 made Grapevine the launcher; r36/r38 shipped Sovereign. Everything above is on **`main`** in both repos (huntington-games and grapevine).
-  Anyone (including other bots) can branch from `main`, change things and release; there are no private branches holding released work any more.
-- Unreleased content updates live on branch **`wip/content-wave`** (not on `main`). Restore them into a checkout of `main` with:
-  `git fetch origin wip/content-wave && git checkout origin/wip/content-wave -- "Blocky Shooter V2" "Tower Defense 2.0" Frontline Tetris "Coffee Shop NEW" "Brown E Clicker" "Market Life 1.9" "50 Levels Of Spikes 1.2" src/hgnet.js src/hgnet-test.html src/hgnet-README.md`
-  then `git reset -q` so nothing is staged. Do not commit these to `main` until each game passes its play-test.
-- Back up work in progress (leaves HEAD and `main` alone):
-  `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
-
-| Game | Version | Built | Left to do |
-|---|---|---|---|
-| Frontline | 3.0 | Iron Legion faction, navy + 5 maps, night/weather, General perks | play-test + fix |
-| Tetris | 2.0 | ranks, perks, bosses, daily, achievements, 70 puzzles, themes, tutorial | play-test + fix |
-| Coffee Shop NEW (Bean & Brew) | 2.0 | cities, recipes, staff skills, events, franchises, seasons, story, latte art | play-test + fix |
-| Tower Defense 2.0 | 3.0 | heroes, 18 towers, alien era, 12 maps, stars, bosses, daily, map editor | play-test found issues; fix + re-test |
-| Blocky Shooter V2 | 4.0 | released in r35 (classes, new weapons, Mall + Military Base, challenges, prestige) plus Grapevine names/friends on `main`; the wip copy is OLDER, do not restore it | source split into `Blocky Shooter V2/src/` (see below); next: the big update |
-| Brown E Clicker | 2.0 | 24 buildings, 287 upgrades, golden E, 126 achievements, offline earnings | chunk "Ascension 2.0...", then play-test |
-| Market Life 1.9 (Market & Life) | 2.0 | life sim: education, careers, housing, cars, health, family, retirement | chunk "Market and business depth", then play-test |
-| 50 Levels Of Spikes 1.2 | 2.0 | released in r33 (the wip copy matches) | nothing |
-
-Plan: run ONE game at a time with the `game-finish` workflow, release it (`tools/release.sh`), update the doc, repeat.
-
-## Running a game through `game-finish`
-`Workflow({name: 'game-finish', args: {chains: [ <one entry below> ]}})`. Entries with `chunks: []` only play-test and fix.
-```
-{"slug":"frontline","title":"Frontline: Command (3D RTS, three.js; debug via ?debug -> window.__fl)","dir":"Frontline","port":8803,"version":"3.0","claims":["Iron Legion faction (24 units, shields, upgrades, AI commander Kael, online faction pick NETV=2)","5 new maps incl. 2 coastal with Shipyard, Gunboat, Landing Craft, Destroyer and naval AI","Night battles and rain/fog/snow weather options","General perk tree (18 perks, 3 branches), off online","What's New 3.0 screen, new achievements, Field Guide/lore"],"chunks":[]}
-{"slug":"tetris","title":"Tetris Surge (canvas; debug via ?debug -> window.__tg)","dir":"Tetris","port":8804,"version":"2.0","claims":["Rank ladder for Surge/Sprint/Ultra/Marathon with promotion animation and Ranks screen","14 new perks, 5 new bosses","Daily challenge with streaks and history","48 achievements page","70-puzzle Puzzle mode with stars, undo and hints","12 block skins, 8 backgrounds, Customize screen","Hold and T-spin tutorial"],"chunks":[]}
-{"slug":"coffee","title":"Bean & Brew Tycoon","dir":"Coffee Shop NEW","port":8805,"version":"2.0","claims":["5 new cities with rent and customer types","Recipe Lab crafting, recipe book, menu specials","Staff levels and skill trees, training","Random events with choices","Franchises with managers and chain overview","Decorations","Seasons and holidays","Story/career chapters","Latte art mini-game"],"chunks":[]}
-{"slug":"td","title":"Tower Defense (2D canvas; debug window.__td)","dir":"Tower Defense 2.0","port":8802,"version":"3.0","claims":["6 heroes with 2 abilities each","18 new towers incl. Alien tab","7 alien enemies and Mothership boss","12 new maps with terrain, map select with stars","Campaign length and boss waves every 10","Daily challenge","Map editor with share codes"],"chunks":[]}
-{"slug":"blocky","title":"Blocky Shooter (3D zombie FPS, three.js; debug window.__blocky)","dir":"Blocky Shooter V2","port":8801,"version":"4.0","claims":["4 classes with X abilities and upgrade trees","Dual Pistols, Katana, Grenade Launcher, Tesla Gun, Railgun"],"chunks":[{"name":"Maps and progression","brief":"Add 2 new maps with the existing map system (working navigation, spawns, lighting): MALL (two floors, stores, stairs/escalators, food court) and MILITARY BASE (hangars, watchtowers, bunkers, fences, helipad). Add CHALLENGES: 3 daily + 3 weekly rotating challenges tracked across runs, saved, with XP/cash rewards and a Challenges panel showing progress and time left. Add PRESTIGE at max rank (rank resets, prestige badge in menu/HUD, small permanent bonus). Update Bestiary/stats/controls pages. Partial work for this chunk may already be in the file."}]}
-{"slug":"clicker","title":"Brown E Clicker (Tailwind UI; debug window.__clicker)","dir":"Brown E Clicker","port":8806,"version":"2.0","claims":["24 new buildings, progressive unlocks, buy x1/x10/x100","287 upgrades incl. tiers and synergies","Golden E with 4 effects and timers","126 achievements, stats page","Offline earnings with welcome-back popup"],"chunks":[{"name":"Ascension 2.0, minigames, events, skins","brief":"Ascending gives Heavenly Chips spent in a PRESTIGE TREE of 30+ permanent upgrades (tree screen). CHALLENGE RUNS (restricted ascensions with permanent rewards). 2 MINIGAMES unlocked by buildings: E-GOODS MARKET (buy low, sell high) and E GARDEN (seeds grow, give buffs, mutations). Timed seasonal EVENTS with special golden E effects, E SKINS/backgrounds unlocked by achievements, a funny NEWS TICKER, settings (reduced effects, number format). First ascension in about 30-60 minutes."}]}
-{"slug":"market","title":"Market & Life (life + stock market sim)","dir":"Market Life 1.9","port":8807,"version":"2.0","claims":["Tabbed UI; character creation; aging to retirement with Life Score summary and Hall of Lives","22 education programs with loans","Careers with promotion ladders","Housing with mortgages, cars, health/happiness, family, random life events"],"chunks":[{"name":"Market and business depth","brief":"30+ stocks across sectors with sector NEWS EVENTS, per-stock price CHARTS, DIVIDENDS, SAVINGS and BONDS with interest, volatile CRYPTO, LIMIT ORDERS, PORTFOLIO screen with P/L. Several business types with employees, upgrades, marketing and monthly reports, plus the existing corporation flow. 20+ ACHIEVEMENTS and a stats page. Keep the economy challenging and saves compatible."}]}
-```
-
-## Releasing a finished game
-1. `sh tools/setup-tools.sh` (once per container).
-2. `tools/release.sh prepare <N> "<game dir>"` (N = newest tag + 1). The first release after r33 also renames the hub to "Launcher".
-3. Edit that game's card in `/home/user/hg-release/index.html` (name with version, `desc` starting "NEW x.y: ...", `tags` with 'New').
-4. `HG_TRAILER="Claude-Session: <session url>" tools/release.sh finish <N> "<Game x.y: summary>"`: runs the 9 licence tests and pushes only if all pass.
-5. Update the doc (below).
-
-## The Google Doc
-ID `1mldLgaLnYbVsh87x216u8YCePpBOO0OgunbunqaWA08`. Tabs: Terms of Service `t.1e55unjqj026`, Launcher (code) `t.ji1wotvgzga4`,
-How to Set Up the Launcher `t.ppvs6ddwlyfo`, Information `t.spxklapold80` (Patch Notes child `t.2nj6za60e3b8`).
-After each release, replace the two lines under "Latest Release" at the top of Information:
-"Launcher build rN, released <weekday, Month D, YYYY at H:MM AM/PM> Eastern Time (EDT/EST)." and "Newest update: ...".
-Get the time with `TZ=America/New_York git log -1 --format=%cd --date=format-local:'%A, %B %-d, %Y at %-I:%M %p %Z' rN`.
-Use `replaceAllText` scoped to the Information tab (cheaper than reading the whole doc). The Docs API cannot rename tabs.
-
-## Multiplayer library (src/hgnet.js, not integrated in any game yet)
-Built, 324 local checks pass. Stress test found, still to fix:
-- BLOCKER: host tab hidden more than 5 minutes (Chrome throttling) makes the room vanish, kicks hidden guests.
-- major: one-way WebRTC failure keeps guest sending into a dead channel for 30 s.
-- minor: phantom join/leave when a guest leaves right after joining; ~10 s recovery after an outage; a spoofed goodbye ends the room; README advice for hidden hosts gives guests ~1 snapshot/s.
-Real cross-network test (two Chromebooks, different states) still needed before games switch to it.
-
-## Grapevine in the launcher + relay (on `main` in both repos; server runs the grapevine repo's `main`)
-- Grapevine's server was reachable only over WebRTC, which school networks block. The fix is in the **grapevine** repo: `relay/` (HGNet over public MQTT relays
-  on 443, end-to-end encrypted, raced against PeerJS) plus PeerJS TURN servers. The server is a $5 Vultr box (Atlanta); hosting guide: grapevine `deploy/DEPLOY.md`;
-  database (Supabase): migrations run by themselves at server start (archive.js `migrate()`).
-  **The server updates itself**: a systemd timer runs grapevine `deploy/update.sh` every 2 minutes; it follows grapevine `main`, restarts
-  only when server files changed, rolls back a version that does not come up, and restarts a hung server. So to change the server:
-  push to grapevine `main`, wait ~3 minutes. Never ask the owner to use a terminal. Machine setup lives in `deploy/provision.sh`
-  (re-applied on every update). Test the updater with `bash test/update-test.sh` before pushing changes to it: if it breaks, nobody
-  can fix the server without a terminal.
-- Direct door: Caddy (auto-HTTPS on `<server IP>.sslip.io`) passes `/gv` to `relay/direct.js`; browsers learn the address from the
-  signed relay key exchange and connect straight there afterwards (~0.3 s instead of seconds), falling back to the relays where blocked.
-  GVLink (`relay/gvlink.js`, copied to `gv/vendor/gvlink.js`) does this by itself; `HGGrapevine.status().via` says 'direct' or 'relay'.
-- Only servers that actually run belong in the archive lists (`CONFIG.archiveIds` in client.html, `archives` in gv/core.js): a missing
-  one costs seconds whenever it is tried.
-- The launcher IS Grapevine (`gv/`, see gv/README.md): an account gates the launcher, the Grapevine tab runs the full app signed in as the same account
-  (`gv/app.html`, copied from grapevine `client.html` with `tools/sync-grapevine.sh`; rebuild `gv/account.js` with `tools/build-gv.sh`; the vendor copies in
-  `gv/vendor/` come from grapevine `relay/`). Games read the account as `parent.HGGrapevine` (or `opener` in the New-tab copy).
-- Game saves sync to the account (`HGGrapevine.sync`, core.js). Rules that matter: only keys matching `GAME_KEYS` travel (add a new game's key prefix there);
-  a device meeting the account for the first time lets the cloud win (old value kept as `hgv:bak:<key>`); nothing is written into localStorage while a game is open;
-  and `index.html` `gvBeforePlay` holds a game back (up to 25 s, with a skip button) until this visit's first sync has finished, because a game reads its save
-  the moment it starts. Do not start a game before that: it would write a fresh save over the account's.
-- In-game pop-ups and chat: `HG_notify` (called by the embedded app's `maybeNotify` and by core 'notify' events for friend requests) draws cards over the game;
-  T opens a chat window (its own small iframe so the game never sees the keys) using `GVEmbed` from grapevine `client.html`. Per-game flags in the GAMES list:
-  `chatShift` (Frontline: Shift+T because T is its tech tree) and `noChat` (the four Neon Dash games).
-- Cards: Neon Dash 2.0 (folder "Levi Dash By Levi 2.0") is the last main game; credits: Levi (Neon Dash, Neon Drift), Robbie (Bean & Brew Classic, original Market & Life).
-- Release: `tools/release.sh prepare` copies only named game folders, so for launcher-only changes do it by hand: `git worktree add --detach /home/user/hg-release origin/main`,
-  merge/copy your work in, `HG_ROOT=/home/user/hg-release HG_TOOLS=/tmp/hg-tools python3 tools/build-release.py N`, write `latest.json` (`{"release":N}`), run
-  `tools/tests/gate.js` and `gate2.js` (env `HG_BUILD=N HG_SECRET=$(cat /tmp/hg-tools/hg_secret.txt) HG_ROOT=... HG_TOOLS=... NODE_PATH=/opt/node22/lib/node_modules`),
-  commit and `git push origin HEAD:main` (an Action tags rN). Run `tools/sync-grapevine.sh` and `tools/build-gv.sh` first so `gv/app.html` matches the server's client.
-- Tests (need the Grapevine rig, grapevine test/README.md): `tools/tests/gv.mjs` (gate, accounts, friends, saves incl. the game-waits-for-saves check, Grapevine tab,
-  cards, new tab), `tools/tests/gv-notify.mjs` (menu buttons, pop-ups, chat on T), `tools/tests/gv-games.mjs blocky|frontline` (run them one at a time).
-- Achievements (`gv/ach.js`, built into gv/account.js): ~72 across all games, worked out from each game's own save keys (no game code needed;
-  add one = one line). Unlocks in 'hgach:v1' (synced), summary sent to the server (`achSet`) and shown on Grapevine profile cards; Account >
-  Achievements lists them and shares one into a chat ("... hg-ach:<game>:<id>" renders as a card). Sovereign writes 'sov.hgach' for its ones.
-- Game invites: launcher API `HG_inviteTargets/HG_sendInvite/HG_takeJoin` (+ `HG_inviteGames/HG_hostInvite/HG_takeHost` for Grapevine's
-  + menu "Invite to a game"); games implement `__hgJoin(code)` / `__hgHost(convId)` (Blocky 28b-mp-lan.js, Frontline). Messages end in
-  "hg-invite:<game>:<code>" and render as Join cards. Test: tools/tests/gv-invite.mjs (also gv-ach.mjs, gv-saves.mjs).
-- Server saves: if the DB role cannot use user_saves (no GRANT / row-level security) archive.js keeps saves in the settings table instead
-  (`SAVES` in archive.js) - nothing to fix by hand.
-- Sovereign 1.2 (src/js/67b-sim-conquest.js): conquest/controlled lands (nation.owner, tribute, unrest, uprisings), weekly fronts
-  (`warWeek`), strikes push fronts (`f.push`), detailed fronts when zoomed in (`drawFronts`, Cam.alt < 0.75), World Domination.
-- Connection speed: Account > Connection shows a step-by-step timeline of the last connection (milliseconds per step); ask a slow user for it.
-## Blocky Shooter V2 source (split 2026-10-24)
-- `Blocky Shooter V2/src/shell.html` (page HTML), `src/css/00-tailwind.css` + `10-game.css`, `src/js/00-imports.js` ... `28-mp-ui.js`
-  (one ES module, joined in name order; files are unindented, `<!--@js indent=8-->` re-indents). Files follow the old section
-  headers: state, ranks/classes/prestige, audio, engine, world, maps, Mall/Base, nav/collision, effects, view models, state machine,
-  input/combat, 4.0 weapons, secondaries/gadgets, class abilities, enemies, waves/damage/XP, challenges, saved run, enemy AI,
-  bosses, pickups/power-ups, physics/render, UI/shop, settings/menu (debug hook `window.__blocky`), multiplayer net/game/UI.
-- `node tools/build-game.js "Blocky Shooter V2" --check` writes `index.html` (keeps the HG block). `release.sh prepare` rebuilds and
-  ships the sources of any game that has `src/shell.html`.
-
-## Blocky Shooter 5.0 (in progress on branch claude/pensive-planck-h9xqbg)
-- Owner asked (2026-10-25): perf + lighting (Chromebook can't hold 60 on LOW), realistic guns, model upgrades, one UI theme
-  (restyle CONTINUE SAVE), new start screen, Campaign (3 chapters), power-ups removed, same-wifi game scan, Grapevine invites. One 5.0 release.
-- Round 1 built (game-finish run 2026-10-25, play-test 60/79 claims OK): all of the above. Still weak / to do: perf only
-  ~10-20% better (draw calls 158->~132, enemy loop makes ~75 KB garbage/frame, LOW p95 17-18 ms at 4x CPU throttle on
-  swiftshader); bosses kept old models; gun hand fit and screen position (overlaps HUD cards) need polish; flat map lighting;
-  new enemies/final boss not in multiplayer; campaign difficulty untuned; wifi scan only tested with a fake transport.
-- Launcher side of invites is in the hub `index.html` (HG_inviteTargets / HG_sendInvite / HG_takeJoin, invite pop-up with JOIN).
-  The hub is NOT copied by `release.sh prepare`: port that block into `$W/index.html` by hand when releasing 5.0.
-
-## Blocky Shooter 5.1 performance (r47, 2026-10-27)
-- Owner: LOW could not hold 45 FPS on a Chromebook with other tabs open; Auto useless; no 50% resolution. Diagnosis: the
-  Chromebook is CPU-bound (dropping to 50% res did not help), so the fixes cut per-frame processor work:
-  zombies draw ONE instanced mesh per type (`ZM` in 16-enemies.js: merged parts + a float texture of part matrices, WebGL2;
-  the old per-part `ZI` sets are the fallback), `scene.matrixWorldAutoUpdate = false` (frame() updates once, before the
-  instances), hidden gun models skip matrix updates, limb pivots hidden from the renderer walk, effect meshes upload only
-  used instances (`instUpload`) and hide when empty (`instFlush`), sky drawn after the world, Lambert gun on Low.
-  With 32 zombies at 5x CPU throttle: 22-25 ms -> 13-15 ms per frame.
-- Resolution: Low 85% (floor 70%); a step down is kept only if FPS rises 7% (`RES` in 23-physics-render.js), else it
-  reverts (CPU-bound). Auto drops a tier when res can't help (between waves, or at once after 6 s under 40) and saves
-  `blocky_autotier_fps` so the next launch only tries a better tier if fights held 58+. FPS overlay shows cpu ms.
-- Probes (not in the repo): CDP `Emulation.setCPUThrottlingRate` 5 + a 480x270 viewport approximates a Chromebook CPU.
-
-## Last Light (new 2D platformer, r49 as "Lumi's Lantern", renamed r51)
-- `Last Light/src/` (shell.html, css/10-ui.css, js/00-core ... 90-main), built with `node tools/build-game.js "Last Light" --check`.
-  Canvas 2D, everything drawn procedurally at screen resolution: terrain auto-tiled into cached 8x8-tile chunks, parallax
-  strips per world, a half-resolution light pass (darkness with light discs stamped out) plus additive glow.
-- Levels are NOT typed: `python3 "Last Light/tools/levels.py"` builds them with helpers (ground/pit/ledge/rect/put) and writes
-  `src/js/70-levels.js`, after a reachability check with each world's moves (world 1 jump; 2 +double; 3 +wall; 4 +dash). Wall
-  climbing needs a shaft (walls 3 tiles apart). `--show 2-3` prints a level with what is reachable.
-- Save key `lumi_save` (cloud-synced: `lumi_` is in GAME_KEYS), 9 achievements in gv/ach.js (`g: 'lumi'`). Debug hook `window.__lumi`
-  (start, key, tick, tp, ability). Real jump: 3.7 tiles up, 5.5 across; double 6.6 up; dash 4.6 across.
-- r51 tuning: the checker also finds TRAPS (places you can reach but not leave for the gate; walks back from the gate over the
-  same moves, never by dropping through a one-way ledge; a nearby pit counts as a way out). `spice()` adds seeded extra
-  enemies. Pits kill at once; death screen `#s-dead` (UI.died/UI.retry, state 'dead'); lifetime stats in `SAVE.d.stats`
-  (ST(key, n)), shown on the title's Stats screen. Hold down to drop through a one-way ledge. Camera look-ahead follows real
-  speed, so turning around does not swing it.
-- r52: guardians (mini bosses) in `src/js/47-guard.js`: `Q` in a level + `def.guard` (moss/shard/bell/cinder); levels.py
-  `arena()` widens each x-4 level by 34 columns (old gate -> lantern, door column w0+1 closes at runtime, gate hidden till
-  freed; a fall resets the fight via guardReset in respawn). Lore in `src/js/65-lore.js`: `r` = memory (levels.py `memory()`
-  places one per level on a high reachable spot; The Gloom drops 5-1's), `SAVE.d.lore`, journal on the title, ending screen
-  after 5-1. Star moths are drawn/called "stars" (kind and save field still `moth(s)`). Splash `#splash` (>= 2 s), iris
-  in/out, stomp hit-stop + squash, spawn beam. levels.py `spice()`/`bats()` add seeded enemies.
-
-## Launcher: Multiplayer tab (hub rooms) + Go live (r49)
-- r54: lore is PEOPLE now, not memory stones: `n` in a level (levels.py `npc()` puts one by a lantern; before a guardian,
-  at the arena door) -> kind 'npc'; art in `src/js/12-people.js` (bram, pip, marta, ilse, hob, orin); words in
-  `src/js/65-lore.js` (CAST, TALKS per level, GUARD_TALK pre/mid/free, GLOOM_TALK pre/mid/end). Dialogue = `UI.talk(lines, done)`
-  (state 'talk', #talk box, typing, jump/E/Enter/click). First meeting starts by itself; E/Enter again. `SAVE.d.talks`.
-  Guardians: 6/5/5/5 hp, extra attacks from phase 2-3 (double hops + rocks, shard showers + bats, double toll, wall bounce
-  + triple spit). The Gloom: 9 hp. Moving ledges: you count as standing on one (rising ledges ate jumps).
-- r53: saves lost on reopen = localStorage FULL (Grapevine's gv:log:* chat cache shares the launcher origin), so game
-  saves failed silently. Launcher `roomForSaves()` keeps ~1 MB free (drops biggest gv:log caches, then hgv:bak backups) at
-  start, every minute and before play; Last Light's SAVE.write also frees chat cache and toasts if it still cannot save.
-  Doors more than one tile wide are one door (`openDoor`): 2-4 needed two keys.
-- In the hub `index.html` ("Multiplayer hub + Go live" block), on HGNet (comes with gv/account.js): HGNet game 'hghub' = rooms
-  for ANY 6-digit code (join, or host if not found); 'hgspec' = Go live streams. One code box tries both at once.
-- Start a game for the room: HG_hostInvite(game, 'hub:<code>'); the game's HG_sendInvite('hub:...') is routed to the room as a
-  Join card. Joins/hosting from invites or rooms skip the save-sync wait (`play(g, true)`).
-- Go live: the game's biggest canvas (`captureStream`) or the tab (`getDisplayMedia`); video by PeerJS calls, and a viewer
-  with no video after 7 s asks for ~3 JPEG frames/s through the relays. Test hooks: window.HG_TEST_RELAYS / HG_TEST_PEER.
-- Test: `tools/tests/gv-hub.mjs`. The hub chat uses the same GUARD block as Grapevine (word filter + spam slowdown).
-
-## Grapevine server changes (2026-10-28)
-- Cloud saves: three stores tried in order (user_saves, settings, conversations kind 'save'); production fell through to the
-  conversations table (RLS on the newer tables). Every conversation query skips kind 'save'.
-- GUARD (archive.js and client.html, identical): the n-word only (names refused/renamed, text masked); spam heat for repeats
-  and very short lines. #main serves nothing older than the last 09:00 UTC reset. `migrate-v14.sql` (owner, optional) deletes
-  the old #main rows for real (gv_purge_main) and turns RLS off.
-
-## Sovereign (grand strategy, released in r36)
-Plan: `deliverables/sovereign-plan.md` (10 chunks, section 15). Owner decided: name Sovereign, REAL world leaders.
-- Source is many files: `Sovereign/src/shell.html`, `src/css/*.css`, `src/js/*.js` (joined in name order into ONE
-  ES module, so top-level names are shared), data in `Sovereign/data/*.json` (embedded as JSON script tags, read with
-  `readData(id)`). `node tools/build-game.js Sovereign --check` writes `Sovereign/index.html` (the only file the Launcher
-  loads; keeps the HG licence block). Always rebuild and commit index.html with source changes.
-- Data: `node tools/sovereign-data.js` (npm packs world-atlas, world-countries, all-the-cities into $HG_TOOLS/sov-src;
-  needs `npm i pbf@3` in $HG_TOOLS).
-- Engine: three.js globe (radius 1), camera = lon/lat/alt with auto tilt, 110m map at boot, 50m built in background,
-  one land mesh with a per-vertex country index + 256x1 colour texture (map modes = `MapModes.add(id, name, c => '#hex')`),
-  2D overlay canvas for labels. Debug: `window.__sov` (`ready`, `detailed`, `info()`, `pick(lon,lat)`, `select(id)`, `flyTo`).
-- Test locally: serve repo on a port, open `/Sovereign/index.html`, route three@0.160.0 as in CLAUDE.md.
-- Chunk 2 done: sim in `src/js/60-62` (state, formulas, time/actions/saves), UI in `70-74`. Effects are measured
-  against each nation's start (`n.base`) so the 2026 data is the starting point; AI nations run the same formulas plus
-  `aiFiscal`. Balance check: run 120 x `__sov.worldMonth(true)` after `__sov.newGame(...)` and look for NaN/extremes.
-  All chunks done (v1.0): 21-life (living map), 63 politics, 64 reaction, 65 elections, 66 diplomacy, 67 war, 68/68b events,
-  69 progress, 75-79 screens. Systems register with SYSTEM_INITS / DAILY / MONTHLY (60-sim-state.js); ensureSystems() fills
-  missing state so old saves keep working. Top-level code in a file may only use names from files that sort before it.
-  Full-game check: start a game, call __sov.nextDay() in a loop and answer any #modal (see the play-through test idea in
-  the plan). Release: `tools/release.sh prepare N Sovereign` now also copies Sovereign/src, data, tools and hub/sovereign.jpg.
-- In the Launcher since r36 (card + `hub/sovereign.jpg`, 'Sovereign' in `tools/build-release.py` GAMES).
-
-## r56 (2026-10-29): performance + every game split into src/
-- Grapevine typing lag: each key re-laid out every visible message (rows were `display:grid; align-items:baseline`,
-  which Chrome cannot cache). Rows are flex now; the box sizes itself (`field-sizing`), drafts save 0.6 s after typing.
-  Measured (busy room, CPU x4, 103 keys): 15.7 s -> 8.7 s, worst key 168 -> 40 ms, long tasks 109 -> 0; full storage
-  13.9 s -> 8.9 s. Probe: /home/user/tmp-tests/gvperf.mjs (FULL=1 fills storage, NOB=1 no live chat, FIX=n experiments).
-- Animated chat backgrounds: no 46px blur on aurora; slow background-position drifts step a few times a second; the
-  rain band moves by transform. Launcher: while a game is open the pages under it are `content-visibility:hidden`
-  (html.playing); the Grapevine app starts in the background when the page is idle (2.5 s + idle), roomForSaves is
-  cheap (300K probe, every 5 min when idle, never reads caches to size them).
-- All games now build from `src/` (CLAUDE.md). Older ones: `tools/split-game.py` + `<!--@inline path-->` in
-  build-game.js; their rebuilt index.html was byte-identical to the original at the split.
-- Known stale Grapevine test failures (same on the old code): e2e-polish (/help, /shrug, new-account offer x2) and
-  e2e-v2 (two image tests).
+## Open
+- Blocky 5.4: most specialisations, bots' class effects and the Elite mid-wave switch were never play-tested. The 6-digit-code automatic
+  reconnect needs PeerJS (not reachable offline) and is untested.
+- Possible next win: minify built files at release (esbuild, whitespace+syntax only) cuts downloads ~13% after gzip, but release commits
+  are fast-forwarded into the work branch, so `tools/check.js` would need to compare un-minified output first.

@@ -52,7 +52,7 @@ function dockPaint(scroll) {
 function dockBadge() {
   var api = chatApi(), b = document.getElementById('dk-btn'); if (!b) return;
   var n = 0; if (api) api.convs().forEach(function (c) { if (!(DOCK.open && c.id === DOCK.cur)) n += c.unread || 0; });
-  b.innerHTML = '💬 Chat' + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '');
+  setHtml(b, '💬 Chat' + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : ''));
 }
 function dockSend(text) {
   var api = chatApi(), inp = document.getElementById('dk-in'); text = String(text == null ? inp.value : text).trim();

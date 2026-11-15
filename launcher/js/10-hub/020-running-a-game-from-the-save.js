@@ -414,6 +414,11 @@ function startChat() {
     frm.srcdoc = html;
   }, function (e) { chatLoaded = false; frm.srcdoc = '<body style="font:14px sans-serif;background:#0b0b0d;color:#e5484d;padding:30px">' + String(e.message).replace(/</g, '&lt;') + '</body>'; });
 }
+// The app starts in the background and focuses its message box once signed in. While its tab is not showing, take the focus
+// back, or every key pressed on the Games page (and "/" for search) goes into a hidden chat.
+window.addEventListener('blur', function () {
+  setTimeout(function () { var f = document.getElementById('gvapp'); if (document.activeElement === f && document.getElementById('view-chat').hidden) { f.blur(); window.focus(); } }, 0);
+});
 function showTab(which) {
   if (guestMode && which !== 'games' && which !== 'mp') { guestMode = false; onGvChange(); return; }   // those need an account: show the sign-in screen again
   var chat = which === 'chat';
@@ -439,6 +444,7 @@ function showTab(which) {
 }
 // What the full app is showing, carried to the launcher: unread chats and friend requests as a badge on its tab.
 setInterval(function () {
+  if (document.hidden) return;
   var t = document.getElementById('tab-chat'), L = window.HGGrapevine, n = 0;
   try { var m = /^\((\d+)\)/.exec(document.getElementById('gvapp').contentDocument.title || ''); if (m) n = +m[1]; } catch (e) {}
   if (L && L.me()) n += L.friends().incoming.length;
