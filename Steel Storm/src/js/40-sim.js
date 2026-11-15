@@ -78,17 +78,37 @@ function canHit(p, e) {
     if (e.dive > .5) return p.k === 'bomb';      // a dived submarine is only touched by torpedoes and depth bombs
     return true;
 }
+// Guided missiles (2.1): true proportional navigation (turn the velocity N times as fast as the line of sight rotates, so the
+// missile flies to where the target will be), a pursuit term while the target is far off the nose (just after launch), a turn-rate
+// limit (accel <= speed * turn), terrain following for anti-tank / anti-ship missiles (they loft a little, then dive) and flares that
+// sometimes spoof heat-seekers. A missile that loses its target self-destructs soon after; every missile has a fixed life.
+const PN_N = 4, FLARE_SPOOF = .45;
 function steerMissile(p, dt) {
+    if (!p.turn) return;
+    const sp = Math.hypot(p.vx, p.vy, p.vz) || 1, ux = p.vx / sp, uy = p.vy / sp, uz = p.vz / sp;
+    let ax = 0, ay = 0, az = 0, R = 1e9;
     const t = p.tg >= 0 ? EN.get(p.tg) : null;
-    if (t && t.alive) {
-        if (t.flareT > 0 && p.fid !== t.flareId) { p.fid = t.flareId; if (Math.random() < .7) { p.tg = -1; return; } }
-        const sp = Math.hypot(p.vx, p.vy, p.vz) || 1, D = Math.hypot(t.x - p.x, t.y - p.y, t.z - p.z), tt = D / sp;
-        let tx = t.x + t.vx * tt - p.x, ty = t.y + (t.def.ln === 'a' ? 0 : 1.2) + t.vy * tt - p.y, tz = t.z + t.vz * tt - p.z; const L = Math.hypot(tx, ty, tz) || 1;
-        const k = Math.min(1, p.turn * dt);
-        let nx = p.vx / sp + (tx / L - p.vx / sp) * k, ny = p.vy / sp + (ty / L - p.vy / sp) * k, nz = p.vz / sp + (tz / L - p.vz / sp) * k; const nl = Math.hypot(nx, ny, nz) || 1;
-        if (p.sea && p.y > 3) ny = Math.min(ny, -.02);
-        p.vx = nx / nl * sp; p.vy = ny / nl * sp; p.vz = nz / nl * sp;
+    if (t && t.alive && t.flareT > 0 && p.fid !== t.flareId) { p.fid = t.flareId; if (p.air && Math.random() < FLARE_SPOOF) { p.tg = -1; p.life = Math.min(p.life, 2); return; } }
+    if (t && t.alive && p.tg >= 0) {
+        const air = t.def.ln === 'a', D0 = Math.hypot(t.x - p.x, t.y - p.y, t.z - p.z);
+        const loft = !air && !p.air && !p.sea ? clamp((D0 - 70) * .07, 0, 10) : 0;
+        const rx = t.x - p.x, ry = t.y + (air ? 0 : t.def.ln === 'n' ? 1.5 : 1.2) + loft - p.y, rz = t.z - p.z, R2 = rx * rx + ry * ry + rz * rz || 1;
+        R = Math.sqrt(R2);
+        const vrx = (t.vx || 0) - p.vx, vry = (t.vy || 0) - p.vy, vrz = (t.vz || 0) - p.vz;
+        const wx = (ry * vrz - rz * vry) / R2, wy = (rz * vrx - rx * vrz) / R2, wz = (rx * vry - ry * vrx) / R2;      // line-of-sight rate
+        const Vc = Math.max(sp * .5, -(rx * vrx + ry * vry + rz * vrz) / R), k = PN_N * Vc / R;
+        ax = k * (wy * rz - wz * ry); ay = k * (wz * rx - wx * rz); az = k * (wx * ry - wy * rx);
+        const cosE = (rx * ux + ry * uy + rz * uz) / R;
+        if (cosE < .95) { const q = sp * p.turn * (cosE < .5 ? 1 : (1 - cosE) * 2); ax += (rx / R - ux * cosE) * q; ay += (ry / R - uy * cosE) * q; az += (rz / R - uz * cosE) * q; }
     }
+    if (!p.air && R > 30) {       // anti-tank / anti-ship: climb over the ground in the way
+        const clr = p.sea ? 1.5 : 2.5;
+        for (const la of [.12, .3, .55]) { const gh = Math.max(GH(p.x + p.vx * la, p.z + p.vz * la), 0) + clr, fy = p.y + p.vy * la; if (fy < gh) ay = Math.max(ay, (gh - fy) / (la * la) * 2.2); }
+    }
+    const al = ax * ux + ay * uy + az * uz; ax -= al * ux; ay -= al * uy; az -= al * uz;      // steering only turns the missile
+    const am = Math.hypot(ax, ay, az), lim = sp * p.turn; if (am > lim) { const f = lim / am; ax *= f; ay *= f; az *= f; }
+    p.vx += ax * dt; p.vy += ay * dt; p.vz += az * dt;
+    const nl = Math.hypot(p.vx, p.vy, p.vz) || 1; p.vx *= sp / nl; p.vy *= sp / nl; p.vz *= sp / nl;
 }
 function updateProjectiles(dt) {
     let vi = 0; const tnow = simTime * 1000;
@@ -352,10 +372,10 @@ function weaponFire(e, slot, c) {
             if (w.k === 'bomb') { y -= 1.2; dir = [0, 0, 0]; }
             if (w.k === 'rocket' || w.k === 'missile') y -= .5;
         } else if (w.k === 'torp') { const a = e.tur + rnd(-1, 1) * .01; dir = [Math.sin(a), 0, Math.cos(a)]; y = -.45; }
-        else if (w.k === 'missile') { dir = dirAt(0); if (d.ln === 'n' && w.sea) dir = [dir[0] * .9, .35, dir[2] * .9]; else if (w.air) dir[1] = Math.max(dir[1], .25); }
+        else if (w.k === 'missile') { dir = dirAt(0); if (d.ln === 'n' && w.sea) dir = [dir[0] * .9, .35, dir[2] * .9]; else if (w.air) dir[1] = Math.max(dir[1], .25); else dir[1] += .06; }
         else dir = dirAt(w.k === 'shell' ? (w.spread || 0.004) : (w.sprd || 0.02));
         const v = w.v || 0, vx = dir[0] * v + vx0, vy = dir[1] * v + vy0, vz = dir[2] * v + vz0;
-        const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep, prox: w.prox || 0, big: !e.ai, tg, turn: w.turn || 0, sea: !!w.sea });
+        const p = addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life, own: e.id, team: e.team, dmg: w.dmg, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep, prox: w.prox || 0, big: !e.ai, tg, turn: w.turn || 0, sea: !!w.sea, air: !!w.air });
         if (!rep) { p.dmg = 0; p.mine = e === ME; p.claim = e === ME && w.k === 'bullet'; if (p.claim) p.dmg = w.dmg; }
         e.nShots = (e.nShots || 0) + 1;
         out.push([+x.toFixed(1), +y.toFixed(1), +z.toFixed(1), +vx.toFixed(1), +vy.toFixed(1), +vz.toFixed(1)]);
@@ -376,7 +396,7 @@ function remoteShot(e, slot, ps, tg, ff, lag) {
     for (const s of ps) {
         let [x, y, z, vx, vy, vz] = s; const t = clamp(ff || 0, 0, .3);
         if (t > 0 && w.k !== 'missile') { x += vx * t; z += vz * t; if (w.k !== 'torp') { y += vy * t - .5 * w.g * t * t; vy -= w.g * t; } }
-        addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life - t, own: e.id, team: e.team, dmg: auth ? w.dmg : 0, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep: auth, lag: auth ? lag || 0 : 0, prox: w.prox || 0, big: !e.isBot, tg: tg === undefined ? -1 : tg, turn: w.turn || 0, sea: !!w.sea });
+        addProj({ x, y, z, vx, vy, vz, g: w.g, life: w.life - t, own: e.id, team: e.team, dmg: auth ? w.dmg : 0, sp: w.sp || 0, pk: w.pierce || 0, k: w.k, slot, rep: auth, lag: auth ? lag || 0 : 0, prox: w.prox || 0, big: !e.isBot, tg: tg === undefined ? -1 : tg, turn: w.turn || 0, sea: !!w.sea, air: !!w.air, air: !!w.air });
     }
     const s = ps[0]; if (!s) return;
     if (w.k === 'shell') { sfx(w.snd || 'cannon', s[0], s[1], s[2]); fxExplosion(s[0], s[1], s[2], e.def.ln === 'n' ? 2.2 : 1.4, true); e.t1 = Math.max(e.t1, .2); }
