@@ -35,23 +35,53 @@ function partyActivity() {
 setInterval(partyActivity, 60000);
 function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }
 function partyJoin(game, code) { if (game === 'hub') { showTab('mp'); document.getElementById('mp-code').value = code; mpGo(); } else joinInvite(game, code); }
+// the Multiplayer tab (2026-11-16): a live header, Quick Play as game cards (with how many open matches each has), "Live
+// now" as cards (friends' games first), and the multiplayer bonus. It asks the server only while the tab is showing.
+function partyThumb(id) { var g = id === 'hub' ? null : inviteGame(id); try { return g && g.img ? glThumb(g) : ''; } catch (e) { return ''; } }
+function partyCard(p, friend) {
+  var t = partyThumb(p.game), full = Math.min(100, Math.round(100 * p.n / Math.max(1, p.max)));
+  return '<div class="mp-card' + (friend ? ' fr' : '') + '"><div class="mp-cimg"' + (t ? ' style="background-image:url(&quot;' + t + '&quot;)"' : '') + '>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + (friend ? '<span class="mp-frb">friend</span>' : '') + '</div>' +
+    '<div class="mp-cbody"><b>' + profEsc(partyGameName(p.game)) + '</b><span class="mp-ph">' + profEsc(friend ? friend : p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span>' +
+    (p.max ? '<div class="mp-fill"><i style="width:' + full + '%"></i></div><span class="mp-pn">' + p.n + ' / ' + p.max + ' players</span>' : '') +
+    '<button class="mp-join" data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div></div>';
+}
+function partyBonus(b) {
+  var box = document.getElementById('mp-bonus'); if (!box) return;
+  if (!b) { box.innerHTML = '<div class="mp-bring"><i style="--v:0"></i><span>🎁</span></div><div><b>Multiplayer bonus</b><span>Goons for every 10 minutes you play with other people.</span></div>'; return; }
+  var v = b.today >= b.cap ? 1 : b.min / b.every;
+  box.className = 'mp-bonus' + (b.happy ? ' happy' : '') + (b.playing ? ' on' : '');
+  box.innerHTML = '<div class="mp-bring"><i style="--v:' + v.toFixed(2) + '"></i><span>' + (b.happy ? '×2' : '🎁') + '</span></div><div><b>' + (b.happy ? 'Double goons right now!' : 'Multiplayer bonus') + '</b>' +
+    '<span>' + (b.today >= b.cap ? 'All ' + b.cap + ' bonus goons earned today. Back tomorrow!' : (b.playing ? (b.every - b.min) + ' min to +' + b.pay + ' goons' : '+' + b.pay + ' goons every ' + b.every + ' min you play with others')) + '</span>' +
+    '<span class="mp-today">' + b.today + ' / ' + b.cap + ' today</span></div>';
+}
 function partyPaint() {
-  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden || !hubShown()) return;   // two server asks: only while it shows
+  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden || !hubShown()) return;   // server asks: only while it shows
   var qk = document.getElementById('mp-quick');
-  if (!qk.childElementCount) qk.innerHTML = Object.keys(INVITE_GAMES).map(function (id) { return inviteGame(id) ? '<button class="mp-qm" data-qm="' + id + '">' + profEsc(partyGameName(id)) + '</button>' : ''; }).join('');
-  if (!L || !L.party || !L.online()) { setHtml(box, '<div class="rdesc">Sign in to see open parties.</div>'); return; }
+  var paintQuick = function (counts) {
+    setHtml(qk, Object.keys(INVITE_GAMES).map(function (id) {
+      if (!inviteGame(id)) return ''; var t = partyThumb(id), n = (counts || {})[id] || 0;
+      return '<button class="mp-qm" data-qm="' + id + '"><span class="mp-qimg"' + (t ? ' style="background-image:url(&quot;' + t + '&quot;)"' : '') + '></span><b>' + profEsc(partyGameName(id)) + '</b><span class="mp-qn' + (n ? ' live' : '') + '">' + (n ? n + ' open' : 'Start one') + '</span></button>';
+    }).join(''));
+  };
+  if (!qk.childElementCount) paintQuick();
+  if (!L || !L.party || !L.online()) { setHtml(box, '<div class="rdesc">Sign in to see the games people are hosting.</div>'); partyBonus(null); return; }
+  if (!partyPaint.hooked && L.on) { partyPaint.hooked = true; L.on('mpBonus', partyBonus); }
+  partyBonus(L.party.bonus ? L.party.bonus() : null);
   partyNet().then(function (net) {
     L.party.list(net).then(function (m) {
-      var row = function (p) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(partyGameName(p.game)) + '</span><span class="mp-ph">' + profEsc(p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span><span class="mp-pn">' + p.n + '/' + p.max + '</span>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + '<button data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div>'; };
-      var all = (m.near || []).concat(m.pub || []);
-      setHtml(box, all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>');
-      document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public parties)';
+      var all = (m.near || []).concat(m.pub || []), counts = {}, players = 0;
+      all.forEach(function (p) { counts[p.game] = (counts[p.game] || 0) + 1; players += p.n || 0; });
+      paintQuick(counts);
+      setHtml(box, all.length ? all.map(function (p) { return partyCard(p); }).join('') : '<div class="mp-empty"><b>Nobody is hosting right now.</b><span>Be the first: pick a game in Quick Play and others can join you.</span></div>');
+      var live = document.getElementById('mp-live');
+      if (live) live.innerHTML = '<span class="mp-livedot' + (all.length ? ' on' : '') + '"></span>' + (all.length ? all.length + ' open game' + (all.length > 1 ? 's' : '') + ' · ' + players + ' playing' : 'No open games yet. Start one!');
+      document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public games)';
     }, function () {});
     L.party.friends().then(function (m) {
       var fr = L.friends().friends, nm = {}; fr.forEach(function (f) { nm[f.userId] = f.name; });
-      var fb = document.getElementById('mp-friends');
-      setHtml(fb, (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
-        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>');
+      var fb = document.getElementById('mp-friends'), list = (m.list || []).filter(function (a) { return nm[a.uid]; });
+      setHtml(fb, list.map(function (a) { return a.code && a.gid ? partyCard({ game: a.gid, code: a.code, host: nm[a.uid], n: 0, max: 0 }, nm[a.uid] + ' is playing') :
+        '<div class="mp-card fr off"><div class="mp-cimg"><span class="mp-frb">friend</span></div><div class="mp-cbody"><b>' + profEsc(nm[a.uid]) + '</b><span class="mp-ph">playing ' + profEsc(a.game) + '</span></div></div>'; }).join(''));
     }, function () {});
   });
 }

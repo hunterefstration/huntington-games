@@ -429,9 +429,11 @@ function showTab(which) {
   document.getElementById('view-lb').hidden = which !== 'lb';
   if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); if (typeof feedNow === 'function') feedNow(); if (typeof lbRefresh === 'function' && PROF.lbData) lbRefresh(); }, function () {});
   document.getElementById('view-mp').hidden = which !== 'mp';
+  document.getElementById('view-act').hidden = which !== 'act';
+  if (which === 'act' && typeof actRender === 'function') loadGV().then(actRender, function () {});
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
-  ['games', 'prof', 'lb', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  ['games', 'prof', 'lb', 'mp', 'act', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
   if (chat) {
     document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
     if (chatLoaded !== true) loadGV().then(startChat, function () {});

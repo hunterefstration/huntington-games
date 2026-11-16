@@ -512,7 +512,10 @@ const GVLink = (() => {
       case 'permsAdmin': return rpcDone('permsAdmin', m);
       case 'lbAdmin': return rpcDone('lbAdmin', m);
       case 'nickSet': return rpcDone('nickSet', m);
-      case 'mod': return rpcDone('mod', m);
+      case 'smod': return rpcDone('smod', m);
+      case 'mpBonus': st.mpBonus = m; emit('mpBonus', m); return;
+      case 'gchat': emit('gchat', m); return;
+      case 'stats': return rpcDone('stats', m);      // the game chat over a running game (launcher 097-gamechat.js)
       case 'modNotice': case 'modFx': emit(m.type, m); return;      // an admin's warning or mute, or a bonk (the launcher shows them)
       case 'tagSet': return rpcDone('tagSet', m);
       case 'savesNudge': if (st.ready && !sy.running) syncRun().catch(function () {}); return;      // an admin changed this account's saves
@@ -1048,7 +1051,14 @@ const GVLink = (() => {
       close: function (code) { if (st.ready) send({ type: 'partyClose', code: String(code) }); },
       list: function (net, game) { return st.ready ? rpc({ type: 'partyList', net: net || null, game: game || null }, 'parties') : Promise.reject(new Error('Not connected to Grapevine.')); },
       activity: function (game, code, gid) { if (st.ready) send({ type: 'activity', game: game || null, code: code || null, gid: gid || null }); },
-      friends: function () { return st.ready ? rpc({ type: 'friendsActivity' }, 'factivity') : Promise.reject(new Error('Not connected to Grapevine.')); }
+      friends: function () { return st.ready ? rpc({ type: 'friendsActivity' }, 'factivity') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // the Activity page: players per day, most played games, who is playing what right now (Grapevine 082-stats.js)
+      stats: function () { return st.ready ? rpc0({ type: 'statsGet' }, 'stats') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // the game chat (temporary, over a running game): join a room (null leaves) and say something in it
+      chatRoom: function (room) { st.gchatRoom = room || null; if (st.ready) send({ type: 'gchatJoin', room: room || undefined }); },
+      chatSay: function (room, text) { if (!st.ready || !room) return false; text = String(text || '').trim(); if (!text) return false; send({ type: 'gchatSay', room: room, text: text.slice(0, 300) }); return true; },
+      // the multiplayer bonus: ask for it (an 'mpBonus' event answers, and comes by itself every minute while you play with people)
+      bonus: function () { if (st.ready) send({ type: 'mpStatus' }); return st.mpBonus || null; }
     },
     // ---- goons, the shop, profiles on show, leaderboards ----
     eco: {
@@ -1086,7 +1096,7 @@ const GVLink = (() => {
       permsAdmin: function (op, name, perms) { return st.ready ? rpc0({ type: 'permsAdmin', op: op, name: name || null, perms: perms || null }, 'permsAdmin') : Promise.reject(new Error('Not connected to Grapevine.')); },
       lbAdmin: function (op, name, prefix) { return st.ready ? rpc0({ type: 'lbAdmin', op: op, name: String(name || ''), prefix: prefix || null }, 'lbAdmin') : Promise.reject(new Error('Not connected to Grapevine.')); },
       // admins: the moderation tools (op: list, warn, mute, slow, nick, uwu, caps, backwards, mime, pirate, clown, bonk, shame, clear, tempban, ban, unban)
-      mod: function (op, name, o) { o = o || {}; return st.ready ? rpc0({ type: 'mod', op: String(op), name: name ? String(name) : undefined, mins: o.mins, secs: o.secs, text: o.text ? String(o.text) : undefined, announce: !!o.announce }, 'mod') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      mod: function (op, name, o) { o = o || {}; return st.ready ? rpc0({ type: 'smod', op: String(op), name: name ? String(name) : undefined, mins: o.mins, secs: o.secs, text: o.text ? String(o.text) : undefined, announce: !!o.announce }, 'smod') : Promise.reject(new Error('Not connected to Grapevine.')); },
       nickSet: function (nick) { return st.ready ? rpc0({ type: 'nickSet', nick: String(nick || '') }, 'nickSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       tagSet: function (tag, on) { return st.ready ? rpc0({ type: 'tagSet', tag: tag, on: !!on }, 'tagSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },

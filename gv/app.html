@@ -3006,7 +3006,7 @@ function paintSidebarNow(){
   const el = $('#convs'); el.textContent = '';
   const qRaw = ($('#sideBox')?.value || '').trim();
   const q = qRaw.replace(/^#/, '').toLowerCase();
-  const filter = sideGet('filter', 'all'), folded = new Set(sideGet('folded', ['discover'])), more = new Set(sideGet('more', []));
+  const filter = sideGet('filter', 'all'), folded = new Set(sideGet('folded', [])), more = new Set(sideGet('more', []));
   const pins = new Set(sideGet('pins', []));
   // filter chips
   const chips = document.createElement('div'); chips.className = 'schips';
@@ -3049,7 +3049,7 @@ function paintSidebarNow(){
     b.innerHTML = ico + `<span class="nm">${esc(nm)}${c.private || c.kind === 'group' ? '<span class="lock" title="private">🔒</span>' : ''}</span>` +
       (o.kids ? `<span class="twist" title="${o.open ? 'fold' : 'show'} the rooms inside">${o.open ? '▾' : '▸'} ${o.kids}</span>` : '') +
       (un > 0 ? `<span class="un">${un > 99 ? '99+' : un}</span>` : (recentOf(c.id) && !sub ? `<span class="ago">${ago(recentOf(c.id))}</span>` : '')) +
-      (o.ico ? '' : `<span class="pin${pins.has(c.id) ? ' on' : ''}" title="${pins.has(c.id) ? 'unpin' : 'pin to the top'}">📌</span>`);
+      (o.ico ? '' : `<span class="pin${pins.has(c.id) ? ' on' : ''}" title="${pins.has(c.id) ? 'take it off the top' : 'keep it at the top'}">📌</span>`);
     b.onclick = () => { openConv(c.id); clearFind(); sidebar(false); };
     const tw = b.querySelector('.twist');
     if (tw) tw.onclick = e => { e.stopPropagation(); expand.has(c.id) ? expand.delete(c.id) : expand.add(c.id); saveExpand(); paintSidebarNow(); };

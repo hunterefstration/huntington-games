@@ -121,6 +121,7 @@ window.HG_hostInvite = function (game, convId) {
 window.HG_joinInvite = function (game, code) { joinInvite(game, code); };
 function joinInvite(game, code) {
   var g = inviteGame(game); if (!g) return;
+  if (window.PARTY) { PARTY.lastCode = String(code); PARTY.lastGame = game; setTimeout(function () { if (typeof partyActivity === 'function') partyActivity(); }, 9000); }      // (joining counts for the multiplayer bonus too)
   pendingJoin = { game: game, code: code, at: Date.now() };
   // the game is already open (here or in the New-tab copy): hand it the code now
   var wins = [];
@@ -194,6 +195,8 @@ function attachChat(doc, g) {
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || String(e.key).toLowerCase() !== 't' || !!g.chatShift !== !!e.shiftKey) return;
     var t = e.target; if (t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName))) return;
     e.preventDefault(); e.stopPropagation();
+    // a game in the launcher: the game chat over it (097-gamechat.js); a game in its own tab: the chat window
+    try { if (doc === frame.contentDocument && typeof gcOpen === 'function' && gcOpen()) return; } catch (err) {}
     openChatBox(doc, '');
   }, true);
 }

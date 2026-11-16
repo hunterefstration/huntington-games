@@ -552,6 +552,87 @@ html.gdense .game .galt { margin-top: 6px; padding: 2px 8px; font-size: 11px; }
 @keyframes hshame{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
 body.hubbonked{animation:hbonkshake .5s}
 @keyframes hbonkshake{0%,100%{transform:none}20%{transform:translate(-8px,6px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
+
+/* ---- the Multiplayer tab (2026-11-16) ---- */
+#mp-home { max-width: 1100px; margin: 0 auto; padding: 18px 20px 40px; }
+.mp-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.mp-headl h2 { margin: 0; font-size: 30px; letter-spacing: .01em; }
+.mp-live { display: flex; align-items: center; gap: 8px; margin-top: 4px; color: var(--dim); font-size: 14px; }
+.mp-livedot { width: 9px; height: 9px; border-radius: 50%; background: #64748b; }
+.mp-livedot.on { background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,.6); animation: mp-ping 1.6s infinite; }
+@keyframes mp-ping { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.6); } 100% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } }
+.mp-bonus { display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; border-radius: 16px; background: linear-gradient(135deg, rgba(139,92,246,.18), rgba(249,115,22,.14)); border: 1px solid rgba(255,255,255,.1); min-width: 280px; }
+.mp-bonus b { display: block; font-size: 14.5px; } .mp-bonus span { display: block; font-size: 12.5px; color: var(--dim); }
+.mp-bonus .mp-today { margin-top: 2px; font-weight: 700; color: #fdba74; }
+.mp-bonus.happy { background: linear-gradient(135deg, rgba(250,204,21,.25), rgba(249,115,22,.25)); border-color: rgba(250,204,21,.5); animation: mp-glow 2s ease-in-out infinite; }
+@keyframes mp-glow { 50% { box-shadow: 0 0 24px rgba(250,204,21,.35); } }
+.mp-bring { position: relative; width: 50px; height: 50px; flex: none; display: grid; place-items: center; font-size: 20px; font-weight: 900; }
+.mp-bring i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(#f97316 calc(var(--v) * 360deg), rgba(255,255,255,.1) 0); -webkit-mask: radial-gradient(circle, transparent 57%, #000 59%); mask: radial-gradient(circle, transparent 57%, #000 59%); }
+.mp-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+@media (max-width: 820px) { .mp-actions { grid-template-columns: 1fr; } }
+.mp-act { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 18px; background: var(--card, #161b22); border: 1px solid var(--line, #2a3140); }
+.mp-act .mp-ico { font-size: 26px; } .mp-act b { font-size: 17px; } .mp-act > span { color: var(--dim); font-size: 13.5px; }
+.mp-act-quick { background: linear-gradient(135deg, rgba(139,92,246,.22), rgba(20,184,166,.14)); }
+.mp-act .mp-codebox { display: flex; gap: 8px; margin-top: 4px; }
+.mp-act .mp-codebox input { flex: 1; min-width: 0; font: 700 22px var(--mono, monospace); letter-spacing: .2em; text-align: center; padding: 8px; border-radius: 12px; background: var(--raise, #0d1117); border: 1px solid var(--line2, #3b4456); color: var(--text, #fff); }
+.mp-act .mp-codebox button, .mp-hostbtn { padding: 9px 18px; border-radius: 12px; border: 0; background: linear-gradient(90deg, #8b5cf6, #f97316); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.mp-hostbtn { margin-top: auto; align-self: flex-start; }
+.mp-qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.mp-qm { display: flex; flex-direction: column; text-align: left; padding: 0 0 10px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line, #2a3140); background: var(--card, #161b22); color: var(--text, #fff); font: inherit; cursor: pointer; transition: transform .12s, border-color .12s; }
+.mp-qm:hover { transform: translateY(-3px); border-color: #f97316; }
+.mp-qimg { display: block; aspect-ratio: 16 / 9; background: #0d1117 center / cover no-repeat; margin-bottom: 8px; }
+.mp-qm b { padding: 0 10px; font-size: 13.5px; } .mp-qn { padding: 2px 10px 0; font-size: 12px; color: var(--dim); } .mp-qn.live { color: #22c55e; font-weight: 700; }
+.mp-pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.mp-pgrid:empty { display: none; } #mp-friends:not(:empty) { margin-bottom: 12px; }
+.mp-card { display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; background: var(--card, #161b22); border: 1px solid var(--line, #2a3140); }
+.mp-card.fr { border-color: rgba(244,114,182,.5); }
+.mp-cimg { position: relative; aspect-ratio: 16 / 7; background: #0d1117 center / cover no-repeat; }
+.mp-near, .mp-frb { position: absolute; top: 8px; left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(34,197,94,.9); color: #052e16; }
+.mp-frb { left: auto; right: 8px; background: rgba(244,114,182,.95); color: #500724; }
+.mp-cbody { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px 12px; } .mp-cbody b { font-size: 15px; } .mp-ph { font-size: 12.5px; color: var(--dim); }
+.mp-fill { height: 5px; margin-top: 6px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; } .mp-fill i { display: block; height: 100%; background: linear-gradient(90deg, #22c55e, #84cc16); }
+.mp-pn { font-size: 12px; color: var(--dim); }
+.mp-join { margin-top: 8px; padding: 8px; border-radius: 10px; border: 0; background: #22c55e; color: #052e16; font: inherit; font-weight: 800; cursor: pointer; }
+.mp-join:hover { filter: brightness(1.1); }
+.mp-empty { grid-column: 1 / -1; padding: 22px; border-radius: 14px; border: 1px dashed var(--line2, #3b4456); text-align: center; color: var(--dim); } .mp-empty b { display: block; color: var(--text, #fff); margin-bottom: 4px; }
+.mp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } @media (max-width: 820px) { .mp-steps { grid-template-columns: 1fr; } }
+.mp-steps div { padding: 14px; border-radius: 14px; background: var(--card, #161b22); color: var(--dim); font-size: 13.5px; } .mp-steps b { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 8px; border-radius: 50%; background: #8b5cf6; color: #fff; }
+
+/* ---- the game chat over a running game (097-gamechat.js) ---- */
+#gchat { position: absolute; left: 14px; bottom: 14px; z-index: 6; width: min(520px, calc(100% - 28px)); pointer-events: none; font: 600 14px/1.35 var(--sans); }
+#gchat .gc-lines { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.gc-line { max-width: 100%; padding: 3px 9px; border-radius: 6px; background: rgba(0,0,0,.42); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.8); overflow-wrap: anywhere; transition: opacity 1.8s; }
+.gc-line b { margin-right: 6px; } .gc-line b::after { content: ':'; color: rgba(255,255,255,.6); }
+.gc-line.sys { color: #c7d2fe; font-weight: 500; font-style: italic; } .gc-line.err { color: #fca5a5; }
+.gc-line.fade { opacity: 0; }
+#gchat .gc-bar { display: none; align-items: center; gap: 8px; margin-top: 6px; padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.62); backdrop-filter: blur(4px); pointer-events: auto; }
+#gchat.open .gc-bar { display: flex; } #gchat.open .gc-line { background: rgba(0,0,0,.55); }
+.gc-ch { flex: none; padding: 2px 8px; border-radius: 999px; background: rgba(139,92,246,.6); color: #fff; font-size: 11.5px; font-weight: 800; }
+#gchat input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: #fff; font: inherit; }
+.gc-hint { flex: none; font-size: 11px; color: rgba(255,255,255,.5); font-weight: 500; } @media (max-width: 640px) { .gc-hint { display: none; } }
+
+/* ---- the Activity tab (098-activity.js) ---- */
+#act-home { max-width: 1000px; margin: 0 auto; padding: 18px 20px 40px; }
+.act-head h2 { margin: 0 0 2px; font-size: 30px; }
+.act-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; } @media (max-width: 760px) { .act-tiles { grid-template-columns: repeat(2, 1fr); } }
+.act-tile { padding: 16px; border-radius: 16px; background: var(--card, #161b22); border: 1px solid var(--line, #2a3140); }
+.act-tile b { display: block; font-size: 30px; line-height: 1.1; color: var(--text, #fff); } .act-tile span { font-size: 13px; color: var(--dim); } .act-tile em { display: block; font-style: normal; font-size: 11.5px; color: var(--dimmer, #6b7280); }
+.act-card { padding: 16px 18px; margin-bottom: 14px; border-radius: 16px; background: var(--card, #161b22); border: 1px solid var(--line, #2a3140); }
+.act-ct { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; } .act-ct b { font-size: 16px; }
+.act-seg { display: inline-flex; border: 1px solid var(--line2, #3b4456); border-radius: 999px; overflow: hidden; }
+.act-seg button { padding: 4px 12px; border: 0; background: transparent; color: var(--dim); font: inherit; font-size: 12.5px; cursor: pointer; } .act-seg button.on { background: #8b5cf6; color: #fff; }
+.act-row { display: grid; grid-template-columns: 22px minmax(90px, 200px) 1fr 64px; align-items: center; gap: 10px; padding: 4px 0; font-size: 13.5px; }
+.act-pos { color: var(--dimmer, #6b7280); text-align: right; font-variant-numeric: tabular-nums; } .act-gn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.act-track { height: 12px; } .act-track i { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #8b5cf6; }
+.act-val { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+.act-chart { position: relative; } .act-chart svg { display: block; width: 100%; height: 170px; }
+.act-bar path { fill: #8b5cf6; opacity: .85; } .act-bar path.today { fill: #f97316; opacity: 1; } .act-bar:hover path { opacity: 1; }
+.act-axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: var(--dimmer, #6b7280); }
+.act-tip { position: absolute; top: -6px; padding: 5px 9px; border-radius: 8px; background: #0b0f17; border: 1px solid var(--line2, #3b4456); color: var(--text, #fff); font-size: 12px; white-space: nowrap; pointer-events: none; transform: translateY(-100%); }
+.act-now { display: flex; flex-wrap: wrap; gap: 8px; }
+.act-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: var(--raise, #0d1117); border: 1px solid var(--line, #2a3140); font-size: 13px; }
+.act-chip i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; } .act-chip b { color: #22c55e; }
+.act-empty { padding: 14px; color: var(--dim); text-align: center; }
 </style>
 <style>/* The loading screen (2026-11-16). The SAME rules and markup live in loader.html (the code people paste into jsfiddle),
    so the screen is up from the first moment and carries on unchanged into the launcher's own boot screen.
@@ -601,7 +682,7 @@ body.hubbonked{animation:hbonkshake .5s}
 <div id="hub">
   <div id="topbar">
     <h1>HUNTINGTON GAMES</h1>
-    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-lb">Leaderboards</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
+    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-lb">Leaderboards</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-act">Activity</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
     <button id="reportBtn" title="Report a player, a message or a bug to the admins">&#128681; Report</button><button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
   </div>
   <div id="view-games">
@@ -623,19 +704,23 @@ body.hubbonked{animation:hbonkshake .5s}
   <div id="view-gpops" hidden></div>
   <div id="view-prof" hidden></div>
   <div id="view-lb" hidden></div>
+  <div id="view-act" hidden><div id="act-home"><div class="rdesc">Loading...</div></div></div>
   <div id="view-mp" hidden>
     <div id="mp-home">
-      <div class="mp-hero">
-        <h2>Play together</h2>
-        <div class="rdesc">Type <b>any</b> 6-digit code. Everyone who types the same code ends up in the same room, where you can chat and start a game together. A code from a friend's <b>Go live</b> button lets you watch their game.</div>
-        <div class="mp-codebox"><input id="mp-code" inputmode="numeric" maxlength="7" placeholder="123456" autocomplete="off" spellcheck="false"><button id="mp-go">Go</button></div>
-        <div class="mp-row"><button id="mp-new" class="mp-ghost">Make a room for me</button></div>
-        <div id="mp-status" class="rdesc"></div>
+      <div class="mp-head">
+        <div class="mp-headl"><h2>Multiplayer</h2><div id="mp-live" class="mp-live"><span class="mp-livedot"></span>Looking for games...</div></div>
+        <div id="mp-bonus" class="mp-bonus" title="Goons for playing with other people"></div>
       </div>
-      <div class="mp-sec"><div class="mp-lbl">Quick Match</div><div class="rdesc">Jump into an open party (yours to host if there is none).</div><div id="mp-quick"></div></div>
-      <div class="mp-sec"><div class="mp-lbl">Friends playing now</div><div id="mp-friends"></div></div>
-      <div class="mp-sec"><div class="mp-lbl">Open parties <span id="mp-pnote" class="rdesc"></span></div><div id="mp-parties"></div>
-        <label class="mp-pub"><input type="checkbox" id="mp-pub" checked> Let everyone find my parties (people on the same Wi-Fi always can)</label></div>
+      <div class="mp-actions">
+        <div class="mp-act mp-act-quick"><div class="mp-ico">&#9889;</div><b>Quick Play</b><span>Pick a game below. You join an open match, or start one others can join.</span></div>
+        <div class="mp-act"><div class="mp-ico">&#127915;</div><b>Join with a code</b><div class="mp-codebox"><input id="mp-code" inputmode="numeric" maxlength="7" placeholder="123456" autocomplete="off" spellcheck="false"><button id="mp-go">Join</button></div><div id="mp-status" class="rdesc"></div></div>
+        <div class="mp-act"><div class="mp-ico">&#127968;</div><b>Host a room</b><span>Get a code for your friends, chat, and pick a game together.</span><button id="mp-new" class="mp-hostbtn">Make my room</button></div>
+      </div>
+      <div class="mp-sec"><div class="mp-lbl">Quick Play</div><div id="mp-quick" class="mp-qgrid"></div></div>
+      <div class="mp-sec"><div class="mp-lbl">Live now <span id="mp-pnote" class="rdesc"></span></div><div id="mp-friends" class="mp-pgrid"></div><div id="mp-parties" class="mp-pgrid"></div>
+        <label class="mp-pub"><input type="checkbox" id="mp-pub" checked> Let everyone find the games I host (people on the same Wi-Fi always can)</label></div>
+      <div class="mp-sec mp-how"><div class="mp-lbl">How it works</div><div class="mp-steps">
+        <div><b>1</b>Quick Play, a friend's code, or your own room.</div><div><b>2</b>Everyone in the room picks the game together and plays.</div><div><b>3</b>Every 10 minutes you play with other people earns goons, double from 3 to 5 pm.</div></div></div>
     </div>
     <div id="mp-room" hidden>
       <div class="mp-roomtop"><div><div class="mp-lbl">Room</div><div id="mp-roomcode" class="mp-big"></div></div><button id="mp-leave" class="mp-ghost">Leave room</button></div>
@@ -1536,9 +1621,11 @@ function showTab(which) {
   document.getElementById('view-lb').hidden = which !== 'lb';
   if (which === 'lb') loadGV().then(function () { profMount(); lbRender(); if (typeof feedNow === 'function') feedNow(); if (typeof lbRefresh === 'function' && PROF.lbData) lbRefresh(); }, function () {});
   document.getElementById('view-mp').hidden = which !== 'mp';
+  document.getElementById('view-act').hidden = which !== 'act';
+  if (which === 'act' && typeof actRender === 'function') loadGV().then(actRender, function () {});
   document.getElementById('view-chat').hidden = !chat;
   document.body.className = chat ? 'chat' : '';
-  ['games', 'prof', 'lb', 'mp', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
+  ['games', 'prof', 'lb', 'mp', 'act', 'chat', 'acct'].forEach(function (t) { document.getElementById('tab-' + t).className = 'tab' + (which === t ? ' on' : ''); });
   if (chat) {
     document.getElementById('view-chat').style.setProperty('--topbar', Math.ceil(document.getElementById('topbar').getBoundingClientRect().bottom + 1) + 'px');
     if (chatLoaded !== true) loadGV().then(startChat, function () {});
@@ -1692,6 +1779,7 @@ window.HG_hostInvite = function (game, convId) {
 window.HG_joinInvite = function (game, code) { joinInvite(game, code); };
 function joinInvite(game, code) {
   var g = inviteGame(game); if (!g) return;
+  if (window.PARTY) { PARTY.lastCode = String(code); PARTY.lastGame = game; setTimeout(function () { if (typeof partyActivity === 'function') partyActivity(); }, 9000); }      // (joining counts for the multiplayer bonus too)
   pendingJoin = { game: game, code: code, at: Date.now() };
   // the game is already open (here or in the New-tab copy): hand it the code now
   var wins = [];
@@ -1765,6 +1853,8 @@ function attachChat(doc, g) {
     if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || String(e.key).toLowerCase() !== 't' || !!g.chatShift !== !!e.shiftKey) return;
     var t = e.target; if (t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName))) return;
     e.preventDefault(); e.stopPropagation();
+    // a game in the launcher: the game chat over it (097-gamechat.js); a game in its own tab: the chat window
+    try { if (doc === frame.contentDocument && typeof gcOpen === 'function' && gcOpen()) return; } catch (err) {}
     openChatBox(doc, '');
   }, true);
 }
@@ -2860,23 +2950,53 @@ function partyActivity() {
 setInterval(partyActivity, 60000);
 function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }
 function partyJoin(game, code) { if (game === 'hub') { showTab('mp'); document.getElementById('mp-code').value = code; mpGo(); } else joinInvite(game, code); }
+// the Multiplayer tab (2026-11-16): a live header, Quick Play as game cards (with how many open matches each has), "Live
+// now" as cards (friends' games first), and the multiplayer bonus. It asks the server only while the tab is showing.
+function partyThumb(id) { var g = id === 'hub' ? null : inviteGame(id); try { return g && g.img ? glThumb(g) : ''; } catch (e) { return ''; } }
+function partyCard(p, friend) {
+  var t = partyThumb(p.game), full = Math.min(100, Math.round(100 * p.n / Math.max(1, p.max)));
+  return '<div class="mp-card' + (friend ? ' fr' : '') + '"><div class="mp-cimg"' + (t ? ' style="background-image:url(&quot;' + t + '&quot;)"' : '') + '>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + (friend ? '<span class="mp-frb">friend</span>' : '') + '</div>' +
+    '<div class="mp-cbody"><b>' + profEsc(partyGameName(p.game)) + '</b><span class="mp-ph">' + profEsc(friend ? friend : p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span>' +
+    (p.max ? '<div class="mp-fill"><i style="width:' + full + '%"></i></div><span class="mp-pn">' + p.n + ' / ' + p.max + ' players</span>' : '') +
+    '<button class="mp-join" data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div></div>';
+}
+function partyBonus(b) {
+  var box = document.getElementById('mp-bonus'); if (!box) return;
+  if (!b) { box.innerHTML = '<div class="mp-bring"><i style="--v:0"></i><span>🎁</span></div><div><b>Multiplayer bonus</b><span>Goons for every 10 minutes you play with other people.</span></div>'; return; }
+  var v = b.today >= b.cap ? 1 : b.min / b.every;
+  box.className = 'mp-bonus' + (b.happy ? ' happy' : '') + (b.playing ? ' on' : '');
+  box.innerHTML = '<div class="mp-bring"><i style="--v:' + v.toFixed(2) + '"></i><span>' + (b.happy ? '×2' : '🎁') + '</span></div><div><b>' + (b.happy ? 'Double goons right now!' : 'Multiplayer bonus') + '</b>' +
+    '<span>' + (b.today >= b.cap ? 'All ' + b.cap + ' bonus goons earned today. Back tomorrow!' : (b.playing ? (b.every - b.min) + ' min to +' + b.pay + ' goons' : '+' + b.pay + ' goons every ' + b.every + ' min you play with others')) + '</span>' +
+    '<span class="mp-today">' + b.today + ' / ' + b.cap + ' today</span></div>';
+}
 function partyPaint() {
-  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden || !hubShown()) return;   // two server asks: only while it shows
+  var L = window.HGGrapevine, box = document.getElementById('mp-parties'); if (!box || document.getElementById('view-mp').hidden || !hubShown()) return;   // server asks: only while it shows
   var qk = document.getElementById('mp-quick');
-  if (!qk.childElementCount) qk.innerHTML = Object.keys(INVITE_GAMES).map(function (id) { return inviteGame(id) ? '<button class="mp-qm" data-qm="' + id + '">' + profEsc(partyGameName(id)) + '</button>' : ''; }).join('');
-  if (!L || !L.party || !L.online()) { setHtml(box, '<div class="rdesc">Sign in to see open parties.</div>'); return; }
+  var paintQuick = function (counts) {
+    setHtml(qk, Object.keys(INVITE_GAMES).map(function (id) {
+      if (!inviteGame(id)) return ''; var t = partyThumb(id), n = (counts || {})[id] || 0;
+      return '<button class="mp-qm" data-qm="' + id + '"><span class="mp-qimg"' + (t ? ' style="background-image:url(&quot;' + t + '&quot;)"' : '') + '></span><b>' + profEsc(partyGameName(id)) + '</b><span class="mp-qn' + (n ? ' live' : '') + '">' + (n ? n + ' open' : 'Start one') + '</span></button>';
+    }).join(''));
+  };
+  if (!qk.childElementCount) paintQuick();
+  if (!L || !L.party || !L.online()) { setHtml(box, '<div class="rdesc">Sign in to see the games people are hosting.</div>'); partyBonus(null); return; }
+  if (!partyPaint.hooked && L.on) { partyPaint.hooked = true; L.on('mpBonus', partyBonus); }
+  partyBonus(L.party.bonus ? L.party.bonus() : null);
   partyNet().then(function (net) {
     L.party.list(net).then(function (m) {
-      var row = function (p) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(partyGameName(p.game)) + '</span><span class="mp-ph">' + profEsc(p.host) + (p.mode ? ' · ' + profEsc(p.mode) : '') + '</span><span class="mp-pn">' + p.n + '/' + p.max + '</span>' + (p.near ? '<span class="mp-near">same Wi-Fi</span>' : '') + '<button data-pj="' + profEsc(p.game) + '|' + profEsc(p.code) + '">Join</button></div>'; };
-      var all = (m.near || []).concat(m.pub || []);
-      setHtml(box, all.length ? all.map(row).join('') : '<div class="rdesc">No open parties right now. Host one (Quick Match does it for you) and it shows up here.</div>');
-      document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public parties)';
+      var all = (m.near || []).concat(m.pub || []), counts = {}, players = 0;
+      all.forEach(function (p) { counts[p.game] = (counts[p.game] || 0) + 1; players += p.n || 0; });
+      paintQuick(counts);
+      setHtml(box, all.length ? all.map(function (p) { return partyCard(p); }).join('') : '<div class="mp-empty"><b>Nobody is hosting right now.</b><span>Be the first: pick a game in Quick Play and others can join you.</span></div>');
+      var live = document.getElementById('mp-live');
+      if (live) live.innerHTML = '<span class="mp-livedot' + (all.length ? ' on' : '') + '"></span>' + (all.length ? all.length + ' open game' + (all.length > 1 ? 's' : '') + ' · ' + players + ' playing' : 'No open games yet. Start one!');
+      document.getElementById('mp-pnote').textContent = net ? '' : '(could not tell which network you are on: only public games)';
     }, function () {});
     L.party.friends().then(function (m) {
       var fr = L.friends().friends, nm = {}; fr.forEach(function (f) { nm[f.userId] = f.name; });
-      var fb = document.getElementById('mp-friends');
-      setHtml(fb, (m.list || []).length ? m.list.map(function (a) { return '<div class="mp-party"><span class="mp-pg">' + profEsc(nm[a.uid] || 'A friend') + '</span><span class="mp-ph">playing ' + profEsc(a.game) + '</span>' +
-        (a.code && a.gid ? '<button data-pj="' + profEsc(a.gid) + '|' + profEsc(a.code) + '">Join</button>' : '') + '</div>'; }).join('') : '<div class="rdesc">None of your friends are playing right now.</div>');
+      var fb = document.getElementById('mp-friends'), list = (m.list || []).filter(function (a) { return nm[a.uid]; });
+      setHtml(fb, list.map(function (a) { return a.code && a.gid ? partyCard({ game: a.gid, code: a.code, host: nm[a.uid], n: 0, max: 0 }, nm[a.uid] + ' is playing') :
+        '<div class="mp-card fr off"><div class="mp-cimg"><span class="mp-frb">friend</span></div><div class="mp-cbody"><b>' + profEsc(nm[a.uid]) + '</b><span class="mp-ph">playing ' + profEsc(a.game) + '</span></div></div>'; }).join(''));
     }, function () {});
   });
 }
@@ -3224,6 +3344,84 @@ var gn = document.getElementById('gnone'); if (gn) gn.onclick = function (e) { i
   var L = window.HGGrapevine; if (!L || !L.on) return setTimeout(wait, 3000);
   L.on('sync', function (m) { if (m && m.state === 'ok' && !QOL.cur) { try { qolLoad(); qolBar(); qolDecorate(); qolApply(); } catch (e) {} } });
 })();
+
+// ===== Game chat over a running game (2026-11-16), Minecraft style =====
+// While a game is open in the launcher you are in its temporary game chat: the people in your party (the code you host or
+// joined), or else everyone playing the same game. Messages float up in the bottom-left corner over the game and fade
+// after a few seconds. T opens the input line (with the recent lines showing); Enter sends and closes, Esc closes, Tab
+// switches to your Grapevine chats in the dock. Nothing is stored (Grapevine 081-gamechat.js).
+var GC = { room: '', label: '', n: 0, lines: [], open: false, el: null, inp: null, hooked: false, game: null };
+function gcRoomFor(g) {
+  if (!g) return { room: '', label: '' };
+  var gid = Object.keys(INVITE_GAMES).filter(function (k) { return INVITE_GAMES[k] === g.dir; })[0];
+  var nm = String(g.name || g.dir).replace(/ [\d.]+$/, '');
+  if (gid && window.PARTY && PARTY.lastGame === gid && PARTY.lastCode) return { room: 'p:' + gid + ':' + PARTY.lastCode, label: 'Party ' + PARTY.lastCode };
+  return { room: 'g:' + nm.replace(/[^A-Za-z0-9 .&'!:-]/g, '').slice(0, 40), label: 'Everyone in ' + nm };
+}
+function gcEl() {
+  if (GC.el) return GC.el;
+  var d = document.createElement('div'); d.id = 'gchat'; d.hidden = true;
+  d.innerHTML = '<div class="gc-lines"></div><div class="gc-bar"><span class="gc-ch"></span><input maxlength="300" autocomplete="off" spellcheck="false" placeholder="Say something to the players here"><span class="gc-hint">Enter sends · Esc closes · Tab: your chats</span></div>';
+  document.getElementById('player').appendChild(d);
+  GC.el = d; GC.inp = d.querySelector('input');
+  GC.inp.addEventListener('keydown', function (e) {
+    e.stopPropagation();
+    if (e.key === 'Escape') { e.preventDefault(); gcClose(); }
+    else if (e.key === 'Enter') { e.preventDefault(); var t = GC.inp.value.trim(); if (t && GC.room && window.HGGrapevine) window.HGGrapevine.chatSay(GC.room, t); GC.inp.value = ''; gcClose(); }
+    else if (e.key === 'Tab') { e.preventDefault(); gcClose(); if (typeof dockOpen === 'function') dockOpen(''); }
+  });
+  GC.inp.addEventListener('keyup', function (e) { e.stopPropagation(); });
+  return d;
+}
+function gcPaint() {
+  var d = gcEl(), box = d.querySelector('.gc-lines'), now = Date.now();
+  d.hidden = !GC.room;
+  d.classList.toggle('open', GC.open);
+  d.querySelector('.gc-ch').textContent = GC.label + (GC.n > 1 ? ' · ' + GC.n + ' here' : '');
+  var show = GC.lines.filter(function (l) { return GC.open || now - l.at < 9000; }).slice(GC.open ? -12 : -6);
+  box.textContent = '';
+  show.forEach(function (l) {
+    var r = document.createElement('div'); r.className = 'gc-line' + (l.sys ? ' sys' : '') + (l.err ? ' err' : '') + (!GC.open && now - l.at > 7000 ? ' fade' : '');
+    if (l.from) { var b = document.createElement('b'); b.textContent = l.from; b.style.color = gcColor(l.uid || l.from); if (l.real && l.real !== l.from) b.title = l.real; r.appendChild(b); }
+    r.appendChild(document.createTextNode(l.text));
+    box.appendChild(r);
+  });
+}
+function gcColor(k) { var h = 0; for (var i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 360; return 'hsl(' + h + ',85%,72%)'; }
+function gcLine(l) { l.at = Date.now(); GC.lines.push(l); if (GC.lines.length > 60) GC.lines.shift(); gcPaint(); setTimeout(gcPaint, 9200); setTimeout(gcPaint, 7100); }
+function gcOpen() {
+  var L = window.HGGrapevine; if (!L || !L.me || !L.me() || !GC.room) return false;
+  gcEl(); GC.open = true; gcPaint();
+  try { var fd = frame.contentDocument; if (fd && fd.exitPointerLock) fd.exitPointerLock(); } catch (e) {}
+  setTimeout(function () { GC.inp.focus(); }, 0);
+  return true;
+}
+function gcClose() { GC.open = false; gcPaint(); try { frame.focus(); frame.contentWindow.focus(); } catch (e) {} }
+// which room: follows the game that is open (and its party, once the launcher knows the code)
+function gcSync() {
+  var L = window.HGGrapevine; if (!L || !L.chatRoom) return;
+  if (!GC.hooked && L.on) {
+    GC.hooked = true;
+    L.on('gchat', function (m) {
+      if (!m || m.room !== GC.room) return;
+      if (m.n != null && m.text == null && !m.err) { var was = GC.n; GC.n = m.n; if (was && m.n > was) gcLine({ sys: 1, text: 'Someone joined the game chat.' }); else gcPaint(); return; }
+      if (m.err) return gcLine({ err: 1, text: m.err });
+      gcLine({ from: m.from, real: m.real, uid: m.uid, text: m.text });
+    });
+    L.on('status', function (s) { if (s.status === 'online' && GC.room) L.chatRoom(GC.room); });
+  }
+  var g = typeof current !== 'undefined' && current && current.game, want = g && !g.noChat && L.me && L.me() ? gcRoomFor(g) : { room: '', label: '' };
+  if (want.room === GC.room) return;
+  GC.room = want.room; GC.label = want.label; GC.n = 0; GC.lines = []; GC.open = false;
+  L.chatRoom(GC.room || null);
+  if (GC.room) gcLine({ sys: 1, text: 'Press T to chat with the people playing here.' });
+  else gcPaint();
+}
+setInterval(gcSync, 3000);
+(function () { var pn = playNow, cp = closePlayer;
+  playNow = function () { var r = pn.apply(this, arguments); setTimeout(gcSync, 1500); return r; };
+  closePlayer = function () { var r = cp.apply(this, arguments); setTimeout(gcSync, 50); return r; };
+})();
 // ---- loading screens --------------------------------------------------------------------------------------------
 // 1. The launcher's own boot screen (launcher/boot.html + boot.css, the same screen loader.html shows while it downloads
 //    the launcher, so it carries on seamlessly): stays until the hub is ready, then fades away. The very first run ever
@@ -3355,6 +3553,57 @@ window.HG_gameReady = function () { if (GL.armed) glHide(); };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
   setTimeout(function () { if (document.getElementById('boot')) go(); }, 8000);
 })();
+
+// ===== The Activity tab (2026-11-16): how many people play, which games are most played, who is playing what right now =====
+// Everything comes from one server answer (Grapevine 082-stats.js), cached there for 30 s; this page asks again at most
+// every 30 s while it is open.
+var ACT = { data: null, at: 0, span: 'week', timer: 0 };
+function actFmtMin(m) { return m >= 120 ? Math.round(m / 60) + ' h' : m + ' min'; }
+function actDay(d) { var t = new Date(d + 'T12:00:00Z'); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+function actRender() {
+  var box = document.getElementById('act-home'); if (!box) return;
+  var L = window.HGGrapevine;
+  if (!L || !L.stats || !L.online()) { setHtml(box, '<div class="act-empty">Sign in to see the activity.</div>'); return; }
+  clearInterval(ACT.timer); ACT.timer = setInterval(function () { if (document.getElementById('view-act').hidden) return clearInterval(ACT.timer); actRender(); }, 30000);
+  if (ACT.data && Date.now() - ACT.at < 25000) return actPaint();
+  L.stats().then(function (d) { ACT.data = d; ACT.at = Date.now(); actPaint(); }, function () { if (!ACT.data) setHtml(box, '<div class="act-empty">Could not load the activity. Try again in a moment.</div>'); });
+}
+function actPaint() {
+  var d = ACT.data, box = document.getElementById('act-home'); if (!d || !box) return;
+  var today = d.perDay.filter(function (x) { return x.d === d.today; })[0] || { players: 0, minutes: 0, peak: 0 };
+  var tile = function (n, label, sub) { return '<div class="act-tile"><b>' + n + '</b><span>' + label + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</div>'; };
+  var h = '<div class="act-head"><h2>Activity</h2><div class="rdesc">Live numbers from everyone playing Huntington Games.</div></div>' +
+    '<div class="act-tiles">' + tile(d.online, 'online now') + tile(today.players, 'played today') + tile(actFmtMin(today.minutes), 'played today', 'all games together') + tile(today.peak, 'most online at once today') + '</div>';
+  // most played: horizontal bars, one hue, values written at the end of each bar
+  var games = ACT.span === 'week' ? d.week : d.month, top = games.slice(0, 12), max = Math.max(1, top.reduce(function (m, g) { return Math.max(m, g.minutes); }, 0));
+  h += '<div class="act-card"><div class="act-ct"><b>Most played</b><div class="act-seg"><button data-act-span="week" class="' + (ACT.span === 'week' ? 'on' : '') + '">7 days</button><button data-act-span="month" class="' + (ACT.span === 'month' ? 'on' : '') + '">30 days</button></div></div>' +
+    (top.length ? '<div class="act-rank">' + top.map(function (g, i) {
+      return '<div class="act-row" title="' + profEsc(g.name) + ': ' + actFmtMin(g.minutes) + ' played, ' + g.plays + ' player-days"><span class="act-pos">' + (i + 1) + '</span><span class="act-gn">' + profEsc(g.name) + '</span>' +
+        '<span class="act-track"><i style="width:' + Math.max(2, Math.round(100 * g.minutes / max)) + '%"></i></span><span class="act-val">' + actFmtMin(g.minutes) + '</span></div>';
+    }).join('') + '</div>' : '<div class="act-empty">Nothing played yet in this time.</div>') + '</div>';
+  // players per day: vertical bars, hover for the numbers
+  var pd = d.perDay.slice(-30), pmax = Math.max(1, pd.reduce(function (m, x) { return Math.max(m, x.players); }, 0)), W = 640, H = 170, bw = W / Math.max(pd.length, 1);
+  var bars = pd.map(function (x, i) { var hh = Math.max(2, Math.round((H - 24) * x.players / pmax)), bx = i * bw + 1, w = Math.max(2, bw - 2);
+    return '<g class="act-bar" data-tip="' + profEsc(actDay(x.d) + ': ' + x.players + ' players · ' + actFmtMin(x.minutes) + ' played · ' + x.peak + ' online at once') + '"><rect x="' + bx + '" y="0" width="' + w + '" height="' + H + '" fill="transparent"/>' +
+      '<path d="M' + bx + ',' + H + ' V' + (H - hh + 4) + ' q0,-4 4,-4 h' + Math.max(0, w - 8) + ' q4,0 4,4 V' + H + ' Z" class="' + (x.d === d.today ? 'today' : '') + '"/></g>'; }).join('');
+  h += '<div class="act-card"><div class="act-ct"><b>Players per day</b><span class="rdesc">since ' + actDay(d.since) + ' · busiest: ' + pmax + '</span></div>' +
+    (pd.length ? '<div class="act-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Players per day">' + bars + '</svg><div class="act-axis"><span>' + actDay(pd[0].d) + '</span><span>today</span></div><div class="act-tip" hidden></div></div>' : '<div class="act-empty">No days counted yet.</div>') + '</div>';
+  // right now
+  h += '<div class="act-card"><div class="act-ct"><b>Playing right now</b></div>' + (d.playingNow.length ? '<div class="act-now">' + d.playingNow.map(function (g) {
+    return '<span class="act-chip"><i></i>' + profEsc(g.name) + ' <b>' + g.n + '</b></span>'; }).join('') + '</div>' : '<div class="act-empty">Nobody is in a game this minute.</div>') + '</div>';
+  setHtml(box, h);
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('[data-act-span]'); if (!b) return;
+  ACT.span = b.dataset.actSpan; actPaint();
+});
+document.addEventListener('mousemove', function (e) {
+  var g = e.target.closest && e.target.closest('.act-bar'), tip = document.querySelector('#act-home .act-tip'); if (!tip) return;
+  if (!g) { tip.hidden = true; return; }
+  var c = tip.parentNode.getBoundingClientRect(); tip.hidden = false; tip.textContent = g.dataset.tip;
+  tip.style.left = Math.min(c.width - tip.offsetWidth, Math.max(0, e.clientX - c.left - tip.offsetWidth / 2)) + 'px';
+});
+document.getElementById('tab-act').addEventListener('click', function () { showTab('act'); });
 
 // ===== Admin tools (2026-11-15): what you see is what the owner allowed you =====
 // Every admin power is checked by the server (ADMIN_PERMS in Grapevine's 020); this only draws the parts you may use.
