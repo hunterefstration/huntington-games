@@ -275,6 +275,7 @@ function qolPlayerBar() {
 // --- what's new: once after an update, on the Games page ---
 var WHATSNEW = { id: 'r74', items: [
   ['Beat Lab: make your own music', 'A new music studio: a simple song grid for anyone, and a full studio with 250+ instruments, a piano roll, a mixer and effects. Your song can even be your launcher music.'],
+  ['Steel Storm 2.2', 'New menus, a live preview of your vehicle fighting like a pro, a proper multiplayer screen with a party lobby, and you respawn in what you picked.'],
   ['Multiplayer, rebuilt', 'Quick Play, join with a code or host a room, see every open game live, and earn bonus goons for every 10 minutes you play with other people (double from 3 to 5 pm).'],
   ['Chat over your game', 'Press T in a game to talk to the people playing with you, right on screen. Messages float up and fade away.'],
   ['Grapevine, tidied up', 'A new sidebar with filters, folding sections and pins, and official rooms everyone is in: #announcements, #main, #multiplayer-codes, #music and #bugs-and-ideas.'],
