@@ -9,7 +9,7 @@
   const LFO = (tgt, amt, r, x) => Object.assign({ w: 'sine', r: r || 5, tgt, amt, sync: '' }, x || {});
   const syn = (c, n, p) => L.push({ c, n, p: Object.assign({ k: 'syn' }, p) });
   const kit = (c, prefix, list) => list.forEach(([n, d, gain, cg]) => L.push({ c, n: prefix + ' ' + n, p: { k: 'drm', d, gain: gain == null ? 0.8 : gain, cg: cg || 0 } }));
-  const pl = (x) => o('pluck'), ks = (damp, bright, dur, pos) => ({ damp, bright, dur, pos: pos == null ? 0.13 : pos });
+  const ks = (damp, bright, dur, pos) => ({ damp, bright, dur, pos: pos == null ? 0.13 : pos });
 
   // ------------------------------------------------------------------ Keys
   let C = 'Keys';

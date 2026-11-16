@@ -119,7 +119,7 @@ function simpleHit(e) {
 const pcHue = pc => [0, 18, 36, 52, 75, 120, 160, 185, 205, 230, 265, 300][pc];
 function drawSimple(pos) {
   const G = simpleGeom(), { d, cols, rows, cw, rh, laneH } = G;
-  SV.cv.style.width = G.W + 'px';
+  if (SV.cvW !== G.W) { SV.cvW = G.W; SV.cv.style.width = G.W + 'px'; }
   const { g, w, h: H } = fitCanvas(SV.cv);
   g.fillStyle = '#fff'; g.fillRect(0, 0, w, H);
   const mh = H - G.drumH, n = SCALES[d.scale].s.length, now = performance.now();
@@ -145,7 +145,6 @@ function drawSimple(pos) {
   // drum lanes
   g.fillStyle = '#eef1f8'; g.fillRect(0, mh, w, G.drumH);
   g.fillStyle = '#9aa5be'; g.fillRect(0, mh, w, 2);
-  const kit = SIMPLE_KITS.find(k => k.id === d.kit);
   g.font = '600 10px system-ui, sans-serif'; g.fillStyle = '#8a94ad';
   for (let l = 0; l < 4; l++) g.fillText(LANES[l], 4, G.top + l * laneH + 11);
   // hover
@@ -169,6 +168,14 @@ function drawSimple(pos) {
     else if (shapes[l] === 'diamond') { g.moveTo(cx, cy - sz); g.lineTo(cx + sz, cy); g.lineTo(cx, cy + sz); g.lineTo(cx - sz, cy); }
     else g.rect(cx - sz * 0.85, cy - sz * 0.85, sz * 1.7, sz * 1.7);
     g.fill();
+  }
+  if (!d.mel.length && !d.drm.length) {                 // an empty song: say what to do
+    g.textAlign = 'center'; g.fillStyle = 'rgba(91, 91, 247, 0.55)'; g.font = '800 26px system-ui, sans-serif';
+    const cx = Math.min(w, SV.wrap.clientWidth) / 2 + SV.wrap.scrollLeft;
+    g.fillText('Click the squares to make music', cx, mh / 2 - 6);
+    g.font = '600 15px system-ui, sans-serif'; g.fillStyle = 'rgba(80, 90, 120, 0.6)';
+    g.fillText('Top part: the tune. Bottom rows: drums. Then press the big Play button.', cx, mh / 2 + 22);
+    g.textAlign = 'left';
   }
   for (const k in SV.pulse) if (now - SV.pulse[k] > 300) delete SV.pulse[k];
   SV.dirty = Object.keys(SV.pulse).length > 0;

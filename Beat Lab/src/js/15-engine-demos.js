@@ -38,7 +38,6 @@
     return B;
   }
   E.demoBuilder = build;
-  const range = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 
   E.DEMOS = [
     { id: 'lofi', n: 'Lo-fi Study Beats', desc: 'Dusty piano chords, a walking upright bass and a swung boom-bap beat at 82 BPM.', make() {

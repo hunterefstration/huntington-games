@@ -1,5 +1,5 @@
 // ===== Playlist: the arrangement. Pattern clips on tracks, a loop region, song position =====
-const TRH = 40, PRUL = 24;
+const TRH = 40;
 const PL = { pps: 8, sx: 0, tool: 'draw', snap: 'bar', sel: new Set(), drag: null, clip: null };
 function plSnap() { const bar = E.barTicks(A.p) / STEP; return PL.snap === 'bar' ? bar : PL.snap === 'beat' ? 4 * 4 / A.p.sig[1] : 1; }
 function buildPlaylist(root) {

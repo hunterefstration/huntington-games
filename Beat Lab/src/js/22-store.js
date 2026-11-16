@@ -127,7 +127,6 @@ function changed(all) {
   emit('changed', all);
   clearTimeout(saveT); saveT = setTimeout(() => Store.save(A.p), 1200);
 }
-function saveSoon() { clearTimeout(saveT); saveT = setTimeout(() => Store.save(A.p), 1200); }
 function saveNow() { clearTimeout(saveT); return Store.save(A.p); }
 window.addEventListener('pagehide', () => { if (A.p) saveNow(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && A.p) saveNow(); });

@@ -614,7 +614,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     c.lfoTgt = lfo ? lfo.tgt : 'off';
   };
   P._syncChannels = function () {
-    const p = this.proj, ctx = this.ctx, seen = new Set();
+    const p = this.proj, seen = new Set();
     const anySolo = p.ch.some(c => c.solo);
     for (const d of p.ch) {
       seen.add(d.id);
@@ -1715,7 +1715,7 @@ registerProcessor('bl-crush',C);`;
   const LFO = (tgt, amt, r, x) => Object.assign({ w: 'sine', r: r || 5, tgt, amt, sync: '' }, x || {});
   const syn = (c, n, p) => L.push({ c, n, p: Object.assign({ k: 'syn' }, p) });
   const kit = (c, prefix, list) => list.forEach(([n, d, gain, cg]) => L.push({ c, n: prefix + ' ' + n, p: { k: 'drm', d, gain: gain == null ? 0.8 : gain, cg: cg || 0 } }));
-  const pl = (x) => o('pluck'), ks = (damp, bright, dur, pos) => ({ damp, bright, dur, pos: pos == null ? 0.13 : pos });
+  const ks = (damp, bright, dur, pos) => ({ damp, bright, dur, pos: pos == null ? 0.13 : pos });
 
   // ------------------------------------------------------------------ Keys
   let C = 'Keys';
@@ -2012,7 +2012,6 @@ registerProcessor('bl-crush',C);`;
     return B;
   }
   E.demoBuilder = build;
-  const range = (n, f) => Array.from({ length: n }, (_, i) => f(i));
 
   E.DEMOS = [
     { id: 'lofi', n: 'Lo-fi Study Beats', desc: 'Dusty piano chords, a walking upright bass and a swung boom-bap beat at 82 BPM.', make() {
@@ -2487,7 +2486,6 @@ function changed(all) {
   emit('changed', all);
   clearTimeout(saveT); saveT = setTimeout(() => Store.save(A.p), 1200);
 }
-function saveSoon() { clearTimeout(saveT); saveT = setTimeout(() => Store.save(A.p), 1200); }
 function saveNow() { clearTimeout(saveT); return Store.save(A.p); }
 window.addEventListener('pagehide', () => { if (A.p) saveNow(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && A.p) saveNow(); });
@@ -2723,7 +2721,7 @@ function simpleHit(e) {
 const pcHue = pc => [0, 18, 36, 52, 75, 120, 160, 185, 205, 230, 265, 300][pc];
 function drawSimple(pos) {
   const G = simpleGeom(), { d, cols, rows, cw, rh, laneH } = G;
-  SV.cv.style.width = G.W + 'px';
+  if (SV.cvW !== G.W) { SV.cvW = G.W; SV.cv.style.width = G.W + 'px'; }
   const { g, w, h: H } = fitCanvas(SV.cv);
   g.fillStyle = '#fff'; g.fillRect(0, 0, w, H);
   const mh = H - G.drumH, n = SCALES[d.scale].s.length, now = performance.now();
@@ -2749,7 +2747,6 @@ function drawSimple(pos) {
   // drum lanes
   g.fillStyle = '#eef1f8'; g.fillRect(0, mh, w, G.drumH);
   g.fillStyle = '#9aa5be'; g.fillRect(0, mh, w, 2);
-  const kit = SIMPLE_KITS.find(k => k.id === d.kit);
   g.font = '600 10px system-ui, sans-serif'; g.fillStyle = '#8a94ad';
   for (let l = 0; l < 4; l++) g.fillText(LANES[l], 4, G.top + l * laneH + 11);
   // hover
@@ -2773,6 +2770,14 @@ function drawSimple(pos) {
     else if (shapes[l] === 'diamond') { g.moveTo(cx, cy - sz); g.lineTo(cx + sz, cy); g.lineTo(cx, cy + sz); g.lineTo(cx - sz, cy); }
     else g.rect(cx - sz * 0.85, cy - sz * 0.85, sz * 1.7, sz * 1.7);
     g.fill();
+  }
+  if (!d.mel.length && !d.drm.length) {                 // an empty song: say what to do
+    g.textAlign = 'center'; g.fillStyle = 'rgba(91, 91, 247, 0.55)'; g.font = '800 26px system-ui, sans-serif';
+    const cx = Math.min(w, SV.wrap.clientWidth) / 2 + SV.wrap.scrollLeft;
+    g.fillText('Click the squares to make music', cx, mh / 2 - 6);
+    g.font = '600 15px system-ui, sans-serif'; g.fillStyle = 'rgba(80, 90, 120, 0.6)';
+    g.fillText('Top part: the tune. Bottom rows: drums. Then press the big Play button.', cx, mh / 2 + 22);
+    g.textAlign = 'left';
   }
   for (const k in SV.pulse) if (now - SV.pulse[k] > 300) delete SV.pulse[k];
   SV.dirty = Object.keys(SV.pulse).length > 0;
@@ -3592,7 +3597,7 @@ on('changed', all => { if (all) RL.sel.clear(); if (A.views.roll) A.views.roll.d
 
 // ---- 46-playlist.js ----
 // ===== Playlist: the arrangement. Pattern clips on tracks, a loop region, song position =====
-const TRH = 40, PRUL = 24;
+const TRH = 40;
 const PL = { pps: 8, sx: 0, tool: 'draw', snap: 'bar', sel: new Set(), drag: null, clip: null };
 function plSnap() { const bar = E.barTicks(A.p) / STEP; return PL.snap === 'bar' ? bar : PL.snap === 'beat' ? 4 * 4 / A.p.sig[1] : 1; }
 function buildPlaylist(root) {

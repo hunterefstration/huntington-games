@@ -320,7 +320,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     c.lfoTgt = lfo ? lfo.tgt : 'off';
   };
   P._syncChannels = function () {
-    const p = this.proj, ctx = this.ctx, seen = new Set();
+    const p = this.proj, seen = new Set();
     const anySolo = p.ch.some(c => c.solo);
     for (const d of p.ch) {
       seen.add(d.id);
