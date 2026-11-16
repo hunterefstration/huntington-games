@@ -112,6 +112,18 @@ try {
   check('the Activity tab shows the numbers', !!(await until(() => A.evaluate(() => document.querySelectorAll('#act-home .act-tile').length === 4 && +document.querySelector('#act-home .act-tile b').textContent >= 2), 15000)));
   check('...the most played games (version numbers dropped)', !!(await until(() => A.evaluate(() => [...document.querySelectorAll('#act-home .act-row .act-gn')].some(x => x.textContent === 'Tetris Surge')), 8000)));
   check('...and a players-per-day chart', await A.evaluate(() => document.querySelectorAll('#act-home .act-bar').length >= 1));
+
+  console.log('\n=== shared songs (Beat Lab) ===');
+  const song = JSON.stringify({ mode: 'simple', simple: { bpm: 120, mel: [[0, 3], [2, 5]], drm: [[0, 0]] }, name: 'Test Tune' });
+  const sh = await A.evaluate(d => HGGrapevine.songs.share({ name: 'Test Tune', data: d, post: true }), song);
+  check('sharing a song gives a 6-digit code', sh.ok && /^\d{6}$/.test(sh.code), JSON.stringify(sh));
+  const got = await B.evaluate(c => HGGrapevine.songs.get(c), sh.code);
+  check('anyone opens it with the code: the same song, its name and maker', got.ok && got.data === song && got.name === 'Test Tune' && got.by === 'PlayAva', JSON.stringify(got).slice(0, 160));
+  check('a wrong code says so', !(await B.evaluate(() => HGGrapevine.songs.get('000001'))).ok);
+  const appB = await until(async () => { const f = B.frames().find(x => x !== B.mainFrame() && x.url().startsWith('about:srcdoc')); return f && (await f.evaluate(() => !!(window.S && S.ready)).catch(() => false)) ? f : null; }, 60000);
+  check('...and "post it" puts the code in #music', !!appB && !!(await until(() => appB.evaluate(c => { const m = [...msgsOf('music').values()]; return m.some(x => x.text.includes(c) && /Test Tune/.test(x.text)); }, sh.code), 15000)));
+  let refused = null; for (let i = 0; i < 11 && !refused; i++) { const r = await B.evaluate(d => HGGrapevine.songs.share({ name: 'Spam ' + Math.random(), data: d }), song).catch(e => ({ ok: false, err: String(e.message) })); if (!r.ok) refused = r.err; await sleep(2100); }
+  check('ten shares a day, then a polite no', /10 songs a day/.test(refused || ''), refused);
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 try { rig('server-stop'); rig('server-start'); } catch (e) {}
 await browser.close();

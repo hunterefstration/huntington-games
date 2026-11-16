@@ -518,7 +518,8 @@ const GVLink = (() => {
       case 'smod': return rpcDone('smod', m);
       case 'mpBonus': st.mpBonus = m; emit('mpBonus', m); return;
       case 'gchat': emit('gchat', m); return;
-      case 'stats': return rpcDone('stats', m);      // the game chat over a running game (launcher 097-gamechat.js)
+      case 'stats': return rpcDone('stats', m);
+      case 'song': return rpcDone('song', m);      // the game chat over a running game (launcher 097-gamechat.js)
       case 'modNotice': case 'modFx': emit(m.type, m); return;      // an admin's warning or mute, or a bonk (the launcher shows them)
       case 'tagSet': return rpcDone('tagSet', m);
       case 'savesNudge': if (st.ready && !sy.running) syncRun().catch(function () {}); return;      // an admin changed this account's saves
@@ -1050,6 +1051,11 @@ const GVLink = (() => {
     timeline: function () { return { at: tl.at, archive: tl.archive, steps: tl.steps.slice(), total: tl.steps.length ? tl.steps[tl.steps.length - 1][1] : 0 }; },
     diagnose: function () { return GVLink.diagnose({ relays: CFG.relays }); },
     // ---- open parties (public, or on your Wi-Fi), and what your friends are playing ----
+    // Beat Lab's shared songs (Grapevine 083-songs.js): share({ name, data, post }) -> { ok, code, err }; get(code) -> { ok, name, by, at, data, err }
+    songs: {
+      share: function (o) { o = o || {}; return st.ready ? rpc0({ type: 'songShare', name: String(o.name || 'Untitled').slice(0, 60), data: String(o.data || ''), post: !!o.post }, 'song') : Promise.resolve({ ok: false, err: 'Sign in to the launcher to share songs.' }); },
+      get: function (code) { return st.ready ? rpc0({ type: 'songGet', code: String(code || '') }, 'song') : Promise.resolve({ ok: false, err: 'Sign in to the launcher to open shared songs.' }); }
+    },
     party: {
       open: function (o) { if (st.ready) send({ type: 'partyOpen', game: o.game, code: String(o.code), n: o.n || 1, max: o.max || 10, pub: o.pub !== false, net: o.net || null, mode: o.mode || null }); },
       close: function (code) { if (st.ready) send({ type: 'partyClose', code: String(code) }); },
