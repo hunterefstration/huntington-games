@@ -262,6 +262,56 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
 #s-title .menu .btn { margin: 5px; }
 @media (max-width: 480px) { #s-title .menu { grid-template-columns: auto; } }
 
+/* ---- Training (88-tutor.js): Beat Lab's lesson look. Spotlight hole + click shields in menus, a compact banner + ring in battle */
+#hgt { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+#hgt .hidden, #hgt-offer .hidden { display: none !important; }
+#hgt .hgt-shield { position: fixed; background: transparent; pointer-events: auto; }
+#hgt.free .hgt-shield, #hgt.coach .hgt-shield { pointer-events: none; display: none; }
+#hgt .hgt-hole { position: fixed; pointer-events: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(8,12,24,.58); transition: left .18s, top .18s, width .18s, height .18s; }
+#hgt.coach .hgt-hole { box-shadow: none; }
+#hgt .hgt-hole::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; border: 3px solid #ffd43b; animation: hgtPulse 1.6s ease-in-out infinite; }
+#hgt .hgt-hole.none::after { display: none; }
+#hgt.coach .hgt-hole.none { box-shadow: none; }
+@keyframes hgtPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.hgt-bubble { position: fixed; width: 330px; max-width: calc(100vw - 16px); background: #fff; color: #1f2430; border-radius: 14px; padding: 12px 14px 10px; box-shadow: 0 14px 44px rgba(0,0,0,.4); border-top: 4px solid #5b5bf7; font: 13px/1.4 system-ui, "Segoe UI", Roboto, Arial, sans-serif; text-align: left; pointer-events: auto; user-select: text; letter-spacing: normal; text-transform: none; }
+#hgt.coach .hgt-bubble { width: 290px; padding: 9px 12px 8px; font-size: 12px; background: #fff; left: 12px; top: 12px; }
+#hgt.coach .hgt-bubble h4 { font-size: 14px; margin: 3px 0 2px; }
+#hgt.coach .hgt-bubble p { margin-bottom: 6px; }
+.hgt-bubble.nudge { animation: hgtNudge .35s; }
+@keyframes hgtNudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.hgt-bubble .hgt-top, .hgt-card .hgt-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b5bf7; }
+.hgt-bubble .hgt-prog, .hgt-card .hgt-prog { color: #8a94a3; white-space: nowrap; }
+.hgt-bubble h4 { margin: 6px 0 4px; font-size: 16px; font-weight: 800; color: #1f2430; font-style: normal; }
+.hgt-bubble p { margin: 0 0 8px; line-height: 1.45; color: #1f2430; }
+.hgt-bubble b, .hgt-card b { color: #111522; }
+.hgt-bubble kbd { display: inline-block; padding: 0 5px; border: 1px solid #c9cfdd; border-bottom-width: 2px; border-radius: 4px; background: #f4f6fb; font: 700 11px system-ui, sans-serif; color: #2b3140; }
+.hgt-bubble .hgt-task { margin: 0 0 8px; padding: 5px 9px; border-radius: 7px; background: #fff7d6; color: #6b5300; font-weight: 700; font-size: 12px; }
+.hgt-bubble .hgt-task.ok { background: #d3f9d8; color: #2b8a3e; }
+.hgt-bubble .hgt-end { display: flex; flex-wrap: wrap; gap: 6px; }
+.hgt-bubble .hgt-end:not(:empty) { margin-bottom: 8px; }
+.hgt-btns { display: flex; align-items: center; gap: 6px; }
+.hgt-sp { flex: 1; }
+.hgt-btn { background: #fff; color: #2b3140; border: 1px solid #c9cfdd; border-radius: 7px; padding: 5px 11px; font: 700 12px system-ui, "Segoe UI", sans-serif; cursor: pointer; margin: 0; text-transform: none; letter-spacing: normal; box-shadow: none; min-width: 0; }
+.hgt-btn:hover { filter: brightness(.96); }
+.hgt-btn.pri { background: #5b5bf7; color: #fff; border-color: #4b4be0; }
+.hgt-btn.ghost { color: #7a8396; }
+.hgt-skip { border: 0; background: none; color: #7a8396; font: 12px system-ui, sans-serif; text-decoration: underline; padding: 3px 2px; cursor: pointer; margin: 0; }
+.hgt-bubble.offer { right: 16px; bottom: 16px; border-top-color: #ffd43b; }
+#hgt-hub { position: fixed; inset: 0; background: rgba(8,12,24,.62); display: flex; align-items: center; justify-content: center; padding: 12px; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+.hgt-card { width: min(560px, 100%); max-height: calc(100vh - 24px); overflow: auto; background: #fff; color: #1f2430; border-radius: 14px; border-top: 4px solid #5b5bf7; padding: 14px 18px 12px; box-shadow: 0 14px 44px rgba(0,0,0,.45); font-size: 13px; text-align: left; }
+.hgt-card h3 { margin: 6px 0 4px; font-size: 20px; font-weight: 800; color: #1f2430; letter-spacing: normal; text-transform: none; font-style: normal; }
+.hgt-card p { margin: 0 0 10px; color: #3d4455; line-height: 1.45; }
+.hgt-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.hgt-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e7f0; border-radius: 10px; background: #f8f9fd; }
+.hgt-row.done { background: #f0fbf2; border-color: #b9e8c3; }
+.hgt-tick { flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: #e6e8f5; color: #5b5bf7; }
+.hgt-row.done .hgt-tick { background: #2b8a3e; color: #fff; }
+.hgt-meta { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hgt-meta b { font-size: 14px; }
+.hgt-meta span { color: #7a8396; font-size: 12px; }
+/* Last Light: the in-play banner sits under the hearts and sparks */
+#hgt.coach .hgt-bubble { top: 86px; }
+
 </style>
 </head>
 <body>
@@ -303,9 +353,10 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
     <button class="btn" id="t-lore-btn">People</button>
     <button class="btn" id="t-look">Your light</button>
     <button class="btn" id="t-how">How to play</button>
+    <button class="btn" id="t-train">Training <span class="newtag" id="t-train-new">new</span></button>
   </div>
   <div class="foot" id="t-stats"></div>
-  <button class="ver" id="t-ver" title="What's new in 1.5">Version 1.5 · Frostveil, a new world past The Gloom · the glide · Trials with medals · <u>What's new</u></button>
+  <button class="ver" id="t-ver" title="What's new in 1.6">Version 1.6 · Training: a practice room for every move you have learned · Frostveil · Trials with medals · <u>What's new</u></button>
 </div>
 
 <!-- world map -->
@@ -409,8 +460,12 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
 <!-- 1.5: what's new -->
 <div id="s-new" class="screen dim hidden">
   <div class="card wide">
-    <h2>What's new in 1.5</h2>
+    <h2>What's new in 1.6</h2>
     <div class="how newlist">
+      <p><b>Training</b> (1.6, on the title screen): three short hands-on lessons. A practice room for every move you have earned
+      (run, jump, double jump, wall jump, dash, glide), Trials, medals and ghosts, and your light, the people you met and playing together.
+      Practice never records times or stats.</p>
+      <p><b>From 1.5:</b></p>
       <p><b>Frostveil</b>: a new world past The Gloom. Eleven lights never came home; they froze on the peaks above the Sky Ruins.
       Ten levels of ice, snow geysers, frostwisps and snowpuffs, people to meet (and someone new), and a guardian at the top: Hoarfrost, the great snow owl.</p>
       <p><b>The glide</b>: Frostveil's first shrine teaches it. In the air, after your double jump, press jump again and hold it to float.
@@ -576,7 +631,9 @@ const SAVE = (() => {
 })();
 
 // lifetime stats (Stats screen): ST('jumps'), ST('dist', tiles)...
-const ST = (k, n = 1) => { SAVE.d.stats[k] = (SAVE.d.stats[k] || 0) + n; };
+// 1.6 Training: in the practice room (PRAC is set) nothing reaches the save; the lesson reads its own counts from PRAC
+let PRAC = null;
+const ST = (k, n = 1) => { if (PRAC) { PRAC[k] = (PRAC[k] || 0) + n; return; } SAVE.d.stats[k] = (SAVE.d.stats[k] || 0) + n; };
 
 // ---------- settings ----------
 const SET_KEY = 'lumi_settings';
@@ -1680,7 +1737,7 @@ function hurt(G, why, from) {
     p.hearts = why === 'pit' ? 0 : p.hearts - 1; G.stats.hits++; ST('hits');
     G.shake(why === 'enemy' ? 6 : 9); G.flash = 0.35;
     if (p.hearts <= 0) {
-        p.dead = true; p.deadT = 0.9; G.stats.deaths++; SAVE.d.deaths++; ST('deaths');
+        p.dead = true; p.deadT = 0.9; G.stats.deaths++; if (!PRAC) SAVE.d.deaths++; ST('deaths');
         G.cause = why !== 'enemy' ? why : from === G.boss ? 'boss' : from && from.kind ? from.kind : from && from.shadow ? 'boss' : 'turret';
         ST('death_' + (G.cause === 'pit' || G.cause === 'spike' || G.cause === 'lava' ? G.cause : 'enemy'));
         Sound.play('die'); burst(G, p.x, p.y, '#ffd36b', 40, 340); burst(G, p.x, p.y, '#ffffff', 16, 200);
@@ -3125,7 +3182,9 @@ const G = {
     shake(a) { if (!settings.shake) return; this.shakeA = Math.max(this.shakeA * (this.shakeT > 0 ? 1 : 0), a); this.shakeT = 0.25; },
     bossAlive() { return !!this.boss || !!(this.guard && this.guard.state !== 'free' && this.guard.state !== 'gone'); },
     start(idx) {
-        const def = LEVELS[idx]; if (!def) return;
+        // 1.6: idx can be a level def of its own (the Training practice room): no records, no stats, no play time
+        const prac = idx && typeof idx === 'object' ? idx : null, def = prac || LEVELS[idx]; if (!def) return;
+        if (prac) { PRAC = PRAC || {}; this.run = null; this.trial = null; } else PRAC = null;
         this.idx = idx; this.L = parseLevel(def); this.world = def.world; this.levelKey = def.id + ':' + Date.now();
         this.p = makePlayer(this.L.start.x, this.L.start.y); this.p.hearts = this.maxHearts();
         if (!this.mp) applyLook(this.p);                    // 1.5: the light you chose (multiplayer gives everyone their own)
@@ -3151,6 +3210,7 @@ const G = {
         this.hud();
         $('#h-trial').classList.add('hidden');
         if (this.trial) trialBegin(this);
+        else if (prac) UI.banner('Training', def.name);
         else UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
     },
     update(dt) {
@@ -3158,7 +3218,7 @@ const G = {
         // a split-second freeze when a stomp lands: it makes the hit feel solid
         if (this.hitstop > 0) { this.hitstop -= dt; return; }
         this.t += dt; this.iris = Math.min(1, (this.iris ?? 1) + dt * 1.5); if (this.p.spawnT > 0) this.p.spawnT -= dt;
-        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } if (this.trial) trialTick(this, dt); }
+        if (!this.done) { this.time += dt; if (!PRAC) { SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } } if (this.trial) trialTick(this, dt); }
         updatePlayer(this, dt);
         if (this.mp) mpUpdate(this, dt);
         updateWorld(this, dt);
@@ -6181,6 +6241,374 @@ window.__lumi = {
 };
 // saves from before 1.3: work out which levels were already done flawless (once)
 if (flawlessGrandfather(SAVE.d)) SAVE.write();
+
+// ---- 91-tutor.js ----
+// ===== Training (2026-11-16): the coach-mark engine. A copy of Beat Lab's 80-tutor.js look and behaviour, made game-agnostic =====
+// (Steel Storm 88-tutor.js and Blocky Shooter V2 31-tutor.js are the same file; keep them in step.)
+//   Tutor.config({ done(id), mark(id), z })                      where "lessons done" live (the game's own save)
+//   Tutor.define({ id, title, blurb, steps: [step], end: 'finale html', next: lessonId, coach: true|false,
+//                  begin() -> false to refuse (e.g. start a practice match), finish(how) (clean up: leave the practice match),
+//                  alive() -> false once the player left the lesson's world (Quit to menu...) })
+//   step: { title, text (html), el: selector | Element | () => Element | rect | null (what to ring), enter() (on arrival),
+//           base() -> snapshot taken on arrival, wait(base) -> true once the player has done it (polled every 150 ms),
+//           when() -> false skips the step (e.g. no bombs on this plane), coach (override the lesson's mode), at: 'br'|'bl'|'tr'|'tl',
+//           free (no click shield), act: [label, fn] (a helper button in the bubble, e.g. "Self-destruct") }
+//   coach mode (gameplay): no dimming, no click shields, a compact banner in a corner and a pulsing ring; spotlight mode (menus):
+//   the screen dims around the target, clicks outside it nudge the bubble. Esc always leaves the lesson.
+//   Tutor.start(id) / stop(how) / next() / back(); Tutor.active; Tutor.lesson; Tutor.i; Tutor.done(id); Tutor.list;
+//   Tutor.offer({ title, text, les, kicker, time, answer(yes) }); Tutor.hub({ title, intro })
+const Tutor = (() => {
+    const LES = [], S = { les: null, i: 0, dir: 1, base: null, doneAt: 0, iv: 0, sig: '', el: null, hub: null, offer: null };
+    const C = { done: () => false, mark: () => {}, z: 9000, nextKey: '' };      // nextKey: in battle the mouse is captured, so a key does Next
+    const q = s => document.querySelector(s);
+    const cl = (v, a, b) => v < a ? a : v > b ? b : v;
+    function mk(tag, attrs, ...kids) {
+        const e = document.createElement(tag);
+        for (const k in attrs || {}) { const v = attrs[k]; if (v == null || v === false) continue; if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); }
+        for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : String(c));
+        return e;
+    }
+    const btn = (t, cls, f, title) => mk('button', { class: 'hgt-btn' + (cls ? ' ' + cls : ''), type: 'button', title, onclick: e => { e.stopPropagation(); f(); } }, t);
+    const coachOf = st => st && st.coach !== undefined ? !!st.coach : !!(S.les && S.les.coach);
+    const err = e => { try { console.warn('[training]', e); } catch (e2) {} };
+
+    function start(id) {
+        const les = LES.find(l => l.id === id); if (!les) return false;
+        closeHub(); hideOffer();
+        if (S.les) stop('switch');
+        let ok = true; try { if (les.begin) ok = les.begin() !== false; } catch (e) { err(e); ok = false; }
+        if (!ok) return false;
+        S.les = les; S.dir = 1;
+        overlay();
+        go(0);
+        S.iv = setInterval(tick, 150);
+        return true;
+    }
+    function stop(how) {                                         // how: skip | done | left | switch
+        const les = S.les; if (!les) return;
+        clearInterval(S.iv); S.les = null;
+        if (S.el) { S.el.root.remove(); S.el = null; }
+        try { if (les.finish) les.finish(how || 'skip'); } catch (e) { err(e); }
+    }
+    function overlay() {
+        if (S.el) S.el.root.remove();
+        const shield = () => mk('div', { class: 'hgt-shield', onpointerdown: e => { e.preventDefault(); e.stopPropagation(); nudge(); } });
+        const sh = [shield(), shield(), shield(), shield()];
+        const hole = mk('div', { class: 'hgt-hole' });
+        const lesson = mk('span', { class: 'hgt-les' }), prog = mk('span', { class: 'hgt-prog' }), title = mk('h4'), text = mk('p'), task = mk('div', { class: 'hgt-task' });
+        const skip = mk('button', { class: 'hgt-skip', type: 'button', title: 'Leave the lesson (Esc)', onclick: e => { e.stopPropagation(); stop(S.i >= S.les.steps.length ? 'done' : 'skip'); } }, 'Skip lesson');
+        const back = btn('Back', '', () => { S.dir = -1; go(S.i - 1); });
+        const next = btn('Next', 'pri', () => { S.dir = 1; go(S.i + 1); });
+        const extra = mk('div', { class: 'hgt-end' });
+        const bub = mk('div', { class: 'hgt-bubble', role: 'dialog', 'aria-live': 'polite', onpointerdown: e => e.stopPropagation(), onmousedown: e => e.stopPropagation(), onclick: e => e.stopPropagation() },
+            mk('div', { class: 'hgt-top' }, lesson, prog), title, text, task, extra, mk('div', { class: 'hgt-btns' }, skip, mk('span', { class: 'hgt-sp' }), back, next));
+        const root = mk('div', { id: 'hgt', style: 'z-index:' + C.z }, sh, hole, bub);
+        document.body.appendChild(root);
+        S.el = { root, sh, hole, bub, lesson, prog, title, text, task, skip, back, next, extra };
+    }
+    function nudge() { const b = S.el && S.el.bub; if (!b) return; b.classList.remove('nudge'); void b.offsetWidth; b.classList.add('nudge'); }
+    function go(i) {
+        const les = S.les; if (!les || !S.el) return;
+        const n = les.steps.length;
+        // steps that do not apply right now (when() false) are passed over in the direction of travel
+        while (i >= 0 && i < n && les.steps[i].when) { let w = true; try { w = !!les.steps[i].when(); } catch (e) {} if (w) break; i += S.dir < 0 ? -1 : 1; }
+        if (i < 0) { S.dir = 1; return go(0); }
+        if (i > n) return stop('done');
+        S.i = i; S.doneAt = 0; S.sig = '';
+        const E = S.el; E.extra.innerHTML = '';
+        E.lesson.textContent = les.title;
+        if (i === n) {                                            // the finale: the lesson counts as done
+            try { C.mark(les.id); } catch (e) { err(e); }
+            try { if (les.atEnd) les.atEnd(); } catch (e) { err(e); }          // e.g. leave the practice match so the mouse is free
+            const nx = les.next && LES.find(l => l.id === les.next);
+            E.root.classList.remove('coach'); E.root.classList.add('final');
+            E.prog.textContent = 'Done!'; E.title.textContent = 'Lesson complete'; E.text.innerHTML = les.end || 'Nice work!';
+            E.task.className = 'hgt-task hidden';
+            E.extra.append(btn('All lessons', '', () => { stop('done'); setTimeout(() => hub(), 30); }));
+            if (nx) E.extra.append(btn('Next: ' + nx.title, 'pri', () => start(nx.id)));
+            E.skip.textContent = 'Close';
+            E.next.classList.add('hidden'); E.back.classList.remove('hidden');
+            place(true);
+            return;
+        }
+        E.root.classList.remove('final');
+        const st = les.steps[i];
+        try { if (st.enter) st.enter(); } catch (e) { err(e); }
+        S.base = null; try { if (st.base) S.base = st.base(); } catch (e) { err(e); }
+        if (S.base == null) S.base = {};
+        E.root.classList.toggle('coach', coachOf(st));
+        E.prog.textContent = (i + 1) + ' of ' + n;
+        E.title.textContent = st.title || '';
+        E.text.innerHTML = st.text || '';
+        E.skip.textContent = 'Skip lesson';
+        E.back.classList.toggle('hidden', i === 0); E.next.classList.remove('hidden');
+        if (st.act) E.extra.append(btn(st.act[0], '', () => { try { st.act[1](); } catch (e) { err(e); } }));
+        let pre = false;
+        if (st.wait) { try { pre = !!st.wait(S.base); } catch (e) {} }
+        if (st.wait && pre) S.doneAt = -1;                       // already done (e.g. coming Back): no auto-advance, just Next
+        taskUi(st, pre);
+        place(true);
+    }
+    function taskUi(st, done) {
+        const E = S.el, last = S.i === S.les.steps.length - 1;
+        const k = C.nextKey && coachOf(st) ? ' (' + C.nextKey + ')' : '';
+        if (!st.wait) { E.task.className = 'hgt-task hidden'; E.next.textContent = (last ? 'Finish' : 'Next') + k; E.next.className = 'hgt-btn pri'; return; }
+        E.task.className = 'hgt-task' + (done ? ' ok' : '');
+        E.task.textContent = done ? '✓ Nice!' : 'Your turn: do it and the lesson moves on';
+        E.next.textContent = (done ? (last ? 'Finish' : 'Next') : 'Skip step') + k;
+        E.next.className = 'hgt-btn' + (done ? ' pri' : ' ghost');
+    }
+    function tick() {
+        const les = S.les; if (!les) return;
+        if (S.i >= les.steps.length) return;                     // the finale waits for the player
+        let alive = true; try { if (les.alive) alive = les.alive() !== false; } catch (e) {}
+        if (!alive) return stop('left');
+        const st = les.steps[S.i];
+        if (st && st.enter && st.el && !coachOf(st) && !target(st)) { try { st.enter(); } catch (e) {} }     // the player wandered to another view
+        place(false);
+        if (!st || !st.wait || S.doneAt) return;
+        let ok = false; try { ok = !!st.wait(S.base); } catch (e) {}
+        if (!ok) return;
+        S.doneAt = performance.now(); taskUi(st, true);
+        const at = S.i;
+        setTimeout(() => { if (S.les === les && S.i === at) { S.dir = 1; go(at + 1); } }, 800);
+    }
+    function target(st) {
+        let t = st && st.el;
+        try { if (typeof t === 'function') t = t(); } catch (e) { t = null; }
+        if (typeof t === 'string') t = q(t);
+        if (!t) return null;
+        const r = t.getBoundingClientRect ? t.getBoundingClientRect() : t;
+        if (!r || !(r.width > 2) || !(r.height > 2)) return null;
+        const l = Math.max(0, r.left), tp = Math.max(0, r.top), rt = Math.min(innerWidth, r.left + r.width), bt = Math.min(innerHeight, r.top + r.height);
+        return rt - l > 2 && bt - tp > 2 ? { l, t: tp, r: rt, b: bt } : null;
+    }
+    function place(force) {
+        const E = S.el; if (!E || !S.les) return;
+        const st = S.les.steps[S.i], tg = st ? target(st) : null, P = 6, W = innerWidth, H = innerHeight, coach = st && coachOf(st);
+        const bw = E.bub.offsetWidth, bh = E.bub.offsetHeight;
+        const sig = (tg ? [tg.l, tg.t, tg.r, tg.b].map(Math.round).join(',') : '-') + '|' + W + 'x' + H + '|' + bw + 'x' + bh + (st && st.free ? 'f' : '') + (coach ? 'c' : '');
+        if (!force && sig === S.sig) return;
+        S.sig = sig;
+        const box = (el, l, t, w, hh) => { el.style.left = l + 'px'; el.style.top = t + 'px'; el.style.width = Math.max(0, w) + 'px'; el.style.height = Math.max(0, hh) + 'px'; };
+        E.root.classList.toggle('free', !!(st && st.free));
+        if (tg) {
+            const l = Math.max(0, tg.l - P), t = Math.max(0, tg.t - P), r = Math.min(W, tg.r + P), b = Math.min(H, tg.b + P);
+            E.hole.classList.remove('none'); box(E.hole, l, t, r - l, b - t);
+            box(E.sh[0], 0, 0, W, t); box(E.sh[1], 0, b, W, H - b); box(E.sh[2], 0, t, l, b - t); box(E.sh[3], r, t, W - r, b - t);
+        } else {
+            E.hole.classList.add('none'); box(E.hole, W / 2, H / 2, 0, 0);
+            box(E.sh[0], 0, 0, W, H); box(E.sh[1], 0, 0, 0, 0); box(E.sh[2], 0, 0, 0, 0); box(E.sh[3], 0, 0, 0, 0);
+        }
+        if (coach) { E.bub.style.left = ''; E.bub.style.top = ''; return; }      // the banner sits in its corner (CSS)
+        // the bubble: beside the target if it fits (below, above, right, left), else in a corner; never off-screen
+        const M = 12, fit = (x, y) => x >= 8 && y >= 8 && x + bw <= W - 8 && y + bh <= H - 8;
+        let x, y;
+        if (!tg) { x = (W - bw) / 2; y = (H - bh) / 2; }
+        else {
+            const cx = cl((tg.l + tg.r) / 2 - bw / 2, 8, W - bw - 8), cy = cl((tg.t + tg.b) / 2 - bh / 2, 8, H - bh - 8);
+            const opts = [[cx, tg.b + P + M], [cx, tg.t - P - M - bh], [tg.r + P + M, cy], [tg.l - P - M - bw, cy]];
+            const o = opts.find(([a, b]) => fit(a, b));
+            if (o) [x, y] = o;
+            else { const at = (st && st.at) || 'br'; x = at[1] === 'l' ? 16 : W - bw - 16; y = at[0] === 't' ? 16 : H - bh - 16; }
+        }
+        E.bub.style.left = Math.round(cl(x, 8, Math.max(8, W - bw - 8))) + 'px';
+        E.bub.style.top = Math.round(cl(y, 8, Math.max(8, H - bh - 8))) + 'px';
+    }
+    addEventListener('resize', () => { if (S.les) place(true); });
+    document.addEventListener('scroll', () => { if (S.les) place(false); }, true);
+    // Esc always leaves the lesson (or closes the Training list / the offer); the game never sees that Esc
+    addEventListener('keydown', e => {
+        if (C.nextKey && S.les && e.key === C.nextKey && !e.repeat && S.i < S.les.steps.length && coachOf(S.les.steps[S.i])) {
+            const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+            e.preventDefault(); e.stopImmediatePropagation(); S.dir = 1; go(S.i + 1); return;
+        }
+        if (e.key !== 'Escape' && e.code !== 'Escape') return;
+        if (!S.les && !S.hub && !S.offer) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (S.hub) return closeHub();
+        if (S.offer) return hideOffer(false);
+        stop(S.i >= S.les.steps.length ? 'done' : 'skip');
+    }, true);
+
+    // ---- the first-visit offer (once: the game remembers the answer)
+    function offer(o) {
+        hideOffer();
+        const answer = yes => { hideOffer(); try { if (o.answer) o.answer(yes); } catch (e) { err(e); } if (yes) start(o.les); };
+        const card = mk('div', { id: 'hgt-offer', class: 'hgt-bubble offer', style: 'z-index:' + (C.z + 1) },
+            mk('div', { class: 'hgt-top' }, mk('span', { class: 'hgt-les' }, o.kicker || 'Welcome'), mk('span', { class: 'hgt-prog' }, o.time || '2 minutes')),
+            mk('h4', null, o.title), mk('p', null, o.text),
+            mk('div', { class: 'hgt-btns' }, btn('No thanks', '', () => answer(false)), mk('span', { class: 'hgt-sp' }), btn('Yes', 'pri', () => answer(true))));
+        S.offer = { card, answer };
+        document.body.appendChild(card);
+    }
+    function hideOffer(silent) { const o = S.offer; if (!o) return; S.offer = null; o.card.remove(); if (silent === false) try { o.answer(false); } catch (e) {} }
+
+    // ---- the Training list: every lesson with a tick once done
+    function hub(o) {
+        o = o || S.hubOpts || {}; S.hubOpts = o;
+        closeHub();
+        const done = LES.filter(l => C.done(l.id)).length;
+        const rows = mk('div', { class: 'hgt-rows' }, LES.map((l, i) => {
+            const d = C.done(l.id);
+            return mk('div', { class: 'hgt-row' + (d ? ' done' : ''), 'data-l': l.id },
+                mk('span', { class: 'hgt-tick', title: d ? 'Done' : '' }, d ? '✓' : String(i + 1)),
+                mk('div', { class: 'hgt-meta' }, mk('b', null, l.title), mk('span', null, l.blurb + ' · ' + l.steps.length + ' steps')),
+                btn(d ? 'Again' : 'Start', d ? '' : 'pri', () => start(l.id)));
+        }));
+        const card = mk('div', { class: 'hgt-card', role: 'dialog' },
+            mk('div', { class: 'hgt-top' }, mk('span', { class: 'hgt-les' }, 'Training'), mk('span', { class: 'hgt-prog' }, done + ' of ' + LES.length + ' done')),
+            mk('h3', null, o.title || 'Training'),
+            mk('p', null, o.intro || 'Short lessons where you do each step yourself. Esc or "Skip lesson" leaves at any time.'),
+            rows,
+            mk('div', { class: 'hgt-btns' }, mk('span', { class: 'hgt-sp' }), btn('Close', '', closeHub)));
+        const wrap = mk('div', { id: 'hgt-hub', style: 'z-index:' + (C.z + 2), onpointerdown: e => { if (e.target === wrap) closeHub(); e.stopPropagation(); }, onmousedown: e => e.stopPropagation(), onclick: e => e.stopPropagation() }, card);
+        S.hub = wrap;
+        document.body.appendChild(wrap);
+    }
+    function closeHub() { if (S.hub) { S.hub.remove(); S.hub = null; } }
+
+    return {
+        config(o) { Object.assign(C, o); },
+        define(l) { LES.push(l); return l; },
+        start, stop: how => stop(how || 'skip'), next: () => { S.dir = 1; go(S.i + 1); }, back: () => { S.dir = -1; go(S.i - 1); },
+        get active() { return !!S.les; }, get lesson() { return S.les; }, get i() { return S.i; }, get step() { return S.les && S.les.steps[S.i]; },
+        get finale() { return !!S.les && S.i >= S.les.steps.length; }, get stepDone() { return !!S.doneAt; }, get hubOpen() { return !!S.hub; }, get offerOpen() { return !!S.offer; },
+        get el() { return S.el; },
+        done: id => !!C.done(id), list: LES, offer, hideOffer: () => hideOffer(), hub, closeHub, place: () => place(true)
+    };
+})();
+
+// ---- 92-training.js ----
+// ==========================================
+// TRAINING (1.6): three lessons on the Tutor engine (91-tutor.js), the Training list (title screen), a one-time offer.
+// Lesson 1 runs in a practice room (G.start(ROOM): PRAC is set, so no best times, stats, play time or deaths reach the save;
+// the room has no gate, so it never finishes). Only the moves you have earned are practised. Lessons 2 and 3 tour the menus.
+// Lessons done: SAVE.d.tut[id] = 1 (lumi_save, synced); SAVE.d.tutOffer: the offer was shown (new players, once).
+// ==========================================
+const ROOM = { id: 'Training', name: 'Practice room', world: 0, gives: null, hint: null, guard: null, par: 0, map: [
+    '############################################',
+    '#                                          #',
+    '#                                          #',
+    '#                                          #',
+    '#                              =====       #',
+    '#                                          #',
+    '#                                          #',
+    '#                 ====                     #',
+    '#                                          #',
+    '#                                     ##   #',
+    '#        ===                          ##   #',
+    '#                                     ##   #',
+    '#   P                  L              ##   #',
+    '############################################',
+    '############################################'] };
+Tutor.config({ done: id => !!(SAVE.d.tut && SAVE.d.tut[id]), mark: id => { SAVE.d.tut = SAVE.d.tut || {}; SAVE.d.tut[id] = 1; SAVE.write(); trainBadge(); }, z: 9000, nextKey: 'Enter' });
+const kb = k => '<kbd>' + k + '</kbd>';
+const AB = () => SAVE.d.abilities || {};
+const pc = k => (PRAC && PRAC[k]) || 0;
+const inRoom = () => !!(G.L && G.L.def === ROOM && ['play', 'paused', 'dead', 'talk'].includes(G.state));
+const onMenu = () => G.state === 'title' || G.state === 'map';
+function trainLeave() {
+    PRAC = null;
+    if (G.L && G.L.def === ROOM && G.state !== 'title' && G.state !== 'map') {
+        G.state = 'title'; $('#hud').classList.add('hidden'); UI.show('title'); titleStats(); Sound.musicFor(0);
+    }
+}
+// where each move is learned (its shrine's world), for the moves you do not have yet
+const MOVES = { double: 'Double jump', wall: 'Wall jump', dash: 'Dash', glide: 'Glide' };
+function missingMoves() {
+    return Object.keys(MOVES).filter(k => !AB()[k]).map(k => { const l = LEVELS.find(d => d.gives === k); return '<b>' + MOVES[k] + '</b>' + (l ? ' (' + WORLDS[l.world].name + ')' : ''); });
+}
+const toTitle = () => { if (G.state === 'map') { G.state = 'title'; UI.show('title'); titleStats(); } };
+
+Tutor.define({
+    id: 'moves', title: 'Controls refresher', blurb: 'A practice room for every move you have earned: run, jump, double jump, wall jump, dash, glide', coach: true, next: 'trials',
+    begin: () => { if (G.mp || !onMenu()) return false; PRAC = {}; G.trial = null; G.run = null; G.start(ROOM); return inRoom(); },
+    finish: () => trainLeave(), atEnd: () => trainLeave(), alive: () => inRoom(),
+    end: 'Those are all the moves you have so far. The levels teach the rest at their shrines. Next: <b>Trials, medals and ghosts</b>.',
+    steps: [
+        { title: 'Run', text: 'This is a practice room: nothing here counts. Hold ' + kb('←') + ' ' + kb('→') + ' (or ' + kb('A') + ' ' + kb('D') + ') to run.',
+            base: () => ({ d: pc('dist') }), wait: b => pc('dist') - b.d > 5 },
+        { title: 'Jump', text: 'Press ' + kb('Space') + ' (or ' + kb('W') + ', ' + kb('↑') + ', ' + kb('Z') + ') to jump. Hold it to jump higher, tap it for a small hop.',
+            base: () => ({ n: pc('jumps') }), wait: b => pc('jumps') > b.n },
+        { title: 'Light a lantern', text: 'Run to the <b>lantern</b> and touch it. If you fall, you come back to the last lantern you lit (' + kb('R') + ' takes you there too).',
+            base: () => ({ n: pc('lanterns') }), wait: b => pc('lanterns') > b.n },
+        { title: 'Double jump', text: 'In the air, press jump <b>again</b> for a second jump.', when: () => AB().double,
+            base: () => ({ n: pc('djumps') }), wait: b => pc('djumps') > b.n },
+        { title: 'Wall jump', text: 'Jump at a wall and hold toward it to slide down slowly, then press jump to kick off it. Try the pillar on the right.', when: () => AB().wall,
+            base: () => ({ n: pc('walljumps') }), wait: b => pc('walljumps') > b.n },
+        { title: 'Dash', text: 'Press ' + kb('Shift') + ' or ' + kb('X') + ' to dash. Hold ' + kb('↑') + ' to dash upward. You get one dash in the air until you land.', when: () => AB().dash,
+            base: () => ({ n: pc('dashes') }), wait: b => pc('dashes') > b.n },
+        { title: 'Glide', text: 'After your double jump, press jump once more and <b>hold</b> it: you float down slowly.', when: () => AB().glide,
+            base: () => ({ t: pc('glide') }), wait: b => pc('glide') - b.t > 0.5 },
+        { title: 'Still to find', text: '', when: () => missingMoves().length > 0,
+            enter() { this.text = 'You have not learned these yet: ' + missingMoves().join(', ') + '. A shrine in that world teaches each one.'; } }
+    ]
+});
+Tutor.define({
+    id: 'trials', title: 'Trials, medals and ghosts', blurb: 'Beat the clock on levels you have cleared, win medals, race your ghost', next: 'light',
+    begin: () => { if (!onMenu()) return false; toTitle(); return true; }, alive: () => onMenu(),
+    end: 'Clear levels in the story to open more trials. Last lesson: <b>Your light</b>.',
+    steps: [
+        { title: 'Trials', text: 'Open <b>Trials</b>.', el: '#t-trials', enter: () => { if (G.state === 'map' && UI.mapMode !== 'trial') toTitle(); }, wait: () => UI.cur === 'map' && UI.mapMode === 'trial' },
+        { title: 'Every level you cleared', text: 'Each level you have cleared in the story is a trial: run it against the clock. Levels you have not cleared yet say <b>Clear it first</b>.',
+            el: '#worlds', at: 'tr', enter: () => { if (UI.cur !== 'map' || UI.mapMode !== 'trial') { G.state = 'title'; UI.map('trial'); } } },
+        { title: 'Medals', text: 'Beat a time to win a medal: <b>Gold</b> is the level\'s target time, <b>Silver</b> a bit slower, <b>Bronze</b> slower again, and <b>Lumen</b> beats gold by 15%. Your medals are counted here.',
+            el: '#m-total', enter: () => { if (UI.cur !== 'map' || UI.mapMode !== 'trial') { G.state = 'title'; UI.map('trial'); } } },
+        { title: 'Your ghost', text: 'In a trial a see-through <b>ghost</b> of your best run races you, so you can see where you lose time. Ghosts stay on this device.' },
+        { title: 'Start over fast', text: 'In a trial, ' + kb('R') + ' starts the run over at once. Lanterns still catch you, but the clock never stops.' },
+        { title: 'Leaderboards', text: 'Medal points (Bronze 1, Silver 2, Gold 3, Lumen 4) go on the launcher\'s <b>Last Light medals</b> board. Story times have boards too.' },
+        { title: 'Back to the story', text: 'This button switches between <b>Story</b> and <b>Trials</b>. Press it.', el: '#m-mode',
+            enter: () => { if (UI.cur !== 'map') { G.state = 'title'; UI.map('trial'); } }, wait: () => UI.cur === 'map' && UI.mapMode === 'story' }
+    ]
+});
+const scr = id => () => UI.cur === id;
+Tutor.define({
+    id: 'light', title: 'Your light', blurb: 'Colours and flames, the people you met, playing together', next: null,
+    begin: () => { if (!onMenu()) return false; toTitle(); return true; }, alive: () => onMenu() && UI.cur !== 'map',
+    end: 'That is everything! Lessons stay in <b>Training</b> on the title screen if you want them again.',
+    steps: [
+        { title: 'Your light', text: 'Open <b>Your light</b>.', el: '#t-look', wait: scr('look') },
+        { title: 'Pick a flame', text: 'Choose the <b>shape</b> of your flame. You can change it back any time.', el: '#lk-shapes', enter: () => { if (UI.cur !== 'look') UI.looks(); },
+            base: () => ({ s: SAVE.d.look.shape, p: SAVE.d.look.pal }), wait: b => SAVE.d.look.shape !== b.s || SAVE.d.look.pal !== b.p },
+        { title: 'Colours', text: 'Six colours to start with and five more to earn: free a guardian, find the frozen lanterns, win gold medals... Click a locked one to see what it needs.',
+            el: '#lk-list', at: 'tl', enter: () => { if (UI.cur !== 'look') UI.looks(); } },
+        { title: 'Done', text: 'Press <b>Done</b>.', el: '#lk-done', wait: scr('title') },
+        { title: 'People', text: 'Open <b>People</b>: everyone you have met on the way.', el: '#t-lore-btn', wait: scr('lore') },
+        { title: 'What they told you', text: 'Everything the people you met told you is kept here, even the lost lanterns\' stories. Press <b>Back</b>.', el: '#lo-done', wait: scr('title') },
+        { title: 'Play together', text: 'Open <b>Play together</b>.', el: '#t-mp', wait: scr('mp') },
+        { title: 'Open a room', text: '<b>Open a room</b> to host: you get a 6-digit code, pick the level and press Start. Up to 6 lights in one level.', el: '#mp-host',
+            enter: () => { if (UI.cur !== 'mp') mpOpen(); } },
+        { title: 'Join a friend', text: 'Or type a friend\'s <b>6-digit code</b> here and press <b>Join</b>. Bump into people to push them; ' + kb('F') + ' shoves.', el: '#mp-join-code',
+            enter: () => { if (UI.cur !== 'mp') mpOpen(); } },
+        { title: 'Back', text: 'Press <b>Back</b> to finish.', el: '#mp-back', wait: scr('title') }
+    ]
+});
+
+// the title's Training button says "new" until a lesson is done
+function trainBadge() { const e = $('#t-train-new'); if (e) e.classList.toggle('hidden', Tutor.list.some(l => Tutor.done(l.id))); }
+function trainHub() {
+    if (!onMenu()) return;
+    Tutor.hub({ title: 'Last Light training', intro: 'Short lessons where you do each step yourself. The practice room never records times, stats or medals. Esc or "Skip lesson" leaves at any time.' });
+}
+// a new player's first title screen: offer the practice room once (the answer, or just seeing it, is remembered)
+function trainOffer() {
+    if (SAVE.d.tutOffer || Tutor.active || G.state !== 'title' || Object.keys(SAVE.d.levels).length) return false;
+    SAVE.d.tutOffer = 1; SAVE.write();
+    Tutor.offer({ kicker: 'Welcome', time: '1 minute', les: 'moves', title: 'New here? Try the practice room?', text: 'Run and jump in a room where nothing counts, then start the story. You do each step yourself.',
+        answer: () => trainBadge() });
+    return true;
+}
+on('t-train', () => trainHub());
+trainBadge();
+setTimeout(trainOffer, 2300);       // after the splash
+window.__lumi.tut = {
+    start: id => Tutor.start(id), stop: how => Tutor.stop(how), next: () => Tutor.next(), back: () => Tutor.back(), hub: () => trainHub(), offer: () => trainOffer(),
+    get active() { return Tutor.active; }, get lesson() { return Tutor.lesson && Tutor.lesson.id; }, get i() { return Tutor.i; }, get title() { return Tutor.step && Tutor.step.title; },
+    get finale() { return Tutor.finale; }, get stepDone() { return Tutor.stepDone; }, get hubOpen() { return Tutor.hubOpen; }, get offerOpen() { return Tutor.offerOpen; },
+    get lessons() { return Tutor.list.map(l => ({ id: l.id, title: l.title, steps: l.steps.length, done: Tutor.done(l.id) })); },
+    get prac() { return PRAC; }, get inRoom() { return inRoom(); }, ROOM
+};
 
 </script>
 </body>

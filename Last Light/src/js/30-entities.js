@@ -177,7 +177,7 @@ function hurt(G, why, from) {
     p.hearts = why === 'pit' ? 0 : p.hearts - 1; G.stats.hits++; ST('hits');
     G.shake(why === 'enemy' ? 6 : 9); G.flash = 0.35;
     if (p.hearts <= 0) {
-        p.dead = true; p.deadT = 0.9; G.stats.deaths++; SAVE.d.deaths++; ST('deaths');
+        p.dead = true; p.deadT = 0.9; G.stats.deaths++; if (!PRAC) SAVE.d.deaths++; ST('deaths');
         G.cause = why !== 'enemy' ? why : from === G.boss ? 'boss' : from && from.kind ? from.kind : from && from.shadow ? 'boss' : 'turret';
         ST('death_' + (G.cause === 'pit' || G.cause === 'spike' || G.cause === 'lava' ? G.cause : 'enemy'));
         Sound.play('die'); burst(G, p.x, p.y, '#ffd36b', 40, 340); burst(G, p.x, p.y, '#ffffff', 16, 200);

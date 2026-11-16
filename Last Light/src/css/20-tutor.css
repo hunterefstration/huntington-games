@@ -1,0 +1,49 @@
+/* ---- Training (88-tutor.js): Beat Lab's lesson look. Spotlight hole + click shields in menus, a compact banner + ring in battle */
+#hgt { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+#hgt .hidden, #hgt-offer .hidden { display: none !important; }
+#hgt .hgt-shield { position: fixed; background: transparent; pointer-events: auto; }
+#hgt.free .hgt-shield, #hgt.coach .hgt-shield { pointer-events: none; display: none; }
+#hgt .hgt-hole { position: fixed; pointer-events: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(8,12,24,.58); transition: left .18s, top .18s, width .18s, height .18s; }
+#hgt.coach .hgt-hole { box-shadow: none; }
+#hgt .hgt-hole::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; border: 3px solid #ffd43b; animation: hgtPulse 1.6s ease-in-out infinite; }
+#hgt .hgt-hole.none::after { display: none; }
+#hgt.coach .hgt-hole.none { box-shadow: none; }
+@keyframes hgtPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.hgt-bubble { position: fixed; width: 330px; max-width: calc(100vw - 16px); background: #fff; color: #1f2430; border-radius: 14px; padding: 12px 14px 10px; box-shadow: 0 14px 44px rgba(0,0,0,.4); border-top: 4px solid #5b5bf7; font: 13px/1.4 system-ui, "Segoe UI", Roboto, Arial, sans-serif; text-align: left; pointer-events: auto; user-select: text; letter-spacing: normal; text-transform: none; }
+#hgt.coach .hgt-bubble { width: 290px; padding: 9px 12px 8px; font-size: 12px; background: #fff; left: 12px; top: 12px; }
+#hgt.coach .hgt-bubble h4 { font-size: 14px; margin: 3px 0 2px; }
+#hgt.coach .hgt-bubble p { margin-bottom: 6px; }
+.hgt-bubble.nudge { animation: hgtNudge .35s; }
+@keyframes hgtNudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.hgt-bubble .hgt-top, .hgt-card .hgt-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b5bf7; }
+.hgt-bubble .hgt-prog, .hgt-card .hgt-prog { color: #8a94a3; white-space: nowrap; }
+.hgt-bubble h4 { margin: 6px 0 4px; font-size: 16px; font-weight: 800; color: #1f2430; font-style: normal; }
+.hgt-bubble p { margin: 0 0 8px; line-height: 1.45; color: #1f2430; }
+.hgt-bubble b, .hgt-card b { color: #111522; }
+.hgt-bubble kbd { display: inline-block; padding: 0 5px; border: 1px solid #c9cfdd; border-bottom-width: 2px; border-radius: 4px; background: #f4f6fb; font: 700 11px system-ui, sans-serif; color: #2b3140; }
+.hgt-bubble .hgt-task { margin: 0 0 8px; padding: 5px 9px; border-radius: 7px; background: #fff7d6; color: #6b5300; font-weight: 700; font-size: 12px; }
+.hgt-bubble .hgt-task.ok { background: #d3f9d8; color: #2b8a3e; }
+.hgt-bubble .hgt-end { display: flex; flex-wrap: wrap; gap: 6px; }
+.hgt-bubble .hgt-end:not(:empty) { margin-bottom: 8px; }
+.hgt-btns { display: flex; align-items: center; gap: 6px; }
+.hgt-sp { flex: 1; }
+.hgt-btn { background: #fff; color: #2b3140; border: 1px solid #c9cfdd; border-radius: 7px; padding: 5px 11px; font: 700 12px system-ui, "Segoe UI", sans-serif; cursor: pointer; margin: 0; text-transform: none; letter-spacing: normal; box-shadow: none; min-width: 0; }
+.hgt-btn:hover { filter: brightness(.96); }
+.hgt-btn.pri { background: #5b5bf7; color: #fff; border-color: #4b4be0; }
+.hgt-btn.ghost { color: #7a8396; }
+.hgt-skip { border: 0; background: none; color: #7a8396; font: 12px system-ui, sans-serif; text-decoration: underline; padding: 3px 2px; cursor: pointer; margin: 0; }
+.hgt-bubble.offer { right: 16px; bottom: 16px; border-top-color: #ffd43b; }
+#hgt-hub { position: fixed; inset: 0; background: rgba(8,12,24,.62); display: flex; align-items: center; justify-content: center; padding: 12px; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+.hgt-card { width: min(560px, 100%); max-height: calc(100vh - 24px); overflow: auto; background: #fff; color: #1f2430; border-radius: 14px; border-top: 4px solid #5b5bf7; padding: 14px 18px 12px; box-shadow: 0 14px 44px rgba(0,0,0,.45); font-size: 13px; text-align: left; }
+.hgt-card h3 { margin: 6px 0 4px; font-size: 20px; font-weight: 800; color: #1f2430; letter-spacing: normal; text-transform: none; font-style: normal; }
+.hgt-card p { margin: 0 0 10px; color: #3d4455; line-height: 1.45; }
+.hgt-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.hgt-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e7f0; border-radius: 10px; background: #f8f9fd; }
+.hgt-row.done { background: #f0fbf2; border-color: #b9e8c3; }
+.hgt-tick { flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: #e6e8f5; color: #5b5bf7; }
+.hgt-row.done .hgt-tick { background: #2b8a3e; color: #fff; }
+.hgt-meta { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hgt-meta b { font-size: 14px; }
+.hgt-meta span { color: #7a8396; font-size: 12px; }
+/* Last Light: the in-play banner sits under the hearts and sparks */
+#hgt.coach .hgt-bubble { top: 86px; }

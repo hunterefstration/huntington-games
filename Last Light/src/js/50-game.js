@@ -9,7 +9,9 @@ const G = {
     shake(a) { if (!settings.shake) return; this.shakeA = Math.max(this.shakeA * (this.shakeT > 0 ? 1 : 0), a); this.shakeT = 0.25; },
     bossAlive() { return !!this.boss || !!(this.guard && this.guard.state !== 'free' && this.guard.state !== 'gone'); },
     start(idx) {
-        const def = LEVELS[idx]; if (!def) return;
+        // 1.6: idx can be a level def of its own (the Training practice room): no records, no stats, no play time
+        const prac = idx && typeof idx === 'object' ? idx : null, def = prac || LEVELS[idx]; if (!def) return;
+        if (prac) { PRAC = PRAC || {}; this.run = null; this.trial = null; } else PRAC = null;
         this.idx = idx; this.L = parseLevel(def); this.world = def.world; this.levelKey = def.id + ':' + Date.now();
         this.p = makePlayer(this.L.start.x, this.L.start.y); this.p.hearts = this.maxHearts();
         if (!this.mp) applyLook(this.p);                    // 1.5: the light you chose (multiplayer gives everyone their own)
@@ -35,6 +37,7 @@ const G = {
         this.hud();
         $('#h-trial').classList.add('hidden');
         if (this.trial) trialBegin(this);
+        else if (prac) UI.banner('Training', def.name);
         else UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
     },
     update(dt) {
@@ -42,7 +45,7 @@ const G = {
         // a split-second freeze when a stomp lands: it makes the hit feel solid
         if (this.hitstop > 0) { this.hitstop -= dt; return; }
         this.t += dt; this.iris = Math.min(1, (this.iris ?? 1) + dt * 1.5); if (this.p.spawnT > 0) this.p.spawnT -= dt;
-        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } if (this.trial) trialTick(this, dt); }
+        if (!this.done) { this.time += dt; if (!PRAC) { SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } } if (this.trial) trialTick(this, dt); }
         updatePlayer(this, dt);
         if (this.mp) mpUpdate(this, dt);
         updateWorld(this, dt);

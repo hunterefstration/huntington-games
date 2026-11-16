@@ -87,7 +87,9 @@ const SAVE = (() => {
 })();
 
 // lifetime stats (Stats screen): ST('jumps'), ST('dist', tiles)...
-const ST = (k, n = 1) => { SAVE.d.stats[k] = (SAVE.d.stats[k] || 0) + n; };
+// 1.6 Training: in the practice room (PRAC is set) nothing reaches the save; the lesson reads its own counts from PRAC
+let PRAC = null;
+const ST = (k, n = 1) => { if (PRAC) { PRAC[k] = (PRAC[k] || 0) + n; return; } SAVE.d.stats[k] = (SAVE.d.stats[k] || 0) + n; };
 
 // ---------- settings ----------
 const SET_KEY = 'lumi_settings';
