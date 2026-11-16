@@ -3,6 +3,7 @@ Current state and the facts you need to change things. What each round did and w
 
 ## Where things stand
 - Live: **r78** (`latest.json` on `main`). r78: Training in Steel Storm 2.3, Blocky 5.6, Sovereign 1.5, Mayhem 1.2, Brown E 2.1, Last Light 1.6 (shared tutor engine copied byte-identical from `Steel Storm/src/js/88-tutor.js`; suites `tools/tests/{ss,blocky,sov,mayhem,bec,lumi}-training.mjs`; practice never saves or touches boards; known: Esc under pointer lock may open pause, Skip still works). r77: Beat Lab 1.2 tutorials (`80-tutor.js`), Beat Lab pinned in Featured. r76: Beat Lab 1.1 (share codes: grapevine `083-songs.js`, `~songs`, 10 a day; `HGGrapevine.songs`; layers, 8-lane kits, articulations `[tick,len,midi,vel,art]`). r75: content updates. r74: Round 10.
+- Before `release.sh ship`, the hub `index.html` must hold the plain launcher build (one licence line after `HG_BUILD_N`), not a released copy (two lines): rebuild it with `node tools/build-game.js . --src launcher`. A released copy gives a doubled `})();` and the gate tests fail ("Unexpected token '}'").
 - r70: admin "Rebuild from leaderboards" (`launcher/js/10-hub/098-rebuild.js`, suite `gv-rebuild`). r69: saves never lost (other-tab
   guard, mass-delete guard, server copies, admin lookup/restore, device backups; Saves tab "Look for older saves"; suite `gv-recover`).
 - 2026-11-14 cleanup: launcher `001-util.js` (`hubShown`, `hubWake`, `setHtml`): hub repaint/poll timers skip work while a game is open or
