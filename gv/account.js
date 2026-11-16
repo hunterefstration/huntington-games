@@ -1126,7 +1126,7 @@ const GVLink = (() => {
   // To add one: { id, g (game id), i (icon), n (name), d (how to get it), p (points: 10 / 25 / 50 / 100), t: fn }.
   var AG = { spikes: '100 Levels of Spikes', tetris: 'Tetris Surge', clicker: 'Brown E Clicker', coffee: 'Bean & Brew Tycoon',
     market: 'Market & Life', td: 'Tower Defense', frontline: 'Frontline: Command', blocky: 'Blocky Shooter', neon: 'Neon Dash',
-    sov: 'Sovereign', lumi: 'Last Light', imposter: 'Imposter', elementlab: 'Element Lab', hub: 'Huntington Games' };
+    sov: 'Sovereign', lumi: 'Last Light', imposter: 'Imposter', elementlab: 'Element Lab', mayhem: 'Mayhem Marathon', hub: 'Huntington Games' };
   function rd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
   function cnt(x) { return !x ? 0 : Array.isArray(x) ? x.length : typeof x === 'object' ? Object.keys(x).filter(function (k) { return x[k]; }).length : 0; }
@@ -1136,7 +1136,8 @@ const GVLink = (() => {
       ML = function () { var s = rd('marketLifeSave'); return (s && s.life) || {}; }, TDR = function () { return rd('td2_records') || {}; },
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
       SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; },
-      LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; }, EL = function () { return cnt(rd('elementlab_challenges')); };
+      LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; }, EL = function () { return cnt(rd('elementlab_challenges')); },
+      MM = function () { return rd('mayhem_save') || {}; }, MMS = function () { return MM().stats || {}; }, MMR = function (r, k) { return num(((MM().rp || {})[r] || {})[k]); };
   var luDone = function (id) { return !!((LU().levels || {})[id]); }, luFlaw = function () { var n = 0, l = LU().levels || {}; for (var k in l) if ((l[k] || {}).perfect && !/^6-/.test(k)) n++; return n; },      // (the main game: Frostveil, 1.5, comes after it)
       luMedals = function (m) { var n = 0, t = LU().trials || {}; for (var k in t) if (num((t[k] || {}).m) >= m) n++; return n; }, luFrozen = function () { var n = 0, s = LU().secrets || {}; for (var k in s) if (/^6-/.test(k)) n++; return n; }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
@@ -1239,7 +1240,16 @@ const GVLink = (() => {
     { id: 'el1', g: 'elementlab', i: '🧪', n: 'Mad Scientist', d: 'Finish a challenge in Element Lab.', p: 10, t: function () { return EL() >= 1; } },
     { id: 'el6', g: 'elementlab', i: '⚗️', n: 'Lab Partner', d: 'Finish 6 Element Lab challenges.', p: 25, t: function () { return EL() >= 6; } },
     { id: 'elall', g: 'elementlab', i: '🔬', n: 'Nobel Prize', d: 'Finish every Element Lab challenge.', p: 50, t: function () { return EL() >= 13; } },
+    // Mayhem Marathon (mayhem_save: stats + rp = per-round { p played, q qualified/survived, w won })
+    { id: 'mm1', g: 'mayhem', i: '🤸', n: 'Wobbly Debut', d: 'Play a Mayhem Marathon show.', p: 10, t: function () { return num(MMS().shows) >= 1; } },
+    { id: 'mmcrown', g: 'mayhem', i: '👑', n: 'Crowned', d: 'Win a Mayhem Marathon show.', p: 25, t: function () { return num(MMS().crowns) >= 1; } },
+    { id: 'mmq50', g: 'mayhem', i: '🏃', n: 'Qualifier', d: 'Qualify from 50 Mayhem Marathon rounds.', p: 25, t: function () { return num(MMS().qualified) >= 50; } },
+    { id: 'mmhill', g: 'mayhem', i: '⛰️', n: 'King of the Hill', d: 'Win the Summit Showdown final.', p: 25, t: function () { return MMR('hill', 'w') >= 1; } },
+    { id: 'mmbomb', g: 'mayhem', i: '💣', n: 'Hot Potato', d: 'Pass the bomb 25 times in Bomb Tag.', p: 10, t: function () { return num(MMS().bombsPassed) >= 25; } },
+    { id: 'mmall', g: 'mayhem', i: '🎪', n: 'Full Programme', d: 'Play all 21 Mayhem Marathon rounds.', p: 50, t: function () { var r = MM().rp || {}, n = 0; for (var k in r) if (r[k] && num(r[k].p) > 0) n++; return n >= 21; } },
+    { id: 'mmcrown10', g: 'mayhem', i: '🏰', n: 'Mayhem Monarch', d: 'Win 10 Mayhem Marathon shows.', p: 100, t: function () { return num(MMS().crowns) >= 10; } },
     // Imposter
+
     { id: 'imp1', g: 'imposter', i: '🫘', n: 'Suspicious', d: 'Play a game of Imposter.', p: 10, t: function () { return num(IM().games) >= 1; } },
     { id: 'imp10', g: 'imposter', i: '🧑‍🚀', n: 'Crew Captain', d: 'Win 10 games as crew.', p: 25, t: function () { return num(IM().crewWins) >= 10; } },
     { id: 'imptask', g: 'imposter', i: '🔧', n: 'Busy Bean', d: 'Finish 100 tasks.', p: 25, t: function () { return num(IM().tasks) >= 100; } },

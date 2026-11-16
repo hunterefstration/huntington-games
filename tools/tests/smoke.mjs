@@ -23,9 +23,9 @@ let bad = 0;
 for (const g of games) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } }), errs = [];
   page.on('pageerror', e => errs.push(e.message));
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());                       // nothing else leaves the machine (first: Playwright tries the LAST route added first, so the two below win for theirs)
   await page.route(/three@0\.160\.0\/(.*)$/, r => { const m = /three@0\.160\.0\/(.*)$/.exec(r.request().url()), f = TOOLS + '/cdn/package/' + m[1].split('?')[0]; fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : r.abort(); });
   await page.route(/cdn\.tailwindcss\.com/, r => { const f = TOOLS + '/node_modules/tailwindcss-cdn/tailwindcss.js'; fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : r.abort(); });
-  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());                       // nothing else leaves the machine
   let nav = '';
   await page.goto(base + (g === '.' ? '' : g.split('/').map(encodeURIComponent).join('/') + '/') + 'index.html', { timeout: 30000 }).catch(e => { nav = e.message.split('\n')[0]; });
   await page.waitForTimeout(g === '.' ? 2500 : 1800);

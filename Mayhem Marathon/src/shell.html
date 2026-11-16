@@ -32,6 +32,7 @@
     <button class="btn" id="b-ward">Customise</button>
     <button class="btn" id="b-how">How to play</button>
     <button class="btn" id="b-set">Settings</button>
+    <button class="btn newb" id="b-new">What's new</button>
   </div>
   <div class="foot" id="t-stats"></div>
 </div>
@@ -46,6 +47,7 @@
         <p class="note">You and 15 bots. Rounds knock out part of the field until one Tumbler wins the crown.</p>
         <label>Bot skill</label><div class="seg" id="o-skill"><button data-v="0">Easy</button><button data-v="1">Normal</button><button data-v="2">Hard</button><button data-v="3">Mixed</button></div>
         <label>Show length</label><div class="seg" id="o-len"><button data-v="3">3 rounds</button><button data-v="4">4 rounds</button><button data-v="5">5 rounds</button></div>
+        <label>Rounds in the show</label><div class="row"><button class="btn small" id="b-pick" title="Custom show: pick which rounds can come up"><span id="o-pick">All rounds</span> - change</button></div>
         <button class="btn go" id="b-solo">Start solo show</button>
         <label>Practice one round</label>
         <div class="row"><select id="o-prac"></select><button class="btn small" id="b-prac">Go</button></div>
@@ -76,6 +78,7 @@
           <label>Bot skill</label><div class="seg" id="l-skill"><button data-v="0">Easy</button><button data-v="1">Normal</button><button data-v="2">Hard</button><button data-v="3">Mixed</button></div>
           <label>Show length</label><div class="seg" id="l-len"><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div>
           <label>Scoring</label><div class="seg" id="l-score"><button data-v="auto" title="Points with 2-4 players, knockout with more">Auto</button><button data-v="knockout">Knockout</button><button data-v="points">Points</button></div>
+          <label>Rounds (custom show)</label><button class="btn small" id="l-pick" title="Pick which rounds can come up">All rounds</button>
         </div>
         <div class="row end"><button class="btn small" id="l-ward">Customise</button><button class="btn" id="l-ready">Ready</button><button class="btn go" id="l-start">Start show</button></div>
         <div id="l-status" class="note"></div>
@@ -117,6 +120,7 @@
         <p><b>Races</b>: reach the finish before the spots run out.</p>
         <p><b>Survival</b>: stay on until the time is up.</p>
         <p><b>Team</b> rounds: the team with the lowest score is out. In Tail Chase, have a tail when time runs out.</p>
+        <p><b>Hunt</b>: in Bomb Tag, grab someone to pass your bomb on. Holding one when the fuse runs out knocks you out.</p>
         <p><b>Final</b>: the winner takes the crown!</p>
         <p>With 2-4 friends a show can be scored by points, so nobody is knocked out. Every round earns kudos and fame for new looks.</p>
       </div>
@@ -155,6 +159,23 @@
 </div>
 <div id="s-intro" class="hidden"><div class="ic-card"><div id="i-kind"></div><div id="i-name"></div><div id="i-desc"></div><div id="i-goal"></div></div></div>
 <div id="s-res" class="scr dim hidden"><div class="card wide" id="r-card"></div></div>
+<div id="s-pick" class="scr dim hidden">
+  <div class="card wide">
+    <div class="ch"><h2>Custom show: pick the rounds</h2><button class="x" data-back>&times;</button></div>
+    <div class="row"><button class="btn small" data-pk="*all">All</button><button class="btn small" data-pk="*none">None</button></div>
+    <div id="pk-list"></div>
+    <div class="note" id="pk-note"></div>
+    <div class="row end"><button class="btn go" id="pk-done">Done</button></div>
+  </div>
+</div>
+<div id="s-new" class="scr dim hidden">
+  <div class="card">
+    <div class="ch"><h2>What's new in 1.1</h2><button class="x" data-back>&times;</button></div>
+    <ul id="n-list"></ul>
+    <div class="row end"><button class="btn go" id="n-ok">Let's go!</button></div>
+  </div>
+</div>
+
 <div id="s-win" class="scr hidden"><div class="win-box" id="w-box"></div></div>
 <div id="s-pause" class="scr dim hidden">
   <div class="card"><h2 id="pa-title">Paused</h2><div class="note" id="pa-note"></div>

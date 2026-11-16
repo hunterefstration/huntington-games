@@ -90,7 +90,7 @@ function qolDecorate() {
 // The page used to be one tall column of big cards, which stopped working past twenty games. Now: a banner, a shelf
 // per kind of game (each scrolls sideways, so a shelf never gets longer), then every game as a small tile. A tile's
 // description shows when you rest on it (qolPeek). NEW_NOW names what this release added or changed.
-var NEW_NOW = ['Beat Lab', 'Steel Storm', 'Mayhem Marathon', 'Blocky Shooter V2'];
+var NEW_NOW = ['Blocky Shooter V2', 'Last Light', 'Sovereign', 'Mayhem Marathon'];
 var SHELF_OF = { '3D': 'action', Shooter: 'action', Strategy: 'think', Tycoon: 'think', Sim: 'think', Clicker: 'think', Platformer: 'run', Puzzle: 'run', Arcade: 'run', Party: 'party', Minigame: 'party', Casino: 'party', Sandbox: 'make' };
 var SHELVES = [['fav', '\u2605 Your favourites'], ['new', 'New and updated'], ['mp', 'Play with friends'], ['action', 'Action and shooters'], ['think', 'Strategy, tycoon and idle'], ['run', 'Platformers, puzzles and arcade'], ['party', 'Party games and minigames'], ['make', 'Sandbox and the rest']];
 function qolShelfOf(g) { var t = g.tags || [], out = {}; for (var i = 0; i < t.length; i++) if (SHELF_OF[t[i]]) out[SHELF_OF[t[i]]] = 1; if (!Object.keys(out).length) out.make = 1; if (t.indexOf('Multiplayer') >= 0) out.mp = 1; if (NEW_NOW.indexOf(g.dir) >= 0) out['new'] = 1; if (qolIsFav(g.dir)) out.fav = 1; return out; }
@@ -273,13 +273,12 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r74', items: [
-  ['Beat Lab: make your own music', 'A new music studio: a simple song grid for anyone, and a full studio with 250+ instruments, a piano roll, a mixer and effects. Your song can even be your launcher music.'],
-  ['Steel Storm 2.2', 'New menus, a live preview of your vehicle fighting like a pro, a proper multiplayer screen with a party lobby, and you respawn in what you picked.'],
-  ['Multiplayer, rebuilt', 'Quick Play, join with a code or host a room, see every open game live, and earn bonus goons for every 10 minutes you play with other people (double from 3 to 5 pm).'],
-  ['Chat over your game', 'Press T in a game to talk to the people playing with you, right on screen. Messages float up and fade away.'],
-  ['Grapevine, tidied up', 'A new sidebar with filters, folding sections and pins, and official rooms everyone is in: #announcements, #main, #multiplayer-codes, #music and #bugs-and-ideas.'],
-  ['Activity', 'A new tab with how many people play, the most played games and who is playing what right now.']
+var WHATSNEW = { id: 'r75', items: [
+  ['Blocky Shooter 5.5', 'Two new maps (Frostbite and Carnival), the new HUNTED mode, four new weapons (Drum Shotgun, Cryo Blaster, Plasma Rifle, Seeker Launcher), new enemies and the Winter King boss.'],
+  ['Last Light 1.5', 'Frostveil: a whole new world after the final boss with a new ability (Glide), a snow owl guardian, a secret level, Trials with medals and ghosts, and new colours for your light.'],
+  ['Sovereign 1.4', 'The World Council (vote on sanctions, peacekeepers and world laws), global crises, four new scenarios like Cold War II, and 25 new events.'],
+  ['Mayhem Marathon 1.1', 'Seven new rounds (21 in all) including Bomb Tag, Turf War and Meteor Mayhem, custom shows, and 22 new things to wear.'],
+  ['New achievements', 'Every update above comes with new achievements to chase.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;

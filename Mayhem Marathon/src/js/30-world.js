@@ -117,7 +117,7 @@ function animStadium(t) {
 }
 // ---------- level meshes from the colliders ----------
 const LV = { group: null, inst: [], dyn: [] };
-const GEO = { box: new THREE.BoxGeometry(2, 2, 2), cyl: new THREE.CylinderGeometry(1, 1, 2, 24), sph: new THREE.SphereGeometry(1, 20, 14), hex: new THREE.CylinderGeometry(1, 1, 2, 6) };
+const GEO = { box: new THREE.BoxGeometry(2, 2, 2), cyl: new THREE.CylinderGeometry(1, 1, 2, 24), sph: new THREE.SphereGeometry(1, 20, 14), hex: new THREE.CylinderGeometry(1, 1, 2, 6), oct: new THREE.CylinderGeometry(1, 1, 2, 8) };
 function clearLevel() {
     if (LV.group) { GFX.scene.remove(LV.group); LV.group.traverse(o => { if (o.geometry && !Object.values(GEO).includes(o.geometry)) o.geometry.dispose(); }); }
     LV.group = null; LV.inst = []; LV.dyn = [];
@@ -125,10 +125,10 @@ function clearLevel() {
 // static colliders are merged into one mesh; colliders with a mover or marked dyn go into instanced meshes
 function buildLevelMeshes(extra) {
     clearLevel(); const g = LV.group = new THREE.Group(); GFX.scene.add(g);
-    const stat = [], dyn = { box: [], cyl: [], sph: [], hex: [] };
+    const stat = [], dyn = { box: [], cyl: [], sph: [], hex: [], oct: [] };
     for (const c of W.cs) {
         if (!c.vis) continue;
-        const shape = c.k === K_BOX ? 'box' : c.k === K_SPH ? 'sph' : c.hex ? 'hex' : 'cyl';
+        const shape = c.k === K_BOX ? 'box' : c.k === K_SPH ? 'sph' : c.hex ? 'hex' : c.oct ? 'oct' : 'cyl';      // oct: rolling logs (you can see them turn)
         if (c.mv || c.dyn) { dyn[shape].push(c); continue; }
         const geo = GEO[shape].clone(), sx = c.k === K_BOX ? c.hx : c.r, sy = c.k === K_BOX ? c.hy : c.k === K_SPH ? c.r : c.hy, sz = c.k === K_BOX ? c.hz : c.r;
         stat.push(colorGeo(placeGeo(geo, c.p[0], c.p[1], c.p[2], c.rot[0], c.rot[1], c.rot[2], sx, sy, sz), c.col));
@@ -173,8 +173,13 @@ float patMask(vec3 p, float k){
   if (k < 6.5) { vec3 q = normalize(p); return mod(floor(atan(q.x, q.z) * 2.5) + floor(q.y * 4.0), 2.0); }
   if (k < 7.5) { vec3 q = p * 5.0; return step(0.62, fract(sin(dot(floor(q), vec3(12.9, 78.2, 37.7))) * 4375.5)) * 0.9; }
   if (k < 8.5) return smoothstep(-0.3, 0.45, p.y);
-  vec3 q = normalize(p); vec2 g = vec2(atan(q.x, q.z) * 3.0, q.y * 5.0); vec2 f = fract(g) - 0.5; float a = atan(f.y, f.x);
-  float r = 0.18 + 0.08 * cos(a * 5.0); return step(length(f), r) * step(0.5, fract(sin(dot(floor(g), vec2(3.1, 7.7))) * 91.3) + 0.4);
+  if (k < 9.5) { vec3 q = normalize(p); vec2 g = vec2(atan(q.x, q.z) * 3.0, q.y * 5.0); vec2 f = fract(g) - 0.5; float a = atan(f.y, f.x);
+    float r = 0.18 + 0.08 * cos(a * 5.0); return step(length(f), r) * step(0.5, fract(sin(dot(floor(g), vec2(3.1, 7.7))) * 91.3) + 0.4); }
+  if (k < 10.5) { vec3 q = p * 3.2; vec3 f = fract(q) - 0.5; float h = fract(sin(dot(floor(q), vec3(12.9, 78.2, 37.7))) * 4375.5);
+    return step(length(f) + 0.06 * sin(atan(f.y, f.x) * 6.0 + h * 9.0), 0.12 + 0.22 * h) * step(0.35, h); }
+  if (k < 11.5) return step(0.5, fract((p.x + p.y) * 3.2));
+  float c = abs(sin(p.x * 9.0 + sin(p.y * 7.0) * 1.8) * sin(p.z * 8.0 + sin(p.x * 6.0) * 1.5)) * abs(sin(p.y * 10.0 + p.z * 3.0));
+  return 1.0 - step(0.06, c);
 }`;
 function tumMat(withPattern) {
     const m = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
@@ -209,7 +214,15 @@ function hatGeometry(id) {
         case 'h13': add(new THREE.ConeGeometry(0.33, 0.9, 16), 0x3550ff, 0, 0.42, -0.05, -0.2); add(new THREE.CylinderGeometry(0.55, 0.55, 0.04, 20), 0x3550ff, 0, 0.0); add(new THREE.OctahedronGeometry(0.07), 0xffe066, 0.12, 0.35, 0.22); break;
         case 'h14': add(new THREE.TorusGeometry(0.5, 0.045, 6, 20, PI), 0x2f3247, 0, -0.15, 0); add(new THREE.CylinderGeometry(0.16, 0.16, 0.14, 14), 0xff4f6d, 0.52, -0.2, 0, 0, 0, PI / 2); add(new THREE.CylinderGeometry(0.16, 0.16, 0.14, 14), 0xff4f6d, -0.52, -0.2, 0, 0, 0, PI / 2); break;
         case 'h15': add(new THREE.SphereGeometry(0.46, 16, 8, 0, TAU, 0, PI / 2), 0x9aa3ad, 0, -0.1); add(new THREE.ConeGeometry(0.08, 0.4, 10), 0xf4f1ea, 0.42, 0.12, 0, 0, 0, -1.0); add(new THREE.ConeGeometry(0.08, 0.4, 10), 0xf4f1ea, -0.42, 0.12, 0, 0, 0, 1.0); add(new THREE.BoxGeometry(0.07, 0.42, 0.06), 0x9aa3ad, 0, 0.0, 0.45); break;
+        case 'h16': add(new THREE.SphereGeometry(0.43, 16, 8, 0, TAU, 0, PI / 2), 0xd8332f, 0, -0.08); add(new THREE.BoxGeometry(0.88, 0.07, 0.9), 0x2a1d1d, 0, 0.02); add(new THREE.BoxGeometry(0.5, 0.05, 0.3), 0xd8332f, 0, -0.06, 0.48); add(new THREE.BoxGeometry(0.1, 0.32, 0.26), 0x2a1d1d, 0.44, -0.2, 0); add(new THREE.BoxGeometry(0.1, 0.32, 0.26), 0x2a1d1d, -0.44, -0.2, 0); add(new THREE.SphereGeometry(0.08, 8, 6), 0xffffff, 0, 0.36); break;
+        case 'h17': add(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), 0xf4f1ea, 0, 0.2); for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; add(new THREE.ConeGeometry(0.16, 0.42, 3), [0xff5fa2, 0xffd23f, 0x3fb8ff, 0x7ee23a][i], Math.sin(a) * 0.2, 0.46, Math.cos(a) * 0.2, PI / 2 - 0.35, a, 0); } add(new THREE.SphereGeometry(0.06, 8, 6), 0xffffff, 0, 0.46); break;
+        case 'h18': add(new THREE.DodecahedronGeometry(0.3, 0), 0x6b5a50, 0, 0.18); add(new THREE.SphereGeometry(0.08, 6, 4), 0x4a3d36, 0.12, 0.3, 0.2); for (let i = 0; i < 3; i++) add(new THREE.ConeGeometry(0.12 - i * 0.025, 0.7 - i * 0.12, 8), [0xff5a1f, 0xff9a1f, 0xffe066][i], (i - 1) * 0.12, 0.2 + i * 0.05, -0.42, -PI / 2 - 0.3, 0, 0); break;
+        case 'h19': add(new THREE.CylinderGeometry(0.3, 0.38, 0.44, 16), 0x3fb8ff, 0, 0.16); add(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 16), 0xffffff, 0, 0.39); add(new THREE.TorusGeometry(0.34, 0.025, 6, 16, PI), 0x888888, 0, 0.12, 0, 0, 0, 0); for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + 0.3; add(new THREE.CapsuleGeometry(0.045, 0.12 + (i % 3) * 0.06, 3, 6), [0xff5fa2, 0xffd23f, 0x52f2c2][i % 3], Math.sin(a) * 0.37, -0.02 - (i % 3) * 0.03, Math.cos(a) * 0.37); } break;
+        case 'h20': add(new THREE.SphereGeometry(0.42, 16, 8, 0, TAU, 0, PI / 2), 0x23242e, 0, -0.08); add(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 10), 0x55575f, 0, 0.32); add(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 6), 0xc9a26b, 0.04, 0.44, 0, 0, 0, -0.4); add(new THREE.SphereGeometry(0.07, 8, 6), 0xffd23f, 0.1, 0.56); add(new THREE.BoxGeometry(0.86, 0.06, 0.86), 0xffd23f, 0, -0.05); break;
+        case 'h21': for (let i = 0; i < 5; i++) add(new THREE.ConeGeometry(0.1, 0.36 + (2 - Math.abs(i - 2)) * 0.14, 8), [0xff3d1f, 0xff8a1f, 0xffd23f, 0xff8a1f, 0xff3d1f][i], 0, 0.14 + (2 - Math.abs(i - 2)) * 0.07, (i - 2) * 0.15, (i - 2) * 0.25, 0, 0); break;
+        case 'h22': add(new THREE.TorusGeometry(0.4, 0.04, 6, 20), 0x3f8f3a, 0, 0.0, 0, PI / 2); for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; if (Math.abs(a - PI) < 0.4) continue; add(new THREE.SphereGeometry(0.09, 6, 4).scale(1.8, 0.5, 0.8), i % 2 ? 0x5fb84a : 0x3f8f3a, Math.sin(a) * 0.4, 0.04, Math.cos(a) * 0.4, 0, a + 0.6, 0); } add(new THREE.SphereGeometry(0.05, 6, 4), 0xffd23f, 0, 0.03, 0.42); break;
         case 'tail': add(new THREE.ConeGeometry(0.16, 0.7, 10), 0xffd23f, 0, 0, 0, PI / 2); add(new THREE.SphereGeometry(0.2, 10, 8), 0xff8a2b, 0, 0, -0.38); break;
+        case 'bomb': add(new THREE.SphereGeometry(0.32, 14, 10), 0x23242e); add(new THREE.CylinderGeometry(0.09, 0.09, 0.1, 10), 0x55575f, 0, 0.32); add(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 6), 0xc9a26b, 0.03, 0.44, 0, 0, 0, -0.35); add(new THREE.SphereGeometry(0.08, 8, 6), 0xffd23f, 0.08, 0.56); add(new THREE.SphereGeometry(0.07, 8, 6), 0xffffff, -0.12, 0.12, 0.25); break;
         case 'crown': add(new THREE.CylinderGeometry(0.34, 0.3, 0.22, 16, 1, true), 0xffd23f); for (let i = 0; i < 5; i++) add(new THREE.ConeGeometry(0.08, 0.2, 6), 0xffd23f, Math.sin(i / 5 * TAU) * 0.3, 0.2, Math.cos(i / 5 * TAU) * 0.3); add(new THREE.SphereGeometry(0.06, 8, 6), 0xff4f6d, 0, 0, 0.33); break;
         default: return null;
     }
@@ -232,6 +245,7 @@ function initTumblers() {
     instPart('band', new THREE.TorusGeometry(0.6, 0.07, 8, 28).rotateX(PI / 2), new THREE.MeshStandardMaterial({ roughness: 0.4, emissive: 0x222222 }), 1, false);
     instPart('tail', hatGeometry('tail'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }), 1);
     instPart('crown', hatGeometry('crown'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.7, emissive: 0x332200 }), 1, false);
+    instPart('bomb', hatGeometry('bomb'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }), 1);
     const blobGeo = new THREE.CircleGeometry(0.55, 16).rotateX(-PI / 2);
     TUM.blob = instPart('blob', blobGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }), 1, false);
     for (const it of ITEMS) if (it.cat === 'hat' && it.id !== 'h0') {
@@ -270,6 +284,9 @@ function drawTumbler(vs, look, opt) {
         if (p === 'e4') { armFwd = -1.57 * (Math.floor(s) % 2); legA = 0; armOut = 0.3; spinY = Math.floor(s / 2) % 2 ? 0.4 : -0.4; }
         if (p === 'e5') { armOut = 2.6 + Math.sin(s * 2) * 0.3; hop = Math.abs(Math.sin(s)) * 0.25; }
         if (p === 'e6') { legA = Math.sin(s * 1.5) * 0.6; spinY = PI * 0.5; armA = Math.sin(s * 1.5) * 0.5; }
+        if (p === 'e7') { spinY = Math.sin(s * 1.6) * 0.45; armOut = 1.4; armA = Math.sin(s * 1.6 + 1) * 0.6; bob = Math.abs(Math.sin(s * 1.6)) * 0.05; }
+        if (p === 'e8') { const j = Math.abs(Math.sin(s * 1.3)); hop = j * 0.45; armOut = 0.3 + j * 2.4; legA = 0; }
+        if (p === 'e9') { armOut = 0.3; armA = 0; armFwd = 0; spinY = Math.sin(s * 0.5) * 0.5; hop = 0.05 + Math.sin(s) * 0.03; }
     }
     const sq = vs.sq || 0, sy = 1 - sq, sxz = 1 + sq * 0.55, sc = opt.scale || 1;
     // ROOT = T(feet) * T(c) * Rtumble * Ry(yaw) * Rx(pitch) * T(-c) * S
@@ -286,12 +303,22 @@ function drawTumbler(vs, look, opt) {
     pushInst(TUM.parts.eyes, M3, st === ST_TUMBLE ? 0xffffff : vis.eye);
     for (let s = -1; s <= 1; s += 2) {
         QA.setFromAxisAngle(XA, legA * s); M1.compose(V3.set(0.22 * s, 0.34, 0), QA, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.legs, M3, 0x3a3d52);
-        const ao = vs.pose === 'e0' && s > 0 ? 2.6 + Math.sin(t * 9) * 0.4 : armOut; QA.setFromAxisAngle(XA, armA * s + armFwd); QB.setFromAxisAngle(ZA, ao * s); QB.multiply(QA); M1.compose(V3.set(0.55 * s, 0.98, 0), QB, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.arms, M3, col);
+        const ao = (vs.pose === 'e0' || vs.pose === 'e9') && s > 0 ? (vs.pose === 'e9' ? 2.2 + Math.sin(t * 5) * 0.25 : 2.6 + Math.sin(t * 9) * 0.4) : armOut;
+ QA.setFromAxisAngle(XA, armA * s + armFwd); QB.setFromAxisAngle(ZA, ao * s); QB.multiply(QA); M1.compose(V3.set(0.55 * s, 0.98, 0), QB, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.arms, M3, col);
     }
-    if (L.hat !== 'h0' && TUM.hats[L.hat]) { PART.makeTranslation(0, 1.36, 0); M3.multiplyMatrices(ROOT, PART); if (L.hat === 'h9') { M2.makeRotationY(t * 12); M3.multiply(M2); } pushInst(TUM.hats[L.hat], M3); }
+    if (L.hat !== 'h0' && TUM.hats[L.hat]) { PART.makeTranslation(0, 1.36, 0); M3.multiplyMatrices(ROOT, PART); if (L.hat === 'h9' || L.hat === 'h17') { M2.makeRotationY(t * (L.hat === 'h9' ? 12 : 7)); M3.multiply(M2); } pushInst(TUM.hats[L.hat], M3); }
     if (opt.team != null) { PART.makeTranslation(0, 0.72, 0); M3.multiplyMatrices(ROOT, PART); pushInst(TUM.parts.band, M3, TEAM_COLS[opt.team]); }
     if (opt.tail) { QA.setFromAxisAngle(XA, 0.5 + Math.sin(t * 10) * 0.15); M1.compose(V3.set(0, 0.55, -0.62), QA, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.tail, M3); }
-    if (opt.crown) { PART.makeTranslation(0, 1.5, 0); M3.multiplyMatrices(ROOT, PART); pushInst(TUM.parts.crown, M3); }
+    if (opt.crown) {             // crown celebrations make it grander: bigger, then spinning, then floating
+        const k = opt.crownTier || 0, s = 1 + Math.min(k, 3) * 0.14;
+        PART.makeTranslation(0, 1.5 + (k >= 4 ? 0.25 + Math.sin(t * 3) * 0.08 : 0), 0); M3.multiplyMatrices(ROOT, PART);
+        M2.makeScale(s, s, s); M3.multiply(M2); if (k >= 2) { M2.makeRotationY(t * (k >= 4 ? 2.5 : 1.2)); M3.multiply(M2); }
+        pushInst(TUM.parts.crown, M3);
+    }
+    if (opt.bomb) {               // Bomb Tag: the bomb rides above your head and swells as the fuse burns down
+        const s = 1 + (opt.bombHot || 0) * (0.15 + 0.15 * Math.sin(t * 20));
+        PART.makeTranslation(0, 1.85, 0); M3.multiplyMatrices(ROOT, PART); M2.makeScale(s, s, s); M3.multiply(M2); pushInst(TUM.parts.bomb, M3);
+    }
     if (TUM.blob.visible && opt.blobY != null) { M1.makeTranslation(vs.x, opt.blobY + 0.03, vs.z); pushInst(TUM.blob, M1); }
 }
 // ---------- particles: confetti + puffs (trails, dust, splashes) ----------
@@ -303,9 +330,10 @@ function initParticles() {
     PFX.conf.setColorAt(0, C1.setHex(0xffffff)); PFX.puff.setColorAt(0, C1.setHex(0xffffff));
 }
 const CONF_PAL = [0xff5fa2, 0xffd23f, 0x3fb8ff, 0x7ee23a, 0xff8a2b, 0x9a5cff, 0xffffff];
-function confetti(x, y, z, n, spread) {
+function confetti(x, y, z, n, spread, pal) {
+    pal = pal || CONF_PAL;
     const max = QUALITY[GFX.q].confetti;
-    for (let i = 0; i < n && PFX.confP.length < max; i++) PFX.confP.push({ x: x + (Math.random() - 0.5) * (spread || 1), y, z: z + (Math.random() - 0.5) * (spread || 1), vx: (Math.random() - 0.5) * 8, vy: 4 + Math.random() * 9, vz: (Math.random() - 0.5) * 8, r: Math.random() * 6, rv: (Math.random() - 0.5) * 14, life: 3 + Math.random() * 2, c: CONF_PAL[Math.floor(Math.random() * CONF_PAL.length)] });
+    for (let i = 0; i < n && PFX.confP.length < max; i++) PFX.confP.push({ x: x + (Math.random() - 0.5) * (spread || 1), y, z: z + (Math.random() - 0.5) * (spread || 1), vx: (Math.random() - 0.5) * 8, vy: 4 + Math.random() * 9, vz: (Math.random() - 0.5) * 8, r: Math.random() * 6, rv: (Math.random() - 0.5) * 14, life: 3 + Math.random() * 2, c: pal[Math.floor(Math.random() * pal.length)] });
 }
 function puff(x, y, z, hex, n, sp, up, life, size) {
     const max = QUALITY[GFX.q].puffs;

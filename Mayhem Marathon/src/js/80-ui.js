@@ -35,16 +35,17 @@ function drawMenu(dt) {
     const t = performance.now() / 1000, cam = GFX.cam; MENU.t = t; tumBegin(); clearTags();
     const vs = (x, y, z, yaw, pose, extra) => Object.assign({ x, y: y + PR, z, yaw, st: 0, ground: true, spd: 0, anim: t * 2, t, pose, sq: Math.sin(t * 3) * 0.03 }, extra || {});
     if (MENU.scene === 'ceremony' && MENU.cer) {
-        const c = MENU.cer;
-        if (c.win) drawTumbler(vs(0, 1.5, 0, 0, c.win.look.pose), c.win.look, { crown: true, seed: 1 });
+        const c = MENU.cer, cel = c.win ? c.win.look.cel : 'k0';
+        if (c.win) drawTumbler(vs(0, 1.5, 0, 0, c.win.look.pose), c.win.look, { crown: true, crownTier: ITEM[cel].tier, seed: 1 });
         if (c.second) drawTumbler(vs(-3, 0.9, 0.3, 0.25, 'e5'), c.second.look, { seed: 2 });
         if (c.third) drawTumbler(vs(3, 0.6, 0.3, -0.25, 'e5'), c.third.look, { seed: 3 });
-        if (Math.random() < dt * 6) confetti((Math.random() - 0.5) * 8, 8, (Math.random() - 0.5) * 4, 10, 2);
+        celebrate(cel, dt, 0, 1.5, 0, 1);
         cam.position.set(Math.sin(t * 0.2) * 1.5, 3.2, 8.5); cam.lookAt(0, 1.6, 0);
     } else if (MENU.scene === 'ward') {
-        const look = MENU.tryLook || save.look;
-        drawTumbler(vs(0, 0.2, 0, MENU.wardYaw + Math.sin(t * 0.5) * 0.1, MENU.cat === 'pose' ? look.pose : null), look, { seed: 1, scale: 1 });
+        const look = MENU.tryLook || save.look, celCat = MENU.cat === 'cel';
+        drawTumbler(vs(0, 0.2, 0, MENU.wardYaw + Math.sin(t * 0.5) * 0.1, MENU.cat === 'pose' || celCat ? look.pose : null), look, { seed: 1, scale: 1, crown: celCat, crownTier: ITEM[look.cel].tier });
         if (look.trail !== 't0' && Math.random() < dt * 10) { const tr = ITEM[look.trail]; puff(Math.sin(t * 2) * 1.2, 0.3, Math.cos(t * 2) * 1.2, tr.hex, 1, 0.5, 0.6, 0.8, 0.8); }
+        if (celCat) celebrate(look.cel, dt, 0, 0.2, 0, 0.45);
         const narrow = innerWidth < 700;
         cam.position.set(narrow ? 0 : -1.25, narrow ? 2.6 : 1.6, narrow ? 5.5 : 3.9); cam.lookAt(narrow ? 0 : -1.25, narrow ? 0.4 : 0.95, 0);
         if (!narrow) { cam.position.x = -1.25; cam.lookAt(-1.25, 0.95, 0); cam.position.x = -1.2; }
@@ -56,8 +57,38 @@ function drawMenu(dt) {
     tumEnd(); listenerPos = null;
     GFX.sun.position.set(30, 60, 20); GFX.sun.target.position.set(0, 0, 0);
 }
+// crown celebrations (cel items): podium effects around (x,y,z); k scales them down for the wardrobe preview
+const GOLD_PAL = [0xf2b705, 0xffd23f, 0xffe066, 0xfff2b3], ROYAL_PAL = [0x9a5cff, 0xf2b705, 0xffffff, 0x3550ff], RAIN_PAL = [0xff4f6d, 0xff8a2b, 0xffd23f, 0x7ee23a, 0x3fb8ff, 0x9a5cff];
+function celebrate(id, dt, x, y, z, k) {
+    const r = Math.random, s = k || 1, t = performance.now() / 1000;
+    if (id === 'k1') {                      // fireworks: a rocket trail, then a burst
+        if (r() < dt * 1.6) { const bx = x + (r() - 0.5) * 9 * s, by = y + (5 + r() * 3) * s, bz = z - 2 * s + (r() - 0.5) * 3 * s; confetti(bx, by, bz, Math.round(40 * s), 0.6, [RAIN_PAL[Math.floor(r() * 6)], 0xffffff]); puff(bx, by, bz, 0xfff2b3, 6, 6, 1, 0.5, 1.3); if (s > 0.9) sfx('pop', null, 0.4); }
+        if (r() < dt * 8) puff(x + (r() - 0.5) * 8 * s, y + r() * 4 * s, z - 2 * s, 0xffe066, 1, 0.3, 3, 0.6, 0.7);
+    } else if (id === 'k2') {               // gold rain
+        if (r() < dt * 14) confetti(x + (r() - 0.5) * 8 * s, y + 6 * s, z + (r() - 0.5) * 4 * s, 6, 1.5, GOLD_PAL);
+        if (r() < dt * 4) puff(x + (r() - 0.5) * 2 * s, y + 1.4 * s, z, 0xffe066, 2, 1, 1, 0.6, 0.9);
+    } else if (id === 'k3') {               // meteor shower: flaming streaks falling behind the podium
+        if (r() < dt * 5) { const mx = x + (r() - 0.5) * 12 * s; for (let i = 0; i < 6; i++) puff(mx + i * 0.35 * s, y + (7 - i * 0.6) * s, z - 4 * s, i < 2 ? 0xffd23f : 0xff5a1f, 1, 0.2, -2, 0.6 + i * 0.05, 1.4 - i * 0.12); }
+        if (r() < dt * 3) confetti(x, y + 4 * s, z, 8, 3, [0xff5a1f, 0xffd23f]);
+    } else if (id === 'k4') {               // royal fanfare: purple and gold, plus trumpets once
+        if (r() < dt * 7) confetti(x + (r() - 0.5) * 7 * s, y + 7 * s, z + (r() - 0.5) * 3 * s, 10, 2, ROYAL_PAL);
+        if (k >= 1 && !MENU.fanfare) { MENU.fanfare = true; sfx('fanfare'); }
+    } else if (id === 'k5') {               // rainbow storm: a spinning spiral of every colour
+        for (let i = 0; i < 2; i++) if (r() < dt * 30) { const a = t * 3 + i * PI, rr = 2.2 * s; confetti(x + Math.sin(a) * rr, y + (1 + (t * 2 % 4)) * s, z + Math.cos(a) * rr, 3, 0.3, [RAIN_PAL[Math.floor(t * 4 + i * 3) % 6]]); }
+        if (r() < dt * 6) confetti(x + (r() - 0.5) * 8 * s, y + 7 * s, z, 8, 2);
+    } else if (r() < dt * 6) confetti(x + (r() - 0.5) * 8 * s, y + 6.5 * s, z + (r() - 0.5) * 4 * s, Math.round(10 * s), 2);
+}
+// ---------- custom shows: which rounds a show may use (save.opts.pick, [] = all) ----------
+// [] means every round, so a picker emptied with 'None' is kept as MENU.pickNone until a round is picked again
+function pickedSet() { const p = save.opts.pick; return MENU.pickNone ? new Set() : new Set(p && p.length ? p : Object.keys(ROUND_INFO)); }
+function pickLabel(o) { const p = (o || save.opts).pick; return p && p.length ? p.length + ' of ' + Object.keys(ROUND_INFO).length + ' rounds' : 'All ' + Object.keys(ROUND_INFO).length + ' rounds'; }
+function pickToggle(id) {
+    const all = Object.keys(ROUND_INFO), set = pickedSet();
+    if (id === '*all') set.clear(), all.forEach(x => set.add(x)); else if (id === '*none') set.clear(); else if (set.has(id)) set.delete(id); else set.add(id);
+    MENU.pickNone = set.size === 0; save.opts.pick = set.size === all.length || !set.size ? [] : all.filter(x => set.has(x)); writeSave();
+}
 // ---------- screens ----------
-const SCREENS = ['#s-title', '#s-play', '#s-lobby', '#s-ward', '#s-how', '#s-set', '#s-res', '#s-win', '#s-pause'];
+const SCREENS = ['#s-title', '#s-play', '#s-lobby', '#s-ward', '#s-how', '#s-set', '#s-res', '#s-win', '#s-pause', '#s-pick', '#s-new'];
 const UI = {
     back: null,
     show(id) { for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id); G.screen = id ? id.slice(3) : 'game'; },
@@ -71,10 +102,29 @@ const UI = {
         $('#t-crowns').textContent = s.crowns; $$('.v-kudos').forEach(e => e.textContent = save.kudos);
         $('#t-lvl').textContent = fp.lvl; $('#t-fame').style.width = (fp.lvl >= FAME_MAX ? 100 : fp.have / fp.need * 100).toFixed(0) + '%';
         const nm = $('#t-name'); nm.value = myName(); nm.disabled = signedIn();
-        $('#t-stats').textContent = 'Shows ' + s.shows + ' · Crowns ' + s.crowns + ' · Rounds qualified ' + s.qualified + ' · Finals reached ' + s.finals;
+        $('#t-stats').textContent = 'Shows ' + s.shows + ' · Crowns ' + s.crowns + ' · Rounds qualified ' + s.qualified + ' · Finals reached ' + s.finals + ' · v' + VERSION;
+    },
+    openNew() {
+        UI.back = G.screen; UI.show('#s-new');
+        $('#n-list').innerHTML = WHATS_NEW.map(x => '<li>' + esc(x) + '</li>').join('');
+        if (save.seenVer !== VERSION) { save.seenVer = VERSION; writeSave(); }
+    },
+    openPick(from) {
+        UI.back = from || G.screen; MENU.pickNone = false; UI.show('#s-pick'); UI.paintPick();
+    },
+    paintPick() {
+        const set = pickedSet(), can = !NET.net || NET.host;
+        let h = '';
+        for (const kind of ['race', 'survive', 'team', 'hunt', 'final']) {
+            const ids = Object.keys(ROUND_INFO).filter(id => ROUND_INFO[id].kind === kind); if (!ids.length) continue;
+            h += '<div class="pk-k">' + KIND_LABEL[kind] + '</div><div class="pk-row">' + ids.map(id => '<button class="pk' + (set.has(id) ? ' on' : '') + (NEW_ROUNDS.includes(id) ? ' new' : '') + '" data-r="' + id + '" title="' + esc(ROUND_INFO[id].desc) + '"' + (can ? '' : ' disabled') + '>' + esc(ROUND_INFO[id].name) + '</button>').join('') + '</div>';
+        }
+        $('#pk-list').innerHTML = h;
+        const fin = [...set].some(id => ROUND_INFO[id].kind === 'final'), other = [...set].some(id => ROUND_INFO[id].kind !== 'final');
+        $('#pk-note').textContent = MENU.pickNone ? 'Nothing picked yet: pick some rounds (with none picked, a show uses them all).' : pickLabel() + ' picked.' + (!fin ? ' No final picked: a random final ends the show.' : '') + (!other ? ' No other rounds picked: random ones fill the show.' : '') + ' Team and hunt rounds need enough players left.';
     },
     openPlay() {
-        UI.show('#s-play'); segPaint('#o-skill', save.opts.skill); segPaint('#o-len', save.opts.length);
+        UI.show('#s-play'); segPaint('#o-skill', save.opts.skill); segPaint('#o-len', save.opts.length); $('#o-pick').textContent = pickLabel();
         const rc = lastRoom(); $('#b-rejoin').classList.toggle('hidden', !rc); if (rc) $('#b-rejoin').textContent = 'Rejoin room ' + rc;
         $('#p-status').textContent = '';
     },
@@ -96,6 +146,7 @@ const UI = {
         if (nb > 0) { const d = document.createElement('div'); d.className = 'pl bot'; d.textContent = '+ ' + nb + ' bot' + (nb > 1 ? 's' : '') + ' (' + (SKILLS[o.skill] || 'Mixed') + ')'; list.appendChild(d); }
         $('#l-n').textContent = r.length + ' / ' + MAXP;
         segPaint('#l-bots', o.bots); segPaint('#l-skill', o.skill); segPaint('#l-len', o.length); segPaint('#l-score', o.scoring);
+        $('#l-pick').textContent = pickLabel(o); $('#l-pick').disabled = !NET.host;
         $$('#l-opts .seg').forEach(s => s.classList.toggle('locked', !NET.host));
         $('#l-hostonly').textContent = NET.host ? '' : '(the host picks)';
         $('#l-start').classList.toggle('hidden', !NET.host); $('#l-ready').classList.toggle('hidden', NET.host || !NET.net);
@@ -112,8 +163,9 @@ const UI = {
         $('#w-grid').innerHTML = ITEMS.filter(i => i.cat === cat).map(it => {
             const own = itemOwned(it), sw = it.hex != null && it.hex >= 0 ? 'background:#' + it.hex.toString(16).padStart(6, '0') : it.cat === 'visor' ? 'background:radial-gradient(circle at 50% 45%, #' + it.eye.toString(16).padStart(6, '0') + ' 0 18%, #' + it.glass.toString(16).padStart(6, '0') + ' 20%)' : it.hex === -1 ? 'background:conic-gradient(red,orange,yellow,lime,cyan,blue,violet,red)' : 'background:#f0eaff';
             const lab = it.cat === 'pat' ? 'background:repeating-linear-gradient(45deg,#ff5fa2 0 6px,#fff 6px 12px)' : sw;
-            return '<button class="it' + (cur === it.id ? ' on' : '') + (own ? '' : ' lock') + '" data-id="' + it.id + '"><span class="sw" style="' + (it.cat === 'col' || it.cat === 'visor' || it.cat === 'trail' ? sw : it.cat === 'pat' ? lab : 'background:#f0eaff') + '"></span>' + esc(it.name) +
-                (own ? '' : it.lvl ? '<span class="lv">Fame ' + it.lvl + '</span>' : '<span class="pr">' + it.price + ' kudos</span>') + '</button>';
+            const cel = it.cat === 'cel' ? 'background:conic-gradient(#f2b705,#fff2b3,#f2b705,#ffe066,#f2b705)' : 'background:#f0eaff';
+            return '<button class="it' + (cur === it.id ? ' on' : '') + (own ? '' : ' lock') + (it.earn ? ' earn' : '') + '" data-id="' + it.id + '"><span class="sw" style="' + (it.cat === 'col' || it.cat === 'visor' || it.cat === 'trail' ? sw : it.cat === 'pat' ? lab : cel) + '"></span>' + esc(it.name) +
+                (own ? '' : it.earn ? '<span class="lv">' + esc(earnText(it.earn)) + '</span>' : it.lvl ? '<span class="lv">Fame ' + it.lvl + '</span>' : '<span class="pr">' + it.price + ' kudos</span>') + '</button>';
         }).join('');
         const n = ITEMS.filter(i => itemOwned(i)).length; if (!MENU.tryLook) $('#w-note').innerHTML = 'You own ' + n + ' of ' + ITEMS.length + ' items. Fame level ' + lvl + '. Click to wear; locked items can be tried on.';
     },
@@ -121,7 +173,8 @@ const UI = {
         const it = ITEM[id]; if (!it) return; sfx('click');
         if (itemOwned(it)) { save.look[MENU.cat] = id; MENU.tryLook = null; writeSave(); UI.paintWard(); if (NET.net) { if (NET.host) broadcastLobby(); else sendHi(); } return; }
         MENU.tryLook = Object.assign({}, save.look, { [MENU.cat]: id }); UI.paintWard();
-        if (it.lvl && !it.price) $('#w-note').innerHTML = '<b>' + esc(it.name) + '</b> unlocks at fame level ' + it.lvl + '.';
+        if (it.earn) $('#w-note').innerHTML = '<b>' + esc(it.name) + '</b> is earned, not bought: ' + esc(earnText(it.earn)) + '.';
+        else if (it.lvl && !it.price) $('#w-note').innerHTML = '<b>' + esc(it.name) + '</b> unlocks at fame level ' + it.lvl + '.';
         else $('#w-note').innerHTML = 'Trying on <b>' + esc(it.name) + '</b>. <button class="btn small go" id="w-buy" ' + (save.kudos < it.price ? 'disabled' : '') + '>Buy for ' + it.price + ' kudos</button>' + (save.kudos < it.price ? ' <span class="note bad">Not enough kudos yet</span>' : '');
         const bb = $('#w-buy'); if (bb) bb.onclick = () => { if (save.kudos < it.price) return; save.kudos -= it.price; save.owned[id] = true; save.look[MENU.cat] = id; MENU.tryLook = null; writeSave(); sfx('buy'); confetti(-1.2, 2, 0, 30, 1); UI.paintWard(); };
     },
@@ -134,6 +187,8 @@ const UI = {
     goBack() {
         const b = UI.back; UI.back = null;
         if (b === 'pause') { UI.show('#s-pause'); return; }
+        if (b === 'play') { UI.openPlay(); return; }
+        if (b === 'lobby' && NET.net && !G.show) { UI.showLobby(); return; }
         if (G.show && !G.show.over) { UI.show(null); $('#hud').classList.remove('hidden'); return; }
         if (MENU.scene !== 'title') menuWorld('title');
         if (b === 'lobby' && NET.net) UI.showLobby(); else UI.toTitle();
@@ -144,7 +199,7 @@ const UI = {
         $('#i-kind').textContent = KIND_LABEL[R.info.kind] + ' · Round ' + (R.idx + 1) + (S.practice ? '' : ' of ' + S.len);
         $('#i-name').textContent = R.info.name; $('#i-desc').textContent = R.info.desc;
         const me = byId(G.me), n = R.cs.length;
-        let goal = S.pts ? 'Points round: everyone plays on!' : R.info.kind === 'race' ? 'The first ' + R.q + ' of ' + n + ' qualify' : R.info.kind === 'survive' ? 'Survive! ' + R.q + ' of ' + n + ' go through' : R.rid === 'tail' ? R.q + ' tails - hold one at the end!' : R.info.kind === 'team' ? R.nTeams + ' teams - the lowest team is out' : 'Winner takes the crown!';
+        let goal = R.def.goal && !S.pts ? R.def.goal(R, S, n) : S.pts ? 'Points round: everyone plays on!' : R.info.kind === 'race' ? 'The first ' + R.q + ' of ' + n + ' qualify' : R.info.kind === 'survive' ? 'Survive! ' + R.q + ' of ' + n + ' go through' : R.rid === 'tail' ? R.q + ' tails - hold one at the end!' : R.info.kind === 'team' ? R.nTeams + ' teams - the lowest team is out' : 'Winner takes the crown!';
         if (!me || !me.inRound) goal += ' (you are spectating)';
         $('#i-goal').textContent = goal; $('#s-intro').classList.remove('hidden');
         if (me && me.inRound && R.team != null) {}
@@ -157,7 +212,7 @@ const UI = {
         const S = G.show, msg = R.results; if (!msg) return;
         const qs = new Set(msg.q), me = byId(G.me);
         let h = '<div class="ch"><h2>' + esc(R.info.name) + ' - results</h2></div>';
-        if (me && me.inRound && R.reward) { const ok = qs.has(me.id); h += '<div class="reward">' + (S.pts ? 'Placed ' + (msg.order.indexOf(me.id) + 1) + ' of ' + msg.order.length + '! ' : ok ? (R.info.kind === 'final' ? 'You won the final! ' : 'You qualified! ') : 'You were eliminated. ') + '+' + R.reward.kudos + ' kudos, +' + R.reward.fame + ' fame' + (R.reward.lvlUp ? ' · <b>FAME LEVEL ' + R.reward.lvlUp + '!</b>' : '') + '</div>'; }
+        if (me && me.inRound && R.reward) { const ok = qs.has(me.id); h += '<div class="reward">' + (S.pts ? 'Placed ' + (msg.order.indexOf(me.id) + 1) + ' of ' + msg.order.length + '! ' : ok ? (R.info.kind === 'final' ? 'You won the final! ' : 'You qualified! ') : 'You were eliminated. ') + '+' + R.reward.kudos + ' kudos, +' + R.reward.fame + ' fame' + (R.reward.lvlUp ? ' · <b>FAME LEVEL ' + R.reward.lvlUp + '!</b>' : '') + (R.unlocks && R.unlocks.length ? ' · <b>Unlocked: ' + esc(R.unlocks.join(', ')) + '!</b>' : '') + '</div>'; }
         h += '<div class="res">';
         for (const id of msg.order) { const C = byId(id); if (!C) continue; const ok = qs.has(id); h += '<div class="pl ' + (S.pts ? 'q' : ok ? 'q' : 'o') + (isMe(C) ? ' me' : '') + '"><span>' + esc(C.name) + '</span>' + (S.pts ? '<b>+' + (msg.pts[id] || 0) + ' (' + C.points + ')</b>' : ok ? '<b>✔</b>' : '') + '</div>'; }
         h += '</div><div class="note">' + (S.pts ? 'Points show: total points in brackets.' : qs.size + ' qualified, ' + (msg.order.length - qs.size) + ' eliminated.') + ' Next up in a moment...</div>';
@@ -169,10 +224,11 @@ const UI = {
         G.R = null; G.scene = 'menu'; menuWorld('ceremony'); $('#s-intro').classList.add('hidden'); $('#hud').classList.add('hidden'); clearTags();
         const st = msg.standings || [], get = i => st[i] ? byId(st[i].id) : null;
         MENU.cer = { win: W0, second: get(st[0] && st[0].id === msg.id ? 1 : 0), third: get(st[0] && st[0].id === msg.id ? 2 : 1) };
-        playMusic('win'); sfx('crown'); confetti(0, 6, 0, 150, 4);
-        const me = isMe(W0);
+        playMusic('win'); sfx('crown'); confetti(0, 6, 0, 150, 4); MENU.fanfare = false;
+        const me = isMe(W0), cel = W0 && W0.look.cel !== 'k0' ? ITEM[W0.look.cel] : null;
         let h = '<h1>' + (msg.practice ? 'Practice over' : me ? 'YOU WIN THE CROWN!' : esc(W0 ? W0.name : 'Nobody') + ' wins!') + '</h1>';
-        if (!msg.practice && me) h += '<div class="reward">+1 crown · +150 kudos · +200 fame</div>';
+        if (!msg.practice && me) h += '<div class="reward">+1 crown · +150 kudos · +200 fame' + (msg.unlocks && msg.unlocks.length ? ' · <b>Unlocked: ' + esc(msg.unlocks.join(', ')) + '!</b>' : '') + '</div>';
+        if (!msg.practice && cel) h += '<div class="note">Celebration: ' + esc(cel.name) + '</div>';
         h += '<div class="st">' + st.slice(0, 16).map((s, i) => '<span>' + (i + 1) + '. ' + esc(s.name) + (S && S.pts ? ' ' + s.pts : '') + '</span>').join('') + '</div><div class="row" style="justify-content:center">';
         if (!NET.net) h += '<button class="btn go" id="w-again">Play again</button><button class="btn" id="w-menu">Main menu</button>';
         else if (NET.host) h += '<button class="btn go" id="w-lobby">Back to the lobby</button>';
@@ -196,7 +252,7 @@ function segPaint(sel, v) { $$(sel + ' button').forEach(b => b.classList.toggle(
 const isTouch = () => matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window && navigator.maxTouchPoints > 0;
 function startSolo() {
     netReset(); ac();
-    const o = save.opts, cfg = makeShowConfig([{ id: 0, name: myName(), look: save.look }], { bots: 15, skill: o.skill, length: o.length, scoring: 'knockout' });
+    const o = save.opts, cfg = makeShowConfig([{ id: 0, name: myName(), look: save.look }], { bots: 15, skill: o.skill, length: o.length, scoring: 'knockout', pick: o.pick });
     G.host = true; G.me = 0; beginShow(cfg); hostStartRound();
 }
 function startPractice(rid, bots, skill) {
@@ -216,13 +272,15 @@ function updateHud() {
     else if (R.rid === 'hex') st = 'Still standing: ' + live;
     else if (info.kind === 'race') st = S.pts ? 'Finished: ' + R.finished.length + ' / ' + R.cs.length : 'Qualified: ' + R.finished.length + ' / ' + R.q;
     else if (info.kind === 'survive') st = 'Still on: ' + live + (S.pts ? '' : ' · ' + R.q + ' qualify');
+    else if (R.def.status) st = R.def.status(R, me, S, live);
     else if (R.rid === 'tail') st = 'Tails: ' + R.tails.size + (me && R.tails.has(me.id) ? ' · <b style="color:#e8a400">YOU HAVE ONE!</b>' : me && me.inRound ? ' · grab one (F)!' : '');
     $('#h-stat').innerHTML = st;
     let tm = '';
     if (R.nTeams && R.rid !== 'tail') for (let k = 0; k < R.nTeams; k++) tm += '<span class="' + (me && me.team === k ? 'mine' : '') + '" style="background:#' + TEAM_COLS[k].toString(16).padStart(6, '0') + '">' + TEAM_NAMES[k] + ' ' + ((R.score && R.score[k]) || 0) + '</span>';
     $('#h-teams').innerHTML = tm;
     $('#h-fruit').innerHTML = R.def.hud ? R.def.hud(R) : '';
-    const wd = $('#h-wind'); if (R.def.wind && R.phase === 'play') { const w = R.def.wind(R.t); wd.style.display = 'block'; wd.firstChild.style.transform = 'rotate(' + (Math.atan2(w.x, w.z) - G.camYaw + PI) * -180 / PI + 'deg) scaleY(' + clamp(Math.hypot(w.x, w.z) / 4, 0.3, 1.3) + ')'; } else wd.style.display = 'none';
+    const wd = $('#h-wind'), wfn = R.def.windAt && me && me.inRound && !me.hide ? (t => R.def.windAt(t, me.vs)) : R.def.wind;
+    if (wfn && R.phase === 'play' && (R.def.wind || Math.hypot(wfn(R.t).x, wfn(R.t).z) > 0.3)) { const w = wfn(R.t); wd.style.display = 'block'; wd.firstChild.style.transform = 'rotate(' + (Math.atan2(w.x, w.z) - G.camYaw + PI) * -180 / PI + 'deg) scaleY(' + clamp(Math.hypot(w.x, w.z) / 4, 0.3, 1.3) + ')'; } else wd.style.display = 'none';
     const spec = !me || !me.inRound || me.hide, sp = byId(G.spec);
     $('#h-spec').classList.toggle('hidden', !spec || !sp || R.phase === 'intro');
     if (spec && sp) $('#h-spec').textContent = 'Spectating ' + sp.name + ' · click or Space to switch';
@@ -232,7 +290,11 @@ function updateHud() {
 // ---------- wiring ----------
 function wireUI() {
     const click = (sel, fn) => $(sel).addEventListener('click', e => { ac(); sfx('click'); fn(e); });
-    click('#b-play', () => UI.openPlay()); click('#b-ward', () => UI.openWard()); click('#b-how', () => { UI.back = G.screen; UI.show('#s-how'); }); click('#b-set', () => UI.openSettings());
+    click('#b-play', () => UI.openPlay()); click('#b-ward', () => UI.openWard()); click('#b-new', () => UI.openNew()); click('#n-ok', () => UI.goBack());
+    click('#b-pick', () => UI.openPick('play')); click('#l-pick', () => { if (NET.host) UI.openPick('lobby'); }); click('#pk-done', () => UI.goBack());
+    $('#pk-list').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || (NET.net && !NET.host)) return; sfx('click'); pickToggle(b.dataset.r); UI.paintPick(); if (NET.host) broadcastLobby(); });
+    $$('#s-pick [data-pk]').forEach(b => b.addEventListener('click', () => { if (NET.net && !NET.host) return; sfx('click'); pickToggle(b.dataset.pk); UI.paintPick(); if (NET.host) broadcastLobby(); }));
+ click('#b-how', () => { UI.back = G.screen; UI.show('#s-how'); }); click('#b-set', () => UI.openSettings());
     $$('[data-back]').forEach(b => b.addEventListener('click', () => { sfx('click'); if (G.screen === 'ward') { MENU.tryLook = null; menuWorld('title'); } UI.goBack(); }));
     $('#t-name').addEventListener('change', e => { save.name = e.target.value.trim().slice(0, 16) || save.name; writeSave(); e.target.value = myName(); });
     const seg = (sel, fn) => $(sel).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ac(); sfx('click'); fn(b.dataset.v); });

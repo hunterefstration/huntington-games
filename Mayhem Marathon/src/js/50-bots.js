@@ -47,6 +47,7 @@ function botTick(C, R, dt) {
             }
             if (!hit) continue;
             if (c.k === K_SPH) { ai.dodge = { dir: (p.x > c.p[0] ? 1 : -1) * (Math.abs(p.x) > 8 ? -1 : 1), until: R.t + 0.6 }; break; }
+            if (c.low) { if (hit <= 0.4 && b.ground) inp.jump = true; break; }             // rolling logs: keep running, jump just in time
             const low = c.p[1] + (c.hy || 0.3) < p.y + 0.55 && c.hx > 2.5;
             if (low && hit <= 0.4 && b.ground) { inp.jump = true; break; }
             const here = sphCol(predictCol(c, R.t + hit), p.x, p.y + 0.27, p.z, 0.8);
@@ -62,7 +63,9 @@ function botTick(C, R, dt) {
         }
         if (C.skill > 0 && L.finZ - p.z < 3.5 && L.finZ - p.z > 1 && b.ground && Math.random() < 0.3) inp.dive = true;
     }
+    if (R.def.botAfter) R.def.botAfter(C, R, ai, inp, dt);
     botWobble(C, ai, inp, dt);
+
     return inp;
 }
 function botWobble(C, ai, inp, dt) {         // easy bots dither a bit
