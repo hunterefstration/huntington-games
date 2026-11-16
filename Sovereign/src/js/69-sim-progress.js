@@ -182,13 +182,13 @@ A('topmil', 'Mightiest army', 'Strongest land army in the world', n => G.nations
 A('saved', 'Save point', 'Save your game', n => !!Saves.latest());
 function achMonth() {
   const n = P_(); G.ach = G.ach || {};
-  const life = Store.get('ach', {});
+  const life = G.tut ? {} : Store.get('ach', {});      // (a Training game: achievements show, but never reach the lifetime list)
   for (const a of ACH) {
     if (G.ach[a.id]) continue;
     let ok = false; try { ok = a.test(n); } catch (e) {}
     if (ok) { G.ach[a.id] = G.day; life[a.id] = (life[a.id] || 0) + 1; toast('🏆 Achievement: ' + a.name, 3500); }
   }
-  Store.set('ach', life);
+  if (!G.tut) Store.set('ach', life);
   checkVictories(n);
 }
 

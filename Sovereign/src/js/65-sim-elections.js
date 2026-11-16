@@ -223,8 +223,7 @@ function endGame(kind, headline, text) {
   Clock.pause();
   const n = G.nations[G.player.idx], c = World.countries[n.idx], L = legacyScore(n), P = G.player;
   const entry = { country: c.name, flag: c.flag, leader: P.title + ' ' + P.name, years: (G.day / 365).toFixed(1), ending: headline, score: L.total, date: fmtDate(G.day), at: Date.now() };
-  const hall = Store.get('hall', []); hall.unshift(entry); Store.set('hall', hall.slice(0, 50));
-  try { localStorage.removeItem('sov.save.auto'); } catch (e) {}
+  if (!G.tut) { const hall = Store.get('hall', []); hall.unshift(entry); Store.set('hall', hall.slice(0, 50)); try { localStorage.removeItem('sov.save.auto'); } catch (e) {} }
   UI.modal(`<div style="background:#f3ecd9;color:#1d1a14;border-radius:6px;padding:18px 20px;font-family:Georgia,serif">
       <div style="text-align:center;border-bottom:3px double #1d1a14;padding-bottom:6px;font-size:13px;letter-spacing:.2em">THE ${esc(c.name.toUpperCase())} CHRONICLE · ${fmtDate(G.day).toUpperCase()}</div>
       <h1 style="font-size:30px;margin:12px 0 6px;line-height:1.1">${esc(headline.toUpperCase())}</h1>

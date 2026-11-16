@@ -145,6 +145,7 @@ function newGame(opt) {
   G.feed = [{ type: 'news', day: 0, outlet: 'World Wire', text: (opt.real ? opt.name + ' faces a new chapter in ' : opt.name + ' takes office in ') + c.name, mood: 0 },
     { type: 'news', day: 0, outlet: 'World Wire', text: 'War in Ukraine grinds on into its fifth year', mood: -1 }].concat(G.feed || []);
   applyScenario(G, opt.scenario || 'standard'); // 1.4: Cold War II, After the Crash... (69c-sim-scenarios.js)
+  if (opt.tut || trainWants()) G.tut = true;      // 1.5 Training: a throwaway game (88-training.js)
   recordHistory(true);
   return G;
 }

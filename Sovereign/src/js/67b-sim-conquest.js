@@ -98,7 +98,7 @@ function checkDomination() {
 // (Sovereign's own achievements live in 'sov.ach'; this is a separate key so their counts stay right.)
 function sovAch() {
   try {
-    if (!G || !G.player) return;
+    if (!G || !G.player || G.tut) return;      // (a Training game never counts)
     const me = G.player.idx, n = G.nations[me], o = Store.get('hgach', {}) || {};
     o.warsWon = Math.max(o.warsWon || 0, n.warsWon || 0);
     o.conquered = Math.max(o.conquered || 0, ruledBy(me).length);

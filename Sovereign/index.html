@@ -28,6 +28,56 @@
   background: rgba(20, 24, 33, .92); border: 1px solid #5aa0ff; border-radius: 10px; font-size: 13px; color: #e8e2cf; }
 #onbar.on { display: flex; } #onbar b { color: #7fb6ff; letter-spacing: .12em; }
 
+/* ---- Training (88-tutor.js): Beat Lab's lesson look. Spotlight hole + click shields in menus, a compact banner + ring in battle */
+#hgt { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+#hgt .hidden, #hgt-offer .hidden { display: none !important; }
+#hgt .hgt-shield { position: fixed; background: transparent; pointer-events: auto; }
+#hgt.free .hgt-shield, #hgt.coach .hgt-shield { pointer-events: none; display: none; }
+#hgt .hgt-hole { position: fixed; pointer-events: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(8,12,24,.58); transition: left .18s, top .18s, width .18s, height .18s; }
+#hgt.coach .hgt-hole { box-shadow: none; }
+#hgt .hgt-hole::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; border: 3px solid #ffd43b; animation: hgtPulse 1.6s ease-in-out infinite; }
+#hgt .hgt-hole.none::after { display: none; }
+#hgt.coach .hgt-hole.none { box-shadow: none; }
+@keyframes hgtPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.hgt-bubble { position: fixed; width: 330px; max-width: calc(100vw - 16px); background: #fff; color: #1f2430; border-radius: 14px; padding: 12px 14px 10px; box-shadow: 0 14px 44px rgba(0,0,0,.4); border-top: 4px solid #5b5bf7; font: 13px/1.4 system-ui, "Segoe UI", Roboto, Arial, sans-serif; text-align: left; pointer-events: auto; user-select: text; letter-spacing: normal; text-transform: none; }
+#hgt.coach .hgt-bubble { width: 290px; padding: 9px 12px 8px; font-size: 12px; background: #fff; left: 12px; top: 12px; }
+#hgt.coach .hgt-bubble h4 { font-size: 14px; margin: 3px 0 2px; }
+#hgt.coach .hgt-bubble p { margin-bottom: 6px; }
+.hgt-bubble.nudge { animation: hgtNudge .35s; }
+@keyframes hgtNudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.hgt-bubble .hgt-top, .hgt-card .hgt-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b5bf7; }
+.hgt-bubble .hgt-prog, .hgt-card .hgt-prog { color: #8a94a3; white-space: nowrap; }
+.hgt-bubble h4 { margin: 6px 0 4px; font-size: 16px; font-weight: 800; color: #1f2430; font-style: normal; }
+.hgt-bubble p { margin: 0 0 8px; line-height: 1.45; color: #1f2430; }
+.hgt-bubble b, .hgt-card b { color: #111522; }
+.hgt-bubble kbd { display: inline-block; padding: 0 5px; border: 1px solid #c9cfdd; border-bottom-width: 2px; border-radius: 4px; background: #f4f6fb; font: 700 11px system-ui, sans-serif; color: #2b3140; }
+.hgt-bubble .hgt-task { margin: 0 0 8px; padding: 5px 9px; border-radius: 7px; background: #fff7d6; color: #6b5300; font-weight: 700; font-size: 12px; }
+.hgt-bubble .hgt-task.ok { background: #d3f9d8; color: #2b8a3e; }
+.hgt-bubble .hgt-end { display: flex; flex-wrap: wrap; gap: 6px; }
+.hgt-bubble .hgt-end:not(:empty) { margin-bottom: 8px; }
+.hgt-btns { display: flex; align-items: center; gap: 6px; }
+.hgt-sp { flex: 1; }
+.hgt-btn { background: #fff; color: #2b3140; border: 1px solid #c9cfdd; border-radius: 7px; padding: 5px 11px; font: 700 12px system-ui, "Segoe UI", sans-serif; cursor: pointer; margin: 0; text-transform: none; letter-spacing: normal; box-shadow: none; min-width: 0; }
+.hgt-btn:hover { filter: brightness(.96); }
+.hgt-btn.pri { background: #5b5bf7; color: #fff; border-color: #4b4be0; }
+.hgt-btn.ghost { color: #7a8396; }
+.hgt-skip { border: 0; background: none; color: #7a8396; font: 12px system-ui, sans-serif; text-decoration: underline; padding: 3px 2px; cursor: pointer; margin: 0; }
+.hgt-bubble.offer { right: 16px; bottom: 16px; border-top-color: #ffd43b; }
+#hgt-hub { position: fixed; inset: 0; background: rgba(8,12,24,.62); display: flex; align-items: center; justify-content: center; padding: 12px; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+.hgt-card { width: min(560px, 100%); max-height: calc(100vh - 24px); overflow: auto; background: #fff; color: #1f2430; border-radius: 14px; border-top: 4px solid #5b5bf7; padding: 14px 18px 12px; box-shadow: 0 14px 44px rgba(0,0,0,.45); font-size: 13px; text-align: left; }
+.hgt-card h3 { margin: 6px 0 4px; font-size: 20px; font-weight: 800; color: #1f2430; letter-spacing: normal; text-transform: none; font-style: normal; }
+.hgt-card p { margin: 0 0 10px; color: #3d4455; line-height: 1.45; }
+.hgt-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.hgt-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e7f0; border-radius: 10px; background: #f8f9fd; }
+.hgt-row.done { background: #f0fbf2; border-color: #b9e8c3; }
+.hgt-tick { flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: #e6e8f5; color: #5b5bf7; }
+.hgt-row.done .hgt-tick { background: #2b8a3e; color: #fff; }
+.hgt-meta { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hgt-meta b { font-size: 14px; }
+.hgt-meta span { color: #7a8396; font-size: 12px; }
+/* Sovereign: the NEW tag on the title's Training button */
+.tut-new { margin-left: 6px; font-size: 10px; font-weight: 800; background: #ffd43b; color: #2b1a05; border-radius: 6px; padding: 1px 5px; vertical-align: middle; }
+
 :root {
   --bg: #060b16; --panel: rgba(10, 18, 34, .86); --panel2: rgba(22, 34, 58, .9); --line: rgba(160, 190, 230, .16);
   --text: #e7edf7; --dim: #93a3bd; --gold: #e2b65c; --gold2: #f5d58f; --red: #ef6b5b; --green: #5fd38d; --blue: #6aa7ff;
@@ -339,7 +389,7 @@ textarea.code { width: 100%; height: 80px; background: rgba(0, 0, 0, .35); color
 // Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-game.js.
 import * as THREE from 'three';
 
-const VERSION = '1.4';
+const VERSION = '1.5';
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => v >= a ? (v <= b ? v : b) : a;   // NaN comes out as the low end, never NaN
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1499,6 +1549,7 @@ const UI = {
       else if (a === 'settings') this.settings();
       else if (a === 'credits') this.credits();
       else if (a === 'whatsnew') this.whatsNew();
+      else if (a === 'training') trainHub();
       else if (a === 'back') this.show('title');
       else if (a === 'menu') this.menu();
       else if (a === 'zin') { Cam.fly = null; camZoom(0.5); }
@@ -1611,8 +1662,9 @@ const UI = {
     const has = !!Saves.latest();
     $('#title .menu').innerHTML = (has ? '<button class="btn gold" data-act="continue">Continue</button><button class="btn" data-act="new">New Game</button><button class="btn" data-act="load">Load Game</button>'
       : '<button class="btn gold" data-act="new">New Game</button>') +
-      `<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="whatsnew">What\'s new in ${VERSION}</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>`;
-    if (!Store.get('seen14', false)) { Store.set('seen14', true); setTimeout(() => { if (this.screen === 'title' && $('#modal').classList.contains('hidden')) this.whatsNew(); }, 900); }
+      `<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button>${trainButton()}<button class="btn" data-act="whatsnew">What\'s new in ${VERSION}</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>`;
+    if (!Store.get('seen15', false)) { Store.set('seen15', true); if (has) setTimeout(() => { if (this.screen === 'title' && $('#modal').classList.contains('hidden') && !Tutor.active && !Tutor.offerOpen) this.whatsNew(); }, 900); }
+    setTimeout(() => trainOffer(), 1200);      // 1.5: a new player (no saves yet) is offered Your first year once
   },
   confirm(title, text, ok, fn) {
     this.onOk = fn;
@@ -1658,6 +1710,7 @@ const UI = {
   },
   whatsNew() {
     const items = [
+      ['🎓', 'Training (new in 1.5)', 'Four hands-on lessons on the title screen: your first year (in a practice game that is thrown away afterwards), war and peace, the World Council and crises, and playing online. Practice games never save and never count for achievements or leaderboards.'],
       ['🕊', 'The World Council', 'Every four months the whole world votes: sanctions, peacekeepers and world laws on climate, arms, tax, aid, trade, AI and space. Propose your own resolutions, lobby with political capital or aid money, and watch out for vetoes. Break a world law and the world will notice. (Council, in the menu.)'],
       ['🦠', 'Global crises', 'Pandemics, a world financial panic, a food crisis, a solar superstorm, a cyber plague and, very rarely, an asteroid. Every country pledges to a world fund; the fuller it is, the less everyone suffers.'],
       ['🧊', 'Four new scenarios', 'Start in Cold War II, After the Crash, the Resource Scramble or the Age of Peace, each with its own goal. Works in New Game, the Simulator and online rooms (the host picks).'],
@@ -1831,6 +1884,7 @@ function newGame(opt) {
   G.feed = [{ type: 'news', day: 0, outlet: 'World Wire', text: (opt.real ? opt.name + ' faces a new chapter in ' : opt.name + ' takes office in ') + c.name, mood: 0 },
     { type: 'news', day: 0, outlet: 'World Wire', text: 'War in Ukraine grinds on into its fifth year', mood: -1 }].concat(G.feed || []);
   applyScenario(G, opt.scenario || 'standard'); // 1.4: Cold War II, After the Crash... (69c-sim-scenarios.js)
+  if (opt.tut || trainWants()) G.tut = true;      // 1.5 Training: a throwaway game (88-training.js)
   recordHistory(true);
   return G;
 }
@@ -2415,6 +2469,7 @@ function migrate(g) {
 }
 function saveMeta() { const n = G.nations[G.player.idx]; return { country: World.countries[n.idx].name, flag: World.countries[n.idx].flag, leader: G.player.name, date: fmtDate(G.day), at: Date.now() }; }
 async function saveTo(slot) {
+  if (G && G.tut) return false;      // 1.5: a Training game is thrown away, never saved (not even the autosave)
   try { const meta = saveMeta(); localStorage.setItem('sov.save.' + slot, 'gz:' + await gzip64(serialize())); Store.set('meta.' + slot, meta); return true; }
   catch (e) { toast('Could not save: browser storage is full'); return false; }
 }
@@ -3185,8 +3240,7 @@ function endGame(kind, headline, text) {
   Clock.pause();
   const n = G.nations[G.player.idx], c = World.countries[n.idx], L = legacyScore(n), P = G.player;
   const entry = { country: c.name, flag: c.flag, leader: P.title + ' ' + P.name, years: (G.day / 365).toFixed(1), ending: headline, score: L.total, date: fmtDate(G.day), at: Date.now() };
-  const hall = Store.get('hall', []); hall.unshift(entry); Store.set('hall', hall.slice(0, 50));
-  try { localStorage.removeItem('sov.save.auto'); } catch (e) {}
+  if (!G.tut) { const hall = Store.get('hall', []); hall.unshift(entry); Store.set('hall', hall.slice(0, 50)); try { localStorage.removeItem('sov.save.auto'); } catch (e) {} }
   UI.modal(`<div style="background:#f3ecd9;color:#1d1a14;border-radius:6px;padding:18px 20px;font-family:Georgia,serif">
       <div style="text-align:center;border-bottom:3px double #1d1a14;padding-bottom:6px;font-size:13px;letter-spacing:.2em">THE ${esc(c.name.toUpperCase())} CHRONICLE · ${fmtDate(G.day).toUpperCase()}</div>
       <h1 style="font-size:30px;margin:12px 0 6px;line-height:1.1">${esc(headline.toUpperCase())}</h1>
@@ -4249,7 +4303,7 @@ function checkDomination() {
 // (Sovereign's own achievements live in 'sov.ach'; this is a separate key so their counts stay right.)
 function sovAch() {
   try {
-    if (!G || !G.player) return;
+    if (!G || !G.player || G.tut) return;      // (a Training game never counts)
     const me = G.player.idx, n = G.nations[me], o = Store.get('hgach', {}) || {};
     o.warsWon = Math.max(o.warsWon || 0, n.warsWon || 0);
     o.conquered = Math.max(o.conquered || 0, ruledBy(me).length);
@@ -5280,13 +5334,13 @@ A('topmil', 'Mightiest army', 'Strongest land army in the world', n => G.nations
 A('saved', 'Save point', 'Save your game', n => !!Saves.latest());
 function achMonth() {
   const n = P_(); G.ach = G.ach || {};
-  const life = Store.get('ach', {});
+  const life = G.tut ? {} : Store.get('ach', {});      // (a Training game: achievements show, but never reach the lifetime list)
   for (const a of ACH) {
     if (G.ach[a.id]) continue;
     let ok = false; try { ok = a.test(n); } catch (e) {}
     if (ok) { G.ach[a.id] = G.day; life[a.id] = (life[a.id] || 0) + 1; toast('🏆 Achievement: ' + a.name, 3500); }
   }
-  Store.set('ach', life);
+  if (!G.tut) Store.set('ach', life);
   checkVictories(n);
 }
 
@@ -6726,7 +6780,7 @@ const TUTORIAL = [
 ];
 const Tutorial = {
   i: 0,
-  start() { if (Store.get('tutorialDone', false) || (G && G.sim)) return; this.i = 0; this.show(); },
+  start() { if (Store.get('tutorialDone', false) || (G && (G.sim || G.tut))) return; this.i = 0; this.show(); },
   show() {
     let el = $('#tut'); if (!el) { el = document.createElement('div'); el.id = 'tut'; el.className = 'panel'; document.body.appendChild(el); }
     const [t, x] = TUTORIAL[this.i];
@@ -7310,6 +7364,394 @@ window.__hgJoin = c => { Online.open(); $('#on-code').value = c; Online.joinRoom
 window.__hgHost = convId => { Online.open(); Online.hostRoom(); const iv = setInterval(() => { if (Online.code) { clearInterval(iv); try { window.parent.HG_sendInvite(convId, { game: 'sovereign', code: Online.code, max: 6 }); } catch (e) {} } }, 300); setTimeout(() => clearInterval(iv), 25000); };
 setTimeout(function hgBoot() { try { if (!window.__sov || !window.__sov.ready) return setTimeout(hgBoot, 500); const p = window.parent; if (!p || p === window) return; const c = p.HG_takeJoin && p.HG_takeJoin('sovereign'); if (c) return window.__hgJoin(c); const h = p.HG_takeHost && p.HG_takeHost('sovereign'); if (h && h.convId) window.__hgHost(h.convId); } catch (e) {} }, 800);
 
+// ---- 87-tutor.js ----
+// ===== Training (2026-11-16): the coach-mark engine. A copy of Beat Lab's 80-tutor.js look and behaviour, made game-agnostic =====
+// (Steel Storm 88-tutor.js and Blocky Shooter V2 31-tutor.js are the same file; keep them in step.)
+//   Tutor.config({ done(id), mark(id), z })                      where "lessons done" live (the game's own save)
+//   Tutor.define({ id, title, blurb, steps: [step], end: 'finale html', next: lessonId, coach: true|false,
+//                  begin() -> false to refuse (e.g. start a practice match), finish(how) (clean up: leave the practice match),
+//                  alive() -> false once the player left the lesson's world (Quit to menu...) })
+//   step: { title, text (html), el: selector | Element | () => Element | rect | null (what to ring), enter() (on arrival),
+//           base() -> snapshot taken on arrival, wait(base) -> true once the player has done it (polled every 150 ms),
+//           when() -> false skips the step (e.g. no bombs on this plane), coach (override the lesson's mode), at: 'br'|'bl'|'tr'|'tl',
+//           free (no click shield), act: [label, fn] (a helper button in the bubble, e.g. "Self-destruct") }
+//   coach mode (gameplay): no dimming, no click shields, a compact banner in a corner and a pulsing ring; spotlight mode (menus):
+//   the screen dims around the target, clicks outside it nudge the bubble. Esc always leaves the lesson.
+//   Tutor.start(id) / stop(how) / next() / back(); Tutor.active; Tutor.lesson; Tutor.i; Tutor.done(id); Tutor.list;
+//   Tutor.offer({ title, text, les, kicker, time, answer(yes) }); Tutor.hub({ title, intro })
+const Tutor = (() => {
+    const LES = [], S = { les: null, i: 0, dir: 1, base: null, doneAt: 0, iv: 0, sig: '', el: null, hub: null, offer: null };
+    const C = { done: () => false, mark: () => {}, z: 9000, nextKey: '' };      // nextKey: in battle the mouse is captured, so a key does Next
+    const q = s => document.querySelector(s);
+    const cl = (v, a, b) => v < a ? a : v > b ? b : v;
+    function mk(tag, attrs, ...kids) {
+        const e = document.createElement(tag);
+        for (const k in attrs || {}) { const v = attrs[k]; if (v == null || v === false) continue; if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); }
+        for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : String(c));
+        return e;
+    }
+    const btn = (t, cls, f, title) => mk('button', { class: 'hgt-btn' + (cls ? ' ' + cls : ''), type: 'button', title, onclick: e => { e.stopPropagation(); f(); } }, t);
+    const coachOf = st => st && st.coach !== undefined ? !!st.coach : !!(S.les && S.les.coach);
+    const err = e => { try { console.warn('[training]', e); } catch (e2) {} };
+
+    function start(id) {
+        const les = LES.find(l => l.id === id); if (!les) return false;
+        closeHub(); hideOffer();
+        if (S.les) stop('switch');
+        let ok = true; try { if (les.begin) ok = les.begin() !== false; } catch (e) { err(e); ok = false; }
+        if (!ok) return false;
+        S.les = les; S.dir = 1;
+        overlay();
+        go(0);
+        S.iv = setInterval(tick, 150);
+        return true;
+    }
+    function stop(how) {                                         // how: skip | done | left | switch
+        const les = S.les; if (!les) return;
+        clearInterval(S.iv); S.les = null;
+        if (S.el) { S.el.root.remove(); S.el = null; }
+        try { if (les.finish) les.finish(how || 'skip'); } catch (e) { err(e); }
+    }
+    function overlay() {
+        if (S.el) S.el.root.remove();
+        const shield = () => mk('div', { class: 'hgt-shield', onpointerdown: e => { e.preventDefault(); e.stopPropagation(); nudge(); } });
+        const sh = [shield(), shield(), shield(), shield()];
+        const hole = mk('div', { class: 'hgt-hole' });
+        const lesson = mk('span', { class: 'hgt-les' }), prog = mk('span', { class: 'hgt-prog' }), title = mk('h4'), text = mk('p'), task = mk('div', { class: 'hgt-task' });
+        const skip = mk('button', { class: 'hgt-skip', type: 'button', title: 'Leave the lesson (Esc)', onclick: e => { e.stopPropagation(); stop(S.i >= S.les.steps.length ? 'done' : 'skip'); } }, 'Skip lesson');
+        const back = btn('Back', '', () => { S.dir = -1; go(S.i - 1); });
+        const next = btn('Next', 'pri', () => { S.dir = 1; go(S.i + 1); });
+        const extra = mk('div', { class: 'hgt-end' });
+        const bub = mk('div', { class: 'hgt-bubble', role: 'dialog', 'aria-live': 'polite', onpointerdown: e => e.stopPropagation(), onmousedown: e => e.stopPropagation(), onclick: e => e.stopPropagation() },
+            mk('div', { class: 'hgt-top' }, lesson, prog), title, text, task, extra, mk('div', { class: 'hgt-btns' }, skip, mk('span', { class: 'hgt-sp' }), back, next));
+        const root = mk('div', { id: 'hgt', style: 'z-index:' + C.z }, sh, hole, bub);
+        document.body.appendChild(root);
+        S.el = { root, sh, hole, bub, lesson, prog, title, text, task, skip, back, next, extra };
+    }
+    function nudge() { const b = S.el && S.el.bub; if (!b) return; b.classList.remove('nudge'); void b.offsetWidth; b.classList.add('nudge'); }
+    function go(i) {
+        const les = S.les; if (!les || !S.el) return;
+        const n = les.steps.length;
+        // steps that do not apply right now (when() false) are passed over in the direction of travel
+        while (i >= 0 && i < n && les.steps[i].when) { let w = true; try { w = !!les.steps[i].when(); } catch (e) {} if (w) break; i += S.dir < 0 ? -1 : 1; }
+        if (i < 0) { S.dir = 1; return go(0); }
+        if (i > n) return stop('done');
+        S.i = i; S.doneAt = 0; S.sig = '';
+        const E = S.el; E.extra.innerHTML = '';
+        E.lesson.textContent = les.title;
+        if (i === n) {                                            // the finale: the lesson counts as done
+            try { C.mark(les.id); } catch (e) { err(e); }
+            try { if (les.atEnd) les.atEnd(); } catch (e) { err(e); }          // e.g. leave the practice match so the mouse is free
+            const nx = les.next && LES.find(l => l.id === les.next);
+            E.root.classList.remove('coach'); E.root.classList.add('final');
+            E.prog.textContent = 'Done!'; E.title.textContent = 'Lesson complete'; E.text.innerHTML = les.end || 'Nice work!';
+            E.task.className = 'hgt-task hidden';
+            E.extra.append(btn('All lessons', '', () => { stop('done'); setTimeout(() => hub(), 30); }));
+            if (nx) E.extra.append(btn('Next: ' + nx.title, 'pri', () => start(nx.id)));
+            E.skip.textContent = 'Close';
+            E.next.classList.add('hidden'); E.back.classList.remove('hidden');
+            place(true);
+            return;
+        }
+        E.root.classList.remove('final');
+        const st = les.steps[i];
+        try { if (st.enter) st.enter(); } catch (e) { err(e); }
+        S.base = null; try { if (st.base) S.base = st.base(); } catch (e) { err(e); }
+        if (S.base == null) S.base = {};
+        E.root.classList.toggle('coach', coachOf(st));
+        E.prog.textContent = (i + 1) + ' of ' + n;
+        E.title.textContent = st.title || '';
+        E.text.innerHTML = st.text || '';
+        E.skip.textContent = 'Skip lesson';
+        E.back.classList.toggle('hidden', i === 0); E.next.classList.remove('hidden');
+        if (st.act) E.extra.append(btn(st.act[0], '', () => { try { st.act[1](); } catch (e) { err(e); } }));
+        let pre = false;
+        if (st.wait) { try { pre = !!st.wait(S.base); } catch (e) {} }
+        if (st.wait && pre) S.doneAt = -1;                       // already done (e.g. coming Back): no auto-advance, just Next
+        taskUi(st, pre);
+        place(true);
+    }
+    function taskUi(st, done) {
+        const E = S.el, last = S.i === S.les.steps.length - 1;
+        const k = C.nextKey && coachOf(st) ? ' (' + C.nextKey + ')' : '';
+        if (!st.wait) { E.task.className = 'hgt-task hidden'; E.next.textContent = (last ? 'Finish' : 'Next') + k; E.next.className = 'hgt-btn pri'; return; }
+        E.task.className = 'hgt-task' + (done ? ' ok' : '');
+        E.task.textContent = done ? '✓ Nice!' : 'Your turn: do it and the lesson moves on';
+        E.next.textContent = (done ? (last ? 'Finish' : 'Next') : 'Skip step') + k;
+        E.next.className = 'hgt-btn' + (done ? ' pri' : ' ghost');
+    }
+    function tick() {
+        const les = S.les; if (!les) return;
+        if (S.i >= les.steps.length) return;                     // the finale waits for the player
+        let alive = true; try { if (les.alive) alive = les.alive() !== false; } catch (e) {}
+        if (!alive) return stop('left');
+        const st = les.steps[S.i];
+        if (st && st.enter && st.el && !coachOf(st) && !target(st)) { try { st.enter(); } catch (e) {} }     // the player wandered to another view
+        place(false);
+        if (!st || !st.wait || S.doneAt) return;
+        let ok = false; try { ok = !!st.wait(S.base); } catch (e) {}
+        if (!ok) return;
+        S.doneAt = performance.now(); taskUi(st, true);
+        const at = S.i;
+        setTimeout(() => { if (S.les === les && S.i === at) { S.dir = 1; go(at + 1); } }, 800);
+    }
+    function target(st) {
+        let t = st && st.el;
+        try { if (typeof t === 'function') t = t(); } catch (e) { t = null; }
+        if (typeof t === 'string') t = q(t);
+        if (!t) return null;
+        const r = t.getBoundingClientRect ? t.getBoundingClientRect() : t;
+        if (!r || !(r.width > 2) || !(r.height > 2)) return null;
+        const l = Math.max(0, r.left), tp = Math.max(0, r.top), rt = Math.min(innerWidth, r.left + r.width), bt = Math.min(innerHeight, r.top + r.height);
+        return rt - l > 2 && bt - tp > 2 ? { l, t: tp, r: rt, b: bt } : null;
+    }
+    function place(force) {
+        const E = S.el; if (!E || !S.les) return;
+        const st = S.les.steps[S.i], tg = st ? target(st) : null, P = 6, W = innerWidth, H = innerHeight, coach = st && coachOf(st);
+        const bw = E.bub.offsetWidth, bh = E.bub.offsetHeight;
+        const sig = (tg ? [tg.l, tg.t, tg.r, tg.b].map(Math.round).join(',') : '-') + '|' + W + 'x' + H + '|' + bw + 'x' + bh + (st && st.free ? 'f' : '') + (coach ? 'c' : '');
+        if (!force && sig === S.sig) return;
+        S.sig = sig;
+        const box = (el, l, t, w, hh) => { el.style.left = l + 'px'; el.style.top = t + 'px'; el.style.width = Math.max(0, w) + 'px'; el.style.height = Math.max(0, hh) + 'px'; };
+        E.root.classList.toggle('free', !!(st && st.free));
+        if (tg) {
+            const l = Math.max(0, tg.l - P), t = Math.max(0, tg.t - P), r = Math.min(W, tg.r + P), b = Math.min(H, tg.b + P);
+            E.hole.classList.remove('none'); box(E.hole, l, t, r - l, b - t);
+            box(E.sh[0], 0, 0, W, t); box(E.sh[1], 0, b, W, H - b); box(E.sh[2], 0, t, l, b - t); box(E.sh[3], r, t, W - r, b - t);
+        } else {
+            E.hole.classList.add('none'); box(E.hole, W / 2, H / 2, 0, 0);
+            box(E.sh[0], 0, 0, W, H); box(E.sh[1], 0, 0, 0, 0); box(E.sh[2], 0, 0, 0, 0); box(E.sh[3], 0, 0, 0, 0);
+        }
+        if (coach) { E.bub.style.left = ''; E.bub.style.top = ''; return; }      // the banner sits in its corner (CSS)
+        // the bubble: beside the target if it fits (below, above, right, left), else in a corner; never off-screen
+        const M = 12, fit = (x, y) => x >= 8 && y >= 8 && x + bw <= W - 8 && y + bh <= H - 8;
+        let x, y;
+        if (!tg) { x = (W - bw) / 2; y = (H - bh) / 2; }
+        else {
+            const cx = cl((tg.l + tg.r) / 2 - bw / 2, 8, W - bw - 8), cy = cl((tg.t + tg.b) / 2 - bh / 2, 8, H - bh - 8);
+            const opts = [[cx, tg.b + P + M], [cx, tg.t - P - M - bh], [tg.r + P + M, cy], [tg.l - P - M - bw, cy]];
+            const o = opts.find(([a, b]) => fit(a, b));
+            if (o) [x, y] = o;
+            else { const at = (st && st.at) || 'br'; x = at[1] === 'l' ? 16 : W - bw - 16; y = at[0] === 't' ? 16 : H - bh - 16; }
+        }
+        E.bub.style.left = Math.round(cl(x, 8, Math.max(8, W - bw - 8))) + 'px';
+        E.bub.style.top = Math.round(cl(y, 8, Math.max(8, H - bh - 8))) + 'px';
+    }
+    addEventListener('resize', () => { if (S.les) place(true); });
+    document.addEventListener('scroll', () => { if (S.les) place(false); }, true);
+    // Esc always leaves the lesson (or closes the Training list / the offer); the game never sees that Esc
+    addEventListener('keydown', e => {
+        if (C.nextKey && S.les && e.key === C.nextKey && !e.repeat && S.i < S.les.steps.length && coachOf(S.les.steps[S.i])) {
+            const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+            e.preventDefault(); e.stopImmediatePropagation(); S.dir = 1; go(S.i + 1); return;
+        }
+        if (e.key !== 'Escape' && e.code !== 'Escape') return;
+        if (!S.les && !S.hub && !S.offer) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (S.hub) return closeHub();
+        if (S.offer) return hideOffer(false);
+        stop(S.i >= S.les.steps.length ? 'done' : 'skip');
+    }, true);
+
+    // ---- the first-visit offer (once: the game remembers the answer)
+    function offer(o) {
+        hideOffer();
+        const answer = yes => { hideOffer(); try { if (o.answer) o.answer(yes); } catch (e) { err(e); } if (yes) start(o.les); };
+        const card = mk('div', { id: 'hgt-offer', class: 'hgt-bubble offer', style: 'z-index:' + (C.z + 1) },
+            mk('div', { class: 'hgt-top' }, mk('span', { class: 'hgt-les' }, o.kicker || 'Welcome'), mk('span', { class: 'hgt-prog' }, o.time || '2 minutes')),
+            mk('h4', null, o.title), mk('p', null, o.text),
+            mk('div', { class: 'hgt-btns' }, btn('No thanks', '', () => answer(false)), mk('span', { class: 'hgt-sp' }), btn('Yes', 'pri', () => answer(true))));
+        S.offer = { card, answer };
+        document.body.appendChild(card);
+    }
+    function hideOffer(silent) { const o = S.offer; if (!o) return; S.offer = null; o.card.remove(); if (silent === false) try { o.answer(false); } catch (e) {} }
+
+    // ---- the Training list: every lesson with a tick once done
+    function hub(o) {
+        o = o || S.hubOpts || {}; S.hubOpts = o;
+        closeHub();
+        const done = LES.filter(l => C.done(l.id)).length;
+        const rows = mk('div', { class: 'hgt-rows' }, LES.map((l, i) => {
+            const d = C.done(l.id);
+            return mk('div', { class: 'hgt-row' + (d ? ' done' : ''), 'data-l': l.id },
+                mk('span', { class: 'hgt-tick', title: d ? 'Done' : '' }, d ? '✓' : String(i + 1)),
+                mk('div', { class: 'hgt-meta' }, mk('b', null, l.title), mk('span', null, l.blurb + ' · ' + l.steps.length + ' steps')),
+                btn(d ? 'Again' : 'Start', d ? '' : 'pri', () => start(l.id)));
+        }));
+        const card = mk('div', { class: 'hgt-card', role: 'dialog' },
+            mk('div', { class: 'hgt-top' }, mk('span', { class: 'hgt-les' }, 'Training'), mk('span', { class: 'hgt-prog' }, done + ' of ' + LES.length + ' done')),
+            mk('h3', null, o.title || 'Training'),
+            mk('p', null, o.intro || 'Short lessons where you do each step yourself. Esc or "Skip lesson" leaves at any time.'),
+            rows,
+            mk('div', { class: 'hgt-btns' }, mk('span', { class: 'hgt-sp' }), btn('Close', '', closeHub)));
+        const wrap = mk('div', { id: 'hgt-hub', style: 'z-index:' + (C.z + 2), onpointerdown: e => { if (e.target === wrap) closeHub(); e.stopPropagation(); }, onmousedown: e => e.stopPropagation(), onclick: e => e.stopPropagation() }, card);
+        S.hub = wrap;
+        document.body.appendChild(wrap);
+    }
+    function closeHub() { if (S.hub) { S.hub.remove(); S.hub = null; } }
+
+    return {
+        config(o) { Object.assign(C, o); },
+        define(l) { LES.push(l); return l; },
+        start, stop: how => stop(how || 'skip'), next: () => { S.dir = 1; go(S.i + 1); }, back: () => { S.dir = -1; go(S.i - 1); },
+        get active() { return !!S.les; }, get lesson() { return S.les; }, get i() { return S.i; }, get step() { return S.les && S.les.steps[S.i]; },
+        get finale() { return !!S.les && S.i >= S.les.steps.length; }, get stepDone() { return !!S.doneAt; }, get hubOpen() { return !!S.hub; }, get offerOpen() { return !!S.offer; },
+        get el() { return S.el; },
+        done: id => !!C.done(id), list: LES, offer, hideOffer: () => hideOffer(), hub, closeHub, place: () => place(true)
+    };
+})();
+
+// ---- 88-training.js ----
+// Training (1.5): four lessons on the Tutor engine (87-tutor.js), the Training list (title screen), a one-time offer.
+// Lessons 1-3 play a TRAINING GAME (G.tut): saveTo() refuses it (no autosave, no quit-save), sovAch() skips it (sov.hgach: the
+// leaderboard), lifetime achievements (sov.ach) and the Hall of Leaders are not written, and it is thrown away when the lesson
+// ends (G = null, back to the title). Lesson 1 builds it through the real New Game screens; lessons 2-3 start one for France.
+// Lessons done: Store 'tut' (sov.tut = { id: 1 }); 'tutOffer' (sov.tutOffer): the offer was shown (new players, once).
+const TRN = { want: false, cid: 'FRA', n: { law: 0, diplo: 0, peace: 0, lobby: 0 } };
+function trainWants() { return TRN.want; }
+Tutor.config({ done: id => !!(Store.get('tut', {}) || {})[id], mark: id => { const o = Store.get('tut', {}) || {}; o[id] = 1; Store.set('tut', o); }, z: 9000 });
+// count what the player does in a training game (laws proposed, diplomacy, peace offers, lobbying)
+for (const [o, k, c] of [[Politics, 'propose', 'law'], [DiploAct, 'run', 'diplo'], [War, 'peace', 'peace'], [Council, 'lobby', 'lobby']]) {
+  const f = o[k]; o[k] = function () { if (G && G.tut) TRN.n[c]++; return f.apply(this, arguments); };
+}
+const tG = () => !!(G && G.tut);
+const tMe = () => G.nations[G.player.idx];
+const navBtn = id => () => $(`#nav [data-panel="${id}"]`);
+const tPanel = id => () => { if (tG() && Game.panel !== id) { Game.panel = null; Game.open(id); } };
+const shown = sel => { const e = $(sel); return !!e && !e.classList.contains('hidden'); };
+// throw the training game away and go back to the title
+function trainEnd() {
+  TRN.want = false;
+  if (G && G.tut) { Clock.pause(); UI.closeModal(); Game.close(); G = null; UI.show('title'); }
+}
+// a training game for lessons 2 and 3 (France: a big economy, a Security Council seat, many neighbours)
+function trainGame() {
+  if (tG()) return true;
+  if (G) return false;
+  const c = World.byId[TRN.cid], n0 = World.nat0[c.idx];
+  TRN.want = true;
+  try {
+    newGame({ idx: c.idx, name: n0.leader, title: n0.title, party: 'Governing party', econ: 0, social: 0, traits: [TRAITS[0].id, TRAITS[1].id], face: faceFromName(n0.leader), real: true, scenario: 'standard' });
+  } finally { TRN.want = false; }
+  Game.start();
+  const n = tMe(); n.pc = Math.max(n.pc, 90);      // plenty of political capital to try everything
+  return true;
+}
+const onTitle = () => UI.screen === 'title' && !G;
+const chosen = () => G.inbox.filter(m => /^You chose/.test(m.text || '')).length;      // event decisions so far
+
+Tutor.define({
+  id: 'first', title: 'Your first year', blurb: 'Pick a country, the main panels, a tax rate, a law, time and your first event (a practice game, thrown away after)', next: 'war',
+  begin: () => { if (!onTitle()) return false; TRN.want = true; UI.show('select'); UI.renderList(); return true; },
+  finish: () => trainEnd(), atEnd: () => trainEnd(),
+  alive: () => !(G && !G.tut) && (UI.screen === 'select' || UI.screen === 'setup' || UI.screen === 'game'),
+  end: 'That is a year in office: taxes, laws, time and events. This practice game is thrown away now. Next: <b>War and peace</b>.',
+  steps: [
+    { title: 'Pick a country', text: 'This is a <b>practice game</b>: it is thrown away afterwards. Click a country on the globe or in this list (search works too).', el: '#sel-list', free: true,
+      wait: () => UI.selected != null },
+    { title: 'Lead it', text: 'Its card shows the numbers and how hard it is. Press <b>Lead ...</b> to take over.', el: '#sel-card', wait: () => UI.screen === 'setup' },
+    { title: 'Take office', text: 'Choose your leader: the real one or your own. Pick <b>2 traits</b>, then press <b>Take office</b>.', el: '#setup .setup-box', at: 'tr', wait: () => tG() && UI.screen === 'game' },
+    { title: 'Your numbers', text: 'The bar at the top shows how your country is doing. <b>Click any number</b> to see exactly what pushes it up or down.', el: '#stats', wait: () => shown('#why') },
+    { title: 'The panels', text: 'This menu runs the country: <b>Economy</b>, <b>Budget</b> (taxes), <b>Diplomacy</b>, <b>Military</b> and more. Open <b>Economy</b>.', el: '#nav',
+      enter: () => $('#why').classList.add('hidden'), wait: () => Game.panel === 'economy' },
+    { title: 'Set a tax rate', text: 'Open <b>Budget</b>, move any tax slider (the forecast shows what it will do), then press <b>Pass budget</b>.', el: () => Game.panel === 'budget' ? $('#panel') : navBtn('budget')(),
+      base: () => ({ t: JSON.stringify(tMe().tax), s: JSON.stringify(tMe().spend) }), wait: b => JSON.stringify(tMe().tax) !== b.t || JSON.stringify(tMe().spend) !== b.s },
+    { title: 'Pass a law', text: 'Open <b>Laws</b>, click a different level of any law, check who cheers and who is angry, then press <b>Propose</b>. Parliament votes on it.', el: () => Game.panel === 'laws' ? $('#panel') : navBtn('laws')(),
+      base: () => ({ n: TRN.n.law }), wait: b => TRN.n.law > b.n },
+    { title: 'Let time run', text: 'Time is paused. Press <b>play</b> (or Space) and let a month go by. Speeds 1 to 5 make days pass faster.', el: () => $('#btn-pause').parentElement,
+      enter: () => Game.close(), base: () => ({ d: G.day }), wait: b => G.day >= b.d + 30 || (G.pendingEvents && G.pendingEvents.length > 0) || !$('#modal').classList.contains('hidden') },
+    { title: 'An event', text: 'Things happen: events need a decision. Read it and <b>pick a choice</b>. Each one shows what it will do.', el: () => shown('#modal') ? $('#modal-box') : null,
+      enter() {
+        Clock.pause();
+        if (!shown('#modal')) {
+          if (!(G.pendingEvents && G.pendingEvents.length)) { const ctx = eventContext(tMe()), e = EVENTS.find(x => !x.disaster && !x.needRival && !x.needFriend && !x.needPoor && x.choices && x.choices.length > 1); if (e) G.pendingEvents.push({ id: e.id, ctx }); }
+          showNextEvent();
+        }
+      },
+      base: () => ({ n: chosen() }), wait: b => chosen() > b.n },
+    { title: 'The news', text: '<b>News</b> and <b>People</b> show how everyone reacts to you. Keep your approval up and you stay in power!', el: navBtn('news') }
+  ]
+});
+Tutor.define({
+  id: 'war', title: 'War and peace', blurb: 'Relations, alliances, declaring and ending a war, armies (in a practice game)', next: 'council',
+  begin: () => onTitle() && trainGame(), finish: () => trainEnd(), atEnd: () => trainEnd(), alive: () => tG() && UI.screen === 'game',
+  end: 'Wars are easy to start and hard to end. Most of the time a trade deal does more for you. Next: <b>The World Council and crises</b>.',
+  steps: [
+    { title: 'Diplomacy', text: 'This is a practice game as France: nothing here counts. Open <b>Diplomacy</b>.', el: navBtn('diplomacy'), wait: () => Game.panel === 'diplomacy' },
+    { title: 'Friends and rivals', text: 'Every country has a <b>relation</b> with you, from -100 to +100. Click a country in <b>Closest friends</b> or <b>Biggest rivals</b> (or on the map, then Diplomacy).', el: '#panel', at: 'tr',
+      enter: () => { if (Game.panel !== 'diplomacy') { Panels.diploTarget = null; tPanel('diplomacy')(); } }, wait: () => Game.panel === 'diplomacy' && Panels.diploTarget != null },
+    { title: 'Make friends', text: 'Their leader, their numbers and what you can do. The % shows how likely they are to say yes. Try an action: a <b>state visit</b>, a <b>trade deal</b>... (talks ask how you open: pick one).', el: () => shown('#modal') ? $('#modal-box') : $('#panel'), at: 'tr', free: true,
+      base: () => ({ n: TRN.n.diplo }), wait: b => TRN.n.diplo > b.n && !shown('#modal') },
+    { title: 'Alliances', text: 'Good relations open treaties: <b>defence pacts</b> pull allies into your wars (and you into theirs). The Diplomacy overview also lets you join groups like NATO or BRICS.', el: '#panel', at: 'tr' },
+    { title: 'Declare war', text: 'Scroll to <b>Military</b> on a country\'s page, pick a goal and press <b>Declare war</b>, then confirm. (Practice: nothing is real.)', el: () => shown('#modal') ? $('#modal-box') : $('#panel'), at: 'tr', free: true,
+      wait: () => G.wars.some(w => w.a.includes(G.player.idx)) },
+    { title: 'Your army', text: 'Open <b>Military</b>: your forces, your wars and their fronts.', el: navBtn('military'), enter: () => UI.closeModal(), wait: () => Game.panel === 'military' },
+    { title: 'Stance', text: 'Set the army\'s <b>stance</b> (defend, balanced, attack) or <b>mobilise</b> the reserves.', el: '#panel', at: 'tr', enter: tPanel('military'),
+      base: () => ({ s: tMe().army.stance, m: !!tMe().army.mobilized }), wait: b => tMe().army.stance !== b.s || !!tMe().army.mobilized !== b.m },
+    { title: 'Make peace', text: 'Under your war, press <b>Strikes and peace talks</b>, then offer peace: a <b>ceasefire</b> or harder terms. The % is the chance they accept.', el: '#panel', at: 'tr', free: true,
+      enter: tPanel('military'), base: () => ({ n: TRN.n.peace }), wait: b => TRN.n.peace > b.n || !G.wars.some(w => w.a.includes(G.player.idx)) }
+  ]
+});
+const votes = () => JSON.stringify(G.council.agenda.map(it => it.vote));
+const cnBtn = sel => () => { const e = $('#panel ' + sel); return e && (e.closest('.btnrow') || e); };
+Tutor.define({
+  id: 'council', title: 'The World Council and crises', blurb: 'Propose a resolution, lobby, vote, fund a global crisis (in a practice game)', next: 'online',
+  begin: () => onTitle() && trainGame(), finish: () => trainEnd(), atEnd: () => trainEnd(), alive: () => tG() && UI.screen === 'game',
+  end: 'Every four months the votes are counted. Passing resolutions and helping in crises raise your influence. Last lesson: <b>Playing online</b>.',
+  steps: [
+    { title: 'The World Council', text: 'A practice game as France. Open the <b>Council</b>.', el: navBtn('council'), wait: () => Game.panel === 'council' },
+    { title: 'Propose a resolution', text: 'Pick a resolution (sanctions, a world law on climate...), a country if it needs one, and press <b>Propose</b>.', el: cnBtn('#cn-prop'), enter: tPanel('council'),
+      wait: () => G.council.agenda.some(it => it.by === G.player.idx) },
+    { title: 'Lobby', text: 'Each item on the agenda shows the expected vote. <b>Lobby</b> friendly governments to move it your way.', el: cnBtn('[data-clob]'), enter: tPanel('council'),
+      base: () => ({ n: TRN.n.lobby }), wait: b => TRN.n.lobby > b.n },
+    { title: 'Vote', text: 'Choose <b>our vote</b> on an item: Yes, No or Abstain. (Tick the box below to let your ambassador vote for you.)', el: cnBtn('[data-cvote]'), enter: tPanel('council'),
+      base: () => ({ v: votes() }), wait: b => votes() !== b.v },
+    { title: 'A global crisis', text: 'A <b>global crisis</b> just hit (practice). Every country pledges to a world fund; the fuller it is, the less everyone suffers. <b>Pledge</b> some money.',
+      el: () => shown('#modal') ? $('#modal-box') : cnBtn('[data-cpl]')(), free: true,
+      enter: () => { if (!G.council.crisis) Council.startCrisis('pandemic'); tPanel('council')(); }, wait: () => !!G.council.crisis && (G.council.crisis.pledged[G.player.idx] || 0) > 0 },
+    { title: 'Influence', text: 'Your <b>influence</b> decides how far lobbying moves other countries. It grows with your economy, aid, a Security Council seat and a good record.', el: '#panel', at: 'tr',
+      enter: () => { UI.closeModal(); tPanel('council')(); } }
+  ]
+});
+Tutor.define({
+  id: 'online', title: 'Playing online', blurb: 'Hosting and joining a room, the lobby, scenarios', next: null,
+  begin: () => onTitle(), alive: () => UI.screen === 'title' && !G,
+  end: 'That is everything! Lessons stay in <b>Training</b> on the title screen if you want them again.',
+  steps: [
+    { title: 'Play online', text: 'Up to 6 leaders share one world. Press <b>Play online with friends</b>.', el: '#title [data-act="online"]', wait: () => !!$('#on-host') && shown('#modal') },
+    { title: 'Open a room', text: '<b>Open a room</b> to host: you get a 6-digit code to give your friends.', el: '#on-host', enter: () => { if (!$('#on-host')) Online.open(); } },
+    { title: 'Join a room', text: 'Or type a friend\'s <b>code</b> here and press <b>Join</b>.', el: () => $('#on-code') && $('#on-code').parentElement, enter: () => { if (!$('#on-host')) Online.open(); } },
+    { title: 'The lobby', text: 'In the room everyone picks a <b>different country</b>. The host starts the game; countries nobody picked are run by the AI, and the AI takes over if someone leaves.',
+      el: () => shown('#modal') ? $('#modal-box') : null, enter: () => { if (!$('#on-host')) Online.open(); } },
+    { title: 'Scenarios', text: 'The host also picks the <b>scenario</b>: ' + SCENARIOS.map(s => s.name).join(', ') + '. Each one starts a different world with its own goal. Everyone needs the same version of Sovereign.',
+      el: () => shown('#modal') ? $('#modal-box') : null, enter: () => { if (!$('#on-host')) Online.open(); } },
+    { title: 'Close', text: 'Press <b>Close</b> to finish.', el: '#on-close', wait: () => !shown('#modal') }
+  ]
+});
+
+// the title's Training button (NEW until a lesson is done)
+function trainButton() { const any = Tutor.list.some(l => Tutor.done(l.id)); return `<button class="btn" data-act="training">🎓 Training${any ? '' : ' <span class="tut-new" id="t-train-new">NEW</span>'}</button>`; }
+function trainHub() {
+  if (!onTitle()) return;
+  Tutor.hub({ title: 'Sovereign training', intro: 'Short lessons where you do each step yourself. Lessons 1 to 3 play a practice game that is thrown away afterwards: it never saves and never counts for achievements or leaderboards. Esc or "Skip lesson" leaves at any time.' });
+}
+// a new player's first title screen (no saves yet): offer Your first year once
+function trainOffer() {
+  if (Store.get('tutOffer', false) || Tutor.active || !onTitle() || Saves.latest() || !$('#modal').classList.contains('hidden')) return false;
+  Store.set('tutOffer', 1);
+  Tutor.offer({ kicker: 'Welcome', time: '4 minutes', les: 'first', title: 'New here? Play a practice year?', text: 'Pick a country, set a tax, pass a law and handle your first event in a practice game that is thrown away afterwards. You do each step yourself.',
+    answer: () => { if (UI.screen === 'title') UI.titleButtons(); } });
+  return true;
+}
+// marking a lesson done redraws the title's button
+Tutor.config({ mark: id => { const o = Store.get('tut', {}) || {}; o[id] = 1; Store.set('tut', o); if (UI.screen === 'title') UI.titleButtons(); } });
+function trainHook() { return {
+  start: id => Tutor.start(id), stop: how => Tutor.stop(how), next: () => Tutor.next(), back: () => Tutor.back(), hub: () => trainHub(), offer: () => trainOffer(),
+  get active() { return Tutor.active; }, get lesson() { return Tutor.lesson && Tutor.lesson.id; }, get i() { return Tutor.i; }, get title() { return Tutor.step && Tutor.step.title; },
+  get finale() { return Tutor.finale; }, get stepDone() { return Tutor.stepDone; }, get hubOpen() { return Tutor.hubOpen; }, get offerOpen() { return Tutor.offerOpen; },
+  get lessons() { return Tutor.list.map(l => ({ id: l.id, title: l.title, steps: l.steps.length, done: Tutor.done(l.id) })); }, n: TRN.n, game: () => trainGame()
+}; }
+
 // ---- 90-main.js ----
 // Boot: read the data, build the 110m globe, show the title, then build the detailed 50m map in the background.
 const frame = () => new Promise(r => requestAnimationFrame(() => r()));
@@ -7377,7 +7819,7 @@ function loop(now) {
 }
 
 window.__sov = {
-  ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
+  ready: false, detailed: false, tut: trainHook(), World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
   get G() { return G; }, Sim, General, Online, capitulate, newGame, worldMonth, nextMonth, nextDay, conquer, release, checkDomination, warWeek, frontLine, drawFronts, Rule, controlledHtml, MapModes, startWar, sovAch, endWar, Overlay, endGame, crisis, react, Politics, Life, War, peaceChance, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
   Council, SCENARIOS, RESOLUTIONS, WORLD_CRISES, applyScenario, EVENTS, eventContext, applyEventFx, showNextEvent, saveTo, loadFrom, serialize, Game, VICTORIES, ACH, // 1.4
   flyTo, flyToCountry, screenToLL, llToScreen, pickLL, landPower: n => landPower(n), relation: (a, b) => relation(a, b),

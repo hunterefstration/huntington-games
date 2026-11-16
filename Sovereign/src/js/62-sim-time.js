@@ -161,6 +161,7 @@ function migrate(g) {
 }
 function saveMeta() { const n = G.nations[G.player.idx]; return { country: World.countries[n.idx].name, flag: World.countries[n.idx].flag, leader: G.player.name, date: fmtDate(G.day), at: Date.now() }; }
 async function saveTo(slot) {
+  if (G && G.tut) return false;      // 1.5: a Training game is thrown away, never saved (not even the autosave)
   try { const meta = saveMeta(); localStorage.setItem('sov.save.' + slot, 'gz:' + await gzip64(serialize())); Store.set('meta.' + slot, meta); return true; }
   catch (e) { toast('Could not save: browser storage is full'); return false; }
 }
