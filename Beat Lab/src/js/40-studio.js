@@ -27,11 +27,12 @@ function buildStudio() {
   const keysT = toggleBtn('Keys', true, v => { A.set.keys = v ? 1 : 0; Store.saveSet(); }, 'Play the selected instrument with your computer keyboard: Z S X D C... and Q 2 W 3 E... ([ and ] change octave)');
   const midiB = h('button', { class: 'btn small', title: 'Use a MIDI keyboard', onclick: () => connectMidi() }, 'MIDI');
   const wav = h('button', { class: 'btn small', title: 'Export the song as a WAV file', onclick: () => exportWav() }, 'Export WAV');
+  const lm = h('button', { class: 'btn small', title: 'Play this song on the launcher\'s pages (your launcher music)', onclick: () => launcherMusic() }, '♪ Launcher music');
   const cpu = h('div', { class: 'cpu', title: 'Notes sounding right now' }, '');
   const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, recQ, swing,
     h('div', { class: 'grp' }, h('span', { class: 'lab' }, 'Pattern'), patSel, patAdd, patMenu),
     h('div', { class: 'grp' }, h('button', { class: 'btn small', title: 'Undo (Ctrl+Z)', onclick: () => Hist.doUndo() }, 'Undo'), h('button', { class: 'btn small', title: 'Redo (Ctrl+Y)', onclick: () => Hist.doRedo() }, 'Redo')),
-    keysT, midiB, wav, cpu);
+    keysT, midiB, wav, lm, cpu);
   // ---- browser
   const search = h('input', { type: 'search', class: 'txt', placeholder: 'Search ' + E.PRESETS.length + ' sounds...' });
   search.addEventListener('input', () => fillBrowser(search.value));

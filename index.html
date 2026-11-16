@@ -2894,26 +2894,56 @@ function musBeat(tr, s, t) {
   }
 }
 function musTick() {
-  if (!MUS.on || !MUS.track) return;
+  if (!MUS.on || !MUS.track || !TRACKS[MUS.track]) return;
   var T = TRACKS[MUS.track], sd = 60 / T.bpm / 4;
   while (MUS.next < MUS.ac.currentTime + 0.25) { musBeat(MUS.track, MUS.step, MUS.next); MUS.next += sd; MUS.step++; }
 }
 function musWant() {
   var L = window.HGGrapevine, e = L && L.eco && L.eco.state(), id = e && e.equip && e.equip.music;
   var tr = id ? id.replace(/^music:/, '') : '';
-  return TRACKS[tr] && !document.documentElement.classList.contains('playing') && !document.hidden && musPref() ? tr : '';
+  if (musBlId() && !BUNDLE) tr = 'beatlab';      // the player's own Beat Lab song comes first (set from Beat Lab)
+  return (TRACKS[tr] || tr === 'beatlab') && !document.documentElement.classList.contains('playing') && !document.hidden && musPref() ? tr : '';
 }
 function musPref() { try { return localStorage.getItem('hgv:music') !== 'off'; } catch (e) { return true; } }
 function musSync() {
   var want = musWant();
   if (want && !MUS.ac) { try { MUS.ac = new (window.AudioContext || window.webkitAudioContext)(); MUS.gain = MUS.ac.createGain(); MUS.gain.gain.value = 0.35; MUS.gain.connect(MUS.ac.destination); } catch (e) { return; } }
   if (!MUS.ac) return;
+  if (want === 'beatlab') { if (!MUS.on || MUS.track !== 'beatlab' || MUSB.id !== musBlId()) musBlStart(); return; }
+  if (MUS.track === 'beatlab') musBlStop();
   if (want && (!MUS.on || MUS.track !== want)) { MUS.track = want; MUS.on = true; MUS.step = 0; MUS.next = MUS.ac.currentTime + 0.1; if (MUS.ac.state === 'suspended') MUS.ac.resume(); clearInterval(MUS.timer); MUS.timer = setInterval(musTick, 90); }
   else if (!want && MUS.on) { MUS.on = false; clearInterval(MUS.timer); MUS.gain.gain.setTargetAtTime(0.0001, MUS.ac.currentTime, 0.1); setTimeout(function () { if (!MUS.on) MUS.gain.gain.value = 0.35; }, 600); }
 }
 setInterval(musSync, 1000);
 document.addEventListener('pointerdown', function () { if (MUS.ac && MUS.ac.state === 'suspended') MUS.ac.resume(); musSync(); }, { capture: true });
 window.HG_music = { toggle: function () { try { localStorage.setItem('hgv:music', musPref() ? 'off' : 'on'); } catch (e) {} musSync(); return musPref(); }, playing: function () { return MUS.on ? MUS.track : ''; } };
+
+// ---- your own Beat Lab song as the launcher's music (2026-11-16) ----
+// Beat Lab's "Launcher music" button names a project in beatlab_launcher. Its engine (Beat Lab/engine.js, 145 KB) is
+// loaded only then, and plays the whole song on a loop through the launcher's music volume.
+var MUSB = { eng: null, loading: null, id: '' };
+function musBlId() { try { var id = localStorage.getItem('beatlab_launcher'); return id && localStorage.getItem('beatlab_p_' + id) ? id : ''; } catch (e) { return ''; } }
+function musBlLoad() {
+  if (window.BeatLabEngine && window.BeatLabEngine.create) return Promise.resolve();
+  if (MUSB.loading) return MUSB.loading;
+  return (MUSB.loading = new Promise(function (res, rej) {
+    var s = document.createElement('script'); s.src = (local ? '' : MIRRORS[0]) + 'Beat%20Lab/engine.js';
+    s.onload = res; s.onerror = function () { MUSB.loading = null; rej(new Error('engine')); }; document.head.appendChild(s);
+  }));
+}
+function musBlStop() { if (MUSB.eng) { try { MUSB.eng.stop(); MUSB.eng.destroy(); } catch (e) {} } MUSB.eng = null; MUSB.id = ''; if (MUS.track === 'beatlab') { MUS.on = false; MUS.track = ''; } }
+function musBlStart() {
+  var id = musBlId(); musBlStop(); clearInterval(MUS.timer);
+  MUS.on = true; MUS.track = 'beatlab'; MUSB.id = id;
+  if (MUS.ac.state === 'suspended') MUS.ac.resume();
+  musBlLoad().then(function () {
+    if (MUS.track !== 'beatlab' || MUSB.id !== id || !MUS.on) return;
+    var E = window.BeatLabEngine, p = E.fromSave(localStorage.getItem('beatlab_p_' + id)); if (!p) return musBlStop();
+    var steps = Math.max(16, Math.ceil(E.songTicks(p) / 12)); p.loop = [0, steps];
+    MUSB.eng = E.create({ ctx: MUS.ac, out: MUS.gain }); MUSB.eng.load(p); MUSB.eng.play({ mode: 'song' });
+  }, function () { musBlStop(); });
+}
+window.HG_musicChanged = function () { if (MUS.track === 'beatlab') musBlStop(); musSync(); };
 
 // ===== Open parties, Quick Match, friends playing now =====
 // Games that host a party tell the launcher (HG_partyOpen, or a code they send with HG_sendInvite), and the launcher
@@ -3125,7 +3155,7 @@ function qolDecorate() {
 // The page used to be one tall column of big cards, which stopped working past twenty games. Now: a banner, a shelf
 // per kind of game (each scrolls sideways, so a shelf never gets longer), then every game as a small tile. A tile's
 // description shows when you rest on it (qolPeek). NEW_NOW names what this release added or changed.
-var NEW_NOW = ['Mayhem Marathon', 'Casino', 'Steel Storm', 'Blocky Shooter V2'];
+var NEW_NOW = ['Beat Lab', 'Steel Storm', 'Mayhem Marathon', 'Blocky Shooter V2'];
 var SHELF_OF = { '3D': 'action', Shooter: 'action', Strategy: 'think', Tycoon: 'think', Sim: 'think', Clicker: 'think', Platformer: 'run', Puzzle: 'run', Arcade: 'run', Party: 'party', Minigame: 'party', Casino: 'party', Sandbox: 'make' };
 var SHELVES = [['fav', '\u2605 Your favourites'], ['new', 'New and updated'], ['mp', 'Play with friends'], ['action', 'Action and shooters'], ['think', 'Strategy, tycoon and idle'], ['run', 'Platformers, puzzles and arcade'], ['party', 'Party games and minigames'], ['make', 'Sandbox and the rest']];
 function qolShelfOf(g) { var t = g.tags || [], out = {}; for (var i = 0; i < t.length; i++) if (SHELF_OF[t[i]]) out[SHELF_OF[t[i]]] = 1; if (!Object.keys(out).length) out.make = 1; if (t.indexOf('Multiplayer') >= 0) out.mp = 1; if (NEW_NOW.indexOf(g.dir) >= 0) out['new'] = 1; if (qolIsFav(g.dir)) out.fav = 1; return out; }
@@ -3308,12 +3338,12 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r73', items: [
-  ['Steel Storm runs smoother', 'About a third faster on Medium with the same picture. On a slow computer it lowers the resolution a little before dropping the graphics level.'],
-  ['Steel Storm 2.1', 'A full rebalance: every vehicle has a job and every tier hits harder. Guided missiles lock on and hit, bots on hard bring better gear, and tanks climb hills without stalling.'],
-  ['Nicknames', 'Pick a nickname everyone sees (Profile, the pencil next to your name). Your account name is still there when someone hovers over it.'],
-  ['Mayhem Marathon, Sovereign, Neon Dash fixes', 'No more spawning under the map in Tail Grab, no more "InfinityT" money in Sovereign, and impossible Neon Dash scores are gone from the board.'],
-  ['Saves are safer', 'Two tabs signed in as different accounts can no longer wipe each other, and lost progress can now be brought back.']
+var WHATSNEW = { id: 'r74', items: [
+  ['Beat Lab: make your own music', 'A new music studio: a simple song grid for anyone, and a full studio with 250+ instruments, a piano roll, a mixer and effects. Your song can even be your launcher music.'],
+  ['Multiplayer, rebuilt', 'Quick Play, join with a code or host a room, see every open game live, and earn bonus goons for every 10 minutes you play with other people (double from 3 to 5 pm).'],
+  ['Chat over your game', 'Press T in a game to talk to the people playing with you, right on screen. Messages float up and fade away.'],
+  ['Grapevine, tidied up', 'A new sidebar with filters, folding sections and pins, and official rooms everyone is in: #announcements, #main, #multiplayer-codes, #music and #bugs-and-ideas.'],
+  ['Activity', 'A new tab with how many people play, the most played games and who is playing what right now.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;

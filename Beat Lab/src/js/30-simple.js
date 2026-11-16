@@ -58,7 +58,7 @@ function buildSimple() {
     h('div', { class: 's-group' }, h('button', { class: 'btn', title: 'Undo (Ctrl+Z)', onclick: () => Hist.doUndo() }, 'Undo'), h('button', { class: 'btn', title: 'Redo (Ctrl+Y)', onclick: () => Hist.doRedo() }, 'Redo'),
       h('button', { class: 'btn', onclick: () => confirmBox('Clear the song?', 'Every note and drum hit goes (Undo brings them back).', 'Clear', () => edit('Clear', d => { d.mel = []; d.drm = []; })) }, 'Clear')),
     h('div', { class: 's-group' }, h('button', { class: 'btn fun', title: 'Make up a melody and a beat', onclick: () => edit('Surprise', d => surprise(d)) }, 'Surprise me!'), songs),
-    h('div', { class: 's-group right' }, h('button', { class: 'btn', title: 'Save the song as a WAV sound file', onclick: () => exportWav(true) }, 'Save WAV'), h('button', { class: 'btn primary', title: 'Turn this into a full Studio project', onclick: openInStudio }, 'Open in Studio →'))));
+    h('div', { class: 's-group right' }, h('button', { class: 'btn', title: 'Save the song as a WAV sound file', onclick: () => exportWav(true) }, 'Save WAV'), h('button', { class: 'btn', title: 'Play this song on the launcher\'s pages', onclick: () => launcherMusic() }, '♪ Launcher music'), h('button', { class: 'btn primary', title: 'Turn this into a full Studio project', onclick: openInStudio }, 'Open in Studio →'))));
   SV.refresh = () => {
     const d = s();
     tempo.value = d.bpm; tempoVal.textContent = d.bpm;

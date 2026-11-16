@@ -40,23 +40,53 @@ function musBeat(tr, s, t) {
   }
 }
 function musTick() {
-  if (!MUS.on || !MUS.track) return;
+  if (!MUS.on || !MUS.track || !TRACKS[MUS.track]) return;
   var T = TRACKS[MUS.track], sd = 60 / T.bpm / 4;
   while (MUS.next < MUS.ac.currentTime + 0.25) { musBeat(MUS.track, MUS.step, MUS.next); MUS.next += sd; MUS.step++; }
 }
 function musWant() {
   var L = window.HGGrapevine, e = L && L.eco && L.eco.state(), id = e && e.equip && e.equip.music;
   var tr = id ? id.replace(/^music:/, '') : '';
-  return TRACKS[tr] && !document.documentElement.classList.contains('playing') && !document.hidden && musPref() ? tr : '';
+  if (musBlId() && !BUNDLE) tr = 'beatlab';      // the player's own Beat Lab song comes first (set from Beat Lab)
+  return (TRACKS[tr] || tr === 'beatlab') && !document.documentElement.classList.contains('playing') && !document.hidden && musPref() ? tr : '';
 }
 function musPref() { try { return localStorage.getItem('hgv:music') !== 'off'; } catch (e) { return true; } }
 function musSync() {
   var want = musWant();
   if (want && !MUS.ac) { try { MUS.ac = new (window.AudioContext || window.webkitAudioContext)(); MUS.gain = MUS.ac.createGain(); MUS.gain.gain.value = 0.35; MUS.gain.connect(MUS.ac.destination); } catch (e) { return; } }
   if (!MUS.ac) return;
+  if (want === 'beatlab') { if (!MUS.on || MUS.track !== 'beatlab' || MUSB.id !== musBlId()) musBlStart(); return; }
+  if (MUS.track === 'beatlab') musBlStop();
   if (want && (!MUS.on || MUS.track !== want)) { MUS.track = want; MUS.on = true; MUS.step = 0; MUS.next = MUS.ac.currentTime + 0.1; if (MUS.ac.state === 'suspended') MUS.ac.resume(); clearInterval(MUS.timer); MUS.timer = setInterval(musTick, 90); }
   else if (!want && MUS.on) { MUS.on = false; clearInterval(MUS.timer); MUS.gain.gain.setTargetAtTime(0.0001, MUS.ac.currentTime, 0.1); setTimeout(function () { if (!MUS.on) MUS.gain.gain.value = 0.35; }, 600); }
 }
 setInterval(musSync, 1000);
 document.addEventListener('pointerdown', function () { if (MUS.ac && MUS.ac.state === 'suspended') MUS.ac.resume(); musSync(); }, { capture: true });
 window.HG_music = { toggle: function () { try { localStorage.setItem('hgv:music', musPref() ? 'off' : 'on'); } catch (e) {} musSync(); return musPref(); }, playing: function () { return MUS.on ? MUS.track : ''; } };
+
+// ---- your own Beat Lab song as the launcher's music (2026-11-16) ----
+// Beat Lab's "Launcher music" button names a project in beatlab_launcher. Its engine (Beat Lab/engine.js, 145 KB) is
+// loaded only then, and plays the whole song on a loop through the launcher's music volume.
+var MUSB = { eng: null, loading: null, id: '' };
+function musBlId() { try { var id = localStorage.getItem('beatlab_launcher'); return id && localStorage.getItem('beatlab_p_' + id) ? id : ''; } catch (e) { return ''; } }
+function musBlLoad() {
+  if (window.BeatLabEngine && window.BeatLabEngine.create) return Promise.resolve();
+  if (MUSB.loading) return MUSB.loading;
+  return (MUSB.loading = new Promise(function (res, rej) {
+    var s = document.createElement('script'); s.src = (local ? '' : MIRRORS[0]) + 'Beat%20Lab/engine.js';
+    s.onload = res; s.onerror = function () { MUSB.loading = null; rej(new Error('engine')); }; document.head.appendChild(s);
+  }));
+}
+function musBlStop() { if (MUSB.eng) { try { MUSB.eng.stop(); MUSB.eng.destroy(); } catch (e) {} } MUSB.eng = null; MUSB.id = ''; if (MUS.track === 'beatlab') { MUS.on = false; MUS.track = ''; } }
+function musBlStart() {
+  var id = musBlId(); musBlStop(); clearInterval(MUS.timer);
+  MUS.on = true; MUS.track = 'beatlab'; MUSB.id = id;
+  if (MUS.ac.state === 'suspended') MUS.ac.resume();
+  musBlLoad().then(function () {
+    if (MUS.track !== 'beatlab' || MUSB.id !== id || !MUS.on) return;
+    var E = window.BeatLabEngine, p = E.fromSave(localStorage.getItem('beatlab_p_' + id)); if (!p) return musBlStop();
+    var steps = Math.max(16, Math.ceil(E.songTicks(p) / 12)); p.loop = [0, steps];
+    MUSB.eng = E.create({ ctx: MUS.ac, out: MUS.gain }); MUSB.eng.load(p); MUSB.eng.play({ mode: 'song' });
+  }, function () { musBlStop(); });
+}
+window.HG_musicChanged = function () { if (MUS.track === 'beatlab') musBlStop(); musSync(); };

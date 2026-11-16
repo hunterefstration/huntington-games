@@ -101,6 +101,13 @@ try {
   const want = ld.replace(/\/\*@boot\.css\*\/[\s\S]*?\/\*@\/boot\.css\*\//, '/*@boot.css*/\n' + css + '\n/*@/boot.css*/').replace(/<!--@boot\.html-->[\s\S]*?<!--@\/boot\.html-->/, '<!--@boot.html-->\n' + html + '\n<!--@/boot.html-->');
   if (want !== ld) { if (FIX) { fs.writeFileSync(L, want); notes.push('loader.html: the loading screen was copied in from launcher/boot.*'); } else problems.push('loader.html carries an old copy of the loading screen (node tools/check.js --fix)'); }
 } catch (e) { problems.push('loader.html: ' + e.message); }
+// --- 6. Beat Lab's engine on its own (Beat Lab/engine.js), for the launcher's music player: its src files 10-16 joined ---
+try {
+  const dir = path.join(ROOT, 'Beat Lab/src/js'), files = fs.readdirSync(dir).filter(f => /^1[0-6]-/.test(f)).sort();
+  const want = '// Beat Lab engine, built from Beat Lab/src/js/' + files.join(', ') + ' by tools/check.js --fix. Do not edit.\n' + files.map(f => read(path.join(dir, f))).join('\n');
+  const E = path.join(ROOT, 'Beat Lab/engine.js'), have = fs.existsSync(E) ? read(E) : '';
+  if (have !== want) { if (FIX) { fs.writeFileSync(E, want); notes.push('Beat Lab/engine.js rebuilt from its sources'); } else problems.push('Beat Lab/engine.js is not what Beat Lab/src/js/10-16 build to (node tools/check.js --fix)'); }
+} catch (e) { problems.push('Beat Lab/engine.js: ' + e.message); }
 for (const n of notes) console.log('note  ' + n);
 for (const p of problems) console.log('FAIL  ' + p);
 console.log(problems.length ? `\n${problems.length} problem(s)` : `ok: ${targets.length - (only.length ? targets.length - only.length : 0)} built file(s) match their sources, lists agree`);

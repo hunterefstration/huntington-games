@@ -301,7 +301,7 @@ body[data-mode="studio"] #foot { display: block; }
 //   const eng = BeatLabEngine.create(); eng.audio(); eng.load(p); eng.play({ mode: 'song' });   ... eng.destroy()
 //
 // API (E = BeatLabEngine)
-//   const eng = E.create({ ctx })         a live engine. ctx: an AudioContext (made on the first eng.audio() call if left
+//   const eng = E.create({ ctx, out })    a live engine (out: an AudioNode of ctx to play into instead of the speakers). ctx: an AudioContext (made on the first eng.audio() call if left
 //                                         out; browsers only allow sound after a click, so call eng.audio() from one)
 //   eng.load(project)                     use this project; call it again after every change (it only rebuilds what
 //                                         changed, and running playback picks the change up)
@@ -453,7 +453,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
 
   // =================================================================================================== the engine
   function Engine(ctx, opts) {
-    this.ctx = ctx || null; this.offline = !!(opts && opts.offline);
+    this.ctx = ctx || null; this.offline = !!(opts && opts.offline); this.out = (opts && opts.out) || null;      // out: an AudioNode to play into (the launcher's music volume)
     this.proj = null; this.ch = new Map(); this.mix = []; this.voices = [];
     this.playing = false; this.mode = 'pat'; this.patId = null; this.metro = false;
     this.stats = { notes: 0, voices: 0, recent: [] };
@@ -509,7 +509,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
       const clip = ctx.createWaveShaper(), n = 2048, cv = new Float32Array(n);
       for (let k = 0; k < n; k++) { const x = k / (n - 1) * 2 - 1, a = Math.abs(x); cv[k] = Math.sign(x) * (a < 0.85 ? a : 0.85 + 0.13 * Math.tanh((a - 0.85) / 0.13)); }
       clip.curve = cv;
-      t.vol.connect(t.post); if (E.noClip) t.post.connect(t.an); else { t.post.connect(clip); clip.connect(t.an); } t.an.connect(ctx.destination);
+      t.vol.connect(t.post); if (E.noClip) t.post.connect(t.an); else { t.post.connect(clip); clip.connect(t.an); } t.an.connect(this.out && this.out.context === ctx ? this.out : ctx.destination);
     } else {
       t.pan = ctx.createStereoPanner();
       t.pan.connect(t.vol); t.vol.connect(t.an);
@@ -2667,7 +2667,7 @@ function buildSimple() {
     h('div', { class: 's-group' }, h('button', { class: 'btn', title: 'Undo (Ctrl+Z)', onclick: () => Hist.doUndo() }, 'Undo'), h('button', { class: 'btn', title: 'Redo (Ctrl+Y)', onclick: () => Hist.doRedo() }, 'Redo'),
       h('button', { class: 'btn', onclick: () => confirmBox('Clear the song?', 'Every note and drum hit goes (Undo brings them back).', 'Clear', () => edit('Clear', d => { d.mel = []; d.drm = []; })) }, 'Clear')),
     h('div', { class: 's-group' }, h('button', { class: 'btn fun', title: 'Make up a melody and a beat', onclick: () => edit('Surprise', d => surprise(d)) }, 'Surprise me!'), songs),
-    h('div', { class: 's-group right' }, h('button', { class: 'btn', title: 'Save the song as a WAV sound file', onclick: () => exportWav(true) }, 'Save WAV'), h('button', { class: 'btn primary', title: 'Turn this into a full Studio project', onclick: openInStudio }, 'Open in Studio →'))));
+    h('div', { class: 's-group right' }, h('button', { class: 'btn', title: 'Save the song as a WAV sound file', onclick: () => exportWav(true) }, 'Save WAV'), h('button', { class: 'btn', title: 'Play this song on the launcher\'s pages', onclick: () => launcherMusic() }, '♪ Launcher music'), h('button', { class: 'btn primary', title: 'Turn this into a full Studio project', onclick: openInStudio }, 'Open in Studio →'))));
   SV.refresh = () => {
     const d = s();
     tempo.value = d.bpm; tempoVal.textContent = d.bpm;
@@ -2885,11 +2885,12 @@ function buildStudio() {
   const keysT = toggleBtn('Keys', true, v => { A.set.keys = v ? 1 : 0; Store.saveSet(); }, 'Play the selected instrument with your computer keyboard: Z S X D C... and Q 2 W 3 E... ([ and ] change octave)');
   const midiB = h('button', { class: 'btn small', title: 'Use a MIDI keyboard', onclick: () => connectMidi() }, 'MIDI');
   const wav = h('button', { class: 'btn small', title: 'Export the song as a WAV file', onclick: () => exportWav() }, 'Export WAV');
+  const lm = h('button', { class: 'btn small', title: 'Play this song on the launcher\'s pages (your launcher music)', onclick: () => launcherMusic() }, '♪ Launcher music');
   const cpu = h('div', { class: 'cpu', title: 'Notes sounding right now' }, '');
   const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, recQ, swing,
     h('div', { class: 'grp' }, h('span', { class: 'lab' }, 'Pattern'), patSel, patAdd, patMenu),
     h('div', { class: 'grp' }, h('button', { class: 'btn small', title: 'Undo (Ctrl+Z)', onclick: () => Hist.doUndo() }, 'Undo'), h('button', { class: 'btn small', title: 'Redo (Ctrl+Y)', onclick: () => Hist.doRedo() }, 'Redo')),
-    keysT, midiB, wav, cpu);
+    keysT, midiB, wav, lm, cpu);
   // ---- browser
   const search = h('input', { type: 'search', class: 'txt', placeholder: 'Search ' + E.PRESETS.length + ' sounds...' });
   search.addEventListener('input', () => fillBrowser(search.value));
@@ -4274,6 +4275,18 @@ function helpDialog() {
     h('h4', null, 'Shortcuts'),
     h('p', null, 'Space play/stop · Ctrl+Z undo · Ctrl+Y redo · Ctrl+S save · Delete removes the selection · F5-F9 or Alt+1-5 switch views · Ctrl+mouse wheel zooms, Shift+wheel scrolls sideways, Alt+wheel changes row height. Shift+T opens the chat.'));
   modal('How Beat Lab works', body, [{ t: 'Got it', primary: true }], { wide: true });
+}
+
+// ---- your song as the launcher's music: the launcher plays the project named in beatlab_launcher on its own pages, with
+// Beat Lab's engine (Beat Lab/engine.js, loaded only when needed). The key syncs with the account like the songs do.
+function launcherMusic() {
+  const cur = (() => { try { return localStorage.getItem('beatlab_launcher'); } catch (e) { return null; } })();
+  const mine = cur === A.p.id;
+  const tell = () => { try { if (parent !== window && parent.HG_musicChanged) parent.HG_musicChanged(); } catch (e) {} };
+  modal('Launcher music', h('p', null, mine ? '"' + A.p.name + '" is your launcher music. It plays on the launcher\'s pages (never over a game).' :
+    'Play "' + A.p.name + '" on the launcher\'s pages instead of the shop track? It never plays over a game, and the music button on the launcher still turns it off.'),
+    mine ? [{ t: 'Keep it' }, { t: 'Stop using it', f: () => { try { localStorage.removeItem('beatlab_launcher'); } catch (e) {} tell(); toast('The launcher plays the shop track again.'); } }]
+         : [{ t: 'Cancel' }, { t: 'Use this song', primary: true, f: () => { saveNow(); try { localStorage.setItem('beatlab_launcher', A.p.id); } catch (e) {} tell(); toast('Done: it plays when you go back to the launcher.'); } }]);
 }
 
 // ---- 90-main.js ----

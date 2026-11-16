@@ -103,3 +103,15 @@ function helpDialog() {
     h('p', null, 'Space play/stop · Ctrl+Z undo · Ctrl+Y redo · Ctrl+S save · Delete removes the selection · F5-F9 or Alt+1-5 switch views · Ctrl+mouse wheel zooms, Shift+wheel scrolls sideways, Alt+wheel changes row height. Shift+T opens the chat.'));
   modal('How Beat Lab works', body, [{ t: 'Got it', primary: true }], { wide: true });
 }
+
+// ---- your song as the launcher's music: the launcher plays the project named in beatlab_launcher on its own pages, with
+// Beat Lab's engine (Beat Lab/engine.js, loaded only when needed). The key syncs with the account like the songs do.
+function launcherMusic() {
+  const cur = (() => { try { return localStorage.getItem('beatlab_launcher'); } catch (e) { return null; } })();
+  const mine = cur === A.p.id;
+  const tell = () => { try { if (parent !== window && parent.HG_musicChanged) parent.HG_musicChanged(); } catch (e) {} };
+  modal('Launcher music', h('p', null, mine ? '"' + A.p.name + '" is your launcher music. It plays on the launcher\'s pages (never over a game).' :
+    'Play "' + A.p.name + '" on the launcher\'s pages instead of the shop track? It never plays over a game, and the music button on the launcher still turns it off.'),
+    mine ? [{ t: 'Keep it' }, { t: 'Stop using it', f: () => { try { localStorage.removeItem('beatlab_launcher'); } catch (e) {} tell(); toast('The launcher plays the shop track again.'); } }]
+         : [{ t: 'Cancel' }, { t: 'Use this song', primary: true, f: () => { saveNow(); try { localStorage.setItem('beatlab_launcher', A.p.id); } catch (e) {} tell(); toast('Done: it plays when you go back to the launcher.'); } }]);
+}

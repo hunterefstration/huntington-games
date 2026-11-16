@@ -7,7 +7,7 @@
 //   const eng = BeatLabEngine.create(); eng.audio(); eng.load(p); eng.play({ mode: 'song' });   ... eng.destroy()
 //
 // API (E = BeatLabEngine)
-//   const eng = E.create({ ctx })         a live engine. ctx: an AudioContext (made on the first eng.audio() call if left
+//   const eng = E.create({ ctx, out })    a live engine (out: an AudioNode of ctx to play into instead of the speakers). ctx: an AudioContext (made on the first eng.audio() call if left
 //                                         out; browsers only allow sound after a click, so call eng.audio() from one)
 //   eng.load(project)                     use this project; call it again after every change (it only rebuilds what
 //                                         changed, and running playback picks the change up)
@@ -159,7 +159,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
 
   // =================================================================================================== the engine
   function Engine(ctx, opts) {
-    this.ctx = ctx || null; this.offline = !!(opts && opts.offline);
+    this.ctx = ctx || null; this.offline = !!(opts && opts.offline); this.out = (opts && opts.out) || null;      // out: an AudioNode to play into (the launcher's music volume)
     this.proj = null; this.ch = new Map(); this.mix = []; this.voices = [];
     this.playing = false; this.mode = 'pat'; this.patId = null; this.metro = false;
     this.stats = { notes: 0, voices: 0, recent: [] };
@@ -215,7 +215,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
       const clip = ctx.createWaveShaper(), n = 2048, cv = new Float32Array(n);
       for (let k = 0; k < n; k++) { const x = k / (n - 1) * 2 - 1, a = Math.abs(x); cv[k] = Math.sign(x) * (a < 0.85 ? a : 0.85 + 0.13 * Math.tanh((a - 0.85) / 0.13)); }
       clip.curve = cv;
-      t.vol.connect(t.post); if (E.noClip) t.post.connect(t.an); else { t.post.connect(clip); clip.connect(t.an); } t.an.connect(ctx.destination);
+      t.vol.connect(t.post); if (E.noClip) t.post.connect(t.an); else { t.post.connect(clip); clip.connect(t.an); } t.an.connect(this.out && this.out.context === ctx ? this.out : ctx.destination);
     } else {
       t.pan = ctx.createStereoPanner();
       t.pan.connect(t.vol); t.vol.connect(t.an);
