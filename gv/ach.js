@@ -101,6 +101,11 @@
     { id: 'sovconq10', g: 'sov', i: '🗺️', n: 'Empire Builder', d: 'Control 10 countries besides your own.', p: 50, t: function () { return num(SV().conquered) >= 10; } },
     { id: 'sovyears', g: 'sov', i: '📅', n: 'Long Reign', d: 'Rule for 20 years in one game.', p: 25, t: function () { return num(SV().years) >= 20; } },
     { id: 'sovach', g: 'sov', i: '🏅', n: 'Statesman', d: 'Earn 15 of Sovereign\'s own achievements.', p: 50, t: function () { return cnt(rd('sov.ach')) >= 15; } },
+    { id: 'sovvictory', g: 'sov', i: '🏆', n: 'Triumph', d: 'Win any victory in Sovereign.', p: 25, t: function () { return num(SV().victories) >= 1; } },
+    { id: 'sovcouncil', g: 'sov', i: '🕊️', n: 'Voice of the World', d: 'Pass 3 of your own resolutions at Sovereign\'s World Council.', p: 25, t: function () { return num(SV().councilPassed) >= 3; } },
+    { id: 'sovinfluence', g: 'sov', i: '🎙️', n: 'Heavyweight', d: 'Reach 80 Council influence in Sovereign.', p: 25, t: function () { return num(SV().influence) >= 80; } },
+    { id: 'sovcrisis', g: 'sov', i: '🦠', n: 'Saviour', d: 'Help the world beat a global crisis in Sovereign.', p: 25, t: function () { return num(SV().crises) >= 1; } },
+    { id: 'sovscenario', g: 'sov', i: '📜', n: 'Alternate History', d: 'Rule for 5 years in one of Sovereign\'s scenarios.', p: 25, t: function () { return num(SV().scnYears) >= 5; } },
     { id: 'sovworld', g: 'sov', i: '🌍', n: 'World Domination', d: 'Control every country on Earth.', p: 100, t: function () { return !!SV().domination; } },
     // the launcher itself
     // Last Light
