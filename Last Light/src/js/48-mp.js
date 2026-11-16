@@ -8,7 +8,7 @@
 // ==========================================
 const MP = { on: false, net: null, host: false, code: '', mode: 'race', level: 0, players: new Map(), me: 0, ghosts: new Map(), fin: [], t0: 0,
     sendT: 0, shoveT: 0, endT: 0, ended: false, name: '' };
-const MP_ABIL = { double: true, wall: true, dash: true };
+const MP_ABIL = { double: true, wall: true, dash: true, glide: true };
 const MP_MAX = 6;
 function mpHG() {
     const h = window.HGNet || (() => { try { return window.parent && window.parent.HGNet; } catch (e) { return null; } })();

@@ -52,14 +52,18 @@ function flawlessGrandfather(d) {
     delete d.flawlessFrom; return true;
 }
 const flawlessCount = () => LEVELS.filter(l => (SAVE.d.levels[l.id] || {}).perfect).length;
+const frozenFound = () => Object.keys(SAVE.d.secrets || {}).filter(k => /^6-/.test(k)).length;      // 1.5: Frostveil's frozen lanterns
 const SAVE = (() => {
-    const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
+    const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false, glide: false }, deaths: 0, sparks: 0, playTime: 0 });
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
     if (typeof d.levels !== 'object' || !d.levels) d.levels = {};
     d.talks = d.talks || {}; migrateSave(d); d.secrets = d.secrets || {};
     d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {}; d.talks = d.talks || {};
+    // 1.5 (still save version 3: these only add): trial records { id: { t: best seconds, m: medal 0-4 } } and the light's look
+    if (!d.trials || typeof d.trials !== 'object') d.trials = {};
+    if (!d.look || typeof d.look !== 'object') d.look = { pal: 0, shape: 0 };
     // The launcher's chat caches messages in this same storage, and a full storage used to make saves fail silently
     // (progress looked fine, then was gone the next time). If a save is refused: drop the biggest chat caches (only a
     // cache, the chat server keeps the history) and try again; if it still fails, say so.
@@ -183,14 +187,22 @@ const Sound = (() => {
         gong: () => { [1, 2.76, 5.4].forEach((m, i) => tone(110 * m, 110 * m * 0.99, 1.4 - i * 0.3, 'sine', 0.16 / (i + 1))); noise(0.15, 1200, 300, 0.1); },
         roar: () => { tone(120, 60, 0.7, 'sawtooth', 0.2); noise(0.7, 900, 150, 0.25, 0, 0.5); },
         blip: () => tone(880, 1100, 0.05, 'sine', 0.05),
+        // 1.5
+        glide: () => { noise(0.35, 1800, 700, 0.05, 0, 0.6); tone(620, 760, 0.18, 'sine', 0.04); },
+        throw: () => { noise(0.12, 2400, 900, 0.12); tone(300, 180, 0.1, 'triangle', 0.06); },
+        wisp: () => { tone(1500, 2100, 0.2, 'sine', 0.05); tone(2250, 3000, 0.16, 'sine', 0.03, 0.05); },
+        hoot: () => { tone(330, 300, 0.22, 'sine', 0.16); tone(300, 260, 0.3, 'sine', 0.14, 0.28); },
+        gust: () => noise(0.9, 900, 300, 0.22, 0, 0.4),
+        medal: (m = 1) => [0, 4, 7, 12, 16, 19].slice(0, 2 + m).forEach((s, i) => tone(587 * Math.pow(2, s / 12), 587 * Math.pow(2, s / 12), 0.4, 'triangle', 0.1, i * 0.09)),
         // a little voice per speaker while the words type out
-        talk: who => { const f = { bram: 150, pip: 520, marta: 300, ilse: 380, hob: 120, orin: 200, gloom: 90, moss: 110, shard: 700, bell: 160, cinder: 95 }[who] || 300; const k = f * (0.9 + Math.random() * 0.25);
+        talk: who => { const f = { bram: 150, pip: 520, marta: 300, ilse: 380, hob: 120, orin: 200, gloom: 90, moss: 110, shard: 700, bell: 160, cinder: 95, sorrel: 170, owl: 250 }[who] || 300; const k = f * (0.9 + Math.random() * 0.25);
             tone(k, k * 1.05, 0.045, who === 'gloom' || who === 'cinder' ? 'sawtooth' : 'triangle', 0.045); }
     };
     // music: a soft generative pad + plucked arpeggio per world, scheduled a bar at a time
-    const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10]];
-    const ROOTS = [57, 50, 62, 52, 45];
-    const PROG = [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 5, 3], [0, 1, 0, 5], [0, 1, 3, 2]];
+    // (1.5: Frostveil is the sixth: lydian, high and glassy, with bell-like plucks)
+    const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10], [0, 2, 4, 6, 7, 11]];
+    const ROOTS = [57, 50, 62, 52, 45, 64];
+    const PROG = [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 5, 3], [0, 1, 0, 5], [0, 1, 3, 2], [0, 3, 1, 4]];
     let mus = null;
     const mf = n => 440 * Math.pow(2, (n - 69) / 12);
     function musicFor(world) {
@@ -209,7 +221,8 @@ const Sound = (() => {
                 const r = seeded(mus.bar * 31 + world * 7);
                 for (let i = 0; i < 8; i++) if (r() < 0.72) {
                     const n = deg(Math.floor(r() * 5)) + 12;
-                    tone(mf(n), mf(n), 0.35, world === 4 || boss ? 'square' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
+                    tone(mf(n), mf(n), world % 10 === 5 ? 0.7 : 0.35, world === 4 || boss ? 'square' : world === 5 ? 'sine' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
+                    if (world === 5 && r() < 0.3) tone(mf(n + 12), mf(n + 12), 0.5, 'sine', 0.014, t0 - ac.currentTime + i * bar / 8 + 0.01, musBus);
                 }
                 if (boss) for (let i = 0; i < 4; i++) { tone(70, 40, 0.18, 'sine', 0.16, t0 - ac.currentTime + i * bar / 4, musBus); tone(1800, 1700, 0.03, 'square', 0.012, t0 - ac.currentTime + (i + 0.5) * bar / 4, musBus); }
                 mus.next += bar; mus.bar++;

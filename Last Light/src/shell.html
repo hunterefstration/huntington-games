@@ -24,7 +24,7 @@
     <div class="hud-pill"><span class="ico spark"></span><b id="h-sparks">0</b><small id="h-sparks-of">/0</small></div>
     <div class="hud-pill" id="h-moths"></div>
   </div>
-  <div class="hud-c"><div id="h-level"></div><div id="h-time">0:00.0</div></div>
+  <div class="hud-c"><div id="h-level"></div><div id="h-time">0:00.0</div><div id="h-trial" class="hidden"></div></div>
   <div class="hud-r"><button class="hud-btn" id="b-pause" title="Pause (Esc)">II</button></div>
 </div>
 <div id="toast"></div>
@@ -37,20 +37,22 @@
   <div class="menu">
     <button class="btn big" id="t-play">Play</button>
     <button class="btn" id="t-settings">Settings</button>
+    <button class="btn" id="t-trials">Trials <span class="newtag">new</span></button>
     <button class="btn" id="t-onelife">One Life run</button>
     <button class="btn" id="t-mp">Play together</button>
     <button class="btn" id="t-saves">Save files</button>
     <button class="btn" id="t-stats-btn">Stats</button>
     <button class="btn" id="t-lore-btn">People</button>
+    <button class="btn" id="t-look">Your light</button>
     <button class="btn" id="t-how">How to play</button>
   </div>
   <div class="foot" id="t-stats"></div>
-  <div class="ver" id="t-ver" title="What's new in 1.4: The Gloom has new attacks (a ring, a beam, a charge, shadow rain, a double slam) and you can throw its own light back at it. Stomping a boss or guardian can no longer hurt you a moment later.">Version 1.4 · The Gloom fights back with new attacks · stomping a boss is always safe now</div>
+  <button class="ver" id="t-ver" title="What's new in 1.5">Version 1.5 · Frostveil, a new world past The Gloom · the glide · Trials with medals · <u>What's new</u></button>
 </div>
 
 <!-- world map -->
 <div id="s-map" class="screen hidden">
-  <div class="topbar"><button class="btn small" id="m-back">&larr; Back</button><div class="ttl">Choose a level</div><div id="m-total"></div></div>
+  <div class="topbar"><button class="btn small" id="m-back">&larr; Back</button><div class="ttl" id="m-ttl">Choose a level</div><button class="btn small" id="m-mode">Trials</button><div id="m-total"></div></div>
   <div id="worlds"></div>
 </div>
 
@@ -136,6 +138,34 @@
   <div class="tk-body"><div id="tk-name"></div><div id="tk-text"></div><div class="tk-next">&#9660;</div></div>
 </div>
 
+<!-- 1.5: the colour of your light -->
+<div id="s-look" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Your light</h2>
+    <div class="lk-top"><canvas id="lk-big" width="110" height="120"></canvas><div><div id="lk-n"></div><div class="seg" id="lk-shapes"></div></div></div>
+    <div id="lk-list"></div>
+    <button class="btn big" id="lk-done">Done</button>
+  </div>
+</div>
+
+<!-- 1.5: what's new -->
+<div id="s-new" class="screen dim hidden">
+  <div class="card wide">
+    <h2>What's new in 1.5</h2>
+    <div class="how newlist">
+      <p><b>Frostveil</b>: a new world past The Gloom. Eleven lights never came home; they froze on the peaks above the Sky Ruins.
+      Ten levels of ice, snow geysers, frostwisps and snowpuffs, people to meet (and someone new), and a guardian at the top: Hoarfrost, the great snow owl.</p>
+      <p><b>The glide</b>: Frostveil's first shrine teaches it. In the air, after your double jump, press jump again and hold it to float.
+      It works in every level, so the old ones play differently too.</p>
+      <p><b>Trials</b>: every level you have cleared, against the clock, with a ghost of your best run. Win Bronze, Silver, Gold, or Lumen if you are very fast.</p>
+      <p><b>Your light</b>: choose the colour of your light and the shape of its flame. Five new lights to earn: free the owl, find all 11 frozen lanterns, win gold medals...</p>
+      <p><b>A secret level</b>: find Frostveil's first ten frozen lanterns and the eleventh light is waiting for you.</p>
+      <p>Your saves carry over: everything you had is still there.</p>
+    </div>
+    <button class="btn big" id="new-done">Back</button>
+  </div>
+</div>
+
 <!-- everyone you met and what they told you -->
 <div id="s-lore" class="screen dim hidden">
   <div class="card wide">
@@ -180,6 +210,7 @@
       <div><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> move</div>
       <div><kbd>Space</kbd>, <kbd>W</kbd>, <kbd>&uarr;</kbd> or <kbd>Z</kbd> jump (hold to jump higher)</div>
       <div><kbd>Shift</kbd> or <kbd>X</kbd> dash (once you have found it)</div>
+      <div>Glide (Frostveil): in the air, press jump again and <b>hold</b> it</div>
       <div><kbd>&darr;</kbd> or <kbd>S</kbd> (hold) drop through a thin ledge</div>
       <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
       <div>Gamepads and touch screens work too.</div>

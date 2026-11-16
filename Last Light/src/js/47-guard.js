@@ -5,6 +5,9 @@
 //   Shardwing (Hollow Caves)  a crystal bat: hovers raising crystal spikes from the floor, skims across the floor, then dives and gets stuck.
 //   The Bellkeeper (Sky)      a stone bell: fires rings of light, then tolls - crashes down, sends waves, sticks a moment.
 //   Cinderjaw (Ember Forge)   a magma beast: spits lava, then charges; hitting the wall knocks it silly.
+//   Hoarfrost (Frostveil, 1.5) a great snow owl: drops fans of ice feathers, swoops low, then beats up a gale that shoves you
+//                              away and is left out of breath, hanging in the air too high to jump to: ride a snow geyser up
+//                              and glide down onto it. (The guardian that tests the glide.)
 // A "!" means it is open: stomp it or dash into it.
 // ==========================================
 const GUARDS = {
@@ -15,10 +18,15 @@ const GUARDS = {
     bell: { name: 'The Bellkeeper', sub: 'Guardian of the Sky Ruins', hp: 5, r: 42, col: '#ffe08a', light: '255,230,150',
         free: 'The hour is late. He is waiting at the Forge.' },
     cinder: { name: 'Cinderjaw', sub: 'Guardian of the Ember Forge', hp: 5, r: 44, col: '#ff8a3a', light: '255,140,60',
-        free: 'You carry her light. He will know it.' }
+        free: 'You carry her light. He will know it.' },
+    owl: { name: 'Hoarfrost', sub: 'Guardian of Frostveil', hp: 5, r: 40, col: '#bfe8ff', light: '190,230,255',
+        free: 'The cold is gone out of my feathers. Thank you, little light.' }
 };
 function makeGuard(G, e) {
-    const L = G.L, kind = L.def.guard || 'moss', D = GUARDS[kind], floor = findFloor(L, e.x), fty = Math.round(floor / TS);
+    // the floor under it (1.5: searched from where it stands, so an arena with a roof works too)
+    const L = G.L, kind = L.def.guard || 'moss', D = GUARDS[kind], etx = Math.floor(e.x / TS);
+    let fty = Math.floor(e.y / TS); while (fty < L.h && !isSolidT(L, etx, fty)) fty++;
+    const floor = fty * TS;
     const doorTx = Math.floor(e.x / TS) - 19, ty0 = Math.max(0, fty - 11);       // the arena starts one column past the door
     return { kind, D, ent: e, x: e.x, y: floor - D.r, floor, top: Math.max(TS, floor - TS * 10), x0: (doorTx + 1) * TS, x1: L.w * TS,
         doorTx, doorTy: ty0, doorH: fty - ty0, hp: D.hp, max: D.hp, state: 'wait', t: 0, hitT: 0, open: false, vx: 0, vy: 0,
@@ -56,6 +64,11 @@ function guardHit(G, B) {
     if (B.kind === 'moss') { B.state = 'idle'; B.t = 1.2; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
     else if (B.kind === 'shard') { B.state = 'rise'; B.t = 0.9; }
     else if (B.kind === 'bell') { B.state = 'lift'; B.t = 0.8; }
+    else if (B.kind === 'owl') {
+        B.state = 'climb'; B.t = 0.9; B.blowing = false;
+        if (B.phase === 2 && !G.L.ents.some(e => e.kind === 'heart' && !e.gone)) G.L.ents.push({ kind: 'heart', x: (B.x0 + B.x1) / 2, y: B.floor - 40, sx: (B.x0 + B.x1) / 2, sy: B.floor - 40, seed: rand(9), spawned: true });
+        if (B.phase >= 3 && alive < 2) for (const fx of [B.x0 + 90, B.x1 - 90]) G.L.ents.push({ kind: 'wisp', x: fx, y: B.top + 40, sx: fx, sy: B.top + 40, seed: rand(9), spawned: true });
+    }
     else { B.state = 'stalk'; B.t = 1.2; }
     if (B.phase === B.max - 1) G.toast(B.D.name + ' is furious!');
     B.bounced = false;
@@ -64,7 +77,7 @@ function guardFree(G, B) {
     B.state = 'free'; B.t = 2.2; G.white = 0.55; Sound.play('shrine');
     for (const d of G.L.doors) if (d.boss) d.open = true;
     G.L.ents = G.L.ents.filter(e => !e.spawned); G.shots = G.shots.filter(s => !s.guard);
-    SAVE.d.guards = SAVE.d.guards || {}; SAVE.d.guards[B.kind] = true; ST('guardians'); SAVE.write();
+    SAVE.d.guards = SAVE.d.guards || {}; SAVE.d.guards[B.kind] = true; ST('guardians'); SAVE.write(); lookCheck();
     UI.bossbar(null); Sound.musicFor(G.world); B.clean = true;
     UI.talk(GUARD_TALK[B.kind].free.map(l => [B.kind, l]), () => { UI.banner(B.D.name + ' is free', 'The way is open'); G.revealGate(); });
 }
@@ -102,6 +115,56 @@ function guardFx(G, B, dt) {
     B.fx = B.fx.filter(f => f.t > 0);
 }
 const GUARD_AI = {
+    owl(G, B, dt) {
+        const p = G.p, sp = 1 + B.phase * 0.18, hy = B.top + 48, mid = (B.x0 + B.x1) / 2;
+        if (B.state === 'go') { B.state = 'climb'; B.t = 1; }
+        B.flap = (B.flap || 0) + dt * (B.state === 'tired' ? 4 : B.state === 'gust' ? 24 : 11);
+        switch (B.state) {
+            case 'climb': B.y = lerp(B.y, hy, dt * 2.5); B.x = lerp(B.x, B.rx !== undefined ? B.rx : mid, dt * 2);
+                if (B.t <= 0) { B.state = 'hover'; B.t = 2.6 / sp; B.drop = 0.7; B.rx = undefined; } break;
+            case 'hover':           // high up: fans of ice feathers (it spreads its wings first)
+                B.x = lerp(B.x, clamp(p.x, B.x0 + 70, B.x1 - 70), dt * 1.1); B.y = lerp(B.y, hy + Math.sin(B.wob * 2.5) * 8, dt * 3); B.face = sign(p.x - B.x) || B.face;
+                B.drop -= dt; B.flare = clamp(1 - B.drop / 0.45, 0, 1);
+                if (B.drop <= 0 && B.t > 0.3) {
+                    B.drop = 1.5 / sp; const n = B.phase >= 2 ? 5 : 3;
+                    for (let i = 0; i < n; i++) { const a = (i - (n - 1) / 2) * 0.34; G.shots.push({ x: B.x + Math.sin(a) * 20, y: B.y + 18, vx: Math.sin(a) * 170, vy: 90 + Math.cos(a) * 40, g: 420, life: 4, style: 'feather', guard: true, kind: 'owl', col: '#e8f6ff', light: '200,235,255' }); }
+                    Sound.play('throw');
+                }
+                if (B.t <= 0) {
+                    B.n++; B.flare = 0;
+                    if (B.n % 2) { B.state = 'swoop'; B.u = 0; B.sx = B.x; B.sy = B.y; B.ex = B.x < mid ? B.x1 - 70 : B.x0 + 70; B.k = B.phase >= 3 ? 2 : 1; Sound.play('screech'); }
+                    else { B.state = 'gust'; B.t = 2.2; B.gx = p.x < mid ? B.x1 - 80 : B.x0 + 80; Sound.play('hoot'); }
+                }
+                break;
+            case 'swoop': {         // skims the floor from one side to the other: jump it (or glide over it)
+                B.u += dt / (1.35 / sp); const u = Math.min(1, B.u), base = lerp(B.sy, hy, u);
+                B.x = lerp(B.sx, B.ex, u); B.y = base + (B.floor - B.D.r - 4 - base) * Math.sin(Math.PI * u); B.face = sign(B.ex - B.sx);
+                if (u >= 1) { if (--B.k > 0) { B.u = 0; B.sx = B.x; B.sy = B.y; B.ex = B.x < mid ? B.x1 - 70 : B.x0 + 70; } else { B.state = 'hover'; B.t = 2.2 / sp; B.drop = 0.8; } }
+                break;
+            }
+            case 'gust': {          // flies to one side and beats up a gale: it shoves you away (harder while you glide)
+                B.x = lerp(B.x, B.gx, dt * 3); B.y = lerp(B.y, B.floor - TS * 5, dt * 3); B.face = sign(mid - B.x) || 1;
+                if (B.t < 1.6) {
+                    if (!B.blowing) { B.blowing = true; Sound.play('gust'); }
+                    const away = sign(p.x - B.x) || 1;
+                    if (!p.dead) p.vx = clamp(p.vx + away * 1500 * (p.gliding ? 1.6 : 1) * dt, -360, 360);
+                    if (Math.random() < 0.8) G.parts.push({ x: B.x + away * rand(20, 60), y: B.floor - rand(10, TS * 9), vx: away * rand(420, 620), vy: rand(-20, 20), life: 0.8, max: 0.8, size: rand(1.5, 3), color: '#eaf6ff', sq: true });
+                }
+                if (B.t <= 0) {
+                    B.blowing = false; B.state = 'tired'; B.t = 3.0 - B.phase * 0.12; B.open = true;
+                    // it hangs about 6 tiles from the geyser nearest to you, 7 tiles up: out of jumping reach
+                    const v = G.L.vents.filter(q => q.x > B.x0 && q.x < B.x1).sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
+                    B.tx = v ? clamp(v.x + TS / 2 + sign(mid - v.x) * TS * 6, B.x0 + 60, B.x1 - 60) : mid;
+                    if (!G.owlHint) { G.owlHint = true; G.toast('Out of breath! Ride a geyser up and glide onto it'); }
+                }
+                break;
+            }
+            case 'tired':           // out of breath and open, just too high to jump to
+                B.x = lerp(B.x, B.tx, dt * 2.5); B.y = lerp(B.y, B.floor - TS * 7 + Math.sin(B.wob * 3) * 4, dt * 2.5); B.open = true;
+                if (B.t <= 0) { B.open = false; B.state = 'climb'; B.t = 0.9; }
+                break;
+        }
+    },
     moss(G, B, dt) {
         // 1.2: made fair. 4 hits (was 6); a long squat tell (1.1 s, was 0.7); a long rest after each landing (the moment to
         // run under it and bounce off its back); slower, floatier hops; waves only on every other landing and slower;
@@ -281,7 +344,7 @@ function drawGuard(x, G, t) {
     if (dying) x.translate(rand(-3, 3), rand(-3, 3));
     const hit = B.hitT > 0.4 && Math.floor(t * 20) % 2, lit = free || hit;
     // the sprites are drawn at a reference size and scaled up to the guardian's real size
-    const base = { moss: 38, shard: 30, bell: 36, cinder: 36 }[B.kind], k = B.D.r / base;
+    const base = { moss: 38, shard: 30, bell: 36, cinder: 36, owl: 34 }[B.kind], k = B.D.r / base;
     x.save(); x.scale(k, k); GUARD_ART[B.kind](x, Object.assign({}, B, { D: Object.assign({}, B.D, { r: base }) }), t, lit); x.restore();
     if (B.say && B.say.t > 0) { x.restore(); drawSay(x, B.x, B.y - B.D.r - 30, B.say); x.save(); x.translate(B.x, B.y); }
     if (B.open && !free) { x.fillStyle = '#fff'; x.font = 'bold 22px sans-serif'; x.textAlign = 'center'; x.globalAlpha = 0.6 + 0.4 * Math.sin(t * 10); x.fillText('!', 0, -B.D.r - 14); x.globalAlpha = 1;
@@ -297,6 +360,33 @@ function darkWisps(x, r, t) {
 }
 const eyes = (x, ex, ey, r, lit, look) => { for (const s of [-1, 1]) { x.fillStyle = lit ? '#fff' : '#d9b0ff'; x.beginPath(); x.ellipse(ex + s * r * 2.2, ey, r, r * 1.2, 0, 0, 7); x.fill(); x.fillStyle = '#1a0630'; x.beginPath(); x.arc(ex + s * r * 2.2 + look * r * 0.4, ey + r * 0.2, r * 0.5, 0, 7); x.fill(); } };
 const GUARD_ART = {
+    owl(x, B, t, lit) {
+        const r = B.D.r, tired = B.state === 'tired' || B.state === 'idle', fl = tired ? 0.35 + Math.sin((B.flap || t * 6)) * 0.1 : Math.sin(B.flap || t * 11), spread = Math.max(B.flare || 0, B.state === 'gust' ? 1 : 0);
+        x.scale(B.face < 0 ? -1 : 1, 1);
+        if (!lit && !B.clean) darkWisps(x, r, t);
+        // wings (spread wide before a volley and in the gale; drooping when tired)
+        for (const s of [-1, 1]) {
+            x.save(); x.scale(s, 1); x.rotate(tired ? 0.7 : -0.15 + fl * 0.4 - spread * 0.35);
+            const g = x.createLinearGradient(0, -10, 60, 20); g.addColorStop(0, lit ? '#ffffff' : '#eef8ff'); g.addColorStop(1, lit ? '#f4fbff' : '#7aa6d0');
+            x.fillStyle = g; x.beginPath(); x.moveTo(6, -8); x.quadraticCurveTo(34, -30 - spread * 8, 62 + spread * 8, -10); x.lineTo(54, -2); x.lineTo(58, 6); x.lineTo(46, 4); x.lineTo(48, 13); x.lineTo(34, 8); x.lineTo(30, 16); x.quadraticCurveTo(14, 12, 6, 10); x.closePath(); x.fill();
+            x.strokeStyle = lit ? '#e8f0f8' : 'rgba(60,100,150,.55)'; x.lineWidth = 1.4; x.beginPath(); x.moveTo(14, 4); x.lineTo(50, -6); x.moveTo(16, 9); x.lineTo(40, 6); x.stroke(); x.restore();
+        }
+        // body: round and fluffy, speckled
+        const g = x.createRadialGradient(-6, -10, 4, 0, 0, r); g.addColorStop(0, '#ffffff'); g.addColorStop(1, lit ? '#f0f8ff' : '#b8d4ec');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, 2, r * 0.68, r * 0.82, 0, 0, 7); x.fill();
+        x.fillStyle = lit ? '#e8f0f8' : '#5a7ea6'; for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(((i * 37) % 30) - 15, 6 + ((i * 23) % 22) - 4, 1.8, 0, 7); x.fill(); }
+        // ear tufts, the face disc, eyes (frost-blue while the dark is in it), beak
+        x.fillStyle = lit ? '#fff' : '#d8eaf8'; for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 10, -r * 0.62); x.lineTo(s * 20, -r * 1.05); x.lineTo(s * 22, -r * 0.5); x.fill(); }
+        x.fillStyle = lit ? '#fff' : '#f4fbff'; x.beginPath(); x.ellipse(-8, -r * 0.3, 11, 10, 0, 0, 7); x.ellipse(8, -r * 0.3, 11, 10, 0, 0, 7); x.fill();
+        for (const s of [-1, 1]) {
+            x.fillStyle = lit ? '#ffd36b' : '#9ff0ff'; x.beginPath(); x.arc(s * 8, -r * 0.3, 6.5, 0, 7); x.fill();
+            x.fillStyle = '#10142a'; x.beginPath(); x.arc(s * 8 + 1, -r * 0.3, 3.2, 0, 7); x.fill();
+            if (tired) { x.fillStyle = lit ? '#fff' : '#f4fbff'; x.fillRect(s * 8 - 7, -r * 0.3 - 8, 14, 7); }        // heavy eyelids
+        }
+        x.fillStyle = '#e0a040'; x.beginPath(); x.moveTo(-3.5, -r * 0.16); x.lineTo(3.5, -r * 0.16); x.lineTo(0, -r * 0.16 + 8); x.closePath(); x.fill();
+        // talons
+        x.strokeStyle = '#4a3a2a'; x.lineWidth = 2.2; for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 8, r * 0.78); x.lineTo(s * 6, r * 0.95); x.moveTo(s * 8, r * 0.78); x.lineTo(s * 11, r * 0.95); x.stroke(); }
+    },
     moss(x, B, t, lit) {
         const r = B.D.r, sq = B.state === 'hop' ? clamp(-B.vy / 1400, -0.15, 0.25) : -(B.squat || 0) * 0.18 - B.land * 0.2;
         x.scale(B.face < 0 ? -1 : 1, 1); x.scale(1 - sq * 0.6, 1 + sq);
@@ -376,6 +466,8 @@ const GUARD_ART = {
 // guardian shots: crystal shards, lava blobs, falling rocks
 function drawGShot(x, b, t) {
     x.save(); x.translate(b.x, b.y);
+    if (b.style === 'snow') { x.fillStyle = '#ffffff'; x.beginPath(); x.arc(0, 0, 7, 0, 7); x.fill(); x.fillStyle = '#c8dcf0'; x.beginPath(); x.arc(2, 2, 3.5, 0, 7); x.fill(); x.restore(); return; }
+    if (b.style === 'feather') { x.rotate(Math.atan2(b.vy, b.vx) - Math.PI / 2); x.fillStyle = '#e8f6ff'; x.beginPath(); x.moveTo(0, 13); x.quadraticCurveTo(7, 0, 0, -13); x.quadraticCurveTo(-7, 0, 0, 13); x.fill(); x.strokeStyle = '#7ab0e0'; x.lineWidth = 1.3; x.beginPath(); x.moveTo(0, 12); x.lineTo(0, -12); x.stroke(); x.restore(); return; }
     if (b.style === 'shard') { x.rotate(Math.atan2(b.vy, b.vx) - Math.PI / 2); x.fillStyle = '#bff7ff'; x.beginPath(); x.moveTo(0, 12); x.lineTo(5, -4); x.lineTo(0, -12); x.lineTo(-5, -4); x.closePath(); x.fill(); x.fillStyle = '#fff'; x.fillRect(-1, -8, 2, 14); }
     else if (b.style === 'lava') { const g = x.createRadialGradient(0, 0, 1, 0, 0, 11); g.addColorStop(0, '#fff2a0'); g.addColorStop(0.5, '#ff8a2a'); g.addColorStop(1, 'rgba(200,40,0,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill(); }
     else { x.rotate(t * 6); x.fillStyle = '#5a3a30'; x.beginPath(); x.moveTo(-9, -4); x.lineTo(-2, -10); x.lineTo(9, -5); x.lineTo(7, 7); x.lineTo(-6, 9); x.closePath(); x.fill(); x.strokeStyle = '#ff8a3a'; x.lineWidth = 2; x.stroke(); }

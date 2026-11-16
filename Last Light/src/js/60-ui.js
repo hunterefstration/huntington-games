@@ -18,29 +18,43 @@ const UI = {
     },
     unlocked(i) {
         if (i === 0) return true;
+        // 1.5: 6-11 opens when Frostveil's first ten frozen lanterns are found (or once it has been cleared)
+        if (LEVELS[i].id === '6-11') return !!SAVE.d.levels['6-11'] || LEVELS.filter(l => l.world === 5 && l.id !== '6-11').every(l => (SAVE.d.secrets || {})[l.id]);
         if (SAVE.d.levels[LEVELS[i - 1].id]) return true;
         for (let j = i + 1; j < LEVELS.length; j++) if (SAVE.d.levels[LEVELS[j].id]) return true;       // 1.2: saves from before the new levels keep everything they had
         return false;
     },
-    map() {
+    // the level map; 1.5: mode 'trial' shows the trials (cleared levels only, medals instead of stars)
+    map(mode) {
+        if (mode) this.mapMode = mode;
+        const trial = this.mapMode === 'trial'; if (!trial) G.trial = null;
         G.state = 'map'; $('#hud').classList.add('hidden'); Sound.musicFor(0);
         const box = $('#worlds'); box.innerHTML = '';
+        $('#m-ttl').textContent = trial ? 'Trials: beat the clock' : 'Choose a level'; $('#m-mode').textContent = trial ? 'Story' : 'Trials';
+        $('#s-map').classList.toggle('trialmode', trial);
         let moths = 0, mothsOf = 0;
         WORLDS.forEach((W, wi) => {
             const lv = LEVELS.map((l, i) => ({ l, i })).filter(o => o.l.world === wi); if (!lv.length) return;
-            const card = document.createElement('div'); card.className = 'world' + (this.unlocked(lv[0].i) ? '' : ' locked');
+            const card = document.createElement('div'); card.className = 'world' + ((trial ? trialOpen(lv[0].i) : this.unlocked(lv[0].i)) ? '' : ' locked');
             const art = document.createElement('div'); art.className = 'wart'; const cv = document.createElement('canvas'); cv.width = 600; cv.height = 240; art.appendChild(cv);
             const layers = paintBackground(wi, 600, 240), cx = cv.getContext('2d'); layers.forEach(l => cx.drawImage(l.c, 0, l.fixed ? 0 : 20 * (1 - l.k)));
             const done = lv.filter(o => SAVE.d.levels[o.l.id]).length;
             const fl = lv.filter(o => (SAVE.d.levels[o.l.id] || {}).perfect).length;
-            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}${fl ? ` · <span class="flawtxt">✦ ${fl}</span>` : ''}</div>`);
+            const pts = lv.reduce((n, o) => n + (((SAVE.d.trials || {})[o.l.id] || {}).m | 0), 0);
+            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${trial ? `${medalHTML(3)} ${lv.filter(o => (((SAVE.d.trials || {})[o.l.id] || {}).m | 0) >= 3).length}/${lv.length} gold · ${pts} pts` : `${done}/${lv.length}${fl ? ` · <span class="flawtxt">✦ ${fl}</span>` : ''}`}</div>`);
             card.appendChild(art);
             const list = document.createElement('div'); list.className = 'lvls';
             lv.forEach(({ l, i }) => {
-                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : '') + (rec && rec.perfect ? ' flaw' : ''); b.disabled = !this.unlocked(i);
+                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : '') + (l.id === '6-11' ? ' secretlv' : '') + (rec && rec.perfect && !trial ? ' flaw' : ''); b.disabled = trial ? !trialOpen(i) : !this.unlocked(i);
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
-                b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
+                const tr = (SAVE.d.trials || {})[l.id];
+                if (trial) {
+                    b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${b.disabled ? 'Clear it first' : tr && tr.t != null ? 'Best ' + fmtTime(tr.t) : 'Gold ' + fmtTime(medalTime(l, 3))}</small></span><span class="moths">${medalHTML(tr ? tr.m : 0)}</span>`;
+                    b.onclick = () => { Sound.play('click'); trialStart(i); };
+                    list.appendChild(b); return;
+                }
+                b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id === '6-11' ? '✧' : l.id.split('-')[1]}</span><span class="nm">${b.disabled && l.id === '6-11' ? '???' : l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? (l.id === '6-11' ? 'Find the frozen lanterns (' + frozenFound() + '/10)' : 'Locked') : 'New'}</small></span>`
                     + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}${TALKS[l.id] ? `<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span>` : ''}</span>` : '');
                 if (rec && rec.perfect) b.insertAdjacentHTML('beforeend', '<span class="flawgem" title="Done flawless: no hits, every star, every spark, the lost lantern and the talk">✦</span>');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
@@ -48,7 +62,8 @@ const UI = {
             });
             card.appendChild(list); box.appendChild(card);
         });
-        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf} &nbsp; <span class="flawtxt" title="Levels done flawless">✦ ${flawlessCount()}/${LEVELS.length}</span>`;
+        $('#m-total').innerHTML = trial ? `<span title="Medal points: bronze 1, silver 2, gold 3, Lumen 4">${medalHTML(3)} ${medalCount(3)} gold · ${medalPoints()} pts</span>`
+            : `<span class="moth-on">★</span> ${moths}/${mothsOf} &nbsp; <span class="flawtxt" title="Levels done flawless">✦ ${flawlessCount()}/${LEVELS.length}</span>`;
         this.show('map');
     },
     pause() {
@@ -70,11 +85,12 @@ const UI = {
             ['Enemies defeated', r.kills],
             ['Falls', r.deaths]
         ];
-        $('#d-title').textContent = r.def.world === 4 ? 'You relit the world!' : 'Level complete!';
+        $('#d-title').textContent = r.def.world === 4 ? 'You relit the world!' : r.def.id === '6-11' ? 'Every light is home!' : 'Level complete!'; $('#d-retry').textContent = 'Play again';
         $('#d-rows').innerHTML = rows.map(([a, b]) => `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
         const next = LEVELS[G.idx + 1];
         $('#d-unlock').textContent = r.def.gives && SAVE.d.abilities[r.def.gives] && r.rec.clears === 1 ? 'New world unlocked: ' + (next ? WORLDS[next.world].name : '') : (next && next.world !== r.def.world && r.rec.clears === 1 ? 'New world unlocked: ' + WORLDS[next.world].name : '');
-        $('#d-next').classList.toggle('hidden', !next);
+        if (next && next.id === '6-11' && !this.unlocked(G.idx + 1)) $('#d-unlock').textContent = 'Something is still hidden up here: ' + frozenFound() + ' of 10 frozen lanterns found';
+        $('#d-next').classList.toggle('hidden', !next || !this.unlocked(G.idx + 1));
         $('#d-next').textContent = next ? 'Next: ' + next.name : 'Next';
         $('#hud').classList.add('hidden');
         this.show('done');
@@ -104,11 +120,13 @@ const UI = {
 const CAUSE = { pit: 'You fell into the dark.', spike: 'Spikes.', lava: 'The lava took you.', slime: 'A slime got you.', bat: 'A bat got you.',
     thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.',
     moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.',
-    hopper: 'A hopper got you.', drip: 'A stalactite fell on you.', jet: 'A fire jet got you.' };
+    hopper: 'A hopper got you.', drip: 'A stalactite fell on you.', jet: 'A fire jet got you.',
+    wisp: 'A frostwisp caught you.', puff: 'A snowpuff got you.', snowball: 'A snowball hit you.', owl: 'Hoarfrost got you.' };
 const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump longer to jump higher.', 'You can still jump a moment after running off a ledge.',
     'Stomp slimes, bats and turrets from above. Never thornbacks.', 'A dash goes straight through enemies.', 'Press R to go back to the last lantern.',
     'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.', 'Guardians can only be hurt when they show a !. Watch what they do first.', 'Talk to everyone you meet. Each of them knows part of what happened.', 'Press E or Enter next to someone to hear them again.',
-    'Hold down to drop through a thin ledge.'];
+    'Hold down to drop through a thin ledge.', 'Glide: after your double jump, press jump again and hold it.', 'Stop gliding over a snow geyser and it carries you up.',
+    'On ice, let go early: you slide.', 'Trials: every level you have cleared, against the clock. Win medals for new lights.'];
 UI.died = function () {
     G.state = 'dead'; Input.clear(); $('#banner').classList.remove('on'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden');
     $('#dd-cause').textContent = (CAUSE[G.cause] || 'The light went out.') + (G.run ? '  One Life run over: ' + G.run.cleared + ' level' + (G.run.cleared === 1 ? '' : 's') + ' cleared (best ' + ((SAVE.d.runs || {}).onelife || 0) + ').' : '');
@@ -128,10 +146,11 @@ UI.stats = function () {
     const pt = SAVE.d.playTime || 0, tp = pt >= 3600 ? Math.floor(pt / 3600) + 'h ' + Math.floor(pt % 3600 / 60) + 'm' : Math.floor(pt / 60) + 'm ' + Math.floor(pt % 60) + 's';
     const enemy = n('death_enemy');
     const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
-        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
+        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).filter(k => GUARDS[k]).length + ' / ' + Object.keys(GUARDS).length], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
         ['Levels done flawless', flawlessCount() + ' / ' + LEVELS.length], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
+        ['Frozen lanterns', frozenFound() + ' / 11'], ['Trial medals', medalCount(1) + ' won · ' + medalCount(3) + ' gold · ' + medalPoints() + ' points'],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
-        ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
+        ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Time gliding', Math.round(S.glide || 0) + ' s'], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
         ['Distance', n('dist').toLocaleString() + ' tiles']];
     $('#st-rows').innerHTML = rows.map(([a, b]) => a === 'sec' ? `<div class="sec">${b}</div>` : `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
     this.show('stats');

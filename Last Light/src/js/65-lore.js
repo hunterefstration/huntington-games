@@ -12,8 +12,12 @@ const CAST = {
     moss: { name: 'Mossback', col: '#8fe07a' }, shard: { name: 'Shardwing', col: '#8ff0ff' }, bell: { name: 'The Bellkeeper', col: '#ffe08a' },
     tam: { name: 'Tamsin', col: '#9fe0c8', about: 'A mapmaker who walks the whole valley and draws what is left of it. Always looking for places other people walked past.' },
     quill: { name: 'Quill', col: '#d8b8ff', about: 'The last librarian of the sky temples. Took the best books down to the Forge so the fire could not have them.' },
-    cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' }
+    cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' },
+    // 1.5
+    sorrel: { name: 'Sorrel', col: '#e8c8a0', about: 'Keeps the goat path over the high pass. Saw the dark smoke roll up the mountain the night The Gloom broke.' },
+    owl: { name: 'Hoarfrost', col: '#bfe8ff' }
 };
+CAST.orin.about = 'The Lamplighter. He held on to the light so tightly that he became The Gloom. Now he is learning to let go.';
 const TALKS = {
     '1-1': ['bram', ['Well, I’ll be. A light! A real one, walking about on its own.',
         'Haven’t seen one of those since the Lamplighter’s men came round with their carts. Took every lantern in the Glowwood. Said they’d bring them back.',
@@ -115,7 +119,40 @@ const TALKS = {
     '4-10': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
         'You’re her. Aren’t you? You’re Wren. The light of her. The part she gave away.',
         'You can’t talk. That’s okay. You always talked enough for both of us.',
-        'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']]
+        'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']],
+    // 1.5 FROSTVEIL: after The Gloom. Wren is awake by day; at night, while she sleeps, her light slips out of the window.
+    '6-1': ['orin', ['Little light. You came up here too? Then you counted them as well.',
+        'Four thousand two hundred and eleven lanterns went into the Heart. Four thousand two hundred came home.',
+        'When the Gloom broke, the last of its smoke blew up the mountain. Eleven lights went with it, and the frost took them.',
+        'That shrine back there is Ilse’s wind shrine. Hold on to the wind and it will hold on to you. Help me bring the last ones home.']],
+    '6-2': ['sorrel', ['Ho there! Mind the ice, it has no manners. I am Sorrel. I keep the goat path over the pass.',
+        'The night the dark broke I saw it: a cloud of black smoke rolling UP the mountain, against the wind. It had lights in it, like fish in a net.',
+        'Then the frost came down behind it. My goats have not stopped complaining since.',
+        'Whatever is up there, it is cold and it is scared. Scared things hold on tight.']],
+    '6-3': ['pip', ['Don’t tell Wren I came. She’ll say it’s her turn to be the brave one.',
+        'She’s awake in the daytime now. She laughs at everything. But at night she sleeps SO deep, and her window is always open.',
+        'I knew it. I KNEW it was you. You go on adventures without her, and she dreams about them.',
+        'She told me about the geysers this morning. She said they tickle. Do they tickle?']],
+    '6-5': ['tam', ['Oh, wonderful, a light! Hold still, I am drawing the falls and I cannot see my own pencil.',
+        'Nobody has ever mapped Frostveil. Too high, too cold, and too many things that drift at you.',
+        'I marked every frozen lantern I could see from down here. Ten of them. There is an eleventh on my map with a question mark next to it.',
+        'Find the first ten and I think the last one will find you. That is how maps work. Mostly.']],
+    '6-6': ['sorrel', ['Snowpuffs! Do not be fooled. They are fluffy, and they are fiendish.',
+        'They were never so cross before the frost. The cold makes everything mean. I used to be quite nice.',
+        'The old owl lives above. Hoarfrost. She kept the pass for a thousand winters and never once let a traveller freeze.',
+        'Now she sits in her roost with all that cold smoke in her feathers, and the lights with her. She is not wicked. She is lost.']],
+    '6-8': ['orin', ['You glide like a moth on a summer night. Wren used to try that off the hayloft. I never let her.',
+        'I should have let her. I spent so long keeping her safe that I forgot to let her be anything.',
+        'I keep counting the lights we have found. Hob says I count like a man who lost something.',
+        'He is right. But I am trying to count what I have, now. It is a longer list than I thought.']],
+    '6-9': ['pip', ['I climbed all this way and my toes are ice cubes. Worth it, though. LOOK at that sky.',
+        'Sorrel says the owl up there is lost, not bad. Like Mossback was. Like the Lamplighter was.',
+        'Funny how everybody bad turns out to be somebody who got lost.',
+        'Go on. I’ll wait here. I’m good at waiting now. I got lots of practice.']],
+    '6-10': ['orin', ['Hoarfrost is through there. When I was a boy she carried me home through a blizzard, gentle as snowfall.',
+        'The smoke in her is my smoke. My grief. I made it, and she caught it.',
+        'She will throw the wind at you, and then she will tire. When she does, ride a geyser up and come down on her softly.',
+        'Bring her back, little light. Then let us go home.']]
 };
 // the guardians: before the fight, during it (one line each time it is hit), and once the dark is out of them
 const GUARD_TALK = {
@@ -131,6 +168,10 @@ const GUARD_TALK = {
         mid: ['TOLL!', 'The hour grows late...', 'You ring... out of time!', 'Who... rings me...?'],
         free: ['...The hour returns. Morning, I think. It has been so long since morning.', 'I rang for the girl, little flame. The last hour of the last night. She went down the mountain alone.',
             'The Forge lies below. He waits there. And so, I think, does she.'] },
+    owl: { pre: ['Hooo... who climbs my mountain in the dark?', 'More lights? MINE. Nothing warm leaves my roost again!'],
+        mid: ['So cold...', 'HOOO!', 'You cannot fly, little spark!', 'Let me keep them... let me keep SOMETHING...', 'The wind is MINE!'],
+        free: ['...Oh. The cold is gone out of my feathers. I can see the valley again.', 'The smoke came up the mountain crying for a girl. I thought if I held on to the lights it carried, it would stop crying.',
+            'Take them home. All but one: the last one fled from me, up to the very top of the peak. It was afraid. Be gentle with it.'] },
     cinder: { pre: ['GRRRAAH. Another lantern for the Heart?', 'No... you are no lantern. You are HER. He will want you back.'],
         mid: ['BURN!', 'The Heart is hungry...', 'Hold STILL!', 'Stop... hitting...!'],
         free: ['Hrrm. The fire in me is my own again. You hit hard, for a spark.', 'I guarded the Forge for a thousand years. I let him in because he was the Lamplighter. I trusted him.',
@@ -147,11 +188,14 @@ const GLOOM_TALK = {
         ['orin', 'I am so sorry, my girl. I held on so tight that I put out everything I loved.'], ['orin', 'Take them home, Wren. All of them. Light them all.']]
 };
 const talkCount = () => Object.keys(SAVE.d.talks || {}).filter(k => TALKS[k]).length;
+// the story of the main game (worlds 1-5): what the true ending at 5-1 asks for (Frostveil's talks come after it)
+const MAIN_TALKS = Object.keys(TALKS).filter(k => +k.split('-')[0] <= 5);
 const TALK_N = Object.keys(TALKS).length;
 
 // ---------- the dialogue box: a portrait, a name, the words typing out; jump / Enter / click goes on ----------
 const TK = { lines: null, i: 0, shown: 0, done: null, back: 'play' };
 UI.talk = function (lines, done) {
+    if (G.trial) { if (done) done(); return; }          // 1.5 trials: no talking, just the clock
     if (!lines || !lines.length) { if (done) done(); return; }
     TK.lines = lines; TK.i = 0; TK.shown = 0; TK.done = done || null; TK.back = G.state === 'talk' ? TK.back : G.state;
     G.state = 'talk'; Input.clear(); $('#touch').classList.add('hidden');
@@ -184,7 +228,7 @@ UI.talkNext = function () {
 };
 // a person in a level: the first time you come close they talk; afterwards E / Enter hears them again
 function meet(G, e, again) {
-    const t = TALKS[G.L.def.id]; if (!t) return;
+    const t = TALKS[G.L.def.id]; if (!t || G.trial) return;
     const [who, lines] = t, first = !SAVE.d.talks[G.L.def.id];
     e.talked = true; e.who = who;
     SAVE.d.talks[G.L.def.id] = true; if (first) ST('talks'); SAVE.write();
@@ -196,7 +240,7 @@ function drawPortrait(who, t = 0, speaking = false) {
     const g = x.createRadialGradient(48, 52, 4, 48, 52, 60); g.addColorStop(0, c.col + '55'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 96, 96);
     if (PEOPLE[who]) { x.translate(48, 108); x.scale(1.9, 1.9); PEOPLE[who](x, t, 1, speaking); }
     else if (GUARD_ART[who]) {
-        const base = { moss: 38, shard: 30, bell: 36, cinder: 36 }[who];
+        const base = { moss: 38, shard: 30, bell: 36, cinder: 36, owl: 34 }[who];
         x.translate(48, 54); x.scale(0.95, 0.95);
         GUARD_ART[who](x, { D: { r: base }, state: 'idle', face: 1, vx: 0, vy: 0, squat: speaking ? Math.abs(Math.sin(t * 12)) * 0.3 : 0, land: 0, glow: speaking ? 0.6 : 0, open: false, spit: speaking ? 1 : 0, clean: !!(G.guard && G.guard.state === 'free') }, t, false);
     } else if (who === 'gloom') {
@@ -209,7 +253,7 @@ function drawPortrait(who, t = 0, speaking = false) {
 
 // ---------- People: everyone you met and everything they told you ----------
 UI.people = function () {
-    const order = ['bram', 'pip', 'marta', 'ilse', 'hob', 'tam', 'quill'], heard = SAVE.d.talks || {};
+    const order = ['bram', 'pip', 'marta', 'ilse', 'hob', 'tam', 'quill', 'orin', 'sorrel'], heard = SAVE.d.talks || {};
     $('#lo-n').textContent = talkCount() + ' of ' + TALK_N + ' conversations heard' + (talkCount() === TALK_N ? ': the whole story.' : '');
     $('#lo-list').innerHTML = order.map(who => {
         const ids = Object.keys(TALKS).filter(id => TALKS[id][0] === who), got = ids.filter(id => heard[id]);
@@ -220,11 +264,16 @@ UI.people = function () {
     this.show('lore');
 };
 // the end of the game: the epilogue, then the usual results
+// 1.5: the last frozen lantern (6-11) has an epilogue of its own
+const FROST_END = ['At the top of the world the eleventh lantern was waiting, small and shaking, the way you were once.',
+    'You took it home. In the valley four thousand two hundred and eleven lanterns burned, and not one of them was missing.',
+    'Orin stopped counting.', 'And in the morning Wren woke up laughing, with snow in her hair, and nobody could explain it.'];
 UI.ending = function (r) {
-    const n = talkCount(), all = n === TALK_N;
+    const n = MAIN_TALKS.filter(k => (SAVE.d.talks || {})[k]).length, all = n === MAIN_TALKS.length, TALK_N = MAIN_TALKS.length, frost = r.def.id === '6-11';
     const lines = ['The Gloom came apart like smoke in the wind.', 'Four thousand two hundred and eleven lights flew home across the valley, and one by one the lanterns woke.',
         'At the edge of the Forge a boy with a red ribbon in his fist was waiting, exactly where he said he would be.',
         all ? 'And in the morning, in the Lamplighter’s house, a girl opened her eyes, and laughed, and asked why everyone was crying.' : 'Some say there is more to the story. (' + n + ' of ' + TALK_N + ' conversations heard)'];
+    if (frost) lines.splice(0, lines.length, ...FROST_END);
     $('#en-lines').innerHTML = lines.map((l, i) => `<p style="animation-delay:${0.6 + i * 1.6}s">${l}</p>`).join('');
     $('#en-stats').innerHTML = `<span>${fmtTime(SAVE.d.playTime || 0)} played</span><span>${SAVE.d.deaths} falls</span><span>${n} of ${TALK_N} stories</span>`;
     $('#en-go').onclick = () => { Sound.play('click'); UI.results(r); };

@@ -105,6 +105,23 @@ const PEOPLE = {
         if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(2, -32, 2, 1.5 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
         darkLantern(x, -16, -10);
     },
+    // Sorrel (1.5): the pass-keeper: a thick wool coat, a fur hat with ear flaps, a crook with a goat bell on it
+    sorrel(x, t, face = 1, speaking = false) {
+        const { br, blink } = personBase(x, t, face, speaking);
+        x.fillStyle = '#3a2a22'; x.fillRect(-8, -7, 6, 7); x.fillRect(2, -7, 6, 7);
+        x.fillStyle = '#8a6a4a'; x.beginPath(); x.moveTo(-13, -4); x.quadraticCurveTo(-14, -30 - br, 0, -31 - br); x.quadraticCurveTo(14, -30 - br, 13, -4); x.closePath(); x.fill();
+        x.fillStyle = '#efe6d6'; for (let i = 0; i < 6; i++) { x.beginPath(); x.arc(-11 + i * 4.4, -5, 3, 0, 7); x.fill(); }                 // a woolly hem
+        x.fillStyle = '#5a3a2a'; x.fillRect(-1, -28, 2, 22);
+        x.strokeStyle = '#7a5a3a'; x.lineWidth = 2; x.beginPath(); x.moveTo(14, 0); x.lineTo(14, -52); x.arc(18, -52, 4, Math.PI, 0); x.stroke();    // the crook
+        x.fillStyle = '#d8b040'; x.beginPath(); x.arc(14, -40 + Math.sin(t * 3) * 0.6, 2.6, 0, 7); x.fill();                                  // its bell
+        x.fillStyle = '#e8c098'; x.beginPath(); x.arc(0, -38, 9, 0, 7); x.fill();
+        x.fillStyle = '#c8a070'; x.beginPath(); x.ellipse(0, -44, 11, 7, 0, Math.PI, 0); x.fill(); x.fillRect(-11, -45, 5, 12); x.fillRect(6, -45, 5, 12);   // fur hat, ear flaps
+        x.fillStyle = '#efe6d6'; x.fillRect(-11, -47, 22, 3);
+        x.fillStyle = 'rgba(255,120,120,.5)'; x.beginPath(); x.ellipse(-4, -35, 2.2, 1.4, 0, 0, 7); x.ellipse(6, -35, 2.2, 1.4, 0, 0, 7); x.fill();
+        eyesP(x, 1.5, -39, blink);
+        if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(1.5, -34, 2, 1.2 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+        darkLantern(x, -16, -10);
+    },
     // Quill (1.2): the librarian: round glasses, a long lilac robe, a stack of books
     quill(x, t, face = 1, speaking = false) {
         const { br, blink } = personBase(x, t, face, speaking);
