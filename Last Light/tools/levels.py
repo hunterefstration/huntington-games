@@ -802,7 +802,7 @@ def f63():
     c.run(14, lamp=9, sparks=2); v.put(3, 25, 'P')
     s = chasm(c, 22, 3, geysers=[(10, 4)]); x0, b = c.run(12, lamp=2, foes=[(8, 'y')]); c.up(4)
     s = chasm(c, 24, 4, geysers=[(8, 8), (16, 4)]); v.put(s + 9, c.b - 4, '*'); x0, b = c.run(14, lamp=2, foes=[(9, 'g')])
-    c.down(6); s = chasm(c, 26, 4, geysers=[(12, 2)]); v.put(s + 2, c.b + 6, 'z'); v.ledge(s + 1, s + 3, c.b + 7)
+    c.down(6); s = chasm(c, 26, 4, geysers=[(12, 2)]); v.put(s + 2, c.b + 4, 'z'); v.ledge(s + 1, s + 3, c.b + 5)
     x0, b = c.run(16, lamp=3, foes=[(10, 'w')], sparks=3); c.perch(x0, b, 9, 3, rise=3)
     c.up(3); s = chasm(c, 28, 4, geysers=[(9, 6), (18, 6)]); x0, b = c.run(12, lamp=2)
     s = chasm(c, 16, 3); v.put(s + 8, c.b - 7, '*'); c.run(14, lamp=3, foes=[(8, 'y')]); v.put(c.x - 3, c.b - 1, 'E')
@@ -1046,6 +1046,8 @@ def check(v, ab, doors_open=False):
         probs += ['TRAP %d,%d (%d cells)' % (gr[0][0], gr[0][1], len(gr)) for gr in groups]
     nm = sum(r.count('*') for r in g)
     if v.world != 4 and nm != 3: probs.append('%d moths (want 3)' % nm)
+    if v.world == 5 and sum(r.count('z') for r in g) != 1: probs.append('%d frozen lanterns (want 1)' % sum(r.count('z') for r in g))
+    if v.id in PEOPLE_IN and not any('n' in r for r in g): probs.append('nobody to talk to')
     if not any(c == 'E' for r in g for c in r): probs.append('no gate')
     return probs
 

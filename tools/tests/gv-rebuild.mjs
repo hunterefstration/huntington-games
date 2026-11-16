@@ -100,7 +100,7 @@ try {
   await until(() => D.evaluate(() => !!document.querySelector('[data-padm="rebuild"]')), 15000);
   await D.click('[data-padm="rebuild"]');
   const preview = await until(() => D.evaluate(() => { const t = document.getElementById('pa-lookout').innerText; return /Rebuild for/.test(t) ? t : null; }), 15000);
-  check('a preview says what comes back', /Last Light: 22 finished levels/.test(preview || '') && /Blocky/.test(preview || '') && /Brown E Clicker/.test(preview || '') && /achievements/.test(preview || ''), (preview || '').replace(/\s+/g, ' ').slice(0, 300));
+  check('a preview says what comes back', /Last Light: 24 finished levels/.test(preview || '') && /Blocky/.test(preview || '') && /Brown E Clicker/.test(preview || '') && /achievements/.test(preview || ''), (preview || '').replace(/\s+/g, ' ').slice(0, 300));
   await D.click('[data-padm="rebuild-go"]');
   const done = await until(() => D.evaluate(() => { const t = document.getElementById('pa-lookout').innerText; return /Rebuilt \d+ save/.test(t) ? t : null; }), 15000);
   check('the rebuilt saves are written', !!done, String(done).slice(0, 120));
@@ -118,7 +118,7 @@ try {
   const F = await until(async () => { const f = U.frames().find(f => /Last%20Light\/index/.test(f.url())); return f && await f.evaluate(() => !!window.__lumi).catch(() => false) ? f : null; }, 40000);
   if (!F) console.log('    frames:', U.frames().map(f => f.url().slice(0, 90)).join(' | '));
   const inGame = F && await F.evaluate(() => ({ n: Object.keys(__lumi.SAVE.d.levels).length, dbl: __lumi.SAVE.d.abilities.double, best: __lumi.SAVE.d.levels['2-10'].best }));
-  check('Last Light loads it: 22 levels, the abilities, the times', !!inGame && inGame.n === 22 && inGame.dbl && inGame.best === 39, JSON.stringify(inGame));
+  check('Last Light loads it: 24 levels, the abilities, the times', !!inGame && inGame.n === 24 && inGame.dbl && inGame.best === 39, JSON.stringify(inGame));
   await U.evaluate(() => { try { closePlayer(); } catch (e) {} }); await sleep(1500); await U.evaluate(() => { feedNow(); return HGGrapevine.sync.run(); }); await sleep(2000);      // (opening the game earned new achievements: let them all arrive)
   const dbg = await D.evaluate(() => HGGrapevine.eco.acctLook('RebLost').then(look => HGGrapevine.eco.savesAdminGet('RebLost', ['hgach:v1']).then(r => { const g = JSON.parse((r.values[0] || {}).v || '{}'); return { server: look.achIds.filter(i => !g[i]), local: Object.keys(g).length }; })));
   console.log('    achievements the saved list lacks:', JSON.stringify(dbg));
