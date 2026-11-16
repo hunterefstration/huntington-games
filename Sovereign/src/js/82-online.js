@@ -8,7 +8,12 @@
 //   offer the other leader accepts or refuses. Wars against AI countries stay your own business.
 // - Leaders board and chat at the top.
 // ==========================================
+// Protocol version: players must run the same Sovereign. A 1.4 host refuses older guests (they send no version) and a
+// 1.4 guest leaves a room whose host sends no version or a different one, each with a plain message.
+const SOV_PROTO = 14;
+const protoText = v => v === SOV_PROTO ? '' : !v || v < SOV_PROTO ? 'an older version of Sovereign' : 'a newer version of Sovereign';
 const Online = {
+  scn: 'standard',
   on: false, net: null, host: false, code: '', id: 0, name: '', picks: {}, names: {}, started: false, lastClk: 0, hostClk: null,
   hgnet() {
     const h = window.HGNet || (() => { try { return window.parent && window.parent.HGNet; } catch (e) { return null; } })();
@@ -41,7 +46,7 @@ const Online = {
     this.hgnet().then(HG => {
       if (!HG) return this.st('Online play needs the Huntington Games launcher.', true);
       this.name = this.myName(); const net = this.net = HG.create({ game: 'sovereign' }); this.wire(net);
-      net.host({ name: this.name, maxPlayers: 6, accept: () => this.started ? 'That game has already started.' : true }).then(r => {
+      net.host({ name: this.name, maxPlayers: 6, info: { v: SOV_PROTO }, accept: p => this.started ? 'That game has already started.' : (p && p.info && p.info.v) !== SOV_PROTO ? 'This room runs Sovereign ' + VERSION + ' and you have ' + protoText(p && p.info && p.info.v) + '. Reload Sovereign from the launcher so you both have the same version.' : true }).then(r => {
         this.host = true; this.code = r.code; this.id = 0; this.names[0] = this.name; this.st('Room open. Pick your country, then start when everyone is in.'); this.lobbySend(); this.advertise();
       }, e => { this.net = null; this.st(e.message || 'Could not open a room.', true); });
     });
@@ -52,7 +57,7 @@ const Online = {
     this.hgnet().then(HG => {
       if (!HG) return this.st('Online play needs the Huntington Games launcher.', true);
       this.name = this.myName(); const net = this.net = HG.create({ game: 'sovereign' }); this.wire(net);
-      net.join(code, { name: this.name }).then(r => { this.host = false; this.code = r.code || code; this.id = r.id; this.st('In the room. Pick your country and wait for the host to start.'); this.paint(); },
+      net.join(code, { name: this.name, info: { v: SOV_PROTO } }).then(r => { const hv = net.hostInfo && net.hostInfo.info && net.hostInfo.info.v; if (hv !== SOV_PROTO) { this.net = null; try { net.close(); } catch (e) {} return this.st('That room runs ' + protoText(hv) + ' (you have ' + VERSION + '). Everyone needs the same version: reload Sovereign from the launcher.', true); } this.host = false; this.code = r.code || code; this.id = r.id; this.st('In the room. Pick your country and wait for the host to start.'); this.paint(); },
         e => { this.net = null; this.st(e.message || 'Could not join.', true); });
     });
   },
@@ -64,7 +69,7 @@ const Online = {
   lobbySend() {
     if (!this.host || !this.net) return;
     for (const p of this.net.peers()) if (!p.isHost && p.state !== 'left') this.names[p.id] = String(p.name || 'Leader').slice(0, 20);
-    this.net.send('all', { t: 'lobby', picks: this.picks, names: this.names }); this.paint();
+    this.net.send('all', { t: 'lobby', picks: this.picks, names: this.names, scn: this.scn, v: SOV_PROTO }); this.paint();
   },
   paint() {
     const el = $('#on-lobby'); if (!el) return;
@@ -73,33 +78,36 @@ const Online = {
     el.innerHTML = `<div class="note-box">Room code <b style="font-size:20px;letter-spacing:.15em">${this.code}</b></div>
       <div class="field"><label>Your country</label><select id="on-pick" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;width:100%">
         <option value="">Choose...</option>${this.countries().filter(c => !taken.has(c.idx)).map(c => `<option value="${c.idx}" ${mine === c.idx ? 'selected' : ''}>${c.flag} ${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>World</label>${this.host ? `<select id="on-scn" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;width:100%">${SCENARIOS.map(s => `<option value="${s.id}" ${this.scn === s.id ? 'selected' : ''}>${s.icon} ${esc(s.name)}</option>`).join('')}</select>` : `<div><b>${scnOf(this.scn).icon} ${esc(scnOf(this.scn).name)}</b> <span class="sub">(the host picks)</span></div>`}<div class="sub">${esc(scnOf(this.scn).desc)}</div></div>
       ${Object.entries(this.names).map(([id, n]) => { const i = this.picks[id]; return `<div class="sumrow"><span>${esc(n)}${+id === 0 ? ' (host)' : ''}${+id === this.id ? ' (you)' : ''}</span><span>${i != null ? World.countries[i].flag + ' ' + esc(World.countries[i].name) : '<i>choosing...</i>'}</span></div>`; }).join('')}
       ${this.host ? `<div class="btnrow"><button class="btn gold" id="on-start">Start the game</button></div>` : '<div class="sub">The host starts the game.</div>'}`;
     $('#on-pick').onchange = e => { const v = e.target.value === '' ? null : +e.target.value; if (this.host) { if (v == null) delete this.picks[0]; else this.picks[0] = v; this.lobbySend(); } else this.net.send('host', { t: 'pick', idx: v }); };
+    const sc = $('#on-scn'); if (sc) sc.onchange = e => { this.scn = scnOf(e.target.value).id; this.lobbySend(); };
     const sb = $('#on-start'); if (sb) sb.onclick = () => this.start();
   },
   start() {
     const ids = Object.keys(this.names);
     if (ids.some(id => this.picks[id] == null)) return this.st('Everyone has to pick a country first.', true);
-    const m = { t: 'start', seed: (Math.random() * 2 ** 31) | 0, picks: this.picks, names: this.names };
+    const m = { t: 'start', seed: (Math.random() * 2 ** 31) | 0, picks: this.picks, names: this.names, scn: this.scn, v: SOV_PROTO };
     this.net.send('all', m); this.begin(m);
   },
   begin(m) {
     this.started = true; clearInterval(this.adT);
     try { const p = window.parent; if (p && p !== window && p.HG_partyClose && this.host) p.HG_partyClose(this.code); } catch (e) {}
     const idx = m.picks[this.id], n0 = World.nat0[idx];
-    newGame({ seed: m.seed, idx, name: n0.leader, title: n0.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n0.leader), real: true });
+    newGame({ seed: m.seed, idx, name: n0.leader, title: n0.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n0.leader), real: true, scenario: scnOf(m.scn).id });
     const humans = {}; for (const id in m.picks) humans[m.picks[id]] = { id: +id, name: m.names[id] };
     G.online = { humans, host: this.host, code: this.code };
     UI.closeModal(); Game.start();
     this.on = true;
     inbox('info', 'Online game', 'You lead ' + World.countries[idx].name + '. The other leaders: ' + Object.entries(humans).filter(([i]) => +i !== idx).map(([i, h]) => h.name + ' (' + World.countries[i].name + ')').join(', ') + '. ' + (this.host ? 'You control the clock.' : 'The host controls the clock.') + ' Open Leaders at the top to compare countries and chat.');
+    if (G.scenario && G.scenario.id !== 'standard') { const s = scnOf(G.scenario.id); inbox('info', s.icon + ' Scenario: ' + s.name, s.desc + ' Your scenario goal is in Goals.'); }
     Game.refresh(); sovAch();
   },
   reset() {
     clearInterval(this.adT);
     const net = this.net; this.net = null; try { net && net.close(); } catch (e) {}
-    Object.assign(this, { on: false, host: false, code: '', id: 0, picks: {}, names: {}, started: false, hostClk: null });
+    Object.assign(this, { on: false, host: false, code: '', id: 0, picks: {}, names: {}, started: false, hostClk: null, scn: 'standard' });
     if (G) G.online = null;
   },
   leave() { this.reset(); },
@@ -107,7 +115,7 @@ const Online = {
   msg(peer, m) {
     if (!m || typeof m !== 'object') return;
     switch (m.t) {
-      case 'lobby': if (!this.host) { this.picks = m.picks; this.names = m.names; this.paint(); } return;
+      case 'lobby': if (!this.host) { this.picks = m.picks; this.names = m.names; this.scn = scnOf(m.scn).id; this.paint(); } return;
       case 'pick': if (this.host) { if (m.idx == null || Object.entries(this.picks).some(([id, i]) => i === m.idx && +id !== peer.id)) delete this.picks[peer.id]; else this.picks[peer.id] = +m.idx; this.lobbySend(); } return;
       case 'start': if (!this.host) this.begin(m); return;
     }

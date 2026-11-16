@@ -4,9 +4,13 @@
 // from then on it is a normal game as that country's leader.
 // ==========================================
 const Sim = {
-  start() {
+  choose() {
+    UI.modal(`<h2>Simulator</h2><p class="sub">Choose the world the AI starts from.</p><div class="menu" style="width:auto">${SCENARIOS.map(s => `<button class="btn" data-simscn="${s.id}">${s.icon} ${esc(s.name)}<div class="sub" style="font-size:12px">${esc(s.desc)}</div></button>`).join('')}</div><div class="btnrow"><button class="btn" data-act="close-modal">Back</button></div>`);
+    $$('[data-simscn]').forEach(b => b.onclick = () => { UI.closeModal(); Sim.start(b.dataset.simscn); });
+  },
+  start(scn) {
     const c = World.countries.find(x => x && x.id === 'USA') || World.countries.find(x => x), n = World.nat0[c.idx];
-    newGame({ idx: c.idx, name: n.leader, title: n.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), real: true });
+    newGame({ idx: c.idx, name: n.leader, title: n.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), real: true, scenario: scn || 'standard' });
     G.sim = true;
     Game.start(); Game.close(); Clock.paused = false; Bus.emit('clock');
     inbox('info', 'Simulator', 'The AI runs every country. Press play and speed time up (1-5). Click any country and choose Take control, or open Wars at the top to play either side of a war.');

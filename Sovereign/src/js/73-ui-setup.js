@@ -54,7 +54,7 @@ const Setup = {
   o: null,
   open(idx) {
     const n = World.nat0[idx], c = World.countries[idx];
-    this.o = { idx, real: true, name: n.leader, title: n.title, party: '', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), custom: { name: '', face: faceFromName('custom' + idx) } };
+    this.o = { idx, real: true, name: n.leader, title: n.title, party: '', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), scenario: scnOf(Store.get('lastScn', 'standard')).id, custom: { name: '', face: faceFromName('custom' + idx) } };
     UI.show('setup'); this.render();
   },
   render() {
@@ -74,6 +74,8 @@ const Setup = {
         <div class="field"><label>Society</label>${seg('social', [[-0.6, 'Progressive'], [0, 'Moderate'], [0.6, 'Traditional']])}</div>
         <div class="field"><label>Pick 2 traits (${o.traits.length}/2)</label><div class="traits">${TRAITS.map(t => `<button class="trait${o.traits.includes(t.id) ? ' on' : ''}" data-trait="${t.id}">${t.name}<small>${t.desc}</small></button>`).join('')}</div></div>
       </div><div>
+        <div class="field" style="margin-top:12px"><label>World (new in 1.4)</label><div class="seg scn" data-scn>${SCENARIOS.map(s => `<button data-v="${s.id}" class="${o.scenario === s.id ? 'on' : ''}" title="${esc(s.desc)}">${s.icon} ${esc(s.name)}</button>`).join('')}</div>
+          <div class="sub" style="margin-top:4px">${esc(scnOf(o.scenario).desc)}</div></div>
         <div class="facts" style="margin-top:12px"><b>People</b><span>${fmtBig(n.pop)}</span><b>GDP</b><span>$${fmtBig(gdpUsd(n))}</span><b>Debt</b><span>${debtPct(n).toFixed(0)}% of GDP</span><b>Approval</b><span>${n.approval.toFixed(0)}%</span></div>
         <button class="btn gold" style="width:100%;text-align:center;margin-top:8px" data-act="take-office">Take office</button>
       </div></div>`;
@@ -84,6 +86,7 @@ const Setup = {
       else { o.name = o.custom.name; o.title = o.custom.title || n.title; o.face = o.custom.face; }
       o.real = real; this.render();
     });
+    $$('[data-scn]', body).forEach(s => s.onclick = e => { const b = e.target.closest('[data-v]'); if (b) { o.scenario = b.dataset.v; this.render(); } });
     $$('[data-o]', body).forEach(s => s.onclick = e => { const b = e.target.closest('[data-v]'); if (b) { o[s.dataset.o] = +b.dataset.v; this.render(); } });
     $$('[data-trait]', body).forEach(b => b.onclick = () => {
       const id = b.dataset.trait, i = o.traits.indexOf(id);
@@ -99,8 +102,10 @@ const Setup = {
     if (!o.real && !o.name.trim()) { toast('Give your leader a name first'); return; }
     if (o.traits.length < 2) { toast('Pick 2 traits'); return; }
     newGame({ idx: o.idx, name: o.name.trim(), title: (o.title || n.title).trim(), party: o.party.trim() || (o.real ? 'Governing party' : 'Independent'),
-      econ: o.econ, social: o.social, traits: o.traits, face: o.face, real: o.real });
+      econ: o.econ, social: o.social, traits: o.traits, face: o.face, real: o.real, scenario: o.scenario });
+    Store.set('lastScn', o.scenario);
     Game.start();
+    if (o.scenario !== 'standard') inbox('info', scnOf(o.scenario).icon + ' Scenario: ' + scnOf(o.scenario).name, scnOf(o.scenario).desc + ' Your scenario goal is in Goals.');
     inbox('info', 'Welcome to office, ' + G.player.title + ' ' + G.player.name, 'Press play (space) to start time. Click any number at the top to see what drives it. Open Budget to change taxes and spending, and Money & Debt to run the central bank and currency.');
     Game.refresh();
   }

@@ -228,7 +228,11 @@ function econMonth(n, noise = true) {
   const conf = Math.exp(0.03 * (realRate - b.realRate) - 0.02 * dOp * (1 - absorb) - 0.5 * Math.min(1, stress) - 0.01 * (b.stability - n.stability) + 0.02 * (n.growth - b.growth));
   if (mon.type === 'float') {
     const fxT = (n.id === 'USA' ? 100 : 100 * W.usP / n.P) * conf * (n.devalued || 1);
-    n.fx += (fxT - n.fx) * 0.1;
+    // 1.4: in hyperinflation prices pass straight into the exchange rate, and a rate that is far off (2x or more) closes
+    // in big steps. Before, a hyperinflating country's dollar GDP ran away to 1e38 within 20 years.
+    if (n.infl > 50) n.fx *= (1 + W.usInfl / 1200) / (1 + Math.min(n.infl, 1e6) / 1200);
+    const fxR = fxT / n.fx;
+    if (fxR > 0 && (fxR < 0.5 || fxR > 2)) n.fx *= Math.pow(fxR, 0.3); else n.fx += (fxT - n.fx) * 0.1;
   } else if (mon.type === 'union' || (mon.type === 'adopted' && mon.anchor === 'EUR')) n.fx = W.eurFx;
   else if (mon.type === 'adopted') { const an = anchorNation(mon.anchor); n.fx = an ? an.fx : 100; }
   else { // peg: holds until the pressure is too much

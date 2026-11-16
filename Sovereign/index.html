@@ -126,6 +126,8 @@ input { font: inherit; color: var(--text); }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button { background: transparent; border: 0; padding: 6px 10px; font-size: 13px; color: var(--dim); }
 .seg button.on { background: var(--gold); color: #1b1407; }
+.seg.scn { flex-wrap: wrap; border: 0; gap: 4px; overflow: visible; }
+.seg.scn button { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; }
 .credits p { margin: 0 0 10px; color: var(--dim); }
 .credits b { color: var(--text); }
 .credits .hg { text-align: center; font-family: var(--title); font-size: 18px; color: var(--gold2); margin: 4px 0 16px; }
@@ -337,7 +339,7 @@ textarea.code { width: 100%; height: 80px; background: rgba(0, 0, 0, .35); color
 // Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-game.js.
 import * as THREE from 'three';
 
-const VERSION = '1.3';
+const VERSION = '1.4';
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => v >= a ? (v <= b ? v : b) : a;   // NaN comes out as the low end, never NaN
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1491,11 +1493,12 @@ const UI = {
       else if (a === 'setup-back') this.show('select');
       else if (a === 'hall') Hall.open();
       else if (a === 'take-office') Setup.go();
-      else if (a === 'sim') Sim.start();
+      else if (a === 'sim') Sim.choose();
       else if (a === 'online') Online.open();
       else if (a === 'explore') { G = null; this.home = null; this.startHud(); }
       else if (a === 'settings') this.settings();
       else if (a === 'credits') this.credits();
+      else if (a === 'whatsnew') this.whatsNew();
       else if (a === 'back') this.show('title');
       else if (a === 'menu') this.menu();
       else if (a === 'zin') { Cam.fly = null; camZoom(0.5); }
@@ -1608,7 +1611,8 @@ const UI = {
     const has = !!Saves.latest();
     $('#title .menu').innerHTML = (has ? '<button class="btn gold" data-act="continue">Continue</button><button class="btn" data-act="new">New Game</button><button class="btn" data-act="load">Load Game</button>'
       : '<button class="btn gold" data-act="new">New Game</button>') +
-      '<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
+      `<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="whatsnew">What\'s new in ${VERSION}</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>`;
+    if (!Store.get('seen14', false)) { Store.set('seen14', true); setTimeout(() => { if (this.screen === 'title' && $('#modal').classList.contains('hidden')) this.whatsNew(); }, 900); }
   },
   confirm(title, text, ok, fn) {
     this.onOk = fn;
@@ -1651,6 +1655,17 @@ const UI = {
       if (k === 'quality') { Settings.autoLevel = 'medium'; Perf.set(raw === 'auto' ? 'medium' : raw); }
       saveSettings();
     }));
+  },
+  whatsNew() {
+    const items = [
+      ['🕊', 'The World Council', 'Every four months the whole world votes: sanctions, peacekeepers and world laws on climate, arms, tax, aid, trade, AI and space. Propose your own resolutions, lobby with political capital or aid money, and watch out for vetoes. Break a world law and the world will notice. (Council, in the menu.)'],
+      ['🦠', 'Global crises', 'Pandemics, a world financial panic, a food crisis, a solar superstorm, a cyber plague and, very rarely, an asteroid. Every country pledges to a world fund; the fuller it is, the less everyone suffers.'],
+      ['🧊', 'Four new scenarios', 'Start in Cold War II, After the Crash, the Resource Scramble or the Age of Peace, each with its own goal. Works in New Game, the Simulator and online rooms (the host picks).'],
+      ['🏆', 'New victories and achievements', 'Voice of the World, Saviour of Humanity and a goal for each scenario, plus 12 new achievements (5 more count on your Huntington Games account).'],
+      ['📰', '25 new events', 'Bribes for your Council vote, defecting pilots, barter towns, a lost city, a treasure ship, the oldest person on Earth and the heist of the century.'],
+      ['🌐', 'Online', 'Everyone in a room needs Sovereign 1.4: older and newer versions now refuse each other with a clear message.']
+    ];
+    this.modal(`<h2>What's new in Sovereign ${VERSION}</h2>${items.map(([i, t, d]) => `<div class="sumrow" style="display:block"><b>${i} ${t}</b><div class="sub" style="font-size:13px">${d}</div></div>`).join('')}<div class="actions"><button class="btn small gold" data-act="close-modal">Let's go</button></div>`);
   },
   credits() {
     this.modal(`<h2>Credits</h2><div class="credits">
@@ -1815,6 +1830,7 @@ function newGame(opt) {
   const c = World.countries[opt.idx];
   G.feed = [{ type: 'news', day: 0, outlet: 'World Wire', text: (opt.real ? opt.name + ' faces a new chapter in ' : opt.name + ' takes office in ') + c.name, mood: 0 },
     { type: 'news', day: 0, outlet: 'World Wire', text: 'War in Ukraine grinds on into its fifth year', mood: -1 }].concat(G.feed || []);
+  applyScenario(G, opt.scenario || 'standard'); // 1.4: Cold War II, After the Crash... (69c-sim-scenarios.js)
   recordHistory(true);
   return G;
 }
@@ -2050,7 +2066,11 @@ function econMonth(n, noise = true) {
   const conf = Math.exp(0.03 * (realRate - b.realRate) - 0.02 * dOp * (1 - absorb) - 0.5 * Math.min(1, stress) - 0.01 * (b.stability - n.stability) + 0.02 * (n.growth - b.growth));
   if (mon.type === 'float') {
     const fxT = (n.id === 'USA' ? 100 : 100 * W.usP / n.P) * conf * (n.devalued || 1);
-    n.fx += (fxT - n.fx) * 0.1;
+    // 1.4: in hyperinflation prices pass straight into the exchange rate, and a rate that is far off (2x or more) closes
+    // in big steps. Before, a hyperinflating country's dollar GDP ran away to 1e38 within 20 years.
+    if (n.infl > 50) n.fx *= (1 + W.usInfl / 1200) / (1 + Math.min(n.infl, 1e6) / 1200);
+    const fxR = fxT / n.fx;
+    if (fxR > 0 && (fxR < 0.5 || fxR > 2)) n.fx *= Math.pow(fxR, 0.3); else n.fx += (fxT - n.fx) * 0.1;
   } else if (mon.type === 'union' || (mon.type === 'adopted' && mon.anchor === 'EUR')) n.fx = W.eurFx;
   else if (mon.type === 'adopted') { const an = anchorNation(mon.anchor); n.fx = an ? an.fx : 100; }
   else { // peg: holds until the pressure is too much
@@ -3136,7 +3156,7 @@ const ElectionNight = {
       if (i < r.res.length) {
         const x = r.res[i++], city = World.cities[x.city]; sum += x.me * x.w; wsum += x.w;
         Overlay.marks.push({ lon: city.lon, lat: city.lat, color: x.me > 50 ? '#e2b65c' : '#6aa7ff', label: x.name + ' ' + x.me.toFixed(0) + '%' }); Globe.dirty = true;
-        $('#en-body').innerHTML = `${esc(x.name)}: <b>${x.me.toFixed(1)}%</b> for you`; $('#en-bar div').style.width = (sum / wsum).toFixed(1) + '%';
+        if ($('#en-body') && $('#en-bar div')) { $('#en-body').innerHTML = `${esc(x.name)}: <b>${x.me.toFixed(1)}%</b> for you`; $('#en-bar div').style.width = (sum / wsum).toFixed(1) + '%'; } // (another window may have replaced it)
         setTimeout(step, 650);
       } else this.finish(n, r);
     };
@@ -3144,6 +3164,7 @@ const ElectionNight = {
   },
   finish(n, r) {
     const P = G.player;
+    if (!$('#en-body') || !$('#en-act')) UI.modal(`<h2>${r.kind === 'midterm' ? 'Midterm elections' : 'Election results'}</h2><div id="en-body" class="sub" style="font-size:14px"></div><div class="actions" id="en-act"></div>`);
     $('#en-body').innerHTML = (r.pres ? `You won <b>${r.total.toFixed(1)}%</b> of the vote. ` : '') + `Your party: <b>${r.seats}</b> seats (was ${r.oldSeats}). Government: ${r.govSeats} of ${n.parl.total}.`;
     if (r.won) {
       if (r.kind !== 'midterm') { P.terms++; n.honeymoon = 1; n.months = Math.min(n.months, 0); }
@@ -3763,7 +3784,7 @@ function annex(w, att, def) {
   newsWorld(World.countries[att].name + ' annexes ' + taken.length + ' cities from ' + World.countries[def].name);
 }
 function aiWars() {
-  if (G.rng() > 0.25) return;
+  if (G.rng() > (G.council && Council.lawActive('armscap') ? 0.15 : 0.25)) return; // the World Council's Arms Control Treaty calms the world
   const cands = [];
   for (const n of G.nations) {
     if (!n || isHuman(n.idx) || n.atWar || n.owner != null) continue;
@@ -4236,6 +4257,14 @@ function sovAch() {
     if (G.dominated) o.domination = o.domination || Date.now();
     o.genWins = Math.max(o.genWins || 0, n.genWins || 0);
     if (G.online) o.online = Math.max(o.online || 0, 1);
+    if (G.council && !G.sim) { // 1.4: World Council, global crises, victories, scenarios
+      const st = G.council.stats || {};
+      o.councilPassed = Math.max(o.councilPassed || 0, st.passed || 0);
+      o.crises = Math.max(o.crises || 0, st.crises || 0);
+      o.influence = Math.max(o.influence || 0, Math.round(clamp(Council.influence(n), 0, 100)));
+      o.victories = Math.max(o.victories || 0, Object.keys(G.vic || {}).length);
+      if (G.scenario && G.scenario.id !== 'standard') o.scnYears = Math.max(o.scnYears || 0, Math.floor(Math.max(0, G.day - (G.player.startDay || 0)) / 365));
+    }
     Store.set('hgach', o);
   } catch (e) {}
 }
@@ -4525,7 +4554,7 @@ function fxSummary(fx, n) {
   const t = [], gl = gdpUsd(n);
   if (fx.a) t.push(['Approval', fx.a]); if (fx.s) t.push(['Stability', fx.s]); if (fx.g) t.push(['Growth', fx.g, '%']); if (fx.i) t.push(['Inflation', -fx.i, '%', true]);
   if (fx.$) t.push(['Cost', -fx.$, '', false, '$' + fmtBig(Math.abs(fx.$) / 100 * gl)]); if (fx.pc) t.push(['Capital', fx.pc]); if (fx.r) t.push(['Relations', fx.r]); if (fx.x) t.push(['Prestige', fx.x]);
-  if (fx.f) t.push(['Freedom', fx.f]); if (fx.abroad) t.push(['World opinion', fx.abroad]);
+  if (fx.f) t.push(['Freedom', fx.f]); if (fx.inf) t.push(['Council influence', fx.inf]); if (fx.abroad) t.push(['World opinion', fx.abroad]);
   return t.map(([k, v, u, inv, txt]) => `<span class="${v > 0 ? 'up' : 'down'}">${k} ${txt ? (v > 0 ? '+' : '-') + txt : (inv ? (v > 0 ? '-' : '+') + Math.abs(v) : (v > 0 ? '+' : '') + v) + (u || '')}</span>`).join(' · ')
     + (fx.grp ? ' · ' + Object.entries(fx.grp).map(([g, v]) => `<span class="${v > 0 ? 'up' : 'down'}">${GROUPS[G_IDX[g]].icon}${v > 0 ? '+' : ''}${v}</span>`).join(' ') : '');
 }
@@ -4554,6 +4583,8 @@ function applyEventFx(n, fx, ev, ctx, label) {
   if (fx.mobilize) War.mobilize(true);
   if (fx.worldAid) { for (const m of G.nations) if (m && m.idx !== n.idx && relation(m.idx, n.idx) > 20) addRel(n.idx, m.idx, 2); n.debt -= 0.001 * gl; }
   if (fx.debtTrap) n.debtTrap = ctx.rival;
+  if (fx.inf && G.council) Council.stand(fx.inf);
+  if (typeof fx.fn === 'function') fx.fn(n, ctx);
   if (fx.referendum) { if (G.rng() < 0.35) { const lost = 0.06; n.real *= 1 - lost; n.pop *= 1 - lost; react(n, { title: 'Region votes to leave', stance: { military: -5 }, size: 2, mood: -0.8 }); } else react(n, { title: 'Region votes to stay', stance: {}, size: 1, mood: 0.4 }); }
   react(n, { title: fillText(ev.title, ctx) + ': ' + label, stance: fx.grp || {}, size: 0.9, abroad: fx.abroad || 0, mood: ((fx.a || 0) > 0 ? 0.15 : (fx.a || 0) < 0 ? -0.15 : 0), city: ctx.city, topic: ev.id });
   if (ev.crowd) addCrowd(n, ctx.city, 'protest', GROUPS[G_IDX[ev.crowd]], 5, ev.title);
@@ -4997,6 +5028,73 @@ E('pacificaid', 'Foreign', (n, c) => c.region === 'Oceania' && n.pop < 2e6 ? 0.0
 E('oildip', 'Economy', (n) => n.res.includes('oil') && G.world.oil < 80 ? 0.02 : 0, 'Oil price slump', ['Oil prices fell below what it costs to pump it. The treasury is worried.'],
   [['Cut spending', { $: -0.3, a: -2 }], ['Borrow and wait for prices to recover', { y: 0.2 }], ['Diversify: invest in tourism and tech', { $: 0.2, g: 0.05 }]]);
 
+// ---- 68f-sim-events5.js ----
+// Events, fifth batch (1.4): the World Council, the scenarios, and a few rare ones people will remember.
+// fx.inf moves Council influence (standing); fx.fn(n, ctx) runs custom code when chosen.
+const hasAgenda = () => !!(G.council && G.council.agenda.length);
+const scn = id => !!(G.scenario && G.scenario.id === id);
+const NORTH = ['RUS', 'CAN', 'NOR', 'ISL', 'FIN', 'SWE', 'DNK', 'USA', 'GRL'];
+
+// ---- the World Council
+E('councilbribe', 'Foreign', (n, c, ctx) => hasAgenda() && ctx.rival != null ? 0.012 : 0, 'A suitcase for your vote', ['A diplomat from {rival} hints that a "development grant" would follow if we vote their way at the next World Council session.'],
+  [['Take the money and vote their way', { $: -0.15, r: 12, inf: -3, scandalRisk: 0.25 }], ['Refuse politely', { r: -3 }], ['Expose the offer to the press', { r: -15, inf: 3, abroad: 3, grp: { media: 3 } }]], { needRival: true });
+E('councilspeech', 'Foreign', () => hasAgenda() ? 0.012 : 0, 'Your ambassador\'s big speech', ['Our ambassador to the World Council wants to give a fiery speech before the next vote. Diplomats say it could go either way.'],
+  [['Let them speak their mind', { inf: 3, risk: 0.3, grp: { media: 2 } }], ['Write them a careful, boring speech', { inf: 1 }], ['Skip the debate', { inf: -1 }]]);
+E('vetoplea', 'Foreign', (n) => hasAgenda() && !n.blocs.includes('UNSC') ? 0.008 : 0, 'A great power asks a favour', ['A permanent member of the Security Council asks us to stand with them at the next session. In return they offer investment.'],
+  [['Promise our support', { g: 0.1, inf: -1, fn: n => { const it = G.council.agenda[0]; if (it && it.vote == null) it.vote = it.by != null && relation(n.idx, it.by) > 0 ? 1 : -1; } }], ['We vote our conscience', { inf: 1, a: 1 }]]);
+E('secgen', 'Foreign', (n) => G.council && Council.influence(n) > 35 ? 0.002 : 0, 'One of ours for Secretary-General?', ['The world\'s diplomats are looking for a new Secretary-General of the World Council, and {person}, our former foreign minister, is on the shortlist. Campaigning would cost a fortune.'],
+  [['Campaign for the job', { $: 0.05, pc: -8, fn: n => { if (G.rng() < 0.3 + Council.influence(n) / 200) { Council.stand(12); n.prestige = (n.prestige || 0) + 4; inbox('good', 'Secretary-General!', 'Our candidate won the vote. The world\'s top diplomat is one of us.'); } else { Council.stand(-2); inbox('bad', 'Not this time', 'Our candidate lost the Secretary-General vote.'); } } }], ['Back a candidate from a friendly country', { inf: 2, r: 5, friendSide: true }]], { needFriend: true });
+E('peacekeepers', 'Foreign', (n) => G.council && G.council.laws.some(l => l.kind === 'peacekeep') && !n.atWar ? 0.01 : 0, 'Send blue helmets?', ['The World Council needs soldiers for its peacekeeping mission. Will we send some of ours?'],
+  [['Send a battalion', { $: 0.03, inf: 4, x: 1, grp: { military: 2 } }], ['Send money, not soldiers', { $: 0.05, inf: 2 }], ['Not our war', { inf: -1 }]]);
+E('defylaw', 'Politics', () => G.council && Object.keys(G.council.defy || {}).length ? 0.015 : 0, 'Defiance at home and abroad', ['Our refusal to follow a World Council law is front-page news. Some voters love it; foreign investors are nervous.'],
+  [['"Nobody tells us what to do"', { a: 3, inf: -3, grp: { military: 2, media: -2 } }], ['Promise to comply soon', { a: -1, inf: 1 }]]);
+
+// ---- scenarios
+E('proxyask', 'Foreign', (n) => scn('coldwar') && !scnCamp(n.idx) ? 0.02 : 0, 'Pick a side', ['Both camps of the new Cold War are courting us. Washington offers a trade deal; Beijing offers a port and a railway.'],
+  [['Join the West', { g: 0.15, fn: n => { G.scenario.camps.w.push(n.idx); for (const i of G.scenario.camps.w) addRel(n.idx, i, 12); for (const i of G.scenario.camps.e) addRel(n.idx, i, -15); } }],
+   ['Join the East', { g: 0.15, fn: n => { G.scenario.camps.e.push(n.idx); for (const i of G.scenario.camps.e) addRel(n.idx, i, 12); for (const i of G.scenario.camps.w) addRel(n.idx, i, -15); } }],
+   ['Stay non-aligned and trade with both', { inf: 2, a: 1 }]]);
+E('defectpilot', 'Foreign', (n) => scn('coldwar') && scnCamp(n.idx) ? 0.008 : 0, 'A pilot defects with a jet', ['A fighter pilot from the other camp landed his newest jet at one of our airbases and asked for asylum.'],
+  [['Take the jet apart and study it', { t: 2, mil: 0.02, fn: n => { const foe = scnCamp(n.idx) === 'w' ? G.scenario.camps.e : G.scenario.camps.w; for (const i of foe.slice(0, 6)) addRel(n.idx, i, -6); } }], ['Give the jet back, keep the pilot', { x: 1, abroad: 2 }]]);
+E('barter', 'Economy', (n) => scn('collapse') && G.day < 1100 ? 0.02 : 0, 'Barter towns', ['In {city} people trade eggs for haircuts and firewood for medicine. Cash has lost its meaning.'],
+  [['Hand out emergency food cards', { $: 0.2, a: 3, s: 2 }], ['Let the markets work it out', { g: 0.05, s: -3, grp: { workers: -3, business: 2 } }]]);
+E('reconloan', 'Economy', (n, c, ctx) => scn('collapse') && ctx.friend != null && G.day < 1500 ? 0.015 : 0, 'Reconstruction loan', ['{friend} offers a huge reconstruction loan: new factories and roads, but their companies get the contracts.'],
+  [['Accept it', { $: -0.6, g: 0.3, r: 8, friendSide: true, grp: { business: -2, workers: 3 } }], ['Rebuild on our own', { a: 1, grp: { military: 1 } }]], { needFriend: true });
+E('lithiumrush', 'Economy', (n, c) => scn('scramble') && ['CHL', 'ARG', 'BOL', 'AUS', 'CHN', 'COD', 'ZWE', 'BRA', 'MEX', 'CAN', 'USA', 'PER', 'MLI', 'NAM'].includes(c.id) ? 0.015 : 0, 'Lithium rush', ['Battery makers are fighting over our lithium. Prices have tripled.'],
+  [['Nationalise the mines', { rent: 1.5, g: -0.05, grp: { workers: 4, business: -6 } }], ['Auction licences to the highest bidder', { $: -0.4, g: 0.2, grp: { business: 4 } }]]);
+E('peacedividend', 'Economy', (n) => scn('peace') && G.day < 1100 ? 0.015 : 0, 'The peace dividend', ['With wars ending everywhere, generals expect their budgets cut. Economists say the money could do more good elsewhere.'],
+  [['Move money from arms to schools', { g: 0.1, a: 2, grp: { military: -5, students: 4 } }], ['Keep the army strong, just in case', { grp: { military: 3 } }]]);
+
+// ---- ordinary troubles
+E('superbug', 'Society', (n) => n.dev > 0.3 ? 0.005 : 0, 'Superbug in the hospitals', ['A bacterium that no antibiotic can kill is spreading through hospitals in {city}.'],
+  [['Close wards and fund new drugs', { $: 0.08, t: 0.5, a: 1 }], ['Keep it quiet to avoid panic', { risk: 0.4 }]]);
+E('cablecut', 'Economy', (n, c) => !c.landlocked ? 0.004 : 0, 'Undersea cable cut', ['The undersea internet cable to {country} was cut overnight. Banks and shops are offline. Nobody knows who did it.'],
+  [['Blame {rival} publicly', { r: -12, grp: { military: 3 } }], ['Repair it quietly and add a second cable', { $: 0.03, infra: 0.01 }]], { needRival: true });
+E('waterdam', 'Foreign', (n, c, ctx) => c.borders.length && ctx.rival != null ? 0.003 : 0, 'A dam upstream', ['{rival} is building a giant dam on a river that feeds our farms. Our farmers fear the water will stop.'],
+  [['Take it to the World Council', { inf: 1, r: -6, grp: { farmers: 2 } }], ['Negotiate a water-sharing treaty', { r: 6, pc: -3 }], ['Threaten military action', { r: -20, s: 1, grp: { military: 4, farmers: 3 } }]], { needRival: true });
+E('arcticroute', 'Economy', (n, c) => NORTH.includes(c.id) ? 0.005 : 0, 'The Arctic opens', ['Melting ice has opened a summer shipping lane along our northern coast. Ship owners want ports; scientists want it protected.'],
+  [['Build Arctic ports', { $: 0.1, g: 0.15, grp: { business: 3, green: -5 } }], ['Declare a protected zone', { x: 1, grp: { green: 5 } }]]);
+E('spacejunk', 'Society', () => 0.003, 'Space junk lands in a village', ['A piece of an old satellite crashed into a barn near {city}. Nobody was hurt, but the cow is famous now.'],
+  [['Demand compensation from whoever launched it', { $: -0.002, abroad: -1 }], ['Put it in a museum', { a: 1, x: 0.5 }]]);
+E('chipsplant', 'Economy', (n) => n.dev > 0.45 ? 0.004 : 0, 'A giant chip factory', ['{company} wants to build the world\'s most advanced microchip factory here, if we pay a third of the cost.'],
+  [['Pay it: the future is chips', { $: 0.3, g: 0.2, t: 1, grp: { business: 3 } }], ['Offer tax breaks instead', { g: 0.08, grp: { business: 1 } }], ['Say no', { grp: { business: -2 } }]]);
+E('aiminister', 'Politics', (n) => n.dev > 0.5 ? 0.003 : 0, 'An AI minister?', ['A tech company offers an AI system that could run the tax office better than any person. Unions are horrified.'],
+  [['Try it in one ministry', { g: 0.05, c: -0.01, grp: { workers: -3, youth: 2 } }], ['Ban AI from government', { grp: { workers: 3, youth: -2 } }]]);
+E('formerleader', 'Politics', (n) => GOV[n.gov].free && G.day > 400 ? 0.003 : 0, 'A former leader returns', ['A popular former leader of {country} says the country needs them again and is touring the talk shows.'],
+  [['Offer them a job in the government', { a: 2, pc: -4, grp: { elite: 3 } }], ['Attack their record', { a: -1, grp: { media: 2 } }], ['Ignore them', { a: -2 }]]);
+
+// ---- rare and memorable
+E('ancientcity', 'Society', () => 0.0012, 'A lost city is found', ['Archaeologists using laser scans found the ruins of a lost city near {city}: temples, roads and a royal tomb, untouched for 2,000 years.'],
+  [['Open it to tourists', { g: 0.2, x: 2, a: 3, grp: { business: 3 } }], ['Protect it for science', { x: 3, t: 0.5, grp: { students: 3 } }]]);
+E('treasureship', 'Economy', (n, c) => !c.landlocked ? 0.0012 : 0, 'Treasure ship found', ['Divers found a sunken galleon off our coast, full of silver coins. Its old colonial owner says the treasure is theirs.'],
+  [['It is ours: put it in our museum', { x: 2, a: 3, abroad: -1 }], ['Sell some of it at auction', { $: -0.05, a: 1 }], ['Share it with them as a gesture', { x: 1, abroad: 4, inf: 2 }]]);
+E('meteorite', 'Society', () => 0.0008, 'A meteorite lands', ['A meteorite the size of a car landed in an empty field near {city}. Scientists, tourists and treasure hunters are racing there.'],
+  [['Fence it off for scientists', { t: 1, x: 1 }], ['Let the town sell tickets', { a: 2, g: 0.02 }]]);
+E('centenarian', 'Society', () => 0.0012, 'The oldest person on Earth', ['{person}, aged 118, is now the oldest person in the world. Reporters from 40 countries are at her door asking for her secret.'],
+  [['Throw her a state birthday party', { a: 2, x: 1 }], ['Respect her privacy', { a: 1 }]]);
+E('cryptoheist', 'Economy', () => 0.0012, 'The heist of the century', ['Hackers emptied part of the central bank\'s foreign reserves in a single night and vanished into the dark web.'],
+  [['Hunt them down whatever it costs', { $: 0.05, risk: 0.5, grp: { police: 3 } }], ['Admit it and reform the bank', { $: 0.1, y: 1, a: -2, c: -0.01 }], ['Cover it up', { $: 0.1, scandalRisk: 0.4 }]]);
+
 // ---- 69-sim-progress.js ----
 // Progress: technology tree, achievements, victory goals, mediating other countries' wars, the people around you.
 // Effects: g growth, a approval, s stability, i inflation, u unemployment, mil army equipment, e pollution, t research speed, x prestige
@@ -5044,6 +5142,8 @@ function researchPoints(n) { // per month
   return (1 + n.k.know * 6 + n.k.human * 0.4) * (0.5 + n.dev) * (G.player.traits.includes('scholar') ? 1.3 : 1) * (1 + ((n.lawFx || {}).t || 0) * 0.1 + (n.techFx ? n.techFx.t || 0 : 0))
     + G.treaties.filter(x => x.type === 'tech' && (x.a === n.idx || x.b === n.idx)).length * 1.5;
 }
+// world laws can ban some research (AI Safety Pact, Peaceful Space Treaty) and slow the rest
+function techBanned(id) { return !!(G.council && ((['agi', 'swarm'].includes(id) && Council.lawActive('aisafety')) || (id === 'spaceshield' && Council.lawActive('spacetreaty')))); }
 function techDone(id) { return G.tech.done.includes(id); }
 function techAvailable(t) { return !techDone(t.id) && t.needs.every(techDone); }
 function applyTech(n) {
@@ -5055,9 +5155,9 @@ function applyTech(n) {
 }
 function techMonth() {
   const n = G.nations[G.player.idx], T0 = G.tech;
-  if (!T0.current || techDone(T0.current)) T0.current = (TECHS.find(techAvailable) || {}).id || null;
+  if (!T0.current || techDone(T0.current)) T0.current = (TECHS.find(t => techAvailable(t) && !techBanned(t.id)) || {}).id || null;
   if (!T0.current) return;
-  T0.progress += researchPoints(n) + (n.techLv || 0) * 0.02;
+  T0.progress += (researchPoints(n) + (n.techLv || 0) * 0.02) * (G.council && Council.lawActive('aisafety') ? 0.9 : 1);
   const t = TECHS.find(x => x.id === T0.current);
   if (T0.progress >= t.cost) {
     T0.progress -= t.cost; T0.done.push(t.id); T0.current = null;
@@ -5246,6 +5346,561 @@ SYSTEM_INITS.push(g => {
 MONTHLY.push(techMonth);
 MONTHLY.push(achMonth);
 
+// ---- 69b-sim-council.js ----
+// ==========================================
+// WORLD COUNCIL (1.4): the world's assembly meets every four months (1 January, 1 May, 1 September).
+// - A month before each session the agenda is published: resolutions proposed by AI countries (sanctions on an
+//   aggressor, peacekeepers for a war, world laws like a climate accord or a global minimum tax) and by you.
+// - Every country votes. Sanctions and peacekeepers also need the Security Council: any permanent member can veto.
+// - Passed world laws last years. Breaking one (defying the Council) costs relations and influence every month,
+//   and sooner or later the world proposes sanctions on you.
+// - Council influence (0-100) decides how much your lobbying moves votes; it comes from your economy, your seat,
+//   prestige, foreign aid and your record (standing): votes won, resolutions passed, crises fought.
+// - Global crises (pandemics, financial panics, an asteroid...) open an emergency session: every country pledges
+//   money to a world fund, and the damage everyone takes shrinks as the fund fills.
+// All numbers are clamped; AI countries vote with the same rules everywhere (Simulator, online, solo).
+// ==========================================
+const COUNCIL_SESSION_MONTHS = [0, 4, 8];
+const cnName = i => World.countries[i] ? World.countries[i].name : '?';
+const cnFlag = i => World.countries[i] ? World.countries[i].flag : '';
+const cnVoters = () => G.nations.filter(m => m && m.owner == null);
+const cnWorldGdp = () => Math.max(1, G.world.worldGdp || G.nations.reduce((a, n) => a + (n ? gdpUsd(n) : 0), 0));
+const cnBloc = (a, b) => ['EU', 'NATO', 'BRICS', 'SCO', 'CSTO', 'AL', 'AU', 'ASEAN', 'GCC', 'MERC'].some(k => a.blocs.includes(k) && b.blocs.includes(k));
+const cnWar = it => G.wars.find(w => w.id === it.w);
+const cnMe = () => G.nations[G.player.idx];
+
+// ---- the resolutions. ai(m, it): how much country m likes it (about -2..2). ok(n, law): does the player keep the law?
+const RESOLUTIONS = {
+  sanction: { icon: '⛔', target: 'country', sc: true, years: 3, name: it => 'Sanctions on ' + cnName(it.t),
+    desc: 'Every country that votes yes cuts business with them for 3 years. Members must keep the sanctions up.',
+    ai: (m, it) => { const t = G.nations[it.t]; return -0.02 * relation(m.idx, it.t) - 0.35 + (G.wars.some(w => w.a[0] === it.t) ? 0.7 : 0) + (m.dem > 7 && t.dem < 4 ? 0.3 : 0) - (hasTreaty(m.idx, it.t, 'trade') ? 0.5 : 0) - (cnBloc(m, t) ? 0.7 : 0); },
+    ok: (n, law) => law.t === n.idx || G.sanctions.some(s => s.by === n.idx && s.on === law.t), need: law => 'Keep sanctions on ' + cnName(law.t) },
+  condemn: { icon: '📢', target: 'country', years: 0, name: it => 'Condemn ' + cnName(it.t),
+    desc: 'A formal condemnation. The world thinks less of them; nothing else happens.',
+    ai: (m, it) => { const t = G.nations[it.t]; return -0.02 * relation(m.idx, it.t) - 0.05 + (G.wars.some(w => w.a[0] === it.t) ? 0.7 : 0) + (m.dem > 7 && t.dem < 4 ? 0.3 : 0) - (cnBloc(m, t) ? 0.6 : 0); } },
+  peacekeep: { icon: '🕊', target: 'war', sc: true, years: 0.5, name: it => { const w = cnWar(it); return 'Peacekeepers: ' + (w ? cnName(w.a[0]) + ' vs ' + cnName(w.d[0]) : 'a war that ended'); },
+    desc: 'Blue helmets and a ceasefire deadline. Wars between AI countries usually stop; an attacker that fights on defies the Council.',
+    ai: (m, it) => { const w = cnWar(it); if (!w) return 0; if (w.a.includes(m.idx)) return -3; if (w.d.includes(m.idx)) return 2.5; return 0.3 + 0.01 * (relation(m.idx, w.d[0]) - relation(m.idx, w.a[0])) - (hasTreaty(m.idx, w.a[0], 'defence') ? 1.5 : 0); },
+    ok: (n, law) => !G.wars.some(w => w.id === law.w && w.a.includes(n.idx)), need: law => 'Stop attacking in the war (' + (cnWar(law) ? cnName(cnWar(law).a[0]) + ' vs ' + cnName(cnWar(law).d[0]) : 'over') + ')' },
+  climate: { icon: '🌱', years: 5, name: () => 'Climate Accord',
+    desc: 'Countries must put a price on carbon (carbon tax of at least $20 a tonne). Oil demand falls.',
+    ai: m => (m.dev - 0.5) * 1.6 + (m.dem - 5) * 0.08 - (m.rent > 5 ? 1.3 : 0) - (m.res.includes('coal') ? 0.5 : 0) + (World.countries[m.idx].borders.length ? 0 : 0.8),
+    ok: n => n.tax.carbon >= 20, need: () => 'Carbon tax of at least $20/t', comply: m => { if (m.dev > 0.4) m.tax.carbon = Math.max(m.tax.carbon, 20); } },
+  armscap: { icon: '🛡', years: 5, name: () => 'Arms Control Treaty',
+    desc: 'Defence spending capped at 3% of GDP (countries at war are exempt). Fewer wars start while it holds.',
+    ai: m => -0.1 - (m.spend.defence - 1.8) * 0.4 - (m.nukes ? 0.8 : 0) - (m.atWar ? 1 : 0) + (m.mil < 50000 ? 0.25 : 0) - ((m.persona || {}).aggr > 60 ? 0.4 : 0),
+    ok: n => n.atWar || n.spend.defence <= 3.001, need: () => 'Defence spending at most 3% of GDP (unless at war)', comply: m => { if (!m.atWar) m.spend.defence = Math.min(m.spend.defence, 3); } },
+  mintax: { icon: '🏦', years: 6, name: () => 'Global Minimum Tax',
+    desc: 'Company tax of at least 15% everywhere. Big economies collect more; tax havens lose their edge.',
+    ai: m => (m.tax.corporate - 22) * 0.1 + (m.tax.corporate < 13 ? -1 : 0) + (m.dev - 0.55) * 1.6 - (m.open > 0.55 ? 0.4 : 0) - 0.15,
+    ok: n => n.tax.corporate >= 15, need: () => 'Company tax of at least 15%', comply: m => { m.tax.corporate = Math.max(m.tax.corporate, 15); } },
+  aidfund: { icon: '🤲', years: 5, name: () => 'World Development Fund',
+    desc: 'Rich countries give at least 0.3% of GDP in foreign aid; the poorest countries grow faster while it lasts.',
+    ai: m => (0.45 - m.dev) * 2.6 + (m.dem > 8 ? 0.4 : 0) + m.spend.aid * 1.5,
+    ok: n => n.dev <= 0.6 || n.spend.aid >= 0.3, need: () => 'Foreign aid of at least 0.3% of GDP (rich countries only)', comply: m => { if (m.dev > 0.6) m.spend.aid = Math.max(m.spend.aid, 0.3); } },
+  aisafety: { icon: '🤖', years: 6, name: () => 'AI Safety Pact',
+    desc: 'No research into General AI or drone swarms while it holds. Research is 10% slower; the world is calmer.',
+    ai: m => 0.1 + (m.dem - 5) * 0.06 + (m.dev < 0.4 ? 0.25 : 0) - m.dev * 0.3 - (m.techLv || 0) * 0.015 - (m.blocs.includes('UNSC') ? 0.4 : 0),
+    ok: n => !['agi', 'swarm'].includes(G.tech && G.tech.current) || !G.tech.progress, need: () => 'Do not research General AI or drone swarms' },
+  freetrade: { icon: '🚢', years: 5, name: () => 'World Trade Round',
+    desc: 'Import tariffs of at most 10%. Open economies grow; protected industries complain.',
+    ai: m => (m.open - 0.45) * 3 + (m.tax.tariff < 6 ? 0.5 : m.tax.tariff > 15 ? -0.8 : 0),
+    ok: n => n.tax.tariff <= 10, need: () => 'Import tariffs of at most 10%', comply: m => { m.tax.tariff = Math.min(m.tax.tariff, 10); } },
+  debtrelief: { icon: '📜', years: 0, name: () => 'Debt Relief for the Poorest',
+    desc: 'Poor countries with heavy debts get 30% of it cancelled. Lenders take a small hit.',
+    ai: m => (0.4 - m.dev) * 2.5 + (debtPct(m) > 90 ? 0.8 : 0) - (m.dev > 0.75 ? 0.3 : 0) },
+  spacetreaty: { icon: '🛰', years: 8, name: () => 'Peaceful Space Treaty',
+    desc: 'No weapons in orbit: nobody may build a space shield while it holds. Space powers dislike it.',
+    ai: m => 0.2 - m.dev * 0.3 - (m.blocs.includes('UNSC') ? 0.9 : 0) - (m.spend.space > 0.2 ? 0.6 : 0),
+    ok: n => G.tech.current !== 'spaceshield' || !G.tech.progress, need: () => 'Do not research the space shield' }
+};
+const WORLD_LAWS = ['climate', 'armscap', 'mintax', 'aidfund', 'aisafety', 'freetrade', 'debtrelief', 'spacetreaty'];
+
+// ---- global crises
+const WORLD_CRISES = {
+  pandemic: { icon: '🦠', name: 'The Grey Flu pandemic', months: 14, need: 0.22, text: 'A new flu is spreading across every continent. Hospitals are filling up. The Council has opened a vaccine fund.',
+    hit: (m, s) => ({ growth: -1.1 * s, stability: -2.5 * s, approval: -1.5 * s }), win: 'Vaccines for everyone: the Grey Flu is beaten.', lose: 'The Grey Flu burned itself out, but it cost millions of lives and years of growth.' },
+  contagion: { icon: '📉', name: 'World financial panic', months: 10, need: 0.3, text: 'A giant bank collapsed overnight and panic is spreading from market to market. The Council is raising a rescue fund.',
+    hit: (m, s) => ({ growth: -1.6 * s * (0.4 + m.open), unemp: 0.8 * s }), win: 'The rescue fund calmed the markets. The panic is over.', lose: 'The panic ended on its own, leaving a long recession behind it.' },
+  asteroid: { icon: '☄', name: 'Asteroid 2031 KR', months: 16, need: 0.14, text: 'Astronomers confirm it: a 400-metre asteroid is on a collision course with Earth. The Council is funding a mission to push it off course.',
+    hit: (m, s) => ({ stability: -1.2 * s, growth: -0.2 * s }), win: 'The deflection mission worked: Asteroid 2031 KR sails safely past Earth. The whole world watched.', lose: 'The mission was never funded. Asteroid 2031 KR has struck the Earth.' },
+  famine: { icon: '🌾', name: 'World food crisis', months: 12, need: 0.18, text: 'Failed harvests on three continents at once. Food prices are doubling. The Council is raising a food fund.',
+    hit: (m, s) => ({ infl: 2.2 * s, stability: -3 * s * (m.dev < 0.4 ? 1 : 0.3) }), win: 'Grain ships reached every port: the food crisis is over.', lose: 'The food crisis faded with the next harvest, after riots in dozens of countries.' },
+  climate: { icon: '🧊', name: 'Climate tipping point', months: 24, need: 0.35, text: 'A huge Antarctic ice shelf has broken away. Sea levels are rising faster than anyone feared. The Council is raising a climate fund.',
+    hit: (m, s) => ({ growth: -0.6 * s * (World.countries[m.idx].landlocked ? 0.3 : 1), stability: -1 * s }), win: 'The climate fund built sea walls and clean power worldwide. The worst was avoided.', lose: 'The world did too little. Coastal cities will be fighting the sea for a century.' },
+  solar: { icon: '🌞', name: 'Solar superstorm', months: 6, need: 0.1, text: 'The biggest solar storm in 150 years fried satellites and power grids. The Council is funding repairs.',
+    hit: (m, s) => ({ growth: -1.2 * s * m.dev }), win: 'The grids are back and satellites are being replaced.', lose: 'The grids came back slowly, one city at a time.' },
+  worm: { icon: '🪱', name: 'The Worm: a global cyber plague', months: 8, need: 0.12, text: 'A self-spreading computer virus is shutting down banks, ports and hospitals worldwide. The Council is funding a cure.',
+    hit: (m, s) => ({ growth: -0.9 * s * (0.3 + m.dev), stability: -1 * s }), win: 'Programmers from 60 countries cracked the Worm.', lose: 'The Worm was eventually contained, after months of chaos.' }
+};
+const PLEDGES = [[0, 'Nothing'], [0.1, 'Small (0.1% of GDP)'], [0.3, 'Fair share (0.3% of GDP)'], [0.6, 'Generous (0.6% of GDP)'], [1, 'Lead the world (1% of GDP)']];
+
+const Council = {
+  st() { return G.council; },
+  def(k) { return RESOLUTIONS[k]; },
+  itemName(it) { const d = RESOLUTIONS[it.kind]; return d ? d.name(it) : it.kind; },
+  isPerm(i) { return !!(G.nations[i] && G.nations[i].blocs.includes('UNSC')); },
+  scMembers() { return G.nations.filter(m => m && m.owner == null && (m.blocs.includes('UNSC') || (G.unsc || []).includes(m.idx))); },
+  lawActive(kind) { return G.council.laws.some(l => l.kind === kind); },
+  nextSessionDay() {
+    for (let d = G.day + 1; d < G.day + 140; d++) { const t = dateOf(d); if (t.getUTCDate() === 1 && COUNCIL_SESSION_MONTHS.includes(t.getUTCMonth())) return d; }
+    return G.day + 120;
+  },
+  // ---- influence (the player's voice at the Council)
+  influence(n) {
+    n = n || cnMe(); const C = G.council, share = gdpUsd(n) / cnWorldGdp();
+    return clamp(4 + 50 * Math.sqrt(clamp(share, 0, 1)) + (this.isPerm(n.idx) ? 15 : (G.unsc || []).includes(n.idx) ? 5 : 0) + Math.min(15, (n.prestige || 0) * 0.5) + Math.min(10, (n.spend.aid || 0) * 15) + (C.standing || 0), 0, 100);
+  },
+  influenceWhy(n) {
+    n = n || cnMe(); const share = gdpUsd(n) / cnWorldGdp();
+    return [['Base', 4], ['Size of your economy', 50 * Math.sqrt(clamp(share, 0, 1))], ['Security Council seat', this.isPerm(n.idx) ? 15 : (G.unsc || []).includes(n.idx) ? 5 : 0],
+      ['Prestige', Math.min(15, (n.prestige || 0) * 0.5)], ['Foreign aid', Math.min(10, (n.spend.aid || 0) * 15)], ['Your record (votes, resolutions, crises)', G.council.standing || 0]];
+  },
+  stand(v) { const C = G.council; C.standing = clamp((C.standing || 0) + v, -25, 60); },
+  // ---- how a country votes: +1 yes, -1 no, 0 abstain
+  score(m, it) {
+    const d = RESOLUTIONS[it.kind]; if (!d) return 0;
+    if (it.t === m.idx) return -9;
+    if (it.by === m.idx) return 9;
+    let s = d.ai(m, it);
+    if (it.by != null && G.nations[it.by]) s += 0.012 * relation(m.idx, it.by) + (cnBloc(m, G.nations[it.by]) ? 0.3 : 0);
+    if (G.scenario && G.scenario.id === 'coldwar' && it.by != null) { const cA = scnCamp(m.idx), cB = scnCamp(it.by); if (cA && cB) s += cA === cB ? 0.6 : -0.6; }
+    if (it.lobby) s += it.lobby * clamp((relation(m.idx, G.player.idx) + 30) / 90, 0, 1.3);
+    if (it.aid && m.dev < 0.45) s += it.aid;
+    return Number.isFinite(s) ? s : 0;
+  },
+  aiVote(m, it) { const s = this.score(m, it) + (G.rng() - 0.5) * 0.7; return s > 0.25 ? 1 : s < -0.25 ? -1 : 0; },
+  // ---- the vote itself
+  tally(it, myVote) {
+    const me = G.player.idx, sim = !!G.sim, res = { yes: 0, no: 0, abst: 0, veto: null, scYes: 0, yesList: [], votes: {} };
+    for (const m of cnVoters()) {
+      const v = m.idx === me && !sim ? (myVote || 0) : this.aiVote(m, it);
+      res.votes[m.idx] = v;
+      if (v > 0) { res.yes++; res.yesList.push(m.idx); } else if (v < 0) res.no++; else res.abst++;
+    }
+    if (RESOLUTIONS[it.kind].sc) {
+      for (const m of this.scMembers()) { const v = res.votes[m.idx] || 0; if (v > 0) res.scYes++; if (v < 0 && this.isPerm(m.idx) && (res.veto == null || m.idx === it.t)) res.veto = m.idx; }
+    }
+    const total = res.yes + res.no + res.abst;
+    res.pass = !res.veto && res.yes > res.no && res.yes >= total * 0.3 && (!RESOLUTIONS[it.kind].sc || res.scYes >= 9);
+    return res;
+  },
+  // ---- proposing
+  canPropose() { const C = G.council; return !C.agenda.some(it => it.by === G.player.idx) && C.agenda.length < 5; },
+  propose(kind, t, w) {
+    const C = G.council, n = cnMe(), d = RESOLUTIONS[kind]; if (!d) return 'Unknown resolution.';
+    if (G.sim) return 'Take control of a country first.';
+    if (!this.canPropose()) return 'You already have a resolution on this session\'s agenda.';
+    if (n.pc < 10) return 'Not enough political capital (10).';
+    if (d.target === 'country' && (t == null || !G.nations[t] || t === n.idx)) return 'Pick a country.';
+    if (d.target === 'war' && !G.wars.some(x => x.id === w)) return 'Pick a war.';
+    if (!d.target && this.lawActive(kind)) return 'That world law is already in force.';
+    if (C.agenda.some(it => it.kind === kind && it.t === t && it.w === w)) return 'That is already on the agenda.';
+    n.pc -= 10;
+    C.agenda.push({ kind, t: d.target === 'country' ? t : null, w: d.target === 'war' ? w : null, by: n.idx, lobby: 0, aid: 0, nLobby: 0 });
+    C.stats.proposed = (C.stats.proposed || 0) + 1;
+    newsWorld(cnName(n.idx) + ' tables a resolution: ' + this.itemName(C.agenda[C.agenda.length - 1]));
+    return 'Your resolution is on the agenda for ' + fmtDate(this.nextSessionDay()) + '.';
+  },
+  // ---- lobbying: political capital moves friends, aid money moves poor countries
+  lobby(i, dir, how) {
+    const C = G.council, it = C.agenda[i], n = cnMe(); if (!it) return 'Nothing to lobby for.';
+    if (G.sim) return 'Take control of a country first.';
+    if ((it.nLobby || 0) >= 3) return 'You have already lobbied hard on this one.';
+    const inf = this.influence(n);
+    if (how === 'aid') {
+      const cost = 0.0015 * gdpL(n); n.debt += cost;
+      it.aid = clamp((it.aid || 0) + dir * 1.1 * clamp(Math.sqrt(gdpUsd(n) / 1e12), 0.15, 1.5), -3, 3);
+    } else {
+      if (n.pc < 5) return 'Not enough political capital (5).'; n.pc -= 5;
+      it.lobby = clamp((it.lobby || 0) + dir * (0.45 + inf / 100), -3, 3);
+    }
+    it.nLobby = (it.nLobby || 0) + 1; it.myDir = dir;
+    if (it.vote == null) it.vote = dir;
+    const r = this.forecast(it);
+    return 'Our diplomats are working the corridors. Latest count: ' + r.yes + ' yes, ' + r.no + ' no' + (r.veto != null ? ' (veto threat from ' + cnName(r.veto) + ')' : '') + '.';
+  },
+  forecast(it) { const save = G.rng; G.rng = makeRng(G.day * 7 + (it.t || 0) + (it.w || 0) * 3 + it.kind.length); const r = this.tally(it, it.vote || 0); G.rng = save; return r; },
+  // ---- AI proposals, published a month before the session
+  aiAgenda() {
+    const C = G.council, me = G.player.idx, big = G.nations.filter(m => m && m.owner == null && !isHuman(m.idx)).sort((a, b) => gdpUsd(b) - gdpUsd(a)).slice(0, 40);
+    const add = it => { if (C.agenda.length < 4 && !C.agenda.some(x => x.kind === it.kind && x.t === it.t && x.w === it.w)) C.agenda.push(Object.assign({ lobby: 0, aid: 0, nLobby: 0 }, it)); };
+    const foeOf = t => big.filter(m => m.idx !== t).sort((a, b) => relation(a.idx, t) - relation(b.idx, t))[0];
+    // the player keeps defying a law: someone proposes sanctions
+    if (!G.sim && Object.values(C.defy || {}).some(v => v >= 5) && G.rng() < 0.6) { const f = foeOf(me); if (f) add({ kind: 'sanction', t: me, by: f.idx }); }
+    // wars of aggression
+    for (const w of G.wars.slice().sort(() => G.rng() - 0.5)) {
+      if (G.day - (w.start || 0) < 60 || w.hh) continue;
+      const att = w.a[0], f = foeOf(att); if (!f || f.idx === w.d[0] && G.rng() < 0.5) continue;
+      const r = G.rng();
+      if (r < 0.35) add({ kind: 'peacekeep', w: w.id, by: f.idx }); else if (r < 0.6) add({ kind: 'sanction', t: att, by: f.idx }); else if (r < 0.75) add({ kind: 'condemn', t: att, by: f.idx });
+      if (C.agenda.length >= 2) break;
+    }
+    // conquerors get condemned
+    for (const m of big) if (G.rng() < 0.3 && ruledBy(m.idx).length >= 2) { const f = foeOf(m.idx); if (f) add({ kind: 'condemn', t: m.idx, by: f.idx }); break; }
+    if (!G.sim && ruledBy(me).length >= 2 && G.rng() < 0.4) { const f = foeOf(me); if (f) add({ kind: 'condemn', t: me, by: f.idx }); }
+    // one world law that is not in force yet, tabled by the big country that wants it most
+    const free = WORLD_LAWS.filter(k => !this.lawActive(k) && !(C.cool[k] > G.day));
+    if (free.length && C.agenda.length < 4) {
+      const kind = free[Math.floor(G.rng() * free.length)];
+      const champ = big.slice().sort((a, b) => RESOLUTIONS[kind].ai(b, {}) - RESOLUTIONS[kind].ai(a, {}))[0];
+      if (champ) add({ kind, by: champ.idx });
+    }
+  },
+  // ---- the session: resolve every item on the agenda
+  session() {
+    const C = G.council; if (!C.agenda.length) { C.sessions++; return []; }
+    const me = G.player.idx, out = [];
+    for (const it of C.agenda) {
+      if (RESOLUTIONS[it.kind].target === 'war' && !cnWar(it)) continue;
+      const myVote = G.sim ? 0 : it.vote == null ? (C.auto ? Math.sign(Math.round(this.score(cnMe(), Object.assign({}, it, { lobby: 0, aid: 0 })) * 2) / 2) : 0) : it.vote;
+      const r = this.tally(it, myVote);
+      out.push(this.apply(it, r, myVote));
+    }
+    C.history = out.concat(C.history).slice(0, 40);
+    C.agenda = []; C.sessions++;
+    if (!G.sim) {
+      const mine = out.filter(o => o.by === me);
+      inbox('info', 'World Council: ' + out.filter(o => o.pass).length + ' of ' + out.length + ' resolutions passed', out.map(o => o.title + ': ' + o.result).join('. ') + '.');
+      for (const o of mine) toast((o.pass ? '🕊 Your resolution passed: ' : '🕊 Your resolution failed: ') + o.title, 3500);
+    }
+    return out;
+  },
+  apply(it, r, myVote) {
+    const C = G.council, d = RESOLUTIONS[it.kind], me = G.player.idx, title = this.itemName(it), n = cnMe();
+    const result = r.veto != null ? 'vetoed by ' + cnName(r.veto) : (r.pass ? 'passed ' : 'failed ') + r.yes + '-' + r.no + (r.abst ? ' (' + r.abst + ' abstained)' : '');
+    newsWorld('World Council: ' + title + ' ' + result);
+    const rec = { day: G.day, kind: it.kind, title, by: it.by, t: it.t, pass: r.pass, veto: r.veto, yes: r.yes, no: r.no, abst: r.abst, mine: G.sim ? 0 : myVote, result };
+    // the player's vote has consequences
+    if (!G.sim) {
+      if (it.t != null && it.t !== me) addRel(me, it.t, myVote > 0 ? -8 : myVote < 0 ? 4 : 0);
+      if (it.by != null && it.by !== me) addRel(me, it.by, myVote > 0 ? 3 : myVote < 0 ? -3 : 0);
+      if (myVote) this.stand((myVote > 0) === r.pass ? 1 : -0.5);
+      if (it.by === me) {
+        if (r.pass) { this.stand(4); C.stats.passed = (C.stats.passed || 0) + 1; n.prestige = (n.prestige || 0) + 1; react(n, { title: 'Our resolution passes at the World Council', stance: { media: 3, elite: 2 }, size: 0.8, abroad: 3, mood: 0.4, topic: 'WorldCouncil' }); }
+        else { this.stand(r.veto != null ? -1 : -2); if (r.veto != null) C.stats.vetoed = (C.stats.vetoed || 0) + 1; }
+      }
+      if (it.t === me && r.pass) react(n, { title: 'World Council votes against us: ' + title, stance: { media: -3, business: -3, military: 2 }, size: 1.4, abroad: -6, mood: -0.4, topic: 'WorldCouncil' });
+    }
+    if (!r.pass) { if (!d.target) C.cool[it.kind] = G.day + 365; return rec; }
+    // passed: what it does
+    const yes = r.yesList;
+    if (it.kind === 'sanction') {
+      for (const i of yes) if (i !== it.t && !isHuman(i) && !G.sanctions.some(s => s.by === i && s.on === it.t)) G.sanctions.push({ by: i, on: it.t, level: 1, since: G.day, un: true });
+      if (!G.sim && myVote > 0 && it.t !== me && !G.sanctions.some(s => s.by === me && s.on === it.t)) G.sanctions.push({ by: me, on: it.t, level: 1, since: G.day, un: true });
+      for (const i of yes) addRel(i, it.t, -8);
+      G.nations[it.t].evStab -= 4;
+      if (it.t === me && !G.sim) inbox('bad', 'The World Council sanctions us', r.yes + ' countries voted to cut business with us for 3 years. Exports and investment will suffer.');
+    } else if (it.kind === 'condemn') {
+      for (const i of yes) addRel(i, it.t, -6);
+      G.nations[it.t].evStab -= 3;
+    } else if (it.kind === 'peacekeep') {
+      const w = cnWar(it);
+      if (w) {
+        const humanWar = w.a.concat(w.d).some(i => isHuman(i));
+        if (!humanWar && !w.hh && G.rng() < 0.75) endWar(w, 'white', 'talks');
+        else { for (const i of w.a) { w.weary[i] = (w.weary[i] || 0) + 25; if (w.will && w.will[i] != null) w.will[i] = clamp(w.will[i] - 15, 0, 100); } for (const i of yes) addRel(i, w.a[0], -5); }
+        if (w.d.includes(me) && !G.sim) inbox('good', 'Blue helmets are coming', 'The World Council backs us: peacekeepers and a ceasefire deadline for ' + cnName(w.a[0]) + '.');
+      }
+    } else if (it.kind === 'debtrelief') {
+      for (const m of G.nations) if (m && m.owner == null && m.dev < 0.4 && debtPct(m) > 70) { m.debt *= 0.7; m.evStab += 2; }
+      for (const m of G.nations) if (m && m.dev > 0.75) m.evGrowth = (m.evGrowth || 0) - 0.05;
+      if (n.dev < 0.4 && !G.sim) inbox('good', 'Debt relief', 'Thanks to the World Council, 30% of our debt has been cancelled.');
+    }
+    if (d.years) {
+      G.council.laws = G.council.laws.filter(l => !(l.kind === it.kind && l.t === it.t && l.w === it.w));
+      G.council.laws.push({ kind: it.kind, t: it.t, w: it.w, by: it.by, since: G.day, until: G.day + Math.round(d.years * 365), yes: yes.slice(0, 200) });
+      if (d.comply) for (const i of yes) if (!isHuman(i)) d.comply(G.nations[i]);
+      if (!G.sim && d.ok && !d.ok(n, it) && it.t !== me) inbox('bad', 'New world law: ' + title, 'We do not meet it yet: ' + d.need(it) + '. Every month we defy the Council costs relations and influence.');
+    }
+    return rec;
+  },
+  // ---- every month: laws expire, the player's compliance, AI followers, the crisis
+  month() {
+    const C = G.council, me = G.player.idx, n = cnMe();
+    C.standing = clamp((C.standing || 0) * 0.995, -25, 60);
+    for (const l of C.laws.slice()) {
+      if (G.day >= l.until || (l.kind === 'peacekeep' && !G.wars.some(w => w.id === l.w))) {
+        C.laws.splice(C.laws.indexOf(l), 1);
+        if (l.kind === 'sanction') G.sanctions = G.sanctions.filter(s => !(s.un && s.on === l.t && !isHuman(s.by)));
+        if (C.defy) delete C.defy[l.kind + (l.t != null ? ':' + l.t : '') + (l.w != null ? ':w' + l.w : '')];
+        if (l.kind === 'peacekeep' && G.wars.some(w => w.id === l.w && w.a.includes(me)) && !G.sim) { const f = G.nations.filter(m => m && !isHuman(m.idx)).sort((a, b) => relation(a.idx, me) - relation(b.idx, me))[0]; if (f) C.agenda.push({ kind: 'sanction', t: me, by: f.idx, lobby: 0, aid: 0, nLobby: 0 }); }
+        if (!G.sim && l.kind !== 'peacekeep') inbox('info', 'World law expired: ' + this.itemName(l), 'It can be proposed again.');
+      }
+    }
+    // the player's compliance
+    if (!G.sim) {
+      C.defy = C.defy || {};
+      for (const l of C.laws) {
+        const d = RESOLUTIONS[l.kind]; if (!d.ok) continue;
+        const key = l.kind + (l.t != null ? ':' + l.t : '') + (l.w != null ? ':w' + l.w : '');
+        if (d.ok(n, l)) { if (C.defy[key]) delete C.defy[key]; C.complyMonths = (C.complyMonths || 0) + 1; continue; }
+        C.defy[key] = (C.defy[key] || 0) + 1; C.defyMonths = (C.defyMonths || 0) + 1;
+        this.stand(-0.8);
+        for (let k = 0; k < 8 && l.yes.length; k++) addRel(me, l.yes[Math.floor(G.rng() * l.yes.length)], -1.5);
+        if (C.defy[key] === 1) inbox('bad', 'We are defying the World Council', d.need(l) + '. Each month costs relations with the ' + l.yes.length + ' countries that voted for it, and Council influence.');
+      }
+    }
+    // world laws at work
+    const has = k => this.lawActive(k);
+    if (has('climate')) G.world.oil = clamp(G.world.oil * 0.996, 35, 260);
+    for (const m of G.nations) {
+      if (!m) continue;
+      setMod(m, 'growth', 'World laws', (has('aidfund') && m.dev < 0.35 ? 0.35 : 0) + (has('freetrade') && m.open > 0.5 ? 0.08 : 0));
+      setMod(m, 'stability', 'World laws', (has('aisafety') ? 0.8 : 0) + (has('armscap') ? 0.5 : 0) + (has('spacetreaty') ? 0.3 : 0));
+    }
+    this.crisisMonth();
+    // a new crisis now and then (never in the first year, at least 3 years apart)
+    if (!C.crisis && G.day > 365 && G.day - (C.lastCrisis || -9999) > 1095 && G.rng() < 0.014) this.startCrisis();
+    // agenda a month before the session, session on the day
+    const mo = dateOf(G.day).getUTCMonth();
+    if (COUNCIL_SESSION_MONTHS.includes((mo + 1) % 12)) {
+      this.aiAgenda();
+      if (!G.sim && C.agenda.length) inbox('info', 'World Council meets on ' + fmtDate(this.nextSessionDay()), 'On the agenda: ' + C.agenda.map(it => this.itemName(it)).join('; ') + '. Open Council to lobby, propose your own resolution and set your votes.');
+    }
+    if (COUNCIL_SESSION_MONTHS.includes(mo)) {
+      if (!G.sim && !C.auto && C.agenda.some(it => it.vote == null)) { C.pending = true; setTimeout(() => Council.showSession(), 80); }
+      else this.session();
+    }
+  },
+  // the player chooses: a modal listing the agenda with Yes / No / Abstain
+  showSession() {
+    const C = G && G.council; if (!C || !C.pending || G.sim) return;
+    if (!$('#modal').classList.contains('hidden')) { setTimeout(() => Council.showSession(), 600); return; }
+    Clock.pause();
+    const votes = C.agenda.map(it => it.vote == null ? 0 : it.vote);
+    const paint = () => {
+      UI.modal(`<div class="sub" style="text-transform:uppercase;letter-spacing:.1em">🕊 World Council · session ${C.sessions + 1}</div><h2>Cast your votes</h2>
+        <p class="sub">${C.agenda.length} resolution${C.agenda.length === 1 ? '' : 's'} on the agenda. Your influence: <b>${this.influence().toFixed(0)}</b>/100. Voting with the winning side raises your standing; voting against a country angers it.</p>
+        ${C.agenda.map((it, i) => { const f = this.forecast(Object.assign({}, it, { vote: votes[i] })), d = RESOLUTIONS[it.kind];
+          return `<div class="note-box" style="text-align:left"><b>${d.icon} ${esc(this.itemName(it))}</b> <span class="sub">proposed by ${it.by === G.player.idx ? 'us' : cnFlag(it.by) + ' ' + esc(cnName(it.by))}</span>
+          <div class="sub">${esc(d.desc)}</div><div class="sub">Expected: ${f.yes} yes, ${f.no} no${f.veto != null ? ', <b class="down">veto by ' + esc(cnName(f.veto)) + '</b>' : ''}</div>
+          <div class="btnrow">${[[1, 'Yes'], [-1, 'No'], [0, 'Abstain']].map(([v, l]) => `<button class="btn small${votes[i] === v ? ' gold' : ''}" data-cv="${i}:${v}">${l}</button>`).join('')}</div></div>`; }).join('')}
+        <div class="actions"><button class="btn small" id="cv-auto">Let my ambassador decide from now on</button><button class="btn small gold" id="cv-go">Cast votes</button></div>`);
+      $$('[data-cv]').forEach(b => b.onclick = () => { const [i, v] = b.dataset.cv.split(':').map(Number); votes[i] = v; paint(); });
+      $('#cv-go').onclick = () => { C.agenda.forEach((it, i) => { it.vote = votes[i]; }); C.pending = false; UI.closeModal(); this.session(); Bus.emit('changed'); };
+      $('#cv-auto').onclick = () => { C.auto = true; C.pending = false; UI.closeModal(); this.session(); toast('Your ambassador will vote for you (change it in Council).'); Bus.emit('changed'); };
+    };
+    paint();
+  },
+  // ---- global crises
+  startCrisis(id) {
+    const C = G.council, keys = Object.keys(WORLD_CRISES), forced = !!(id && WORLD_CRISES[id]);
+    if (!forced) id = keys[Math.floor(G.rng() * keys.length)];
+    if (id === 'asteroid' && !forced && G.rng() < 0.5) id = 'pandemic'; // the asteroid is the rarest
+    const K = WORLD_CRISES[id];
+    C.crisis = { id, start: G.day, months: K.months, left: K.months, need: K.need / 100 * cnWorldGdp(), fund: 0, pledged: {}, asked: false, rally: 0 };
+    C.lastCrisis = G.day;
+    // AI countries pledge: richer, more honourable and less broke countries give more
+    for (const m of G.nations) {
+      if (!m || m.owner != null || isHuman(m.idx)) continue;
+      const p = m.persona || makePersona(m), rate = clamp(K.need * (0.35 + m.dev * 0.8) * (0.5 + (p.honor || 50) / 100) * (0.5 + G.rng()) * (debtPct(m) > 120 ? 0.5 : 1), 0, 1.2);
+      const usdAmt = rate / 100 * gdpUsd(m); if (usdAmt <= 0) continue;
+      C.crisis.pledged[m.idx] = +rate.toFixed(3); C.crisis.fund += usdAmt; m.debt += rate / 100 * gdpL(m);
+    }
+    newsWorld(K.icon + ' ' + K.name + ': the World Council opens an emergency fund');
+    if (!G.sim) { inbox('crisis', K.icon + ' Global crisis: ' + K.name, K.text + ' Open Council to pledge money to the world fund.'); setTimeout(() => Council.showPledge(), 120); }
+    return C.crisis;
+  },
+  progress() { const c = G.council.crisis; return c ? clamp(c.fund / Math.max(1, c.need), 0, 1.5) : 0; },
+  pledge(pct) {
+    const c = G.council.crisis, n = cnMe(); if (!c || G.sim) return 'There is no crisis.';
+    const had = c.pledged[n.idx] || 0; if (pct <= had) return 'You already pledged that much.';
+    const add = pct - had; n.debt += add / 100 * gdpL(n); c.fund += add / 100 * gdpUsd(n); c.pledged[n.idx] = pct;
+    react(n, { title: 'We pledge ' + pct + '% of GDP to the world fund', stance: { media: 2, elite: 1, workers: pct >= 0.6 ? -2 : 0 }, size: 0.6, abroad: pct >= 0.3 ? 3 : 1, mood: 0.2, topic: 'WorldFund' });
+    return 'Pledged. The fund is at ' + Math.round(this.progress() * 100) + '%.';
+  },
+  rally() {
+    const c = G.council.crisis, n = cnMe(); if (!c || G.sim) return 'There is no crisis.';
+    if ((c.rally || 0) >= 2) return 'You have already rallied the world twice.';
+    if (n.pc < 8) return 'Not enough political capital (8).'; n.pc -= 8;
+    const extra = c.need * 0.12 * (0.4 + this.influence(n) / 100); c.fund += extra; c.rally = (c.rally || 0) + 1; c.rallied = (c.rallied || 0) + extra;
+    return 'Your speech moved the room: other countries added $' + fmtBig(extra) + '. The fund is at ' + Math.round(this.progress() * 100) + '%.';
+  },
+  showPledge() {
+    const C = G && G.council, c = C && C.crisis; if (!c || c.asked || G.sim) return;
+    if (!$('#modal').classList.contains('hidden')) { setTimeout(() => Council.showPledge(), 700); return; }
+    const K = WORLD_CRISES[c.id], n = cnMe(); c.asked = true; Clock.pause();
+    UI.modal(`<div class="sub" style="text-transform:uppercase;letter-spacing:.1em">${K.icon} Emergency session of the World Council</div><h2>${esc(K.name)}</h2><p style="font-size:15px">${esc(K.text)}</p>
+      <p class="sub">The fund is at <b>${Math.round(this.progress() * 100)}%</b> of what is needed. Until it is full, every country takes damage each month (less as it fills). Big pledges win prestige and influence; rich countries that give nothing are remembered.</p>
+      <div class="menu" style="width:auto">${PLEDGES.map(([p, l]) => `<button class="btn" data-pl="${p}">${l}<div class="sub" style="font-size:12px">${p ? 'Costs $' + fmtBig(p / 100 * gdpUsd(n)) + ' (added to our debt)' : 'Keep our money at home'}</div></button>`).join('')}</div>`);
+    $$('[data-pl]').forEach(b => b.onclick = () => { const p = +b.dataset.pl; UI.closeModal(); toast(p ? this.pledge(p) : 'We pledged nothing.'); Bus.emit('changed'); });
+  },
+  crisisMonth() {
+    const C = G.council, c = C.crisis; if (!c) return;
+    const K = WORLD_CRISES[c.id], prog = this.progress(), sev = clamp(1 - prog, 0, 1);
+    for (const m of G.nations) {
+      if (!m) continue;
+      const h = K.hit(m, sev);
+      setMod(m, 'growth', 'Global crisis', clamp(h.growth || 0, -4, 0)); setMod(m, 'stability', 'Global crisis', clamp(h.stability || 0, -8, 0));
+      setMod(m, 'approval', 'Global crisis', clamp(h.approval || 0, -6, 0)); setMod(m, 'infl', 'Global crisis', clamp(h.infl || 0, 0, 5)); setMod(m, 'unemp', 'Global crisis', clamp(h.unemp || 0, 0, 3));
+    }
+    c.fund += c.need * 0.015 * (0.5 + G.rng()); // AI countries top up as the crisis drags on
+    c.left--;
+    if (prog >= 1 && G.day - c.start >= 55) return this.endCrisis(true);
+    if (c.left <= 0) return this.endCrisis(false);
+  },
+  endCrisis(won) {
+    const C = G.council, c = C.crisis, K = WORLD_CRISES[c.id], me = G.player.idx, n = cnMe();
+    for (const m of G.nations) if (m) ['growth', 'stability', 'approval', 'infl', 'unemp'].forEach(s => setMod(m, s, 'Global crisis', 0));
+    const mine = G.sim ? 0 : c.pledged[me] || 0;
+    if (won) {
+      for (const [i, p] of Object.entries(c.pledged)) { const m = G.nations[i]; if (m && p >= 0.3) m.prestige = (m.prestige || 0) + 2; }
+      if (!G.sim) {
+        if (mine >= 0.1) C.stats.crises = (C.stats.crises || 0) + 1;
+        if (mine >= 0.3) { C.stats.bigCrises = (C.stats.bigCrises || 0) + 1; n.prestige = (n.prestige || 0) + 2 + mine * 3; this.stand(4 + mine * 4); n.evAppr += 3; }
+      }
+    } else {
+      for (const m of G.nations) if (m) { m.evGrowth = (m.evGrowth || 0) - 0.8; m.evStab -= 3; }
+      if (c.id === 'asteroid') this.impact();
+    }
+    // rich countries that gave nothing
+    if (!G.sim && n.dev > 0.6 && mine < 0.05 && gdpUsd(n) / cnWorldGdp() > 0.004) { this.stand(-5); for (const [i, p] of Object.entries(c.pledged)) if (p >= 0.3 && G.rng() < 0.4) addRel(me, +i, -2); }
+    newsWorld(K.icon + ' ' + (won ? K.win : K.lose));
+    if (!G.sim) {
+      inbox(won ? 'good' : 'bad', K.icon + ' ' + (won ? 'Crisis beaten: ' : 'Crisis over: ') + K.name, (won ? K.win : K.lose) + (mine ? ' We pledged ' + mine + '% of GDP.' : ' We pledged nothing.'));
+      react(n, { title: won ? K.win : K.lose, stance: won ? { media: 2 } : { media: -2 }, size: 1, mood: won ? 0.6 : -0.6, topic: 'WorldCrisis' });
+    }
+    C.crisisLog = [{ id: c.id, day: G.day, won, mine }].concat(C.crisisLog || []).slice(0, 12);
+    C.crisis = null;
+  },
+  impact() {
+    // the asteroid lands in one region: never the end of the world, but the worst disaster in history there
+    const subs = [...new Set(World.countries.filter(Boolean).map(c => c.sub))].filter(Boolean), sub = subs[Math.floor(G.rng() * subs.length)];
+    const hit = G.nations.filter(m => m && World.countries[m.idx].sub === sub);
+    for (const m of hit) { m.evGrowth = (m.evGrowth || 0) - 5; m.evStab -= 14; m.evAppr -= 6; m.pop *= 0.995; m.real *= 0.97; }
+    G.world.cycleShock = Math.min(G.world.cycleShock, -2.5);
+    newsWorld('☄ The asteroid struck ' + sub + '. The world mourns.');
+    if (!G.sim && hit.some(m => m.idx === G.player.idx)) inbox('crisis', '☄ The asteroid hit our region', 'Cities are flattened and the sky is dark with dust. We will need years to recover.');
+    G.council.impact = sub;
+  }
+};
+function councilMonth() { if (G && G.council) Council.month(); }
+SYSTEM_INITS.push(g => {
+  g.council = g.council || { agenda: [], laws: [], history: [], standing: 0, sessions: 0, cool: {}, stats: {}, defy: {}, crisis: null, auto: false };
+  const C = g.council; C.agenda = C.agenda || []; C.laws = C.laws || []; C.history = C.history || []; C.cool = C.cool || {}; C.stats = C.stats || {}; C.defy = C.defy || {};
+  if (!Number.isFinite(C.standing)) C.standing = 0;
+});
+MONTHLY.push(councilMonth);
+DAILY.push(() => { const C = G.council; if (!C || G.sim) return; if (C.pending && $('#modal').classList.contains('hidden')) Council.showSession(); if (C.crisis && !C.crisis.asked && $('#modal').classList.contains('hidden')) Council.showPledge(); });
+
+// ---- 69c-sim-scenarios.js ----
+// ==========================================
+// SCENARIOS (1.4): different worlds to start in, for New Game, Simulator and online rooms (the host picks one and
+// every player's game builds the same world from the same seed). A scenario only changes the starting world:
+// relations, sanctions, money and moods, with a few pressures that fade over the first years. Each has its own goal.
+// ==========================================
+const SCENARIOS = [
+  { id: 'standard', icon: '🌍', name: 'The world of 2026', desc: 'The real world as it is in mid 2026.' },
+  { id: 'coldwar', icon: '🧊', name: 'Cold War II', desc: 'The world has split into two camps: the West around the USA and the East around China and Russia. Sanctions, arms races and spies everywhere. Pick a side, or play them off against each other.' },
+  { id: 'collapse', icon: '🏚', name: 'After the Crash', desc: 'A global depression has wiped a fifth off every economy. Jobs are gone, debts are huge, governments are fragile. Rebuild your country from the ruins.' },
+  { id: 'scramble', icon: '🛢', name: 'Resource Scramble', desc: 'Oil is at $185 and rising. Energy exporters are rich, everyone else is squeezed, and hungry powers eye their neighbours\' fields.' },
+  { id: 'peace', icon: '🕊', name: 'Age of Peace', desc: 'The war in Ukraine has ended, sanctions are lifted and markets are booming. A gentler start: build a golden age.' }
+];
+const scnOf = id => SCENARIOS.find(s => s.id === id) || SCENARIOS[0];
+const SCN_WEST = ['USA', 'CAN', 'GBR', 'FRA', 'DEU', 'ITA', 'JPN', 'KOR', 'AUS', 'NZL', 'TWN', 'ISR'];
+const SCN_EAST = ['CHN', 'RUS', 'IRN', 'PRK', 'BLR', 'VEN', 'CUB', 'NIC', 'SYR', 'MMR'];
+function scnCamp(idx) {
+  const s = G && G.scenario; if (!s || !s.camps) return null;
+  return s.camps.w.includes(idx) ? 'w' : s.camps.e.includes(idx) ? 'e' : null;
+}
+function applyScenario(g, id) {
+  const S = scnOf(id); g.scenario = { id: S.id, start: g.day };
+  if (S.id === 'standard') return;
+  const G0 = G; G = g;
+  try {
+    const nat = c => g.nations[World.byId[c] ? World.byId[c].idx : -1];
+    if (S.id === 'coldwar') {
+      const w = [], e = [];
+      for (const m of g.nations) { if (!m) continue; const c = World.countries[m.idx];
+        if (SCN_WEST.includes(c.id) || m.blocs.includes('NATO') || m.blocs.includes('EU') || m.blocs.includes('AUKUS')) w.push(m.idx);
+        else if (SCN_EAST.includes(c.id) || m.blocs.includes('CSTO')) e.push(m.idx); }
+      g.scenario.camps = { w, e };
+      for (const a of w) for (const b of e) addRel(a, b, -35);
+      for (const side of [w, e]) for (let i = 0; i < side.length; i++) for (let j = i + 1; j < side.length; j++) addRel(side[i], side[j], 8);
+      const chn = nat('CHN'), usa = nat('USA'), rus = nat('RUS');
+      for (const i of w) if (chn && !g.sanctions.some(s => s.by === i && s.on === chn.idx) && G.nations[i].dev > 0.6) g.sanctions.push({ by: i, on: chn.idx, level: 1, since: 0 });
+      for (const i of e) if (usa && i !== usa.idx && !g.sanctions.some(s => s.by === i && s.on === usa.idx)) g.sanctions.push({ by: i, on: usa.idx, level: 1, since: 0 });
+      for (const i of w.concat(e)) { const m = g.nations[i]; m.spend.defence = +(m.spend.defence + 0.6).toFixed(2); m.army && (m.army.E *= 1.1); m.evStab -= 3; }
+      if (chn && rus && !hasTreaty(chn.idx, rus.idx, 'defence')) g.treaties.push({ type: 'defence', a: chn.idx, b: rus.idx, since: 0 });
+      g.world.oil = 125; g.world.cycleShock = -1;
+      g.feed.unshift({ type: 'news', day: 0, outlet: 'World Wire', text: 'A new Cold War: the world splits into two camps', mood: -1 });
+    } else if (S.id === 'collapse') {
+      for (const m of g.nations) {
+        if (!m) continue;
+        m.preReal = m.real;
+        m.real *= 0.82; m.debt += 0.25 * gdpL(m);
+        m.unemp = clamp(m.unemp + 5 + 4 * m.dev, 0, 45); m.feel.un = m.unemp;
+        m.infl = clamp(m.infl - 1.5, -3, 300); m.growth -= 3;
+        m.approval = clamp(m.approval - 10, 5, 95); m.stability = clamp(m.stability - 12, 5, 95);
+        m.evGrowth = (m.evGrowth || 0) - 2.5; m.evStab -= 6; m.evAppr -= 5;
+        m.ratingOff = (m.ratingOff || 0) - 1.5;
+      }
+      g.world.oil = 55; g.world.cycleShock = -3.5; g.world.cycle = -1.5;
+      g.feed.unshift({ type: 'news', day: 0, outlet: 'World Wire', text: 'The Great Crash: a fifth of the world economy is gone', mood: -1 });
+    } else if (S.id === 'scramble') {
+      for (const m of g.nations) {
+        if (!m) continue;
+        const exporter = m.res.includes('oil') || m.res.includes('gas');
+        if (exporter) { m.rent = +(m.rent * 1.4 + 1).toFixed(2); m.evGrowth = (m.evGrowth || 0) + 0.8; m.approval = clamp(m.approval + 4, 5, 95); }
+        else { m.evGrowth = (m.evGrowth || 0) - 1.2; m.infl = clamp(m.infl + 3, -3, 300); m.evInfl = (m.evInfl || 0) + 2; m.approval = clamp(m.approval - 4, 5, 95); }
+        if (m.persona && m.persona.aggr > 50) m.persona.aggr = Math.min(100, m.persona.aggr + 10);
+      }
+      g.world.oil = 185;
+      g.feed.unshift({ type: 'news', day: 0, outlet: 'World Wire', text: 'Oil hits $185: the great resource scramble begins', mood: -1 });
+    } else if (S.id === 'peace') {
+      for (const w of g.wars.slice()) { g.wars.splice(g.wars.indexOf(w), 1); for (const i of w.a.concat(w.d)) g.nations[i].atWar = false; }
+      g.sanctions = g.sanctions.filter(s => !['RUS'].includes(World.countries[s.on].id));
+      const rus = nat('RUS'), ukr = nat('UKR');
+      for (const m of g.nations) { if (!m) continue; m.evGrowth = (m.evGrowth || 0) + 0.8; m.approval = clamp(m.approval + 5, 5, 95); m.stability = clamp(m.stability + 5, 5, 95); }
+      if (rus) for (const m of g.nations) if (m && m.idx !== rus.idx) addRel(m.idx, rus.idx, 12);
+      if (ukr) { ukr.stability = clamp(ukr.stability + 15, 5, 95); ukr.evGrowth += 2; }
+      g.world.cycleShock = 1.5; g.world.oil = 85;
+      g.feed = g.feed.filter(f => !/Ukraine grinds on/.test(f.text));
+      g.feed.unshift({ type: 'news', day: 0, outlet: 'World Wire', text: 'Peace in Ukraine: a treaty is signed and markets soar', mood: 1 });
+    }
+  } finally { G = G0 || g; }
+}
+// pressures that fade over the first years
+function scenarioMonth() {
+  const s = G.scenario; if (!s || s.id === 'standard') return;
+  const yrs = (G.day - (s.start || 0)) / 365;
+  if (s.id === 'scramble' && yrs < 4) G.world.oil = Math.max(G.world.oil, 185 - yrs * 25);
+  if (s.id === 'coldwar' && yrs < 10 && G.rng() < 0.15) { // the camps keep each other on edge
+    const w = s.camps.w, e = s.camps.e; if (w.length && e.length) { const a = w[Math.floor(G.rng() * w.length)], b = e[Math.floor(G.rng() * e.length)]; addRel(a, b, -4); if (G.rng() < 0.3) newsWorld(cnName(a) + ' and ' + cnName(b) + ' expel each other\'s diplomats'); }
+  }
+  if (s.id === 'collapse' && yrs < 3) G.world.cycleShock = Math.min(G.world.cycleShock, -1.5 + yrs * 0.5);
+}
+MONTHLY.push(scenarioMonth);
+SYSTEM_INITS.push(g => { g.scenario = g.scenario || { id: 'standard', start: 0 }; });
+
+// ---- 1.4 victories: the World Council, global crises and one goal per scenario (shown only in that scenario)
+const vicMe = () => G.nations[G.player.idx];
+const scnIs = id => !!(G.scenario && G.scenario.id === id);
+VICTORIES.push(
+  { id: 'council', name: 'Voice of the World', desc: 'Council influence of 80 and 5 of your own resolutions passed', test: n => Council.influence(n) >= 80 && (G.council.stats.passed || 0) >= 5, months: 0 },
+  { id: 'saviour', name: 'Saviour of Humanity', desc: 'Help beat 2 global crises with pledges of 0.3% of GDP or more', test: () => (G.council.stats.bigCrises || 0) >= 2, months: 0 },
+  { id: 'thaw', only: 'coldwar', name: 'The Thaw', desc: 'Cold War II: relations of 30+ with both the USA and China (or with the other one, if you lead one of them) for a year', months: 12,
+    test: n => { const u = World.byId.USA.idx, c = World.byId.CHN.idx; return scnIs('coldwar') && (n.idx === u ? relation(u, c) >= 30 : n.idx === c ? relation(c, u) >= 30 : relation(n.idx, u) >= 30 && relation(n.idx, c) >= 30); } },
+  { id: 'recovery', only: 'collapse', name: 'The Great Recovery', desc: 'After the Crash: your economy back above its pre-crash size, with unemployment under 6%', months: 6,
+    test: n => scnIs('collapse') && n.preReal > 0 && n.real >= n.preReal && n.unemp < 6 },
+  { id: 'energy', only: 'scramble', name: 'Energy Independence', desc: 'Resource Scramble: research cheap solar, grid batteries and small reactors, with inflation under 4%', months: 0,
+    test: n => scnIs('scramble') && ['solar', 'batteries', 'smr'].every(techDone) && n.infl < 4 },
+  { id: 'golden', only: 'peace', name: 'Golden Age', desc: 'Age of Peace: approval over 60 and growth over 3% for 2 years', months: 24, test: n => scnIs('peace') && n.approval > 60 && n.growth > 3 }
+);
+A('council1', 'Diplomat at large', 'Pass your own resolution at the World Council', () => (G.council.stats.passed || 0) >= 1);
+A('council5', 'The world listens', 'Pass 5 of your own resolutions at the World Council', () => (G.council.stats.passed || 0) >= 5);
+A('vetoed', 'Vetoed!', 'Have one of your resolutions vetoed', () => (G.council.stats.vetoed || 0) >= 1);
+A('inf75', 'Heavyweight', 'Reach 75 Council influence', n => Council.influence(n) >= 75);
+A('defy12', 'Rogue state', 'Defy the World Council for 12 months', () => (G.council.defyMonths || 0) >= 12);
+A('crisis1', 'Answering the call', 'Help beat a global crisis', () => (G.council.stats.crises || 0) >= 1);
+A('asteroid', 'Planetary defence', 'Help push an asteroid off course', () => (G.council.crisisLog || []).some(c => c.id === 'asteroid' && c.won && c.mine > 0));
+A('sanctioned', 'Pariah', 'Get sanctioned by the World Council', () => (G.council.history || []).some(h => h.kind === 'sanction' && h.pass && h.t === G.player.idx));
+A('scn_cold', 'Iron curtain', 'Survive 2 years in Cold War II', () => scnIs('coldwar') && G.day - (G.player.startDay || 0) >= 730);
+A('scn_crash', 'From the ashes', 'Survive 2 years After the Crash', () => scnIs('collapse') && G.day - (G.player.startDay || 0) >= 730);
+A('scn_oil', 'Running on empty', 'Survive 2 years in the Resource Scramble', () => scnIs('scramble') && G.day - (G.player.startDay || 0) >= 730);
+A('scn_peace', 'Blessed are the peacemakers', 'Keep out of every war for 5 years in the Age of Peace', n => scnIs('peace') && G.day - (G.player.startDay || 0) >= 1825 && !(n.warsWon || n.warsLost) && !n.atWar);
+
 // ---- 70-ui-game.js ----
 // In-game HUD: top bar stats, clock, side menu, Why? popovers, data map modes.
 const SEQ = ['#123a6b', '#1c5cab', '#3987e5', '#86b6ef', '#cde2fb'];
@@ -5313,7 +5968,7 @@ const Game = {
     Tutorial.start();
   },
   renderNav() {
-    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['election', '🗳', 'Elections'], ['news', '📰', 'News'], ['diplomacy', '🤝', 'Diplomacy'], ['military', '⚔', 'Military'], ['technology', '🔬', 'Technology'], ['world', '🌍', 'World'], ['goals', '🏆', 'Goals'], ['inbox', '✉', 'Inbox'], ['help', '?', 'Help']];
+    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['election', '🗳', 'Elections'], ['news', '📰', 'News'], ['diplomacy', '🤝', 'Diplomacy'], ['council', '🕊', 'Council'], ['military', '⚔', 'Military'], ['technology', '🔬', 'Technology'], ['world', '🌍', 'World'], ['goals', '🏆', 'Goals'], ['inbox', '✉', 'Inbox'], ['help', '?', 'Help']];
     $('#nav').innerHTML = items.map(([id, ic, name]) => `<button data-panel="${id}"><i>${ic}</i>${name}</button>`).join('');
   },
   renderSpeeds() { $('#speeds').innerHTML = [1, 2, 3, 4, 5].map(s => `<button data-speed="${s}" title="Speed ${s} (${s})"></button>`).join(''); },
@@ -5695,7 +6350,7 @@ const Setup = {
   o: null,
   open(idx) {
     const n = World.nat0[idx], c = World.countries[idx];
-    this.o = { idx, real: true, name: n.leader, title: n.title, party: '', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), custom: { name: '', face: faceFromName('custom' + idx) } };
+    this.o = { idx, real: true, name: n.leader, title: n.title, party: '', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), scenario: scnOf(Store.get('lastScn', 'standard')).id, custom: { name: '', face: faceFromName('custom' + idx) } };
     UI.show('setup'); this.render();
   },
   render() {
@@ -5715,6 +6370,8 @@ const Setup = {
         <div class="field"><label>Society</label>${seg('social', [[-0.6, 'Progressive'], [0, 'Moderate'], [0.6, 'Traditional']])}</div>
         <div class="field"><label>Pick 2 traits (${o.traits.length}/2)</label><div class="traits">${TRAITS.map(t => `<button class="trait${o.traits.includes(t.id) ? ' on' : ''}" data-trait="${t.id}">${t.name}<small>${t.desc}</small></button>`).join('')}</div></div>
       </div><div>
+        <div class="field" style="margin-top:12px"><label>World (new in 1.4)</label><div class="seg scn" data-scn>${SCENARIOS.map(s => `<button data-v="${s.id}" class="${o.scenario === s.id ? 'on' : ''}" title="${esc(s.desc)}">${s.icon} ${esc(s.name)}</button>`).join('')}</div>
+          <div class="sub" style="margin-top:4px">${esc(scnOf(o.scenario).desc)}</div></div>
         <div class="facts" style="margin-top:12px"><b>People</b><span>${fmtBig(n.pop)}</span><b>GDP</b><span>$${fmtBig(gdpUsd(n))}</span><b>Debt</b><span>${debtPct(n).toFixed(0)}% of GDP</span><b>Approval</b><span>${n.approval.toFixed(0)}%</span></div>
         <button class="btn gold" style="width:100%;text-align:center;margin-top:8px" data-act="take-office">Take office</button>
       </div></div>`;
@@ -5725,6 +6382,7 @@ const Setup = {
       else { o.name = o.custom.name; o.title = o.custom.title || n.title; o.face = o.custom.face; }
       o.real = real; this.render();
     });
+    $$('[data-scn]', body).forEach(s => s.onclick = e => { const b = e.target.closest('[data-v]'); if (b) { o.scenario = b.dataset.v; this.render(); } });
     $$('[data-o]', body).forEach(s => s.onclick = e => { const b = e.target.closest('[data-v]'); if (b) { o[s.dataset.o] = +b.dataset.v; this.render(); } });
     $$('[data-trait]', body).forEach(b => b.onclick = () => {
       const id = b.dataset.trait, i = o.traits.indexOf(id);
@@ -5740,8 +6398,10 @@ const Setup = {
     if (!o.real && !o.name.trim()) { toast('Give your leader a name first'); return; }
     if (o.traits.length < 2) { toast('Pick 2 traits'); return; }
     newGame({ idx: o.idx, name: o.name.trim(), title: (o.title || n.title).trim(), party: o.party.trim() || (o.real ? 'Governing party' : 'Independent'),
-      econ: o.econ, social: o.social, traits: o.traits, face: o.face, real: o.real });
+      econ: o.econ, social: o.social, traits: o.traits, face: o.face, real: o.real, scenario: o.scenario });
+    Store.set('lastScn', o.scenario);
     Game.start();
+    if (o.scenario !== 'standard') inbox('info', scnOf(o.scenario).icon + ' Scenario: ' + scnOf(o.scenario).name, scnOf(o.scenario).desc + ' Your scenario goal is in Goals.');
     inbox('info', 'Welcome to office, ' + G.player.title + ' ' + G.player.name, 'Press play (space) to start time. Click any number at the top to see what drives it. Open Budget to change taxes and spending, and Money & Debt to run the central bank and currency.');
     Game.refresh();
   }
@@ -6028,15 +6688,15 @@ Object.assign(Panels, {
     el.innerHTML = this.head('Technology', `${researchPoints(n).toFixed(1)} research points a month (science spending, education, tech deals) · ${T0.done.length}/${TECHS.length} done`) +
       (cur ? `<div class="forecast"><b>Researching: ${esc(cur.name)}</b><div style="height:8px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:6px"><div style="height:100%;width:${Math.min(100, T0.progress / cur.cost * 100)}%;background:var(--gold);border-radius:4px"></div></div><div class="sub">${T0.progress.toFixed(0)} / ${cur.cost}</div></div>` : '') +
       TECH_BRANCHES.map(b => `<h3>${b}</h3>` + TECHS.filter(t => t.branch === b).map(t => {
-        const done = techDone(t.id), avail = techAvailable(t), fx = Object.entries(t.fx).map(([k, v]) => ({ g: 'growth', a: 'approval', s: 'stability', i: 'inflation', u: 'unemployment', mil: 'army', e: 'pollution', t: 'research', x: 'prestige', pop: 'lifespan', c: 'corruption', trust: 'trust in money' })[k] + ' ' + (v > 0 ? '+' : '') + v).join(', ');
-        return `<div class="sumrow" style="opacity:${done || avail ? 1 : 0.5}"><span><b>${esc(t.name)}</b> <span class="sub">${esc(t.desc)} (${fx})${!done && !avail ? ' · needs ' + t.needs.map(id => TECHS.find(x => x.id === id).name).join(' + ') : ''}</span></span>
+        const done = techDone(t.id), banned = techBanned(t.id), avail = techAvailable(t), fx = Object.entries(t.fx).map(([k, v]) => ({ g: 'growth', a: 'approval', s: 'stability', i: 'inflation', u: 'unemployment', mil: 'army', e: 'pollution', t: 'research', x: 'prestige', pop: 'lifespan', c: 'corruption', trust: 'trust in money' })[k] + ' ' + (v > 0 ? '+' : '') + v).join(', ');
+        return `<div class="sumrow" style="opacity:${done || avail ? 1 : 0.5}"><span><b>${esc(t.name)}</b> <span class="sub">${esc(t.desc)} (${fx})${!done && !avail ? ' · needs ' + t.needs.map(id => TECHS.find(x => x.id === id).name).join(' + ') : ''}${banned && !done ? ' · <b class="down">banned by a World Council law (researching it defies the Council)</b>' : ''}</span></span>
           ${done ? '<b class="up">Done</b>' : avail ? `<button class="btn small${T0.current === t.id ? ' gold' : ''}" data-tech="${t.id}">${T0.current === t.id ? 'Researching' : t.cost + ' pts'}</button>` : ''}</div>`; }).join('')).join('');
     $$('[data-tech]', el).forEach(b => b.onclick = () => { if (G.tech.current !== b.dataset.tech) { G.tech.current = b.dataset.tech; G.tech.progress *= 0.5; } this.technology(el); });
   },
   goals(el) {
     const n = me(), got = G.ach || {}, life = Store.get('ach', {});
     el.innerHTML = this.head('Goals', `Legacy score so far: ${legacyScore(n).total} · ${Object.keys(got).length}/${ACH.length} achievements`) +
-      '<h3>Victories</h3>' + VICTORIES.map(v => `<div class="sumrow"><span><b>${esc(v.name)}</b> <span class="sub">${esc(v.desc)}</span></span>${G.vicStart && G.vicStart[v.id] ? '<span class="sub">already true when you started</span>' : G.vic && G.vic[v.id] ? '<b class="up">Won</b>' : (G.vicRun && G.vicRun[v.id] ? `<span class="sub">${G.vicRun[v.id]}/${v.months} months</span>` : '')}</div>`).join('') +
+      '<h3>Victories</h3>' + VICTORIES.filter(v => !v.only || (G.scenario && G.scenario.id === v.only)).map(v => `<div class="sumrow"><span><b>${esc(v.name)}</b> <span class="sub">${v.only ? '<b>Scenario goal.</b> ' : ''}${esc(v.desc)}</span></span>${G.vicStart && G.vicStart[v.id] ? '<span class="sub">already true when you started</span>' : G.vic && G.vic[v.id] ? '<b class="up">Won</b>' : (G.vicRun && G.vicRun[v.id] ? `<span class="sub">${G.vicRun[v.id]}/${v.months} months</span>` : '')}</div>`).join('') +
       '<h3>Achievements</h3><div class="kv">' + ACH.map(a => `<div style="opacity:${got[a.id] ? 1 : 0.45};cursor:default" title="${esc(a.desc)}"><small>${got[a.id] ? '🏆 ' + fmtDate(got[a.id]) : life[a.id] ? 'won in another game' : 'locked'}</small><b style="font-size:13px">${esc(a.name)}</b><div class="sub">${esc(a.desc)}</div></div>`).join('') + '</div>';
   },
   help(el) {
@@ -6077,6 +6737,79 @@ const Tutorial = {
   end() { const el = $('#tut'); if (el) el.remove(); Store.set('tutorialDone', true); }
 };
 
+// ---- 79b-ui-council.js ----
+// World Council screen (1.4): the agenda with forecasts, your votes and lobbying, proposals, world laws, global crises.
+const VOTE_WORD = { 1: 'Yes', '-1': 'No', 0: 'Abstain' };
+Object.assign(Panels, {
+  cnKind: 'climate', cnT: null, cnW: null,
+  council(el) {
+    const C = G.council, n = me(), inf = Council.influence(n), sim = !!G.sim;
+    const infTip = Council.influenceWhy(n).filter(r => Math.abs(r[1]) >= 0.5).map(r => r[0] + ': ' + (r[1] > 0 ? '+' : '') + r[1].toFixed(0)).join('\n');
+    let h = this.head('🕊 World Council', `Every country votes, every four months. Next session: <b>${fmtDate(Council.nextSessionDay())}</b> · session ${C.sessions + 1}`);
+    h += `<div class="kv"><div title="${esc(infTip)}"><small>Your influence ⓘ</small><b>${inf.toFixed(0)}<span class="sub">/100</span></b></div>
+      <div title="Your own resolutions passed / proposed"><small>Your resolutions</small><b>${C.stats.passed || 0}<span class="sub">/${C.stats.proposed || 0}</span></b></div>
+      <div title="World laws in force right now"><small>World laws</small><b>${C.laws.filter(l => !RESOLUTIONS[l.kind].target).length}</b></div></div>
+      <div class="sub" style="margin:4px 0 8px">Influence decides how far your lobbying moves other countries. It grows with your economy, a Security Council seat, prestige, foreign aid and your record: voting with the winning side, passing resolutions and helping in global crises. Defying world laws lowers it.</div>`;
+    // ---- global crisis
+    const c = C.crisis;
+    if (c) {
+      const K = WORLD_CRISES[c.id], prog = Council.progress(), mine = c.pledged[n.idx] || 0;
+      h += `<h3>${K.icon} Global crisis: ${esc(K.name)}</h3><div class="note-box" style="text-align:left"><div class="sub">${esc(K.text)}</div>
+        <div style="height:10px;background:rgba(255,255,255,.08);border-radius:5px;margin:8px 0 4px"><div style="height:100%;width:${Math.min(100, prog * 100)}%;background:${prog >= 1 ? 'var(--good,#5bd47a)' : 'var(--gold)'};border-radius:5px"></div></div>
+        <div class="sub">World fund ${Math.round(prog * 100)}% full · ${c.left} month${c.left === 1 ? '' : 's'} left · damage to every country is ${Math.round(clamp(1 - prog, 0, 1) * 100)}% of the worst case. We pledged <b>${mine}% of GDP</b>.</div>
+        ${sim ? '' : `<div class="btnrow">${PLEDGES.filter(([p]) => p > mine).map(([p, l]) => `<button class="btn small" data-cpl="${p}" title="Costs $${fmtBig(p / 100 * gdpUsd(n))} (added to our debt)">Pledge ${p}%</button>`).join('')}<button class="btn small gold" data-crally title="A speech at the emergency session: other countries add more, the more influence you have">Rally the world (8 PC)</button></div>`}</div>`;
+    }
+    // ---- agenda
+    h += `<h3>Agenda for ${fmtDate(Council.nextSessionDay())}</h3>`;
+    if (!C.agenda.length) h += `<div class="sub">Nothing on the agenda yet. Countries table resolutions a month before each session, and you can propose one below.</div>`;
+    h += C.agenda.map((it, i) => {
+      const d = RESOLUTIONS[it.kind], f = Council.forecast(it), mine = it.vote;
+      return `<div class="note-box" style="text-align:left"><b>${d.icon} ${esc(Council.itemName(it))}</b> <span class="sub">proposed by ${it.by === n.idx && !sim ? 'us' : cnFlag(it.by) + ' ' + esc(cnName(it.by))}</span>
+        <div class="sub">${esc(d.desc)}${d.sc ? ' <b>Security Council vote: any permanent member can veto.</b>' : ''}</div>
+        <div class="sub">Expected now: <b class="up">${f.yes} yes</b>, <b class="down">${f.no} no</b>, ${f.abst} abstain${f.veto != null ? ` · <b class="down">veto by ${esc(cnName(f.veto))}</b>` : ''} → <b>${f.pass ? 'passes' : 'fails'}</b></div>
+        ${sim ? '' : `<div class="btnrow"><span class="sub" style="align-self:center">Our vote:</span>${[[1, 'Yes'], [-1, 'No'], [0, 'Abstain']].map(([v, l]) => `<button class="btn small${mine === v ? ' gold' : ''}" data-cvote="${i}:${v}">${l}</button>`).join('')}</div>
+        <div class="btnrow"><button class="btn small" data-clob="${i}:1:pc" title="Talk to friendly governments (works better with more influence and better relations)">Lobby for (5 PC)</button><button class="btn small" data-clob="${i}:-1:pc">Lobby against (5 PC)</button><button class="btn small" data-clob="${i}:${mine === -1 ? -1 : 1}:aid" title="Promise aid to poor countries for their votes">Aid for votes ($${fmtBig(0.0015 * gdpUsd(n))})</button><span class="sub" style="align-self:center">${it.nLobby || 0}/3 used</span></div>`}</div>`;
+    }).join('');
+    // ---- propose
+    if (!sim) {
+      const d = RESOLUTIONS[this.cnKind] || RESOLUTIONS.climate;
+      const countries = World.countries.filter(x => x && G.nations[x.idx] && G.nations[x.idx].owner == null && x.idx !== n.idx).sort((a, b) => a.name.localeCompare(b.name));
+      h += `<h3>Propose a resolution</h3><div class="sub">One per session; costs 10 political capital. AI countries vote on what is good for them, who proposed it and your lobbying.</div>
+        <div class="btnrow"><select id="cn-kind" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px">${Object.entries(RESOLUTIONS).map(([k, r]) => `<option value="${k}" ${k === this.cnKind ? 'selected' : ''}>${r.icon} ${esc(r.target ? { country: { sanction: 'Sanctions on...', condemn: 'Condemn...' }[k], war: 'Peacekeepers for a war...' }[r.target] : r.name({}))}</option>`).join('')}</select>
+        ${d.target === 'country' ? `<select id="cn-t" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;max-width:180px"><option value="">Country...</option>${countries.map(x => `<option value="${x.idx}" ${this.cnT === x.idx ? 'selected' : ''}>${x.flag} ${esc(x.name)}</option>`).join('')}</select>` : ''}
+        ${d.target === 'war' ? `<select id="cn-w" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;max-width:220px"><option value="">War...</option>${G.wars.map(w => `<option value="${w.id}" ${this.cnW === w.id ? 'selected' : ''}>${esc(cnName(w.a[0]) + ' vs ' + cnName(w.d[0]))}</option>`).join('')}</select>` : ''}
+        <button class="btn small gold" id="cn-prop"${Council.canPropose() ? '' : ' disabled'}>Propose (10 PC)</button></div><div class="sub">${esc(d.desc)}${!d.target && Council.lawActive(this.cnKind) ? ' <b>Already in force.</b>' : ''}</div>`;
+      h += `<div class="btnrow"><label class="sub" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="cn-auto" ${C.auto ? 'checked' : ''}> Let my ambassador vote when I have not chosen (votes the way our interests point)</label></div>`;
+    }
+    // ---- world laws
+    const laws = C.laws;
+    h += '<h3>In force</h3>' + (laws.length ? laws.map(l => {
+      const d = RESOLUTIONS[l.kind], ok = !d.ok || sim || d.ok(n, l), key = l.kind + (l.t != null ? ':' + l.t : '') + (l.w != null ? ':w' + l.w : ''), months = (C.defy || {})[key] || 0;
+      return `<div class="sumrow"><span><b>${d.icon} ${esc(Council.itemName(l))}</b> <span class="sub">until ${fmtDate(l.until)}${d.need ? ' · rule: ' + esc(d.need(l)) : ''}</span></span>${sim || !d.ok ? '' : ok ? '<b class="up">Keeping it</b>' : `<b class="down">Defying (${months} mo)</b>`}</div>`;
+    }).join('') : '<div class="sub">No world laws or Council measures in force.</div>');
+    // ---- history
+    if (C.history.length) h += '<h3>Recent votes</h3>' + C.history.slice(0, 10).map(o => `<div class="sumrow"><span>${RESOLUTIONS[o.kind] ? RESOLUTIONS[o.kind].icon : ''} ${esc(o.title)} <span class="sub">${fmtDate(o.day)}${!sim && o.mine != null ? ' · we voted ' + VOTE_WORD[o.mine] : ''}</span></span><b class="${o.pass ? 'up' : 'down'}">${esc(o.result)}</b></div>`).join('');
+    if ((C.crisisLog || []).length) h += '<h3>Past global crises</h3>' + C.crisisLog.map(x => `<div class="sumrow"><span>${WORLD_CRISES[x.id].icon} ${esc(WORLD_CRISES[x.id].name)} <span class="sub">${fmtDate(x.day)} · we gave ${x.mine || 0}% of GDP</span></span><b class="${x.won ? 'up' : 'down'}">${x.won ? 'Beaten' : 'Not stopped'}</b></div>`).join('');
+    el.innerHTML = h;
+    const re = msg => { if (msg) toast(msg, 3200); Bus.emit('changed'); this.council(el); };
+    $$('[data-cvote]', el).forEach(b => b.onclick = () => { const [i, v] = b.dataset.cvote.split(':').map(Number); if (C.agenda[i]) C.agenda[i].vote = v; re(); });
+    $$('[data-clob]', el).forEach(b => b.onclick = () => { const [i, dir, how] = b.dataset.clob.split(':'); re(Council.lobby(+i, +dir, how)); });
+    $$('[data-cpl]', el).forEach(b => b.onclick = () => re(Council.pledge(+b.dataset.cpl)));
+    const ra = $('[data-crally]', el); if (ra) ra.onclick = () => re(Council.rally());
+    const k = $('#cn-kind', el); if (k) k.onchange = () => { this.cnKind = k.value; this.council(el); };
+    const t = $('#cn-t', el); if (t) t.onchange = () => { this.cnT = t.value === '' ? null : +t.value; };
+    const w = $('#cn-w', el); if (w) w.onchange = () => { this.cnW = w.value === '' ? null : +w.value; };
+    const pr = $('#cn-prop', el); if (pr) pr.onclick = () => re(Council.propose(this.cnKind, this.cnT, this.cnW));
+    const au = $('#cn-auto', el); if (au) au.onchange = () => { C.auto = au.checked; };
+  }
+});
+HOW.push(['World Council (new in 1.4)', 'Every four months the countries of the world vote on resolutions: sanctions, condemnations, peacekeepers for a war, and world laws (climate, arms control, minimum tax, aid, trade, AI and space). A country votes yes when the resolution suits it, when it likes whoever proposed it, and when lobbying pushes it. Sanctions and peacekeepers also need 9 of the 15 Security Council members and no veto from a permanent member. Passed world laws last years: break one and every month costs relations with the countries that voted for it, plus Council influence, until someone proposes sanctions on you.'],
+  ['Global crises (new in 1.4)', 'Pandemics, financial panics, food crises, solar storms, cyber plagues and even an asteroid hit the whole world. Every country pledges money to a world fund; the damage everyone takes each month shrinks as the fund fills, and a full fund ends the crisis early. Big givers win prestige and influence; rich countries that give nothing lose standing.'],
+  ['Scenarios (new in 1.4)', 'New Game, Simulator and online rooms can start from a different world: Cold War II, After the Crash, Resource Scramble or Age of Peace. Each has its own victory goal in Goals.']);
+GLOSSARY.push(['Council influence', 'Your voice at the World Council (0 to 100): economy size, Security Council seat, prestige, foreign aid and your record. More influence makes lobbying move more votes.'],
+  ['Veto', 'Any of the five permanent Security Council members (USA, China, Russia, UK, France) can block sanctions and peacekeepers by voting no.'],
+  ['Defying the Council', 'Not keeping a world law that passed. Costs relations and influence every month, and invites sanctions.']);
+
 // ---- 80-sim-mode.js ----
 // ==========================================
 // SIMULATOR MODE: watch the world run itself. The AI plays every country (pIdx() is -1, so no one is "the player").
@@ -6084,9 +6817,13 @@ const Tutorial = {
 // from then on it is a normal game as that country's leader.
 // ==========================================
 const Sim = {
-  start() {
+  choose() {
+    UI.modal(`<h2>Simulator</h2><p class="sub">Choose the world the AI starts from.</p><div class="menu" style="width:auto">${SCENARIOS.map(s => `<button class="btn" data-simscn="${s.id}">${s.icon} ${esc(s.name)}<div class="sub" style="font-size:12px">${esc(s.desc)}</div></button>`).join('')}</div><div class="btnrow"><button class="btn" data-act="close-modal">Back</button></div>`);
+    $$('[data-simscn]').forEach(b => b.onclick = () => { UI.closeModal(); Sim.start(b.dataset.simscn); });
+  },
+  start(scn) {
     const c = World.countries.find(x => x && x.id === 'USA') || World.countries.find(x => x), n = World.nat0[c.idx];
-    newGame({ idx: c.idx, name: n.leader, title: n.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), real: true });
+    newGame({ idx: c.idx, name: n.leader, title: n.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n.leader), real: true, scenario: scn || 'standard' });
     G.sim = true;
     Game.start(); Game.close(); Clock.paused = false; Bus.emit('clock');
     inbox('info', 'Simulator', 'The AI runs every country. Press play and speed time up (1-5). Click any country and choose Take control, or open Wars at the top to play either side of a war.');
@@ -6354,7 +7091,12 @@ document.addEventListener('click', e => { const b = e.target.closest && e.target
 //   offer the other leader accepts or refuses. Wars against AI countries stay your own business.
 // - Leaders board and chat at the top.
 // ==========================================
+// Protocol version: players must run the same Sovereign. A 1.4 host refuses older guests (they send no version) and a
+// 1.4 guest leaves a room whose host sends no version or a different one, each with a plain message.
+const SOV_PROTO = 14;
+const protoText = v => v === SOV_PROTO ? '' : !v || v < SOV_PROTO ? 'an older version of Sovereign' : 'a newer version of Sovereign';
 const Online = {
+  scn: 'standard',
   on: false, net: null, host: false, code: '', id: 0, name: '', picks: {}, names: {}, started: false, lastClk: 0, hostClk: null,
   hgnet() {
     const h = window.HGNet || (() => { try { return window.parent && window.parent.HGNet; } catch (e) { return null; } })();
@@ -6387,7 +7129,7 @@ const Online = {
     this.hgnet().then(HG => {
       if (!HG) return this.st('Online play needs the Huntington Games launcher.', true);
       this.name = this.myName(); const net = this.net = HG.create({ game: 'sovereign' }); this.wire(net);
-      net.host({ name: this.name, maxPlayers: 6, accept: () => this.started ? 'That game has already started.' : true }).then(r => {
+      net.host({ name: this.name, maxPlayers: 6, info: { v: SOV_PROTO }, accept: p => this.started ? 'That game has already started.' : (p && p.info && p.info.v) !== SOV_PROTO ? 'This room runs Sovereign ' + VERSION + ' and you have ' + protoText(p && p.info && p.info.v) + '. Reload Sovereign from the launcher so you both have the same version.' : true }).then(r => {
         this.host = true; this.code = r.code; this.id = 0; this.names[0] = this.name; this.st('Room open. Pick your country, then start when everyone is in.'); this.lobbySend(); this.advertise();
       }, e => { this.net = null; this.st(e.message || 'Could not open a room.', true); });
     });
@@ -6398,7 +7140,7 @@ const Online = {
     this.hgnet().then(HG => {
       if (!HG) return this.st('Online play needs the Huntington Games launcher.', true);
       this.name = this.myName(); const net = this.net = HG.create({ game: 'sovereign' }); this.wire(net);
-      net.join(code, { name: this.name }).then(r => { this.host = false; this.code = r.code || code; this.id = r.id; this.st('In the room. Pick your country and wait for the host to start.'); this.paint(); },
+      net.join(code, { name: this.name, info: { v: SOV_PROTO } }).then(r => { const hv = net.hostInfo && net.hostInfo.info && net.hostInfo.info.v; if (hv !== SOV_PROTO) { this.net = null; try { net.close(); } catch (e) {} return this.st('That room runs ' + protoText(hv) + ' (you have ' + VERSION + '). Everyone needs the same version: reload Sovereign from the launcher.', true); } this.host = false; this.code = r.code || code; this.id = r.id; this.st('In the room. Pick your country and wait for the host to start.'); this.paint(); },
         e => { this.net = null; this.st(e.message || 'Could not join.', true); });
     });
   },
@@ -6410,7 +7152,7 @@ const Online = {
   lobbySend() {
     if (!this.host || !this.net) return;
     for (const p of this.net.peers()) if (!p.isHost && p.state !== 'left') this.names[p.id] = String(p.name || 'Leader').slice(0, 20);
-    this.net.send('all', { t: 'lobby', picks: this.picks, names: this.names }); this.paint();
+    this.net.send('all', { t: 'lobby', picks: this.picks, names: this.names, scn: this.scn, v: SOV_PROTO }); this.paint();
   },
   paint() {
     const el = $('#on-lobby'); if (!el) return;
@@ -6419,33 +7161,36 @@ const Online = {
     el.innerHTML = `<div class="note-box">Room code <b style="font-size:20px;letter-spacing:.15em">${this.code}</b></div>
       <div class="field"><label>Your country</label><select id="on-pick" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;width:100%">
         <option value="">Choose...</option>${this.countries().filter(c => !taken.has(c.idx)).map(c => `<option value="${c.idx}" ${mine === c.idx ? 'selected' : ''}>${c.flag} ${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>World</label>${this.host ? `<select id="on-scn" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px;width:100%">${SCENARIOS.map(s => `<option value="${s.id}" ${this.scn === s.id ? 'selected' : ''}>${s.icon} ${esc(s.name)}</option>`).join('')}</select>` : `<div><b>${scnOf(this.scn).icon} ${esc(scnOf(this.scn).name)}</b> <span class="sub">(the host picks)</span></div>`}<div class="sub">${esc(scnOf(this.scn).desc)}</div></div>
       ${Object.entries(this.names).map(([id, n]) => { const i = this.picks[id]; return `<div class="sumrow"><span>${esc(n)}${+id === 0 ? ' (host)' : ''}${+id === this.id ? ' (you)' : ''}</span><span>${i != null ? World.countries[i].flag + ' ' + esc(World.countries[i].name) : '<i>choosing...</i>'}</span></div>`; }).join('')}
       ${this.host ? `<div class="btnrow"><button class="btn gold" id="on-start">Start the game</button></div>` : '<div class="sub">The host starts the game.</div>'}`;
     $('#on-pick').onchange = e => { const v = e.target.value === '' ? null : +e.target.value; if (this.host) { if (v == null) delete this.picks[0]; else this.picks[0] = v; this.lobbySend(); } else this.net.send('host', { t: 'pick', idx: v }); };
+    const sc = $('#on-scn'); if (sc) sc.onchange = e => { this.scn = scnOf(e.target.value).id; this.lobbySend(); };
     const sb = $('#on-start'); if (sb) sb.onclick = () => this.start();
   },
   start() {
     const ids = Object.keys(this.names);
     if (ids.some(id => this.picks[id] == null)) return this.st('Everyone has to pick a country first.', true);
-    const m = { t: 'start', seed: (Math.random() * 2 ** 31) | 0, picks: this.picks, names: this.names };
+    const m = { t: 'start', seed: (Math.random() * 2 ** 31) | 0, picks: this.picks, names: this.names, scn: this.scn, v: SOV_PROTO };
     this.net.send('all', m); this.begin(m);
   },
   begin(m) {
     this.started = true; clearInterval(this.adT);
     try { const p = window.parent; if (p && p !== window && p.HG_partyClose && this.host) p.HG_partyClose(this.code); } catch (e) {}
     const idx = m.picks[this.id], n0 = World.nat0[idx];
-    newGame({ seed: m.seed, idx, name: n0.leader, title: n0.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n0.leader), real: true });
+    newGame({ seed: m.seed, idx, name: n0.leader, title: n0.title, party: 'Governing party', econ: 0, social: 0, traits: [], face: faceFromName(n0.leader), real: true, scenario: scnOf(m.scn).id });
     const humans = {}; for (const id in m.picks) humans[m.picks[id]] = { id: +id, name: m.names[id] };
     G.online = { humans, host: this.host, code: this.code };
     UI.closeModal(); Game.start();
     this.on = true;
     inbox('info', 'Online game', 'You lead ' + World.countries[idx].name + '. The other leaders: ' + Object.entries(humans).filter(([i]) => +i !== idx).map(([i, h]) => h.name + ' (' + World.countries[i].name + ')').join(', ') + '. ' + (this.host ? 'You control the clock.' : 'The host controls the clock.') + ' Open Leaders at the top to compare countries and chat.');
+    if (G.scenario && G.scenario.id !== 'standard') { const s = scnOf(G.scenario.id); inbox('info', s.icon + ' Scenario: ' + s.name, s.desc + ' Your scenario goal is in Goals.'); }
     Game.refresh(); sovAch();
   },
   reset() {
     clearInterval(this.adT);
     const net = this.net; this.net = null; try { net && net.close(); } catch (e) {}
-    Object.assign(this, { on: false, host: false, code: '', id: 0, picks: {}, names: {}, started: false, hostClk: null });
+    Object.assign(this, { on: false, host: false, code: '', id: 0, picks: {}, names: {}, started: false, hostClk: null, scn: 'standard' });
     if (G) G.online = null;
   },
   leave() { this.reset(); },
@@ -6453,7 +7198,7 @@ const Online = {
   msg(peer, m) {
     if (!m || typeof m !== 'object') return;
     switch (m.t) {
-      case 'lobby': if (!this.host) { this.picks = m.picks; this.names = m.names; this.paint(); } return;
+      case 'lobby': if (!this.host) { this.picks = m.picks; this.names = m.names; this.scn = scnOf(m.scn).id; this.paint(); } return;
       case 'pick': if (this.host) { if (m.idx == null || Object.entries(this.picks).some(([id, i]) => i === m.idx && +id !== peer.id)) delete this.picks[peer.id]; else this.picks[peer.id] = +m.idx; this.lobbySend(); } return;
       case 'start': if (!this.host) this.begin(m); return;
     }
@@ -6634,6 +7379,7 @@ function loop(now) {
 window.__sov = {
   ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
   get G() { return G; }, Sim, General, Online, capitulate, newGame, worldMonth, nextMonth, nextDay, conquer, release, checkDomination, warWeek, frontLine, drawFronts, Rule, controlledHtml, MapModes, startWar, sovAch, endWar, Overlay, endGame, crisis, react, Politics, Life, War, peaceChance, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
+  Council, SCENARIOS, RESOLUTIONS, WORLD_CRISES, applyScenario, EVENTS, eventContext, applyEventFx, showNextEvent, saveTo, loadFrom, serialize, Game, VICTORIES, ACH, // 1.4
   flyTo, flyToCountry, screenToLL, llToScreen, pickLL, landPower: n => landPower(n), relation: (a, b) => relation(a, b),
   pick: (lon, lat) => { const h = pickLL(lon, lat); return h && h.c ? World.countries[h.c].id : null; },
   select: id => UI.select(id == null ? null : World.byId[id].idx, true),

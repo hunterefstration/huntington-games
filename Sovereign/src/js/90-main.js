@@ -66,6 +66,7 @@ function loop(now) {
 window.__sov = {
   ready: false, detailed: false, World, Cam, Globe, UI, Perf, Settings, MapModes, Clock, Gov, Panels, Setup,
   get G() { return G; }, Sim, General, Online, capitulate, newGame, worldMonth, nextMonth, nextDay, conquer, release, checkDomination, warWeek, frontLine, drawFronts, Rule, controlledHtml, MapModes, startWar, sovAch, endWar, Overlay, endGame, crisis, react, Politics, Life, War, peaceChance, forecast, budgetOf, gdpUsd, debtPct, serialize, saveTo, loadFrom, Game,
+  Council, SCENARIOS, RESOLUTIONS, WORLD_CRISES, applyScenario, EVENTS, eventContext, applyEventFx, showNextEvent, saveTo, loadFrom, serialize, Game, VICTORIES, ACH, // 1.4
   flyTo, flyToCountry, screenToLL, llToScreen, pickLL, landPower: n => landPower(n), relation: (a, b) => relation(a, b),
   pick: (lon, lat) => { const h = pickLL(lon, lat); return h && h.c ? World.countries[h.c].id : null; },
   select: id => UI.select(id == null ? null : World.byId[id].idx, true),

@@ -2,7 +2,7 @@
 // Source is split into src/js/*.js and joined (in file-name order) into one module by tools/build-game.js.
 import * as THREE from 'three';
 
-const VERSION = '1.3';
+const VERSION = '1.4';
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => v >= a ? (v <= b ? v : b) : a;   // NaN comes out as the low end, never NaN
 const lerp = (a, b, t) => a + (b - a) * t;

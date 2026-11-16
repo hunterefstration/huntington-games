@@ -43,11 +43,12 @@ const UI = {
       else if (a === 'setup-back') this.show('select');
       else if (a === 'hall') Hall.open();
       else if (a === 'take-office') Setup.go();
-      else if (a === 'sim') Sim.start();
+      else if (a === 'sim') Sim.choose();
       else if (a === 'online') Online.open();
       else if (a === 'explore') { G = null; this.home = null; this.startHud(); }
       else if (a === 'settings') this.settings();
       else if (a === 'credits') this.credits();
+      else if (a === 'whatsnew') this.whatsNew();
       else if (a === 'back') this.show('title');
       else if (a === 'menu') this.menu();
       else if (a === 'zin') { Cam.fly = null; camZoom(0.5); }
@@ -160,7 +161,8 @@ const UI = {
     const has = !!Saves.latest();
     $('#title .menu').innerHTML = (has ? '<button class="btn gold" data-act="continue">Continue</button><button class="btn" data-act="new">New Game</button><button class="btn" data-act="load">Load Game</button>'
       : '<button class="btn gold" data-act="new">New Game</button>') +
-      '<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>';
+      `<button class="btn" data-act="online">Play online with friends (2-6 leaders)</button><button class="btn" data-act="sim">Simulator: watch the AI, take over anyone</button><button class="btn" data-act="explore">Explore the World</button><button class="btn" data-act="hall">Hall of Leaders</button><button class="btn" data-act="whatsnew">What\'s new in ${VERSION}</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button>`;
+    if (!Store.get('seen14', false)) { Store.set('seen14', true); setTimeout(() => { if (this.screen === 'title' && $('#modal').classList.contains('hidden')) this.whatsNew(); }, 900); }
   },
   confirm(title, text, ok, fn) {
     this.onOk = fn;
@@ -203,6 +205,17 @@ const UI = {
       if (k === 'quality') { Settings.autoLevel = 'medium'; Perf.set(raw === 'auto' ? 'medium' : raw); }
       saveSettings();
     }));
+  },
+  whatsNew() {
+    const items = [
+      ['🕊', 'The World Council', 'Every four months the whole world votes: sanctions, peacekeepers and world laws on climate, arms, tax, aid, trade, AI and space. Propose your own resolutions, lobby with political capital or aid money, and watch out for vetoes. Break a world law and the world will notice. (Council, in the menu.)'],
+      ['🦠', 'Global crises', 'Pandemics, a world financial panic, a food crisis, a solar superstorm, a cyber plague and, very rarely, an asteroid. Every country pledges to a world fund; the fuller it is, the less everyone suffers.'],
+      ['🧊', 'Four new scenarios', 'Start in Cold War II, After the Crash, the Resource Scramble or the Age of Peace, each with its own goal. Works in New Game, the Simulator and online rooms (the host picks).'],
+      ['🏆', 'New victories and achievements', 'Voice of the World, Saviour of Humanity and a goal for each scenario, plus 12 new achievements (5 more count on your Huntington Games account).'],
+      ['📰', '25 new events', 'Bribes for your Council vote, defecting pilots, barter towns, a lost city, a treasure ship, the oldest person on Earth and the heist of the century.'],
+      ['🌐', 'Online', 'Everyone in a room needs Sovereign 1.4: older and newer versions now refuse each other with a clear message.']
+    ];
+    this.modal(`<h2>What's new in Sovereign ${VERSION}</h2>${items.map(([i, t, d]) => `<div class="sumrow" style="display:block"><b>${i} ${t}</b><div class="sub" style="font-size:13px">${d}</div></div>`).join('')}<div class="actions"><button class="btn small gold" data-act="close-modal">Let's go</button></div>`);
   },
   credits() {
     this.modal(`<h2>Credits</h2><div class="credits">

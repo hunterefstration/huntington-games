@@ -194,7 +194,7 @@ const ElectionNight = {
       if (i < r.res.length) {
         const x = r.res[i++], city = World.cities[x.city]; sum += x.me * x.w; wsum += x.w;
         Overlay.marks.push({ lon: city.lon, lat: city.lat, color: x.me > 50 ? '#e2b65c' : '#6aa7ff', label: x.name + ' ' + x.me.toFixed(0) + '%' }); Globe.dirty = true;
-        $('#en-body').innerHTML = `${esc(x.name)}: <b>${x.me.toFixed(1)}%</b> for you`; $('#en-bar div').style.width = (sum / wsum).toFixed(1) + '%';
+        if ($('#en-body') && $('#en-bar div')) { $('#en-body').innerHTML = `${esc(x.name)}: <b>${x.me.toFixed(1)}%</b> for you`; $('#en-bar div').style.width = (sum / wsum).toFixed(1) + '%'; } // (another window may have replaced it)
         setTimeout(step, 650);
       } else this.finish(n, r);
     };
@@ -202,6 +202,7 @@ const ElectionNight = {
   },
   finish(n, r) {
     const P = G.player;
+    if (!$('#en-body') || !$('#en-act')) UI.modal(`<h2>${r.kind === 'midterm' ? 'Midterm elections' : 'Election results'}</h2><div id="en-body" class="sub" style="font-size:14px"></div><div class="actions" id="en-act"></div>`);
     $('#en-body').innerHTML = (r.pres ? `You won <b>${r.total.toFixed(1)}%</b> of the vote. ` : '') + `Your party: <b>${r.seats}</b> seats (was ${r.oldSeats}). Government: ${r.govSeats} of ${n.parl.total}.`;
     if (r.won) {
       if (r.kind !== 'midterm') { P.terms++; n.honeymoon = 1; n.months = Math.min(n.months, 0); }
