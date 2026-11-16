@@ -203,8 +203,12 @@ try {
   check('after a reload there is no gate; the account comes back by itself', !!(await until(() => A.evaluate(() => document.getElementById('gate').hidden && !!window.HGGrapevine && HGGrapevine.status().status === 'online'), 60000)));
   await A.evaluate(() => localStorage.setItem('frontline_settings_v2', '{"name":"x"}'));
   await A.click('#tab-acct'); await until(() => A.$('#gl-out'));
+  A.on('dialog', d => { console.log('    [dialog] ' + d.message().slice(0, 120)); d.dismiss(); });
+  await A.evaluate(() => { window.__syncLog = []; HGGrapevine.on('sync', x => window.__syncLog.push(x.state + ': ' + x.text)); HGGrapevine.on('status', x => window.__syncLog.push('status ' + x.status + ' ' + x.text)); });
   await A.click('#gl-out');
-  check('signing out brings the gate back', !!(await until(() => A.evaluate(() => !document.getElementById('gate').hidden), 30000)));
+  const outOk = !!(await until(() => A.evaluate(() => !document.getElementById('gate').hidden), 30000));
+  if (!outOk) console.log('    sign-out log:', await A.evaluate(() => JSON.stringify(window.__syncLog.slice(-12))));
+  check('signing out brings the gate back', outOk);
   check('...and clears this device\'s saves and key', await A.evaluate(() => localStorage.getItem('td2_save') === null && localStorage.getItem('hgv:key') === null));
   const D3 = await device(await browser.newContext());
   await D3.waitForSelector('#gate .gl .seg'); await D3.fill('#gate #gl-key', keyA); await D3.click('#gate #gl-go');

@@ -91,6 +91,9 @@
   function retrySoon() {
     if (st.timer || !st.key) return;
     var wait_ = Math.min(1000 * Math.pow(2, Math.min(st.fails, 5)), 20000) * (0.6 + Math.random() * 0.8);
+    // the server dropped this one because the account is open in too many places: coming straight back would only knock
+    // another one off, and they would take turns forever (each sign-in costs the database). Wait a good while instead.
+    if (Date.now() - (st.kickedAt || 0) < 60000) wait_ = Math.max(wait_, 30000 + Math.random() * 30000);
     st.timer = setTimeout(function () { st.timer = null; connect(); }, wait_);
   }
 
@@ -225,6 +228,7 @@
     if (code === 'rate') { rpcFail(new Error('Slow down a little.')); settlePending(new Error('Slow down a little.')); return; }
     if (code === 'rebind' && !st.sendKey && st.auth) { st.sendKey = true; try { c.close(); } catch (e) {} return; }   // retry once, sending the key to bind it
     if (code === 'full') { st.idx++; try { c.close(); } catch (e) {} return; }
+    if (code === 'sessions') { st.kickedAt = Date.now(); setStatus('offline', 'Open in too many places: this one waits a minute.'); }
     if (code === 'no-such-name') {
       // a failed profile lookup or friend request: tell whoever asked
       Object.keys(st.lookups).forEach(function (n) { var cbs = st.lookups[n]; delete st.lookups[n]; cbs.forEach(function (f) { f(null); }); });
