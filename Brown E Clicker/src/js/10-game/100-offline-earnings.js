@@ -370,7 +370,7 @@
        // --- DEBUG / TEST HOOK ---
        window.__clicker = {
            get state() { return state; },
-           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, AC_RULES,
+           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, AC_RULES, accept: (e, kind) => acceptClick(e, kind),
            click(n) { n = n || 1; for (let i = 0; i < n; i++) clickBigE(null); }, // bypasses the auto-clicker guard (tests only)
            shopItems, UPGRADES, ACHIEVEMENTS, BUILDING, MULTS,
            formatNumber, formatShort,

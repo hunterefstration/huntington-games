@@ -3786,24 +3786,28 @@
     // Fake (script) clicks are ignored; more than 14 clicks a second are ignored; a robot's give-away (two dozen clicks in a
     // row spaced almost exactly the same) or a long burst faster than any hand locks the buttons for a while. Each time is a
     // strike, saved with the game; three strikes keep this life off the world leaderboard.
-    const AC = { t: [], lockUntil: 0, warnAt: 0, strikes: (() => { try { return +localStorage.getItem('marketLife_ac') || 0; } catch (e) { return 0; } })() };
+    const AC = { t: [], lockUntil: 0, warnAt: 0, caughtAt: -1e9, strikes: (() => { try { if (!localStorage.getItem('marketLife_acFix2')) { localStorage.setItem('marketLife_ac', '0'); localStorage.setItem('marketLife_acFix2', '1'); } return +localStorage.getItem('marketLife_ac') || 0; } catch (e) { return 0; } })() };
+    // (2026-11-16: the old rules, 25 clicks within 6 ms and 72 in 6 s, caught people clicking by hand; old strikes were wiped once)
     function acStrike(now, why) {
+        if (now - AC.caughtAt > 120000) { AC.caughtAt = now; AC.t = []; toast('That clicking looks automatic (' + why + '). If it keeps up, buttons lock for a while.', 'bad'); return; }
+        AC.caughtAt = -1e9;
         AC.strikes++; try { localStorage.setItem('marketLife_ac', String(AC.strikes)); } catch (e) {}
         AC.lockUntil = now + Math.min(120000, 20000 * AC.strikes); AC.t = [];
         toast('Autoclicker detected (' + why + '). Buttons are locked for ' + Math.round((AC.lockUntil - now) / 1000) + ' s.' + (AC.strikes >= 3 ? ' This life no longer counts for the world leaderboard.' : ''), 'bad');
     }
     function acAllow(e) {
         if (!e.isTrusted) return false;
-        const now = performance.now();
+        const now = e.timeStamp > 0 ? e.timeStamp : performance.now();      // (when the click happened, not when it was handled)
         if (now < AC.lockUntil) { if (now - AC.warnAt > 2000) { AC.warnAt = now; toast('Slow down: buttons unlock in ' + Math.ceil((AC.lockUntil - now) / 1000) + ' s.', 'bad'); } return false; }
-        AC.t.push(now); if (AC.t.length > 80) AC.t.shift();
+        if (AC.t.length && now - AC.t[AC.t.length - 1] > 1500) AC.t = [];      // a pause starts a new run
+        AC.t.push(now); if (AC.t.length > 120) AC.t.shift();
         const inLast = ms => AC.t.filter(x => now - x < ms).length;
-        if (AC.t.length >= 25) {
-            const iv = []; for (let i = AC.t.length - 24; i < AC.t.length; i++) iv.push(AC.t[i] - AC.t[i - 1]);
+        if (AC.t.length >= 41) {
+            const iv = []; for (let i = AC.t.length - 40; i < AC.t.length; i++) iv.push(AC.t[i] - AC.t[i - 1]);
             const m = iv.reduce((a, b) => a + b, 0) / iv.length, sd = Math.sqrt(iv.reduce((a, b) => a + (b - m) * (b - m), 0) / iv.length);
-            if (m < 400 && sd < 6) { acStrike(now, 'clicks spaced like a machine'); return false; }
+            if (m < 250 && sd < 2.5 && sd / m < .012) { acStrike(now, 'clicks spaced like a machine'); return false; }
         }
-        if (inLast(6000) > 72) { acStrike(now, 'over 12 clicks a second for 6 seconds'); return false; }
+        if (inLast(6000) > 100) { acStrike(now, 'over 16 clicks a second for 6 seconds'); return false; }
         if (inLast(1000) > 14) return false;
         return true;
     }
@@ -3862,7 +3866,7 @@
 
     // test / debug hook
     window.__market = {
-        noEvents: false,
+        noEvents: false, acAllow: e => acAllow(e), get acStrikes() { return AC.strikes; },
         get state() { return { cash, day, lifeScore, pbScore, pbMoney, life: L, stocks, indexStock, hasBiz1, biz1Level, hasBiz2, biz2Level, netWorth: netWorth(), modalOpen, totalWorkCompleted, promotionCount, currentSalary }; },
         days(n) { let i = 0; for (; i < n && L.phase === 'play' && !modalOpen; i++) simDay(); markDirty(); updateUI(); return i; },
         set(o) { if (o.cash !== undefined) cash = o.cash; if (o.lifeScore !== undefined) lifeScore = o.lifeScore; if (o.life) Object.assign(L, o.life); markDirty(); updateUI(); },

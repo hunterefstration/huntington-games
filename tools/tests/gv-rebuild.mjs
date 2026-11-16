@@ -3,6 +3,7 @@
 //   bash tools/rig/test.sh gv-rebuild
 import { chromium } from 'playwright';
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const HUB = process.env.HUB_URL || 'http://127.0.0.1:8090/index.html';
 const ARCHIVE = process.env.RIG_ARCHIVE || 'rig-archive-a';
@@ -13,6 +14,7 @@ const ROOT = new URL('../../', import.meta.url).pathname;
 let failures = 0;
 const check = (name, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  — ' + extra : ''}`); if (!ok) failures++; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rig = (...args) => execFileSync('bash', [ROOT + 'tools/rig/db.sh', ...args], { encoding: 'utf8' });
 async function until(fn, ms = 20000, every = 250) {
   const t0 = Date.now();
   for (;;) { try { const v = await fn(); if (v) return v; } catch {} if (Date.now() - t0 > ms) return null; await sleep(every); }
@@ -121,6 +123,26 @@ try {
   console.log('    achievements the saved list lacks:', JSON.stringify(dbg));
   const again = await D.evaluate(() => HGGrapevine.eco.acctLook('RebLost').then(look => rbBuild(look.boards, {}, []) && HGGrapevine.eco.savesAdminGet('RebLost', RB_KEYS).then(r => { const cur = {}; r.values.forEach(x => { cur[x.k] = x.v; }); const k = Object.keys(rbBuild(look.boards, cur, look.achIds).saves); return k.length ? k.join(',') : 0; })));
   check('a second rebuild changes no save (only achievements claimed in the meantime can be added)', again === 0 || again === 'hgach:v1', String(again));
+
+  console.log('\n=== the one-time server job rebuilds BOBERTODAROBERTO by itself (the owner asked; no button needed) ===');
+  const Bo = await device(await browser.newContext({ viewport: { width: 1280, height: 900 } }));
+  await createAccount(Bo, 'BOBERTODAROBERTO'); await until(async () => (await status(Bo)) === 'online', 60000);
+  await Bo.evaluate(lv => {
+    const levels = {}; lv.forEach((id, i) => { levels[id] = { best: 30 + i, moths: [true, true, true], sparks: 3, clears: 1 }; });
+    localStorage.setItem('lumi_save', JSON.stringify({ v: 3, levels, abilities: { double: true, wall: true, dash: false }, deaths: 2, sparks: 10, playTime: 900 }));
+    localStorage.setItem('spikes100_progress', JSON.stringify({ unlocked: 40 }));
+  }, LV);
+  await Bo.evaluate(() => HGGrapevine.sync.run()); await Bo.evaluate(() => feedNow()); await sleep(3000);
+  await Bo.evaluate(() => { localStorage.setItem('lumi_save', JSON.stringify({ v: 3, levels: {}, abilities: { double: false, wall: false, dash: false } })); localStorage.setItem('spikes100_progress', JSON.stringify({ unlocked: 1 })); return HGGrapevine.sync.run(); });
+  check('his progress is gone', await Bo.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('lumi_save')).levels).length === 0));
+  await sleep(6000);      // (the leaderboards reach the database)
+  rig('server-stop'); rig('server-start', 'ONCE_DELAY_MS=1500');
+  const back = await until(async () => { if ((await status(Bo)) !== 'online') return null; await Bo.evaluate(() => HGGrapevine.sync.run()).catch(() => {}); const n = await Bo.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('lumi_save')).levels).length); return n === LV.length ? n : null; }, 90000, 2000);
+  check('after the server starts, his Last Light levels are back on his device', back === LV.length, String(back));
+  check('...and Spikes', await Bo.evaluate(() => JSON.parse(localStorage.getItem('spikes100_progress')).unlocked === 40));
+  rig('server-stop'); rig('server-start', 'ONCE_DELAY_MS=1500'); await sleep(4000);
+  const pre = await D.evaluate(() => HGGrapevine.eco.acctLook('BOBERTODAROBERTO'));
+  check('the job ran once (a second start changes nothing) and the replaced saves are kept', pre.ok && pre.saves.some(x => x.k === 'lumi_save'), JSON.stringify(pre.saves && pre.saves.map(x => x.k)));
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 await browser.close();
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');

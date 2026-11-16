@@ -1306,6 +1306,12 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
 @keyframes pfrspin{to{transform:rotate(360deg)}}
 
 .gtag.role-owner{border-color:#fbbf24;color:#1a1200;background:linear-gradient(90deg,#fde68a,#fbbf24);font-weight:800}.gtag.role-admin{border-color:#60a5fa;color:#04122a;background:#93c5fd;font-weight:800}
+
+/* long messages: folded to about eight lines; long unbroken strings wrap instead of stretching the window */
+.txt{overflow-wrap:anywhere}
+.txt.fold{display:block;max-height:10.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.foldbtn{display:inline-block;margin:2px 0 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--raise);color:var(--dim, #9aa);font:inherit;font-size:11.5px;cursor:pointer}
+.foldbtn:hover{color:var(--text, #fff)}
 </style>
 </head>
 <body>
@@ -3323,6 +3329,13 @@ function renderBodyInner(el, m){
     body.innerHTML = richHtml(m.text);
     wireRich(body);
     el.append(body);
+    // a very long message shows folded (about eight lines) with a button to open it; it never fills the screen
+    if (m.text.length > 600 || (m.text.match(/\n/g) || []).length > 8) {
+      body.classList.add('fold');
+      const more = document.createElement('button'); more.className = 'foldbtn'; more.type = 'button'; more.textContent = 'Show more';
+      more.onclick = ev => { ev.stopPropagation(); const open = body.classList.toggle('fold'); more.textContent = open ? 'Show more' : 'Show less'; };
+      el.append(more);
+    }
   }
   const meta = document.createElement('span'); meta.className = 'meta'; meta.textContent = fmtTime(m.ts);
   el.append(meta);
@@ -4128,6 +4141,11 @@ const GUARD = (() => {
   function similar(a, b) {
     if (a === b) return true;
     if (a.length < 4 || b.length < 4) return false;
+    if (a.length > 60 && b.length > 60) {      // long messages: compare word pairs (any two English paragraphs share most letter pairs)
+      const wp = t => { const w = t.split(' '), m = new Set(); for (let i = 0; i < w.length - 1; i++) m.add(w[i] + ' ' + w[i + 1]); return m; };
+      const P = wp(a), Q = wp(b); let k = 0; for (const x of P) if (Q.has(x)) k++;
+      return k / Math.max(1, Math.min(P.size, Q.size)) >= 0.6;
+    }
     const A = bigrams(a), B = bigrams(b); let n = 0;
     for (const [k, v] of A) n += Math.min(v, B.get(k) || 0);
     return 2 * n / (a.length - 1 + b.length - 1) >= 0.8;
@@ -4142,14 +4160,29 @@ const GUARD = (() => {
     let wait = 0, h = heat;
     if (spammy && now < (st.nextAt || 0)) { wait = st.nextAt - now; h = Math.min(heat + 0.5, 12); }
     else if (spammy) h = Math.min(heat + (isSim ? 1 : 0.6), 12);
+    // walls of text: a long message is fine, but more than ~3000 characters a minute is pasting, not talking
+    const vol = (st.vol || []).filter(x => x.at > now - 60000), chars = vol.reduce((n, x) => n + x.n, 0) + t.length;
+    if (t.length > 280 && chars > 3000) { wait = Math.max(wait, 5000, (vol[0] ? vol[0].at + 60000 - now : 0)); h = Math.min(h + 1, 12); }
     if (!commit) return wait;
+    if (!wait) { vol.push({ n: t.length, at: now }); st.vol = vol.slice(-20); }
     st.heat = h; st.at = now;
-    if (wait) { st.nextAt = Math.max(st.nextAt, now + gap(h)); return st.nextAt - now; }
+    if (wait) { st.nextAt = Math.max(st.nextAt || 0, now + gap(h), now + wait); return st.nextAt - now; }
     if (spammy) st.nextAt = now + gap(h);
     last.push({ t, at: now }); if (last.length > 8) last.shift(); st.last = last;
     return 0;
   }
-  return { has, badName, mask, spam, fold };
+  // tidy: what a message may look like, applied by the server before it is stored (the client shows the same). A character
+  // repeated past 6 times is cut to 6 ("!!!!!!!!!!!" -> "!!!!!!"), a short chunk repeated past 4 times to 4 ("lollollollollol",
+  // emoji walls), no more than one blank line in a row, at most 12 lines (the rest joins the last line), runs of spaces to 3.
+  function tidy(text) {
+    let t = String(text || '');
+    t = t.replace(/(.)\1{6,}/gsu, (m, c) => c.repeat(6));
+    t = t.replace(/(.{2,24}?)\1{4,}/gsu, (m, c) => c.repeat(4));
+    t = t.replace(/[ \t]{4,}/g, '   ').replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, '\n\n');
+    const lines = t.split('\n'); if (lines.length > 12) t = lines.slice(0, 11).join('\n') + '\n' + lines.slice(11).map(l => l.trim()).filter(Boolean).join(' ');
+    return t;
+  }
+  return { has, badName, mask, spam, fold, tidy };
 })();
 // ---- end chat guard ----
 // the same slowdown the server applies, checked before sending, so a refused message never goes out to anyone

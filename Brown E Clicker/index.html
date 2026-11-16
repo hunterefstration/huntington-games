@@ -3996,8 +3996,10 @@
        const AC_META_KEY = 'brownEClicker_acMeta';
        const AC_RULES = {
            maxPerSec: 15,            // accepted clicks in any 1 s window
-           steadyN: 25, steadyMean: 400, steadySd: 6, // 25+ intervals, mean under 400 ms, standard deviation under 6 ms
-           burstN: 80, burstMs: 6000, // more than 80 raw clicks in 6 s (13+ a second, sustained)
+           // (2026-11-16: was 25 intervals under 6 ms apart and 80 clicks in 6 s, which caught steady human clickers)
+           steadyN: 40, steadyMean: 250, steadySd: 2.5, steadyCv: .012, // 40 fast intervals (4+ a second) spaced like a machine
+           burstN: 100, burstMs: 6000, // more than 100 raw clicks in 6 s (over 16 a second, sustained: no hand does that)
+           warnMs: 120000,           // the first catch is only a warning; a second one within 2 minutes is the strike
            untrustedN: 10, untrustedMs: 5000, // script clicks
            lockPer: 20, lockMax: 120, // seconds locked per strike
            decayMs: 86400000, decayPlay: 600 // a strike is forgiven after a day with 10+ minutes of clean play
@@ -4022,8 +4024,18 @@
            } catch (e) { /* ignore */ }
        }
        acLoad();
+       // the old rules gave strikes to people clicking by hand: everyone starts clean once
+       try { if (!localStorage.getItem('brownEClicker_acFix2')) { ac.strikes = 0; ac.lockUntil = 0; acSave(); localStorage.setItem('brownEClicker_acFix2', '1'); } } catch (e) { /* ignore */ }
        function acLocked() { return Date.now() < ac.lockUntil; }
+       let acWarnAt = 0;
        function acStrike(why) {
+           const nowW = Date.now();
+           if (why !== 'script clicks' && nowW - acWarnAt > AC_RULES.warnMs) {      // first time: a warning, nothing else
+               acWarnAt = nowW; ac.gaps.length = 0; ac.raw.length = 0;
+               acToast('That clicking looks automatic (' + why + '). If it keeps up, clicks pause for a while.');
+               return;
+           }
+           acWarnAt = 0;
            ac.strikes++;
            const secs = Math.min(AC_RULES.lockMax, AC_RULES.lockPer * ac.strikes);
            ac.lockUntil = Date.now() + secs * 1000;
@@ -4072,17 +4084,17 @@
                    let mean = 0; for (let i = 0; i < g.length; i++) mean += g[i]; mean /= g.length;
                    let v = 0; for (let i = 0; i < g.length; i++) v += (g[i] - mean) * (g[i] - mean);
                    const sd = Math.sqrt(v / g.length);
-                   if (mean < AC_RULES.steadyMean && sd < AC_RULES.steadySd) { acStrike('perfectly steady clicking'); return false; }
+                   if (mean < AC_RULES.steadyMean && sd < AC_RULES.steadySd && sd / mean < AC_RULES.steadyCv) { acStrike('perfectly steady clicking'); return false; }
                }
            }
            // Sustained machine-gun clicking
-           ac.raw.push(now);
-           while (ac.raw.length && now - ac.raw[0] > AC_RULES.burstMs) ac.raw.shift();
+           ac.raw.push(t);      // (counted by when each click happened, not when the page got round to it)
+           while (ac.raw.length && t - ac.raw[0] > AC_RULES.burstMs) ac.raw.shift();
            if (ac.raw.length > AC_RULES.burstN) { acStrike('too many clicks for too long'); return false; }
            // Hard cap: at most 15 paid clicks in any second
-           while (ac.accepted.length && now - ac.accepted[0] > 1000) ac.accepted.shift();
+           while (ac.accepted.length && t - ac.accepted[0] > 1000) ac.accepted.shift();
            if (ac.accepted.length >= AC_RULES.maxPerSec) return false;
-           ac.accepted.push(now);
+           ac.accepted.push(t);
            return true;
        }
        // Called once a second while playing: forgive one strike after a clean day with some play
@@ -4502,7 +4514,7 @@
        // --- DEBUG / TEST HOOK ---
        window.__clicker = {
            get state() { return state; },
-           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, AC_RULES,
+           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, AC_RULES, accept: (e, kind) => acceptClick(e, kind),
            click(n) { n = n || 1; for (let i = 0; i < n; i++) clickBigE(null); }, // bypasses the auto-clicker guard (tests only)
            shopItems, UPGRADES, ACHIEVEMENTS, BUILDING, MULTS,
            formatNumber, formatShort,
