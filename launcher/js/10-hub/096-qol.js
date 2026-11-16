@@ -90,7 +90,8 @@ function qolDecorate() {
 // The page used to be one tall column of big cards, which stopped working past twenty games. Now: a banner, a shelf
 // per kind of game (each scrolls sideways, so a shelf never gets longer), then every game as a small tile. A tile's
 // description shows when you rest on it (qolPeek). NEW_NOW names what this release added or changed.
-var NEW_NOW = ['Beat Lab', 'Blocky Shooter V2', 'Last Light', 'Sovereign'];
+var NEW_NOW = ['Blocky Shooter V2', 'Last Light', 'Sovereign', 'Mayhem Marathon'];
+var FEATURED_PIN = ['Beat Lab'];      // always first in Featured, whatever the release (the owner's ask, 2026-11-16)
 var SHELF_OF = { '3D': 'action', Shooter: 'action', Strategy: 'think', Tycoon: 'think', Sim: 'think', Clicker: 'think', Platformer: 'run', Puzzle: 'run', Arcade: 'run', Party: 'party', Minigame: 'party', Casino: 'party', Sandbox: 'make' };
 var SHELVES = [['fav', '\u2605 Your favourites'], ['new', 'New and updated'], ['mp', 'Play with friends'], ['action', 'Action and shooters'], ['think', 'Strategy, tycoon and idle'], ['run', 'Platformers, puzzles and arcade'], ['party', 'Party games and minigames'], ['make', 'Sandbox and the rest']];
 function qolShelfOf(g) { var t = g.tags || [], out = {}; for (var i = 0; i < t.length; i++) if (SHELF_OF[t[i]]) out[SHELF_OF[t[i]]] = 1; if (!Object.keys(out).length) out.make = 1; if (t.indexOf('Multiplayer') >= 0) out.mp = 1; if (NEW_NOW.indexOf(g.dir) >= 0) out['new'] = 1; if (qolIsFav(g.dir)) out.fav = 1; return out; }
@@ -128,7 +129,7 @@ function qolPaintImgs(root) {
 function qolTile(g) { return '<button class="stile" data-sdir="' + profEsc(g.dir) + '"><span class="simg"' + (g.img ? ' data-qimg="' + profEsc(g.img) + '"' : '') + '><i>' + profEsc(g.name) + '</i></span><b>' + profEsc(g.name) + '</b></button>'; }
 function qolShelves() {
   var hero = document.getElementById('ghero'), box = document.getElementById('gshelves'); if (!hero || !box) return;
-  var feat = NEW_NOW.map(qolGame).filter(Boolean); if (feat.length < 2) feat = GAMES.slice(0, 4);
+  var feat = FEATURED_PIN.concat(NEW_NOW.filter(function (d) { return FEATURED_PIN.indexOf(d) < 0; })).map(qolGame).filter(Boolean); if (feat.length < 2) feat = GAMES.slice(0, 4);
   QOL.feat = feat; if (!(QOL.fi < feat.length)) QOL.fi = 0;
   qolHero();
   var h = '';
@@ -141,7 +142,7 @@ function qolShelves() {
 }
 function qolHero() {
   var hero = document.getElementById('ghero'), g = QOL.feat && QOL.feat[QOL.fi]; if (!hero || !g) return;
-  var desc = String(g.desc || '').replace(/<[^>]+>/g, '');
+  var desc = String(g.hero || g.desc || '').replace(/<[^>]+>/g, '');      // (g.hero: a short line written for this banner)
   hero.innerHTML = '<div class="gh-img"' + (g.img ? ' data-now="1" data-qimg="' + profEsc(g.img) + '"' : '') + '></div><div class="gh-txt"><span class="gh-k">Featured</span><h2>' + profEsc(g.name) + '</h2><p>' + profEsc(desc.length > 210 ? desc.slice(0, 207) + '...' : desc) + '</p>' +
     '<button class="gh-play" data-sdir="' + profEsc(g.dir) + '">&#9654; Play</button></div><div class="gh-dots">' + QOL.feat.map(function (x, i) { return '<button data-ghi="' + i + '" class="' + (i === QOL.fi ? 'on' : '') + '" aria-label="' + profEsc(x.name) + '"></button>'; }).join('') + '</div>';
   qolPaintImgs(hero);
