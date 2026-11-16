@@ -21,7 +21,7 @@ function gcEl() {
   GC.inp.addEventListener('keydown', function (e) {
     e.stopPropagation();
     if (e.key === 'Escape') { e.preventDefault(); gcClose(); }
-    else if (e.key === 'Enter') { e.preventDefault(); var t = GC.inp.value.trim(); if (t && GC.room && window.HGGrapevine) window.HGGrapevine.chatSay(GC.room, t); GC.inp.value = ''; gcClose(); }
+    else if (e.key === 'Enter') { e.preventDefault(); var t = GC.inp.value.trim(); if (t && GC.room && window.HGGrapevine) window.HGGrapevine.party.chatSay(GC.room, t); GC.inp.value = ''; gcClose(); }
     else if (e.key === 'Tab') { e.preventDefault(); gcClose(); if (typeof dockOpen === 'function') dockOpen(''); }
   });
   GC.inp.addEventListener('keyup', function (e) { e.stopPropagation(); });
@@ -53,7 +53,7 @@ function gcOpen() {
 function gcClose() { GC.open = false; gcPaint(); try { frame.focus(); frame.contentWindow.focus(); } catch (e) {} }
 // which room: follows the game that is open (and its party, once the launcher knows the code)
 function gcSync() {
-  var L = window.HGGrapevine; if (!L || !L.chatRoom) return;
+  var L = window.HGGrapevine; if (!L || !L.party || !L.party.chatRoom) return;
   if (!GC.hooked && L.on) {
     GC.hooked = true;
     L.on('gchat', function (m) {
@@ -62,12 +62,12 @@ function gcSync() {
       if (m.err) return gcLine({ err: 1, text: m.err });
       gcLine({ from: m.from, real: m.real, uid: m.uid, text: m.text });
     });
-    L.on('status', function (s) { if (s.status === 'online' && GC.room) L.chatRoom(GC.room); });
+    L.on('status', function (s) { if (s.status === 'online' && GC.room) L.party.chatRoom(GC.room); });
   }
   var g = typeof current !== 'undefined' && current && current.game, want = g && !g.noChat && L.me && L.me() ? gcRoomFor(g) : { room: '', label: '' };
   if (want.room === GC.room) return;
   GC.room = want.room; GC.label = want.label; GC.n = 0; GC.lines = []; GC.open = false;
-  L.chatRoom(GC.room || null);
+  L.party.chatRoom(GC.room || null);
   if (GC.room) gcLine({ sys: 1, text: 'Press T to chat with the people playing here.' });
   else gcPaint();
 }

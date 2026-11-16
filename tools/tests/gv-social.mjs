@@ -77,12 +77,13 @@ try {
   check('...the live header and the bonus card', !!(await until(() => A.evaluate(() => /open game|No open games/.test(document.getElementById('mp-live').textContent) && /Multiplayer bonus|Double goons/.test(document.getElementById('mp-bonus').textContent)), 15000)));
 
   console.log('\n=== the multiplayer bonus ===');
-  const g0 = (await eco(A)).goons;
+  const g0 = (await eco(B)).goons;      // (A is the owner: an owner's goons read -1)
   for (const P of [A, B]) await P.evaluate(() => HGGrapevine.party.activity('Blocky Shooter', '424242', 'blocky'));
-  const paid = await until(async () => { for (const P of [A, B]) await P.evaluate(() => HGGrapevine.party.activity('Blocky Shooter', '424242', 'blocky')); const e = await eco(A); return e.goons >= g0 + 2 ? e : null; }, 45000, 1500);
-  check('ten "minutes" playing in the same party pays goons', !!paid, JSON.stringify({ before: g0, now: (await eco(A)).goons }));
+  const paid = await until(async () => { for (const P of [A, B]) await P.evaluate(() => HGGrapevine.party.activity('Blocky Shooter', '424242', 'blocky')); const e = await eco(B); return e.goons >= g0 + 2 ? e : null; }, 45000, 1500);
+  check('ten "minutes" playing in the same party pays goons', !!paid, JSON.stringify({ before: g0, now: (await eco(B)).goons }));
   check('...and the wallet says why', !!paid && paid.log.some(l => /Played with others/.test(l.why)));
-  check('...the bonus card shows today\'s total', !!(await until(() => A.evaluate(() => /[1-9]\d* \/ 20 today/.test(document.getElementById('mp-bonus').textContent)), 10000)));
+  await B.evaluate(() => document.getElementById('tab-mp').click());
+  check('...the bonus card shows today\'s total', !!(await until(() => B.evaluate(() => /[1-9]\d* \/ 20 today/.test(document.getElementById('mp-bonus').textContent)), 10000)));
   const C = await device(await browser.newContext({ viewport: { width: 1280, height: 860 } }));
   await createAccount(C, 'PlaySolo'); await until(async () => (await status(C)) === 'online', 60000);
   const c0 = (await eco(C)).goons;

@@ -8,10 +8,10 @@ function actDay(d) { var t = new Date(d + 'T12:00:00Z'); return t.toLocaleDateSt
 function actRender() {
   var box = document.getElementById('act-home'); if (!box) return;
   var L = window.HGGrapevine;
-  if (!L || !L.stats || !L.online()) { setHtml(box, '<div class="act-empty">Sign in to see the activity.</div>'); return; }
+  if (!L || !L.party || !L.party.stats || !L.online()) { setHtml(box, '<div class="act-empty">Sign in to see the activity.</div>'); return; }
   clearInterval(ACT.timer); ACT.timer = setInterval(function () { if (document.getElementById('view-act').hidden) return clearInterval(ACT.timer); actRender(); }, 30000);
   if (ACT.data && Date.now() - ACT.at < 25000) return actPaint();
-  L.stats().then(function (d) { ACT.data = d; ACT.at = Date.now(); actPaint(); }, function () { if (!ACT.data) setHtml(box, '<div class="act-empty">Could not load the activity. Try again in a moment.</div>'); });
+  L.party.stats().then(function (d) { ACT.data = d; ACT.at = Date.now(); actPaint(); }, function () { if (!ACT.data) setHtml(box, '<div class="act-empty">Could not load the activity. Try again in a moment.</div>'); });
 }
 function actPaint() {
   var d = ACT.data, box = document.getElementById('act-home'); if (!d || !box) return;
