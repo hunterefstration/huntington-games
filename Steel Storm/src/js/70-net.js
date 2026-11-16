@@ -6,7 +6,7 @@
 // next player takes over the room (host migration) or everybody gets a clean return to the menu.
 // ============================================================
 const GAME_ID = 'warpvp', PARTY_MAX = 8, DROP_MS = 75000;
-const PARTY = { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], rtt: 0, succ: -1, recon: false, migr: null, unread: 0 };
+const PARTY = { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], rtt: 0, succ: -1, recon: false, migr: null, unread: 0, migrating: false };
 function hgLoad() {
     let h = window.HGNet; try { if (!h && window.parent && window.parent !== window) h = window.parent.HGNet; } catch (e) {}
     if (h) return Promise.resolve(h);
@@ -77,7 +77,8 @@ function wireNet(net) {
 function onNetMsg(peer, m) {
     if (!m || typeof m !== 'object') return;
     switch (m.t) {
-        case 'party': if (!PARTY.host) { PARTY.roster = m.r; PARTY.opts = m.o; PARTY.succ = m.succ; Object.assign(save, { mode: m.o.mode, size: m.o.size, bots: m.o.bots, diff: m.o.diff }); Object.assign(save.opts, { len: m.o.len, map: m.o.map, ff: m.o.ff, wx: m.o.wx }); UI.paintParty(); UI.refreshLobby(); UI.paintMenuSel(); } return;
+        // the host's options stay in PARTY.opts: a guest's own solo settings are no longer overwritten by every party it joins (2.2)
+        case 'party': if (!PARTY.host && m.o && MODES[m.o.mode]) { PARTY.roster = Array.isArray(m.r) ? m.r : []; PARTY.opts = m.o; PARTY.succ = m.succ; PARTY.inMatch = !!m.im || (PARTY.inMatch && !!M); UI.paintParty(); UI.refreshLobby(); } return;
         case 'me': if (PARTY.host) { const x = PARTY.mem[peer.id] || (PARTY.mem[peer.id] = { team: autoTeam() }); if (VBY[m.veh]) { x.veh = m.veh; x.mm = m.mm | 0; x.line = Array.isArray(m.line) ? m.line.slice(0, 5) : []; } if (m.ready !== undefined) x.ready = !!m.ready; broadcastParty(); } return;
         case 'team': if (PARTY.host && !PARTY.inMatch) { const x = PARTY.mem[peer.id]; if (x && (m.team === 0 || m.team === 1)) { x.team = m.team; x.ready = false; broadcastParty(); } } return;
         case 'chat': { const n = String(peer && peer.name || 'Player').slice(0, 16); addChat(n, String(m.x || '').slice(0, 140), peer && peer.id); return; }
@@ -94,7 +95,7 @@ function partyReset() {
     try { net && net.close(); } catch (e) {}
     if (lpOpen) { try { const p = LP(); p && p.HG_partyClose && p.HG_partyClose(lpOpen); } catch (e) {} lpOpen = ''; }
     if (!UNLOADING) try { sessionStorage.removeItem('steelstorm_party'); } catch (e) {}
-    Object.assign(PARTY, { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], succ: -1, recon: false, lag: false, migr: null, unread: 0 });
+    Object.assign(PARTY, { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], succ: -1, recon: false, lag: false, migr: null, unread: 0, migrating: false, force: 0 });
 }
 function rememberParty() { try { sessionStorage.setItem('steelstorm_party', JSON.stringify({ code: PARTY.code, at: Date.now(), host: PARTY.host })); } catch (e) {} }
 function makeNet(HG) { const net = HG.create({ game: GAME_ID, dropMs: DROP_MS }); PARTY.net = net; wireNet(net); return net; }
@@ -174,13 +175,13 @@ function tryMigrate() {
     const old = PARTY.code, me = PARTY.myId, succ = PARTY.succ; if (succ < 0 || !/^\d{6}$/.test(old)) return false;
     const code = migCode(old), inM = !!M && !M.over, net = PARTY.net;
     PARTY.net = null; try { net.close(); } catch (e) {}
-    PARTY.code = ''; PARTY.busy = false; PARTY.recon = false;
+    PARTY.code = ''; PARTY.busy = false; PARTY.recon = false; PARTY.migrating = true;      // the lobby stays up and says so
     UI.banner('Host left: moving the party to a new host...');
     if (me === succ) {
         partyCreate(code);
         const t0 = Date.now(), iv = setInterval(() => {
             if (PARTY.host && PARTY.code) {
-                clearInterval(iv); PARTY.migr = { at: Date.now(), map: {} };
+                clearInterval(iv); PARTY.migr = { at: Date.now(), map: {} }; PARTY.migrating = false;
                 if (inM && M) becomeMatchHost(me);
                 UI.banner(''); chatSys('You are the new host' + (PARTY.code !== code ? ' (new code ' + PARTY.code + ')' : ''));
                 setTimeout(() => { if (PARTY.migr) { if (M) for (const id of Object.keys(PARTY.migr.map)) hostPlayerGone(+id); PARTY.migr = null; } }, 25000);
@@ -189,7 +190,7 @@ function tryMigrate() {
     } else {
         const t0 = Date.now(), attempt = () => {
             if (Date.now() - t0 > 22000) return migrateFailed();
-            partyJoin(code, { old: me }).then(ok => { if (ok) { UI.banner(''); chatSys('Moved to the new host.'); } else setTimeout(attempt, 1500); });
+            partyJoin(code, { old: me }).then(ok => { if (ok) { PARTY.migrating = false; UI.banner(''); chatSys('Moved to the new host.'); } else setTimeout(attempt, 1500); });
         };
         setTimeout(attempt, 2000);
     }
@@ -212,21 +213,27 @@ function migrantJoined(peer, old) {
     else if (M && !M.over) hostAddPlayer(peer);
 }
 // ---------- launcher hooks (invites, open parties) ----------
-let lpOpen = '';
+let lpOpen = '', advT = 0;
+function advMode() {      // what the open-games list shows under the host's name (Grapevine keeps 40 characters)
+    const m = MODES[save.mode] || MODES.tdm, s = save.size, map = { small: 'Small', normal: 'Normal', large: 'Large' }[save.opts.map] || 'Normal';
+    const t = n => n + (save.mode === 'ffa' ? '' : ' ' + s + 'v' + s) + ' · ' + map + ' map' + (PARTY.inMatch ? ' · in battle' : '');
+    return t(m.name).length <= 40 ? t(m.name) : t(m.short);
+}
 function advertise() {
     const p = LP(); if (!p || !p.HG_partyOpen) return;
     const open = PARTY.host && /^\d{6}$/.test(PARTY.code);
-    if (open) { try { p.HG_partyOpen({ game: GAME_ID, code: PARTY.code, n: rosterNow().length, max: PARTY_MAX, mode: MODES[save.mode].name + (PARTY.inMatch ? ' (in battle)' : '') }); lpOpen = PARTY.code; } catch (e) {} }
+    if (open) { try { p.HG_partyOpen({ game: GAME_ID, code: PARTY.code, n: rosterNow().length, max: PARTY_MAX, mode: advMode(), pub: save.opts.pub !== 0 }); lpOpen = PARTY.code; } catch (e) {} }
     else if (lpOpen) { try { p.HG_partyClose(lpOpen); } catch (e) {} lpOpen = ''; }
 }
+function advertiseSoon() { if (!PARTY.host) return; clearTimeout(advT); advT = setTimeout(advertise, 1500); }      // option clicks come in bursts: one update
 setInterval(advertise, 30000);
 setInterval(() => { if (PARTY.host && PARTY.net && !M) broadcastParty(); else if (PARTY.host && PARTY.net) { PARTY.roster = hostRoster(); } }, 3000);
 window.__hgJoin = code => {
     const c = String(code || '').replace(/\D/g, ''); if (c.length !== 6) return false;
-    UI.showMenu(); $('#p-code').value = c; partyJoin(c); return true;
+    if (!M) UI.go('mp'); $('#p-code').value = c; partyJoin(c); return true;
 };
 window.__hgHost = convId => {
-    UI.showMenu(); partyCreate();
+    if (!M) UI.go('mp'); partyCreate();
     const t0 = Date.now(), iv = setInterval(() => {
         if (Date.now() - t0 > 25000) return clearInterval(iv);
         if (PARTY.host && /^\d{6}$/.test(PARTY.code)) { clearInterval(iv); const p = LP(); try { p && p.HG_sendInvite && p.HG_sendInvite(convId, { game: GAME_ID, code: PARTY.code, max: PARTY_MAX }); } catch (e) {} }

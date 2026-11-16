@@ -17,7 +17,7 @@ function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79
 const TEAM_COL = [0x3b9bff, 0xff4d4d, 0x4cd964, 0xffd21f, 0xc77dff, 0xff9d3a, 0x3ae0d0, 0xff6ac1, 0xa0e85a, 0xe8e8e8, 0x7a8cff, 0xd08a5a, 0x5ad0ff, 0xffb0b0, 0x9a9a9a, 0xb0ff6a, 0xffe08a, 0x8affd8];
 const teamCol = t => TEAM_COL[((t | 0) % TEAM_COL.length + TEAM_COL.length) % TEAM_COL.length];
 const teamHex = t => '#' + teamCol(t).toString(16).padStart(6, '0');
-const VERSION = '2.1.1';
+const VERSION = '2.2';
 let toastT = 0;
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2600); }
 
@@ -30,8 +30,8 @@ function defaultSave() {
     return {
         v: SAVE_V, name: '', credits: 800, freeRp: 0, rp: {}, researched: {}, owned: {}, target: null,
         lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0, bots: 'match', diff: 'normal',
-        mods: {}, opts: { len: 10, map: 'normal', ff: 0, wx: 'noon' },
-        settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false },
+        mods: {}, opts: { len: 10, map: 'normal', ff: 0, wx: 'noon', pub: 1 },
+        settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false, show: true },
         stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0, flags: 0, mvp: 0 }, seenHow: false, seenNew: ''
     };
 }
@@ -79,6 +79,8 @@ function fixSave(s) {      // tier I is always owned; drop unknown ids; keep a u
     o.ff = o.ff ? 1 : 0; if (!['noon', 'evening', 'overcast', 'night', 'random'].includes(o.wx)) o.wx = 'noon';
     if (!['off', 'match', 'mixed'].includes(s.bots)) s.bots = 'match';
     if (!['low', 'med', 'high'].includes(s.settings.quality)) s.settings.quality = 'med';
+    s.settings.show = s.settings.show !== false; o.pub = o.pub === 0 ? 0 : 1;
+    if (!['easy', 'normal', 'hard'].includes(s.diff)) s.diff = 'normal';
     s.v = SAVE_V;
     return s;
 }
@@ -150,6 +152,7 @@ const SFX = {
 // positional: quieter with distance from the camera
 let listenerPos = null;
 function sfx(name, x, y, z, vol) {
+    if (x !== undefined && !M) return;      // a sound with a position and no match: the menu showcase stays silent
     const c = ac(); if (!c || !SFX[name]) return;
     const now = c.currentTime, lim = (name === 'gun' || name === 'mg') ? 0.07 : 0.04;
     if (A.last[name] && now - A.last[name] < lim) return; A.last[name] = now;

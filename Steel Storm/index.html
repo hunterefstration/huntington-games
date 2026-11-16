@@ -5,78 +5,283 @@
 })();</script><!--/HG-->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Steel Storm 2.1</title>
+<title>Steel Storm 2.2</title>
 <style>
-:root{--y:#ffd21f;--y2:#ff9d00;--bg:#0b1020;--p:#141b33;--p2:#1d2748;--tx:#eef2ff;--mut:#8f9bc4;--t0:#3b9bff;--t1:#ff4d4d;--ok:#4cd964;--bad:#ff5a5a}
+/* ===== base: colours, type, buttons, inputs, modal cards (2.2) ===== */
+:root{--y:#ffd21f;--y2:#ff9d00;--bg:#0a0f1f;--p:#111833;--p2:#1a2448;--pa:rgba(10,15,33,.88);--pb:rgba(16,23,48,.92);--ln:#2d3b72;--tx:#eef2ff;--mut:#93a0c8;--cy:#4fe0ff;--t0:#3b9bff;--t1:#ff4d4d;--ok:#4cd964;--bad:#ff5a5a;--warn:#ffb340;--nav:220px;--top:60px;--hd:"Arial Black",Impact,"Trebuchet MS",sans-serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:#0b1020;color:var(--tx);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;user-select:none}
 canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
 canvas#ov{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 .hidden{display:none!important}
+button{font-family:inherit;color:inherit}
 #boot{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,#22305e,#080b18);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center}
-#boot .bt{font:900 italic 64px "Arial Black",Impact,sans-serif;letter-spacing:4px;color:var(--y);text-shadow:0 4px 0 #a45b00,0 0 40px #ff9d0066}
-#boot-s{margin-top:14px;color:var(--mut)}
+#boot .bt{font:900 italic 64px var(--hd);letter-spacing:4px;color:var(--y);text-shadow:0 4px 0 #a45b00,0 0 40px #ff9d0066;text-align:center}
+#boot-s{margin-top:14px;color:var(--mut);text-align:center;padding:0 16px}
 .scr{position:fixed;inset:0;z-index:10;pointer-events:none}
 .scr>*{pointer-events:auto}
-.scr.dim{background:rgba(5,8,18,.72);display:flex;align-items:center;justify-content:center;pointer-events:auto}
-.scr.full{background:linear-gradient(160deg,#090d1e,#121a3a);pointer-events:auto;display:flex;flex-direction:column;overflow:auto}
-.panel{background:linear-gradient(180deg,rgba(24,32,64,.88),rgba(12,17,38,.88));border:1px solid #3a4a8a55;border-radius:10px;padding:12px;backdrop-filter:blur(3px)}
-.panel h3,.card h3,.garage-main h3{margin:0 0 8px;font:800 13px "Arial Black",sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--y)}
-.garage-main h3{margin-top:14px}.garage-main h3 small{color:var(--mut);font:12px sans-serif;letter-spacing:0;text-transform:none}
-.note{color:var(--mut);font-size:12px;margin-top:6px;min-height:14px}.note.bad{color:var(--bad)}
-.btn{background:linear-gradient(#2a3a72,#1c2756);color:var(--tx);border:1px solid #5468b8;border-radius:8px;padding:9px 16px;font:700 14px "Trebuchet MS",sans-serif;cursor:pointer;margin:3px 0}
+.scr.dim{background:rgba(4,7,16,.74);display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:30;padding:12px}
+.note{color:var(--mut);font-size:12px;margin-top:6px;min-height:14px}.note.bad,.bad{color:var(--bad)}
+h2,h3,h4{margin:0}
+kbd{display:inline-block;min-width:20px;padding:1px 6px;border:1px solid #5a6aa8;border-bottom-width:3px;border-radius:5px;background:#18214a;font:800 11px "Trebuchet MS",sans-serif;color:#dfe6ff;text-align:center}
+/* buttons */
+.btn{background:linear-gradient(#26346a,#1a2452);color:var(--tx);border:1px solid #4a5ea8;border-radius:9px;padding:9px 16px;font:700 14px "Trebuchet MS",sans-serif;cursor:pointer;margin:3px 0;transition:filter .12s,background .12s}
 .btn:hover{filter:brightness(1.25)}.btn:disabled{opacity:.4;cursor:default;filter:none}
-.btn.small{padding:5px 10px;font-size:12px}.btn.big{padding:12px 28px;font-size:17px;margin-top:12px}
+.btn.small{padding:5px 11px;font-size:12px;border-radius:7px}.btn.big{padding:12px 28px;font-size:17px;margin-top:14px}
+.btn.primary{background:linear-gradient(#ffe04a,var(--y2));color:#231600;border-color:#fff1a8;font-weight:900}
 .btn.danger{background:linear-gradient(#7a2a2a,#4e1818);border-color:#c55}
-.btn.nav{min-width:104px;padding:12px 10px;font-size:15px;transform:skewX(-8deg)}
-.play{font:900 italic 38px "Arial Black",Impact,sans-serif;letter-spacing:3px;color:#1a1200;background:linear-gradient(#ffe45a,var(--y2));border:3px solid #fff3b0;border-radius:6px;padding:10px 64px;cursor:pointer;transform:skewX(-8deg);box-shadow:0 6px 0 #9a5200,0 0 30px #ffb30066;margin:0 14px}
-.play:hover{filter:brightness(1.1);transform:skewX(-8deg) translateY(-2px)}.play:active{transform:skewX(-8deg) translateY(3px);box-shadow:0 2px 0 #9a5200}
-.play:disabled{filter:grayscale(.8) brightness(.6);cursor:default;box-shadow:none}.play.small{font-size:26px;padding:8px 40px;margin:12px 0 0}
-.m-top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;padding:10px 16px;gap:16px;background:linear-gradient(rgba(5,8,18,.8),transparent)}
-.brand{font:900 italic 26px "Arial Black",Impact,sans-serif;color:#fff;letter-spacing:2px}.brand b{color:var(--y);margin-left:6px}
-.wallet{display:flex;gap:8px;margin-left:auto}.m-me{margin-left:10px}
-.w-pill{display:flex;align-items:center;gap:6px;background:#0008;border:1px solid #4a5a9a66;border-radius:20px;padding:4px 12px 4px 6px;font-weight:800}
-.ic{display:inline-block;width:18px;height:18px;border-radius:50%}.ic.cr{background:radial-gradient(#ffe27a,#c78a00)}.ic.rp{background:radial-gradient(#8fe0ff,#1b7fc4)}.ic.fr{background:radial-gradient(#d8a8ff,#7a35c9)}
-input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(--tx);border:1px solid #4a5a9a;border-radius:6px;padding:7px 9px;font:700 14px "Trebuchet MS",sans-serif;outline:none}
-#m-name{width:150px;text-align:center}#p-code{width:130px;letter-spacing:2px}
-.row{display:flex;gap:6px;margin-top:6px}
-.m-left{position:absolute;left:14px;top:66px;width:205px}.m-right{position:absolute;right:14px;top:66px;width:225px}
-.mode{display:block;width:100%;text-align:left;margin-bottom:6px;padding:9px 12px;background:#18224a;border:2px solid #31417f;border-radius:8px;color:var(--tx);cursor:pointer}
-.mode b{display:block;font-size:16px}.mode small{color:var(--mut)}.mode.on{border-color:var(--y);background:#2b2d1a}.mode:disabled{opacity:.5;cursor:default}
-.seg{display:flex;margin-bottom:6px}.seg button{flex:1;background:#18224a;border:1px solid #31417f;color:var(--tx);padding:7px 4px;cursor:pointer;font-weight:700;font-size:12px}
-.seg button.on{background:var(--y);color:#241a00}.seg button:disabled{opacity:.5;cursor:default}
-.p-code{font-size:13px;color:var(--mut)}.p-code b{font:900 26px "Arial Black",sans-serif;color:var(--y);letter-spacing:4px;margin-left:6px}
-#p-list{margin:8px 0}.pm{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0006;border-radius:6px;margin-bottom:4px;font-weight:700}
-.pm .dot{width:10px;height:10px;border-radius:50%;background:var(--ok)}.pm small{color:var(--mut);margin-left:auto}.pm .star{color:var(--y)}
-.m-bottom{position:absolute;left:0;right:0;bottom:0;padding:10px 16px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(transparent,rgba(5,8,18,.85))}
-.m-play{display:flex;align-items:center}
-.lineup{display:flex;gap:8px}.lineup.big{flex-wrap:wrap}
-.chip{width:118px;padding:6px 8px;background:linear-gradient(#222d5e,#141b3c);border:2px solid #334088;border-radius:8px;cursor:pointer;text-align:center;font-size:12px;position:relative}
-.chip b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chip small{color:var(--mut)}
-.chip.sel{border-color:var(--y);box-shadow:0 0 14px #ffd21f66}.chip.empty{opacity:.35;border-style:dashed;cursor:default}.chip .tier{position:absolute;top:2px;right:6px;color:var(--y);font-weight:800;font-size:11px}
-.chip .ln{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
-.ln-g{background:#9bc44a}.ln-a{background:#58b8ff}.ln-n{background:#3ad0c4}
-.chip.dis{opacity:.4;cursor:default}
-.topbar{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid #3a4a8a55}.topbar h2{margin:0;font:900 italic 26px "Arial Black",sans-serif}
-.tree-wrap{display:flex;gap:14px;padding:14px 16px;flex:1;min-height:0}
-#tree{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;overflow:auto}
-.col h3{text-align:center;margin:0 0 6px}.tier{display:flex;gap:6px;align-items:stretch;margin-bottom:6px}.tier>i{width:22px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--y);font:800 12px sans-serif;font-style:normal;background:#0006;border-radius:5px}
-.tier .cards{flex:1;display:flex;flex-wrap:wrap;gap:6px}
-.cards{display:flex;flex-wrap:wrap;gap:8px}
-.vc{flex:1;min-width:96px;background:linear-gradient(#222d5e,#141b3c);border:2px solid #334088;border-radius:8px;padding:6px;cursor:pointer;position:relative;font-size:12px}
-.vc b{display:block;font-size:13px}.vc small{color:var(--mut)}.vc.sel{outline:2px solid var(--y)}
-.vc.owned{border-color:#3d9b55}.vc.res{border-color:#c9a21c}.vc.can{border-color:#5aa0ff}.vc.lock{opacity:.45}
-.bar{height:7px;background:#000a;border-radius:4px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#3ab0ff,#7be0ff)}
-.tag{position:absolute;top:3px;right:5px;font-size:10px;font-weight:800}.tag.ok{color:var(--ok)}.tag.t{color:var(--y)}
-.info{width:300px;flex:none;overflow:auto}.info h2{margin:0 0 4px;font:900 20px "Arial Black",sans-serif}.info .st{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13px;margin:8px 0}.info .st span:nth-child(odd){color:var(--mut)}
-.garage-main{flex:1;overflow:auto}
-.card{background:linear-gradient(180deg,#1a2348,#0f1530);border:2px solid #4457a5;border-radius:12px;padding:20px 26px;min-width:320px;max-width:94vw;max-height:92vh;overflow:auto;pointer-events:auto}
-.card.wide{width:760px}.card h2{margin:0 0 10px;font:900 italic 28px "Arial Black",sans-serif;color:var(--y)}.card label{display:block;margin:10px 0;font-weight:700}
-.card select{margin-left:10px;background:#0a0f22;color:var(--tx);border:1px solid #4a5a9a;padding:5px}.card input[type=range]{vertical-align:middle;margin-left:10px;width:180px}
-.card .btn{display:block;width:100%}.card label.chk input{margin-right:8px}
-.how{display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:14px}.how h4{margin:10px 0 2px;color:var(--y)}.how p{margin:0;color:#cdd6f5}
-.keys td{padding:2px 8px 2px 0;font-size:13px}.keys td:first-child{color:var(--y);font-weight:800;white-space:nowrap}
-/* HUD */
+.btn.ghost{background:#0008;border-color:#ffffff30}
+.play{font:900 italic 34px var(--hd);letter-spacing:3px;color:#1a1200;background:linear-gradient(#ffe45a,var(--y2));border:3px solid #fff3b0;border-radius:10px;padding:10px 56px;cursor:pointer;box-shadow:0 6px 0 #9a5200,0 0 34px #ffb30055;transition:transform .08s,filter .12s;white-space:nowrap}
+.play:hover{filter:brightness(1.08);transform:translateY(-2px)}.play:active{transform:translateY(3px);box-shadow:0 2px 0 #9a5200}
+.play:disabled{filter:grayscale(.8) brightness(.6);cursor:default;box-shadow:none;transform:none}
+.play.wide{display:block;width:100%;padding:10px 12px;font-size:26px;margin-top:10px}
+.play.on{background:linear-gradient(#8af59a,#2fae4a);border-color:#d6ffd9;box-shadow:0 6px 0 #1d6b2d,0 0 30px #4cd96455}
+/* inputs */
+input:not([type=range]):not([type=checkbox]){background:#070b1a;border:1px solid #3d4d8f;border-radius:9px;color:#fff;padding:9px 12px;font:700 15px "Trebuchet MS",sans-serif;outline:none;user-select:text}
+input:not([type=range]):not([type=checkbox]):focus{border-color:var(--y)}
+input[type=range]{accent-color:var(--y);width:100%}
+/* segmented controls (options) */
+.seg{display:inline-flex;flex-wrap:wrap;background:#060a18;border:1px solid #2f3c74;border-radius:9px;padding:2px;gap:2px}
+.seg button{background:none;border:0;border-radius:7px;padding:6px 11px;font:700 13px "Trebuchet MS",sans-serif;color:#b9c3e8;cursor:pointer}
+.seg button:hover:not(:disabled){background:#ffffff12;color:#fff}
+.seg button.on{background:linear-gradient(#ffe04a,var(--y2));color:#231600}
+.seg button:disabled{cursor:default}.seg button:disabled:not(.on){opacity:.45}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:7px 0;flex-wrap:wrap}.opt>span{font-weight:700;font-size:13px;color:#dfe6ff}.opt>span small{display:block;color:var(--mut);font-weight:400;font-size:11px}
+.tabs{display:inline-flex;gap:4px;background:#060a18;border:1px solid #2f3c74;border-radius:10px;padding:3px}
+.tabs button{background:none;border:0;border-radius:8px;padding:6px 14px;font:800 13px "Trebuchet MS",sans-serif;color:#b9c3e8;cursor:pointer}.tabs button:hover{color:#fff;background:#ffffff10}
+.tabs button.on{background:#2a3a78;color:#fff;box-shadow:inset 0 -2px 0 var(--y)}
+.row{display:flex;gap:6px;align-items:center}.row input{flex:1;min-width:0}
+/* wallet + icons */
+.wallet{display:flex;gap:8px}
+.w-pill{display:flex;align-items:center;gap:6px;background:#000a;border:1px solid #4a5a9a66;border-radius:20px;padding:4px 12px 4px 6px;font-weight:800;font-size:14px;white-space:nowrap}
+.ic{display:inline-block;width:18px;height:18px;border-radius:50%;flex:none}.ic.cr{background:radial-gradient(#ffe27a,#c78a00)}.ic.rp{background:radial-gradient(#8fe0ff,#1b7fc4)}.ic.fr{background:radial-gradient(#d8a8ff,#7a35c9)}
+svg.i{width:20px;height:20px;fill:currentColor;flex:none;vertical-align:middle}
+/* modal cards */
+.card{background:linear-gradient(180deg,#152048,#0b1128);border:1px solid #3b4c92;border-radius:16px;padding:20px 24px;width:min(460px,100%);max-height:calc(100vh - 24px);overflow:auto;box-shadow:0 20px 60px #000a;text-align:left}
+.card.wide{width:min(940px,100%)}
+.card h2{font:900 italic 24px var(--hd);color:#fff;letter-spacing:1px}
+.card h3{margin:16px 0 6px;font:800 12px var(--hd);letter-spacing:2px;text-transform:uppercase;color:var(--y)}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.card .x{background:#0006;border:1px solid #ffffff2a;border-radius:50%;width:34px;height:34px;font-size:22px;line-height:28px;cursor:pointer;color:#dfe6ff;flex:none}.card .x:hover{background:#ffffff1a}
+.card>.btn.big{display:block;margin:16px auto 0;min-width:180px}
+.qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.qgrid button{background:#0a1028;border:2px solid #2f3c74;border-radius:12px;padding:10px;text-align:left;cursor:pointer}.qgrid button:hover{border-color:#5a6ec0}
+.qgrid button b{display:block;font:900 15px var(--hd);letter-spacing:1px}.qgrid button small{color:var(--mut);font-size:11px;line-height:1.35}
+.qgrid button.on{border-color:var(--y);background:#2a2610}.qgrid button.on b{color:var(--y)}
+.rng{display:grid;grid-template-columns:150px 1fr 44px;align-items:center;gap:10px;margin:8px 0;font-weight:700;font-size:13px}.rng b{color:var(--y);text-align:right}
+.how{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;font-size:14px;line-height:1.5}.how h4{color:var(--y);font:800 13px var(--hd);letter-spacing:1px;margin:12px 0 2px;text-transform:uppercase}.how h4.old{color:var(--mut)}.how p{margin:0;color:#d6ddf7}
+.keys{border-collapse:collapse;width:100%;font-size:13px}.keys td{padding:4px 6px;border-bottom:1px solid #ffffff10}.keys td:first-child{white-space:nowrap;color:#fff;font-weight:700}
+@media (max-width:700px){.how{grid-template-columns:1fr}.qgrid{grid-template-columns:1fr}.rng{grid-template-columns:1fr 44px}.rng span{grid-column:1/-1}.card{padding:16px}}
+
+/* ===== the menu frame (2.2): top bar, navigation rail, views. No backdrop blur: it would re-blur the live 3D every frame ===== */
+#menu{position:fixed;inset:0;z-index:10;pointer-events:none}
+#menu>*{pointer-events:auto}
+#menu .shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(4,7,16,.88) 0,rgba(4,7,16,.5) calc(var(--nav) + 40px),rgba(4,7,16,0) 42%,rgba(4,7,16,0) 60%,rgba(4,7,16,.6) 100%),linear-gradient(0deg,rgba(4,7,16,.85),rgba(4,7,16,0) 34%),linear-gradient(180deg,rgba(4,7,16,.75),rgba(4,7,16,0) 16%)}
+#menu[data-view=research] .shade,#menu[data-view=mp] .shade,#menu[data-view=battle] .shade{background:rgba(4,7,16,.62)}
+.mtop{position:absolute;left:0;right:0;top:0;height:var(--top);display:flex;align-items:center;gap:14px;padding:0 16px}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.logo{font:900 italic 26px var(--hd);color:#fff;letter-spacing:2px;white-space:nowrap;text-shadow:0 2px 0 #000}.logo b{color:var(--y);margin-left:6px}
+.ver{color:var(--mut);font-size:12px;text-decoration:none;white-space:nowrap;border:1px solid #ffffff22;border-radius:10px;padding:2px 8px}.ver:hover{color:#fff;border-color:var(--y)}
+.mtop .wallet{margin-left:auto}
+.me{display:flex;align-items:center;gap:6px;background:#000a;border:1px solid #4a5a9a66;border-radius:20px;padding:2px 4px 2px 8px}
+.me-ic{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#dfe6ff 0 28%,transparent 30%),radial-gradient(circle at 50% 110%,#dfe6ff 0 45%,transparent 47%);flex:none}
+#menu .me input{background:none;border:0;padding:5px 6px;width:150px;font-size:14px}
+.mnav{position:absolute;top:var(--top);left:0;bottom:0;width:var(--nav);padding:12px 12px 16px 0;display:flex;flex-direction:column;gap:3px;overflow:auto}
+.mnav button{display:flex;align-items:center;gap:12px;background:none;border:0;border-left:4px solid transparent;padding:12px 14px 12px 16px;font:800 14px var(--hd);letter-spacing:1.5px;text-transform:uppercase;color:#b9c3e8;border-radius:0 12px 12px 0;cursor:pointer;text-align:left;position:relative}
+.mnav button:hover{background:#ffffff12;color:#fff}
+.mnav button.on{background:linear-gradient(90deg,#ffd21f38,#ffd21f08);border-left-color:var(--y);color:#fff}
+.mnav button.on svg{color:var(--y)}
+.mnav em{margin-left:auto;font:900 9px var(--hd);letter-spacing:1px;font-style:normal;background:var(--ok);color:#052;padding:2px 6px;border-radius:6px}
+#nv-rs{background:var(--cy);color:#022}
+.nsep{flex:1;min-height:10px}
+.view{position:absolute;top:var(--top);left:var(--nav);right:0;bottom:0;padding:6px 18px 16px 6px;min-height:0}
+#sc-cap{position:absolute;left:calc(var(--nav) + 14px);top:calc(var(--top) + 8px);max-width:440px;pointer-events:none;text-shadow:0 2px 6px #000;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+#sc-cap .sc-live{font:900 10px var(--hd);letter-spacing:2px;background:#ff3b30;color:#fff;padding:2px 7px;border-radius:5px;animation:live 1.6s infinite}
+#sc-cap b{font:900 italic 20px var(--hd);letter-spacing:1px}#sc-cap small{color:#c9d3f5;font-size:12px}
+#sc-cap em{width:100%;font-style:normal;color:var(--y);font-weight:700;font-size:13px}
+@keyframes live{50%{opacity:.55}}
+#menu:not([data-view=menu]):not([data-view=garage]) #sc-cap{display:none}
+/* sheets and the vehicle card */
+.sheet{background:var(--pb);border:1px solid var(--ln);border-radius:16px;padding:14px 16px;min-height:0}
+.sheet h3{font:800 12px var(--hd);letter-spacing:2px;text-transform:uppercase;color:var(--y);margin:0 0 8px}
+.sheet-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}.sheet-h h2{font:900 italic 22px var(--hd);letter-spacing:1px;margin-right:auto}
+.sheet-f{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.vpanel{background:var(--pa);border:1px solid var(--ln);border-radius:16px;padding:14px 16px;overflow:auto;min-height:0;align-self:start;max-height:100%}
+.vk-head{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--lc,#fff3);padding-bottom:10px}
+.tierb{display:inline-grid;place-items:center;min-width:38px;height:38px;border-radius:10px;background:#ffffff14;font:900 16px var(--hd);color:var(--y);flex:none}
+.vk-head small{color:var(--lc);font-weight:800;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+.vk-head h2{font:900 italic 21px var(--hd);letter-spacing:.5px;line-height:1.1}
+.brb{margin-left:auto;text-align:center;font:900 20px var(--hd);color:#fff;flex:none}.brb small{display:block;font:800 9px var(--hd);color:var(--mut);letter-spacing:2px}
+.role{margin:10px 0 4px;font-size:13px;color:#d6ddf7;line-height:1.4}.role b{display:inline-block;background:#ffffff14;border:1px solid #ffffff22;border-radius:6px;padding:0 6px;margin-right:6px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--cy)}
+.desc{font-size:12.5px;color:var(--mut);margin:4px 0;line-height:1.4}
+.sbars{display:grid;gap:7px;margin:12px 0}
+.sb{display:grid;grid-template-columns:78px 1fr 70px;align-items:center;gap:8px;font-size:12px;color:#c9d3f5}
+.sbar{height:9px;background:#000b;border-radius:5px;overflow:hidden;display:flex;box-shadow:inset 0 0 0 1px #ffffff10}
+.sbar i{background:linear-gradient(90deg,#3b9bff,#4fe0ff)}.sbar u{background:linear-gradient(90deg,var(--y2),var(--y))}
+.sb b{text-align:right;font-weight:800;color:#fff;white-space:nowrap}
+.wps{border-top:1px solid #ffffff14;padding-top:8px;display:grid;gap:4px}
+.wp-row{display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:8px;font-size:12.5px}.wp-row b{color:#fff;white-space:nowrap}.wp-row small{color:var(--mut);margin-left:6px}
+.wp-row kbd{font-size:9px;min-width:0;padding:1px 4px;white-space:nowrap;justify-self:start}
+.mdots{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:12px;color:var(--mut)}.mdots i{width:12px;height:12px;border-radius:3px;background:#ffffff18;border:1px solid #ffffff22}.mdots i.on{background:var(--ok);border-color:#b8ffc2}.mdots span{margin-left:6px}
+.vk-act{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.vk-act .btn{flex:1;margin:0}
+.vk-note{font-size:12px;color:var(--mut);margin-top:8px}
+.mod{background:#0a1028;border:1px solid #2a3770;border-radius:10px;padding:8px 10px;margin-top:6px;font-size:12px}.mod b{display:block;font-size:13px}.mod small{color:var(--mut);display:block}.mod.done{border-color:#4cd96466}
+.mod .row{margin-top:6px}.mod .btn{flex:1}
+.tag{position:absolute;top:6px;right:6px;font:900 10px var(--hd);padding:2px 6px;border-radius:5px;letter-spacing:.5px}.tag.ok{background:var(--ok);color:#042}.tag.t{background:var(--y);color:#231600}
+.mod .tag{position:static;display:inline-block;margin-top:4px}
+.bar{height:6px;background:#000b;border-radius:3px;overflow:hidden;margin:4px 0}.bar i{display:block;height:100%;background:linear-gradient(90deg,#3b9bff,var(--cy))}
+/* lineup cards */
+.lineup{display:flex;gap:8px;min-width:0}
+.slot{position:relative;width:150px;flex:none;background:var(--pa);border:2px solid #2d3b72;border-radius:12px;padding:8px 10px 8px;cursor:pointer;text-align:left;transition:border-color .12s,transform .12s}
+.slot:hover{border-color:#5a6ec0;transform:translateY(-2px)}
+.slot.sel{border-color:var(--y);background:linear-gradient(#2c2812f0,#121933f0);box-shadow:0 0 18px #ffd21f40}
+.slot .st{display:flex;align-items:center;gap:6px;color:var(--lc);margin-bottom:3px}.slot .st .tierb{min-width:24px;height:22px;font-size:11px;border-radius:6px}
+.slot b{display:block;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot small{display:block;color:var(--mut);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot.empty{border-style:dashed;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:68px;background:#0a0f2299}
+.slot.empty b{font-size:22px;line-height:1}.slot.empty small{white-space:normal;text-align:center}
+.slot .rm{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:0;background:#0008;color:#fff;font-size:13px;line-height:20px;cursor:pointer;padding:0}.slot .rm:hover{background:var(--bad)}
+.slot .pk{position:absolute;top:-8px;left:8px;font:900 9px var(--hd);background:var(--y);color:#231600;padding:1px 6px;border-radius:5px;letter-spacing:1px}
+.lineup.mini .slot{width:auto;flex:1;min-width:0;padding:6px 7px}.lineup.mini .slot small{display:none}
+.dock{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;min-width:0}
+.dock-l{flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;padding-top:10px}
+.dock-l .lineup{display:grid;grid-template-columns:repeat(5,minmax(104px,150px))}.dock-l .slot{width:auto;min-width:0}
+.dock-h{font:800 11px var(--hd);letter-spacing:2px;color:var(--y);margin-bottom:6px;text-shadow:0 1px 3px #000}.dock-h small{font:12px "Trebuchet MS",sans-serif;letter-spacing:0;color:var(--mut);margin-left:8px}
+/* home */
+#v-home{display:grid;grid-template-columns:1fr minmax(290px,350px);grid-template-rows:minmax(0,1fr) auto;gap:14px}
+#h-vcard{grid-column:2;grid-row:1}
+#v-home .dock{grid-column:1/-1;grid-row:2}
+.playbox{display:flex;flex-direction:column;align-items:stretch;gap:8px;width:300px;flex:none}
+.mode-pill{background:var(--pa);border:1px solid var(--ln);border-radius:12px;padding:8px 12px;text-align:left;cursor:pointer;color:#fff}.mode-pill:hover{border-color:var(--y)}
+.mode-pill b{display:block;font:900 15px var(--hd);letter-spacing:1px}.mode-pill small{color:var(--mut);font-size:12px}.mode-pill b:after{content:" \25BE";color:var(--y)}
+.playbox .note{text-align:center;margin:0;text-shadow:0 1px 3px #000}
+/* battle setup */
+#v-battle{overflow:auto}
+.bt-sheet{max-width:920px;margin:0 auto}
+.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.mcard{background:#0a1028;border:2px solid #2f3c74;border-radius:14px;padding:12px;text-align:left;cursor:pointer;transition:border-color .12s,transform .12s}
+.mcard:hover:not(:disabled){border-color:#5a6ec0;transform:translateY(-2px)}.mcard:disabled{cursor:default;opacity:.6}
+.mcard .mi{display:block;font:900 22px var(--hd);color:var(--cy);letter-spacing:1px}.mcard b{display:block;font:900 14px var(--hd);letter-spacing:.5px;margin:2px 0}.mcard small{color:var(--mut);font-size:12px;line-height:1.3}
+.mcard.on{border-color:var(--y);background:linear-gradient(#2a2610,#0a1028)}.mcard.on .mi{color:var(--y)}
+.modes.small{grid-template-columns:repeat(2,1fr);gap:6px}.modes.small .mcard{padding:7px 9px}.modes.small .mcard small,.modes.small .mcard .mi{display:none}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.mp-side .opts,.lb-opts .opts{grid-template-columns:1fr}
+/* multiplayer */
+#v-mp{overflow:auto}
+.mp-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:14px;min-height:100%;align-items:start}
+.mp-side,.mp-main{display:flex;flex-direction:column;gap:12px;min-width:0}.mp-join .mp-status{margin-top:6px}
+.mp-games{display:grid;gap:6px}
+.mp-g{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;background:#0a1028;border:1px solid #2a3770;border-radius:12px;padding:10px 12px}
+.mp-g:hover{border-color:#5a6ec0}
+.mp-g b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mp-g small{color:var(--mut);font-size:12px}
+.mp-g .pc{text-align:center;font:900 15px var(--hd)}.mp-g .pc small{display:block;font:10px "Trebuchet MS",sans-serif;letter-spacing:1px}
+.mp-g .bd{display:inline-block;font:900 9px var(--hd);letter-spacing:1px;padding:1px 6px;border-radius:5px;margin-left:6px;vertical-align:middle;background:var(--cy);color:#022}.mp-g .bd.fr{background:#c77dff;color:#200}.mp-g .bd.you{background:var(--y);color:#231600}
+.mp-empty{color:var(--mut);font-size:13px;text-align:center;padding:22px 10px;border:1px dashed #2f3c74;border-radius:12px;line-height:1.5}
+.mp-fh{margin-top:16px!important}
+.codebox{display:flex;gap:8px}.codebox input{flex:1;min-width:0;font-size:22px!important;letter-spacing:6px;text-align:center}
+.mp-status{min-height:20px;font-weight:700;font-size:13px;padding:0 4px;text-shadow:0 1px 3px #000}.mp-status.bad{color:var(--bad)}.mp-status.ok{color:var(--ok)}
+/* garage */
+#v-garage{display:grid;grid-template-columns:minmax(260px,380px) 1fr minmax(290px,350px);grid-template-rows:minmax(0,1fr) auto;gap:14px}
+.g-list{grid-column:1;grid-row:1;overflow:auto}
+#g-info{grid-column:3;grid-row:1}
+#v-garage .dock{grid-column:1/-1;grid-row:2}
+.vgrid h4{font:800 11px var(--hd);letter-spacing:2px;margin:10px 0 6px;text-transform:uppercase}
+.vgrid .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.vgrid .slot{width:auto}
+.slot .inl{position:absolute;bottom:6px;right:8px;font:900 9px var(--hd);color:var(--ok);letter-spacing:1px}
+/* research */
+#v-research{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,350px);gap:14px}
+.rs-wrap{overflow:auto}
+#tree .grid{display:grid;gap:6px;min-width:560px}
+.bh{font:800 11px var(--hd);letter-spacing:1px;color:var(--mut);text-transform:uppercase;text-align:center;padding:4px 0;border-bottom:1px solid #ffffff14}
+.th{font:900 16px var(--hd);color:var(--y);display:flex;align-items:center;justify-content:center}
+.cell{min-width:0}
+.vc{position:relative;background:#0a1028;border:1px solid #2a3770;border-radius:10px;padding:7px 8px;cursor:pointer;margin-bottom:5px;font-size:12px}
+.vc:hover{border-color:#6a7ed0}.vc b{display:block;font-size:12.5px;padding-right:26px;line-height:1.2}.vc small{color:var(--mut)}
+.vc.lock{opacity:.5}.vc.owned{border-color:#4cd96477}.vc.res{border-color:#ffd21f88}.vc.can{border-color:#4fe0ff66}
+.vc.sel{outline:2px solid var(--y);outline-offset:1px}
+/* party lobby */
+#s-lobby{display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:10px;padding:10px 12px 12px;background:linear-gradient(rgba(4,7,16,.55),rgba(4,7,16,0) 18%,rgba(4,7,16,0) 55%,rgba(4,7,16,.8));pointer-events:auto}
+.lb-top{display:flex;align-items:center;gap:12px;background:var(--pa);border:1px solid var(--ln);border-radius:14px;padding:8px 12px;flex-wrap:wrap}
+.lb-top .btn{margin:0}
+.lb-room{display:flex;align-items:center;gap:8px}.lb-room small{font:800 9px var(--hd);letter-spacing:2px;color:var(--mut);writing-mode:vertical-rl;transform:rotate(180deg)}
+.lb-room b{font:900 28px var(--hd);letter-spacing:5px;color:var(--y);user-select:text}
+.lb-mode{flex:1;min-width:200px;display:flex;flex-wrap:wrap;align-items:center;gap:4px}.lb-mode>b{font:900 16px var(--hd);letter-spacing:1px;margin-right:8px}.lb-mode small{width:100%;color:var(--mut);font-size:12px}
+.mb{background:#0a1028;border:1px solid #2f3c74;border-radius:8px;padding:5px 10px;font:800 12px "Trebuchet MS",sans-serif;cursor:pointer}.mb.on{background:linear-gradient(#ffe04a,var(--y2));color:#231600;border-color:#fff1a8}.mb:hover:not(.on){border-color:#6a7ed0}
+.lb-conn{display:flex;align-items:center;gap:7px;font-weight:800;font-size:13px;background:#000a;border-radius:20px;padding:5px 12px;white-space:nowrap}
+.lb-conn:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.lb-conn.warn:before{background:var(--warn);box-shadow:0 0 8px var(--warn);animation:live 1s infinite}.lb-conn.bad:before{background:var(--bad);box-shadow:0 0 8px var(--bad);animation:live .7s infinite}
+.lb-conn.warn{color:var(--warn)}.lb-conn.bad{color:var(--bad)}
+.lb-teams{display:flex;justify-content:space-between;gap:12px;min-height:0;pointer-events:none}
+.tcol{pointer-events:auto;width:min(340px,32%);background:var(--pa);border:1px solid var(--ln);border-top:3px solid var(--tc,#fff);border-radius:14px;padding:10px;overflow:auto;align-self:start;max-height:100%}
+.tcol.t0{--tc:var(--t0)}.tcol.t1{--tc:var(--t1)}.tcol.ffa{--tc:var(--y)}
+.tcol h3{display:flex;align-items:center;gap:8px;font:900 14px var(--hd);letter-spacing:2px;color:var(--tc);margin-bottom:8px}.tcol h3 small{font:12px "Trebuchet MS",sans-serif;letter-spacing:0;color:var(--mut)}.tcol h3 .btn{margin-left:auto}
+.lp{background:#0a1028;border:1px solid #2a3770;border-radius:10px;padding:7px 9px;margin-bottom:5px;position:relative}
+.lp.me{border-color:var(--y);box-shadow:0 0 12px #ffd21f30}
+.lp.bot{border-style:dashed;opacity:.55;padding:6px 9px;font-size:12px;color:var(--mut)}
+.lp-n{display:flex;align-items:center;gap:6px;font-weight:800;font-size:14px;min-width:0}.lp-n .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star{color:var(--y)}
+.rdy{margin-left:auto;font:900 9px var(--hd);letter-spacing:1px;padding:2px 6px;border-radius:5px;background:#ffffff14;color:var(--mut);white-space:nowrap}.rdy.on{background:var(--ok);color:#042}.rdy.host{background:var(--y);color:#231600}
+.lp-v{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-top:3px;color:#dfe6ff}.lp-v svg{color:var(--lc);width:16px;height:16px}.lp-v small{color:var(--mut)}
+.lp-l{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.mini{font-size:10px;background:#ffffff10;border-radius:4px;padding:1px 5px;color:#b9c3e8}
+.lp-h{display:flex;gap:4px;margin-top:5px}.lp-h .btn{margin:0;padding:3px 8px}
+.bars{display:inline-flex;align-items:flex-end;gap:1px;height:12px;width:16px;vertical-align:middle}.bars i{flex:1;border-radius:1px}
+.lb-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(260px,320px);gap:10px;height:230px}
+.lb-bottom .sheet{display:flex;flex-direction:column;padding:10px 12px;overflow:hidden}
+.lb-chat #lb-log{flex:1;overflow:auto;font-size:13px;line-height:1.45;margin-bottom:6px;user-select:text}.lb-chat #lb-log b{color:#9fd0ff}.lb-chat #lb-log b.me{color:var(--y)}.lb-chat .sys{color:var(--mut);font-style:italic}
+.lb-opts{overflow:auto!important}.lb-opts .opts{overflow:auto}.lb-opts .opt{margin:4px 0}.lb-opts .seg button{padding:4px 8px;font-size:12px}
+.lb-tools{margin-top:auto}.lb-tools .btn{flex:1}
+.lb-go h3{display:flex;align-items:center}.lb-go h3 .btn{margin:0 0 0 auto}
+.lb-go #lb-hint{text-align:center;margin-top:4px}
+#lb-say,#h-say{background:#070b1a}
+/* death / respawn */
+.dead-box{position:absolute;left:50%;bottom:3%;transform:translateX(-50%);width:min(800px,calc(100% - 20px));background:linear-gradient(#141c40f2,#0a0f24f2);border:1px solid #3b4c92;border-radius:16px;padding:14px 18px;text-align:left;box-shadow:0 14px 50px #000b}
+.dead-h{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}.dead-h h2{font:900 italic 26px var(--hd);color:#ff6a5a}#d-sub{color:var(--mut);font-weight:700}
+.dlineup{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px}
+.dv{position:relative;background:#0a1028;border:2px solid #2d3b72;border-radius:12px;padding:8px 10px;text-align:left;cursor:pointer}.dv:hover{border-color:#6a7ed0}
+.dv.sel{border-color:var(--y);background:linear-gradient(#2c2812,#0a1028);box-shadow:0 0 16px #ffd21f40}
+.dv kbd{position:absolute;top:6px;right:6px;font-size:10px}
+.dv .st{display:flex;align-items:center;gap:6px;color:var(--lc)}.dv .st .tierb{min-width:24px;height:22px;font-size:11px;border-radius:6px}
+.dv b{display:block;font-size:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dv small{color:var(--mut);font-size:11px;display:block}
+.dv em{position:absolute;top:-9px;left:8px;font:900 9px var(--hd);letter-spacing:1px;font-style:normal;background:var(--y);color:#231600;padding:1px 6px;border-radius:5px}
+#d-go{display:flex;align-items:baseline;justify-content:center;gap:14px}#d-go b{font:inherit}#d-go small{font:700 13px "Trebuchet MS",sans-serif;letter-spacing:0;font-style:normal}
+#d-go.wait{filter:saturate(.35) brightness(.85)}
+/* pause + results */
+.card.pause{text-align:center;width:min(420px,100%)}.card.pause .btn{display:block;width:100%;margin:8px 0}.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row2 .btn{margin:0!important}
+.ps-info{display:flex;justify-content:center;gap:10px;margin:10px 0 4px;font-weight:800}.ps-info span{background:#000a;border-radius:8px;padding:5px 10px}.ps-info .t0{color:var(--t0)}.ps-info .t1{color:var(--t1)}
+.result{text-align:center}
+.res-banner small{display:block;font:800 11px var(--hd);letter-spacing:3px;color:var(--mut)}
+.res-h{font:900 italic 48px var(--hd);margin:0;letter-spacing:2px}.res-h.win{color:var(--ok);text-shadow:0 0 30px #4cd96455}.res-h.loss{color:var(--bad)}.res-h.draw{color:var(--y)}
+.res-sc{font:900 20px var(--hd);color:#dfe6ff}.res-sc .t0{color:var(--t0)}.res-sc .t1{color:var(--t1)}
+.res-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.res-tiles div{background:#0a1028;border:1px solid #2a3770;border-radius:12px;padding:8px}.res-tiles b{display:block;font:900 24px var(--hd);color:#fff}.res-tiles small{color:var(--mut);font-size:11px;letter-spacing:1px;text-transform:uppercase}
+.res-rew{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.res-rew span{display:flex;align-items:center;gap:6px;font:900 18px var(--hd);background:#000a;border-radius:20px;padding:5px 14px}
+.res-rp{max-width:420px;margin:8px auto 0;font-size:12px;color:var(--mut)}
+.res-btns{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:12px}.res-btns .btn{margin:0;min-width:170px}
+.result table.board{text-align:left}
+/* ===== smaller screens ===== */
+@media (max-width:1180px){:root{--nav:178px}.mnav button{font-size:12px;padding:11px 10px 11px 12px;gap:9px}.slot{width:128px}.playbox{width:250px}.play{font-size:28px;padding:8px 30px}#v-garage{grid-template-columns:minmax(230px,300px) 1fr minmax(270px,320px)}}
+@media (max-width:980px){:root{--nav:64px}.mnav{padding-right:6px}.mnav button{justify-content:center;padding:12px 6px;border-radius:0 10px 10px 0}.mnav button span{display:none}.mnav em{position:absolute;top:3px;right:2px;font-size:7px;padding:1px 3px}
+  .mtop .wallet .w-pill{font-size:12px;padding:3px 9px 3px 5px}.logo{font-size:20px}
+  #v-garage{grid-template-columns:minmax(0,1fr) minmax(270px,330px)}#v-garage .g-list{grid-column:1}#g-info{grid-column:2}
+  .lb-bottom{grid-template-columns:1fr 1fr;height:auto}.lb-go{grid-column:1/-1}.lb-bottom .sheet{max-height:220px}.modes{grid-template-columns:repeat(2,1fr)}
+  #s-lobby{overflow:auto;display:flex;flex-direction:column}.lb-teams{pointer-events:auto;flex:none}.tcol{max-height:none;width:calc(50% - 6px)}.lb-bottom .sheet{min-height:170px}}
+@media (max-width:760px){:root{--top:52px}
+  #menu{overflow:auto}
+  .ver{display:none}.me{display:none}.mtop{gap:8px;padding:0 10px}.mtop .wallet{gap:4px}
+  .mnav{top:auto;bottom:0;left:0;right:0;width:auto;height:56px;flex-direction:row;padding:4px;gap:2px;background:#070b1af2;border-top:1px solid var(--ln);overflow-x:auto;z-index:3}
+  .mnav button{flex:1;flex-direction:column;gap:2px;padding:4px 2px;border-left:0;border-top:3px solid transparent;border-radius:8px;min-width:52px}.mnav button span{display:block;font-size:8px;letter-spacing:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mnav button.on{border-top-color:var(--y);background:#ffd21f22}.nsep{display:none}
+  .view{left:0;bottom:56px;padding:6px 10px 10px;overflow:auto}
+  #v-home,#v-garage,#v-research{display:flex;flex-direction:column;gap:10px}
+  #v-home{justify-content:flex-end}#h-vcard{order:1;max-height:none}#v-home .dock{order:2}
+  #h-vcard .wps,#h-vcard .mdots,#h-vcard .role,#h-vcard .vk-act{display:none}#h-vcard{padding:10px 12px}#h-vcard .sbars{margin:8px 0 0}
+  .dock{flex-direction:column;align-items:stretch}.playbox{width:auto}.dock-l{padding-top:4px}.slot{width:122px}
+  .mp-wrap{grid-template-columns:1fr}.opts{grid-template-columns:1fr}.res-tiles{grid-template-columns:repeat(2,1fr)}
+  #sc-cap{left:12px;top:calc(var(--top) + 4px);max-width:calc(100% - 24px)}#sc-cap em{display:none}
+  #s-lobby{overflow:auto;display:flex;flex-direction:column}.lb-teams{flex-direction:column;pointer-events:auto}.tcol{width:auto}.lb-bottom{grid-template-columns:1fr}.lb-room b{font-size:22px}
+  .vpanel{max-height:none}.g-list{max-height:none}}
+@media (max-width:440px){.mtop .wallet .w-pill:nth-child(2){display:none}.logo{font-size:17px}.play{font-size:24px}}
+
 #hud{position:fixed;inset:0;z-index:5;pointer-events:none}
 #h-score{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;font-weight:900;font-size:22px;text-shadow:0 2px 4px #000}
 #h-score .tm{min-width:70px;padding:3px 14px;text-align:center;border-radius:5px;background:#000a}#h-score .t0{color:var(--t0);border-bottom:3px solid var(--t0)}#h-score .t1{color:var(--t1);border-bottom:3px solid var(--t1)}
@@ -104,49 +309,9 @@ input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(
 #h-lock{position:absolute;bottom:90px;width:100%;text-align:center;font-weight:800;font-size:17px;text-shadow:0 2px 6px #000;color:var(--y)}
 #h-board{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#050818e8;border:2px solid #4457a5;border-radius:10px;padding:12px 16px;min-width:520px;font-size:13px}
 #h-board table{width:100%;border-collapse:collapse}#h-board th{color:var(--mut);text-align:left;font-size:11px}#h-board td,#h-board th{padding:2px 6px}
-.dead-box{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);text-align:center;background:#050818dd;border:2px solid #4457a5;border-radius:12px;padding:14px 22px}
-.dead-box h2{margin:0;font:900 italic 30px "Arial Black",sans-serif;color:#ff6a5a}.dead-box #d-sub{color:var(--mut);margin-bottom:8px}
 #toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#000c;border:1px solid #fff4;padding:8px 18px;border-radius:20px;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none;font-weight:700}#toast.on{opacity:1}
-.res-h{font:900 italic 44px "Arial Black",sans-serif;text-align:center;margin:0}.res-h.win{color:var(--ok)}.res-h.loss{color:var(--bad)}
-.res-g{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin:10px 0;font-size:15px}.res-g b{color:var(--y)}
-@media (max-width:900px){.m-left,.m-right{width:180px}.btn.nav{min-width:70px;font-size:12px}.play{padding:8px 30px;font-size:28px}.chip{width:84px}#h-veh{left:200px;width:200px}}
-/* ===== 2.0 ===== */
-.ver{font:700 12px "Trebuchet MS",sans-serif;color:var(--mut);letter-spacing:0;margin-left:10px;text-decoration:none;font-style:normal;vertical-align:middle}.ver:hover{color:var(--y)}
-.m-left{max-height:calc(100vh - 230px);overflow:auto}
-.opt{display:flex;align-items:center;gap:6px;margin-bottom:4px}.opt>span{width:74px;flex:none;font-size:11px;color:var(--mut);font-weight:700}.opt .seg{flex:1;margin:0}.opt .seg button{padding:5px 2px;font-size:11px}
-#menu.lobby-on .m-left,#menu.lobby-on .m-right,#menu.lobby-on .m-bottom{display:none}
-.t0b{background:var(--t0)!important}.t1b{background:var(--t1)!important}
-#s-lobby{display:flex;flex-direction:column;padding:62px 14px 12px;gap:10px}
-.lb-top{display:flex;align-items:center;gap:14px;padding:8px 12px}
-.lb-code{font-weight:800;color:var(--mut)}.lb-code b{font:900 28px "Arial Black",sans-serif;color:var(--y);letter-spacing:5px;margin:0 6px}
-.lb-mode{flex:1;display:flex;flex-wrap:wrap;align-items:center;gap:6px}.lb-mode small{width:100%;color:var(--mut)}.lb-mode b{font-size:17px}
-.mb{background:#18224a;border:1px solid #31417f;color:var(--tx);padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:700;font-size:12px}.mb.on{background:var(--y);color:#241a00}
-.lb-right{display:flex;gap:8px;align-items:center}
-.lb-teams{display:flex;gap:12px;flex:1;min-height:0;justify-content:space-between;pointer-events:none}.lb-teams>*{pointer-events:auto}
-.tcol{flex:0 1 330px;background:linear-gradient(180deg,rgba(24,32,64,.82),rgba(12,17,38,.82));border-radius:10px;padding:8px;overflow:auto;border-top:4px solid #888}
-.tcol.t0{border-color:var(--t0)}.tcol.t1{border-color:var(--t1)}.tcol.ffa{border-color:var(--y)}
-.tcol h3{margin:0 0 6px;display:flex;align-items:center;gap:8px;font:800 14px "Arial Black",sans-serif;letter-spacing:1px}.tcol.t0 h3{color:var(--t0)}.tcol.t1 h3{color:var(--t1)}.tcol h3 small{color:var(--mut);font:12px sans-serif}.tcol h3 .btn{margin-left:auto}
-.lp{background:#0007;border-radius:8px;padding:6px 8px;margin-bottom:5px;position:relative}.lp.me{outline:2px solid var(--y)}
-.lp-n{display:flex;align-items:center;gap:6px;font-weight:800}.lp-n .star{color:var(--y)}.rdy{margin-left:auto;font-size:11px;color:var(--mut);border:1px solid #fff3;border-radius:10px;padding:1px 7px}.rdy.on{color:#102010;background:var(--ok);border-color:var(--ok)}
-.lp-v{font-size:13px;margin-top:2px}.lp-v small{color:var(--mut)}.lp-l{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
-.mini{font-size:10px;padding:1px 5px;border-radius:4px;background:#1d2748;color:#dfe6ff;border-left:3px solid #888}.mini.ln-gb{border-color:#9bc44a}.mini.ln-ab{border-color:#58b8ff}.mini.ln-nb{border-color:#3ad0c4}
-.lp-h{position:absolute;right:6px;bottom:4px;display:flex;gap:4px}.lp-h .btn{margin:0;padding:2px 8px}
 .bars{display:inline-flex;align-items:flex-end;gap:1px;height:12px;width:16px;vertical-align:middle}.bars i{flex:1;border-radius:1px}
 .net{font-size:12px;font-weight:800;color:#dfe6ff}
-.lb-bottom{display:flex;gap:12px;align-items:stretch;height:210px}
-.lb-chat{flex:1;display:flex;flex-direction:column;min-width:0}#lb-log{flex:1;overflow:auto;font-size:13px;line-height:1.35}#lb-log b{color:#9fc4ff}#lb-log b.me{color:var(--y)}#lb-log .sys{color:var(--mut);font-style:italic}
-#lb-say,#h-say{flex:1;background:#0a0f22;color:var(--tx);border:1px solid #4a5a9a;border-radius:6px;padding:6px 8px;font:700 13px "Trebuchet MS",sans-serif;outline:none}
-.lb-opts{width:360px;overflow:auto}.lb-opts h3 small{color:var(--mut);font:11px sans-serif;letter-spacing:0;text-transform:none}
-.lb-go{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px}.lb-go .lineup .chip{width:96px}
-#lb-ready{font-size:30px;padding:8px 40px}#lb-ready.on{background:linear-gradient(#8cff9a,#2fbf4a);border-color:#d8ffd8;box-shadow:0 6px 0 #1a7a2a}
-.tabs{display:flex;gap:4px}.tabs button{background:#18224a;border:1px solid #31417f;color:var(--tx);padding:7px 16px;border-radius:6px;cursor:pointer;font-weight:800}.tabs button.on{background:var(--y);color:#241a00}
-#tree{display:block}
-#tree .grid{display:grid;gap:6px}.bh{text-align:center;font:800 12px "Arial Black",sans-serif;color:var(--y);letter-spacing:1px;text-transform:uppercase;padding:4px 0}
-.th{display:flex;align-items:center;justify-content:center;color:var(--y);font:800 12px sans-serif;background:#0006;border-radius:5px}
-.cell{display:flex;flex-direction:column;gap:5px;min-height:46px;background:#ffffff06;border-radius:6px;padding:3px}.cell .vc{flex:none}
-.mod{background:#0006;border-radius:6px;padding:6px 8px;margin:5px 0;position:relative;font-size:12px}.mod b{display:block;font-size:13px}.mod small{color:var(--mut);display:block}.mod.done{border-left:3px solid var(--ok)}.mod .row{margin-top:4px}.mod .btn{margin:0}
-.gh{margin:10px 0 4px;font:800 13px "Arial Black",sans-serif;letter-spacing:1px}
-.chip small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #h-net{position:absolute;left:12px;top:10px;background:#000a;border-radius:6px;padding:4px 8px}
 #h-banner{position:absolute;top:30%;left:50%;transform:translateX(-50%);background:#000c;border:2px solid var(--y);color:var(--y);font:900 20px "Arial Black",sans-serif;padding:8px 20px;border-radius:10px;opacity:0;transition:opacity .3s;pointer-events:none}#h-banner.on{opacity:1;animation:pulse 1.2s infinite}
 @keyframes pulse{50%{border-color:#fff6}}
@@ -156,7 +321,6 @@ input[type=text],input:not([type]),#m-name,#p-code{background:#0a0f22;color:var(
 .mvp{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:center;background:#ffd21f18;border:1px solid #ffd21f66;border-radius:8px;padding:6px;margin:8px 0}.mvp span{background:var(--y);color:#241a00;font:900 13px "Arial Black",sans-serif;padding:2px 8px;border-radius:4px}.mvp b{font-size:18px}.mvp small{color:var(--mut)}.mvp em{width:100%;text-align:center;color:var(--y);font-style:normal;font-weight:800}
 table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}table.board th{text-align:left;color:var(--mut);font-size:11px;padding-top:6px}table.board td{padding:1px 6px}table.board tr.me td{background:#ffd21f22}
 .bad{color:var(--bad)}
-@media (max-width:1000px){.lb-opts{width:280px}.lb-bottom{height:190px}.lb-go .lineup{display:none}}
 
 </style>
 <script type="importmap">
@@ -171,155 +335,186 @@ table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}ta
 <canvas id="ov"></canvas>
 <div id="boot"><div class="bt">STEEL STORM</div><div id="boot-s">Loading...</div></div>
 
-<!-- ===== main menu ===== -->
-<div id="menu" class="scr hidden">
-  <div class="m-top">
-    <div class="brand">STEEL<b>STORM</b> <a id="b-new" class="ver" href="#">v2.1 &middot; What's new</a></div>
+<!-- ===== the menu frame: top bar + navigation around the home, battle setup, multiplayer, garage and research views ===== -->
+<div id="menu" class="hidden" data-view="menu">
+  <div class="shade"></div>
+  <header class="mtop">
+    <div class="brand"><span class="logo">STEEL<b>STORM</b></span><a id="b-new" class="ver" href="#">v2.2 &middot; What's new</a></div>
     <div class="wallet">
-      <span class="w-pill" title="Credits (buy vehicles)"><i class="ic cr"></i><b id="w-cr">0</b></span>
+      <span class="w-pill" title="Credits: buy vehicles"><i class="ic cr"></i><b id="w-cr">0</b></span>
       <span class="w-pill" title="Research points for what you are researching"><i class="ic rp"></i><b id="w-rp">0</b></span>
-      <span class="w-pill" title="Free research points: spend on any vehicle or module"><i class="ic fr"></i><b id="w-fr">0</b></span>
+      <span class="w-pill" title="Free research points: spend them on any vehicle or module"><i class="ic fr"></i><b id="w-fr">0</b></span>
     </div>
-    <div class="m-me"><input id="m-name" maxlength="16" spellcheck="false" title="Your name"></div>
-  </div>
-  <div class="m-left panel">
-    <h3>Mode</h3>
-    <button class="mode" data-m="tdm"><b>Team Deathmatch</b><small>First team to the kill limit</small></button>
-    <button class="mode" data-m="conq"><b>Conquest</b><small>Hold 3 points, drain their tickets</small></button>
-    <button class="mode" data-m="ctf"><b>Capture the Flag</b><small>Steal their flag, bring it home</small></button>
-    <button class="mode" data-m="ffa"><b>Free-for-all</b><small>Everyone for themselves</small></button>
-    <div id="m-opts"></div>
-    <div id="m-lead-note" class="note"></div>
-  </div>
-  <div class="m-right panel">
-    <h3>Play with friends</h3>
-    <div id="p-idle">
-      <button class="btn" id="p-create">Create party</button>
-      <div class="row"><input id="p-code" maxlength="7" placeholder="6-digit code" inputmode="numeric" autocomplete="off"><button class="btn" id="p-join">Join</button></div>
+    <label class="me" title="Your name"><i class="me-ic"></i><input id="m-name" maxlength="16" spellcheck="false" autocomplete="off"></label>
+  </header>
+  <nav class="mnav" id="mnav">
+    <button data-go="menu"><i data-ic="home"></i><span>Home</span></button>
+    <button data-go="battle"><i data-ic="battle"></i><span>Battle</span></button>
+    <button data-go="mp"><i data-ic="mp"></i><span>Multiplayer</span><em id="nv-party" class="hidden">PARTY</em></button>
+    <button data-go="garage"><i data-ic="garage"></i><span>Garage</span></button>
+    <button data-go="research"><i data-ic="research"></i><span>Research</span><em id="nv-rs" class="hidden"></em></button>
+    <div class="nsep"></div>
+    <button data-modal="s-settings"><i data-ic="gear"></i><span>Settings</span></button>
+    <button data-modal="s-how"><i data-ic="help"></i><span>How to play</span></button>
+  </nav>
+  <div id="sc-cap" class="hidden"></div>
+
+  <!-- home: the selected vehicle (showcase behind), its card, the lineup and PLAY -->
+  <section id="v-home" class="view">
+    <aside class="vpanel" id="h-vcard"></aside>
+    <div class="dock">
+      <div class="dock-l"><div class="dock-h">LINEUP <small>click a vehicle to take it into battle</small></div><div id="lineup" class="lineup"></div></div>
+      <div class="playbox">
+        <button class="mode-pill" id="b-mode" title="Change the mode and battle options"></button>
+        <button class="play" id="b-play">PLAY</button>
+        <div class="note" id="m-lead-note"></div>
+      </div>
     </div>
-    <div id="p-live" class="hidden">
-      <div class="p-code">Code <b id="p-codev">------</b></div>
-      <div id="p-list"></div>
-      <button class="btn" id="p-open">Open lobby</button>
-      <button class="btn small" id="p-leave">Leave party</button>
+  </section>
+
+  <!-- solo battle setup -->
+  <section id="v-battle" class="view hidden">
+    <div class="sheet bt-sheet">
+      <div class="sheet-h"><h2>Battle setup</h2><span class="note" id="bt-note"></span></div>
+      <div class="modes" id="bt-modes"></div>
+      <div class="opts" id="bt-opts"></div>
+      <div class="sheet-f"><div class="note" id="m-br"></div><button class="play" id="bt-go">START BATTLE</button></div>
     </div>
-    <div id="p-status" class="note"></div>
-    <div class="note" id="m-br"></div>
-  </div>
-  <div class="m-bottom">
-    <div id="lineup" class="lineup"></div>
-    <div class="m-play">
-      <button class="btn nav" id="b-research">Research</button>
-      <button class="btn nav" id="b-garage">Garage</button>
-      <button class="play" id="b-play">PLAY</button>
-      <button class="btn nav" id="b-settings">Settings</button>
-      <button class="btn nav" id="b-how">How to play</button>
+  </section>
+
+  <!-- multiplayer: open games, join with a code, host -->
+  <section id="v-mp" class="view hidden">
+    <div class="mp-wrap">
+      <div class="mp-main">
+      <div class="sheet mp-join">
+        <h3>Join with a code</h3>
+        <div class="codebox"><input id="p-code" maxlength="7" placeholder="6-digit code" inputmode="numeric" autocomplete="off"><button class="btn primary" id="p-join">Join</button></div>
+        <div id="p-status" class="mp-status"></div>
+      </div>
+      <div class="sheet mp-list">
+        <div class="sheet-h"><h2>Open games</h2><button class="btn small" id="mp-refresh">Refresh</button></div>
+        <div id="mp-games" class="mp-games"></div>
+        <h3 class="mp-fh">Friends playing</h3>
+        <div id="mp-friends" class="mp-games"></div>
+      </div>
+      </div>
+      <div class="mp-side">
+        <div class="sheet">
+          <h3>Host a game</h3>
+          <div class="modes small" id="mp-modes"></div>
+          <div class="opts" id="mp-opts"></div>
+          <div class="opt"><span>Who can find it</span><div class="seg" id="mp-pub"><button data-pub="1">Public</button><button data-pub="0">Friends only</button></div></div>
+          <div class="note" id="mp-pubnote"></div>
+          <button class="play wide" id="p-create">HOST GAME</button>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- garage: your vehicles, the inspected one large behind, its card with modules, the lineup -->
+  <section id="v-garage" class="view hidden">
+    <div class="sheet g-list">
+      <div class="sheet-h"><h2>Garage</h2><div class="tabs" id="g-tabs"><button data-gt="all">All</button><button data-gt="g">Ground</button><button data-gt="a">Air</button><button data-gt="n">Naval</button></div></div>
+      <div id="g-owned" class="vgrid"></div>
+    </div>
+    <aside class="vpanel" id="g-info"></aside>
+    <div class="dock"><div class="dock-l"><div class="dock-h">LINEUP <small>up to 5 vehicles: the selected one goes into battle</small></div><div id="g-lineup" class="lineup"></div></div></div>
+  </section>
+
+  <!-- research tree -->
+  <section id="v-research" class="view hidden">
+    <div class="sheet rs-wrap">
+      <div class="sheet-h"><h2>Research</h2><div class="tabs" id="rs-tabs"><button data-ln="g">Ground</button><button data-ln="a">Air</button><button data-ln="n">Naval</button></div><span class="note" id="rs-now"></span></div>
+      <div id="tree"></div>
+    </div>
+    <aside class="vpanel" id="rs-info"></aside>
+  </section>
 </div>
 
-<!-- ===== party lobby ===== -->
+<!-- ===== party lobby (the 3D lobby shows everyone's vehicle behind it) ===== -->
 <div id="s-lobby" class="scr hidden">
-  <div class="lb-top panel">
-    <div class="lb-code">ROOM <b id="lb-code">------</b> <button class="btn small" id="lb-copy">Copy</button></div>
-    <div id="lb-mode" class="lb-mode"></div>
-    <div class="lb-right"><span id="lb-net" class="net"></span><button class="btn small" id="lb-menu">Garage &amp; research</button><button class="btn small danger" id="lb-leave">Leave</button></div>
-  </div>
+  <header class="lb-top">
+    <button class="btn ghost" id="lb-back" title="Back to the menu (you stay in the party)">&larr; Menu</button>
+    <div class="lb-room"><small>ROOM CODE</small><b id="lb-code">------</b><button class="btn small" id="lb-copy">Copy</button></div>
+    <div class="lb-mode" id="lb-mode"></div>
+    <div class="lb-conn" id="lb-net"></div>
+    <button class="btn small danger" id="lb-leave">Leave</button>
+  </header>
   <div class="lb-teams" id="lb-teams"></div>
   <div class="lb-bottom">
-    <div class="panel lb-chat"><div id="lb-log"></div><div class="row"><input id="lb-say" maxlength="140" placeholder="Say something... (Enter)"><button class="btn small" id="lb-send">Send</button></div></div>
-    <div class="panel lb-opts"><h3>Match options <small id="lb-optnote"></small></h3><div id="lb-opts"></div><div class="row lb-tools" id="lb-tools"><button class="btn small" id="lb-shuffle">Shuffle</button><button class="btn small" id="lb-balance">Balance</button></div></div>
-    <div class="lb-go"><div id="lb-mine" class="lineup"></div><button class="play" id="lb-ready">READY</button></div>
-  </div>
-</div>
-
-<!-- ===== research tree ===== -->
-<div id="s-research" class="scr full hidden">
-  <div class="topbar"><button class="btn small" data-close>&larr; Back</button><h2>Research</h2>
-    <div class="tabs" id="rs-tabs"><button data-ln="g">Ground</button><button data-ln="a">Air</button><button data-ln="n">Naval</button></div>
-    <div class="wallet"><span class="w-pill"><i class="ic cr"></i><b class="v-cr">0</b></span><span class="w-pill"><i class="ic fr"></i><b class="v-fr">0</b></span></div></div>
-  <div class="tree-wrap">
-    <div id="tree"></div>
-    <div id="rs-info" class="panel info"></div>
-  </div>
-</div>
-
-<!-- ===== garage ===== -->
-<div id="s-garage" class="scr full hidden">
-  <div class="topbar"><button class="btn small" data-close>&larr; Back</button><h2>Garage</h2>
-    <div class="wallet"><span class="w-pill"><i class="ic cr"></i><b class="v-cr">0</b></span><span class="w-pill"><i class="ic fr"></i><b class="v-fr">0</b></span></div></div>
-  <div class="tree-wrap">
-    <div class="garage-main">
-      <h3>Lineup <small>up to 5 vehicles. Click one to select it.</small></h3>
-      <div id="g-lineup" class="lineup big"></div>
-      <h3>Your vehicles <small>click to add or remove from the lineup</small></h3>
-      <div id="g-owned" class="cards"></div>
-    </div>
-    <div id="g-info" class="panel info"></div>
+    <div class="sheet lb-chat"><h3>Chat</h3><div id="lb-log"></div><div class="row"><input id="lb-say" maxlength="140" placeholder="Say something... (Enter)"><button class="btn small" id="lb-send">Send</button></div></div>
+    <div class="sheet lb-opts"><h3>Match options <small id="lb-optnote"></small></h3><div id="lb-opts" class="opts"></div><div class="row lb-tools" id="lb-tools"><button class="btn small" id="lb-shuffle">Shuffle teams</button><button class="btn small" id="lb-balance">Balance by BR</button></div></div>
+    <div class="sheet lb-go"><h3>Your vehicle <button class="btn small" id="lb-menu">Garage</button></h3><div id="lb-mine" class="lineup mini"></div><button class="play wide" id="lb-ready">READY</button><div class="note" id="lb-hint"></div></div>
   </div>
 </div>
 
 <!-- ===== settings ===== -->
 <div id="s-settings" class="scr dim hidden">
   <div class="card">
-    <h2>Settings</h2>
-    <label>Graphics quality
-      <select id="st-q"><option value="low">Low (fastest, no shadows)</option><option value="med">Medium (shadows)</option><option value="high">High (soft shadows, more detail)</option></select></label>
-    <div class="note" id="st-qnote"></div>
-    <label>Mouse sensitivity <input type="range" id="st-sens" min="0.3" max="2.5" step="0.05"></label>
-    <label>Volume <input type="range" id="st-vol" min="0" max="1" step="0.05"></label>
-    <label class="chk"><input type="checkbox" id="st-inv"> Invert mouse Y</label>
-    <div class="note">Your progress is saved in this browser.</div>
-    <button class="btn big" data-close>Done</button>
+    <div class="card-h"><h2>Settings</h2><button class="x" data-close title="Close">&times;</button></div>
+    <h3>Graphics</h3>
+    <div class="qgrid" id="st-q">
+      <button data-q="low"><b>Low</b><small>Fastest. No shadows, fewer trees and particles.</small></button>
+      <button data-q="med"><b>Medium</b><small>Shadows, textured ground and water.</small></button>
+      <button data-q="high"><b>High</b><small>Soft shadows, full detail, longest view.</small></button>
+    </div>
+    <div class="opt"><span>Showcase footage <small>live battle behind the menu</small></span><div class="seg" id="st-show"><button data-show="1">On</button><button data-show="0">Off</button></div></div>
+    <h3>Controls and sound</h3>
+    <label class="rng"><span>Mouse sensitivity</span><input type="range" id="st-sens" min="0.3" max="2.5" step="0.05"><b id="st-sensv"></b></label>
+    <label class="rng"><span>Volume</span><input type="range" id="st-vol" min="0" max="1" step="0.05"><b id="st-volv"></b></label>
+    <div class="opt"><span>Invert mouse Y</span><div class="seg" id="st-inv"><button data-inv="0">Off</button><button data-inv="1">On</button></div></div>
+    <div class="note">Your progress is saved in this browser (and to your account in the launcher).</div>
+    <button class="btn big primary" data-close>Done</button>
   </div>
 </div>
 
 <!-- ===== how to play ===== -->
 <div id="s-how" class="scr dim hidden">
   <div class="card wide">
-    <h2>How to play</h2>
+    <div class="card-h"><h2>How to play</h2><button class="x" data-close title="Close">&times;</button></div>
     <div class="how">
       <div><h4>Modes</h4><p><b>Team Deathmatch:</b> first team to the kill limit. <b>Conquest:</b> hold the 3 points; the team holding more drains the other team's tickets. <b>Capture the Flag:</b> drive (or fly a helicopter) over the enemy flag and bring it to your own base while your flag is home. <b>Free-for-all:</b> everyone against everyone.</p>
       <h4>Progress</h4><p>Every match earns <b>credits</b> and <b>research points</b>. Research vehicles in 15 branches (tiers I-V), buy them, then research <b>modules</b> for each vehicle you own (engine, armour, guns, ammo, stabiliser / countermeasures / radar). Battle rating keeps you with vehicles like yours.</p>
-      <h4>Party</h4><p><b>Create party</b> and share the 6-digit code (Copy). In the lobby click a team to switch, press <b>READY</b>. The host sets the options and starts; bots fill the empty slots. Friends can join a running battle, and a dropped player gets their vehicle and score back.</p></div>
+      <h4>Multiplayer</h4><p>Open <b>Multiplayer</b>: join an open game from the list, type a friend's 6-digit code, or <b>Host</b> one with your own options. In the party lobby pick a team and press <b>READY</b>; the host starts, bots fill the empty slots. Friends can join a running battle, and a dropped player gets their vehicle and score back.</p>
+      <h4>Respawning</h4><p>When you are destroyed, the vehicle you picked before the battle is ready first. Pick another one from your lineup (keys <b>1-5</b>) and press <b>DEPLOY</b> or <b>Space</b>.</p></div>
       <div><h4>Controls</h4>
       <table class="keys">
       <tr><td>Mouse</td><td>Aim camera / turrets / steer jet</td></tr>
-      <tr><td>W S</td><td>Throttle (tank and ship: forward, back)</td></tr>
-      <tr><td>A D</td><td>Steer (helicopter: strafe)</td></tr>
+      <tr><td><kbd>W</kbd> <kbd>S</kbd></td><td>Throttle (tank and ship: forward, back)</td></tr>
+      <tr><td><kbd>A</kbd> <kbd>D</kbd></td><td>Steer (helicopter: strafe)</td></tr>
       <tr><td>Left click</td><td>Main gun / jet cannons</td></tr>
-      <tr><td>Right click / Space</td><td>Machine gun / rockets / missiles</td></tr>
-      <tr><td>B / Shift</td><td>Bombs, torpedoes, guided missiles</td></tr>
-      <tr><td>F</td><td>Flares (Countermeasures module)</td></tr>
-      <tr><td>C</td><td>Submarine: dive / surface</td></tr>
-      <tr><td>E / Q</td><td>Helicopter: up / down</td></tr>
+      <tr><td>Right click / <kbd>Space</kbd></td><td>Machine gun / rockets / missiles</td></tr>
+      <tr><td><kbd>B</kbd> / <kbd>Shift</kbd></td><td>Bombs, torpedoes, guided missiles</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Flares (Countermeasures module)</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Submarine: dive / surface</td></tr>
+      <tr><td><kbd>E</kbd> / <kbd>Q</kbd></td><td>Helicopter: up / down</td></tr>
       <tr><td>Wheel</td><td>Camera zoom</td></tr>
-      <tr><td>Tab (hold)</td><td>Scoreboard</td></tr>
-      <tr><td>Enter</td><td>Chat (in a party)</td></tr>
-      <tr><td>Esc</td><td>Menu</td></tr></table></div>
+      <tr><td><kbd>Tab</kbd> (hold)</td><td>Scoreboard</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Chat (in a party)</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Pause menu</td></tr></table></div>
     </div>
-    <button class="btn big" data-close>Got it</button>
+    <button class="btn big primary" data-close>Got it</button>
   </div>
 </div>
 <div id="s-new" class="scr dim hidden">
   <div class="card wide">
-    <h2>Steel Storm 2.1.1: what's new</h2>
+    <div class="card-h"><h2>Steel Storm 2.2: what's new</h2><button class="x" data-close title="Close">&times;</button></div>
     <div class="how"><div>
-      <h4>Runs smoother</h4><p>Medium graphics draw about a third faster with the same picture. When a computer still struggles, the game first lowers its resolution a little, then the graphics level, so it stays playable.</p>
-      <h4>Every vehicle matters</h4><p>A full rebalance: each tier is a clear step up in hit points, armour and firepower, and every class has its own job (heavy tanks soak hits, light tanks scout, tank destroyers hit hardest, bombers delete ground targets, battleships carry the biggest guns). Big guns now feel big: larger blasts, damage numbers over what you hit, screen shake and a shove on heavy hits.</p>
-      <h4>Guided missiles</h4><p>Missiles lead their target and actually hit it. Hold your aim on a target for half a second: yellow brackets close in, then a red LOCK (with a beep) means the missile will guide. Flares still fool heat-seekers some of the time, and lost missiles self-destruct.</p>
-      <h4>Smarter bots</h4><p>Bot skill now picks their gear too: Easy bots drive lower tiers with no modules, Normal bots match your tier, Hard bots bring your tier and above with modules, and aim better.</p>
-      <h4>Hills</h4><p>Tanks no longer stall halfway up a hill. Climbing slows you a little; only real cliffs stop you.</p>
+      <h4>New menus</h4><p>Everything is one click away: Home, Battle, Multiplayer, Garage and Research down the side. Your vehicle is shown large with clear bars for hit points, armour, speed and firepower, its weapons and its role. Works with the mouse alone and on small screens.</p>
+      <h4>Showcase footage</h4><p>Behind the menu your selected vehicle fights a small live battle, played the way an expert would play it: tanks fire on the move, fighters lock missiles, bombers drop on groups, helicopters pop up from cover, warships turn broadside. Pick another vehicle and the footage switches. Too heavy for your computer? Settings turns it off, and it switches itself off if the menu gets slow.</p>
+      <h4>Multiplayer</h4><p>A real Multiplayer screen: a list of open games to join, a join-by-code box, and hosting with clear options (mode, map size, length, bots, friendly fire, weather, public or friends only). The party lobby updates live: everyone's vehicle and readiness, teams, host tools (kick, move, shuffle, balance, start), chat, the room code with a copy button, and the connection state (connecting, reconnecting, the host left).</p>
+      <h4>Respawning</h4><p>After you are destroyed, the vehicle you picked before the battle is selected again. Switch with a click or keys 1-5, deploy with one click or Space.</p>
       <h4>Your save</h4><p>Everything you had is kept.</p>
-      <h4 style="opacity:.7">Steel Storm 2.0</h4>
-      <h4>Multiplayer</h4><p>A real party lobby with teams, ready-up, lineups, host options (mode, map size, length, bots, friendly fire, weather), chat and a copyable room code. Smoother netcode: the host decides every hit, other vehicles glide with jitter-aware interpolation, a ping meter, and Wi-Fi drops survive (reconnect, rejoin with your score, host migration). New modes: Capture the Flag and Free-for-all, a scoreboard with ping, and an MVP on the results.</p>
-      <h4>Looks</h4><p>A real sun with soft shadows, sky and fog that match four weather presets (clear noon, golden evening, overcast rain, night with flares), tone mapping, flashes that light up the ground, fresnel water, and textured terrain, roads, airstrips and vehicles (camouflage, panel lines, rivets, numbers, weathering). All drawn in code.</p></div><div>
-      <h4>Vehicles</h4><p>39 new vehicles (69 in all) in 15 branches up to tier V: light, medium and heavy tanks, tank destroyers, anti-air, artillery; fighters, attackers, bombers, helicopters; patrol boats, destroyers, cruisers, battleships and submarines. Each has its own model. Every vehicle has 5 modules to research. Guided missiles, flares, torpedoes and diving submarines.</p>
-      <p style="opacity:.7">Your credits, research and vehicles were all kept.</p></div></div>
-    <button class="btn big" data-close>Let's go</button>
+    </div><div>
+      <h4 class="old">Steel Storm 2.1</h4>
+      <p>Runs smoother (Medium graphics about a third faster, automatic resolution). A full rebalance: each tier is a clear step up and every class has its job. Guided missiles that lead and lock (hold your aim half a second for the red LOCK). Bots pick their gear by skill. Tanks climb hills properly.</p>
+      <h4 class="old">Steel Storm 2.0</h4>
+      <p>Party lobby with teams, ready-up and host options; smoother netcode with reconnects and host migration; Capture the Flag and Free-for-all; real sun, shadows, weather and textured terrain; 69 vehicles in 15 branches up to tier V with 5 modules each; guided missiles, flares, torpedoes and diving submarines.</p>
+    </div></div>
+    <button class="btn big primary" data-close>Let's go</button>
   </div>
 </div>
-<div id="s-notice" class="scr dim hidden"><div class="card"><h2 id="nt-h">Notice</h2><p id="nt-t"></p><button class="btn big" data-close>OK</button></div></div>
+<div id="s-notice" class="scr dim hidden"><div class="card"><h2 id="nt-h">Notice</h2><p id="nt-t"></p><button class="btn big primary" data-close>OK</button></div></div>
 
 <!-- ===== match HUD ===== -->
 <div id="hud" class="hidden">
@@ -342,20 +537,20 @@ table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}ta
 </div>
 <div id="s-dead" class="scr hidden">
   <div class="dead-box">
-    <h2 id="d-title">Destroyed</h2>
+    <div class="dead-h"><h2 id="d-title">Destroyed</h2><div id="d-sub"></div></div>
     <div id="d-spec" class="note"></div>
-    <div id="d-sub"></div>
-    <div id="d-lineup" class="lineup big"></div>
-    <button class="play small" id="d-go">DEPLOY</button>
+    <div id="d-lineup" class="dlineup"></div>
+    <button class="play wide" id="d-go"><b>DEPLOY</b><small id="d-veh"></small></button>
   </div>
 </div>
 <div id="s-pause" class="scr dim hidden">
-  <div class="card"><h2>Paused</h2><div class="note">The battle goes on while this is open.</div>
-    <button class="btn big" id="ps-resume">Resume</button>
-    <button class="btn" id="ps-settings">Settings</button>
+  <div class="card pause">
+    <h2>Paused</h2><div id="ps-info" class="ps-info"></div><div class="note">The battle goes on while this is open.</div>
+    <button class="btn big primary" id="ps-resume">Resume</button>
+    <div class="row2"><button class="btn" id="ps-settings">Settings</button><button class="btn" id="ps-how">How to play</button></div>
     <button class="btn danger" id="ps-leave">Leave match</button></div>
 </div>
-<div id="s-result" class="scr dim hidden"><div class="card wide" id="r-card"></div></div>
+<div id="s-result" class="scr dim hidden"><div class="card wide result" id="r-card"></div></div>
 <div id="toast"></div>
 <script type="module">
 // ---- 00-core.js ----
@@ -378,7 +573,7 @@ function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79
 const TEAM_COL = [0x3b9bff, 0xff4d4d, 0x4cd964, 0xffd21f, 0xc77dff, 0xff9d3a, 0x3ae0d0, 0xff6ac1, 0xa0e85a, 0xe8e8e8, 0x7a8cff, 0xd08a5a, 0x5ad0ff, 0xffb0b0, 0x9a9a9a, 0xb0ff6a, 0xffe08a, 0x8affd8];
 const teamCol = t => TEAM_COL[((t | 0) % TEAM_COL.length + TEAM_COL.length) % TEAM_COL.length];
 const teamHex = t => '#' + teamCol(t).toString(16).padStart(6, '0');
-const VERSION = '2.1.1';
+const VERSION = '2.2';
 let toastT = 0;
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2600); }
 
@@ -391,8 +586,8 @@ function defaultSave() {
     return {
         v: SAVE_V, name: '', credits: 800, freeRp: 0, rp: {}, researched: {}, owned: {}, target: null,
         lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0, bots: 'match', diff: 'normal',
-        mods: {}, opts: { len: 10, map: 'normal', ff: 0, wx: 'noon' },
-        settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false },
+        mods: {}, opts: { len: 10, map: 'normal', ff: 0, wx: 'noon', pub: 1 },
+        settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false, show: true },
         stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0, flags: 0, mvp: 0 }, seenHow: false, seenNew: ''
     };
 }
@@ -440,6 +635,8 @@ function fixSave(s) {      // tier I is always owned; drop unknown ids; keep a u
     o.ff = o.ff ? 1 : 0; if (!['noon', 'evening', 'overcast', 'night', 'random'].includes(o.wx)) o.wx = 'noon';
     if (!['off', 'match', 'mixed'].includes(s.bots)) s.bots = 'match';
     if (!['low', 'med', 'high'].includes(s.settings.quality)) s.settings.quality = 'med';
+    s.settings.show = s.settings.show !== false; o.pub = o.pub === 0 ? 0 : 1;
+    if (!['easy', 'normal', 'hard'].includes(s.diff)) s.diff = 'normal';
     s.v = SAVE_V;
     return s;
 }
@@ -511,6 +708,7 @@ const SFX = {
 // positional: quieter with distance from the camera
 let listenerPos = null;
 function sfx(name, x, y, z, vol) {
+    if (x !== undefined && !M) return;      // a sound with a position and no match: the menu showcase stays silent
     const c = ac(); if (!c || !SFX[name]) return;
     const now = c.currentTime, lim = (name === 'gun' || name === 'mg') ? 0.07 : 0.04;
     if (A.last[name] && now - A.last[name] < lim) return; A.last[name] = now;
@@ -2493,7 +2691,7 @@ function makeConfig(players, opts) {
     return cfg;
 }
 function beginMatch(cfg, meId, isHost) {
-    clearMatch();
+    Show.stop(); clearMatch();
     const ffa = cfg.mode === 'ffa', nt = ffa ? 0 : 2;
     M = { mode: cfg.mode, cfg, t: 0, state: 'play', limit: cfg.limit, kills: [0, 0], tickets: [cfg.limit.tickets || 0, cfg.limit.tickets || 0], caps: [0, 0], pts: PTS.map(() => ({ own: -1, prog: 0 })),
         flags: [0, 1].map(t => ({ t, st: 'home', x: FLAG_HOME[t].x, z: FLAG_HOME[t].z, by: -1, dt: 0 })), R: MAPR[cfg.map] || MAPR.normal,
@@ -2507,6 +2705,7 @@ function beginMatch(cfg, meId, isHost) {
     };
     cfg.players.forEach(p => mk(p, false)); cfg.bots.forEach(b => mk(b, true));
     ME = EN.get(meId); M.my.tier = ME ? ME.def.t : 1;
+    const mp = cfg.players.find(p => p.id === meId); M.pick = mp && save.lineup.includes(mp.veh) ? mp.veh : myVeh();      // the lobby pick: what the death screen offers first
     if (ME) ME.budget = 0;
     setPointsVisible(cfg.mode === 'conq'); updatePointViz(M.pts); setFlagsVisible(cfg.mode === 'ctf');
     UI.enterMatch();
@@ -2526,13 +2725,14 @@ function bcast(m, fast) {       // message for everyone (including me)
     if (M && M.host) handleMatchMsg(M.meId, m, true);
     if (netOn()) PARTY.net.send('all', m, { fast: !!fast });
 }
-function netFire(e, slot, ps, tg) { if (netOn()) PARTY.net.send('all', { t: 'fire', id: e.id, w: slot, ps, tg }); }
+function netFire(e, slot, ps, tg) { if (M && netOn()) PARTY.net.send('all', { t: 'fire', id: e.id, w: slot, ps, tg }); }
 const owlOf = e => clamp(((e && e.q) || 80) / 2, 0, 300);      // one-way latency estimate (ms) of a guest
 
 // ---------- damage ----------
 function predictHit() { if (M && !M.host) { UI.hitMarker(false, true); } }
 function reportHit(p, tg, dmg) {
-    if (!M || dmg <= 0.05) return;
+    if (!M) { if (Show.on && dmg > .05) Show.hit(p, tg, dmg); return; }      // no match: the menu showcase keeps its own score
+    if (dmg <= 0.05) return;
     const own = EN.get(p.own); if (!own || tg.prot > 0) return;
     own.nHits = (own.nHits || 0) + 1;
     if (M.host) { if (own === ME) { UI.hitMarker(false); sfx('hit'); } hostDamage(p.own, tg.id, dmg, p.pk || 0, p.slot, true); }
@@ -2556,7 +2756,7 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
         a.budget -= dmg;
     }
     let eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
-    if (a.ai) eff *= aiDiff().dmg * (a.def.ln === 'a' ? 1.4 : 1);      // jet guns do tiny damage per bullet and miss a lot; bots get a little help there
+    if (a.ai) eff *= aiDiff(a).dmg * (a.def.ln === 'a' ? 1.4 : 1);      // jet guns do tiny damage per bullet and miss a lot; bots get a little help there
     if (team) eff *= .5;      // friendly fire is on: half damage
     eff = Math.min(eff, v.def.hp * (a.def.ln !== v.def.ln ? .3 : .5));      // no single hit takes more than 30% (50% in the same domain) of a full health bar
     v.hp -= eff; if (!team) { a.dmg += eff; a.score += eff * .1; }
@@ -2867,7 +3067,7 @@ function finishMatch(m) {
 // next player takes over the room (host migration) or everybody gets a clean return to the menu.
 // ============================================================
 const GAME_ID = 'warpvp', PARTY_MAX = 8, DROP_MS = 75000;
-const PARTY = { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], rtt: 0, succ: -1, recon: false, migr: null, unread: 0 };
+const PARTY = { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], rtt: 0, succ: -1, recon: false, migr: null, unread: 0, migrating: false };
 function hgLoad() {
     let h = window.HGNet; try { if (!h && window.parent && window.parent !== window) h = window.parent.HGNet; } catch (e) {}
     if (h) return Promise.resolve(h);
@@ -2938,7 +3138,8 @@ function wireNet(net) {
 function onNetMsg(peer, m) {
     if (!m || typeof m !== 'object') return;
     switch (m.t) {
-        case 'party': if (!PARTY.host) { PARTY.roster = m.r; PARTY.opts = m.o; PARTY.succ = m.succ; Object.assign(save, { mode: m.o.mode, size: m.o.size, bots: m.o.bots, diff: m.o.diff }); Object.assign(save.opts, { len: m.o.len, map: m.o.map, ff: m.o.ff, wx: m.o.wx }); UI.paintParty(); UI.refreshLobby(); UI.paintMenuSel(); } return;
+        // the host's options stay in PARTY.opts: a guest's own solo settings are no longer overwritten by every party it joins (2.2)
+        case 'party': if (!PARTY.host && m.o && MODES[m.o.mode]) { PARTY.roster = Array.isArray(m.r) ? m.r : []; PARTY.opts = m.o; PARTY.succ = m.succ; PARTY.inMatch = !!m.im || (PARTY.inMatch && !!M); UI.paintParty(); UI.refreshLobby(); } return;
         case 'me': if (PARTY.host) { const x = PARTY.mem[peer.id] || (PARTY.mem[peer.id] = { team: autoTeam() }); if (VBY[m.veh]) { x.veh = m.veh; x.mm = m.mm | 0; x.line = Array.isArray(m.line) ? m.line.slice(0, 5) : []; } if (m.ready !== undefined) x.ready = !!m.ready; broadcastParty(); } return;
         case 'team': if (PARTY.host && !PARTY.inMatch) { const x = PARTY.mem[peer.id]; if (x && (m.team === 0 || m.team === 1)) { x.team = m.team; x.ready = false; broadcastParty(); } } return;
         case 'chat': { const n = String(peer && peer.name || 'Player').slice(0, 16); addChat(n, String(m.x || '').slice(0, 140), peer && peer.id); return; }
@@ -2955,7 +3156,7 @@ function partyReset() {
     try { net && net.close(); } catch (e) {}
     if (lpOpen) { try { const p = LP(); p && p.HG_partyClose && p.HG_partyClose(lpOpen); } catch (e) {} lpOpen = ''; }
     if (!UNLOADING) try { sessionStorage.removeItem('steelstorm_party'); } catch (e) {}
-    Object.assign(PARTY, { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], succ: -1, recon: false, lag: false, migr: null, unread: 0 });
+    Object.assign(PARTY, { net: null, host: false, code: '', roster: [], myId: 0, status: '', bad: false, inMatch: false, busy: false, mem: {}, opts: null, chat: [], succ: -1, recon: false, lag: false, migr: null, unread: 0, migrating: false, force: 0 });
 }
 function rememberParty() { try { sessionStorage.setItem('steelstorm_party', JSON.stringify({ code: PARTY.code, at: Date.now(), host: PARTY.host })); } catch (e) {} }
 function makeNet(HG) { const net = HG.create({ game: GAME_ID, dropMs: DROP_MS }); PARTY.net = net; wireNet(net); return net; }
@@ -3035,13 +3236,13 @@ function tryMigrate() {
     const old = PARTY.code, me = PARTY.myId, succ = PARTY.succ; if (succ < 0 || !/^\d{6}$/.test(old)) return false;
     const code = migCode(old), inM = !!M && !M.over, net = PARTY.net;
     PARTY.net = null; try { net.close(); } catch (e) {}
-    PARTY.code = ''; PARTY.busy = false; PARTY.recon = false;
+    PARTY.code = ''; PARTY.busy = false; PARTY.recon = false; PARTY.migrating = true;      // the lobby stays up and says so
     UI.banner('Host left: moving the party to a new host...');
     if (me === succ) {
         partyCreate(code);
         const t0 = Date.now(), iv = setInterval(() => {
             if (PARTY.host && PARTY.code) {
-                clearInterval(iv); PARTY.migr = { at: Date.now(), map: {} };
+                clearInterval(iv); PARTY.migr = { at: Date.now(), map: {} }; PARTY.migrating = false;
                 if (inM && M) becomeMatchHost(me);
                 UI.banner(''); chatSys('You are the new host' + (PARTY.code !== code ? ' (new code ' + PARTY.code + ')' : ''));
                 setTimeout(() => { if (PARTY.migr) { if (M) for (const id of Object.keys(PARTY.migr.map)) hostPlayerGone(+id); PARTY.migr = null; } }, 25000);
@@ -3050,7 +3251,7 @@ function tryMigrate() {
     } else {
         const t0 = Date.now(), attempt = () => {
             if (Date.now() - t0 > 22000) return migrateFailed();
-            partyJoin(code, { old: me }).then(ok => { if (ok) { UI.banner(''); chatSys('Moved to the new host.'); } else setTimeout(attempt, 1500); });
+            partyJoin(code, { old: me }).then(ok => { if (ok) { PARTY.migrating = false; UI.banner(''); chatSys('Moved to the new host.'); } else setTimeout(attempt, 1500); });
         };
         setTimeout(attempt, 2000);
     }
@@ -3073,21 +3274,27 @@ function migrantJoined(peer, old) {
     else if (M && !M.over) hostAddPlayer(peer);
 }
 // ---------- launcher hooks (invites, open parties) ----------
-let lpOpen = '';
+let lpOpen = '', advT = 0;
+function advMode() {      // what the open-games list shows under the host's name (Grapevine keeps 40 characters)
+    const m = MODES[save.mode] || MODES.tdm, s = save.size, map = { small: 'Small', normal: 'Normal', large: 'Large' }[save.opts.map] || 'Normal';
+    const t = n => n + (save.mode === 'ffa' ? '' : ' ' + s + 'v' + s) + ' · ' + map + ' map' + (PARTY.inMatch ? ' · in battle' : '');
+    return t(m.name).length <= 40 ? t(m.name) : t(m.short);
+}
 function advertise() {
     const p = LP(); if (!p || !p.HG_partyOpen) return;
     const open = PARTY.host && /^\d{6}$/.test(PARTY.code);
-    if (open) { try { p.HG_partyOpen({ game: GAME_ID, code: PARTY.code, n: rosterNow().length, max: PARTY_MAX, mode: MODES[save.mode].name + (PARTY.inMatch ? ' (in battle)' : '') }); lpOpen = PARTY.code; } catch (e) {} }
+    if (open) { try { p.HG_partyOpen({ game: GAME_ID, code: PARTY.code, n: rosterNow().length, max: PARTY_MAX, mode: advMode(), pub: save.opts.pub !== 0 }); lpOpen = PARTY.code; } catch (e) {} }
     else if (lpOpen) { try { p.HG_partyClose(lpOpen); } catch (e) {} lpOpen = ''; }
 }
+function advertiseSoon() { if (!PARTY.host) return; clearTimeout(advT); advT = setTimeout(advertise, 1500); }      // option clicks come in bursts: one update
 setInterval(advertise, 30000);
 setInterval(() => { if (PARTY.host && PARTY.net && !M) broadcastParty(); else if (PARTY.host && PARTY.net) { PARTY.roster = hostRoster(); } }, 3000);
 window.__hgJoin = code => {
     const c = String(code || '').replace(/\D/g, ''); if (c.length !== 6) return false;
-    UI.showMenu(); $('#p-code').value = c; partyJoin(c); return true;
+    if (!M) UI.go('mp'); $('#p-code').value = c; partyJoin(c); return true;
 };
 window.__hgHost = convId => {
-    UI.showMenu(); partyCreate();
+    if (!M) UI.go('mp'); partyCreate();
     const t0 = Date.now(), iv = setInterval(() => {
         if (Date.now() - t0 > 25000) return clearInterval(iv);
         if (PARTY.host && /^\d{6}$/.test(PARTY.code)) { clearInterval(iv); const p = LP(); try { p && p.HG_sendInvite && p.HG_sendInvite(convId, { game: GAME_ID, code: PARTY.code, max: PARTY_MAX }); } catch (e) {} }
@@ -3108,9 +3315,9 @@ function launcherBoot() {
 
 // ---- 80-ui.js ----
 // ============================================================
-// UI: main menu, party lobby, research tree (branches + modules), garage, settings, HUD, minimap, death + result screens.
+// UI: the match HUD, minimap and markers, the death / respawn, pause and result screens. The menus are in 82-menu.js.
 // ============================================================
-const UIS = { rs: null, gs: null, rln: 'g', screen: 'menu', selDead: null, hudT: 0, msgT: 0, hitT: 0, board: false, lobby: false, spec: -1 };
+const UIS = { rs: null, gs: null, rln: 'g', gt: 'all', screen: 'menu', selDead: null, autoDep: false, hudT: 0, msgT: 0, hitT: 0, board: false, lobby: false, spec: -1 };
 const OPTS = [
     ['size', 'Team size', [[3, '3v3'], [5, '5v5'], [8, '8v8']]],
     ['len', 'Length', [[5, '5 min'], [10, '10 min'], [15, '15 min']]],
@@ -3120,126 +3327,23 @@ const OPTS = [
     ['diff', 'Bot skill', [['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']]],
     ['ff', 'Friendly fire', [[0, 'Off'], [1, 'On']]]
 ];
-function optVal(k) { return k in save.opts ? save.opts[k] : save[k]; }
+function optVal(k, src) { return src && k in src ? src[k] : k in save.opts ? save.opts[k] : save[k]; }      // src: the host's options (a guest's lobby)
 function setOpt(k, v) {
     if (k === 'size' || k === 'len' || k === 'ff') v = +v;
     if (k in save.opts) save.opts[k] = v; else save[k] = v;
     writeSave(); UI.paintMenu(); UI.paintLobby(); partySettingsChanged();
+    if (k === 'mode' || k === 'size' || k === 'map') advertiseSoon();
 }
-function optsHtml(dis) {
-    return OPTS.map(([k, n, vals]) => '<div class="opt"><span>' + n + '</span><div class="seg">' + vals.map(([v, l]) => '<button data-opt="' + k + '" data-v="' + v + '"' + (String(optVal(k)) === String(v) ? ' class="on"' : '') + (dis ? ' disabled' : '') + '>' + l + '</button>').join('') + '</div></div>').join('');
+function optsHtml(dis, src) {
+    return OPTS.map(([k, n, vals]) => '<div class="opt"><span>' + n + '</span><div class="seg">' + vals.map(([v, l]) => '<button data-opt="' + k + '" data-v="' + v + '"' + (String(optVal(k, src)) === String(v) ? ' class="on"' : '') + (dis ? ' disabled' : '') + '>' + l + '</button>').join('') + '</div></div>').join('');
 }
 const pingBars = (ms, st) => { const n = st && st !== 'connected' ? 0 : ms < 90 ? 4 : ms < 160 ? 3 : ms < 260 ? 2 : 1, c = n >= 3 ? '#6df07a' : n === 2 ? '#ffd21f' : '#ff6a5a'; let h = '<span class="bars">'; for (let i = 1; i <= 4; i++) h += '<i style="height:' + (i * 25) + '%;background:' + (i <= n ? c : '#fff3') + '"></i>'; return h + '</span>'; };
 const UI = {
-    showMenu() { UIS.screen = 'menu'; ovc.clearRect(0, 0, 4000, 4000); $('#menu').classList.remove('hidden'); $$('#s-research,#s-garage,#s-settings,#s-how,#hud,#s-dead,#s-pause,#s-result').forEach(e => e.classList.add('hidden')); UI.paintMenu(); UI.paintLobby(); },
-    open(id) { $('#' + id).classList.remove('hidden'); if (id === 's-research') UI.paintResearch(); if (id === 's-garage') UI.paintGarage(); if (id === 's-settings') UI.paintSettings(); },
-    close(id) { $('#' + id).classList.add('hidden'); UI.paintMenu(); },
-    notice(t, h) { $('#nt-h').textContent = h || 'Party'; $('#nt-t').textContent = t; $('#s-notice').classList.remove('hidden'); toast(t); },
-    banner(t) { UIS.banner = t; const b = $('#h-banner'); if (b) { b.textContent = t; b.classList.toggle('on', !!t); } if (t) toast(t); },
-    wallet() {
-        $('#w-cr').textContent = fmt(save.credits); $('#w-fr').textContent = fmt(save.freeRp);
-        const t = save.target; $('#w-rp').textContent = t && (VBY[t] || MODBY[t]) ? fmt(rpOf(t)) + '/' + fmt(rpNeed(t)) : '-';
-        $$('.v-cr').forEach(e => e.textContent = fmt(save.credits)); $$('.v-fr').forEach(e => e.textContent = fmt(save.freeRp));
-    },
-    paintMenu() {
-        UI.wallet();
-        const guest = PARTY.net && !PARTY.host;
-        $$('#menu .mode').forEach(b => { b.classList.toggle('on', b.dataset.m === save.mode); b.disabled = !!guest; });
-        $('#m-opts').innerHTML = optsHtml(guest);
-        $('#m-lead-note').textContent = guest ? 'The party host picks the options.' : PARTY.net ? 'Teams are set in the party lobby.' : 'Solo: you and bots. Bots use vehicles near your battle rating.';
-        $('#b-play').textContent = PARTY.net ? 'LOBBY' : 'PLAY'; $('#b-play').disabled = false;
-        const nm = $('#m-name'); if (document.activeElement !== nm) nm.value = myName(); nm.disabled = !!LP() && !!(() => { try { return window.parent.HGGrapevine && window.parent.HGGrapevine.me && window.parent.HGGrapevine.me(); } catch (e) { return null; } })();
-        const slots = []; for (let i = 0; i < 5; i++) { const id = save.lineup[i], v = id && VBY[id]; slots.push(v ? chipHtml(v, i === save.sel, 'data-i="' + i + '"') : '<div class="chip empty"><b>Empty</b><small>Garage</small></div>'); }
-        $('#lineup').innerHTML = slots.join('');
-        $('#m-br').textContent = 'Your battle rating: ' + lineupBr().toFixed(1);
-        UI.paintParty();
-    },
-    paintMenuSel() { UI.paintMenu(); },
-    paintParty() {
-        const live = !!PARTY.code;
-        $('#p-idle').classList.toggle('hidden', live); $('#p-live').classList.toggle('hidden', !live);
-        $('#p-codev').textContent = PARTY.code || '------';
-        $('#p-list').innerHTML = rosterNow().map(p => '<div class="pm"><span class="dot t' + (p.team | 0) + 'b"></span>' + (p.id === 0 ? '<span class="star">&#9733;</span>' : '') + esc(p.name) + '<small>' + esc((VBY[p.veh] || VBY.g1a).n) + '</small></div>').join('');
-        const st = $('#p-status'); st.textContent = PARTY.status || ''; st.className = 'note' + (PARTY.bad ? ' bad' : '');
-        $('#p-create').disabled = !!PARTY.busy; $('#p-join').disabled = !!PARTY.busy;
-        UI.paintLobby();
-    },
-    refreshLobby() { if (typeof Lobby !== 'undefined') Lobby.refresh(); },
-    openLobby() { if (!PARTY.code) return; UIS.lobby = true; UI.paintLobby(); },
-    closeLobby() { UIS.lobby = false; $('#s-lobby').classList.add('hidden'); },
-    paintLobby() {
-        const el = $('#s-lobby'), show = UIS.lobby && !!PARTY.code && !M; el.classList.toggle('hidden', !show); $('#menu').classList.toggle('lobby-on', show);
-        if (!show) return;
-        const host = PARTY.host, o = PARTY.opts || lobbyOpts(), ffa = o.mode === 'ffa', R = rosterNow(), me = R.find(p => p.id === PARTY.myId);
-        $('#lb-code').textContent = PARTY.code;
-        $('#lb-mode').innerHTML = (host ? Object.keys(MODES).map(k => '<button class="mb' + (o.mode === k ? ' on' : '') + '" data-opt="mode" data-v="' + k + '">' + MODES[k].name + '</button>').join('') : '<b>' + MODES[o.mode].name + '</b>') + '<small>' + esc(MODES[o.mode].desc) + (PARTY.inMatch ? ' &middot; battle in progress: you can join it' : '') + '</small>';
-        $('#lb-net').innerHTML = host ? '<b>HOST</b>' : pingBars(PARTY.rtt || 0, PARTY.recon ? 'r' : 'connected') + ' ' + Math.round(PARTY.rtt || 0) + ' ms';
-        const row = p => {
-            const v = VBY[p.veh] || VBY.g1a, br = brOf(vdef(p.veh, p.mm));
-            return '<div class="lp' + (p.id === PARTY.myId ? ' me' : '') + '"><div class="lp-n">' + (p.id === 0 ? '<span class="star">&#9733;</span>' : '') + esc(p.name) + (p.st && p.st !== 'connected' ? ' <small class="bad">' + esc(p.st) + '</small>' : '') + '<span class="rdy' + (p.ready ? ' on' : '') + '">' + (p.id === 0 ? 'HOST' : p.ready ? 'READY' : 'not ready') + '</span>' + (p.id ? pingBars(p.ping || 0, p.st) : '') + '</div>' +
-                '<div class="lp-v"><span class="ln ln-' + v.ln + '"></span>' + esc(v.n) + ' <small>' + CLS_NAME[v.cls] + ' &middot; BR ' + br.toFixed(1) + '</small></div>' +
-                '<div class="lp-l">' + (p.line || []).map(x => VBY[x[0]] ? '<span class="mini ln-' + VBY[x[0]].ln + 'b" title="' + esc(VBY[x[0]].n) + '">' + esc(VBY[x[0]].n.split(' ')[0]) + ' ' + (+x[1]).toFixed(1) + '</span>' : '').join('') + '</div>' +
-                (host && p.id !== 0 ? '<div class="lp-h">' + (!ffa ? '<button class="btn small" data-move="' + p.id + '" title="Move to the other team">&#8644;</button>' : '') + '<button class="btn small danger" data-kick="' + p.id + '" title="Remove from the party">&#10006;</button></div>' : '') + '</div>';
-        };
-        const size = o.size || 5;
-        if (ffa) $('#lb-teams').innerHTML = '<div class="tcol ffa"><h3>Everyone <small>' + R.length + ' players' + (o.bots !== 'off' ? ', bots fill to ' + Math.min(12, size * 2) : '') + '</small></h3>' + R.map(row).join('') + '</div>';
-        else $('#lb-teams').innerHTML = [0, 1].map(t => { const L = R.filter(p => (p.team | 0) === t); return '<div class="tcol t' + t + '"><h3 data-team="' + t + '">' + (t ? 'RED' : 'BLUE') + ' TEAM <small>' + L.length + ' / ' + size + (o.bots !== 'off' ? ' (+' + Math.max(0, size - L.length) + ' bots)' : '') + '</small>' + (me && (me.team | 0) !== t && !PARTY.inMatch ? '<button class="btn small" data-team="' + t + '">Join</button>' : '') + '</h3>' + L.map(row).join('') + '</div>'; }).join('');
-        $('#lb-opts').innerHTML = optsHtml(!host); $('#lb-optnote').textContent = host ? '' : '(the host decides)';
-        $('#lb-tools').classList.toggle('hidden', !host || ffa);
-        $('#lb-mine').innerHTML = save.lineup.map((id, i) => chipHtml(VBY[id], i === save.sel, 'data-i="' + i + '"')).join('');
-        const b = $('#lb-ready');
-        if (host) { const nr = R.filter(p => p.id !== 0 && !p.ready).length; b.textContent = PARTY.inMatch ? 'IN BATTLE' : nr ? 'START (' + nr + ' not ready)' : 'START'; b.disabled = PARTY.inMatch; }
-        else if (PARTY.inMatch) { b.textContent = 'JOIN BATTLE'; b.disabled = false; }
-        else { b.textContent = me && me.ready ? 'READY!' : 'READY'; b.classList.toggle('on', !!(me && me.ready)); b.disabled = false; }
-        UI.paintChat();
-    },
-    paintChat() {
-        const L = $('#lb-log'); if (!L) return;
-        L.innerHTML = PARTY.chat.slice(-40).map(c => c.sys || c.x.startsWith('* ') ? '<div class="sys">' + esc(c.x.replace(/^\* /, '')) + '</div>' : '<div><b' + (c.me ? ' class="me"' : '') + '>' + esc(c.n) + ':</b> ' + esc(c.x) + '</div>').join('');
-        L.scrollTop = 1e6;
-    },
-    // ----- research tree -----
-    paintResearch() {
-        UI.wallet(); const ln = UIS.rln, br = BRANCHES[ln];
-        $$('#rs-tabs button').forEach(b => b.classList.toggle('on', b.dataset.ln === ln));
-        let h = '<div class="grid" style="grid-template-columns:28px repeat(' + br.length + ',minmax(110px,1fr))"><div></div>' + br.map(([k, n]) => '<div class="bh">' + n + '</div>').join('');
-        for (let t = 1; t <= MAX_TIER; t++) {
-            h += '<div class="th">' + TIER_ROMAN[t] + '</div>';
-            for (const [k] of br) h += '<div class="cell">' + VEHS.filter(v => v.ln === ln && v.t === t && v.cls === k).map(researchCard).join('') + '</div>';
-        }
-        $('#tree').innerHTML = h + '</div>'; UI.paintInfo('rs');
-    },
-    paintInfo(which) {
-        const id = which === 'rs' ? UIS.rs : UIS.gs, el = which === 'rs' ? $('#rs-info') : $('#g-info'), v = id && VBY[id];
-        if (!v) { el.innerHTML = '<h3>Vehicle</h3><div class="note">Click a vehicle to see it.</div>'; return; }
-        const d = isOwned(id) ? vdef(id, modMask(id)) : v;
-        let h = '<h2>' + esc(v.n) + '</h2><div class="note">' + LINES[v.ln].tag + ' &middot; ' + CLS_NAME[v.cls] + ' &middot; Tier ' + TIER_ROMAN[v.t] + '</div><p>' + esc(v.desc || '') + '</p>' + (v.role ? '<div class="note"><b>Role:</b> ' + esc(v.role) + '</div>' : '') + '<div class="st">' + vStats(d).map(s => '<span>' + s[0] + '</span><b>' + s[1] + '</b>').join('') + '</div>';
-        if (isOwned(id)) {
-            h += '<div class="note">You own this vehicle.</div><button class="btn big" data-act="line" data-id="' + id + '">' + (save.lineup.includes(id) ? 'Remove from lineup' : 'Add to lineup') + '</button>';
-            h += '<h3 style="margin-top:12px">Modules</h3>' + v.mods.map(m => {
-                const done = !!save.mods[m.id], tgt = save.target === m.id;
-                return '<div class="mod' + (done ? ' done' : '') + '"><b>' + esc(m.n) + '</b><small>' + esc(m.desc) + '</small>' + (done ? '<span class="tag ok">INSTALLED</span>' :
-                    '<div class="bar"><i style="width:' + (100 * rpOf(m.id) / m.rp) + '%"></i></div><small>' + fmt(rpOf(m.id)) + ' / ' + fmt(m.rp) + ' RP</small><div class="row"><button class="btn small" data-act="target" data-id="' + m.id + '"' + (tgt ? ' disabled' : '') + '>' + (tgt ? 'Researching' : 'Research') + '</button><button class="btn small" data-act="free" data-id="' + m.id + '"' + (save.freeRp <= 0 ? ' disabled' : '') + '>Free RP</button></div>') + '</div>';
-            }).join('');
-        } else if (isResearched(id)) {
-            h += '<button class="btn big" data-act="buy" data-id="' + id + '"' + (save.credits < v.cost ? ' disabled' : '') + '>Buy for ' + fmt(v.cost) + ' credits</button>';
-        } else if (canResearch(id)) {
-            h += '<div class="note">' + fmt(rpOf(id)) + ' / ' + fmt(v.rp) + ' research points</div><div class="bar"><i style="width:' + (100 * rpOf(id) / v.rp) + '%"></i></div>';
-            h += '<button class="btn big" data-act="target" data-id="' + id + '"' + (save.target === id ? ' disabled' : '') + '>' + (save.target === id ? 'Researching now' : 'Research this (match RP go here)') + '</button>';
-            h += '<button class="btn" data-act="free" data-id="' + id + '"' + (save.freeRp <= 0 ? ' disabled' : '') + '>Spend free RP (' + fmt(save.freeRp) + ')</button><div class="note">Then buy it for ' + fmt(v.cost) + ' credits.</div>';
-        } else h += '<div class="note bad">Locked. Research ' + esc(VBY[v.req].n) + ' first.</div>';
-        el.innerHTML = h;
-    },
-    paintGarage() {
-        UI.wallet();
-        $('#g-lineup').innerHTML = save.lineup.map((id, i) => chipHtml(VBY[id], i === save.sel, 'data-lid="' + id + '"')).join('');
-        $('#g-owned').innerHTML = ['g', 'a', 'n'].map(ln => '<h4 class="gh" style="color:' + LINES[ln].col + '">' + LINES[ln].name + '</h4><div class="cards">' + VEHS.filter(v => v.ln === ln && isOwned(v.id)).map(v => '<div class="vc owned' + (save.lineup.includes(v.id) ? ' sel' : '') + '" data-gid="' + v.id + '"><span class="tag t">' + TIER_ROMAN[v.t] + '</span><b><span class="ln ln-' + v.ln + '"></span>' + esc(v.n) + '</b><small>' + CLS_NAME[v.cls] + ' &middot; BR ' + brOf(vdef(v.id, modMask(v.id))).toFixed(1) + ' &middot; ' + popc(modMask(v.id)) + '/5 mods</small></div>').join('') + '</div>').join('');
-        UI.paintInfo('gs');
-    },
-    paintSettings() { $('#st-q').value = save.settings.quality; $('#st-sens').value = save.settings.sens; $('#st-vol').value = save.settings.vol; $('#st-inv').checked = !!save.settings.invertY; const q = save.settings.quality; $('#st-qnote').textContent = q === 'low' ? 'No shadows, fewer trees and particles, simple water and ground.' : q === 'med' ? 'Shadows, textured ground and water, 2 flash lights.' : 'Soft 2048 shadows, full trees and particles, 4 flash lights, longest view.'; },
+    notice(t, h) { $('#nt-h').textContent = h || 'Party'; $('#nt-t').textContent = t; $('#s-notice').classList.remove('hidden'); toast(t); if (typeof showSync === 'function') showSync(); },
+    banner(t) { UIS.banner = t; const b = $('#h-banner'); if (b) { b.textContent = t; b.classList.toggle('on', !!t); } if (t) toast(t); if (typeof UI.paintLobby === 'function') UI.paintLobby(); },
     // ----- match HUD -----
     enterMatch() {
-        $('#menu').classList.add('hidden'); UI.closeLobby(); UIS.lobby = !!PARTY.code; $$('#s-research,#s-garage,#s-settings,#s-how,#s-dead,#s-pause,#s-result,#s-new').forEach(e => e.classList.add('hidden'));
+        $('#menu').classList.add('hidden'); UI.closeLobby(); UIS.lobby = !!PARTY.code; UIS.autoDep = false; $$('#s-settings,#s-how,#s-dead,#s-pause,#s-result,#s-new,#s-notice').forEach(e => e.classList.add('hidden'));
         $('#s-lobby').classList.add('hidden');
         $('#hud').classList.remove('hidden'); UIS.screen = 'match'; $('#h-feed').innerHTML = ''; $('#h-msg').classList.remove('on');
         $('#h-lock').classList.remove('hidden');
@@ -3286,14 +3390,29 @@ const UI = {
         if (!M || M.over) return;
         $('#s-dead').classList.remove('hidden'); $('#h-lock').classList.add('hidden'); if (document.pointerLockElement) document.exitPointerLock();
         $('#d-title').textContent = w === 'late' ? 'Battle in progress' : w === 'sync' ? 'Back in the battle' : k && k !== ME ? 'Destroyed by ' + k.name : w === 'crash' ? 'You crashed' : 'Destroyed';
-        UIS.spec = k && k !== ME ? k.id : -1;
-        UIS.selDead = UIS.selDead && save.lineup.includes(UIS.selDead) ? UIS.selDead : myVeh();
+        UIS.spec = k && k !== ME ? k.id : -1; UIS.autoDep = false;
+        UIS.selDead = M.pick && save.lineup.includes(M.pick) ? M.pick : myVeh();      // the vehicle picked before the battle, not the last one used
         UI.paintDead();
     },
     paintDead() {
-        $('#d-lineup').innerHTML = save.lineup.map(id => chipHtml(VBY[id], id === UIS.selDead, 'data-did="' + id + '"')).join('');
+        const pick = M && M.pick;
+        $('#d-lineup').innerHTML = save.lineup.map((id, i) => {
+            const v = VBY[id]; if (!v) return ''; const d = vdef(id, modMask(id));
+            return '<button class="dv' + (id === UIS.selDead ? ' sel' : '') + '" data-did="' + id + '" style="--lc:' + LINES[v.ln].col + '"><kbd>' + (i + 1) + '</kbd>' + (id === pick ? '<em>LOBBY PICK</em>' : '') +
+                '<span class="st"><span class="tierb">' + TIER_ROMAN[v.t] + '</span>' + lineIcon(v.ln) + '</span><b>' + esc(v.n) + '</b><small>' + CLS_NAME[v.cls] + ' &middot; BR ' + brOf(d).toFixed(1) + '</small></button>';
+        }).join('');
+        const v = VBY[UIS.selDead]; $('#d-veh').textContent = v ? v.n + ' \u00b7 Space' : '';
     },
-    deployed() { $('#s-dead').classList.add('hidden'); $('#h-lock').classList.remove('hidden'); Cam.reset(); UI.hintFor(ME.def); },
+    // Deploy: one click or Space. Pressed while the timer still runs, it deploys the moment it can.
+    deploy() {
+        if (!M || M.over || !ME || ME.alive) return false;
+        if (ME.respT > 0) { UIS.autoDep = true; return false; }
+        UIS.autoDep = false;
+        const id = save.lineup.includes(UIS.selDead) ? UIS.selDead : M.pick && save.lineup.includes(M.pick) ? M.pick : myVeh();
+        if (respawnMe(id)) { Cam.lock(); return true; }
+        return false;
+    },
+    deployed() { $('#s-dead').classList.add('hidden'); UIS.autoDep = false; $('#h-lock').classList.remove('hidden'); Cam.reset(); UI.hintFor(ME.def); },
     showResult() {
         if (document.pointerLockElement) document.exitPointerLock();
         $$('#s-dead,#s-pause').forEach(e => e.classList.add('hidden'));
@@ -3303,14 +3422,23 @@ const UI = {
         const head = t => '<tr><th style="color:' + (t < 0 ? '#fff' : teamHex(t)) + '">' + (t < 0 ? 'Players' : t ? 'Red team' : 'Blue team') + '</th><th>Vehicle</th><th>Score</th><th>K</th><th>D</th><th>' + (M.mode === 'ctf' ? 'Flags' : 'Caps') + '</th></tr>';
         const tgt = save.target && (VBY[save.target] || MODBY[save.target]);
         const title = ffa ? (rank === 1 ? 'WINNER!' : '#' + rank + ' of ' + ents.length) : r.win ? 'VICTORY' : r.draw ? 'DRAW' : 'DEFEAT';
-        $('#r-card').innerHTML = '<p class="res-h ' + (r.win || (ffa && rank === 1) ? 'win' : r.draw ? '' : 'loss') + '">' + title + '</p>' +
+        const sc = ffa ? '' : M.mode === 'tdm' ? [M.kills[0], M.kills[1]] : M.mode === 'ctf' ? [M.caps[0], M.caps[1]] : [Math.ceil(M.tickets[0]), Math.ceil(M.tickets[1])];
+        const tile = (n, l) => '<div><b>' + n + '</b><small>' + l + '</small></div>';
+        $('#r-card').innerHTML = '<div class="res-banner"><small>' + esc(MODES[M.mode].name.toUpperCase()) + '</small><p class="res-h ' + (r.win || (ffa && rank === 1) ? 'win' : r.draw ? 'draw' : 'loss') + '">' + title + '</p>' +
+            (sc ? '<div class="res-sc"><span class="t0">BLUE ' + sc[0] + '</span> &ndash; <span class="t1">' + sc[1] + ' RED</span></div>' : '') + '</div>' +
             (mvp ? '<div class="mvp"><span>MVP</span><b style="color:' + entHex(mvp) + '">' + esc(mvp.name) + '</b><small>' + esc(mvp.def.n) + ' &middot; ' + mvp.kills + ' kills &middot; ' + Math.round(mvp.score) + ' pts</small>' + (r.mvp ? '<em>That is you! +25% rewards</em>' : '') + '</div>' : '') +
-            '<div class="res-g"><span>Kills <b>' + my.kills + '</b></span><span>' + (M.mode === 'ctf' ? 'Flags' : 'Captures') + ' <b>' + (M.mode === 'ctf' ? my.flags : my.caps) + '</b></span><span>Damage <b>' + fmt(my.dmg) + '</b></span><span>Deaths <b>' + my.deaths + '</b></span>' +
-            '<span>Credits earned <b>+' + fmt(r.cr) + '</b></span><span>Research points <b>+' + fmt(r.rp) + '</b></span></div>' +
-            '<div class="note">' + (tgt ? 'Researching ' + esc(tgt.n) + (MODBY[save.target] ? ' (' + esc(VBY[MODBY[save.target].v].n) + ')' : '') + ': ' + fmt(rpOf(save.target)) + '/' + fmt(rpNeed(save.target)) : 'Nothing selected for research: points go to your free RP (' + fmt(save.freeRp) + '). Pick a vehicle or module in Research.') + '</div>' +
+            '<div class="res-tiles">' + tile(my.kills, 'Kills') + tile(M.mode === 'ctf' ? my.flags : my.caps, M.mode === 'ctf' ? 'Flags' : 'Captures') + tile(fmt(my.dmg), 'Damage') + tile(my.deaths, 'Deaths') + '</div>' +
+            '<div class="res-rew"><span><i class="ic cr"></i>+' + fmt(r.cr) + '</span><span><i class="ic rp"></i>+' + fmt(r.rp) + ' RP</span></div>' +
+            '<div class="res-rp">' + (tgt ? 'Researching ' + esc(tgt.n) + (MODBY[save.target] ? ' (' + esc(VBY[MODBY[save.target].v].n) + ')' : '') + ': ' + fmt(rpOf(save.target)) + ' / ' + fmt(rpNeed(save.target)) + '<div class="bar"><i style="width:' + Math.min(100, 100 * rpOf(save.target) / rpNeed(save.target)) + '%"></i></div>' : 'Nothing selected for research: points go to your free RP (' + fmt(save.freeRp) + '). Pick a vehicle or module in Research.') + '</div>' +
             '<table class="board">' + (ffa ? head(-1) + sorted.map(row).join('') : [0, 1].map(t => head(t) + sorted.filter(e => e.team === t).map(row).join('')).join('')) + '</table>' +
-            '<button class="btn big" id="r-go">' + (PARTY.net ? 'Back to the lobby' : 'Back to menu') + '</button>';
+            '<div class="res-btns">' + (PARTY.net ? '' : '<button class="btn" id="r-again">Play again</button>') + '<button class="btn big primary" id="r-go">' + (PARTY.net ? 'Back to the lobby' : 'Back to menu') + '</button></div>';
         $('#s-result').classList.remove('hidden'); $('#r-go').onclick = () => { sfx('click'); UI.leaveMatch(true); afterMatch(); };
+        const ag = $('#r-again'); if (ag) ag.onclick = () => { sfx('click'); UI.leaveMatch(true); afterMatch(); startPlay(); if (M) Cam.lock(); };
+    },
+    paintPause() {
+        if (!M) return; const left = Math.max(0, M.limit.time - M.t), clock = Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0');
+        const v = t => M.mode === 'tdm' ? M.kills[t] : M.mode === 'ctf' ? M.caps[t] : M.mode === 'conq' ? Math.ceil(M.tickets[t]) : 0;
+        $('#ps-info').innerHTML = '<span>' + esc(MODES[M.mode].name) + '</span><span>' + clock + ' left</span>' + (M.mode === 'ffa' ? '<span>' + (ME ? ME.kills : 0) + ' kills</span>' : '<span><b class="t0">' + v(0) + '</b> : <b class="t1">' + v(1) + '</b></span>');
     },
     // per-frame HUD
     hud(dt) {
@@ -3342,8 +3470,9 @@ const UI = {
         let warnMs = false; for (const p of PR) if (p.k === 'missile' && p.tg === ME.id) { warnMs = true; break; }
         if (warnMs) fl += ' <b style="color:#ff6a5a">MISSILE!</b>';
         $('#h-veh').innerHTML = '<div class="nm">' + esc(d.n) + ' <small>BR ' + brOf(d).toFixed(1) + '</small></div><div class="hp' + (hpk < .3 ? ' low' : '') + '"><i style="width:' + hpk * 100 + '%"></i><b>' + Math.max(0, Math.ceil(ME.hp)) + ' / ' + d.hp + '</b></div><div class="wp">' + w + '</div><div class="fl">' + fl + '</div>';
+        if (!$('#s-pause').classList.contains('hidden')) UI.paintPause();
         const pr = $('#h-prot'); if (ME.alive && ME.prot > 0) { pr.textContent = 'SPAWN PROTECTION ' + ME.prot.toFixed(1) + ' s'; pr.classList.add('on'); } else pr.classList.remove('on');
-        if (!ME.alive) { const sec = Math.max(0, ME.respT); $('#d-sub').textContent = sec > 0 ? 'You can deploy in ' + Math.ceil(sec) + ' s' : 'Choose a vehicle and deploy'; $('#d-go').disabled = sec > 0; $('#d-go').textContent = sec > 0 ? 'WAIT ' + Math.ceil(sec) : 'DEPLOY'; const s = EN.get(Cam.specId); $('#d-spec').textContent = s && s.alive ? 'Watching ' + s.name + ' (click the screen for the next)' : ''; }
+        if (!ME.alive) { const sec = Math.max(0, ME.respT); if (sec <= 0 && UIS.autoDep) UI.deploy(); $('#d-sub').textContent = sec > 0 ? (UIS.autoDep ? 'Deploying in ' : 'You can deploy in ') + Math.ceil(sec) + ' s' : 'Pick a vehicle, then DEPLOY or Space'; const g = $('#d-go'); g.classList.toggle('wait', sec > 0); g.firstChild.textContent = sec > 0 ? (UIS.autoDep ? 'READY ' : 'DEPLOY IN ') + Math.ceil(sec) : 'DEPLOY'; const s = EN.get(Cam.specId); $('#d-spec').textContent = s && s.alive ? 'Watching ' + s.name + ' (click the screen for the next)' : ''; }
         // network: ping + reconnect banner
         const net = $('#h-net');
         if (PARTY.net && !PARTY.solo) {
@@ -3364,15 +3493,6 @@ const UI = {
     }
 };
 function entHex(e) { return M && M.mode === 'ffa' ? (e === ME ? teamHex(0) : teamHex(1)) : teamHex(e.team); }
-function chipHtml(v, sel, attrs) { return '<div class="chip' + (sel ? ' sel' : '') + '" ' + attrs + '><span class="tier">' + TIER_ROMAN[v.t] + '</span><b><span class="ln ln-' + v.ln + '"></span>' + esc(v.n) + '</b><small>' + CLS_NAME[v.cls] + ' ' + brOf(vdef(v.id, modMask(v.id))).toFixed(1) + '</small></div>'; }
-function researchCard(v) {
-    let cls = 'lock', tag = '', sub = 'Locked', bar = '';
-    if (isOwned(v.id)) { cls = 'owned'; tag = '<span class="tag ok">' + popc(modMask(v.id)) + '/5</span>'; sub = 'Owned'; }
-    else if (isResearched(v.id)) { cls = 'res'; tag = '<span class="tag t">BUY</span>'; sub = fmt(v.cost) + ' cr'; }
-    else if (canResearch(v.id)) { cls = 'can'; sub = fmt(rpOf(v.id)) + ' / ' + fmt(v.rp) + ' RP'; bar = '<div class="bar"><i style="width:' + (100 * rpOf(v.id) / v.rp) + '%"></i></div>'; if (save.target === v.id) tag = '<span class="tag t">&#9733;</span>'; }
-    else sub = 'Needs ' + VBY[v.req].n;
-    return '<div class="vc ' + cls + (UIS.rs === v.id ? ' sel' : '') + '" data-rid="' + v.id + '">' + tag + '<b>' + esc(v.n) + '</b><small>BR ' + v.br.toFixed(1) + ' &middot; ' + sub + '</small>' + bar + '</div>';
-}
 // ---------- minimap + on-screen markers ----------
 const miniC = $('#h-map').getContext('2d');
 const hiddenSub = e => e.dive > .5 && ME && foe(e, ME) && !(ME.def.radar && d3(ME, e) < 250) && d3(ME, e) > 90;
@@ -3449,57 +3569,13 @@ function drawOverlay() {
 }
 // ---------- wiring ----------
 function bindUI() {
-    const clickSfx = () => sfx('click');
-    document.addEventListener('click', e => {
-        const t = e.target.closest('button,.chip,.vc,.mode'); if (t) clickSfx();
-        const cl = e.target.closest('[data-close]'); if (cl) { const s = cl.closest('.scr'); s.classList.add('hidden'); UI.paintMenu(); if (M && s.id === 's-settings') UI.open('s-pause'); return; }
-        const op = e.target.closest('[data-opt]'); if (op && !op.disabled) { setOpt(op.dataset.opt, op.dataset.v); return; }
-        const tm = e.target.closest('[data-team]'); if (tm && tm.tagName === 'BUTTON') { partyTeam(+tm.dataset.team); return; }
-        const mv = e.target.closest('[data-move]'); if (mv) { partyMove(+mv.dataset.move); return; }
-        const kk = e.target.closest('[data-kick]'); if (kk) { partyKick(+kk.dataset.kick); return; }
-        const tb2 = e.target.closest('#rs-tabs button'); if (tb2) { UIS.rln = tb2.dataset.ln; UIS.rs = null; UI.paintResearch(); return; }
-        const rc = e.target.closest('[data-rid]'); if (rc) { UIS.rs = rc.dataset.rid; UI.paintResearch(); return; }
-        const gc = e.target.closest('[data-gid]'); if (gc) { UIS.gs = gc.dataset.gid; lineupToggle(gc.dataset.gid); UI.paintGarage(); partyVehChanged(); UI.refreshLobby(); return; }
-        const gl = e.target.closest('[data-lid]'); if (gl) { UIS.gs = gl.dataset.lid; save.sel = save.lineup.indexOf(gl.dataset.lid); writeSave(); UI.paintGarage(); partyVehChanged(); UI.refreshLobby(); return; }
-        const ac2 = e.target.closest('[data-act]');
-        if (ac2) {
-            const id = ac2.dataset.id, a = ac2.dataset.act;
-            if (a === 'target') setTarget(id); else if (a === 'free') spendFreeRp(id); else if (a === 'buy') { if (buyVeh(id)) sfx('cap'); } else if (a === 'line') { lineupToggle(id); partyVehChanged(); UI.refreshLobby(); }
-            if (MODBY[id]) partyVehChanged();
-            if ($('#s-research').classList.contains('hidden')) { UI.paintGarage(); } else UI.paintResearch(); return;
-        }
-        const ch = e.target.closest('#lineup .chip[data-i],#lb-mine .chip[data-i]'); if (ch) { save.sel = +ch.dataset.i; writeSave(); UI.paintMenu(); UI.paintLobby(); UI.refreshLobby(); partyVehChanged(); return; }
-        const dc = e.target.closest('[data-did]'); if (dc) { UIS.selDead = dc.dataset.did; UI.paintDead(); return; }
-    });
-    $$('#menu .mode').forEach(b => b.onclick = () => setOpt('mode', b.dataset.m));
-    $('#b-play').onclick = () => { if (PARTY.net) { UI.openLobby(); return; } startPlay(); if (M) Cam.lock(); };
-    $('#b-research').onclick = () => UI.open('s-research'); $('#b-garage').onclick = () => UI.open('s-garage'); $('#b-settings').onclick = () => UI.open('s-settings'); $('#b-how').onclick = () => UI.open('s-how');
-    $('#b-new').onclick = e => { e.preventDefault(); UI.open('s-new'); };
-    $('#p-create').onclick = () => { ac(); partyCreate(); };
-    $('#p-join').onclick = () => { ac(); partyJoin($('#p-code').value); };
-    $('#p-leave').onclick = () => partyLeave(); $('#p-open').onclick = () => UI.openLobby();
-    $('#lb-leave').onclick = () => partyLeave(); $('#lb-menu').onclick = () => UI.closeLobby();
-    $('#lb-copy').onclick = () => { const c = PARTY.code; const done = () => toast('Code ' + c + ' copied'); try { navigator.clipboard.writeText(c).then(done, () => { fallbackCopy(c); done(); }); } catch (er) { fallbackCopy(c); done(); } };
-    $('#lb-ready').onclick = () => {
-        ac();
-        if (PARTY.host) { startPlay(); if (M) Cam.lock(); return; }
-        if (PARTY.inMatch) { PARTY.net.send('host', Object.assign({ t: 'me', ready: true }, myInfo())); PARTY.net.send('host', { t: 'joinm' }); return; }
-        const me = PARTY.roster.find(p => p.id === PARTY.myId); partyReady(!(me && me.ready));
-    };
-    $('#lb-shuffle').onclick = () => partyShuffle(); $('#lb-balance').onclick = () => partyBalance();
-    const say = () => { const i = $('#lb-say'); sendChat(i.value); i.value = ''; };
-    $('#lb-send').onclick = say; $('#lb-say').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') say(); });
+    bindMenu();
     $('#h-say').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { sendChat(e.target.value); e.target.value = ''; e.target.classList.add('hidden'); e.target.blur(); if (ME && ME.alive) Cam.lock(); } else if (e.key === 'Escape') { e.target.classList.add('hidden'); e.target.blur(); } });
-    $('#p-code').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#p-join').click(); });
-    $('#m-name').addEventListener('keydown', e => e.stopPropagation());
-    $('#m-name').addEventListener('input', e => { save.name = e.target.value.slice(0, 16); try { localStorage.setItem('steelstorm_name', save.name); } catch (er) {} writeSave(); });
-    $('#st-q').onchange = e => { save.settings.quality = e.target.value; writeSave(); applyQuality(); UI.paintSettings(); };
-    $('#st-sens').oninput = e => { save.settings.sens = +e.target.value; writeSave(); };
-    $('#st-vol').oninput = e => { save.settings.vol = +e.target.value; setVolume(save.settings.vol); writeSave(); };
-    $('#st-inv').onchange = e => { save.settings.invertY = e.target.checked; writeSave(); };
-    $('#d-go').onclick = () => { if (ME && ME.respT <= 0) { if (respawnMe(UIS.selDead || myVeh())) { Cam.lock(); } } };
+    $('#d-go').onclick = () => UI.deploy();
+    $('#d-lineup').addEventListener('click', e => { const dc = e.target.closest('[data-did]'); if (dc) { UIS.selDead = dc.dataset.did; UI.paintDead(); } });
     $('#ps-resume').onclick = () => { $('#s-pause').classList.add('hidden'); Cam.lock(); };
     $('#ps-settings').onclick = () => { $('#s-pause').classList.add('hidden'); UI.open('s-settings'); };
+    $('#ps-how').onclick = () => { $('#s-pause').classList.add('hidden'); UI.open('s-how'); };
     $('#ps-leave').onclick = () => {      // a guest hands its vehicle to a bot; the host ends the battle for everyone (score so far decides)
         if (M && !M.over && netOn()) { if (M.host) { M.limit.time = 0; hostCheckEnd(); $('#s-pause').classList.add('hidden'); return; } toHost({ t: 'quit' }); }
         UI.leaveMatch(true); afterMatch();
@@ -3507,12 +3583,369 @@ function bindUI() {
 }
 function fallbackCopy(t) { try { const i = document.createElement('textarea'); i.value = t; document.body.appendChild(i); i.select(); document.execCommand('copy'); i.remove(); } catch (e) {} }
 
+// ---- 82-menu.js ----
+// ============================================================
+// MENUS (2.2): one frame (top bar + navigation) around the Home, Battle, Multiplayer, Garage and Research views, the party
+// lobby, and the Settings / How to play / What's new cards. The selected vehicle is shown large behind the menu by the
+// showcase (87-showcase.js) or, with that off, on the 3D lobby's pad (85-lobby3d.js). Everything works with the mouse alone.
+// ============================================================
+const VIEWS = ['menu', 'battle', 'mp', 'garage', 'research'], VIEW_EL = { menu: 'v-home', battle: 'v-battle', mp: 'v-mp', garage: 'v-garage', research: 'v-research' };
+const UIX = { list: null, fr: [], mpAt: 0, mpState: '', fake: null, lbShown: false };
+const SVGP = {
+    tank: 'M2 15h20l-2.5 4.5h-15zM5 11h11l2 3.5H4zM9 8h5v3H9zM14 9h8v1.6h-8z',
+    plane: 'M12 1.5l1.6 7.3 8.4 4v2.2l-8.5-2.1-.7 5.1 2.9 2.2v1.6L12 20.6l-3.7 1.2v-1.6l2.9-2.2-.7-5.1L2 15v-2.2l8.4-4z',
+    ship: 'M1.5 14.5h21l-3.2 5.5H4.7zM6 10.5h9v4H6zM9 6.5h3v4H9zM15.5 11.5h5l-1 3h-4z',
+    home: 'M3 11l9-8 9 8v10h-6v-6H9v6H3z',
+    battle: 'M11 1h2v5h-2zM11 18h2v5h-2zM1 11h5v2H1zM18 11h5v2h-5zM12 6.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11zm0 2.2a3.3 3.3 0 1 1 0 6.6a3.3 3.3 0 1 1 0-6.6z',
+    mp: 'M8 3.5a3.2 3.2 0 1 1 0 6.4a3.2 3.2 0 1 1 0-6.4zM16.5 5a2.7 2.7 0 1 1 0 5.4a2.7 2.7 0 1 1 0-5.4zM1.5 20c0-4.2 3-6.8 6.5-6.8s6.5 2.6 6.5 6.8zM15.5 20c0-2.3-.6-4-1.7-5.3 .9-.5 1.8-.7 2.7-.7 3.2 0 6 2.2 6 6z',
+    garage: 'M2 9l10-6.5L22 9v12h-3v-9H5v9H2zM7 14h10v2H7zM7 18h10v2H7z',
+    research: 'M9 2h6v2h-1v5.2l6 10c.9 1.5-.2 3.3-1.9 3.3H5.9c-1.7 0-2.8-1.8-1.9-3.3l6-10V4H9zM7.6 16h8.8l-2.6-4.5h-3.6z',
+    gear: 'M10 1.5h4l.7 2.8 2.3 1.3 2.7-.9 2 3.5-2.1 2v2.6l2.1 2-2 3.5-2.7-.9-2.3 1.3-.7 2.8h-4l-.7-2.8-2.3-1.3-2.7.9-2-3.5 2.1-2v-2.6l-2.1-2 2-3.5 2.7.9 2.3-1.3zM12 8.6a3.4 3.4 0 1 0 0 6.8a3.4 3.4 0 1 0 0-6.8z',
+    help: 'M12 1.5a10.5 10.5 0 1 0 0 21a10.5 10.5 0 1 0 0-21zm-1.2 15.5h2.4v2.4h-2.4zM12 5.5c2.4 0 4.2 1.6 4.2 3.7 0 2.7-3.1 2.9-3.1 5.3h-2.3c0-3.4 3.1-3.5 3.1-5.3 0-1-.8-1.6-1.9-1.6s-1.9.6-1.9 1.6H7.8c0-2.1 1.8-3.7 4.2-3.7z'
+};
+const setH = (el, h) => { if (el._h !== h) { el._h = h; el.innerHTML = h; } };      // repaint only what changed (a click on a replaced button is lost)
+const svgI = k => '<svg class="i" viewBox="0 0 24 24"><path fill-rule="evenodd" d="' + SVGP[k] + '"/></svg>';
+const lineIcon = ln => svgI(ln === 'g' ? 'tank' : ln === 'a' ? 'plane' : 'ship');
+// the bars are a share of the best any fully upgraded vehicle of the same domain has (a jet's speed is not a tank's)
+const STATMAX = {};
+function statMax(ln) {
+    if (STATMAX[ln]) return STATMAX[ln];
+    const m = { hp: 1, ar: 1, sp: 1, fp: 1 }; for (const v of VEHS) if (v.ln === ln) { const d = vdef(v.id, 31); m.hp = Math.max(m.hp, d.hp); m.ar = Math.max(m.ar, d.ar); m.sp = Math.max(m.sp, d.sp); m.fp = Math.max(m.fp, d.maxDps); }
+    return STATMAX[ln] = m;
+}
+function statBars(d) {      // blue = the vehicle, yellow = what its installed modules add
+    const b = d.base || d, M0 = statMax(b.ln);
+    const row = (n, v0, v, max, txt) => { const w0 = clamp(100 * v0 / max, 3, 100), w = clamp(100 * v / max, 3, 100); return '<div class="sb"><span>' + n + '</span><div class="sbar"><i style="width:' + w0.toFixed(1) + '%"></i>' + (w > w0 + .5 ? '<u style="width:' + (w - w0).toFixed(1) + '%"></u>' : '') + '</div><b>' + txt + '</b></div>'; };
+    return '<div class="sbars">' + row('Hit points', b.hp, d.hp, M0.hp, fmt(d.hp)) + row('Armour', b.ar, d.ar, M0.ar, fmt(d.ar)) + row('Speed', b.sp, d.sp, M0.sp, Math.round(d.sp * 3.6) + ' km/h') + row('Firepower', b.maxDps, d.maxDps, M0.fp, fmt(d.maxDps) + ' dps') + '</div>';
+}
+function weapHtml(d) {
+    const key = { w1: 'CLICK', w2: 'R-CLICK', w3: 'B' };
+    return '<div class="wps">' + ['w1', 'w2', 'w3'].filter(k => d[k]).map(k => {
+        const w = d[k], val = w.cnt ? w.cnt + ' x ' + fmt(w.dmg) : fmt(w.dmg) + (w.nn > 1 ? ' x' + w.nn : '') + ' dmg';
+        const rl = k === 'w1' ? (w.k === 'bullet' ? Math.round(1 / w.rl) + '/s' : w.rl.toFixed(1) + ' s') : w.k === 'missile' ? 'guided' : '';
+        return '<div class="wp-row"><kbd>' + key[k] + '</kbd><span>' + esc(w.n) + '</span><b>' + val + (rl ? '<small>' + rl + '</small>' : '') + '</b></div>';
+    }).join('') + '</div>';
+}
+function modsHtml(v) {
+    return v.mods.map(m => {
+        const done = !!save.mods[m.id], tgt = save.target === m.id;
+        return '<div class="mod' + (done ? ' done' : '') + '"><b>' + esc(m.n) + '</b><small>' + esc(m.desc) + '</small>' + (done ? '<span class="tag ok">INSTALLED</span>' :
+            '<div class="bar"><i style="width:' + (100 * rpOf(m.id) / m.rp) + '%"></i></div><small>' + fmt(rpOf(m.id)) + ' / ' + fmt(m.rp) + ' RP</small><div class="row"><button class="btn small" data-act="target" data-id="' + m.id + '"' + (tgt ? ' disabled' : '') + '>' + (tgt ? 'Researching' : 'Research') + '</button><button class="btn small" data-act="free" data-id="' + m.id + '"' + (save.freeRp <= 0 ? ' disabled' : '') + '>Free RP</button></div>') + '</div>';
+    }).join('');
+}
+// the big vehicle card: name, tier, BR, role, stat bars, weapons, modules; ctx = home | garage | research
+function vehCard(id, ctx) {
+    const v = VBY[id]; if (!v) return '<div class="vk-note">Click a vehicle to see it here.</div>';
+    const own = isOwned(id), d = own ? vdef(id, modMask(id)) : v, L = LINES[v.ln], inL = save.lineup.includes(id), sel = myVeh() === id;
+    let h = '<div class="vk-head" style="--lc:' + L.col + '"><span class="tierb">' + TIER_ROMAN[v.t] + '</span><div><small>' + L.name + ' &middot; ' + CLS_NAME[v.cls] + '</small><h2>' + esc(v.n) + '</h2></div><span class="brb"><small>BR</small>' + brOf(d).toFixed(1) + '</span></div>';
+    h += '<div class="role"><b>Role</b>' + esc(v.role || '') + '</div>';
+    if (ctx !== 'home' && v.desc) h += '<div class="desc">' + esc(v.desc) + '</div>';
+    h += statBars(d) + weapHtml(d);
+    if (own) h += '<div class="mdots" title="Modules installed">' + v.mods.map(m => '<i class="' + (save.mods[m.id] ? 'on' : '') + '" title="' + esc(m.n) + '"></i>').join('') + '<span>' + popc(modMask(id)) + ' / 5 modules</span></div>';
+    if (ctx === 'home') h += '<div class="vk-act"><button class="btn" data-go="garage">Change vehicle</button><button class="btn" data-act="garage" data-id="' + id + '">Modules</button></div>';
+    else if (own) {
+        h += '<div class="vk-act">' + (sel ? '<button class="btn" disabled>Selected for battle</button>' : '<button class="btn primary" data-act="use" data-id="' + id + '">Take into battle</button>') +
+            '<button class="btn" data-act="line" data-id="' + id + '"' + (inL && save.lineup.length <= 1 ? ' disabled' : '') + '>' + (inL ? 'Remove from lineup' : 'Add to lineup') + '</button></div>';
+        h += '<div class="sheet-h" style="margin:14px 0 0"><h3 style="margin:0">Modules</h3></div>' + modsHtml(v);
+    } else if (isResearched(id)) h += '<div class="vk-act"><button class="btn primary" data-act="buy" data-id="' + id + '"' + (save.credits < v.cost ? ' disabled' : '') + '>Buy for ' + fmt(v.cost) + ' credits</button></div>' + (save.credits < v.cost ? '<div class="vk-note">You need ' + fmt(v.cost - save.credits) + ' more credits.</div>' : '');
+    else if (canResearch(id)) {
+        h += '<div class="vk-note">' + fmt(rpOf(id)) + ' / ' + fmt(v.rp) + ' research points, then ' + fmt(v.cost) + ' credits</div><div class="bar"><i style="width:' + (100 * rpOf(id) / v.rp) + '%"></i></div>';
+        h += '<div class="vk-act"><button class="btn primary" data-act="target" data-id="' + id + '"' + (save.target === id ? ' disabled' : '') + '>' + (save.target === id ? 'Researching now' : 'Research this') + '</button><button class="btn" data-act="free" data-id="' + id + '"' + (save.freeRp <= 0 ? ' disabled' : '') + '>Free RP (' + fmt(save.freeRp) + ')</button></div>';
+    } else h += '<div class="vk-note bad">Locked. Research ' + esc(VBY[v.req].n) + ' first.</div>';
+    return h;
+}
+function slotHtml(v, sel, attrs, extra) {
+    const d = vdef(v.id, modMask(v.id));
+    return '<div class="slot' + (sel ? ' sel' : '') + '" ' + attrs + ' style="--lc:' + LINES[v.ln].col + '"><span class="st"><span class="tierb">' + TIER_ROMAN[v.t] + '</span>' + lineIcon(v.ln) + '</span><b>' + esc(v.n) + '</b><small>' + CLS_NAME[v.cls] + ' &middot; BR ' + brOf(d).toFixed(1) + '</small>' + (extra || '') + '</div>';
+}
+function lineupHtml(kind) {      // home / garage: 5 slots (empty ones lead to the garage); lobby: just the lineup
+    const out = [];
+    for (let i = 0; i < (kind === 'lobby' ? save.lineup.length : 5); i++) {
+        const id = save.lineup[i], v = id && VBY[id];
+        if (v) out.push(slotHtml(v, i === save.sel, 'data-slot="' + i + '"', (kind === 'garage' && save.lineup.length > 1 ? '<button class="rm" data-rm="' + id + '" title="Remove from the lineup">&times;</button>' : '') + (i === save.sel && kind !== 'lobby' ? '<span class="pk">IN BATTLE</span>' : '')));
+        else out.push('<div class="slot empty" data-go="garage"><b>+</b><small>' + (kind === 'garage' ? 'Pick a vehicle above' : 'Add in the Garage') + '</small></div>');
+    }
+    return out.join('');
+}
+function researchCard(v) {
+    let cls = 'lock', tag = '', sub = 'Locked', bar = '';
+    if (isOwned(v.id)) { cls = 'owned'; tag = '<span class="tag ok">' + popc(modMask(v.id)) + '/5</span>'; sub = 'Owned'; }
+    else if (isResearched(v.id)) { cls = 'res'; tag = '<span class="tag t">BUY</span>'; sub = fmt(v.cost) + ' cr'; }
+    else if (canResearch(v.id)) { cls = 'can'; sub = fmt(rpOf(v.id)) + ' / ' + fmt(v.rp) + ' RP'; bar = '<div class="bar"><i style="width:' + (100 * rpOf(v.id) / v.rp) + '%"></i></div>'; if (save.target === v.id) tag = '<span class="tag t">&#9733;</span>'; }
+    else sub = 'Needs ' + VBY[v.req].n;
+    return '<div class="vc ' + cls + (UIS.rs === v.id ? ' sel' : '') + '" data-rid="' + v.id + '">' + tag + '<b>' + esc(v.n) + '</b><small>BR ' + v.br.toFixed(1) + ' &middot; ' + sub + '</small>' + bar + '</div>';
+}
+function modeCards(dis, src) { const cur = optVal('mode', src); return Object.keys(MODES).map(k => '<button class="mcard' + (cur === k ? ' on' : '') + '" data-opt="mode" data-v="' + k + '"' + (dis ? ' disabled' : '') + '><span class="mi">' + MODES[k].short + '</span><b>' + MODES[k].name + '</b><small>' + esc(MODES[k].desc) + '</small></button>').join(''); }
+function optSummary(src) {
+    const g = k => optVal(k, src), s = g('size'), lab = (k, v) => { const o = OPTS.find(x => x[0] === k); const x = o && o[2].find(y => String(y[0]) === String(v)); return x ? x[1] : v; };
+    return (g('mode') === 'ffa' ? Math.min(12, s * 2) + ' players' : s + 'v' + s) + ' &middot; ' + lab('map', g('map')) + ' map &middot; ' + g('len') + ' min &middot; ' + lab('wx', g('wx')) + ' &middot; bots ' + lab('bots', g('bots')).toLowerCase() + (+g('ff') ? ' &middot; friendly fire' : '');
+}
+// which vehicle the showcase films, and whether it runs
+function focusVeh() { return UIS.screen === 'garage' && UIS.gs && isOwned(UIS.gs) ? UIS.gs : myVeh(); }
+function modalOpen() { return ['s-settings', 's-how', 's-new', 's-notice'].some(id => !$('#' + id).classList.contains('hidden')); }
+function showSync() {
+    const inMenu = !M && !$('#menu').classList.contains('hidden') && !(UIS.lobby && (PARTY.code || PARTY.migrating));
+    const id = inMenu ? focusVeh() : null;
+    Show.request(id, id ? modMask(id) : 0);
+    Show.run = inMenu && UIS.screen !== 'research' && !modalOpen();
+    if (!M && !Show.want) Lobby.refresh();      // no showcase: the 3D lobby shows the vehicle (or the party) instead
+    if (Show.want === null) { const c = $('#sc-cap'); if (c) c.classList.add('hidden'); }
+}
+function mpAge(s) { s = s | 0; return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min' : Math.round(s / 3600) + ' h'; }
+// the launcher's list of open games (Grapevine 076-parties.js), refreshed while the Multiplayer screen shows
+function mpRefresh(force) {
+    const now = Date.now(); if (!force && now - UIX.mpAt < 9000) return; UIX.mpAt = now;
+    if (UIX.fake) { UIX.list = UIX.fake.list; UIX.fr = UIX.fake.fr || []; UIX.mpState = 'ok'; UI.paintMpList(); return; }
+    const p = LP(); let G = null; try { G = p && p.HGGrapevine; } catch (e) {}
+    if (!G || !G.party) { UIX.mpState = 'nolauncher'; UI.paintMpList(); return; }
+    if (G.online && !G.online()) { UIX.mpState = 'offline'; UI.paintMpList(); return; }
+    if (!UIX.list) { UIX.mpState = 'loading'; UI.paintMpList(); }
+    let netP; try { netP = typeof p.partyNet === 'function' ? p.partyNet() : null; } catch (e) { netP = null; }
+    Promise.resolve(netP).then(net => G.party.list(net, GAME_ID)).then(m => { UIX.list = m || {}; UIX.mpState = 'ok'; UI.paintMpList(); }, () => { UIX.mpState = UIX.list ? 'ok' : 'err'; UI.paintMpList(); });
+    if (G.party.friends) G.party.friends().then(m => {
+        const nm = {}; try { (G.friends().friends || []).forEach(f => { nm[f.userId] = f.name; }); } catch (e) {}
+        UIX.fr = ((m && m.list) || []).map(a => ({ name: nm[a.uid] || 'A friend', game: a.game || '', code: a.gid === GAME_ID && /^\d{6}$/.test(a.code || '') ? a.code : '' })); UI.paintMpList();
+    }, () => {});
+}
+setInterval(() => { if (!M && !document.hidden && UIS.screen === 'mp' && !UIS.lobby && !$('#menu').classList.contains('hidden')) mpRefresh(); }, 10000);
+function connState() {
+    const n = rosterNow().length;
+    if (PARTY.migrating) return ['warn', 'Host left: moving the party to a new host...'];
+    if (PARTY.busy) return ['warn', PARTY.status || 'Connecting...'];
+    if (PARTY.recon) return ['bad', 'Reconnecting...'];
+    if (PARTY.lag) return ['warn', 'Connection unstable: waiting for the host...'];
+    if (PARTY.host) return ['ok', 'Hosting &middot; ' + n + ' / ' + PARTY_MAX + ' players'];
+    return ['ok', 'Connected &middot; ' + Math.round(PARTY.rtt || 0) + ' ms'];
+}
+function selectSlot(i) {
+    if (!save.lineup[i]) return; save.sel = i; writeSave();
+    if (UIS.screen === 'garage') UIS.gs = save.lineup[i];
+    partyVehChanged(); UI.refreshLobby(); UI.paintMenu(); UI.paintLobby(); showSync();
+}
+function lineToggle(id) {      // add / remove, keeping the same vehicle selected for battle
+    const cur = myVeh(); if (!lineupToggle(id)) { if (!save.lineup.includes(id) && save.lineup.length >= 5) toast('Your lineup is full: remove a vehicle first'); return false; }
+    const i = save.lineup.indexOf(cur); if (i >= 0) save.sel = i; writeSave(); partyVehChanged(); UI.refreshLobby(); return true;
+}
+function useVeh(id) {
+    if (!save.lineup.includes(id) && !lineToggle(id)) return;
+    save.sel = save.lineup.indexOf(id); writeSave(); partyVehChanged(); UI.refreshLobby(); toast(VBY[id].n + ' goes into battle');
+}
+Object.assign(UI, {
+    // ---- navigation ----
+    go(v) {
+        if (M || !VIEWS.includes(v)) return;
+        if (v === 'mp' && (PARTY.code || PARTY.migrating)) { UI.openLobby(); return; }      // in a party, Multiplayer is the party lobby
+        UIS.screen = v; UIS.lobby = false; UIX.lbShown = false; $('#s-lobby').classList.add('hidden');
+        const m = $('#menu'); m.classList.remove('hidden'); m.dataset.view = v;
+        for (const k of VIEWS) $('#' + VIEW_EL[k]).classList.toggle('hidden', k !== v);
+        $$('#mnav [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === v));
+        if (v === 'garage' && !(UIS.gs && isOwned(UIS.gs))) UIS.gs = myVeh();
+        if (v === 'research' && !UIS.rs) { UIS.rs = save.target && VBY[save.target] ? save.target : myVeh(); UIS.rln = VBY[UIS.rs].ln; }
+        UI.paintMenu(); showSync();
+        if (v === 'mp') mpRefresh(true);
+    },
+    showMenu() {
+        ovc.clearRect(0, 0, 4000, 4000); $$('#hud,#s-dead,#s-pause,#s-result').forEach(e => e.classList.add('hidden'));
+        if (UIS.lobby && PARTY.code) { $('#menu').classList.add('hidden'); UI.paintLobby(); showSync(); return; }
+        UI.go(VIEWS.includes(UIS.screen) ? UIS.screen : 'menu');
+    },
+    open(id) {
+        if (id === 's-research') return UI.go('research'); if (id === 's-garage') return UI.go('garage');
+        const el = $('#' + id); if (!el) return; el.classList.remove('hidden');
+        if (id === 's-settings') UI.paintSettings();
+        showSync();
+    },
+    close(id) { $('#' + id).classList.add('hidden'); if (!M) UI.paintMenu(); showSync(); },
+    wallet() {
+        $('#w-cr').textContent = fmt(save.credits); $('#w-fr').textContent = fmt(save.freeRp);
+        const t = save.target; $('#w-rp').textContent = t && (VBY[t] || MODBY[t]) ? fmt(rpOf(t)) + '/' + fmt(rpNeed(t)) : '-';
+        const nr = $('#nv-rs'); const can = VEHS.some(v => isResearched(v.id) && !isOwned(v.id) && save.credits >= v.cost); nr.textContent = 'BUY'; nr.classList.toggle('hidden', !can);
+    },
+    paintMenu() {      // the frame plus whichever view shows
+        UI.wallet();
+        const nm = $('#m-name'); if (document.activeElement !== nm) nm.value = myName(); nm.disabled = !!LP() && !!(() => { try { return window.parent.HGGrapevine && window.parent.HGGrapevine.me && window.parent.HGGrapevine.me(); } catch (e) { return null; } })();
+        $('#nv-party').classList.toggle('hidden', !PARTY.code);
+        const v = UIS.screen;
+        if (v === 'menu') UI.paintHome(); else if (v === 'battle') UI.paintBattle(); else if (v === 'mp') UI.paintMp(); else if (v === 'garage') UI.paintGarage(); else if (v === 'research') UI.paintResearch();
+    },
+    paintMenuSel() { UI.paintMenu(); },
+    paintHome() {
+        $('#h-vcard').innerHTML = vehCard(myVeh(), 'home');
+        $('#lineup').innerHTML = lineupHtml('home');
+        const guest = PARTY.net && !PARTY.host;
+        $('#b-mode').innerHTML = '<b>' + MODES[PARTY.opts && guest ? PARTY.opts.mode : save.mode].name + '</b><small>' + optSummary(guest ? PARTY.opts : null) + '</small>';
+        $('#b-play').textContent = PARTY.code ? 'PARTY LOBBY' : 'PLAY';
+        $('#m-lead-note').textContent = PARTY.code ? (guest ? 'In a party: the host starts the battle.' : 'In a party: start from the lobby.') : 'Solo: you and bots near your battle rating.';
+    },
+    paintBattle() {
+        const guest = PARTY.net && !PARTY.host;
+        const src = guest ? PARTY.opts : null; setH($('#bt-modes'), modeCards(guest, src)); setH($('#bt-opts'), optsHtml(guest, src));
+        $('#bt-note').textContent = guest ? 'The party host picks the options.' : PARTY.code ? 'These are your party\'s options too.' : 'Solo battle: you and bots.';
+        $('#m-br').textContent = 'Your battle rating: ' + lineupBr().toFixed(1) + '. Bots use vehicles near it.';
+        $('#bt-go').textContent = PARTY.code ? 'PARTY LOBBY' : 'START BATTLE';
+    },
+    // ---- multiplayer ----
+    paintMp() {
+        const busy = !!PARTY.busy, inP = !!PARTY.code;
+        setH($('#mp-modes'), modeCards(false)); setH($('#mp-opts'), optsHtml(false));
+        const pub = save.opts.pub !== 0; $$('#mp-pub button').forEach(b => b.classList.toggle('on', (b.dataset.pub === '1') === pub));
+        $('#mp-pubnote').textContent = pub ? 'Listed for everyone in the launcher. Anyone with the code can join.' : 'Only friends (and people on your Wi-Fi) see it in their list. Anyone with the code can still join.';
+        $('#p-create').disabled = busy || inP; $('#p-join').disabled = busy || inP;
+        $('#p-create').textContent = busy ? 'CONNECTING...' : 'HOST GAME';
+        UI.paintMpStatus(); UI.paintMpList();
+    },
+    paintMpStatus() { const st = $('#p-status'); if (!st) return; st.textContent = PARTY.status || ''; st.className = 'mp-status' + (PARTY.bad ? ' bad' : PARTY.code ? ' ok' : ''); },
+    paintMpList() {
+        if (UIS.screen !== 'mp') return;
+        const st = UIX.mpState, all = UIX.list ? (UIX.list.near || []).concat(UIX.list.pub || []).filter(p => !p.game || p.game === GAME_ID) : [], inP = !!PARTY.code || !!PARTY.busy;
+        const row = p => { const full = p.n >= p.max, mine = p.code === PARTY.code;
+            return '<div class="mp-g"><div><b>' + esc(p.host || 'Someone') + '\'s game' + (p.near ? '<span class="bd">SAME WI-FI</span>' : '') + (mine ? '<span class="bd you">YOURS</span>' : '') + '</b><small>' + esc(p.mode || 'Steel Storm') + ' &middot; open ' + mpAge(p.age) + '</small></div>' +
+                '<div class="pc">' + (p.n | 0) + '/' + (p.max | 0) + '<small>PLAYERS</small></div><button class="btn primary" data-pj="' + esc(p.code) + '"' + (full || inP ? ' disabled' : '') + '>' + (mine ? 'Yours' : full ? 'Full' : 'Join') + '</button></div>'; };
+        const empty = { loading: 'Looking for open games...', nolauncher: 'Open games are listed when you play from the Huntington Games launcher.<br>You can still join with a code or host a game.', offline: 'Sign in to the launcher to see open games.', err: 'Could not load the list. Try Refresh.' };
+        setH($('#mp-games'), all.length ? all.map(row).join('') : '<div class="mp-empty">' + (empty[st] || 'No open games right now.<br>Host one and it shows up here for everyone.') + '</div>');
+        const fr = UIX.fr || [];
+        setH($('#mp-friends'), fr.length ? fr.map(f => '<div class="mp-g"><div><b>' + esc(f.name) + (f.code ? '<span class="bd fr">IN A PARTY</span>' : '') + '</b><small>playing ' + esc(f.game || 'a game') + '</small></div><div></div>' + (f.code ? '<button class="btn primary" data-pj="' + esc(f.code) + '"' + (inP ? ' disabled' : '') + '>Join</button>' : '<div></div>') + '</div>').join('') : '<div class="mp-empty">' + (st === 'ok' ? 'None of your friends are playing right now.' : 'Friends who are playing show up here.') + '</div>');
+    },
+    paintParty() { UI.paintMpStatus(); $('#nv-party').classList.toggle('hidden', !PARTY.code); if (UIS.screen === 'mp' && !$('#menu').classList.contains('hidden')) UI.paintMp(); else if (UIS.screen === 'menu' && !M) UI.paintHome(); UI.paintLobby(); },
+    // ---- the party lobby ----
+    refreshLobby() { if (typeof Lobby !== 'undefined') Lobby.refresh(); },
+    openLobby() { if (!PARTY.code && !PARTY.migrating) return; UIS.lobby = true; UI.paintLobby(); showSync(); UI.refreshLobby(); },
+    closeLobby() { UIS.lobby = false; UIX.lbShown = false; $('#s-lobby').classList.add('hidden'); if (!M) { UI.go(UIS.screen === 'mp' ? 'menu' : VIEWS.includes(UIS.screen) ? UIS.screen : 'menu'); } },
+    paintLobby() {
+        const el = $('#s-lobby'), show = UIS.lobby && !!(PARTY.code || PARTY.migrating) && !M;
+        if (!show) { el.classList.add('hidden'); if (UIX.lbShown) { UIX.lbShown = false; UIS.lobby = false; if (!M) UI.go(UIS.screen === 'mp' || !VIEWS.includes(UIS.screen) ? 'menu' : UIS.screen); } return; }
+        if (!UIX.lbShown) { UIX.lbShown = true; $('#menu').classList.add('hidden'); el.classList.remove('hidden'); }
+        const host = PARTY.host, o = PARTY.opts || lobbyOpts(), ffa = o.mode === 'ffa', R = rosterNow(), me = R.find(p => p.id === PARTY.myId);
+        $('#lb-code').textContent = PARTY.code || '------';
+        setH($('#lb-mode'), (host ? Object.keys(MODES).map(k => '<button class="mb' + (o.mode === k ? ' on' : '') + '" data-opt="mode" data-v="' + k + '">' + MODES[k].name + '</button>').join('') : '<b>' + MODES[o.mode].name + '</b>') + '<small>' + optSummary(host ? null : o) + (PARTY.inMatch ? ' &middot; <b style="color:var(--ok)">battle in progress: you can join it</b>' : '') + '</small>');
+        const cs = connState(), ne = $('#lb-net'); ne.className = 'lb-conn ' + cs[0]; ne.innerHTML = cs[1];
+        const row = p => {
+            const v = VBY[p.veh] || VBY.g1a, br = brOf(vdef(v.id, p.mm | 0)), mine = p.id === PARTY.myId;
+            return '<div class="lp' + (mine ? ' me' : '') + '" style="--lc:' + LINES[v.ln].col + '"><div class="lp-n">' + (p.id === 0 ? '<span class="star" title="Host">&#9733;</span>' : '') + '<span class="nm">' + esc(p.name) + '</span>' + (mine ? '<small>(you)</small>' : '') + (p.st && p.st !== 'connected' ? ' <small class="bad">' + esc(p.st) + '</small>' : '') + (p.id ? pingBars(p.ping || 0, p.st) : '') +
+                '<span class="rdy' + (p.id === 0 ? ' host' : p.ready ? ' on' : '') + '">' + (p.id === 0 ? 'HOST' : p.ready ? 'READY' : 'NOT READY') + '</span></div>' +
+                '<div class="lp-v">' + lineIcon(v.ln) + esc(v.n) + ' <small>' + CLS_NAME[v.cls] + ' &middot; BR ' + br.toFixed(1) + '</small></div>' +
+                '<div class="lp-l">' + (p.line || []).map(x => VBY[x[0]] ? '<span class="mini" title="' + esc(VBY[x[0]].n) + '">' + esc(VBY[x[0]].n.split(' ')[0]) + ' ' + (+x[1]).toFixed(1) + '</span>' : '').join('') + '</div>' +
+                (host && p.id !== 0 ? '<div class="lp-h">' + (!ffa ? '<button class="btn small" data-move="' + p.id + '" title="Move to the other team">&#8644; Move</button>' : '') + '<button class="btn small danger" data-kick="' + p.id + '" title="Remove from the party">&#10006; Kick</button></div>' : '') + '</div>';
+        };
+        const size = o.size || 5, bots = o.bots !== 'off', ghost = n => { let h = ''; for (let i = 0; i < Math.min(n, 8); i++) h += '<div class="lp bot">' + (bots ? 'Bot fills this slot' : 'Open slot') + '</div>'; return h; };
+        if (ffa) setH($('#lb-teams'), '<div class="tcol ffa"><h3>EVERYONE <small>' + R.length + ' players</small></h3>' + R.map(row).join('') + ghost(Math.min(12, size * 2) - R.length) + '</div>');
+        else setH($('#lb-teams'), [0, 1].map(t => { const L = R.filter(p => (p.team | 0) === t); return '<div class="tcol t' + t + '"><h3>' + (t ? 'RED' : 'BLUE') + ' TEAM <small>' + L.length + ' / ' + size + '</small>' + (me && (me.team | 0) !== t && !PARTY.inMatch ? '<button class="btn small" data-team="' + t + '">Switch here</button>' : '') + '</h3>' + L.map(row).join('') + ghost(size - L.length) + '</div>'; }).join(''));
+        setH($('#lb-opts'), optsHtml(!host, host ? null : o)); $('#lb-optnote').textContent = host ? '(you decide)' : '(the host decides)';
+        $('#lb-tools').classList.toggle('hidden', !host || ffa);
+        setH($('#lb-mine'), lineupHtml('lobby'));
+        const b = $('#lb-ready'), hint = $('#lb-hint'); b.classList.remove('on');
+        if (host) { const nr = R.filter(p => p.id !== 0 && !p.ready), force = PARTY.force && Date.now() - PARTY.force < 6000; b.textContent = PARTY.inMatch ? 'IN BATTLE' : nr.length && force ? 'START ANYWAY' : 'START'; b.disabled = PARTY.inMatch || !!PARTY.migrating; hint.textContent = PARTY.inMatch ? 'Players can join the running battle.' : R.length < 2 ? 'Share the code: friends join with it, or from the open games list.' : nr.length ? nr.length + ' not ready: ' + nr.map(p => p.name).join(', ') : 'Everyone is ready!'; }
+        else if (PARTY.inMatch) { b.textContent = 'JOIN BATTLE'; b.disabled = false; hint.textContent = 'The battle is on: jump in.'; }
+        else { const r = !!(me && me.ready); b.textContent = r ? 'READY ✓' : 'READY'; b.classList.toggle('on', r); b.disabled = !!PARTY.migrating || !!PARTY.recon; hint.textContent = r ? 'Waiting for the host to start.' : 'Press READY when your vehicle is set.'; }
+        UI.paintChat();
+    },
+    paintChat() {
+        const L = $('#lb-log'); if (!L) return;
+        const h0 = L._h; setH(L, PARTY.chat.slice(-40).map(c => c.sys || c.x.startsWith('* ') ? '<div class="sys">' + esc(c.x.replace(/^\* /, '')) + '</div>' : '<div><b' + (c.me ? ' class="me"' : '') + '>' + esc(c.n) + ':</b> ' + esc(c.x) + '</div>').join('') || '<div class="sys">Say hi! Messages go to everyone in the party.</div>');
+        if (L._h !== h0) L.scrollTop = 1e6;
+    },
+    // ---- garage ----
+    paintGarage() {
+        UI.wallet(); const gs = UIS.gs && isOwned(UIS.gs) ? UIS.gs : (UIS.gs = myVeh()), gt = UIS.gt;
+        $$('#g-tabs button').forEach(b => b.classList.toggle('on', b.dataset.gt === gt));
+        $('#g-owned').innerHTML = ['g', 'a', 'n'].filter(ln => gt === 'all' || gt === ln).map(ln => { const L = VEHS.filter(v => v.ln === ln && isOwned(v.id)); return '<h4 style="color:' + LINES[ln].col + '">' + LINES[ln].name + ' <small style="color:var(--mut)">' + L.length + '</small></h4><div class="cards">' + L.map(v => slotHtml(v, v.id === gs, 'data-gid="' + v.id + '"', save.lineup.includes(v.id) ? '<span class="inl">LINEUP</span>' : '')).join('') + '</div>'; }).join('');
+        $('#g-info').innerHTML = vehCard(gs, 'garage');
+        $('#g-lineup').innerHTML = lineupHtml('garage');
+    },
+    // ---- research ----
+    paintResearch() {
+        UI.wallet(); const ln = UIS.rln, br = BRANCHES[ln];
+        $$('#rs-tabs button').forEach(b => b.classList.toggle('on', b.dataset.ln === ln));
+        let h = '<div class="grid" style="grid-template-columns:30px repeat(' + br.length + ',minmax(104px,1fr))"><div></div>' + br.map(([k, n]) => '<div class="bh">' + n + '</div>').join('');
+        for (let t = 1; t <= MAX_TIER; t++) {
+            h += '<div class="th">' + TIER_ROMAN[t] + '</div>';
+            for (const [k] of br) h += '<div class="cell">' + VEHS.filter(v => v.ln === ln && v.t === t && v.cls === k).map(researchCard).join('') + '</div>';
+        }
+        $('#tree').innerHTML = h + '</div>';
+        const tg = save.target && (VBY[save.target] || MODBY[save.target]);
+        $('#rs-now').innerHTML = tg ? 'Researching <b>' + esc(tg.n) + '</b> ' + fmt(rpOf(save.target)) + ' / ' + fmt(rpNeed(save.target)) + ' RP' : 'Pick something to research: match RP go to it';
+        $('#rs-info').innerHTML = vehCard(UIS.rs, 'research');
+    },
+    paintInfo() { if (UIS.screen === 'garage') UI.paintGarage(); else UI.paintResearch(); },
+    // ---- settings ----
+    paintSettings() {
+        const S = save.settings;
+        $$('#st-q button').forEach(b => b.classList.toggle('on', b.dataset.q === S.quality));
+        const on = S.show && !Show.off; $$('#st-show button').forEach(b => b.classList.toggle('on', (b.dataset.show === '1') === on));
+        $$('#st-inv button').forEach(b => b.classList.toggle('on', (b.dataset.inv === '1') === !!S.invertY));
+        $('#st-sens').value = S.sens; $('#st-vol').value = S.vol; $('#st-sensv').textContent = (+S.sens).toFixed(2); $('#st-volv').textContent = Math.round(S.vol * 100) + '%';
+    }
+});
+function bindMenu() {
+    $$('[data-ic]').forEach(i => { i.outerHTML = svgI(i.dataset.ic); });
+    document.addEventListener('click', e => {
+        const t = e.target.closest('button,.slot,.vc'); if (t && !t.disabled) sfx('click');
+        const cl = e.target.closest('[data-close]');
+        if (cl) { const s = cl.closest('.scr'); s.classList.add('hidden'); if (M && !M.over && (s.id === 's-settings' || s.id === 's-how')) $('#s-pause').classList.remove('hidden'); else if (!M) UI.paintMenu(); showSync(); return; }
+        const rm = e.target.closest('[data-rm]'); if (rm) { lineToggle(rm.dataset.rm); UI.paintMenu(); showSync(); return; }
+        const go = e.target.closest('[data-go]'); if (go) { UI.go(go.dataset.go); return; }
+        const md = e.target.closest('[data-modal]'); if (md) { UI.open(md.dataset.modal); return; }
+        const op = e.target.closest('[data-opt]'); if (op && !op.disabled) { setOpt(op.dataset.opt, op.dataset.v); return; }
+        const tm = e.target.closest('button[data-team]'); if (tm) { partyTeam(+tm.dataset.team); return; }
+        const mv = e.target.closest('[data-move]'); if (mv) { partyMove(+mv.dataset.move); return; }
+        const kk = e.target.closest('[data-kick]'); if (kk) { partyKick(+kk.dataset.kick); return; }
+        const pj = e.target.closest('[data-pj]'); if (pj) { if (pj.disabled) return; ac(); $('#p-code').value = pj.dataset.pj; partyJoin(pj.dataset.pj); return; }
+        const pb = e.target.closest('[data-pub]'); if (pb) { save.opts.pub = +pb.dataset.pub; writeSave(); UI.paintMp(); advertiseSoon(); return; }
+        const gt = e.target.closest('[data-gt]'); if (gt) { UIS.gt = gt.dataset.gt; UI.paintGarage(); return; }
+        const rt = e.target.closest('#rs-tabs button'); if (rt) { UIS.rln = rt.dataset.ln; UI.paintResearch(); return; }
+        const rc = e.target.closest('[data-rid]'); if (rc) { UIS.rs = rc.dataset.rid; UI.paintResearch(); return; }
+        const gc = e.target.closest('[data-gid]'); if (gc) { UIS.gs = gc.dataset.gid; UI.paintGarage(); showSync(); return; }
+        const sl = e.target.closest('[data-slot]'); if (sl) { selectSlot(+sl.dataset.slot); return; }
+        const a2 = e.target.closest('[data-act]');
+        if (a2 && !a2.disabled) {
+            const id = a2.dataset.id, a = a2.dataset.act;
+            if (a === 'garage') { UIS.gs = id; UI.go('garage'); return; }
+            if (a === 'target') setTarget(id); else if (a === 'free') spendFreeRp(id); else if (a === 'line') lineToggle(id); else if (a === 'use') useVeh(id);
+            else if (a === 'buy') { if (buyVeh(id)) { sfx('cap'); toast(VBY[id].n + ' is yours' + (save.lineup.includes(id) ? ' and in your lineup' : ': add it to your lineup in the Garage')); } }
+            if (MODBY[id]) partyVehChanged();
+            UI.paintMenu(); showSync(); return;
+        }
+        const q = e.target.closest('[data-q]'); if (q) { save.settings.quality = q.dataset.q; writeSave(); applyQuality(); UI.paintSettings(); return; }
+        const sh = e.target.closest('[data-show]'); if (sh) { save.settings.show = sh.dataset.show === '1'; if (save.settings.show) { Show.off = false; Show.perf.t = 0; } writeSave(); UI.paintSettings(); showSync(); return; }
+        const iv = e.target.closest('[data-inv]'); if (iv) { save.settings.invertY = iv.dataset.inv === '1'; writeSave(); UI.paintSettings(); return; }
+    });
+    $('#b-play').onclick = () => { ac(); if (PARTY.code) { UI.openLobby(); return; } startPlay(); if (M) Cam.lock(); };
+    $('#bt-go').onclick = () => $('#b-play').click();
+    $('#b-mode').onclick = () => UI.go('battle');
+    $('#b-new').onclick = e => { e.preventDefault(); UI.open('s-new'); };
+    $('#mp-refresh').onclick = () => { UIX.mpState = UIX.list ? 'ok' : 'loading'; mpRefresh(true); };
+    $('#p-create').onclick = () => { ac(); partyCreate(); };
+    $('#p-join').onclick = () => { ac(); partyJoin($('#p-code').value); };
+    $('#p-code').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#p-join').click(); });
+    $('#p-code').addEventListener('input', e => { const v = e.target.value.replace(/\D/g, '').slice(0, 6); if (v !== e.target.value) e.target.value = v; });
+    $('#lb-back').onclick = () => UI.closeLobby();
+    $('#lb-leave').onclick = () => partyLeave();
+    $('#lb-menu').onclick = () => { UIS.screen = 'garage'; UI.closeLobby(); };
+    $('#lb-copy').onclick = () => { const c = PARTY.code; if (!c) return; const done = () => toast('Code ' + c + ' copied'); try { navigator.clipboard.writeText(c).then(done, () => { fallbackCopy(c); done(); }); } catch (er) { fallbackCopy(c); done(); } };
+    $('#lb-ready').onclick = () => {
+        ac();
+        if (PARTY.host) { startPlay(); if (M) Cam.lock(); else UI.paintLobby(); return; }
+        if (PARTY.inMatch) { PARTY.net.send('host', Object.assign({ t: 'me', ready: true }, myInfo())); PARTY.net.send('host', { t: 'joinm' }); return; }
+        const me = PARTY.roster.find(p => p.id === PARTY.myId); partyReady(!(me && me.ready));
+    };
+    $('#lb-shuffle').onclick = () => partyShuffle(); $('#lb-balance').onclick = () => partyBalance();
+    const say = () => { const i = $('#lb-say'); sendChat(i.value); i.value = ''; };
+    $('#lb-send').onclick = say; $('#lb-say').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') say(); });
+    $('#m-name').addEventListener('keydown', e => e.stopPropagation());
+    $('#m-name').addEventListener('input', e => { save.name = e.target.value.slice(0, 16); try { localStorage.setItem('steelstorm_name', save.name); } catch (er) {} writeSave(); });
+    $('#st-sens').oninput = e => { save.settings.sens = +e.target.value; writeSave(); UI.paintSettings(); };
+    $('#st-vol').oninput = e => { save.settings.vol = +e.target.value; setVolume(save.settings.vol); writeSave(); UI.paintSettings(); };
+    addEventListener('keydown', e => { if (e.code === 'Escape' && !M && !typing(e)) { const m = ['s-notice', 's-new', 's-how', 's-settings'].find(id => !$('#' + id).classList.contains('hidden')); if (m) UI.close(m); } });
+}
+
 // ---- 85-lobby3d.js ----
 // ============================================================
-// THE 3D LOBBY: your vehicle on a lit pad, party members' vehicles on pads beside it with their names above.
+// THE 3D LOBBY: your vehicle on a lit pad, party members' vehicles on pads beside it with their names above. Shown in the party
+// lobby, and behind the menu when the showcase is off. Models are rebuilt only when what is shown changes (2.2: it used to rebuild
+// every model and label each time the host's roster went out, every 3 s), and it draws at most ~30 frames a second.
 // ============================================================
 const Lobby = {
-    scene: new THREE.Scene(), cam: new THREE.PerspectiveCamera(42, 1, 0.5, 200), pads: [], items: [], t: 0, built: false,
+    scene: new THREE.Scene(), cam: new THREE.PerspectiveCamera(42, 1, 0.5, 200), pads: [], items: [], t: 0, built: false, sig: '', acc: 0,
     PADX: [0, -4.6, 4.6, -8.6, 8.6],
     init() {
         const s = this.scene, cv = document.createElement('canvas'); cv.width = 4; cv.height = 256; const x = cv.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256);
@@ -3540,12 +3973,16 @@ const Lobby = {
         x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = 'bold 34px Trebuchet MS,sans-serif'; x.fillText((star ? '★ ' : '') + name, 160, 50); x.fillStyle = '#9fb0e8'; x.font = '22px Trebuchet MS,sans-serif'; x.fillText(sub, 160, 76);
         const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); sp.scale.set(me ? 5.2 : 4, me ? 1.56 : 1.2, 1); return sp;
     },
+    list() {      // in a party: everyone (me first); otherwise the vehicle the menu is looking at
+        if (!PARTY.net) { const id = typeof focusVeh === 'function' ? focusVeh() : myVeh(); return [{ id: 0, name: myName(), veh: id, mm: modMask(id), team: 0 }]; }
+        const list = rosterNow().slice(), meId = PARTY.myId, mi = list.findIndex(p => p.id === meId); if (mi > 0) list.unshift(list.splice(mi, 1)[0]); return list;
+    },
     refresh() {
         if (!this.built) return;
+        const list = this.list(), sig = list.slice(0, 5).map(p => [p.id, p.name, p.veh, p.mm | 0, p.team | 0].join(',')).join('|') + (PARTY.net ? '*' : '');
+        if (sig === this.sig) return; this.sig = sig;
         for (const it of this.items) { this.scene.remove(it.root); disposeModel(it.m); if (it.sp) { this.scene.remove(it.sp); it.sp.material.map.dispose(); it.sp.material.dispose(); } }
         this.items = [];
-        const list = rosterNow().slice(), meId = PARTY.net ? PARTY.myId : 0;
-        const mi = list.findIndex(p => p.id === meId); if (mi > 0) list.unshift(list.splice(mi, 1)[0]);
         list.forEach((p, i) => {
             if (i >= 5) return; const def = vdef(VBY[p.veh] ? p.veh : 'g1a', p.mm | 0), m = makeModel(def, p.team | 0), P = getParts(def, p.team | 0);
             const size = def.ln === 'a' ? Math.max(P.len, P.span) * 0.9 : P.len, k = (i === 0 ? 4.4 : 3.3) / size; m.root.scale.setScalar(k);
@@ -3557,7 +3994,8 @@ const Lobby = {
         this.pads.forEach((p, i) => { p.children[2].visible = i < this.items.length; p.children[1].material.color.setHex(i < this.items.length ? (i === 0 ? 0xffd21f : 0x4fe0ff) : 0x333a66); });
     },
     render(dt) {
-        if (!this.built) return; this.t += dt;
+        if (!this.built) return;
+        this.acc += dt; if (this.acc < 1 / 30 - .004) return; dt = Math.min(this.acc, .1); this.acc = 0; this.t += dt;
         this.items.forEach((it, i) => {
             it.ry += dt * (i === 0 ? 0.55 : 0.35); const r = it.root; r.rotation.set(0, it.ry, 0);
             if (it.def.ln === 'a') { r.position.y = 2.4 + Math.sin(this.t * 1.6 + i) * 0.18; r.rotation.z = Math.sin(this.t + i) * 0.12; for (const p of it.m.props) { const ax = p.userData.ax; if (ax === 'y' || ax === '-y') p.rotation.y += dt * (ax === 'y' ? 20 : -20); else if (ax === 'x') p.rotation.x += dt * 30; else p.rotation.z += dt * 30; } }
@@ -3566,9 +4004,272 @@ const Lobby = {
         this.dust.rotation.y += dt * 0.02;
         this.cam.aspect = innerWidth / innerHeight; this.cam.position.set(0, 5.4 + Math.sin(this.t * .3) * .2, 23.5 + (innerWidth / innerHeight < 1.4 ? 7 : 0)); this.cam.lookAt(0, 1.9, 0); this.cam.updateProjectionMatrix();
         renderer.render(this.scene, this.cam);
-        if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} }      // the launcher's loading screen can go
+        gameReady();
     }
 };
+
+// ---- 87-showcase.js ----
+// ============================================================
+// THE SHOWCASE: a tiny live battle behind the menus. The selected vehicle, driven by an elite bot (BOTD.elite), fights a few
+// ordinary bots on a small patch of the real map with the match's own sim, AI and models, filmed by a cinematic camera
+// (orbit, chase, tripod, over-the-shoulder, weapon and kill cams, with cuts). It never touches M, the save or the network:
+// hits come here through reportHit (no match), sounds with a position are silent without a match, netFire needs a match.
+// Cheap on purpose: 6 vehicles at most, a low resolution, ~30 frames a second, shadows every third frame. Paused while the menu
+// is covered or the tab is hidden, gone (entities, shells, particles) the moment a match starts, and it switches off for the
+// visit if this computer cannot keep up (the 3D lobby shows the vehicle instead).
+// ============================================================
+const SHOW_ID = 900, SHOW_FPS = 30;
+const SHOW_TIPS = {
+    lt: ['Never stop moving: speed is your armour', 'Flank wide and hit slower tanks in the side'],
+    mt: ['Fire on the move, then duck behind cover to reload', 'Trade shots from cover, angle your hull'],
+    ht: ['Lead the push: soak up the hits so your team can shoot', 'Face them head on: your front armour is thickest'],
+    td: ['One huge shot from cover, then move', 'Let them come to you: the hardest-hitting gun on land'],
+    spaa: ['Lead fast aircraft and keep firing', 'Stay near your tanks: you guard the sky above them'],
+    arty: ['Lob shells over the hills from far behind the lines', 'Aim where they will be: shells take a while to land'],
+    ftr: ['Keep your speed up and turn inside the enemy', 'Hold the target in your sights until the red LOCK, then fire'],
+    atk: ['Dive in, rockets on the tanks, pull out before the flak', 'Come in from the side and keep moving'],
+    bmb: ['Fly level over the target and release early: bombs fall forward', 'Go for groups: one bomb hurts them all'],
+    heli: ['Hover low behind cover, pop up to fire, drop back down', 'Guided missiles from long range, then hide'],
+    pb: ['Dart in fast, torpedoes away, get out', 'Zig-zag: big guns struggle to track a small boat'],
+    dd: ['Turn broadside so every gun can fire', 'Keep moving and lead your torpedoes'],
+    cl: ['Broadsides at mid range: more guns than a destroyer', 'Keep turning while you reload'],
+    bb: ['Hit them before they get close: the biggest guns at sea', 'Broadside on, every turret firing together'],
+    ss: ['Dive to hide, surface only to strike', 'Lead your torpedoes: aim where the ship will be']
+};
+const SHOTS = {
+    g: [['chase', 3], ['target', 3], ['tripod', 2], ['orbit', 1.5]], arty: [['target', 2], ['chase', 2], ['orbit', 1.5], ['tripod', 1]],
+    a: [['chase', 4], ['orbit', 2], ['tripod', 2], ['target', 2]], heli: [['chase', 2], ['target', 3], ['orbit', 2], ['tripod', 1]],
+    n: [['orbit', 2.5], ['chase', 2], ['target', 2], ['tripod', 2]]
+};
+const SV = new THREE.Vector3(), SV2 = new THREE.Vector3(), SV3 = new THREE.Vector3(), SF = new THREE.Vector3();
+function showLand(x, z) {      // a flat, open spot of land near (x, z)
+    for (let r = 0; r < 320; r += 12) for (let k = 0; k < (r ? 12 : 1); k++) {
+        const a = k * TAU / 12, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r, h = H(px, pz);
+        if (h > 3 && h < 22 && GH(px, pz) === h && Math.abs(H(px + 5, pz) - h) < 2.5 && Math.abs(H(px, pz + 5) - h) < 2.5) return { x: px, z: pz, y: h };
+    }
+    return { x, z, y: Math.max(0, H(x, z)) };
+}
+function showSea(x, z) {
+    for (let r = 0; r < 400; r += 15) for (let k = 0; k < (r ? 12 : 1); k++) { const a = k * TAU / 12, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (H(px, pz) < -8) return { x: px, z: pz, y: 0 }; }
+    return { x, z, y: 0 };
+}
+function showPick(ln, classes, t) {      // a vehicle of one of these classes, as close to tier t as there is
+    for (const dt of [0, -1, 1, -2, 2]) { const L = VEHS.filter(v => v.ln === ln && classes.includes(v.cls) && v.t === t + dt); if (L.length) return L[Math.floor(Math.random() * L.length)]; }
+    return VEHS.find(v => v.ln === ln);
+}
+const Show = {
+    on: false, id: null, mask: 0, want: null, wantMask: 0, wantT: 0, run: false, ents: [], hero: null, P: null, acc: 0, frames: 0, kills: 0, deaths: 0,
+    off: false, res: 0, sh: 0, strT: 1, tipN: 0, lk: 0, ovOn: false, seen: new WeakSet(), perf: { n: 0, sum: 0, t: 0 },
+    cam: { k: '', t: 0, snap: true, ang: 0, side: 1, n: 0, p: new THREE.Vector3(), l: new THREE.Vector3(), tp: new THREE.Vector3(), kp: new THREE.Vector3(), pr: null, hold: 0, wcd: 0, kcd: 0 },
+    // ask for a vehicle (null = no showcase). The switch happens on the next frame after a short pause, so a fast row of clicks builds once.
+    request(id, mask) {
+        if (this.off || !save.settings.show) id = null;
+        if (id === this.want && (mask | 0) === this.wantMask) return;
+        this.want = id; this.wantMask = mask | 0; this.wantT = performance.now() + (this.on && id ? 120 : 0);
+    },
+    // called every animation frame while there is no match. true = the showcase owns the canvas (the 3D lobby must not draw)
+    frame(rdt) {
+        if (this.want !== this.id || this.wantMask !== this.mask) { if (performance.now() >= this.wantT) { if (this.want) this.build(); else this.stop(); } }
+        if (!this.on) return false;
+        if (this.frames) gameReady();
+        if (!this.run || document.hidden) return true;
+        this.acc += rdt; if (this.acc < 1 / SHOW_FPS - .004) return true;
+        const dt = Math.min(this.acc, .1); this.acc = 0;
+        const t0 = performance.now();
+        const n = Math.ceil(dt / .034); for (let i = 0; i < n; i++) this.step(dt / n);
+        updateParticles(dt); this.direct(dt); updateWorld(dt);
+        this.lowRes();
+        if (Q.sh) { renderer.shadowMap.autoUpdate = false; if (++this.sh % 3 === 1) renderer.shadowMap.needsUpdate = true; }
+        renderer.render(scene, camera); this.frames++;
+        this.drawLock(dt);
+        this.watch(performance.now() - t0);
+        return true;
+    },
+    lowRes() {      // about half the pixels of the graphics preset: it sits behind the menu
+        const pr = Math.max(.35, Q.pr * .7) * Math.min(window.devicePixelRatio || 1, 1.25);
+        if (Math.abs(renderer.getPixelRatio() - pr) > .01) { renderer.setPixelRatio(pr); renderer.setSize(window.innerWidth, window.innerHeight, false); this.res = 1; }
+    },
+    restoreRes() { if (this.res) { this.res = 0; applyQuality(); } renderer.shadowMap.autoUpdate = !(Q.shEvery > 1); renderer.shadowMap.needsUpdate = true; },
+    watch(ms) {      // a computer that needs more than ~40 ms for a showcase frame gets the light 3D lobby instead
+        const P = this.perf, now = performance.now(); P.n++; P.sum += ms;
+        if (now - P.t > 3000) { if (P.t && P.n >= 20 && P.sum / P.n > 40) { this.off = true; this.request(null); toast('Showcase footage paused to keep the menu smooth (Settings can turn it back on)'); if (typeof UI !== 'undefined' && UI.paintSettings) UI.paintSettings(); } P.t = now; P.n = P.sum = 0; }
+    },
+    // ---- the scene: who fights where, by the hero's class ----
+    plan(def) {
+        const b = def.base || def, cls = b.cls, ln = b.ln, t = b.t, G = showLand(-20, 25), S = showSea(0, 548), tanks = ['lt', 'mt', 'ht', 'td'];
+        const E = PI / 2, Wd = -PI / 2, P = { A: G, r: 90, foes: [], allies: [] };
+        const land = (dx, dz, yaw) => { const p = showLand(G.x + dx, G.z + dz); return { x: p.x, z: p.z, y: p.y, yaw }; };
+        const sea = (dx, dz, yaw) => { const p = showSea(S.x + dx, S.z + dz); return { x: p.x, z: p.z, y: 0, yaw }; };
+        const air = (dx, dz, alt, yaw) => ({ x: G.x + dx, z: G.z + dz, y: Math.max(0, H(G.x + dx, G.z + dz)) + alt, yaw });
+        const g = (c, sp) => [showPick('g', c, t), sp], a = (c, sp) => [showPick('a', c, t), sp], n = (c, sp) => [showPick('n', c, t), sp];
+        if (ln === 'n') {
+            P.A = S; P.r = 170; P.hero = sea(-230, 0, E);
+            const F = cls === 'ss' ? ['dd', 'cl', 'bb'] : cls === 'pb' ? ['pb', 'dd'] : ['dd', 'cl', 'bb'];
+            P.foes = [n(F, sea(230, -70, Wd)), n(F, sea(270, 70, Wd)), n(['pb', 'dd'], sea(180, 10, Wd))];
+            if (cls !== 'ss') P.allies = [n(['dd', 'cl'], sea(-270, 110, E))];
+        } else if (cls === 'ftr') {
+            P.r = 300; P.hero = air(-460, 0, 130, E);
+            P.foes = [a(['ftr'], air(380, -90, 140, Wd)), a(['ftr'], air(420, 90, 155, Wd)), a(['bmb', 'atk'], air(480, 0, 120, Wd))];
+            P.allies = [a(['ftr'], air(-520, 130, 145, E))];
+        } else if (ln === 'a') {
+            P.r = cls === 'heli' ? 140 : 280; P.hero = cls === 'heli' ? air(-330, 0, 28, E) : air(-470, 0, cls === 'bmb' ? 140 : 115, E);
+            P.foes = [g(tanks, land(60, -30, Wd)), g(tanks, land(85, 35, Wd)), g(cls === 'heli' ? tanks : ['spaa'], land(130, 0, Wd))];
+            P.allies = [g(['mt', 'ht'], land(-90, 25, E))];
+        } else if (cls === 'spaa') {
+            P.hero = land(-60, 0, E);
+            P.foes = [a(['atk'], air(650, -50, 110, Wd)), a(['heli'], air(380, 60, 35, Wd)), g(tanks, land(150, 30, Wd))];
+            P.allies = [g(['mt', 'ht'], land(-30, 45, E))];
+        } else if (cls === 'arty') {
+            P.hero = land(-330, 10, E); P.heroHome = 1;
+            P.foes = [g(tanks, land(80, -30, Wd)), g(tanks, land(100, 35, Wd)), g(tanks, land(140, 0, Wd))];
+            P.allies = [g(['mt', 'ht'], land(-40, 20, E))];
+        } else {
+            P.hero = land(-110, 0, E);
+            P.foes = [g(tanks, land(110, -35, Wd)), g(tanks, land(130, 40, Wd)), g(tanks, land(170, 0, Wd))];
+            P.allies = [g(['mt', 'ht', 'td'], land(-130, 50, E))];
+        }
+        return P;
+    },
+    mk(id, def, team, name, sp, elite, home) {
+        const e = newEnt(id, def, team, name); e.isBot = true; e.carry = -1; aiNew(e);
+        if (elite) { e.ai.elite = true; e.ai.skill = rnd(.96, 1); }
+        e.ai.home = home || { x: this.P.A.x, z: this.P.A.z, r: this.P.r };
+        e.sp0 = sp; spawnEnt(e, Object.assign({}, sp)); e.prot = 0; this.ents.push(e); return e;
+    },
+    build() {
+        const id = this.want, mask = this.wantMask, v = VBY[id]; this.clear();
+        if (!v) { this.stop(); return; }
+        this.id = id; this.mask = mask; this.kills = this.deaths = 0;
+        const def = vdef(id, mask), P = this.P = this.plan(def), bm = t => { let m = 0; for (let i = 0; i < 5; i++) if (Math.random() < (t - 1) * .2) m |= 1 << i; return m; };
+        this.hero = this.mk(SHOW_ID, def, 0, 'You', P.hero, true, P.heroHome ? { x: P.hero.x, z: P.hero.z, r: 30 } : null);
+        let i = 1; for (const [fv, sp] of P.allies) this.mk(SHOW_ID + i++, vdef(fv.id, bm(fv.t)), 0, 'Ally', sp);
+        for (const [fv, sp] of P.foes) this.mk(SHOW_ID + i++, vdef(fv.id, bm(fv.t)), 1, 'Enemy', sp);
+        this.on = true; this.acc = 1; this.tipN = 0; this.lk = 0; this.cam.wcd = 3; this.cam.kcd = 0;
+        if (Math.abs(camera.fov - 50) > .1) { camera.fov = 50; camera.updateProjectionMatrix(); }
+        this.cut('orbit', 4.5); this.caption();
+    },
+    clear() {      // remove the showcase's vehicles, shells and smoke (leaves the resolution alone)
+        for (const e of this.ents) if (EN.get(e.id) === e) removeEnt(e);
+        this.ents = []; this.hero = null; PR.length = 0; PA.life.fill(0); updateParticles(0); updateProjectiles(0);
+        if (this.ovOn) { ovc.clearRect(0, 0, $('#ov').width, $('#ov').height); this.ovOn = false; }
+    },
+    stop() {
+        if (!this.on && !this.ents.length) { this.id = null; return; }
+        this.clear(); this.on = false; this.id = null; this.mask = 0; if (!M) this.want = null;
+        this.restoreRes(); const c = $('#sc-cap'); if (c) c.classList.add('hidden');
+    },
+    // ---- the fight ----
+    step(dt) {
+        simTime += dt;
+        for (const e of this.ents) {
+            if (e.prot > 0) e.prot -= dt;
+            if (e.alive) { aiStep(e, dt); if (e.crashed) { e.crashed = false; this.die(e, null); } }
+            else if ((e.respT -= dt) <= 0) this.respawn(e);
+        }
+        separate(); updateProjectiles(dt);
+        for (const e of this.ents) if (e.alive) smokeDamaged(e, dt);
+        if ((this.strT -= dt) <= 0) { this.strT = 1; const A = this.P.A; for (const e of this.ents) if (e.alive && Math.hypot(e.x - A.x, e.z - A.z) > (e.def.ln === 'a' ? 1100 : e.def.ln === 'n' ? 600 : 480)) this.respawn(e); }
+    },
+    hit(p, tg, dmg) {
+        const a = EN.get(p.own), h = this.hero; if (!a || !tg.alive || tg.prot > 0 || a.team === tg.team || this.ents.indexOf(tg) < 0) return;
+        let eff = dmg / (1 + Math.max(0, tg.def.ar * (1 - (p.pk || 0))) / 100);
+        eff *= a === h ? (a.def.ln === 'a' && !a.def.heli ? (p.k === 'bullet' ? 5 : 3) : 1.8) : tg === h ? .3 : 1;      // the hero is the star of the show
+        eff = Math.min(eff, tg.def.hp * .5); tg.hp -= eff;
+        if (tg.hp <= 0) this.die(tg, a);
+    },
+    die(e, k) {
+        killVisual(e); e.hp = 0; e.kdone = true; e.respT = e === this.hero ? 2.6 : rnd(3, 5);
+        const c = this.cam;
+        if (e === this.hero) { this.deaths++; c.kp.set(e.x, e.y, e.z); this.cut('kill', 2.6); }
+        else if (k === this.hero) { this.kills++; if (c.kcd <= 0 && c.k !== 'weapon' && Math.random() < .7) { c.kp.set(e.x, e.y, e.z); this.cut('kill', 2); c.kcd = 8; } }
+    },
+    respawn(e) {
+        const sp = Object.assign({}, e.sp0); if (e.def.ln === 'a') { sp.x += rnd(-30, 30); sp.z += rnd(-30, 30); }
+        e.kdone = false; e.hp = e.def.hp; spawnEnt(e, sp); e.prot = 1;
+        if (e === this.hero) this.cut('orbit', 3.5);
+    },
+    // ---- the camera ----
+    size() { const d = this.hero.def, P = getParts(d, 0); return d.ln === 'a' ? Math.max(P.len, P.span) * .9 : P.len; },
+    dom() { const d = this.hero.def; return d.heli ? 'heli' : d.cls === 'arty' ? 'arty' : d.ln; },
+    cut(k, dur) {
+        const c = this.cam; c.k = k; c.t = dur || rnd(3.6, 5.6); c.snap = true; c.ang = rnd(0, TAU); c.side = Math.random() < .5 ? -1 : 1; c.hold = 0; c.n++;
+        if (k === 'tripod' && this.hero) {      // a fixed camera ahead of where the hero is going, off to one side
+            const h = this.hero, s = this.size(), air = h.def.ln === 'a' && !h.def.heli, f = this.fwd(h, SV), sd = SV2.set(f.z, 0, -f.x).normalize();
+            const ah = air ? 230 : h.def.ln === 'n' ? s * 2.2 + 70 : 30 + s * 2.5, sw = air ? 55 : h.def.ln === 'n' ? s * 1.3 + 20 : 12 + s;
+            c.tp.set(h.x + f.x * ah + sd.x * sw * c.side, 0, h.z + f.z * ah + sd.z * sw * c.side);
+            c.tp.y = air ? h.y - 18 : Math.max(GH(c.tp.x, c.tp.z), 0) + (h.def.ln === 'n' ? 5 + s * .08 : 2.2 + s * .1);
+        }
+        if (c.n % 2 === 0) this.caption();
+    },
+    next() {
+        const L = SHOTS[this.dom()].filter(s => s[0] !== this.cam.k), tot = L.reduce((s, x) => s + x[1], 0); let r = Math.random() * tot;
+        for (const [k, w] of L) { r -= w; if (r <= 0) return this.cut(k); }
+        this.cut(L[0][0]);
+    },
+    fwd(e, out) {
+        if (e.def.ln === 'a' && !e.def.heli) { const cp = Math.cos(e.pitch); return out.set(Math.sin(e.yaw) * cp, Math.sin(e.pitch), Math.cos(e.yaw) * cp); }
+        const sp = Math.hypot(e.vx || 0, e.vz || 0); return sp > 2 && e.def.ln !== 'a' ? out.set(e.vx / sp, 0, e.vz / sp) : out.set(Math.sin(e.yaw), 0, Math.cos(e.yaw));
+    },
+    direct(dt) {
+        const c = this.cam, h = this.hero; if (!h) return;
+        c.wcd -= dt; c.kcd -= dt; c.t -= dt;
+        // the hero just fired something worth following: missile, bomb, torpedo (artillery: the shell)
+        for (const p of PR) if (p.own === h.id && !this.seen.has(p)) {
+            this.seen.add(p);
+            if ((p.k === 'missile' || p.k === 'bomb' || p.k === 'torp' || (p.k === 'shell' && h.def.cls === 'arty')) && c.wcd <= 0 && c.k !== 'kill' && Math.random() < .6) { this.cut('weapon', 6); c.pr = p; c.wcd = 7; }
+        }
+        if (c.k === 'weapon' && c.pr && c.hold <= 0 && PR.indexOf(c.pr) < 0) { c.hold = 1.3; c.kp.set(c.pr.x, c.pr.y, c.pr.z); }
+        if (c.hold > 0 && (c.hold -= dt) <= 0) { c.pr = null; this.next(); }
+        else if (c.t <= 0 && c.hold <= 0) { if (c.k === 'kill' && !h.alive) c.t = .5; else this.next(); }
+        const s = this.size(), air = h.def.ln === 'a' && !h.def.heli, P = SV, L = SV3, f = this.fwd(h, SF);
+        const T = h.ai && h.ai.tgt && h.ai.tgt.alive ? h.ai.tgt : null; let k = 1 - Math.exp(-dt * (air ? 9 : 4.5));
+        switch (c.k) {
+            case 'orbit': { c.ang += dt * (air ? .45 : .32); const r = s * (air ? 1.5 : 1.25) + (air ? 9 : 6); P.set(h.x + Math.sin(c.ang) * r, h.y + s * .35 + 2.2, h.z + Math.cos(c.ang) * r); L.set(h.x, h.y + s * .12 + (h.def.ln === 'g' ? 1.2 : 0), h.z); if (air) k = 1; break; }
+            case 'chase': { const b = s * 1.4 + 7, u = s * .38 + (air ? 2.4 : 3.2); P.set(h.x - f.x * b, h.y - f.y * b + u, h.z - f.z * b); L.set(h.x + f.x * 30, h.y + f.y * 30 + (air ? 1 : 1.5), h.z + f.z * 30); if (T && !air) { L.x += (T.x - L.x) * .35; L.y += (T.y + 1.5 - L.y) * .35; L.z += (T.z - L.z) * .35; } if (air) k = 1; break; }
+            case 'target': {
+                if (!T) { P.set(h.x - f.x * (s * 1.4 + 7), h.y + s * .38 + 3, h.z - f.z * (s * 1.4 + 7)); L.set(h.x + f.x * 30, h.y + 1.5, h.z + f.z * 30); break; }
+                const dx = h.x - T.x, dy = h.y - T.y, dz = h.z - T.z, D = Math.hypot(dx, dy, dz) || 1, b = s * 1.3 + 8, sw = (s * .7 + 3) * c.side;
+                P.set(h.x + dx / D * b + dz / D * sw, h.y + dy / D * b * .4 + s * .45 + 3.5, h.z + dz / D * b - dx / D * sw);
+                L.set(h.x + (T.x - h.x) * .4, h.y + (T.y - h.y) * .4 + 1, h.z + (T.z - h.z) * .4); if (air) k = 1; break;
+            }
+            case 'tripod': { P.copy(c.tp); L.set(h.x, h.y + s * .1 + 1, h.z); if (h.alive && Math.hypot(h.x - c.tp.x, h.z - c.tp.z) > (air ? 600 : 260) && c.t > .5) c.t = .5; k = 1; break; }
+            case 'weapon': {
+                const p = c.pr; if (c.hold > 0 || !p) { L.copy(c.kp); P.copy(c.p); k = 1; break; }
+                const v = Math.hypot(p.vx, p.vy, p.vz) || 1, vx = p.vx / v, vy = p.vy / v, vz = p.vz / v;
+                if (p.k === 'bomb') { const hz = Math.hypot(vx, vz) || 1; P.set(p.x - vx / hz * 14, p.y + 9, p.z - vz / hz * 14); L.set(p.x + vx / hz * 8, p.y - 10, p.z + vz / hz * 8); }
+                else if (p.k === 'torp') { P.set(p.x - vx * 10, 3.2, p.z - vz * 10); L.set(p.x + vx * 30, 0, p.z + vz * 30); }
+                else { P.set(p.x - vx * 9, p.y - vy * 9 + 2.4, p.z - vz * 9); L.set(p.x + vx * 25, p.y + vy * 25, p.z + vz * 25); }
+                k = 1; break;
+            }
+            case 'kill': { c.ang += dt * .4; const r = 16 + s * 1.2; P.set(c.kp.x + Math.sin(c.ang) * r, c.kp.y + 6 + s * .3, c.kp.z + Math.cos(c.ang) * r); L.copy(c.kp); k = 1; break; }
+        }
+        if (c.snap) { c.p.copy(P); c.l.copy(L); c.snap = false; } else { c.p.lerp(P, k); c.l.lerp(L, Math.min(1, k * 1.3)); }
+        const gy = Math.max(GH(c.p.x, c.p.z), 0) + 1.4; if (c.p.y < gy) c.p.y = gy;
+        camera.position.copy(c.p); camera.lookAt(c.l);
+    },
+    // yellow brackets close in on the hero's target, then a red LOCK (the same half second a player waits for)
+    drawLock(dt) {
+        const cv = $('#ov'), W = cv.width, Hh = cv.height, h = this.hero;
+        if (this.ovOn) { ovc.clearRect(0, 0, W, Hh); this.ovOn = false; }
+        const d = h && h.def, ms = d && ['w1', 'w2', 'w3'].some(s => d[s] && d[s].k === 'missile'), T = h && h.alive && h.ai && h.ai.tgt && h.ai.tgt.alive ? h.ai.tgt : null;
+        if (!ms || !T || d3(h, T) > 900 || this.cam.k === 'weapon' || this.cam.k === 'kill') { this.lk = 0; return; }
+        this.lk = Math.min(1, this.lk + dt / LOCK_T);
+        const p = proj(T.x, T.y + (T.def.ln === 'a' ? 0 : 1.5), T.z); if (!p) return;
+        const kq = this.lk, z = Math.max(10, (34 - 18 * kq) * W / 1000), col = kq >= 1 ? '#ff3b30' : '#ffd21f', x = p[0], y = p[1], q = z * .45;
+        ovc.strokeStyle = col; ovc.lineWidth = 2; ovc.beginPath();
+        for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { ovc.moveTo(x + sx * z, y + sy * (z - q)); ovc.lineTo(x + sx * z, y + sy * z); ovc.lineTo(x + sx * (z - q), y + sy * z); }
+        ovc.stroke(); if (kq >= 1) { ovc.fillStyle = col; ovc.font = 'bold ' + Math.round(11 * W / 900) + 'px Trebuchet MS,sans-serif'; ovc.textAlign = 'center'; ovc.fillText('LOCK', x, y - z - 5); }
+        this.ovOn = true;
+    },
+    caption() {
+        const el = $('#sc-cap'), h = this.hero; if (!el || !h) return;
+        const b = h.def.base || h.def, tips = SHOW_TIPS[b.cls] || ['', ''];
+        el.innerHTML = '<span class="sc-live">LIVE</span><b>' + esc(b.n) + '</b><small>' + esc(CLS_NAME[b.cls]) + ' &middot; elite play</small><em>' + esc(tips[this.tipN++ % tips.length]) + '</em>';
+        el.classList.remove('hidden');
+    },
+    info() { return { on: this.on, run: this.run, id: this.id, want: this.want, n: this.ents.length, frames: this.frames, shot: this.cam.k, kills: this.kills, deaths: this.deaths, off: this.off, hero: this.hero ? { veh: this.hero.def.id, alive: this.hero.alive, elite: !!(this.hero.ai && this.hero.ai.elite), x: Math.round(this.hero.x), z: Math.round(this.hero.z) } : null }; }
+};
+function gameReady() { if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} } }      // the launcher's loading screen can go
 
 // ---- 90-main.js ----
 // ============================================================
@@ -3722,7 +4423,7 @@ function frame(now) {
         if (DBG.autoQ && !DBG.noRender) autoQuality(now);
         const ft = now - FS.last; FS.last = now; if (ft < 1000) { FS.n++; FS.sum += ft; FS.max = Math.max(FS.max, ft); if (ft > 34) FS.over++; }
     } else {
-        if (!DBG.noRender) Lobby.render(rdt); FS.last = now;
+        if (!DBG.noRender && !Show.frame(rdt)) Lobby.render(rdt); FS.last = now;      // the menu showcase, or the 3D lobby
     }
     saveT -= rdt; if (saveT <= 0) { saveT = 20; writeSave(); }
 }
@@ -3757,6 +4458,10 @@ function bindInput() {
         if (typing(e)) return;
         IN.keys[e.code] = true;
         if (e.code === 'Tab' && M) { e.preventDefault(); UIS.board = true; }
+        if (M && !e.repeat && ME && !ME.alive && !M.over && !$('#s-dead').classList.contains('hidden')) {      // death screen: 1-5 pick, Space deploys
+            const n = /^Digit([1-5])$/.exec(e.code); if (n && save.lineup[+n[1] - 1]) { UIS.selDead = save.lineup[+n[1] - 1]; UI.paintDead(); sfx('click'); }
+            if (e.code === 'Space' || e.code === 'Enter' && !PARTY.net) { e.preventDefault(); UI.deploy(); return; }
+        }
         if (M && !e.repeat) {
             if (e.code === 'Escape' && !Cam.locked() && ME && ME.alive && !M.over && $('#s-pause').classList.contains('hidden') && $('#s-settings').classList.contains('hidden')) $('#s-pause').classList.remove('hidden');
             if (e.code === 'KeyC' && ME && ME.alive && ME.def.sub) { ME.diveOn = !ME.diveOn; toast(ME.diveOn ? 'Diving: only torpedoes can hit you, guns are off' : 'Surfacing'); }
@@ -3807,7 +4512,7 @@ function boot() {
 // ---------- debug hook for tests ----------
 function renderStats(n) {      // render n frames now and report the cost and renderer.info
     const gl = renderer.getContext(), t0 = performance.now(); let calls = 0, tris = 0;
-    for (let i = 0; i < (n || 1); i++) { if (M) { updateWorld(.016); renderer.render(scene, camera); } else Lobby.render(.016); calls = renderer.info.render.calls; tris = renderer.info.render.triangles; }
+    for (let i = 0; i < (n || 1); i++) { if (M) { updateWorld(.016); renderer.render(scene, camera); } else if (Show.on) { Show.acc = 1; Show.frame(.04); } else { Lobby.acc = 1; Lobby.render(.016); } calls = renderer.info.render.calls; tris = renderer.info.render.triangles; }
     const px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
     return { calls, tris, ms: +((performance.now() - t0) / (n || 1)).toFixed(1), programs: renderer.info.programs.length, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures };
 }
@@ -3850,7 +4555,9 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay, ready: partyReady, team: partyTeam, chat: sendChat, kick: partyKick, shuffle: partyShuffle, balance: partyBalance,
     impair(o) { if (PARTY.net) PARTY.net.setImpairment(o); },
     leave() { UI.leaveMatch(true); afterMatch(); },
-    ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch(), openLobby: () => UI.openLobby() },
+    ui: { open: id => UI.open(id), close: id => UI.close(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch(), openLobby: () => UI.openLobby(), closeLobby: () => UI.closeLobby(), go: v => UI.go(v), select: i => selectSlot(i), get view() { return UIS.screen; }, get selDead() { return UIS.selDead; }, pickDead: id => { UIS.selDead = id; UI.paintDead(); }, deploy: () => UI.deploy(), mpFake(list, fr) { UIX.fake = list ? { list, fr } : null; mpRefresh(true); }, mpRefresh: () => mpRefresh(true), conn: () => connState() },
+    // the menu showcase (87-showcase.js): info() = { on, run, id, n, frames, shot, kills, hero }, ents() above lists its vehicles while no match runs
+    show: { info: () => Show.info(), stop: () => Show.stop(), sync: () => showSync(), request: (id, m) => Show.request(id, m), set off(v) { Show.off = !!v; showSync(); }, get obj() { return Show; } },
     T: { PR, weaponFire, updateProjectiles, stepVehicle, stepSurface, missileLock, playerCtrl, makeConfig, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, syncState, applySync, CLK, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };

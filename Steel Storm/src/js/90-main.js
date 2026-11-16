@@ -149,7 +149,7 @@ function frame(now) {
         if (DBG.autoQ && !DBG.noRender) autoQuality(now);
         const ft = now - FS.last; FS.last = now; if (ft < 1000) { FS.n++; FS.sum += ft; FS.max = Math.max(FS.max, ft); if (ft > 34) FS.over++; }
     } else {
-        if (!DBG.noRender) Lobby.render(rdt); FS.last = now;
+        if (!DBG.noRender && !Show.frame(rdt)) Lobby.render(rdt); FS.last = now;      // the menu showcase, or the 3D lobby
     }
     saveT -= rdt; if (saveT <= 0) { saveT = 20; writeSave(); }
 }
@@ -184,6 +184,10 @@ function bindInput() {
         if (typing(e)) return;
         IN.keys[e.code] = true;
         if (e.code === 'Tab' && M) { e.preventDefault(); UIS.board = true; }
+        if (M && !e.repeat && ME && !ME.alive && !M.over && !$('#s-dead').classList.contains('hidden')) {      // death screen: 1-5 pick, Space deploys
+            const n = /^Digit([1-5])$/.exec(e.code); if (n && save.lineup[+n[1] - 1]) { UIS.selDead = save.lineup[+n[1] - 1]; UI.paintDead(); sfx('click'); }
+            if (e.code === 'Space' || e.code === 'Enter' && !PARTY.net) { e.preventDefault(); UI.deploy(); return; }
+        }
         if (M && !e.repeat) {
             if (e.code === 'Escape' && !Cam.locked() && ME && ME.alive && !M.over && $('#s-pause').classList.contains('hidden') && $('#s-settings').classList.contains('hidden')) $('#s-pause').classList.remove('hidden');
             if (e.code === 'KeyC' && ME && ME.alive && ME.def.sub) { ME.diveOn = !ME.diveOn; toast(ME.diveOn ? 'Diving: only torpedoes can hit you, guns are off' : 'Surfacing'); }
@@ -234,7 +238,7 @@ function boot() {
 // ---------- debug hook for tests ----------
 function renderStats(n) {      // render n frames now and report the cost and renderer.info
     const gl = renderer.getContext(), t0 = performance.now(); let calls = 0, tris = 0;
-    for (let i = 0; i < (n || 1); i++) { if (M) { updateWorld(.016); renderer.render(scene, camera); } else Lobby.render(.016); calls = renderer.info.render.calls; tris = renderer.info.render.triangles; }
+    for (let i = 0; i < (n || 1); i++) { if (M) { updateWorld(.016); renderer.render(scene, camera); } else if (Show.on) { Show.acc = 1; Show.frame(.04); } else { Lobby.acc = 1; Lobby.render(.016); } calls = renderer.info.render.calls; tris = renderer.info.render.triangles; }
     const px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
     return { calls, tris, ms: +((performance.now() - t0) / (n || 1)).toFixed(1), programs: renderer.info.programs.length, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures };
 }
@@ -277,7 +281,9 @@ window.__steelstorm = {
     party_create: partyCreate, party_join: partyJoin, party_leave: partyLeave, play: startPlay, ready: partyReady, team: partyTeam, chat: sendChat, kick: partyKick, shuffle: partyShuffle, balance: partyBalance,
     impair(o) { if (PARTY.net) PARTY.net.setImpairment(o); },
     leave() { UI.leaveMatch(true); afterMatch(); },
-    ui: { open: id => UI.open(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch(), openLobby: () => UI.openLobby() },
+    ui: { open: id => UI.open(id), close: id => UI.close(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch(), openLobby: () => UI.openLobby(), closeLobby: () => UI.closeLobby(), go: v => UI.go(v), select: i => selectSlot(i), get view() { return UIS.screen; }, get selDead() { return UIS.selDead; }, pickDead: id => { UIS.selDead = id; UI.paintDead(); }, deploy: () => UI.deploy(), mpFake(list, fr) { UIX.fake = list ? { list, fr } : null; mpRefresh(true); }, mpRefresh: () => mpRefresh(true), conn: () => connState() },
+    // the menu showcase (87-showcase.js): info() = { on, run, id, n, frames, shot, kills, hero }, ents() above lists its vehicles while no match runs
+    show: { info: () => Show.info(), stop: () => Show.stop(), sync: () => showSync(), request: (id, m) => Show.request(id, m), set off(v) { Show.off = !!v; showSync(); }, get obj() { return Show; } },
     T: { PR, weaponFire, updateProjectiles, stepVehicle, stepSurface, missileLock, playerCtrl, makeConfig, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, syncState, applySync, CLK, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };

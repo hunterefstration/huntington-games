@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Steel Storm 2.1</title>
+<title>Steel Storm 2.2</title>
 <!--@css-->
 <script type="importmap">
 { "imports": {
@@ -17,155 +17,186 @@
 <canvas id="ov"></canvas>
 <div id="boot"><div class="bt">STEEL STORM</div><div id="boot-s">Loading...</div></div>
 
-<!-- ===== main menu ===== -->
-<div id="menu" class="scr hidden">
-  <div class="m-top">
-    <div class="brand">STEEL<b>STORM</b> <a id="b-new" class="ver" href="#">v2.1 &middot; What's new</a></div>
+<!-- ===== the menu frame: top bar + navigation around the home, battle setup, multiplayer, garage and research views ===== -->
+<div id="menu" class="hidden" data-view="menu">
+  <div class="shade"></div>
+  <header class="mtop">
+    <div class="brand"><span class="logo">STEEL<b>STORM</b></span><a id="b-new" class="ver" href="#">v2.2 &middot; What's new</a></div>
     <div class="wallet">
-      <span class="w-pill" title="Credits (buy vehicles)"><i class="ic cr"></i><b id="w-cr">0</b></span>
+      <span class="w-pill" title="Credits: buy vehicles"><i class="ic cr"></i><b id="w-cr">0</b></span>
       <span class="w-pill" title="Research points for what you are researching"><i class="ic rp"></i><b id="w-rp">0</b></span>
-      <span class="w-pill" title="Free research points: spend on any vehicle or module"><i class="ic fr"></i><b id="w-fr">0</b></span>
+      <span class="w-pill" title="Free research points: spend them on any vehicle or module"><i class="ic fr"></i><b id="w-fr">0</b></span>
     </div>
-    <div class="m-me"><input id="m-name" maxlength="16" spellcheck="false" title="Your name"></div>
-  </div>
-  <div class="m-left panel">
-    <h3>Mode</h3>
-    <button class="mode" data-m="tdm"><b>Team Deathmatch</b><small>First team to the kill limit</small></button>
-    <button class="mode" data-m="conq"><b>Conquest</b><small>Hold 3 points, drain their tickets</small></button>
-    <button class="mode" data-m="ctf"><b>Capture the Flag</b><small>Steal their flag, bring it home</small></button>
-    <button class="mode" data-m="ffa"><b>Free-for-all</b><small>Everyone for themselves</small></button>
-    <div id="m-opts"></div>
-    <div id="m-lead-note" class="note"></div>
-  </div>
-  <div class="m-right panel">
-    <h3>Play with friends</h3>
-    <div id="p-idle">
-      <button class="btn" id="p-create">Create party</button>
-      <div class="row"><input id="p-code" maxlength="7" placeholder="6-digit code" inputmode="numeric" autocomplete="off"><button class="btn" id="p-join">Join</button></div>
+    <label class="me" title="Your name"><i class="me-ic"></i><input id="m-name" maxlength="16" spellcheck="false" autocomplete="off"></label>
+  </header>
+  <nav class="mnav" id="mnav">
+    <button data-go="menu"><i data-ic="home"></i><span>Home</span></button>
+    <button data-go="battle"><i data-ic="battle"></i><span>Battle</span></button>
+    <button data-go="mp"><i data-ic="mp"></i><span>Multiplayer</span><em id="nv-party" class="hidden">PARTY</em></button>
+    <button data-go="garage"><i data-ic="garage"></i><span>Garage</span></button>
+    <button data-go="research"><i data-ic="research"></i><span>Research</span><em id="nv-rs" class="hidden"></em></button>
+    <div class="nsep"></div>
+    <button data-modal="s-settings"><i data-ic="gear"></i><span>Settings</span></button>
+    <button data-modal="s-how"><i data-ic="help"></i><span>How to play</span></button>
+  </nav>
+  <div id="sc-cap" class="hidden"></div>
+
+  <!-- home: the selected vehicle (showcase behind), its card, the lineup and PLAY -->
+  <section id="v-home" class="view">
+    <aside class="vpanel" id="h-vcard"></aside>
+    <div class="dock">
+      <div class="dock-l"><div class="dock-h">LINEUP <small>click a vehicle to take it into battle</small></div><div id="lineup" class="lineup"></div></div>
+      <div class="playbox">
+        <button class="mode-pill" id="b-mode" title="Change the mode and battle options"></button>
+        <button class="play" id="b-play">PLAY</button>
+        <div class="note" id="m-lead-note"></div>
+      </div>
     </div>
-    <div id="p-live" class="hidden">
-      <div class="p-code">Code <b id="p-codev">------</b></div>
-      <div id="p-list"></div>
-      <button class="btn" id="p-open">Open lobby</button>
-      <button class="btn small" id="p-leave">Leave party</button>
+  </section>
+
+  <!-- solo battle setup -->
+  <section id="v-battle" class="view hidden">
+    <div class="sheet bt-sheet">
+      <div class="sheet-h"><h2>Battle setup</h2><span class="note" id="bt-note"></span></div>
+      <div class="modes" id="bt-modes"></div>
+      <div class="opts" id="bt-opts"></div>
+      <div class="sheet-f"><div class="note" id="m-br"></div><button class="play" id="bt-go">START BATTLE</button></div>
     </div>
-    <div id="p-status" class="note"></div>
-    <div class="note" id="m-br"></div>
-  </div>
-  <div class="m-bottom">
-    <div id="lineup" class="lineup"></div>
-    <div class="m-play">
-      <button class="btn nav" id="b-research">Research</button>
-      <button class="btn nav" id="b-garage">Garage</button>
-      <button class="play" id="b-play">PLAY</button>
-      <button class="btn nav" id="b-settings">Settings</button>
-      <button class="btn nav" id="b-how">How to play</button>
+  </section>
+
+  <!-- multiplayer: open games, join with a code, host -->
+  <section id="v-mp" class="view hidden">
+    <div class="mp-wrap">
+      <div class="mp-main">
+      <div class="sheet mp-join">
+        <h3>Join with a code</h3>
+        <div class="codebox"><input id="p-code" maxlength="7" placeholder="6-digit code" inputmode="numeric" autocomplete="off"><button class="btn primary" id="p-join">Join</button></div>
+        <div id="p-status" class="mp-status"></div>
+      </div>
+      <div class="sheet mp-list">
+        <div class="sheet-h"><h2>Open games</h2><button class="btn small" id="mp-refresh">Refresh</button></div>
+        <div id="mp-games" class="mp-games"></div>
+        <h3 class="mp-fh">Friends playing</h3>
+        <div id="mp-friends" class="mp-games"></div>
+      </div>
+      </div>
+      <div class="mp-side">
+        <div class="sheet">
+          <h3>Host a game</h3>
+          <div class="modes small" id="mp-modes"></div>
+          <div class="opts" id="mp-opts"></div>
+          <div class="opt"><span>Who can find it</span><div class="seg" id="mp-pub"><button data-pub="1">Public</button><button data-pub="0">Friends only</button></div></div>
+          <div class="note" id="mp-pubnote"></div>
+          <button class="play wide" id="p-create">HOST GAME</button>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- garage: your vehicles, the inspected one large behind, its card with modules, the lineup -->
+  <section id="v-garage" class="view hidden">
+    <div class="sheet g-list">
+      <div class="sheet-h"><h2>Garage</h2><div class="tabs" id="g-tabs"><button data-gt="all">All</button><button data-gt="g">Ground</button><button data-gt="a">Air</button><button data-gt="n">Naval</button></div></div>
+      <div id="g-owned" class="vgrid"></div>
+    </div>
+    <aside class="vpanel" id="g-info"></aside>
+    <div class="dock"><div class="dock-l"><div class="dock-h">LINEUP <small>up to 5 vehicles: the selected one goes into battle</small></div><div id="g-lineup" class="lineup"></div></div></div>
+  </section>
+
+  <!-- research tree -->
+  <section id="v-research" class="view hidden">
+    <div class="sheet rs-wrap">
+      <div class="sheet-h"><h2>Research</h2><div class="tabs" id="rs-tabs"><button data-ln="g">Ground</button><button data-ln="a">Air</button><button data-ln="n">Naval</button></div><span class="note" id="rs-now"></span></div>
+      <div id="tree"></div>
+    </div>
+    <aside class="vpanel" id="rs-info"></aside>
+  </section>
 </div>
 
-<!-- ===== party lobby ===== -->
+<!-- ===== party lobby (the 3D lobby shows everyone's vehicle behind it) ===== -->
 <div id="s-lobby" class="scr hidden">
-  <div class="lb-top panel">
-    <div class="lb-code">ROOM <b id="lb-code">------</b> <button class="btn small" id="lb-copy">Copy</button></div>
-    <div id="lb-mode" class="lb-mode"></div>
-    <div class="lb-right"><span id="lb-net" class="net"></span><button class="btn small" id="lb-menu">Garage &amp; research</button><button class="btn small danger" id="lb-leave">Leave</button></div>
-  </div>
+  <header class="lb-top">
+    <button class="btn ghost" id="lb-back" title="Back to the menu (you stay in the party)">&larr; Menu</button>
+    <div class="lb-room"><small>ROOM CODE</small><b id="lb-code">------</b><button class="btn small" id="lb-copy">Copy</button></div>
+    <div class="lb-mode" id="lb-mode"></div>
+    <div class="lb-conn" id="lb-net"></div>
+    <button class="btn small danger" id="lb-leave">Leave</button>
+  </header>
   <div class="lb-teams" id="lb-teams"></div>
   <div class="lb-bottom">
-    <div class="panel lb-chat"><div id="lb-log"></div><div class="row"><input id="lb-say" maxlength="140" placeholder="Say something... (Enter)"><button class="btn small" id="lb-send">Send</button></div></div>
-    <div class="panel lb-opts"><h3>Match options <small id="lb-optnote"></small></h3><div id="lb-opts"></div><div class="row lb-tools" id="lb-tools"><button class="btn small" id="lb-shuffle">Shuffle</button><button class="btn small" id="lb-balance">Balance</button></div></div>
-    <div class="lb-go"><div id="lb-mine" class="lineup"></div><button class="play" id="lb-ready">READY</button></div>
-  </div>
-</div>
-
-<!-- ===== research tree ===== -->
-<div id="s-research" class="scr full hidden">
-  <div class="topbar"><button class="btn small" data-close>&larr; Back</button><h2>Research</h2>
-    <div class="tabs" id="rs-tabs"><button data-ln="g">Ground</button><button data-ln="a">Air</button><button data-ln="n">Naval</button></div>
-    <div class="wallet"><span class="w-pill"><i class="ic cr"></i><b class="v-cr">0</b></span><span class="w-pill"><i class="ic fr"></i><b class="v-fr">0</b></span></div></div>
-  <div class="tree-wrap">
-    <div id="tree"></div>
-    <div id="rs-info" class="panel info"></div>
-  </div>
-</div>
-
-<!-- ===== garage ===== -->
-<div id="s-garage" class="scr full hidden">
-  <div class="topbar"><button class="btn small" data-close>&larr; Back</button><h2>Garage</h2>
-    <div class="wallet"><span class="w-pill"><i class="ic cr"></i><b class="v-cr">0</b></span><span class="w-pill"><i class="ic fr"></i><b class="v-fr">0</b></span></div></div>
-  <div class="tree-wrap">
-    <div class="garage-main">
-      <h3>Lineup <small>up to 5 vehicles. Click one to select it.</small></h3>
-      <div id="g-lineup" class="lineup big"></div>
-      <h3>Your vehicles <small>click to add or remove from the lineup</small></h3>
-      <div id="g-owned" class="cards"></div>
-    </div>
-    <div id="g-info" class="panel info"></div>
+    <div class="sheet lb-chat"><h3>Chat</h3><div id="lb-log"></div><div class="row"><input id="lb-say" maxlength="140" placeholder="Say something... (Enter)"><button class="btn small" id="lb-send">Send</button></div></div>
+    <div class="sheet lb-opts"><h3>Match options <small id="lb-optnote"></small></h3><div id="lb-opts" class="opts"></div><div class="row lb-tools" id="lb-tools"><button class="btn small" id="lb-shuffle">Shuffle teams</button><button class="btn small" id="lb-balance">Balance by BR</button></div></div>
+    <div class="sheet lb-go"><h3>Your vehicle <button class="btn small" id="lb-menu">Garage</button></h3><div id="lb-mine" class="lineup mini"></div><button class="play wide" id="lb-ready">READY</button><div class="note" id="lb-hint"></div></div>
   </div>
 </div>
 
 <!-- ===== settings ===== -->
 <div id="s-settings" class="scr dim hidden">
   <div class="card">
-    <h2>Settings</h2>
-    <label>Graphics quality
-      <select id="st-q"><option value="low">Low (fastest, no shadows)</option><option value="med">Medium (shadows)</option><option value="high">High (soft shadows, more detail)</option></select></label>
-    <div class="note" id="st-qnote"></div>
-    <label>Mouse sensitivity <input type="range" id="st-sens" min="0.3" max="2.5" step="0.05"></label>
-    <label>Volume <input type="range" id="st-vol" min="0" max="1" step="0.05"></label>
-    <label class="chk"><input type="checkbox" id="st-inv"> Invert mouse Y</label>
-    <div class="note">Your progress is saved in this browser.</div>
-    <button class="btn big" data-close>Done</button>
+    <div class="card-h"><h2>Settings</h2><button class="x" data-close title="Close">&times;</button></div>
+    <h3>Graphics</h3>
+    <div class="qgrid" id="st-q">
+      <button data-q="low"><b>Low</b><small>Fastest. No shadows, fewer trees and particles.</small></button>
+      <button data-q="med"><b>Medium</b><small>Shadows, textured ground and water.</small></button>
+      <button data-q="high"><b>High</b><small>Soft shadows, full detail, longest view.</small></button>
+    </div>
+    <div class="opt"><span>Showcase footage <small>live battle behind the menu</small></span><div class="seg" id="st-show"><button data-show="1">On</button><button data-show="0">Off</button></div></div>
+    <h3>Controls and sound</h3>
+    <label class="rng"><span>Mouse sensitivity</span><input type="range" id="st-sens" min="0.3" max="2.5" step="0.05"><b id="st-sensv"></b></label>
+    <label class="rng"><span>Volume</span><input type="range" id="st-vol" min="0" max="1" step="0.05"><b id="st-volv"></b></label>
+    <div class="opt"><span>Invert mouse Y</span><div class="seg" id="st-inv"><button data-inv="0">Off</button><button data-inv="1">On</button></div></div>
+    <div class="note">Your progress is saved in this browser (and to your account in the launcher).</div>
+    <button class="btn big primary" data-close>Done</button>
   </div>
 </div>
 
 <!-- ===== how to play ===== -->
 <div id="s-how" class="scr dim hidden">
   <div class="card wide">
-    <h2>How to play</h2>
+    <div class="card-h"><h2>How to play</h2><button class="x" data-close title="Close">&times;</button></div>
     <div class="how">
       <div><h4>Modes</h4><p><b>Team Deathmatch:</b> first team to the kill limit. <b>Conquest:</b> hold the 3 points; the team holding more drains the other team's tickets. <b>Capture the Flag:</b> drive (or fly a helicopter) over the enemy flag and bring it to your own base while your flag is home. <b>Free-for-all:</b> everyone against everyone.</p>
       <h4>Progress</h4><p>Every match earns <b>credits</b> and <b>research points</b>. Research vehicles in 15 branches (tiers I-V), buy them, then research <b>modules</b> for each vehicle you own (engine, armour, guns, ammo, stabiliser / countermeasures / radar). Battle rating keeps you with vehicles like yours.</p>
-      <h4>Party</h4><p><b>Create party</b> and share the 6-digit code (Copy). In the lobby click a team to switch, press <b>READY</b>. The host sets the options and starts; bots fill the empty slots. Friends can join a running battle, and a dropped player gets their vehicle and score back.</p></div>
+      <h4>Multiplayer</h4><p>Open <b>Multiplayer</b>: join an open game from the list, type a friend's 6-digit code, or <b>Host</b> one with your own options. In the party lobby pick a team and press <b>READY</b>; the host starts, bots fill the empty slots. Friends can join a running battle, and a dropped player gets their vehicle and score back.</p>
+      <h4>Respawning</h4><p>When you are destroyed, the vehicle you picked before the battle is ready first. Pick another one from your lineup (keys <b>1-5</b>) and press <b>DEPLOY</b> or <b>Space</b>.</p></div>
       <div><h4>Controls</h4>
       <table class="keys">
       <tr><td>Mouse</td><td>Aim camera / turrets / steer jet</td></tr>
-      <tr><td>W S</td><td>Throttle (tank and ship: forward, back)</td></tr>
-      <tr><td>A D</td><td>Steer (helicopter: strafe)</td></tr>
+      <tr><td><kbd>W</kbd> <kbd>S</kbd></td><td>Throttle (tank and ship: forward, back)</td></tr>
+      <tr><td><kbd>A</kbd> <kbd>D</kbd></td><td>Steer (helicopter: strafe)</td></tr>
       <tr><td>Left click</td><td>Main gun / jet cannons</td></tr>
-      <tr><td>Right click / Space</td><td>Machine gun / rockets / missiles</td></tr>
-      <tr><td>B / Shift</td><td>Bombs, torpedoes, guided missiles</td></tr>
-      <tr><td>F</td><td>Flares (Countermeasures module)</td></tr>
-      <tr><td>C</td><td>Submarine: dive / surface</td></tr>
-      <tr><td>E / Q</td><td>Helicopter: up / down</td></tr>
+      <tr><td>Right click / <kbd>Space</kbd></td><td>Machine gun / rockets / missiles</td></tr>
+      <tr><td><kbd>B</kbd> / <kbd>Shift</kbd></td><td>Bombs, torpedoes, guided missiles</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Flares (Countermeasures module)</td></tr>
+      <tr><td><kbd>C</kbd></td><td>Submarine: dive / surface</td></tr>
+      <tr><td><kbd>E</kbd> / <kbd>Q</kbd></td><td>Helicopter: up / down</td></tr>
       <tr><td>Wheel</td><td>Camera zoom</td></tr>
-      <tr><td>Tab (hold)</td><td>Scoreboard</td></tr>
-      <tr><td>Enter</td><td>Chat (in a party)</td></tr>
-      <tr><td>Esc</td><td>Menu</td></tr></table></div>
+      <tr><td><kbd>Tab</kbd> (hold)</td><td>Scoreboard</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Chat (in a party)</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Pause menu</td></tr></table></div>
     </div>
-    <button class="btn big" data-close>Got it</button>
+    <button class="btn big primary" data-close>Got it</button>
   </div>
 </div>
 <div id="s-new" class="scr dim hidden">
   <div class="card wide">
-    <h2>Steel Storm 2.1.1: what's new</h2>
+    <div class="card-h"><h2>Steel Storm 2.2: what's new</h2><button class="x" data-close title="Close">&times;</button></div>
     <div class="how"><div>
-      <h4>Runs smoother</h4><p>Medium graphics draw about a third faster with the same picture. When a computer still struggles, the game first lowers its resolution a little, then the graphics level, so it stays playable.</p>
-      <h4>Every vehicle matters</h4><p>A full rebalance: each tier is a clear step up in hit points, armour and firepower, and every class has its own job (heavy tanks soak hits, light tanks scout, tank destroyers hit hardest, bombers delete ground targets, battleships carry the biggest guns). Big guns now feel big: larger blasts, damage numbers over what you hit, screen shake and a shove on heavy hits.</p>
-      <h4>Guided missiles</h4><p>Missiles lead their target and actually hit it. Hold your aim on a target for half a second: yellow brackets close in, then a red LOCK (with a beep) means the missile will guide. Flares still fool heat-seekers some of the time, and lost missiles self-destruct.</p>
-      <h4>Smarter bots</h4><p>Bot skill now picks their gear too: Easy bots drive lower tiers with no modules, Normal bots match your tier, Hard bots bring your tier and above with modules, and aim better.</p>
-      <h4>Hills</h4><p>Tanks no longer stall halfway up a hill. Climbing slows you a little; only real cliffs stop you.</p>
+      <h4>New menus</h4><p>Everything is one click away: Home, Battle, Multiplayer, Garage and Research down the side. Your vehicle is shown large with clear bars for hit points, armour, speed and firepower, its weapons and its role. Works with the mouse alone and on small screens.</p>
+      <h4>Showcase footage</h4><p>Behind the menu your selected vehicle fights a small live battle, played the way an expert would play it: tanks fire on the move, fighters lock missiles, bombers drop on groups, helicopters pop up from cover, warships turn broadside. Pick another vehicle and the footage switches. Too heavy for your computer? Settings turns it off, and it switches itself off if the menu gets slow.</p>
+      <h4>Multiplayer</h4><p>A real Multiplayer screen: a list of open games to join, a join-by-code box, and hosting with clear options (mode, map size, length, bots, friendly fire, weather, public or friends only). The party lobby updates live: everyone's vehicle and readiness, teams, host tools (kick, move, shuffle, balance, start), chat, the room code with a copy button, and the connection state (connecting, reconnecting, the host left).</p>
+      <h4>Respawning</h4><p>After you are destroyed, the vehicle you picked before the battle is selected again. Switch with a click or keys 1-5, deploy with one click or Space.</p>
       <h4>Your save</h4><p>Everything you had is kept.</p>
-      <h4 style="opacity:.7">Steel Storm 2.0</h4>
-      <h4>Multiplayer</h4><p>A real party lobby with teams, ready-up, lineups, host options (mode, map size, length, bots, friendly fire, weather), chat and a copyable room code. Smoother netcode: the host decides every hit, other vehicles glide with jitter-aware interpolation, a ping meter, and Wi-Fi drops survive (reconnect, rejoin with your score, host migration). New modes: Capture the Flag and Free-for-all, a scoreboard with ping, and an MVP on the results.</p>
-      <h4>Looks</h4><p>A real sun with soft shadows, sky and fog that match four weather presets (clear noon, golden evening, overcast rain, night with flares), tone mapping, flashes that light up the ground, fresnel water, and textured terrain, roads, airstrips and vehicles (camouflage, panel lines, rivets, numbers, weathering). All drawn in code.</p></div><div>
-      <h4>Vehicles</h4><p>39 new vehicles (69 in all) in 15 branches up to tier V: light, medium and heavy tanks, tank destroyers, anti-air, artillery; fighters, attackers, bombers, helicopters; patrol boats, destroyers, cruisers, battleships and submarines. Each has its own model. Every vehicle has 5 modules to research. Guided missiles, flares, torpedoes and diving submarines.</p>
-      <p style="opacity:.7">Your credits, research and vehicles were all kept.</p></div></div>
-    <button class="btn big" data-close>Let's go</button>
+    </div><div>
+      <h4 class="old">Steel Storm 2.1</h4>
+      <p>Runs smoother (Medium graphics about a third faster, automatic resolution). A full rebalance: each tier is a clear step up and every class has its job. Guided missiles that lead and lock (hold your aim half a second for the red LOCK). Bots pick their gear by skill. Tanks climb hills properly.</p>
+      <h4 class="old">Steel Storm 2.0</h4>
+      <p>Party lobby with teams, ready-up and host options; smoother netcode with reconnects and host migration; Capture the Flag and Free-for-all; real sun, shadows, weather and textured terrain; 69 vehicles in 15 branches up to tier V with 5 modules each; guided missiles, flares, torpedoes and diving submarines.</p>
+    </div></div>
+    <button class="btn big primary" data-close>Let's go</button>
   </div>
 </div>
-<div id="s-notice" class="scr dim hidden"><div class="card"><h2 id="nt-h">Notice</h2><p id="nt-t"></p><button class="btn big" data-close>OK</button></div></div>
+<div id="s-notice" class="scr dim hidden"><div class="card"><h2 id="nt-h">Notice</h2><p id="nt-t"></p><button class="btn big primary" data-close>OK</button></div></div>
 
 <!-- ===== match HUD ===== -->
 <div id="hud" class="hidden">
@@ -188,20 +219,20 @@
 </div>
 <div id="s-dead" class="scr hidden">
   <div class="dead-box">
-    <h2 id="d-title">Destroyed</h2>
+    <div class="dead-h"><h2 id="d-title">Destroyed</h2><div id="d-sub"></div></div>
     <div id="d-spec" class="note"></div>
-    <div id="d-sub"></div>
-    <div id="d-lineup" class="lineup big"></div>
-    <button class="play small" id="d-go">DEPLOY</button>
+    <div id="d-lineup" class="dlineup"></div>
+    <button class="play wide" id="d-go"><b>DEPLOY</b><small id="d-veh"></small></button>
   </div>
 </div>
 <div id="s-pause" class="scr dim hidden">
-  <div class="card"><h2>Paused</h2><div class="note">The battle goes on while this is open.</div>
-    <button class="btn big" id="ps-resume">Resume</button>
-    <button class="btn" id="ps-settings">Settings</button>
+  <div class="card pause">
+    <h2>Paused</h2><div id="ps-info" class="ps-info"></div><div class="note">The battle goes on while this is open.</div>
+    <button class="btn big primary" id="ps-resume">Resume</button>
+    <div class="row2"><button class="btn" id="ps-settings">Settings</button><button class="btn" id="ps-how">How to play</button></div>
     <button class="btn danger" id="ps-leave">Leave match</button></div>
 </div>
-<div id="s-result" class="scr dim hidden"><div class="card wide" id="r-card"></div></div>
+<div id="s-result" class="scr dim hidden"><div class="card wide result" id="r-card"></div></div>
 <div id="toast"></div>
 <!--@js-->
 <script>setTimeout(function () { if (!window.__steelstorm) { var s = document.getElementById('boot-s'); if (s) s.textContent = 'Steel Storm could not load (it needs cdn.jsdelivr.net for the 3D engine). Check your connection and reload.'; } }, 9000);</script>

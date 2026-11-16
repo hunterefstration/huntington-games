@@ -53,7 +53,7 @@ function makeConfig(players, opts) {
     return cfg;
 }
 function beginMatch(cfg, meId, isHost) {
-    clearMatch();
+    Show.stop(); clearMatch();
     const ffa = cfg.mode === 'ffa', nt = ffa ? 0 : 2;
     M = { mode: cfg.mode, cfg, t: 0, state: 'play', limit: cfg.limit, kills: [0, 0], tickets: [cfg.limit.tickets || 0, cfg.limit.tickets || 0], caps: [0, 0], pts: PTS.map(() => ({ own: -1, prog: 0 })),
         flags: [0, 1].map(t => ({ t, st: 'home', x: FLAG_HOME[t].x, z: FLAG_HOME[t].z, by: -1, dt: 0 })), R: MAPR[cfg.map] || MAPR.normal,
@@ -67,6 +67,7 @@ function beginMatch(cfg, meId, isHost) {
     };
     cfg.players.forEach(p => mk(p, false)); cfg.bots.forEach(b => mk(b, true));
     ME = EN.get(meId); M.my.tier = ME ? ME.def.t : 1;
+    const mp = cfg.players.find(p => p.id === meId); M.pick = mp && save.lineup.includes(mp.veh) ? mp.veh : myVeh();      // the lobby pick: what the death screen offers first
     if (ME) ME.budget = 0;
     setPointsVisible(cfg.mode === 'conq'); updatePointViz(M.pts); setFlagsVisible(cfg.mode === 'ctf');
     UI.enterMatch();
@@ -86,13 +87,14 @@ function bcast(m, fast) {       // message for everyone (including me)
     if (M && M.host) handleMatchMsg(M.meId, m, true);
     if (netOn()) PARTY.net.send('all', m, { fast: !!fast });
 }
-function netFire(e, slot, ps, tg) { if (netOn()) PARTY.net.send('all', { t: 'fire', id: e.id, w: slot, ps, tg }); }
+function netFire(e, slot, ps, tg) { if (M && netOn()) PARTY.net.send('all', { t: 'fire', id: e.id, w: slot, ps, tg }); }
 const owlOf = e => clamp(((e && e.q) || 80) / 2, 0, 300);      // one-way latency estimate (ms) of a guest
 
 // ---------- damage ----------
 function predictHit() { if (M && !M.host) { UI.hitMarker(false, true); } }
 function reportHit(p, tg, dmg) {
-    if (!M || dmg <= 0.05) return;
+    if (!M) { if (Show.on && dmg > .05) Show.hit(p, tg, dmg); return; }      // no match: the menu showcase keeps its own score
+    if (dmg <= 0.05) return;
     const own = EN.get(p.own); if (!own || tg.prot > 0) return;
     own.nHits = (own.nHits || 0) + 1;
     if (M.host) { if (own === ME) { UI.hitMarker(false); sfx('hit'); } hostDamage(p.own, tg.id, dmg, p.pk || 0, p.slot, true); }
@@ -116,7 +118,7 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
         a.budget -= dmg;
     }
     let eff = dmg / (1 + Math.max(0, v.def.ar * (1 - pk)) / 100);
-    if (a.ai) eff *= aiDiff().dmg * (a.def.ln === 'a' ? 1.4 : 1);      // jet guns do tiny damage per bullet and miss a lot; bots get a little help there
+    if (a.ai) eff *= aiDiff(a).dmg * (a.def.ln === 'a' ? 1.4 : 1);      // jet guns do tiny damage per bullet and miss a lot; bots get a little help there
     if (team) eff *= .5;      // friendly fire is on: half damage
     eff = Math.min(eff, v.def.hp * (a.def.ln !== v.def.ln ? .3 : .5));      // no single hit takes more than 30% (50% in the same domain) of a full health bar
     v.hp -= eff; if (!team) { a.dmg += eff; a.score += eff * .1; }
