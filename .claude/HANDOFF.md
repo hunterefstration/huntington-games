@@ -1,14 +1,42 @@
-# Handoff (updated 2026-11-14)
+# Handoff (updated 2026-11-16)
 Current state and the facts you need to change things. What each round did and why: `.claude/HISTORY.md` (grep it, do not read it all).
 
 ## Where things stand
-- Live: **r72** (`latest.json` on `main`). r72: Steel Storm 2.1, admin powers the owner picks, progress editor, nicknames, Owner/Admin tags (section below). r71: cleanup (below). Every game in the launcher is released.
+- Live: **r74** (`latest.json` on `main`). r74: Round 10 (section below). r73: Steel Storm performance pass. r72: Steel Storm 2.1, admin powers, nicknames, tags. Every game in the launcher is released.
 - r70: admin "Rebuild from leaderboards" (`launcher/js/10-hub/098-rebuild.js`, suite `gv-rebuild`). r69: saves never lost (other-tab
   guard, mass-delete guard, server copies, admin lookup/restore, device backups; Saves tab "Look for older saves"; suite `gv-recover`).
 - 2026-11-14 cleanup: launcher `001-util.js` (`hubShown`, `hubWake`, `setHtml`): hub repaint/poll timers skip work while a game is open or
   the tab is hidden and repaint when the hub is back. Removed the old `release.sh prepare/finish` path and Divergent's stale duplicate files.
 - Back up unreleased work to `wip/content-wave` without touching HEAD or `main`:
   `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
+
+## Round 10 (r74, 2026-11-16): Beat Lab, Steel Storm 2.2 menus, multiplayer, game chat, Grapevine sidebar, moderation, activity
+- **Beat Lab** (new game, `Beat Lab/src/`): Simple song grid + FL-style Studio on a DOM-free engine (`src/js/10-16-engine-*.js`,
+  API at the top of `10-engine.js`). `tools/check.js --fix` joins the engine into `Beat Lab/engine.js`, which the launcher's music
+  player (`080-music.js`) loads only when a player picks "Launcher music" in Beat Lab (`beatlab_launcher` = project id). Own test:
+  `node "Beat Lab/tools/test.mjs"`. Saves `beatlab_p_<id>` (in GAME_KEYS).
+- **Loading screen**: `launcher/boot.css` + `boot.html`, inlined into the hub and copied into `loader.html` (check.js keeps them in
+  step, `--fix` copies). The loader hands its progress to the hub (`HG_LOAD_P`). Game loading screen in `097-loading.js` (card + tips).
+  When `loader.html` changes, paste it into the Google Doc's Launcher tab (see HISTORY: The Google Doc).
+- **Official rooms** (grapevine `010` OFFICIAL): #main, #announcements (read-only but Server/admins with announce), #multiplayer-codes
+  (daily reset like #main), #music, #bugs-and-ideas. Everyone joins them at hello (one insert); they cannot be left or deleted.
+- **Moderation** (grapevine `080-moderation.js`, frame `smod`; `mod` is a ROOM's own moderation in 060, do not reuse the name):
+  Server account (`user_id 'server'`, name reserved), `banUser` (timed bans carry `[until <ms>]` in the reason; lifted at sign-in),
+  n-word ladder `slurStrike` (1 day, 3, 7, for good; Server announces from the second; counts in `~mod slur:<uid>`), effects
+  (mute, slow, nick, uwu, caps, backwards, mime, pirate, clown) in memory + one `~mod fx` row. Launcher panel: `098-admin.js` paMod.
+  Suite `gv-mod`.
+- **Spam**: `GUARD.tidy` (server applies before storing: char/chunk/blank-line walls, 12 lines) and a volume limit in `GUARD.spam`
+  (3000 chars of long messages a minute); long messages compared by word pairs. GUARD is identical in grapevine 020 and client 060.
+  Client folds messages over 600 chars / 8 lines.
+- **Grapevine sidebar** (`client 030 paintSidebarNow`): chips, folding sections, pins/recency in localStorage (`gv:side:*`), no DB cost.
+- **Multiplayer tab** (`090-parties.js`, shell `#mp-home`) and **multiplayer bonus** (grapevine `076`: same game party code, 2+ devices,
+  2 goons / 10 min, double 3-5 pm Eastern, 20/day; `mpStatus`/`mpBonus`). Joining a party records its code (`030 joinInvite`).
+- **Game chat** over launcher games (`097-gamechat.js`, grapevine `081-gamechat.js`): memory-only rooms `p:<gid>:<code>` or
+  `g:<game>`; T opens it (games with `chatShift` use Shift+T). API `HGGrapevine.party.chatRoom/chatSay`.
+- **Activity tab** (`098-activity.js`, grapevine `082-stats.js`): counts in memory, one `~stats` row saved every 10 min, answer cached 30 s.
+- **One-time jobs** (grapevine `079-once.js`, `~once`): the BOBERTODAROBERTO rebuild ran from there.
+- Auto-click guards (Brown E Clicker 095, Market Life 090): warn first, near-perfect timing over 40 fast clicks or 16+/s for 6 s.
+- Suites added: `gv-mod`, `gv-social`.
 
 ## Admin powers, progress editor, nicknames, tags (r72, 2026-11-15)
 - **Powers** (`ADMIN_PERMS` in grapevine `020`): reports, moderate, ban, announce, inspect, peek, rooms, titles, goons,
