@@ -17,7 +17,8 @@
       FL = function () { return rd('frontline_profile_v2') || {}; }, BL = function () { return rd('blocky21_life') || {}; },
       SV = function () { return rd('sov.hgach') || {}; }, PL = function () { return rd('hgach:plays') || {}; },
       LU = function () { return rd('lumi_save') || {}; }, IM = function () { return rd('imposter_save') || {}; }, EL = function () { return cnt(rd('elementlab_challenges')); };
-  var luDone = function (id) { return !!((LU().levels || {})[id]); }, luFlaw = function () { var n = 0, l = LU().levels || {}; for (var k in l) if ((l[k] || {}).perfect) n++; return n; }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
+  var luDone = function (id) { return !!((LU().levels || {})[id]); }, luFlaw = function () { var n = 0, l = LU().levels || {}; for (var k in l) if ((l[k] || {}).perfect && !/^6-/.test(k)) n++; return n; },      // (the main game: Frostveil, 1.5, comes after it)
+      luMedals = function (m) { var n = 0, t = LU().trials || {}; for (var k in t) if (num((t[k] || {}).m) >= m) n++; return n; }, luFrozen = function () { var n = 0, s = LU().secrets || {}; for (var k in s) if (/^6-/.test(k)) n++; return n; }, luMoths = function () { var n = 0, l = LU().levels || {}; for (var k in l) n += (((l[k] || {}).moths) || []).filter(Boolean).length; return n; };
   var careerBest = function (c) { var b = ML().best || {}; return b[c] === undefined ? -1 : num(b[c]); };
   var ACH = [
     // 100 Levels of Spikes
@@ -136,8 +137,16 @@
     { id: 'lulore', g: 'lumi', i: '🕯️', n: 'The Whole Truth', d: 'Hear 16 conversations in Last Light.', p: 100, t: function () { return Object.keys(LU().talks || {}).length >= 16; } },
     { id: 'luflaw1', g: 'lumi', i: '💎', n: 'Not a Scratch', d: 'Clear a Last Light level flawless: no hits, every star, every spark, the lost lantern and the talk.', p: 10, t: function () { return luFlaw() >= 1; } },
     { id: 'luflaw10', g: 'lumi', i: '✦', n: 'Spotless', d: 'Clear 10 Last Light levels flawless.', p: 50, t: function () { return luFlaw() >= 10; } },
-    { id: 'luflawall', g: 'lumi', i: '🏆', n: 'Flawless Lantern', d: 'Clear every Last Light level flawless (41).', p: 100, t: function () { return luFlaw() >= 41; } },
+    { id: 'luflawall', g: 'lumi', i: '🏆', n: 'Flawless Lantern', d: 'Clear every level of Last Light\'s main game flawless (41).', p: 100, t: function () { return luFlaw() >= 41; } },
     { id: 'lulore31', g: 'lumi', i: '📖', n: 'Valley Historian', d: 'Talk to everyone in Last Light (31 conversations).', p: 100, t: function () { return Object.keys(LU().talks || {}).length >= 31; } },
+    // Last Light 1.5: Frostveil, the glide, trials
+    { id: 'luglide', g: 'lumi', i: '🪶', n: 'Featherlight', d: 'Learn to glide at the wind shrine in Last Light\'s Frostveil.', p: 10, t: function () { return !!(LU().abilities || {}).glide; } },
+    { id: 'luw6', g: 'lumi', i: '🦉', n: 'Out of the Cold', d: 'Free Hoarfrost and clear Frostveil (6-10).', p: 50, t: function () { return luDone('6-10'); } },
+    { id: 'lufrozen', g: 'lumi', i: '❄️', n: 'Every Light Home', d: 'Find all 11 frozen lanterns in Frostveil.', p: 50, t: function () { return luFrozen() >= 11; } },
+    { id: 'lu611', g: 'lumi', i: '✧', n: 'The Eleventh Light', d: 'Clear the secret last level of Frostveil (6-11).', p: 100, t: function () { return luDone('6-11'); } },
+    { id: 'lugold1', g: 'lumi', i: '🥇', n: 'Good as Gold', d: 'Win a gold medal in a Last Light trial.', p: 10, t: function () { return luMedals(3) >= 1; } },
+    { id: 'lugold20', g: 'lumi', i: '🏅', n: 'Golden Hour', d: 'Win 20 gold medals in Last Light trials.', p: 50, t: function () { return luMedals(3) >= 20; } },
+    { id: 'lulumen', g: 'lumi', i: '💠', n: 'Faster Than Light', d: 'Beat a Lumen time in a Last Light trial.', p: 25, t: function () { return luMedals(4) >= 1; } },
     { id: 'luspark', g: 'lumi', i: '💛', n: 'Spark Hoarder', d: 'Collect 500 sparks.', p: 25, t: function () { return num(LU().sparks) >= 500; } },
     { id: 'hubgames', g: 'hub', i: '🎮', n: 'Game Hopper', d: 'Play 5 different games.', p: 10, t: function () { return cnt(PL()) >= 5; } },
     { id: 'huball', g: 'hub', i: '🕹️', n: 'Completionist', d: 'Play 10 different games.', p: 25, t: function () { return cnt(PL()) >= 10; } },

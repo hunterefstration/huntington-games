@@ -17,7 +17,11 @@ const WORLDS = [
       slime: ['#ffb04a', '#d0561c'], deco: 'forge', mote: '#ffb35a' },
     { name: 'The Gloom', sub: 'The last lantern', sky: ['#050010', '#120428', '#2a0a4a', '#40125e'], dark: 'rgba(6, 0, 18,', ambient: 0.8,
       body: ['#2a1a40', '#140a24'], top: '#b98aff', top2: '#5a2a9a', rim: '#08040f', detail: '#3a2856', accent: '#c9a0ff', fog: 'rgba(170,110,255,', plat: '#4a3a6a',
-      slime: ['#c9a0ff', '#7a3ad0'], deco: 'gloom', mote: '#d8b8ff' }
+      slime: ['#c9a0ff', '#7a3ad0'], deco: 'gloom', mote: '#d8b8ff' },
+    // 1.5: the peaks above the Sky Ruins, under the aurora. Snow-capped stone, ice, and the night is cold enough to bite
+    { name: 'Frostveil', sub: 'Where the last lights froze', sky: ['#040c22', '#0c2348', '#1e4a78', '#5a8cb8'], dark: 'rgba(4, 12, 34,', ambient: 0.5,
+      body: ['#9fb6cf', '#4a5f7e'], top: '#ffffff', top2: '#d6ecff', rim: '#1a2a44', detail: '#c8daf0', accent: '#9ff0ff', fog: 'rgba(190,225,255,', plat: '#b8d0e8',
+      slime: ['#d8f4ff', '#6aa8d8'], deco: 'frost', mote: '#ffffff' }
 ];
 
 // ---------- background strips (one per parallax layer, tiled sideways) ----------
@@ -31,6 +35,18 @@ function paintBackground(w, W, H) {
     s.globalAlpha = 1;
     if (w === 0) { const m = s.createRadialGradient(W * 0.72, H * 0.62, 0, W * 0.72, H * 0.62, H * 0.5); m.addColorStop(0, 'rgba(255,220,170,.9)'); m.addColorStop(0.08, 'rgba(255,200,150,.6)'); m.addColorStop(1, 'rgba(255,160,120,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
     if (w === 2) { const m = s.createRadialGradient(W * 0.25, H * 0.2, 0, W * 0.25, H * 0.2, H * 0.7); m.addColorStop(0, 'rgba(255,255,230,.95)'); m.addColorStop(0.06, 'rgba(255,250,210,.7)'); m.addColorStop(1, 'rgba(255,240,200,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
+    if (w === 5) {           // stars, then the aurora: soft green and violet curtains across the sky
+        for (let i = 0; i < 140; i++) { s.globalAlpha = 0.25 + r() * 0.7; s.fillStyle = '#fff'; s.beginPath(); s.arc(r() * W, r() * H * 0.55, r() * 1.3 + 0.3, 0, 7); s.fill(); }
+        s.globalCompositeOperation = 'lighter';
+        for (const [col, y0, amp, ph] of [['90,255,190', 0.18, 0.06, 0], ['150,120,255', 0.28, 0.05, 2.1], ['90,230,255', 0.12, 0.04, 4]]) {
+            for (let px = 0; px < W; px += 4) {
+                const yy = H * (y0 + amp * Math.sin(px / W * Math.PI * 4 + ph) + 0.02 * Math.sin(px / W * Math.PI * 13 + ph)), hh = H * (0.1 + 0.06 * Math.sin(px / W * Math.PI * 6 + ph * 2));
+                const g2 = s.createLinearGradient(0, yy - hh, 0, yy + hh * 0.3); g2.addColorStop(0, `rgba(${col},0)`); g2.addColorStop(0.75, `rgba(${col},.16)`); g2.addColorStop(1, `rgba(${col},0)`);
+                s.fillStyle = g2; s.fillRect(px, yy - hh, 4, hh * 1.3);
+            }
+        }
+        s.globalCompositeOperation = 'source-over'; s.globalAlpha = 1;
+    }
     if (w === 4) { const m = s.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, H * 0.6); m.addColorStop(0, 'rgba(200,140,255,.35)'); m.addColorStop(1, 'rgba(120,60,200,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
     layers.push({ c: sky, k: 0, y: 0, fixed: true });
     // far, mid and near silhouettes
@@ -76,6 +92,11 @@ function paintBackground(w, W, H) {
                 x.fillRect(px - cw / 2, base - chh, cw, chh); x.fillRect(px - cw * 0.7, base - chh, cw * 1.4, 8);
                 if (li < 2) { x.save(); x.globalAlpha = 0.35; x.fillStyle = '#ff7a2a'; x.fillRect(px - cw * 0.3, base - chh * 0.6, cw * 0.6, 4); x.restore(); } }
             const lg = x.createLinearGradient(0, H * 0.8, 0, H); lg.addColorStop(0, 'rgba(255,90,20,0)'); lg.addColorStop(1, `rgba(255,90,20,${0.35 - li * 0.08})`); x.fillStyle = lg; x.fillRect(0, H * 0.8, W, H * 0.2);
+        } else if (T.deco === 'frost') {      // jagged peaks with snow on their shoulders
+            const pk = px => hAt(px) - Math.abs(((px / W * (7 + li * 4) + li * 0.37) % 1) - 0.5) * H * (0.34 - li * 0.08);
+            x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 5) x.lineTo(px, pk(px)); x.lineTo(W, H); x.fill();
+            x.save(); x.globalAlpha = 0.55 - li * 0.12; x.fillStyle = '#eef6ff';
+            x.beginPath(); x.moveTo(0, pk(0)); for (let px = 0; px <= W; px += 5) x.lineTo(px, pk(px)); for (let px = W; px >= 0; px -= 5) x.lineTo(px, pk(px) + 10 + 18 * Math.max(0, Math.sin(px * 0.03 + li))); x.closePath(); x.fill(); x.restore();
         } else {
             x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 6) x.lineTo(px, hAt(px) + Math.sin(px * 0.05) * 6); x.lineTo(W, H); x.fill();
             for (let i = 0; i < 20; i++) { const px = r() * W, py = hAt(px); x.save(); x.globalAlpha = 0.4; x.strokeStyle = T.accent; x.lineWidth = 2; x.beginPath(); x.moveTo(px, py); x.bezierCurveTo(px + 20, py - 60, px - 20, py - 120, px + 10, py - 170 - r() * 80); x.stroke(); x.restore(); }
@@ -150,6 +171,11 @@ function drawTile(x, T, tx, ty, solid, w, seed) {
             x.fillStyle = '#fff'; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 2);
             x.fillStyle = 'rgba(200,160,60,.8)'; x.fillRect(0, 6, s, 1.5);
             if (r() < 0.25) { x.fillStyle = '#5cb85a'; for (let k = 0; k < 4; k++) { x.beginPath(); x.ellipse(4 + r() * 24, 1, 3, 1.6, r(), 0, 7); x.fill(); } }
+        } else if (T.deco === 'frost') {      // a lip of snow, drifting over the edges
+            x.fillStyle = T.top2; x.beginPath(); x.moveTo(rTL ? 1 : 0, 0); x.lineTo(s - (rTR ? 1 : 0), 0); x.lineTo(s - (rTR ? 2 : 0), 7);
+            for (let k = 5; k >= 0; k--) x.lineTo(k * s / 5, 6 + r() * 5); x.closePath(); x.fill();
+            x.fillStyle = T.top; x.fillRect(rTL ? 3 : 0, -2, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 5);
+            if (r() < 0.3) { x.fillStyle = 'rgba(160,230,255,.9)'; x.beginPath(); x.arc(4 + r() * 24, 1, 1.2, 0, 7); x.fill(); }
         } else if (T.deco === 'forge') {
             x.fillStyle = '#2a1414'; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 5);
             x.fillStyle = T.top; x.shadowColor = T.top; x.shadowBlur = 8; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 1.6); x.shadowBlur = 0;
@@ -158,8 +184,18 @@ function drawTile(x, T, tx, ty, solid, w, seed) {
             x.fillStyle = T.top; x.shadowColor = T.top; x.shadowBlur = 6; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 1.5); x.shadowBlur = 0;
         }
     }
+    if (dn && T.deco === 'frost' && r() < 0.3) { x.fillStyle = 'rgba(220,245,255,.85)'; const sx = 6 + r() * 20, sl = 5 + r() * 9; x.beginPath(); x.moveTo(sx - 3, s); x.lineTo(sx, s + sl); x.lineTo(sx + 3, s); x.fill(); }
     if (dn && T.deco === 'cave' && r() < 0.35) { x.fillStyle = T.body[1]; const sx = 6 + r() * 20, sl = 6 + r() * 10; x.beginPath(); x.moveTo(sx - 4, s); x.lineTo(sx, s + sl); x.lineTo(sx + 4, s); x.fill(); }
     if (dn && T.deco === 'forest' && r() < 0.3) { x.strokeStyle = '#3a7a3a'; x.lineWidth = 1.4; const vx = 4 + r() * 24, vl = 8 + r() * 18; x.beginPath(); x.moveTo(vx, s); x.quadraticCurveTo(vx + 4, s + vl / 2, vx, s + vl); x.stroke(); }
+    x.restore();
+}
+// 1.5: ice: a cold glassy sheet over the tile, with a shine on top (you slide on it)
+function drawIce(x, tx, ty, top) {
+    x.save(); x.translate(tx * TS, ty * TS);
+    const g = x.createLinearGradient(0, 0, TS, TS); g.addColorStop(0, 'rgba(200,240,255,.78)'); g.addColorStop(1, 'rgba(110,180,230,.7)');
+    x.fillStyle = g; x.fillRect(0, top ? 0 : 0, TS, TS);
+    x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(5, 24); x.lineTo(14, 9); x.moveTo(17, 27); x.lineTo(24, 15); x.stroke();
+    if (top) { x.fillStyle = 'rgba(255,255,255,.95)'; x.fillRect(0, 0, TS, 2.5); x.fillStyle = 'rgba(160,230,255,.6)'; x.fillRect(0, 2.5, TS, 2); }
     x.restore();
 }
 // background (decorative) wall tile: darker, no collision
@@ -193,12 +229,21 @@ const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${
 // ---------- sprites ----------
 // light colours for multiplayer: flame, flame core, body, body edge (0 = Last Light's own gold)
 const LUMI_PALS = [['#ffb347', '#ffe9a8', '#ffe29a', '#ffae42'], ['#4fd2ff', '#c9f4ff', '#b6ecff', '#3aa8e0'], ['#ff6fb5', '#ffd1ea', '#ffc0df', '#e8509a'],
-  ['#7ee06b', '#dcffd2', '#c8f5b8', '#4fb83c'], ['#b48cff', '#e6dbff', '#d6c4ff', '#8a5ce0'], ['#ff6b5a', '#ffd6cf', '#ffc0b5', '#e04a3a']];
+  ['#7ee06b', '#dcffd2', '#c8f5b8', '#4fb83c'], ['#b48cff', '#e6dbff', '#d6c4ff', '#8a5ce0'], ['#ff6b5a', '#ffd6cf', '#ffc0b5', '#e04a3a'],
+  // 1.5: lights you earn (see LOOKS in 60-ui.js): Frost, Dawn, Aurora, Sunlit, Gloomlight
+  ['#9fe8ff', '#ffffff', '#e4f8ff', '#62b0e0'], ['#ff9f8a', '#fff1e0', '#ffdcc8', '#e9775f'], ['#6af2c8', '#f2e6ff', '#c6f6ec', '#8a6ae0'],
+  ['#ffd23a', '#fffbe0', '#fff1a0', '#e0a400'], ['#8a5aff', '#e8dcff', '#6a4aa8', '#2e1a5e']];
 const Sprites = {
     // p.pal / p.shape: in multiplayer every player is a different light (a colour and a flame shape, see 48-mp.js)
     lumi(x, p, t) {
         const sx = p.sx, sy = p.sy, f = p.face, P = LUMI_PALS[p.pal || 0], shape = p.shape || 0;
         x.save(); x.translate(p.x, p.y + 13 - 13 * sy + 1); x.scale(sx, sy);
+        if (p.gliding) {          // 1.5: gliding, the flame spreads into two wings of light
+            const fl = Math.sin(t * 9) * 0.12; x.save(); x.globalAlpha = 0.7; x.fillStyle = P[1];
+            for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * 6, -3); x.quadraticCurveTo(sd * 22, -17 - fl * 20, sd * 31, -5 + fl * 10); x.quadraticCurveTo(sd * 20, -2, sd * 8, 5); x.closePath(); x.fill(); }
+            x.globalAlpha = 0.9; x.fillStyle = P[0]; for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * 7, -2); x.quadraticCurveTo(sd * 18, -11 - fl * 14, sd * 24, -4 + fl * 8); x.quadraticCurveTo(sd * 16, -1, sd * 8, 3); x.closePath(); x.fill(); }
+            x.restore();
+        }
         // flame tuft (one, two, a crown of three, or a curl)
         const fl = Math.sin(t * 14) * 2, fl2 = Math.cos(t * 11) * 2, tip = -27 - Math.abs(p.vy) * 0.008;
         x.fillStyle = P[0];
@@ -341,11 +386,39 @@ const Sprites = {
     },
     vent(x, v, t, T) {        // the wind column: pale streaks that rise
         x.save(); const h = v.h * TS;
+        if (T.deco === 'frost') {      // 1.5: a snow geyser: flakes blown up the column
+            x.fillStyle = 'rgba(220,240,255,.85)';
+            for (let i = 0; i < 9; i++) { const u = ((t * 0.7 + i * 0.113 + v.seed * 0.07) % 1); x.globalAlpha = Math.sin(u * Math.PI) * 0.9; x.beginPath(); x.arc(v.x + 5 + ((i * 11 + v.seed * 5) % (TS - 10)) + Math.sin(t * 4 + i) * 3, v.y + TS - 6 - u * (h - 8), 1.6 + (i % 3) * 0.6, 0, 7); x.fill(); }
+            x.globalAlpha = 1;
+        }
         x.fillStyle = 'rgba(255,255,255,.07)'; x.fillRect(v.x + 4, v.y + TS - h, TS - 8, h);
         x.fillStyle = 'rgba(40,40,50,.8)'; x.fillRect(v.x + 2, v.y + TS - 5, TS - 4, 5);
         x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 1.5; x.lineCap = 'round';
         for (let i = 0; i < 5; i++) { const u = ((t * 0.55 + i * 0.21 + v.seed * 0.13) % 1), yy = v.y + TS - 6 - u * (h - 8), xx = v.x + 6 + ((i * 7 + v.seed * 3) % (TS - 12)) + Math.sin(t * 5 + i) * 2;
             x.globalAlpha = Math.sin(u * Math.PI) * 0.85; x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx, yy - 9); x.stroke(); }
+        x.restore();
+    },
+    // 1.5 Frostveil: a frostwisp (a fleck of The Gloom's smoke, frozen: it drifts at you) and a snowpuff (lobs snowballs)
+    wisp(x, e, t) {
+        const b = Math.sin(t * 3 + e.seed) * 3, a = e.chase ? 1 : 0.75;
+        x.save(); x.translate(e.x, e.y + b); x.globalAlpha = a;
+        x.fillStyle = 'rgba(150,200,255,.25)'; x.beginPath(); x.arc(0, 0, 17, 0, 7); x.fill();
+        x.strokeStyle = '#d8f0ff'; x.lineWidth = 2.2; x.lineCap = 'round';
+        for (let i = 0; i < 6; i++) { const ang = i / 6 * Math.PI * 2 + t * 0.8 + e.seed; x.beginPath(); x.moveTo(Math.cos(ang) * 4, Math.sin(ang) * 4); x.lineTo(Math.cos(ang) * 13, Math.sin(ang) * 13);
+            x.moveTo(Math.cos(ang) * 9 + Math.cos(ang + 0.9) * 3.5, Math.sin(ang) * 9 + Math.sin(ang + 0.9) * 3.5); x.lineTo(Math.cos(ang) * 9, Math.sin(ang) * 9); x.lineTo(Math.cos(ang) * 9 + Math.cos(ang - 0.9) * 3.5, Math.sin(ang) * 9 + Math.sin(ang - 0.9) * 3.5); x.stroke(); }
+        x.fillStyle = '#2a1a4a'; x.beginPath(); x.arc(0, 0, 6.5, 0, 7); x.fill();
+        x.fillStyle = e.chase ? '#ffffff' : '#9fd8ff'; x.beginPath(); x.arc(-2.4 + (e.dir || 0) * 1.2, -0.5, 1.5, 0, 7); x.arc(2.4 + (e.dir || 0) * 1.2, -0.5, 1.5, 0, 7); x.fill();
+        x.restore();
+    },
+    puff(x, e, t, T) {
+        const wind = e.wind || 0, sq = (e.sq || 0), bob = Math.sin(t * 4 + e.seed) * 1;
+        x.save(); x.translate(e.x, e.y + 16); x.scale(1 + sq * 0.25 - wind * 0.08, 1 - sq * 0.25 + wind * 0.12);
+        const g = x.createRadialGradient(-4, -18, 2, 0, -12, 18); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#a8c8e8');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, -12 + bob, 15, 13, 0, 0, 7); x.fill();
+        x.beginPath(); x.arc(-9, -20 + bob, 6, 0, 7); x.arc(8, -21 + bob, 5, 0, 7); x.fill();
+        x.fillStyle = '#1a2a44'; const ex = (e.dir || 1) * 3; x.beginPath(); x.arc(-4 + ex, -14 + bob, 1.8, 0, 7); x.arc(4 + ex, -14 + bob, 1.8, 0, 7); x.fill();
+        x.fillStyle = '#ff9ab0'; x.globalAlpha = 0.5; x.beginPath(); x.ellipse(-8 + ex, -10 + bob, 2.4, 1.3, 0, 0, 7); x.ellipse(8 + ex, -10 + bob, 2.4, 1.3, 0, 0, 7); x.fill(); x.globalAlpha = 1;
+        if (wind > 0) { x.fillStyle = '#fff'; x.beginPath(); x.arc((e.dir || 1) * 13, -26 - wind * 6, 5 + wind * 2, 0, 7); x.fill(); }      // the snowball, held up before the throw
         x.restore();
     },
     spark(x, e, t) {

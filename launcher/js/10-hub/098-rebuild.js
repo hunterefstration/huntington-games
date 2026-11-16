@@ -5,8 +5,8 @@
 // account's saves: only ever RAISING a number, never lowering one, and the server keeps whatever it replaces ('~pre:').
 // What the boards do not say cannot come back: which Last Light levels were flawless, stars on the others, the exact
 // Brown E Clicker run (its heavenly chips come back as at least what one run of the lifetime total would give).
-var RB_LUMI = (function () { var a = []; for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) a.push(w + '-' + n); a.push('5-1'); return a; })();
-var RB_GIVES = { '1-10': 'double', '2-10': 'wall', '3-10': 'dash' };
+var RB_LUMI = (function () { var a = []; for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) a.push(w + '-' + n); a.push('5-1'); for (var f = 1; f <= 11; f++) a.push('6-' + f); return a; })();      // (1.5: + Frostveil)
+var RB_GIVES = { '1-10': 'double', '2-10': 'wall', '3-10': 'dash', '6-1': 'glide' };
 function rbJ(v) { try { var o = JSON.parse(v); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } }
 function rbN(v) { v = Number(v); return isFinite(v) ? v : 0; }
 function rbMax(o, k, v) { if (!(v > 0)) return false; if (!(rbN(o[k]) >= v)) { o[k] = v; return true; } return false; }
@@ -33,10 +33,10 @@ function rbBuild(boards, cur, ach) {
       if (!(rbN(r.clears) >= 1)) { r.clears = 1; ch = true; }
       if (RB_GIVES[id] && !ab[RB_GIVES[id]]) { ab[RB_GIVES[id]] = true; ch = true; }
     });
-    var fl = B['lumi:flawless'] ? rbN(B['lumi:flawless'].s) : 0;
-    if (fl > 0 && fl >= lumi.length) lumi.forEach(function (id) { var r = lv[id]; if (!r.perfect) { r.perfect = true; r.flawless = true; r.moths = [true, true, true]; ch = true; } });   // every finished level was flawless: so all of them
+    var fl = B['lumi:flawless'] ? rbN(B['lumi:flawless'].s) : 0, main = lumi.filter(function (id) { return !/^6-/.test(id); });      // (flawless counts the main game)
+    if (fl > 0 && fl >= main.length) main.forEach(function (id) { var r = lv[id]; if (!r.perfect) { r.perfect = true; r.flawless = true; r.moths = [true, true, true]; ch = true; } });   // every finished level was flawless: so all of them
     if (B['lumi:onelife']) { var ru = rbObj(o, 'runs'); if (rbMax(ru, 'onelife', rbN(B['lumi:onelife'].s))) ch = true; }
-    if (ch) notes.push('Last Light: ' + lumi.length + ' finished levels with their best times' + (fl > 0 && fl < lumi.length ? ' (which ' + fl + ' were flawless is not known)' : ''));
+    if (ch) notes.push('Last Light: ' + lumi.length + ' finished levels with their best times' + (fl > 0 && fl < main.length ? ' (which ' + fl + ' were flawless is not known)' : ''));
     return ch;
   });
   // Blocky Shooter: XP over every prestige (49 ranks of 600 + 200r), kills, best waves

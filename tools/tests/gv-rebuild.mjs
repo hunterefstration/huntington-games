@@ -62,7 +62,7 @@ async function createAccount(page, name) {
   await page.click('#gate #gl-fin');
   return key;
 }
-const LV = []; for (let w = 1; w <= 2; w++) for (let n = 1; n <= 10; n++) LV.push(w + '-' + n); LV.push('3-1', '3-2');      // 22 levels done, both first guardians
+const LV = []; for (let w = 1; w <= 2; w++) for (let n = 1; n <= 10; n++) LV.push(w + '-' + n); LV.push('3-1', '3-2', '6-1', '6-2');      // 24 levels done, both first guardians, and (1.5) two in Frostveil
 try {
   const D = await device(await browser.newContext({ viewport: { width: 1280, height: 900 } }));
   await createAccount(D, 'RebBoss'); await until(async () => (await status(D)) === 'online', 60000);
@@ -100,7 +100,7 @@ try {
   await until(() => D.evaluate(() => !!document.querySelector('[data-padm="rebuild"]')), 15000);
   await D.click('[data-padm="rebuild"]');
   const preview = await until(() => D.evaluate(() => { const t = document.getElementById('pa-lookout').innerText; return /Rebuild for/.test(t) ? t : null; }), 15000);
-  check('a preview says what comes back', /Last Light: 22 finished levels/.test(preview || '') && /Blocky/.test(preview || '') && /Brown E Clicker/.test(preview || '') && /achievements/.test(preview || ''), (preview || '').replace(/\s+/g, ' ').slice(0, 300));
+  check('a preview says what comes back', /Last Light: 24 finished levels/.test(preview || '') && /Blocky/.test(preview || '') && /Brown E Clicker/.test(preview || '') && /achievements/.test(preview || ''), (preview || '').replace(/\s+/g, ' ').slice(0, 300));
   await D.click('[data-padm="rebuild-go"]');
   const done = await until(() => D.evaluate(() => { const t = document.getElementById('pa-lookout').innerText; return /Rebuilt \d+ save/.test(t) ? t : null; }), 15000);
   check('the rebuilt saves are written', !!done, String(done).slice(0, 120));
@@ -108,6 +108,7 @@ try {
   const got = await U.evaluate(() => ({ lumi: JSON.parse(localStorage.getItem('lumi_save')), bl: JSON.parse(localStorage.getItem('blocky21_life')), cl: JSON.parse(localStorage.getItem('brownEClickerSave')), sp: JSON.parse(localStorage.getItem('spikes100_progress')), ach: JSON.parse(localStorage.getItem('hgach:v1') || '{}') }));
   check('Last Light: every level finished, with its best time', LV.every((id, i) => got.lumi.levels[id] && got.lumi.levels[id].clears >= 1 && got.lumi.levels[id].best === 20 + i), JSON.stringify(got.lumi.levels['2-10']));
   check('...the two guardians\' abilities, and the one-life best', got.lumi.abilities.double && got.lumi.abilities.wall && !got.lumi.abilities.dash && got.lumi.runs && got.lumi.runs.onelife === 7);
+  check('...and Frostveil\'s glide (6-1 has a time)', got.lumi.abilities.glide === true, JSON.stringify(got.lumi.abilities));
   check('Blocky: prestige, XP and kills', got.bl.prestige === 2 && got.bl.xp === 5000 && got.bl.kills === 4321 && got.bl.best.classic === 31, JSON.stringify(got.bl));
   check('Brown E Clicker: Brown E\'s made, ascensions, and heavenly chips worth one run of the lifetime total', got.cl.life.earned === 8e20 && got.cl.meta.ascensions === 12 && got.cl.meta.chipsTotal === Math.floor(Math.cbrt(8e20 / 1e9)), JSON.stringify(got.cl.meta));
   check('Spikes: levels unlocked', got.sp.unlocked === 64 && got.sp.bestOneLife === 12);
@@ -117,7 +118,7 @@ try {
   const F = await until(async () => { const f = U.frames().find(f => /Last%20Light\/index/.test(f.url())); return f && await f.evaluate(() => !!window.__lumi).catch(() => false) ? f : null; }, 40000);
   if (!F) console.log('    frames:', U.frames().map(f => f.url().slice(0, 90)).join(' | '));
   const inGame = F && await F.evaluate(() => ({ n: Object.keys(__lumi.SAVE.d.levels).length, dbl: __lumi.SAVE.d.abilities.double, best: __lumi.SAVE.d.levels['2-10'].best }));
-  check('Last Light loads it: 22 levels, the abilities, the times', !!inGame && inGame.n === 22 && inGame.dbl && inGame.best === 39, JSON.stringify(inGame));
+  check('Last Light loads it: 24 levels, the abilities, the times', !!inGame && inGame.n === 24 && inGame.dbl && inGame.best === 39, JSON.stringify(inGame));
   await U.evaluate(() => { try { closePlayer(); } catch (e) {} }); await sleep(1500); await U.evaluate(() => { feedNow(); return HGGrapevine.sync.run(); }); await sleep(2000);      // (opening the game earned new achievements: let them all arrive)
   const dbg = await D.evaluate(() => HGGrapevine.eco.acctLook('RebLost').then(look => HGGrapevine.eco.savesAdminGet('RebLost', ['hgach:v1']).then(r => { const g = JSON.parse((r.values[0] || {}).v || '{}'); return { server: look.achIds.filter(i => !g[i]), local: Object.keys(g).length }; })));
   console.log('    achievements the saved list lacks:', JSON.stringify(dbg));

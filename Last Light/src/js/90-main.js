@@ -7,7 +7,13 @@ addEventListener('resize', () => R.resize());
 
 // buttons
 const on = (id, fn) => { const el = $(id); if (el) el.onclick = () => { Sound.init(); Sound.play('click'); fn(); }; };
-on('t-play', () => fadeTo(() => UI.map()));
+on('t-play', () => fadeTo(() => UI.map('story')));
+on('t-trials', () => fadeTo(() => UI.map('trial')));          // 1.5
+on('t-look', () => UI.looks());
+on('lk-done', () => UI.show('title'));
+on('t-ver', () => UI.show('new'));
+on('new-done', () => UI.show('title'));
+on('m-mode', () => UI.map(UI.mapMode === 'trial' ? 'story' : 'trial'));
 on('t-settings', () => UI.settings('title'));
 on('t-how', () => UI.show('how'));
 on('t-stats-btn', () => UI.stats());
@@ -27,7 +33,7 @@ on('p-restart', () => { G.run = null; if (G.mp) mpReset(); fadeTo(() => G.start(
 on('p-settings', () => UI.settings('pause'));
 on('p-map', () => { G.run = null; if (G.mp) mpReset(); fadeTo(() => UI.map()); });
 on('d-retry', () => fadeTo(() => G.start(G.idx)));
-on('d-next', () => fadeTo(() => G.start(G.idx + 1)));
+on('d-next', () => fadeTo(() => { if (G.trial) G.trial = trialOpen(G.idx + 1) ? { id: LEVELS[G.idx + 1].id } : null; G.start(G.idx + 1); }));
 on('d-map', () => fadeTo(() => UI.map()));
 on('set-done', () => UI.show(UI._back === 'pause' ? 'pause' : 'title'));
 addEventListener('pointerdown', () => Sound.init(), { once: true });
@@ -86,7 +92,9 @@ setTimeout(() => { const s = $('#splash'); if (!s) return; s.classList.add('out'
 // test hook (used by the launcher's automated tests)
 window.__lumi = {
     get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R, UI, levelNeeds, flawlessCount,
-    start: i => G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i),
+    MEDALS, medalFor, medalTime, medalPoints, LOOKS, frozenFound, GUARDS,
+    trial: i => { G.run = null; G.trial = { id: LEVELS[typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i].id }; G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i); },
+    start: i => { G.trial = null; G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i); },
     step(sec, keys = {}) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { for (const k in keys) Input.touchSet(k, !!keys[k]); G.update(STEP); Input.endFrame(); } for (const k in keys) Input.touchSet(k, false); },
     key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
     tick(sec, watch) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { G.update(STEP); Input.endFrame(); if (watch) watch(G); } },

@@ -3,7 +3,7 @@
 // Feel: coyote time, jump buffering, variable jump height, corner nudges, squash and stretch.
 // ==========================================
 const PH = { g: 2050, fall: 880, run: 270, accG: 2900, accA: 1500, fricG: 3000, fricA: 2600, jump: 690, djump: 610,
-    wallFall: 140, wallJumpX: 320, wallJumpY: 650, dash: 760, dashT: 0.17, spring: 1080, coyote: 0.1, buffer: 0.13, stomp: 470 };
+    wallFall: 140, wallJumpX: 320, wallJumpY: 650, dash: 760, dashT: 0.17, spring: 1080, coyote: 0.1, buffer: 0.13, stomp: 470, glide: 95 };
 
 function makePlayer(x, y) {
     return { x, y, w: 18, h: 24, vx: 0, vy: 0, face: 1, ground: false, coyote: 0, buffer: 0, air: 0, wall: 0, wallT: 0, wallLock: 0,
@@ -23,8 +23,9 @@ function updatePlayer(G, dt) {
     p.downT = Input.held('down') && p.ground ? (p.downT || 0) + dt : 0;
     if (p.downT > 0.15) { p.dropT = 0.22; p.downT = 0; }
     p.dropT = Math.max(0, (p.dropT || 0) - dt);
-    const dir = (Input.held('right') ? 1 : 0) - (Input.held('left') ? 1 : 0);
-    if (Input.hit('jump')) p.buffer = PH.buffer;
+    const dir = (Input.held('right') ? 1 : 0) - (Input.held('left') ? 1 : 0), press = Input.hit('jump');
+    if (press) p.buffer = PH.buffer;
+    let jumped = false;
     p.buffer = Math.max(0, p.buffer - dt); p.coyote = Math.max(0, p.coyote - dt); p.wallT = Math.max(0, p.wallT - dt);
     p.wallLock = Math.max(0, p.wallLock - dt); p.hurtT = Math.max(0, p.hurtT - dt);
     // dash
@@ -34,17 +35,20 @@ function updatePlayer(G, dt) {
         burst(G, p.x, p.y, '#ffe9a8', 14, 220);
     }
     if (p.dashT > 0) {
-        p.dashT -= dt;
+        p.dashT -= dt; p.gliding = false;
         p.vx = p.dashDir * PH.dash * (p.dashDY ? 0.72 : 1); p.vy = p.dashDY * PH.dash * 0.72;
         if (Math.random() < 0.9) G.ghosts.push({ x: p.x, y: p.y, face: p.face, sx: p.sx, sy: p.sy, life: 0.22 });
         if (p.dashT <= 0) { p.vx *= 0.45; if (p.dashDY) p.vy *= 0.4; }
     } else {
-        // run
-        const target = dir * PH.run;
+        // run (1.5: on ice you get going slowly and slide a long way when you let go)
+        const target = dir * PH.run, fy = Math.floor((p.y + p.h / 2 + 2) / TS);
+        p.onIce = p.ground && !p.on && (isIce(L, Math.floor((p.x - 7) / TS), fy) || isIce(L, Math.floor((p.x + 7) / TS), fy));
+        const accG = p.onIce ? PH.accG * 0.32 : PH.accG, fricG = p.onIce ? PH.fricG * 0.09 : PH.fricG;
         if (p.wallLock <= 0) {
             // in the air: let go and you stop drifting almost at once; turning around takes a moment (no twitchy flips)
-            if (dir) { p.vx = approach(p.vx, target, (p.ground ? PH.accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? (p.ground ? 1.6 : 1.25) : 1)); p.face = dir; }
-            else p.vx = approach(p.vx, 0, (p.ground ? PH.fricG : PH.fricA) * dt);
+            if (dir) { p.vx = approach(p.vx, target, (p.ground ? accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? (p.ground ? 1.6 : 1.25) : 1)); p.face = dir; }
+            else p.vx = approach(p.vx, 0, (p.ground ? fricG : PH.fricA) * dt);
+            if (p.onIce && Math.abs(p.vx) > 90 && Math.random() < 0.25) G.parts.push({ x: p.x - sign(p.vx) * 6, y: p.y + 12, vx: -p.vx * 0.2, vy: rand(-40, -10), life: 0.35, max: 0.35, size: rand(1.5, 3), color: '#e8f8ff', drag: 3 });
         }
         // gravity, wall slide
         p.vy = Math.min(p.vy + PH.g * dt * (p.vy > 0 ? 1.18 : 1), PH.fall);
@@ -58,17 +62,29 @@ function updatePlayer(G, dt) {
         // jump: from the ground (or just after leaving it), off a wall, or in the air
         if (p.buffer > 0) {
             if (p.ground || p.coyote > 0) {
-                p.vy = -PH.jump; p.ground = false; p.coyote = 0; p.buffer = 0; p.cut = false; p.on = null;
+                p.vy = -PH.jump; p.ground = false; p.coyote = 0; p.buffer = 0; p.cut = false; p.on = null; jumped = true;
                 p.sx = 0.72; p.sy = 1.32; Sound.play('jump'); dust(G, p.x, p.y + 12, 6); G.stats.jumps++; ST('jumps');
             } else if (A.wall && p.wallT > 0) {
-                p.vy = -PH.wallJumpY; p.vx = -p.wallDir * PH.wallJumpX; p.face = -p.wallDir; p.wallLock = 0.15; p.buffer = 0; p.cut = false; p.wallT = 0;
+                p.vy = -PH.wallJumpY; p.vx = -p.wallDir * PH.wallJumpX; p.face = -p.wallDir; p.wallLock = 0.15; p.buffer = 0; p.cut = false; p.wallT = 0; jumped = true;
                 p.sx = 0.75; p.sy = 1.28; Sound.play('walljump'); ST('walljumps'); dust(G, p.x + p.wallDir * 10, p.y, 6);
             } else if (A.double && p.air > 0) {
-                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump'); ST('djumps');
+                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump'); ST('djumps'); jumped = true;
                 ring(G, p.x, p.y + 10, '#bff7ff');
             }
         }
         if (!Input.held('jump') && p.vy < -220 && !p.cut && !p.springing) { p.vy *= 0.5; p.cut = true; }
+        // 1.5 glide: press jump in the air when it has nothing else to do (no double jump left, no wall), and hold it: you
+        // float down slowly. Holding jump from the ground never glides, so the older levels feel exactly as they did.
+        if (A.glide) {
+            if (press && !jumped && !p.ground && p.coyote <= 0) p.glideArm = true;
+            if (!Input.held('jump') || p.ground || p.wall) p.glideArm = false;
+            const was = p.gliding; p.gliding = !!p.glideArm && p.vy > 0;
+            if (p.gliding) {
+                p.vy = Math.min(p.vy, PH.glide); ST('glide', dt);
+                if (!was) { Sound.play('glide'); ring(G, p.x, p.y + 6, '#e8fbff'); }
+                if (Math.random() < 0.35) G.parts.push({ x: p.x + rand(-16, 16), y: p.y + rand(-2, 6), vx: -p.vx * 0.1, vy: rand(10, 40), life: 0.5, max: 0.5, size: rand(1.5, 3), color: '#fff2c4', add: true });
+            }
+        } else p.gliding = false;
     }
     // move: x then y, against the level
     const wasGround = p.ground, vyBefore = p.vy;
@@ -90,7 +106,7 @@ function updatePlayer(G, dt) {
     if (!p.ground && p.dashT <= 0) { const st = clamp(Math.abs(p.vy) / 2600, 0, 0.18); p.sy = Math.max(p.sy, 1 + st * 0.5); p.sx = Math.min(p.sx, 1 - st * 0.4); }
     // trail of light when moving fast
     p.trailT -= dt;
-    if (p.trailT <= 0 && (Math.abs(p.vx) > 150 || Math.abs(p.vy) > 300)) { p.trailT = 0.03; G.parts.push({ x: p.x + rand(-4, 4), y: p.y + rand(-2, 6), vx: -p.vx * 0.05, vy: rand(-20, 10), life: 0.45, max: 0.45, size: rand(2, 4), color: '#ffd98a', add: true }); }
+    if (p.trailT <= 0 && (Math.abs(p.vx) > 150 || Math.abs(p.vy) > 300)) { p.trailT = 0.03; G.parts.push({ x: p.x + rand(-4, 4), y: p.y + rand(-2, 6), vx: -p.vx * 0.05, vy: rand(-20, 10), life: 0.45, max: 0.45, size: rand(2, 4), color: (LUMI_PALS[p.pal || 0] || LUMI_PALS[0])[1], add: true }); }
     // hazards
     if (p.hurtT <= 0 || true) hazards(G);
     if (p.y > L.h * TS + 24) hurt(G, 'pit');
@@ -236,13 +252,18 @@ function updateWorld(G, dt) {
             case 'hopper': hopper(G, e, dt); break;
             case 'drip': drip(G, e, dt); break;
             case 'jet': jet(G, e, dt); break;
+            case 'wisp': wisp(G, e, dt); break;
+            case 'puff': puff(G, e, dt); break;
             case 'heart':       // a heart that appears in a guardian fight; only picked up when you are missing one
                 if (!p.dead && near(p, e, 20) && p.hearts < G.maxHearts()) { e.gone = true; p.hearts++; Sound.play('lantern'); burst(G, e.x, e.y, '#ff9ab0', 16, 160, true); G.toast('A heart!'); G.hud(); }
                 break;
             case 'secret':      // a lost lantern, hidden away: finding it is remembered
                 if (!p.dead && near(p, e, 22)) {
                     e.gone = true; SAVE.d.secrets = SAVE.d.secrets || {}; const first = !SAVE.d.secrets[G.L.def.id]; SAVE.d.secrets[G.L.def.id] = true; if (first) ST('secrets'); SAVE.write();
-                    Sound.play('shrine'); G.white = 0.35; burst(G, e.x, e.y, '#bff7ff', 40, 260, true); ring(G, e.x, e.y, '#bff7ff'); UI.banner('A lost lantern', first ? 'Secret found' : 'You found it again', 'Hidden lanterns are scattered across the valley');
+                    Sound.play('shrine'); G.white = 0.35; burst(G, e.x, e.y, '#bff7ff', 40, 260, true); ring(G, e.x, e.y, '#bff7ff');
+                    lookCheck();
+                    if (G.L.world === 5) UI.banner('A frozen lantern', first ? 'It thaws in your light' : 'You found it again', frozenFound() + ' of 11 frozen lanterns found');
+                    else UI.banner('A lost lantern', first ? 'Secret found' : 'You found it again', 'Hidden lanterns are scattered across the valley');
                 }
                 break;
         }
@@ -333,6 +354,38 @@ function jet(G, e, dt) {
         if (!p.dead && p.hurtT <= 0 && p.dashT <= 0 && Math.abs(p.x - e.x) < 15 && p.y > e.y - TS * 3.4 && p.y < e.y + 18) hurt(G, 'enemy', { kind: 'jet', x: e.x, y: p.y + 30 });
     }
 }
+// 1.5 frostwisp: drifts about where it was left; come within 6 tiles and it drifts at you (slowly: outrun it, or stomp it).
+// It goes back home once it is 9 tiles from where it started. Smoke goes through walls.
+function wisp(G, e, dt) {
+    const p = G.p; if (e.dead) return;
+    const d = Math.hypot(p.x - e.x, p.y - e.y), home = Math.hypot(e.sx - e.x, e.sy - e.y);
+    e.chase = !p.dead && !G.done && d < TS * 6 && home < TS * 9;
+    if (e.chase && !e.was) Sound.play('wisp');
+    e.was = e.chase;
+    const tx = e.chase ? p.x : e.sx + Math.sin(G.t * 0.9 + e.seed) * 20, ty = e.chase ? p.y : e.sy + Math.cos(G.t * 1.3 + e.seed) * 10;
+    const dx = tx - e.x, dy = ty - e.y, dd = Math.hypot(dx, dy) || 1, sp = (e.chase ? 64 : 45) * dt;
+    e.x += dx / dd * Math.min(sp, dd); e.y += dy / dd * Math.min(sp, dd); e.dir = sign(dx);
+    if (d < 900 && Math.random() < 0.08) G.parts.push({ x: e.x + rand(-8, 8), y: e.y + rand(-8, 8), vx: rand(-10, 10), vy: rand(10, 30), life: 0.6, max: 0.6, size: rand(1, 2.5), color: '#d8f0ff', add: true });
+    contact(G, e, 13);
+}
+// 1.5 snowpuff: when you are in range it lifts a snowball over its head (the tell), then lobs it to land where you are
+function puff(G, e, dt) {
+    const p = G.p; if (e.dead) return;
+    e.sq = Math.max(0, (e.sq || 0) - dt * 4);
+    const dx = p.x - e.x, dy = p.y - e.y, near = !p.dead && !G.done && Math.abs(dx) < TS * 11 && Math.abs(dy) < TS * 7;
+    if (near) e.dir = sign(dx) || e.dir || 1;
+    e.cool = (e.cool ?? (1.2 + e.seed % 1.2)) - dt;
+    e.wind = near && e.cool < 0.65 ? Math.min(1, (0.65 - e.cool) / 0.65) : 0;
+    if (e.cool <= 0) {
+        e.cool = 2.4;
+        if (near) {
+            const T = clamp(Math.abs(dx) / 260, 0.55, 1.1), g = 1100, sx = e.x + e.dir * 12, sy = e.y - 14;
+            G.shots.push({ x: sx, y: sy, vx: (p.x + p.vx * 0.2 - sx) / T, vy: (p.y - sy) / T - 0.5 * g * T, g, life: 3, style: 'snow', kind: 'snowball', col: '#ffffff', light: '200,230,255' });
+            e.sq = 1; Sound.play('throw');
+        }
+    }
+    contact(G, e, 14);
+}
 // touching an enemy: from above it is a stomp (not the spiky ones), a dash goes straight through anything, else it hurts
 function contact(G, e, r) {
     const p = G.p; if (p.dead || e.dead) return;
@@ -349,7 +402,7 @@ function kill(G, e) {
     ring(G, e.x, e.y + 12, '#fff3c4'); burst(G, e.x, e.y - 6, '#fff3c4', 8, 140, true);
 }
 function popEnemy(G, e) {
-    const T = WORLDS[G.world], col = e.kind === 'hopper' ? '#8ee06a' : e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
+    const T = WORLDS[G.world], col = e.kind === 'hopper' ? '#8ee06a' : e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : e.kind === 'wisp' ? '#bfe8ff' : e.kind === 'puff' ? '#ffffff' : '#b8481c';
     for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });
     for (let i = 0; i < 5; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-120, 120), vy: rand(-260, -120), life: 0.8, max: 0.8, size: rand(4, 6), color: '#ffe08a', g: 500, star: true });
     burst(G, e.x, e.y, '#fff3c4', 10, 160, true); Sound.play('pop');

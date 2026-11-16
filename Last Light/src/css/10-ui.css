@@ -227,3 +227,28 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
 .sv input, .sv textarea { background: rgba(0,0,0,.35); color: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: 600 14px system-ui, sans-serif; }
 .sv textarea { width: 100%; height: 64px; font: 12px monospace; margin-top: 8px; }
 .sv .badge { background: var(--gold); color: #1b1404; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 900; margin-left: 6px; vertical-align: middle; }
+
+/* 1.5: trials, medals, your light, what's new */
+#s-title .ver { background: none; border: 0; font-family: inherit; cursor: pointer; }
+#s-title .ver u { color: #bff7ff; }
+.newtag { font-size: 10px; text-transform: uppercase; background: #7df9ff; color: #06303a; border-radius: 6px; padding: 1px 5px; margin-left: 4px; vertical-align: 2px; }
+.topbar #m-mode { min-width: 0; margin-left: auto; margin-right: 14px; }
+#s-map.trialmode .topbar .ttl { color: #bff7ff; text-shadow: 0 0 14px rgba(120, 230, 255, .5); }
+.medal { display: inline-block; color: var(--mc, #888); text-shadow: 0 0 8px var(--mc, transparent); font-size: 15px; line-height: 1; }
+.medal.big { font-size: 26px; } .medal.none { color: rgba(255, 255, 255, .25); text-shadow: none; }
+.mt { white-space: nowrap; margin-left: 8px; opacity: .55; font-weight: 700; } .mt.got { opacity: 1; }
+#h-trial { font-size: 14px; font-weight: 800; margin-top: 2px; text-shadow: 0 2px 6px #000; font-variant-numeric: tabular-nums; }
+.lvl.secretlv .num { background: radial-gradient(circle, #e8fbff, #6ab8e0); color: #06303a; }
+.lk-top { display: flex; align-items: center; gap: 18px; justify-content: center; margin-bottom: 10px; }
+.lk-top #lk-n { font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+#lk-list { width: 100%; align-self: stretch; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 46vh; overflow: auto; margin-bottom: 8px; }
+.look { font: inherit; color: var(--txt); background: rgba(255, 255, 255, .06); border: 1px solid var(--line); border-radius: 12px; padding: 6px 4px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.look span { font-weight: 800; font-size: 13px; } .look small { font-size: 10px; opacity: .7; line-height: 1.2; }
+.look.on { border-color: var(--gold); background: rgba(255, 211, 107, .16); box-shadow: 0 0 14px rgba(255, 211, 107, .35); }
+.look.locked canvas { filter: grayscale(1) brightness(.45); } .look.locked span { opacity: .55; }
+.newlist p { text-align: left; line-height: 1.45; margin: 8px 0; }
+/* 1.5: ten buttons on the title: Play on its own row, the rest two by two (one column on a narrow phone) */
+#s-title .menu { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; margin-top: 4vh; }
+#s-title .menu .btn.big { grid-column: 1 / -1; justify-self: center; }
+#s-title .menu .btn { margin: 5px; }
+@media (max-width: 480px) { #s-title .menu { grid-template-columns: auto; } }

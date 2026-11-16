@@ -7,7 +7,7 @@ Levels are drawn with small helpers (ground, pits, ledges, things at coordinates
 columns always line up. The checker walks a simplified model of the player's moves over the tiles (jump heights and
 distances below are a little shorter than the real ones) and reports anything it cannot reach: the gate, every
 spark, every star moth, every lantern."""
-import json, os, sys, collections, random
+import json, os, sys, collections, random, heapq, math
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'src', 'js', '70-levels.js')
@@ -35,6 +35,9 @@ class Lv:
     def widen(s, n):
         for r in s.g: r.extend([' '] * n)
         s.w += n
+    def deepen(s, n):                             # more rows at the bottom: ground goes on down, pits stay open
+        for _ in range(n): s.g.append([c if c in '#Il' else ' ' for c in s.g[-1]])
+        s.h += n
     def map(s): return [''.join(r).rstrip() for r in s.g]
 
 LEVELS = []
@@ -746,12 +749,172 @@ def n49():
     c.perch(x0, b, 6, 3, rise=3); lava(c, 8, 1); c.run(5); lava(c, 8, 1); c.run(14, lamp=3, foes=[(9, 'f')]); v.put(c.x - 3, c.b - 1, 'E')
     return v
 
+# =====================================================================  1.5: FROSTVEIL (every move, plus the glide from 6-1's shrine)
+# The peaks above the Sky Ruins, where the last of The Gloom's smoke drifted and froze. Long drops into nothing (glide over
+# them: about 3 tiles sideways for each tile you sink), ice ('I': slippery), snow geysers ('W' on a pillar: ride the wind up,
+# then glide on), icicles ('v'), frostwisps ('w': drift at you, stomp them) and snowpuffs ('y': lob snowballs).
+# Every level hides one frozen lantern ('z'): the eleven lights that never came home. 6-11 opens when the first ten are found.
+def iced(c, n, **kw):
+    x0, b = c.run(n, **kw); c.v.rect(x0, b, x0 + n - 1, b, 'I'); return x0, b
+def geyser(v, x, top, w=2):
+    """a pillar out of the dark with a snow geyser on top (its column of wind throws you up)"""
+    v.rect(x, top, x + w - 1, v.h - 1, '#')
+    for i in range(w): v.put(x + i, top - 1, 'W')
+def chasm(c, n, h=3, geysers=()):
+    """a wide drop into nothing; geysers: [(dx, depth)] = a pillar with a geyser, its top `depth` rows under the ground line"""
+    s = c.x; c.gap(n, h)
+    for dx, d in geysers:
+        if c.b + d > c.v.h - 4: c.v.deepen(c.b + d - c.v.h + 4)
+        geyser(c.v, s + dx, c.b + d)
+    return s
+def overhang(v, x0, x1, row, icicles=()):
+    """a shelf of rock over the path (row = its lowest row), with icicles hanging under it"""
+    v.rect(x0, row - 2, x1, row, '#')
+    for x in icicles: v.put(x, row + 1, 'v')
+
+@level
+def f61():
+    v = Lv('6-1', 'Snowline', 5, 150, 30, gives='glide', hint='Hold jump in the air to glide'); c = Course(v, 22)
+    x0, b = c.run(20, lamp=5); v.put(3, 21, 'P'); v.put(x0 + 14, b - 1, 'u')
+    c.gap(7); x0, b = c.run(10, sparks=3); c.perch(x0, b, 2, 3, rise=3)
+    chasm(c, 14); x0, b = c.run(14, lamp=2, foes=[(9, 'g')]); c.down(4)
+    chasm(c, 17, 4); x0, b = c.run(12, lamp=2, sparks=3)
+    s = chasm(c, 24, 3, geysers=[(11, 5)]); v.put(s + 12, c.b - 8, '*'); x0, b = c.run(16, lamp=3, foes=[(10, 'w')])
+    v.ledge(x0 + 11, x0 + 14, b - 7); v.put(x0 + 13, b - 8, 'z'); v.rect(x0 + 9, b - 3, x0 + 9, b - 1, '#')
+    c.up(2); chasm(c, 15); x0, b = c.run(14, lamp=3); v.put(x0 + 10, b - 5, '*'); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f62():
+    v = Lv('6-2', 'Slipstone Pass', 5, 160, 30, hint='Ice is slippery: let go early to stop'); c = Course(v, 22)
+    c.run(12, lamp=8); v.put(3, 21, 'P'); x0, b = iced(c, 16, sparks=4); overhang(v, x0 + 3, x0 + 12, b - 6, [x0 + 5, x0 + 9])
+    c.gap(5); x0, b = iced(c, 6); c.gap(6); x0, b = c.run(12, lamp=2, foes=[(8, 'y')]); c.perch(x0, b, 1, 3, rise=3); c.up(3)
+    chasm(c, 14); x0, b = iced(c, 18, foes=[(12, 'g')]); overhang(v, x0 + 2, x0 + 15, b - 6, [x0 + 4, x0 + 8, x0 + 13]); v.put(x0 + 16, b - 1, 'L')
+    c.gap(5); iced(c, 4); c.gap(5); iced(c, 4); c.gap(5); x0, b = c.run(14, lamp=3, sparks=3); v.put(x0 + 9, b - 6, '*'); c.down(5)
+    chasm(c, 18, 4); x0, b = iced(c, 20, foes=[(14, 'w')]); overhang(v, x0 + 4, x0 + 11, b - 6, [x0 + 6, x0 + 9]); v.put(x0 + 2, b - 1, 'L')
+    v.rect(x0 + 15, b - 6, x0 + 18, b - 6, '#'); v.put(x0 + 17, b - 7, 'z')
+    c.gap(6); x0, b = c.run(10); v.put(x0 + 5, b - 7, '*'); c.up(2); chasm(c, 12); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f63():
+    v = Lv('6-3', 'Geyser Fields', 5, 170, 34, hint='Glide into a geyser and ride it up'); c = Course(v, 26)
+    c.run(14, lamp=9, sparks=2); v.put(3, 25, 'P')
+    s = chasm(c, 22, 3, geysers=[(10, 4)]); x0, b = c.run(12, lamp=2, foes=[(8, 'y')]); c.up(4)
+    s = chasm(c, 24, 4, geysers=[(8, 8), (16, 4)]); v.put(s + 9, c.b - 4, '*'); x0, b = c.run(14, lamp=2, foes=[(9, 'g')])
+    c.down(6); s = chasm(c, 26, 4, geysers=[(12, 2)]); v.put(s + 2, c.b + 4, 'z'); v.ledge(s + 1, s + 3, c.b + 5)
+    x0, b = c.run(16, lamp=3, foes=[(10, 'w')], sparks=3); c.perch(x0, b, 9, 3, rise=3)
+    c.up(3); s = chasm(c, 28, 4, geysers=[(9, 6), (18, 6)]); x0, b = c.run(12, lamp=2)
+    s = chasm(c, 16, 3); v.put(s + 8, c.b - 7, '*'); c.run(14, lamp=3, foes=[(8, 'y')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f64():
+    v = Lv('6-4', 'Wisp Hollow', 5, 160, 30, hint='Frostwisps drift toward you. Stomp them, or glide clear'); c = Course(v, 20, ceil=3)
+    c.run(14, lamp=9, sparks=2); v.put(3, 19, 'P'); c.gap(6)
+    x0, b = iced(c, 14, foes=[(9, 'w')]); v.put(x0 + 6, b - 6, 'w'); c.gap(8)
+    x0, b = c.run(12, lamp=2, foes=[(8, 'g')]); c.perch(x0, b, 5, 3, rise=3); c.down(2)
+    s = chasm(c, 14, 2); v.put(s + 5, c.b - 5, 'w'); v.put(s + 10, c.b - 3, 'w'); x0, b = c.run(14, lamp=2, sparks=3)
+    overhang(v, x0 + 4, x0 + 12, b - 5, [x0 + 6, x0 + 10]); c.up(3)
+    c.gap(7); x0, b = iced(c, 8, foes=[(4, 'w')]); c.gap(7); x0, b = c.run(14, lamp=2, foes=[(10, 'y')]); v.put(x0 + 6, b - 6, '*')
+    c.down(4); s = chasm(c, 16, 2); v.put(s + 8, c.b - 4, 'w'); v.put(s + 8, c.b + 4, '*'); v.ledge(s + 7, s + 9, c.b + 5)
+    x0, b = c.run(14, lamp=2, foes=[(9, 'w')]); v.rect(x0 + 10, b - 6, x0 + 13, b - 6, '#'); v.put(x0 + 12, b - 7, 'z'); v.rect(x0 + 10, 3, x0 + 13, b - 9, '#')
+    c.gap(7); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f65():
+    v = Lv('6-5', 'Frozen Falls', 5, 150, 52, hint='Up the frozen falls: climb, ride the wind, then glide down'); c = Course(v, 46)
+    c.run(14, lamp=9, sparks=2); v.put(3, 45, 'P'); c.gap(5)
+    x0, b = c.run(8, lamp=2); climb(v, c, 12, star=True); x0, b = c.run(12, foes=[(7, 'g')], lamp=3)
+    geyser(v, c.x + 3, c.b + 2); c.gap(8); x0, b = c.run(10, lamp=2); c.up(9); c.x = x0 + 4
+    v.ledge(c.x - 6, c.x - 1, c.b); x0, b = c.run(12, lamp=3, foes=[(8, 'w')]); climb(v, c, 12); x0, b = c.run(10, lamp=2, sparks=3)
+    v.ledge(x0 + 3, x0 + 6, b - 7); v.put(x0 + 5, b - 8, 'z'); v.put(x0 + 4, b - 1, 'W')
+    s = chasm(c, 14, 3); x0, b = c.run(12, lamp=2, foes=[(8, 'y')]); c.perch(x0, b, 3, 3, rise=3)
+    # and down again: one long glide past the falls
+    c.down(14); s = chasm(c, 30, 4); v.put(s + 14, c.b - 6, 'w'); v.put(s + 20, c.b - 2, '*')
+    x0, b = c.run(16, lamp=3, foes=[(10, 'g')], sparks=3); c.down(6); chasm(c, 18, 3); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f66():
+    v = Lv('6-6', 'Snowpuff Ridge', 5, 170, 32, hint='Snowpuffs throw snowballs in an arc: keep moving'); c = Course(v, 24)
+    c.run(14, lamp=9, sparks=2); v.put(3, 23, 'P'); c.gap(6)
+    x0, b = c.run(16, lamp=2, foes=[(11, 'y')]); v.ledge(x0 + 5, x0 + 9, b - 5); v.put(x0 + 7, b - 6, 'y'); c.up(3)
+    chasm(c, 15); x0, b = iced(c, 12, foes=[(6, 'g')]); c.gap(6); x0, b = c.run(14, lamp=2, foes=[(10, 'y')]); c.perch(x0, b, 2, 3, rise=3)
+    c.down(5); s = chasm(c, 20, 4, geysers=[(10, 3)]); v.put(s + 11, c.b - 9, '*'); x0, b = c.run(16, lamp=2, foes=[(8, 'y'), (13, 'w')], sparks=3)
+    c.up(4); c.gap(6); x0, b = iced(c, 10); c.gap(6); x0, b = c.run(14, lamp=2, foes=[(9, 'y')])
+    v.ledge(x0 + 2, x0 + 4, b - 4); v.ledge(x0 + 6, x0 + 8, b - 8); v.put(x0 + 7, b - 9, 'y')
+    c.down(6); s = chasm(c, 22, 4); v.put(s + 2, c.b + 4, 'z'); v.rect(s + 1, c.b + 5, s + 3, c.b + 5, '#')
+    x0, b = c.run(16, lamp=3, foes=[(11, 'y')]); v.put(x0 + 12, b - 6, '*'); c.gap(6); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f67():
+    v = Lv('6-7', 'Icicle Gallery', 5, 170, 30, hint='Icicles tremble before they fall. Snow bridges will not hold you long'); c = Course(v, 20, ceil=2)
+    c.run(14, lamp=9, sparks=2); v.put(3, 19, 'P')
+    x0, b = c.run(18, foes=[(12, 'g')]); overhang(v, x0 + 2, x0 + 16, b - 6, [x0 + 4, x0 + 7, x0 + 10, x0 + 13])
+    c.gap(10, 2, 'C', 'C'); x0, b = c.run(12, lamp=2, sparks=3); c.perch(x0, b, 4, 3, rise=3)
+    c.gap(12, 2, 'C', 'C'); x0, b = iced(c, 16, foes=[(11, 'w')]); overhang(v, x0 + 3, x0 + 14, b - 6, [x0 + 5, x0 + 9, x0 + 12]); v.put(x0 + 1, b - 1, 'L')
+    c.down(3); s = chasm(c, 16, 2); v.put(s + 8, c.b + 3, '*'); v.ledge(s + 7, s + 9, c.b + 4); x0, b = c.run(14, lamp=2, foes=[(9, 'y')])
+    c.gap(10, 2, 'C', 'C'); x0, b = c.run(18, lamp=2, foes=[(13, 'w')]); overhang(v, x0 + 4, x0 + 16, b - 6, [x0 + 6, x0 + 9, x0 + 12, x0 + 15])
+    v.rect(x0 + 6, 2, x0 + 9, b - 11, '#'); v.put(x0 + 7, b - 10, 'z'); v.ledge(x0 + 6, x0 + 9, b - 9); c.up(2)
+    c.gap(6); x0, b = iced(c, 12); v.put(x0 + 6, b - 6, '*'); c.gap(8); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f68():
+    v = Lv('6-8', 'The Long Glide', 5, 180, 36, hint='The long way down: hold jump and float'); c = Course(v, 22)
+    c.run(14, lamp=9, sparks=2); v.put(3, 21, 'P')
+    s = chasm(c, 30, 3, geysers=[(14, 6)]); v.put(s + 7, c.b - 4, 'w'); v.put(s + 21, c.b - 4, 'w'); x0, b = c.run(10, lamp=2)
+    c.down(6); s = chasm(c, 24, 4); v.put(s + 12, c.b - 8, '*'); x0, b = c.run(12, lamp=2, foes=[(8, 'y')])
+    c.up(2); s = chasm(c, 32, 3, geysers=[(10, 6), (21, 6)]); v.put(s + 16, c.b - 2, 'w'); v.put(s + 15, c.b + 9, 'z'); v.ledge(s + 14, s + 16, c.b + 10)
+    x0, b = c.run(14, lamp=2, foes=[(9, 'g')], sparks=3); c.perch(x0, b, 4, 3, rise=3); c.down(4)
+    s = chasm(c, 26, 4, geysers=[(13, 5)]); v.put(s + 6, c.b - 5, 'w'); v.put(s + 20, c.b - 5, 'w'); x0, b = c.run(12, lamp=2)
+    c.down(3); s = chasm(c, 22, 3); v.put(s + 11, c.b + 1, '*'); c.run(14, lamp=3, foes=[(9, 'y')]); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f69():
+    v = Lv('6-9', 'Aurora Steps', 5, 170, 40, hint='The roost is close. Everything you learned, all at once'); c = Course(v, 32)
+    c.run(14, lamp=9, sparks=2); v.put(3, 31, 'P'); c.gap(6)
+    x0, b = iced(c, 12, foes=[(7, 'w')]); climb(v, c, 10, star=True); x0, b = c.run(12, lamp=3, foes=[(8, 'y')])
+    s = chasm(c, 24, 3, geysers=[(11, 3)]); v.put(s + 5, c.b - 3, 'w'); v.put(s + 18, c.b - 6, 'w'); x0, b = iced(c, 14, foes=[(9, 'g')]); v.put(x0 + 2, b - 1, 'L')
+    overhang(v, x0 + 4, x0 + 12, b - 6, [x0 + 6, x0 + 10]); c.gap(10, 2, 'C', 'C'); x0, b = c.run(12, lamp=2, sparks=3)
+    c.up(4); c.gap(7); x0, b = c.run(10, foes=[(6, 'y')]); c.perch(x0, b, 1, 3, rise=3); c.down(8)
+    s = chasm(c, 28, 4, geysers=[(9, 6), (19, 4)]); v.put(s + 24, c.b + 3, 'z'); v.ledge(s + 23, s + 25, c.b + 4); x0, b = c.run(14, lamp=2, foes=[(10, 'w')])
+    c.gap(6); x0, b = iced(c, 6); c.gap(6); x0, b = c.run(12, lamp=2); v.put(x0 + 6, b - 6, '*'); c.up(2); chasm(c, 12); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f610():
+    v = Lv('6-10', 'Hoarfrost Roost', 5, 140, 30, hint='The old owl of the peaks waits at the top'); c = Course(v, 24)
+    c.run(14, lamp=9, sparks=2); v.put(3, 23, 'P'); s = chasm(c, 20, 3, geysers=[(9, 4)]); v.put(s + 10, c.b - 7, '*')
+    x0, b = iced(c, 14, foes=[(9, 'w')]); v.put(x0 + 2, b - 1, 'L'); c.up(3); c.gap(7); x0, b = c.run(12, lamp=2, foes=[(8, 'y')]); c.perch(x0, b, 2, 3, rise=3)
+    c.down(4); s = chasm(c, 22, 4); v.put(s + 11, c.b + 2, 'z'); v.ledge(s + 10, s + 12, c.b + 3); x0, b = c.run(14, lamp=2, sparks=3)
+    c.gap(7); x0, b = iced(c, 8); v.put(x0 + 4, b - 6, '*'); c.gap(7); c.run(14, lamp=3); v.put(c.x - 3, c.b - 1, 'E')
+    return v
+
+@level
+def f611():
+    v = Lv('6-11', 'The Eleventh Light', 5, 200, 44, hint='The last frozen lantern. No more lessons: just you and the wind'); c = Course(v, 36)
+    c.run(12, lamp=8); v.put(3, 35, 'P')
+    s = chasm(c, 30, 3, geysers=[(10, 6), (20, 8)]); v.put(s + 15, c.b - 1, 'w'); v.put(s + 25, c.b - 5, 'w'); x0, b = iced(c, 8)
+    climb(v, c, 12); x0, b = iced(c, 10, foes=[(5, 'y')]); v.put(x0 + 1, b - 1, 'L'); overhang(v, x0 + 3, x0 + 9, b - 6, [x0 + 4, x0 + 6, x0 + 8])
+    c.gap(10, 2, 'C', 'C'); x0, b = c.run(8, foes=[(4, 'w')]); c.perch(x0, b, 1, 2, rise=3, moth=False); c.down(10)
+    s = chasm(c, 34, 4, geysers=[(11, 6), (23, 6)]); v.put(s + 6, c.b - 4, 'w'); v.put(s + 17, c.b - 2, 'w'); v.put(s + 29, c.b - 4, 'w'); x0, b = c.run(10, lamp=2)
+    c.gap(6); iced(c, 4); c.gap(7); iced(c, 4); c.gap(8); x0, b = c.run(12, lamp=2, foes=[(8, 'y')]); v.put(x0 + 6, b - 7, '*')
+    c.up(4); climb(v, c, 12, star=True); x0, b = c.run(12, lamp=3, foes=[(8, 'w')])
+    c.down(14); s = chasm(c, 36, 4, geysers=[(18, 4)]); v.put(s + 9, c.b - 3, 'w'); v.put(s + 27, c.b - 3, 'w'); v.put(s + 18, c.b - 12, '*')
+    x0, b = c.run(16, lamp=3); v.put(x0 + 12, b - 1, 'z'); v.put(c.x - 2, c.b - 1, 'E')
+    return v
+
 LEVELS.sort(key=lambda v: (v.world, int(v.id.split('-')[1])))
 
 # =====================================================================  checker
-SOLIDS = set('#CD')
+SOLIDS = set('#CDI')
 def check(v, ab, doors_open=False):
-    SOLIDS = set('#C') if doors_open else set('#CD')
+    SOLIDS = set('#CI') if doors_open else set('#CDI')
     g, W, H = v.g, v.w, v.h
     def t(x, y):
         if x < 0 or x >= W: return '#'
@@ -777,6 +940,8 @@ def check(v, ab, doors_open=False):
     def stand(x, y): return free(x, y) and floor(x, y)
     H1 = 3 + (3 if ab['double'] else 0)
     DX = 5 + (2 if ab['double'] else 0) + (4 if ab['dash'] else 0)
+    GL = ab.get('glide')
+    RX = 32 if GL else DX + 4           # glide (1.5): how far sideways to look
     start = next((x, y) for y in range(H) for x in range(W) if g[y][x] == 'P')
     seen, q, air = {start}, collections.deque([start]), set()
     edges = collections.defaultdict(set)          # stand cell -> stand cells you can get to from it (for the trap check)
@@ -802,17 +967,22 @@ def check(v, ab, doors_open=False):
                 if top not in seen: seen.add(top); upov[top] = 3; q.append(top)
         # every place in reach from here
         for dy in range(-up, H):
-            for dx in range(-DX - 4, DX + 5):
+            for dx in range(-RX, RX + 1):
                 nx, ny = x + dx, y + dy
                 if not (0 <= nx < W and 0 <= ny < H) or not free(nx, ny): continue
                 reach = DX - max(0, -dy - 1) * 0.6 + (max(0, dy) * 0.7 if dy > 0 else 0)
                 if spring: reach = 4 + (2 if ab['double'] else 0) + (4 if ab['dash'] else 0)
+                # glide (1.5): from the top of the jump you float down about 3 tiles sideways for every tile you sink
+                # (the real glide falls 95 px/s while running 270 px/s); counted at 2 tiles, plus 4 for the rise
+                if GL: reach = max(reach, 4 + 2.0 * max(0, up + dy - 1) + (4 if ab['dash'] else 0))
                 if abs(dx) > reach: continue
                 top = min(y, ny) - (1 if dy <= 0 and abs(dx) > 1 else 0)
                 top = max(top, y - up)
-                if not clear_path(x, y, nx, ny, top) and not clear_path(x, y, nx, ny, min(y, ny)): continue
+                tops = (top, min(y, ny), y - up) if GL and abs(dx) > DX else (top, min(y, ny))
+                tops = [tp for tp in tops if tp >= y - up]
+                if not any(clear_path(x, y, nx, ny, tp) for tp in tops): continue
                 air.add((nx, ny))
-                if stand(nx, ny) and (clear_path(x, y, nx, ny, top, True) or clear_path(x, y, nx, ny, min(y, ny), True)): edges[(x, y)].add((nx, ny))
+                if stand(nx, ny) and any(clear_path(x, y, nx, ny, tp, True) for tp in tops): edges[(x, y)].add((nx, ny))
                 if stand(nx, ny) and (nx, ny) not in seen: seen.add((nx, ny)); q.append((nx, ny))
         # wall climbing: any air cell next to a wall, straight up, while the wall goes on
         if ab['wall']:
@@ -838,7 +1008,7 @@ def check(v, ab, doors_open=False):
     if not doors_open and any(g[yy][xx] == 'k' and ((xx, yy) in air or (xx, yy) in seen) for yy in range(H) for xx in range(W)):
         return check(v, ab, True)
     probs = []
-    v.seen = seen
+    v.seen = seen; v.edges = edges; v.start = start
     keys = sum(r.count('k') for r in g) and sum(1 for y in range(H) for x in range(W) if g[y][x] == 'k')
     for y in range(H):
         for x in range(W):
@@ -875,7 +1045,9 @@ def check(v, ab, doors_open=False):
             else: groups.append([c])
         probs += ['TRAP %d,%d (%d cells)' % (gr[0][0], gr[0][1], len(gr)) for gr in groups]
     nm = sum(r.count('*') for r in g)
-    if v.world < 4 and nm != 3: probs.append('%d moths (want 3)' % nm)
+    if v.world != 4 and nm != 3: probs.append('%d moths (want 3)' % nm)
+    if v.world == 5 and sum(r.count('z') for r in g) != 1: probs.append('%d frozen lanterns (want 1)' % sum(r.count('z') for r in g))
+    if v.id in PEOPLE_IN and not any('n' in r for r in g): probs.append('nobody to talk to')
     if not any(c == 'E' for r in g for c in r): probs.append('no gate')
     return probs
 
@@ -884,7 +1056,7 @@ def spice(v):
     """A few more enemies on the open ground of every level after the first (seeded, so the levels never change between
     builds): slimes and bats early, thornbacks and turrets once you can wall-jump. Never near the start, a lantern, the
     gate or anything else, and never two close together."""
-    n = {0: 4, 1: 5, 2: 5, 3: 6}.get(v.world, 0)
+    n = {0: 4, 1: 5, 2: 5, 3: 6, 5: 5}.get(v.world, 0)
     if v.id == '1-1': n = 2
     rnd, g, spots = random.Random('spice' + v.id), v.g, []
     for y in range(3, v.h - 1):
@@ -896,7 +1068,10 @@ def spice(v):
     for x, y in spots:
         if len(used) >= n: break
         if any(abs(x - a) < 9 for a in used): continue
-        kind = rnd.choice('ggb' if v.world < 2 else 'gbht')
+        kind = rnd.choice('ggb' if v.world < 2 else 'gwyh' if v.world == 5 else 'gbht')
+        if kind == 'w':
+            if not all(g[y - k][x] in ' o' for k in range(1, 3)): continue
+            y -= 2
         if kind == 'b':
             if not all(g[y - k][x] in ' o' for k in range(1, 4)): continue
             y -= 3
@@ -905,7 +1080,7 @@ for v in LEVELS: spice(v)
 
 def bats(v):
     """A bat or two hanging over the open jumps (worlds 1-4; never in the first level)."""
-    n = {0: 1, 1: 2, 2: 2, 3: 3}.get(v.world, 0)
+    n = {0: 1, 1: 2, 2: 2, 3: 3, 5: 2}.get(v.world, 0)
     if v.id == '1-1': return
     rnd, g, spots = random.Random('bats' + v.id), v.g, []
     used = [x for y in range(v.h) for x in range(v.w) if g[y][x] in 'gbht']
@@ -930,15 +1105,18 @@ def arena(v, kind):
     v.ground(w0, v.w - 1, floor)
     if floor - 12 >= 0: v.rect(w0, 0, v.w - 1, floor - 12)
     if kind == 'bell': v.ledge(w0 + 8, w0 + 11, floor - 4); v.ledge(w0 + 21, w0 + 24, floor - 4)
+    if kind == 'owl':              # 1.5: two snow geysers in the roost: ride one up, then glide onto the owl
+        for i in (6, 7, 25, 26): v.put(w0 + i, floor - 1, 'W')
     v.put(w0 + 20, floor - 1, 'Q'); v.put(w0 + 31, floor - 1, 'E')
     v.guard = kind
-for lid, kind in (('1-10', 'moss'), ('2-10', 'shard'), ('3-10', 'bell'), ('4-10', 'cinder')):
+for lid, kind in (('1-10', 'moss'), ('2-10', 'shard'), ('3-10', 'bell'), ('4-10', 'cinder'), ('6-10', 'owl')):
     arena(next(v for v in LEVELS if v.id == lid), kind)
 
-ABIL = [dict(double=False, wall=False, dash=False), dict(double=True, wall=False, dash=False), dict(double=True, wall=True, dash=False), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True)]
+ABIL = [dict(double=False, wall=False, dash=False), dict(double=True, wall=False, dash=False), dict(double=True, wall=True, dash=False), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True), dict(double=True, wall=True, dash=True, glide=True)]
 # who has somebody to talk to (the lines are in src/js/65-lore.js): the 16 original levels, and 14 of the new ones
 PEOPLE_IN = {'1-1', '1-2', '1-3', '1-10', '2-1', '2-2', '2-3', '2-10', '3-1', '3-2', '3-3', '3-10', '4-1', '4-2', '4-3', '4-10',
-             '1-5', '1-6', '1-9', '2-5', '2-6', '2-7', '2-9', '3-5', '3-6', '3-8', '3-9', '4-5', '4-6', '4-8', '4-9'}
+             '1-5', '1-6', '1-9', '2-5', '2-6', '2-7', '2-9', '3-5', '3-6', '3-8', '3-9', '4-5', '4-6', '4-8', '4-9',
+             '6-1', '6-2', '6-3', '6-5', '6-6', '6-8', '6-9', '6-10'}
 def npc(v):
     """Somebody to talk to in every level (not the last): standing by a lantern, the safe places on the way. Before a
     guardian, right by the lantern at the arena door. Enemies too close to them are moved out of the way (removed)."""
@@ -964,14 +1142,45 @@ def npc(v):
             if g[yy][xx] in 'gbht': g[yy][xx] = ' '
 for v in LEVELS: npc(v)
 
+# TRIALS (1.5): a gold-medal time per level. The shortest way from the start to the gate (by way of the key, if there is
+# one) over the checker's moves, timed at running speed with a little for every climb, then made fair: x1.25 + 3 s, plus
+# the fight for a guardian or The Gloom. Silver, bronze and the hidden Lumen medal are worked out from it in the game.
+FIGHT = {'moss': 30, 'shard': 34, 'bell': 34, 'cinder': 34, 'owl': 40}
+def par_time(v):
+    E = v.edges
+    def near(ch):
+        cells = [(x, y) for y in range(v.h) for x in range(v.w) if v.g[y][x] == ch]
+        return lambda c: any(abs(c[0] - a) <= 1 and abs(c[1] - b) <= 1 for a, b in cells)
+    def dij(src, goal):
+        dist, pq = {src: 0.0}, [(0.0, src)]
+        while pq:
+            d, c = heapq.heappop(pq)
+            if d > dist.get(c, 1e9): continue
+            if goal(c): return d, c
+            for n in E.get(c, ()):
+                dx, dy = abs(n[0] - c[0]), n[1] - c[1]
+                w = dx / 8.4 + (0.11 * -dy + 0.1 if dy < 0 else 0.035 * dy + (0.1 if dy else 0))
+                if d + w < dist.get(n, 1e9): dist[n] = d + w; heapq.heappush(pq, (d + w, n))
+        return None, None
+    src, t = v.start, 0.0
+    if any('k' in r for r in v.g):
+        d, src = dij(src, near('k'))
+        if d is None: return None
+        t += d
+    d, _ = dij(src, near('E'))
+    if d is None: return None if v.world != 4 else 80.0
+    return t + d
+
 bad = 0
 for v in LEVELS:
     p = check(v, ABIL[v.world])
     sparks = sum(r.count('o') for r in v.g)
-    print('%-4s %-18s %3dx%-3d sparks %3d  %s' % (v.id, v.name, v.w, v.h, sparks, 'OK' if not p else 'PROBLEMS: ' + '; '.join(p[:40])))
+    est = par_time(v)
+    v.par = None if est is None else math.ceil(est * 1.25 + 3 + FIGHT.get(getattr(v, 'guard', None), 0) + (80 if v.world == 4 else 0))
+    print('%-4s %-18s %3dx%-3d sparks %3d par %4s  %s' % (v.id, v.name, v.w, v.h, sparks, v.par, 'OK' if not p else 'PROBLEMS: ' + '; '.join(p[:40])))
     bad += len(p)
 with open(OUT, 'w') as f:
     f.write('// ==========================================\n// LEVELS (generated by tools/levels.py - edit that, then run it)\n// ==========================================\n')
-    f.write('const LEVELS = ' + json.dumps([dict(id=v.id, name=v.name, world=v.world, gives=v.gives, hint=v.hint, guard=getattr(v, 'guard', None), map=v.map()) for v in LEVELS], indent=0) + ';\n')
+    f.write('const LEVELS = ' + json.dumps([dict(id=v.id, name=v.name, world=v.world, gives=v.gives, hint=v.hint, guard=getattr(v, 'guard', None), par=v.par, map=v.map()) for v in LEVELS], indent=0) + ';\n')
 print('wrote', os.path.relpath(OUT), '-', 'all reachable' if not bad else '%d problem(s)' % bad)
 sys.exit(1 if bad and '--strict' in sys.argv else 0)

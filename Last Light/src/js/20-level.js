@@ -8,6 +8,7 @@
 //   M  moving ledge, left/right (runs between walls or '|' markers)    N  moving ledge, up/down (between '|' markers)
 //   (1.2) j  hopper (a frog that hops at you: stomp it)  v  stalactite (falls when you walk under it)  f  fire jet (timed: watch the flicker)
 //         W  updraft vent (a column of wind that lifts you)  z  a lost lantern (a hidden secret)  ! (nothing)
+//   (1.5) I  ice (ground you slide on)   w  frostwisp (drifts at you: stomp it)   y  snowpuff (lobs snowballs: stomp it)
 //   G  The Gloom (the last boss)  Q  the world's guardian (mini boss: def.guard says which)  n  a person to talk to
 // ==========================================
 const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
@@ -15,13 +16,14 @@ const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
 function parseLevel(def) {
     const rows = def.map.slice(), h = rows.length, w = Math.max(...rows.map(r => r.length));
     const L = { def, w, h, world: def.world, tiles: new Uint8Array(w * h), spikes: [], lava: [], ents: [], crumbles: [], doors: [], movers: [],
-        sparks: 0, moths: 0, start: null, marks: new Set(), vents: [] };
+        sparks: 0, moths: 0, start: null, marks: new Set(), vents: [], ice: null };
     const at = (x, y) => (rows[y] || '')[x] || ' ';
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const c = at(x, y), px = x * TS + TS / 2, py = y * TS + TS / 2;
         const set = v => { L.tiles[y * w + x] = v; };
         switch (c) {
             case '#': set(T_SOLID); break;
+            case 'I': set(T_SOLID); (L.ice || (L.ice = new Uint8Array(w * h)))[y * w + x] = 1; break;
             case '=': set(T_ONEWAY); break;
             case '^': set(T_SPIKE); break;
             case 'l': set(T_LAVA); break;
@@ -43,8 +45,8 @@ function parseLevel(def) {
             }
             default:
                 if (c === 'W') { L.vents.push({ tx: x, ty: y, x: x * TS, y: y * TS, h: 0, seed: (x * 31 + y * 17) % 10 }); break; }
-                if ('oEL*SkubgthGQnjvfz'.includes(c)) {
-                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc', j: 'hopper', v: 'drip', f: 'jet', z: 'secret' }[c];
+                if ('oEL*SkubgthGQnjvfzwy'.includes(c)) {
+                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc', j: 'hopper', v: 'drip', f: 'jet', z: 'secret', w: 'wisp', y: 'puff' }[c];
                     L.ents.push({ kind, x: px, y: py, sx: px, sy: py, seed: (x * 7919 + y * 104729) % 1000 / 100 });
                     if (c === 'o') L.sparks++;
                     if (c === '*') L.moths++;
@@ -80,6 +82,7 @@ function parseLevel(def) {
 }
 const tileAt = (L, x, y) => (x < 0 || x >= L.w) ? T_SOLID : (y < 0) ? T_AIR : (y >= L.h) ? T_AIR : L.tiles[y * L.w + x];
 const isSolidT = (L, x, y) => tileAt(L, x, y) === T_SOLID;
+const isIce = (L, x, y) => !!L.ice && x >= 0 && x < L.w && y >= 0 && y < L.h && L.ice[y * L.w + x] === 1;
 // what counts as ground for drawing (the level's edges look like solid rock)
 const solidForArt = L => (x, y) => x < 0 || x >= L.w || (y >= 0 && y < L.h && L.tiles[y * L.w + x] === T_SOLID);
 

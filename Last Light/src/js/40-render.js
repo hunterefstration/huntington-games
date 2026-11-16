@@ -30,7 +30,7 @@ function chunkCanvas(G, cx, cy) {
     }
     for (let ty = cy * CH - 1; ty < cy * CH + CH + 1; ty++) for (let tx = cx * CH - 1; tx < cx * CH + CH + 1; tx++) {
         const t = (tx < 0 || tx >= L.w || ty < 0 || ty >= L.h) ? (tx < 0 || tx >= L.w ? T_SOLID : T_AIR) : L.tiles[ty * L.w + tx];
-        if (t === T_SOLID) drawTile(x, T, tx, ty, solid, G.world, (tx * 73856093) ^ (ty * 19349663) ^ G.world);
+        if (t === T_SOLID) { drawTile(x, T, tx, ty, solid, G.world, (tx * 73856093) ^ (ty * 19349663) ^ G.world); if (isIce(L, tx, ty)) drawIce(x, tx, ty, !solid(tx, ty - 1)); }
         else if (t === T_ONEWAY) drawOneWay(x, T, tx, ty);
     }
     R.chunks.set(key, c); R.chunkOrder.push(key);
@@ -77,7 +77,7 @@ function render(G) {
     for (const v of G.L.vents) if (vis(v.x, v.y - v.h * TS / 2, v.h * TS)) Sprites.vent(x, v, t, T);
     for (const e of G.L.ents) {
         if (e.gone || !vis(e.x, e.y)) continue;
-        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc', hopper: 'hopper', drip: 'drip', jet: 'jet', heart: 'heart', secret: 'secret' }[e.kind];
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc', hopper: 'hopper', drip: 'drip', jet: 'jet', heart: 'heart', secret: 'secret', wisp: 'wisp', puff: 'puff' }[e.kind];
         if (!f) continue;
         if (e.dying !== undefined) {          // stomped: flattened into the ground, then it pops
             const k = clamp(e.dying / 0.22, 0, 1), fy = e.y + 14;
@@ -90,6 +90,7 @@ function render(G) {
     // dash after-images
     for (const g of G.ghosts) { x.save(); x.globalAlpha = g.life / 0.22 * 0.45; x.globalCompositeOperation = 'lighter'; Sprites.lumi(x, { x: g.x, y: g.y, sx: g.sx, sy: g.sy, face: g.face, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0 }, t); x.restore(); }
     mpDraw(x, t);
+    if (G.trial) trialGhostDraw(x, t);
     const P = G.p;
     if (P.spawnT > 0) {      // arriving: a beam of light and you pop into being
         const a = clamp(P.spawnT / 0.75, 0, 1), g = x.createLinearGradient(0, P.y - 400, 0, P.y + 16); g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(1, `rgba(255,240,200,${a * 0.7})`);
@@ -162,6 +163,7 @@ function lightPass(G, cx, cy, vw, vh) {
         else if (e.kind === 'heart') add(e.x, e.y, 80, 0.8, '255,150,170');
         else if (e.kind === 'jet' && (e.fire || e.warn)) add(e.x, e.y - 30, e.fire ? 130 : 60, 0.8, '255,140,60');
         else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');
+        else if (e.kind === 'wisp' && !e.dead) add(e.x, e.y, e.chase ? 70 : 50, 0.6, '170,220,255');
     }
     // small lights: only the nearest dozen (each one costs a draw)
     const near = (a, b) => Math.abs(a[0] - p.x) + Math.abs(a[1] - p.y) - Math.abs(b[0] - p.x) - Math.abs(b[1] - p.y);

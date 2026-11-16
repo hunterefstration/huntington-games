@@ -65,16 +65,21 @@ var LB_FEED = [
   ['blocky:classes', function () { var l = feedRd('blocky21_life') || {}; return [Math.min(240, feedNum(l.clsTotal)), null]; }],      // (5.4: the sum of the 8 class levels)
   ['elementlab:ch', function () { var d = feedRd('elementlab_challenges') || {}; return [Object.keys(d).length]; }],
   ['imposter:wins', function () { var s = feedRd('imposter_save') || {}, st = s.stats || s; return [feedNum(st.wins) || (feedNum(st.crewWins) + feedNum(st.impWins))]; }],
-  // Last Light: every level's best time, and the full game = all of them added up (only once all 17 are done)
+  // Last Light: every level's best time, and the full game = the 41 levels of the main game added up (only once all are done).
+  // 1.5: Frostveil (6-1..6-11, after The Gloom) has its own level boards but stays out of the full game, One Life and
+  // flawless (those keep meaning the main game); trial medals are one more board (bronze 1, silver 2, gold 3, Lumen 4).
   ['lumi:*', function () {
-    var lv = (feedRd('lumi_save') || {}).levels || {}, out = [], ids = [], sum = 0;
+    var lr = feedRd('lumi_save') || {}, lv = lr.levels || {}, out = [], ids = [], sum = 0, done = 0;
     for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) ids.push(w + '-' + n); ids.push('5-1');      // (Last Light 1.2: 10 levels a world)
-    ids.forEach(function (id) { var b = lv[id] && feedNum(lv[id].best); if (b > 0) { out.push(['lumi:lv' + id, b]); sum += b; } });
-    if (out.length === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 41 }]);
-    var lr = feedRd('lumi_save') || {};
+    ids.forEach(function (id) { var b = lv[id] && feedNum(lv[id].best); if (b > 0) { out.push(['lumi:lv' + id, b]); sum += b; done++; } });
+    if (done === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 41 }]);
+    for (var f = 1; f <= 11; f++) { var fb = lv['6-' + f] && feedNum(lv['6-' + f].best); if (fb > 0) out.push(['lumi:lv6-' + f, fb]); }
     if (lr.runs && feedNum(lr.runs.onelife) > 0) out.push(['lumi:onelife', feedNum(lr.runs.onelife)]);
-    var fl = 0; for (var k in lv) if (lv[k] && lv[k].perfect === true) fl++;
+    var fl = 0; ids.forEach(function (id) { if (lv[id] && lv[id].perfect === true) fl++; });
     if (fl > 0) out.push(['lumi:flawless', Math.min(fl, 41), { of: 41 }]);
+    var tr = lr.trials && typeof lr.trials === 'object' ? lr.trials : {}, pts = 0, gold = 0;
+    for (var tk in tr) { var m = Math.min(4, Math.max(0, Math.floor(feedNum(tr[tk] && tr[tk].m)))); pts += m; if (m >= 3) gold++; }
+    if (pts > 0) out.push(['lumi:medals', Math.min(pts, 208), { gold: gold }]);
     return out;
   }]
 ];

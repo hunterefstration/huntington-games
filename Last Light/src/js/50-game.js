@@ -12,6 +12,8 @@ const G = {
         const def = LEVELS[idx]; if (!def) return;
         this.idx = idx; this.L = parseLevel(def); this.world = def.world; this.levelKey = def.id + ':' + Date.now();
         this.p = makePlayer(this.L.start.x, this.L.start.y); this.p.hearts = this.maxHearts();
+        if (!this.mp) applyLook(this.p);                    // 1.5: the light you chose (multiplayer gives everyone their own)
+        if (this.trial && (this.trial.id !== def.id || this.mp || this.run)) this.trial = null;
         this.checkpoint = { x: this.L.start.x, y: this.L.start.y };
         this.parts = []; this.ghosts = []; this.rings = []; this.shots = []; this.t = 0; this.time = 0; this.done = false; this.flash = 0; this.white = 0; this.ambient = null;
         this.got = { sparks: 0, moths: [false, false, false] }; this.deathShown = false; this.cause = ''; this.stats = { deaths: 0, hits: 0, jumps: 0, stomps: 0, dashes: 0 };
@@ -31,14 +33,16 @@ const G = {
         Sound.musicFor(this.world);
         UI.show(null); $('#hud').classList.remove('hidden');
         this.hud();
-        UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
+        $('#h-trial').classList.add('hidden');
+        if (this.trial) trialBegin(this);
+        else UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
     },
     update(dt) {
         if (this.state !== 'play') return;
         // a split-second freeze when a stomp lands: it makes the hit feel solid
         if (this.hitstop > 0) { this.hitstop -= dt; return; }
         this.t += dt; this.iris = Math.min(1, (this.iris ?? 1) + dt * 1.5); if (this.p.spawnT > 0) this.p.spawnT -= dt;
-        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } }
+        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } if (this.trial) trialTick(this, dt); }
         updatePlayer(this, dt);
         if (this.mp) mpUpdate(this, dt);
         updateWorld(this, dt);
@@ -62,12 +66,13 @@ const G = {
         if (L.w * TS < vw) tx = L.w * TS / 2; if (L.h * TS < vh) ty = L.h * TS / 2;
         if (this.cam.snap > 0) { this.cam.snap -= dt; this.cam.x = tx; this.cam.y = ty; }
         else { this.cam.x = lerp(this.cam.x, tx, Math.min(1, dt * 6)); this.cam.y = lerp(this.cam.y, ty, Math.min(1, dt * 5)); }
-        if (Input.hit('retry') && !p.dead && !this.done) { respawn(this); this.toast('Back to the last lantern'); }
+        if (Input.hit('retry') && !p.dead && !this.done) { if (this.trial) { this.start(this.idx); return; } respawn(this); this.toast('Back to the last lantern'); }      // (a trial starts over)
     },
     revealGate() { const g = this.L.ents.find(e => e.kind === 'gate'); if (g) { g.gone = false; g.hidden = false; burst(this, g.x, g.y, '#fff2c4', 40, 260); } },
     shrine(e) {
         e.used = true;
-        const what = { double: ['Double jump', 'Press jump again in the air'], wall: ['Wall jump', 'Slide down a wall and jump off it'], dash: ['Dash', 'Press Shift or X to dash (hold up to dash upward)'] }[this.L.def.gives];
+        const what = { double: ['Double jump', 'Press jump again in the air'], wall: ['Wall jump', 'Slide down a wall and jump off it'], dash: ['Dash', 'Press Shift or X to dash (hold up to dash upward)'],
+            glide: ['Glide', 'In the air, press jump again and hold it: you float (after your double jump)'] }[this.L.def.gives];
         if (!what) return;
         const first = !SAVE.d.abilities[this.L.def.gives];
         SAVE.d.abilities[this.L.def.gives] = true; SAVE.write();
@@ -80,6 +85,7 @@ const G = {
         const gt = this.L.ents.find(e => e.kind === 'gate'); this.outro = { t: 0, x: gt ? gt.x : this.p.x, y: gt ? gt.y - 10 : this.p.y };
         burst(this, this.outro.x, this.outro.y, '#fff2c4', 40, 260, true);
         if (this.mp) { this.p.vx = 0; mpFinished(this.time); return; }       // playing together: no records, the host collects the finish order
+        if (this.trial) { trialFinish(this); return; }                       // 1.5: a trial keeps its own records
         const def = this.L.def, rec = SAVE.d.levels[def.id] || { best: null, moths: [false, false, false], sparks: 0, clears: 0 };
         const best = rec.best == null || this.time < rec.best, mothsBefore = rec.moths.filter(Boolean).length;
         rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);
@@ -88,21 +94,22 @@ const G = {
         const missing = flawlessMissing(def, { hits: this.stats.hits, moths: this.got.moths, sparks: this.got.sparks }, SAVE.d), flawNew = !missing.length && !rec.perfect;
         if (!missing.length) rec.perfect = true;
         ST('clears'); if (flawNew) ST('flawless'); if (def.world === 4) ST('bossKills');
-        SAVE.d.levels[def.id] = rec; SAVE.write();
+        SAVE.d.levels[def.id] = rec; SAVE.write(); lookCheck();
         this.p.vx = 0;
         // One Life run: no results screen, straight on to the next level (the run ends at the first fall)
         if (this.run) {
             this.run.cleared++; SAVE.d.runs = SAVE.d.runs || {}; SAVE.d.runs.onelife = Math.max(SAVE.d.runs.onelife || 0, this.run.cleared); SAVE.write();
             const nx = this.idx + 1;
             setTimeout(() => {
-                if (!LEVELS[nx]) { this.state = 'done'; UI.banner('One Life', 'You cleared the whole game!', 'Every level without falling once.'); this.run = null; setTimeout(() => UI.map(), 3500); return; }
+                if (!LEVELS[nx] || LEVELS[nx].world > 4) { this.state = 'done';      // (the run is the main game: it ends at The Gloom)
+                     UI.banner('One Life', 'You cleared the whole game!', 'Every level without falling once.'); this.run = null; setTimeout(() => UI.map(), 3500); return; }
                 fadeTo(() => { this.start(nx); UI.banner('One Life · ' + this.run.cleared + ' cleared', LEVELS[nx].name); });
             }, 1300);
             return;
         }
         setTimeout(() => {
             this.state = 'done';
-            (def.world === 4 ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, missing, flawNew, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
+            (def.world === 4 || def.id === '6-11' ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, missing, flawNew, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
         }, 1500);
     },
     hud() {

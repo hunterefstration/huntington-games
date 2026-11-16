@@ -237,6 +237,31 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
 .sv textarea { width: 100%; height: 64px; font: 12px monospace; margin-top: 8px; }
 .sv .badge { background: var(--gold); color: #1b1404; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 900; margin-left: 6px; vertical-align: middle; }
 
+/* 1.5: trials, medals, your light, what's new */
+#s-title .ver { background: none; border: 0; font-family: inherit; cursor: pointer; }
+#s-title .ver u { color: #bff7ff; }
+.newtag { font-size: 10px; text-transform: uppercase; background: #7df9ff; color: #06303a; border-radius: 6px; padding: 1px 5px; margin-left: 4px; vertical-align: 2px; }
+.topbar #m-mode { min-width: 0; margin-left: auto; margin-right: 14px; }
+#s-map.trialmode .topbar .ttl { color: #bff7ff; text-shadow: 0 0 14px rgba(120, 230, 255, .5); }
+.medal { display: inline-block; color: var(--mc, #888); text-shadow: 0 0 8px var(--mc, transparent); font-size: 15px; line-height: 1; }
+.medal.big { font-size: 26px; } .medal.none { color: rgba(255, 255, 255, .25); text-shadow: none; }
+.mt { white-space: nowrap; margin-left: 8px; opacity: .55; font-weight: 700; } .mt.got { opacity: 1; }
+#h-trial { font-size: 14px; font-weight: 800; margin-top: 2px; text-shadow: 0 2px 6px #000; font-variant-numeric: tabular-nums; }
+.lvl.secretlv .num { background: radial-gradient(circle, #e8fbff, #6ab8e0); color: #06303a; }
+.lk-top { display: flex; align-items: center; gap: 18px; justify-content: center; margin-bottom: 10px; }
+.lk-top #lk-n { font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+#lk-list { width: 100%; align-self: stretch; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 46vh; overflow: auto; margin-bottom: 8px; }
+.look { font: inherit; color: var(--txt); background: rgba(255, 255, 255, .06); border: 1px solid var(--line); border-radius: 12px; padding: 6px 4px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.look span { font-weight: 800; font-size: 13px; } .look small { font-size: 10px; opacity: .7; line-height: 1.2; }
+.look.on { border-color: var(--gold); background: rgba(255, 211, 107, .16); box-shadow: 0 0 14px rgba(255, 211, 107, .35); }
+.look.locked canvas { filter: grayscale(1) brightness(.45); } .look.locked span { opacity: .55; }
+.newlist p { text-align: left; line-height: 1.45; margin: 8px 0; }
+/* 1.5: ten buttons on the title: Play on its own row, the rest two by two (one column on a narrow phone) */
+#s-title .menu { display: grid; grid-template-columns: repeat(2, auto); justify-content: center; margin-top: 4vh; }
+#s-title .menu .btn.big { grid-column: 1 / -1; justify-self: center; }
+#s-title .menu .btn { margin: 5px; }
+@media (max-width: 480px) { #s-title .menu { grid-template-columns: auto; } }
+
 </style>
 </head>
 <body>
@@ -257,7 +282,7 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
     <div class="hud-pill"><span class="ico spark"></span><b id="h-sparks">0</b><small id="h-sparks-of">/0</small></div>
     <div class="hud-pill" id="h-moths"></div>
   </div>
-  <div class="hud-c"><div id="h-level"></div><div id="h-time">0:00.0</div></div>
+  <div class="hud-c"><div id="h-level"></div><div id="h-time">0:00.0</div><div id="h-trial" class="hidden"></div></div>
   <div class="hud-r"><button class="hud-btn" id="b-pause" title="Pause (Esc)">II</button></div>
 </div>
 <div id="toast"></div>
@@ -270,20 +295,22 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
   <div class="menu">
     <button class="btn big" id="t-play">Play</button>
     <button class="btn" id="t-settings">Settings</button>
+    <button class="btn" id="t-trials">Trials <span class="newtag">new</span></button>
     <button class="btn" id="t-onelife">One Life run</button>
     <button class="btn" id="t-mp">Play together</button>
     <button class="btn" id="t-saves">Save files</button>
     <button class="btn" id="t-stats-btn">Stats</button>
     <button class="btn" id="t-lore-btn">People</button>
+    <button class="btn" id="t-look">Your light</button>
     <button class="btn" id="t-how">How to play</button>
   </div>
   <div class="foot" id="t-stats"></div>
-  <div class="ver" id="t-ver" title="What's new in 1.4: The Gloom has new attacks (a ring, a beam, a charge, shadow rain, a double slam) and you can throw its own light back at it. Stomping a boss or guardian can no longer hurt you a moment later.">Version 1.4 · The Gloom fights back with new attacks · stomping a boss is always safe now</div>
+  <button class="ver" id="t-ver" title="What's new in 1.5">Version 1.5 · Frostveil, a new world past The Gloom · the glide · Trials with medals · <u>What's new</u></button>
 </div>
 
 <!-- world map -->
 <div id="s-map" class="screen hidden">
-  <div class="topbar"><button class="btn small" id="m-back">&larr; Back</button><div class="ttl">Choose a level</div><div id="m-total"></div></div>
+  <div class="topbar"><button class="btn small" id="m-back">&larr; Back</button><div class="ttl" id="m-ttl">Choose a level</div><button class="btn small" id="m-mode">Trials</button><div id="m-total"></div></div>
   <div id="worlds"></div>
 </div>
 
@@ -369,6 +396,34 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
   <div class="tk-body"><div id="tk-name"></div><div id="tk-text"></div><div class="tk-next">&#9660;</div></div>
 </div>
 
+<!-- 1.5: the colour of your light -->
+<div id="s-look" class="screen dim hidden">
+  <div class="card wide">
+    <h2>Your light</h2>
+    <div class="lk-top"><canvas id="lk-big" width="110" height="120"></canvas><div><div id="lk-n"></div><div class="seg" id="lk-shapes"></div></div></div>
+    <div id="lk-list"></div>
+    <button class="btn big" id="lk-done">Done</button>
+  </div>
+</div>
+
+<!-- 1.5: what's new -->
+<div id="s-new" class="screen dim hidden">
+  <div class="card wide">
+    <h2>What's new in 1.5</h2>
+    <div class="how newlist">
+      <p><b>Frostveil</b>: a new world past The Gloom. Eleven lights never came home; they froze on the peaks above the Sky Ruins.
+      Ten levels of ice, snow geysers, frostwisps and snowpuffs, people to meet (and someone new), and a guardian at the top: Hoarfrost, the great snow owl.</p>
+      <p><b>The glide</b>: Frostveil's first shrine teaches it. In the air, after your double jump, press jump again and hold it to float.
+      It works in every level, so the old ones play differently too.</p>
+      <p><b>Trials</b>: every level you have cleared, against the clock, with a ghost of your best run. Win Bronze, Silver, Gold, or Lumen if you are very fast.</p>
+      <p><b>Your light</b>: choose the colour of your light and the shape of its flame. Five new lights to earn: free the owl, find all 11 frozen lanterns, win gold medals...</p>
+      <p><b>A secret level</b>: find Frostveil's first ten frozen lanterns and the eleventh light is waiting for you.</p>
+      <p>Your saves carry over: everything you had is still there.</p>
+    </div>
+    <button class="btn big" id="new-done">Back</button>
+  </div>
+</div>
+
 <!-- everyone you met and what they told you -->
 <div id="s-lore" class="screen dim hidden">
   <div class="card wide">
@@ -413,6 +468,7 @@ kbd { display: inline-block; min-width: 26px; padding: 1px 7px; margin: 0 2px; b
       <div><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> move</div>
       <div><kbd>Space</kbd>, <kbd>W</kbd>, <kbd>&uarr;</kbd> or <kbd>Z</kbd> jump (hold to jump higher)</div>
       <div><kbd>Shift</kbd> or <kbd>X</kbd> dash (once you have found it)</div>
+      <div>Glide (Frostveil): in the air, press jump again and <b>hold</b> it</div>
       <div><kbd>&darr;</kbd> or <kbd>S</kbd> (hold) drop through a thin ledge</div>
       <div><kbd>Esc</kbd> or <kbd>P</kbd> pause &middot; <kbd>R</kbd> back to the last lantern</div>
       <div>Gamepads and touch screens work too.</div>
@@ -485,14 +541,18 @@ function flawlessGrandfather(d) {
     delete d.flawlessFrom; return true;
 }
 const flawlessCount = () => LEVELS.filter(l => (SAVE.d.levels[l.id] || {}).perfect).length;
+const frozenFound = () => Object.keys(SAVE.d.secrets || {}).filter(k => /^6-/.test(k)).length;      // 1.5: Frostveil's frozen lanterns
 const SAVE = (() => {
-    const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false }, deaths: 0, sparks: 0, playTime: 0 });
+    const blank = () => ({ v: SAVE_VER, levels: {}, abilities: { double: false, wall: false, dash: false, glide: false }, deaths: 0, sparks: 0, playTime: 0 });
     let d;
     try { d = Object.assign(blank(), JSON.parse(localStorage.getItem(SAVE_KEY) || 'null') || {}); } catch (e) { d = blank(); }
     d.abilities = Object.assign(blank().abilities, d.abilities || {});
     if (typeof d.levels !== 'object' || !d.levels) d.levels = {};
     d.talks = d.talks || {}; migrateSave(d); d.secrets = d.secrets || {};
     d.stats = d.stats || {}; d.lore = d.lore || {}; d.guards = d.guards || {}; d.talks = d.talks || {};
+    // 1.5 (still save version 3: these only add): trial records { id: { t: best seconds, m: medal 0-4 } } and the light's look
+    if (!d.trials || typeof d.trials !== 'object') d.trials = {};
+    if (!d.look || typeof d.look !== 'object') d.look = { pal: 0, shape: 0 };
     // The launcher's chat caches messages in this same storage, and a full storage used to make saves fail silently
     // (progress looked fine, then was gone the next time). If a save is refused: drop the biggest chat caches (only a
     // cache, the chat server keeps the history) and try again; if it still fails, say so.
@@ -616,14 +676,22 @@ const Sound = (() => {
         gong: () => { [1, 2.76, 5.4].forEach((m, i) => tone(110 * m, 110 * m * 0.99, 1.4 - i * 0.3, 'sine', 0.16 / (i + 1))); noise(0.15, 1200, 300, 0.1); },
         roar: () => { tone(120, 60, 0.7, 'sawtooth', 0.2); noise(0.7, 900, 150, 0.25, 0, 0.5); },
         blip: () => tone(880, 1100, 0.05, 'sine', 0.05),
+        // 1.5
+        glide: () => { noise(0.35, 1800, 700, 0.05, 0, 0.6); tone(620, 760, 0.18, 'sine', 0.04); },
+        throw: () => { noise(0.12, 2400, 900, 0.12); tone(300, 180, 0.1, 'triangle', 0.06); },
+        wisp: () => { tone(1500, 2100, 0.2, 'sine', 0.05); tone(2250, 3000, 0.16, 'sine', 0.03, 0.05); },
+        hoot: () => { tone(330, 300, 0.22, 'sine', 0.16); tone(300, 260, 0.3, 'sine', 0.14, 0.28); },
+        gust: () => noise(0.9, 900, 300, 0.22, 0, 0.4),
+        medal: (m = 1) => [0, 4, 7, 12, 16, 19].slice(0, 2 + m).forEach((s, i) => tone(587 * Math.pow(2, s / 12), 587 * Math.pow(2, s / 12), 0.4, 'triangle', 0.1, i * 0.09)),
         // a little voice per speaker while the words type out
-        talk: who => { const f = { bram: 150, pip: 520, marta: 300, ilse: 380, hob: 120, orin: 200, gloom: 90, moss: 110, shard: 700, bell: 160, cinder: 95 }[who] || 300; const k = f * (0.9 + Math.random() * 0.25);
+        talk: who => { const f = { bram: 150, pip: 520, marta: 300, ilse: 380, hob: 120, orin: 200, gloom: 90, moss: 110, shard: 700, bell: 160, cinder: 95, sorrel: 170, owl: 250 }[who] || 300; const k = f * (0.9 + Math.random() * 0.25);
             tone(k, k * 1.05, 0.045, who === 'gloom' || who === 'cinder' ? 'sawtooth' : 'triangle', 0.045); }
     };
     // music: a soft generative pad + plucked arpeggio per world, scheduled a bar at a time
-    const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10]];
-    const ROOTS = [57, 50, 62, 52, 45];
-    const PROG = [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 5, 3], [0, 1, 0, 5], [0, 1, 3, 2]];
+    // (1.5: Frostveil is the sixth: lydian, high and glassy, with bell-like plucks)
+    const SCALES = [[0, 2, 4, 7, 9], [0, 3, 5, 7, 10], [0, 2, 4, 5, 7, 9, 11], [0, 1, 4, 5, 7, 8, 10], [0, 3, 6, 7, 10], [0, 2, 4, 6, 7, 11]];
+    const ROOTS = [57, 50, 62, 52, 45, 64];
+    const PROG = [[0, 5, 3, 4], [0, 3, 5, 4], [0, 4, 5, 3], [0, 1, 0, 5], [0, 1, 3, 2], [0, 3, 1, 4]];
     let mus = null;
     const mf = n => 440 * Math.pow(2, (n - 69) / 12);
     function musicFor(world) {
@@ -642,7 +710,8 @@ const Sound = (() => {
                 const r = seeded(mus.bar * 31 + world * 7);
                 for (let i = 0; i < 8; i++) if (r() < 0.72) {
                     const n = deg(Math.floor(r() * 5)) + 12;
-                    tone(mf(n), mf(n), 0.35, world === 4 || boss ? 'square' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
+                    tone(mf(n), mf(n), world % 10 === 5 ? 0.7 : 0.35, world === 4 || boss ? 'square' : world === 5 ? 'sine' : 'triangle', 0.035, t0 - ac.currentTime + i * bar / 8, musBus);
+                    if (world === 5 && r() < 0.3) tone(mf(n + 12), mf(n + 12), 0.5, 'sine', 0.014, t0 - ac.currentTime + i * bar / 8 + 0.01, musBus);
                 }
                 if (boss) for (let i = 0; i < 4; i++) { tone(70, 40, 0.18, 'sine', 0.16, t0 - ac.currentTime + i * bar / 4, musBus); tone(1800, 1700, 0.03, 'square', 0.012, t0 - ac.currentTime + (i + 0.5) * bar / 4, musBus); }
                 mus.next += bar; mus.bar++;
@@ -675,7 +744,11 @@ const WORLDS = [
       slime: ['#ffb04a', '#d0561c'], deco: 'forge', mote: '#ffb35a' },
     { name: 'The Gloom', sub: 'The last lantern', sky: ['#050010', '#120428', '#2a0a4a', '#40125e'], dark: 'rgba(6, 0, 18,', ambient: 0.8,
       body: ['#2a1a40', '#140a24'], top: '#b98aff', top2: '#5a2a9a', rim: '#08040f', detail: '#3a2856', accent: '#c9a0ff', fog: 'rgba(170,110,255,', plat: '#4a3a6a',
-      slime: ['#c9a0ff', '#7a3ad0'], deco: 'gloom', mote: '#d8b8ff' }
+      slime: ['#c9a0ff', '#7a3ad0'], deco: 'gloom', mote: '#d8b8ff' },
+    // 1.5: the peaks above the Sky Ruins, under the aurora. Snow-capped stone, ice, and the night is cold enough to bite
+    { name: 'Frostveil', sub: 'Where the last lights froze', sky: ['#040c22', '#0c2348', '#1e4a78', '#5a8cb8'], dark: 'rgba(4, 12, 34,', ambient: 0.5,
+      body: ['#9fb6cf', '#4a5f7e'], top: '#ffffff', top2: '#d6ecff', rim: '#1a2a44', detail: '#c8daf0', accent: '#9ff0ff', fog: 'rgba(190,225,255,', plat: '#b8d0e8',
+      slime: ['#d8f4ff', '#6aa8d8'], deco: 'frost', mote: '#ffffff' }
 ];
 
 // ---------- background strips (one per parallax layer, tiled sideways) ----------
@@ -689,6 +762,18 @@ function paintBackground(w, W, H) {
     s.globalAlpha = 1;
     if (w === 0) { const m = s.createRadialGradient(W * 0.72, H * 0.62, 0, W * 0.72, H * 0.62, H * 0.5); m.addColorStop(0, 'rgba(255,220,170,.9)'); m.addColorStop(0.08, 'rgba(255,200,150,.6)'); m.addColorStop(1, 'rgba(255,160,120,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
     if (w === 2) { const m = s.createRadialGradient(W * 0.25, H * 0.2, 0, W * 0.25, H * 0.2, H * 0.7); m.addColorStop(0, 'rgba(255,255,230,.95)'); m.addColorStop(0.06, 'rgba(255,250,210,.7)'); m.addColorStop(1, 'rgba(255,240,200,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
+    if (w === 5) {           // stars, then the aurora: soft green and violet curtains across the sky
+        for (let i = 0; i < 140; i++) { s.globalAlpha = 0.25 + r() * 0.7; s.fillStyle = '#fff'; s.beginPath(); s.arc(r() * W, r() * H * 0.55, r() * 1.3 + 0.3, 0, 7); s.fill(); }
+        s.globalCompositeOperation = 'lighter';
+        for (const [col, y0, amp, ph] of [['90,255,190', 0.18, 0.06, 0], ['150,120,255', 0.28, 0.05, 2.1], ['90,230,255', 0.12, 0.04, 4]]) {
+            for (let px = 0; px < W; px += 4) {
+                const yy = H * (y0 + amp * Math.sin(px / W * Math.PI * 4 + ph) + 0.02 * Math.sin(px / W * Math.PI * 13 + ph)), hh = H * (0.1 + 0.06 * Math.sin(px / W * Math.PI * 6 + ph * 2));
+                const g2 = s.createLinearGradient(0, yy - hh, 0, yy + hh * 0.3); g2.addColorStop(0, `rgba(${col},0)`); g2.addColorStop(0.75, `rgba(${col},.16)`); g2.addColorStop(1, `rgba(${col},0)`);
+                s.fillStyle = g2; s.fillRect(px, yy - hh, 4, hh * 1.3);
+            }
+        }
+        s.globalCompositeOperation = 'source-over'; s.globalAlpha = 1;
+    }
     if (w === 4) { const m = s.createRadialGradient(W * 0.5, H * 0.3, 0, W * 0.5, H * 0.3, H * 0.6); m.addColorStop(0, 'rgba(200,140,255,.35)'); m.addColorStop(1, 'rgba(120,60,200,0)'); s.fillStyle = m; s.fillRect(0, 0, W, H); }
     layers.push({ c: sky, k: 0, y: 0, fixed: true });
     // far, mid and near silhouettes
@@ -734,6 +819,11 @@ function paintBackground(w, W, H) {
                 x.fillRect(px - cw / 2, base - chh, cw, chh); x.fillRect(px - cw * 0.7, base - chh, cw * 1.4, 8);
                 if (li < 2) { x.save(); x.globalAlpha = 0.35; x.fillStyle = '#ff7a2a'; x.fillRect(px - cw * 0.3, base - chh * 0.6, cw * 0.6, 4); x.restore(); } }
             const lg = x.createLinearGradient(0, H * 0.8, 0, H); lg.addColorStop(0, 'rgba(255,90,20,0)'); lg.addColorStop(1, `rgba(255,90,20,${0.35 - li * 0.08})`); x.fillStyle = lg; x.fillRect(0, H * 0.8, W, H * 0.2);
+        } else if (T.deco === 'frost') {      // jagged peaks with snow on their shoulders
+            const pk = px => hAt(px) - Math.abs(((px / W * (7 + li * 4) + li * 0.37) % 1) - 0.5) * H * (0.34 - li * 0.08);
+            x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 5) x.lineTo(px, pk(px)); x.lineTo(W, H); x.fill();
+            x.save(); x.globalAlpha = 0.55 - li * 0.12; x.fillStyle = '#eef6ff';
+            x.beginPath(); x.moveTo(0, pk(0)); for (let px = 0; px <= W; px += 5) x.lineTo(px, pk(px)); for (let px = W; px >= 0; px -= 5) x.lineTo(px, pk(px) + 10 + 18 * Math.max(0, Math.sin(px * 0.03 + li))); x.closePath(); x.fill(); x.restore();
         } else {
             x.beginPath(); x.moveTo(0, H); for (let px = 0; px <= W; px += 6) x.lineTo(px, hAt(px) + Math.sin(px * 0.05) * 6); x.lineTo(W, H); x.fill();
             for (let i = 0; i < 20; i++) { const px = r() * W, py = hAt(px); x.save(); x.globalAlpha = 0.4; x.strokeStyle = T.accent; x.lineWidth = 2; x.beginPath(); x.moveTo(px, py); x.bezierCurveTo(px + 20, py - 60, px - 20, py - 120, px + 10, py - 170 - r() * 80); x.stroke(); x.restore(); }
@@ -808,6 +898,11 @@ function drawTile(x, T, tx, ty, solid, w, seed) {
             x.fillStyle = '#fff'; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 2);
             x.fillStyle = 'rgba(200,160,60,.8)'; x.fillRect(0, 6, s, 1.5);
             if (r() < 0.25) { x.fillStyle = '#5cb85a'; for (let k = 0; k < 4; k++) { x.beginPath(); x.ellipse(4 + r() * 24, 1, 3, 1.6, r(), 0, 7); x.fill(); } }
+        } else if (T.deco === 'frost') {      // a lip of snow, drifting over the edges
+            x.fillStyle = T.top2; x.beginPath(); x.moveTo(rTL ? 1 : 0, 0); x.lineTo(s - (rTR ? 1 : 0), 0); x.lineTo(s - (rTR ? 2 : 0), 7);
+            for (let k = 5; k >= 0; k--) x.lineTo(k * s / 5, 6 + r() * 5); x.closePath(); x.fill();
+            x.fillStyle = T.top; x.fillRect(rTL ? 3 : 0, -2, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 5);
+            if (r() < 0.3) { x.fillStyle = 'rgba(160,230,255,.9)'; x.beginPath(); x.arc(4 + r() * 24, 1, 1.2, 0, 7); x.fill(); }
         } else if (T.deco === 'forge') {
             x.fillStyle = '#2a1414'; x.fillRect(rTL ? 3 : 0, 0, s - (rTL ? 3 : 0) - (rTR ? 3 : 0), 5);
             x.fillStyle = T.top; x.shadowColor = T.top; x.shadowBlur = 8; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 1.6); x.shadowBlur = 0;
@@ -816,8 +911,18 @@ function drawTile(x, T, tx, ty, solid, w, seed) {
             x.fillStyle = T.top; x.shadowColor = T.top; x.shadowBlur = 6; x.fillRect(rTL ? 5 : 0, 0, s - (rTL ? 5 : 0) - (rTR ? 5 : 0), 1.5); x.shadowBlur = 0;
         }
     }
+    if (dn && T.deco === 'frost' && r() < 0.3) { x.fillStyle = 'rgba(220,245,255,.85)'; const sx = 6 + r() * 20, sl = 5 + r() * 9; x.beginPath(); x.moveTo(sx - 3, s); x.lineTo(sx, s + sl); x.lineTo(sx + 3, s); x.fill(); }
     if (dn && T.deco === 'cave' && r() < 0.35) { x.fillStyle = T.body[1]; const sx = 6 + r() * 20, sl = 6 + r() * 10; x.beginPath(); x.moveTo(sx - 4, s); x.lineTo(sx, s + sl); x.lineTo(sx + 4, s); x.fill(); }
     if (dn && T.deco === 'forest' && r() < 0.3) { x.strokeStyle = '#3a7a3a'; x.lineWidth = 1.4; const vx = 4 + r() * 24, vl = 8 + r() * 18; x.beginPath(); x.moveTo(vx, s); x.quadraticCurveTo(vx + 4, s + vl / 2, vx, s + vl); x.stroke(); }
+    x.restore();
+}
+// 1.5: ice: a cold glassy sheet over the tile, with a shine on top (you slide on it)
+function drawIce(x, tx, ty, top) {
+    x.save(); x.translate(tx * TS, ty * TS);
+    const g = x.createLinearGradient(0, 0, TS, TS); g.addColorStop(0, 'rgba(200,240,255,.78)'); g.addColorStop(1, 'rgba(110,180,230,.7)');
+    x.fillStyle = g; x.fillRect(0, top ? 0 : 0, TS, TS);
+    x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(5, 24); x.lineTo(14, 9); x.moveTo(17, 27); x.lineTo(24, 15); x.stroke();
+    if (top) { x.fillStyle = 'rgba(255,255,255,.95)'; x.fillRect(0, 0, TS, 2.5); x.fillStyle = 'rgba(160,230,255,.6)'; x.fillRect(0, 2.5, TS, 2); }
     x.restore();
 }
 // background (decorative) wall tile: darker, no collision
@@ -851,12 +956,21 @@ const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${
 // ---------- sprites ----------
 // light colours for multiplayer: flame, flame core, body, body edge (0 = Last Light's own gold)
 const LUMI_PALS = [['#ffb347', '#ffe9a8', '#ffe29a', '#ffae42'], ['#4fd2ff', '#c9f4ff', '#b6ecff', '#3aa8e0'], ['#ff6fb5', '#ffd1ea', '#ffc0df', '#e8509a'],
-  ['#7ee06b', '#dcffd2', '#c8f5b8', '#4fb83c'], ['#b48cff', '#e6dbff', '#d6c4ff', '#8a5ce0'], ['#ff6b5a', '#ffd6cf', '#ffc0b5', '#e04a3a']];
+  ['#7ee06b', '#dcffd2', '#c8f5b8', '#4fb83c'], ['#b48cff', '#e6dbff', '#d6c4ff', '#8a5ce0'], ['#ff6b5a', '#ffd6cf', '#ffc0b5', '#e04a3a'],
+  // 1.5: lights you earn (see LOOKS in 60-ui.js): Frost, Dawn, Aurora, Sunlit, Gloomlight
+  ['#9fe8ff', '#ffffff', '#e4f8ff', '#62b0e0'], ['#ff9f8a', '#fff1e0', '#ffdcc8', '#e9775f'], ['#6af2c8', '#f2e6ff', '#c6f6ec', '#8a6ae0'],
+  ['#ffd23a', '#fffbe0', '#fff1a0', '#e0a400'], ['#8a5aff', '#e8dcff', '#6a4aa8', '#2e1a5e']];
 const Sprites = {
     // p.pal / p.shape: in multiplayer every player is a different light (a colour and a flame shape, see 48-mp.js)
     lumi(x, p, t) {
         const sx = p.sx, sy = p.sy, f = p.face, P = LUMI_PALS[p.pal || 0], shape = p.shape || 0;
         x.save(); x.translate(p.x, p.y + 13 - 13 * sy + 1); x.scale(sx, sy);
+        if (p.gliding) {          // 1.5: gliding, the flame spreads into two wings of light
+            const fl = Math.sin(t * 9) * 0.12; x.save(); x.globalAlpha = 0.7; x.fillStyle = P[1];
+            for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * 6, -3); x.quadraticCurveTo(sd * 22, -17 - fl * 20, sd * 31, -5 + fl * 10); x.quadraticCurveTo(sd * 20, -2, sd * 8, 5); x.closePath(); x.fill(); }
+            x.globalAlpha = 0.9; x.fillStyle = P[0]; for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(sd * 7, -2); x.quadraticCurveTo(sd * 18, -11 - fl * 14, sd * 24, -4 + fl * 8); x.quadraticCurveTo(sd * 16, -1, sd * 8, 3); x.closePath(); x.fill(); }
+            x.restore();
+        }
         // flame tuft (one, two, a crown of three, or a curl)
         const fl = Math.sin(t * 14) * 2, fl2 = Math.cos(t * 11) * 2, tip = -27 - Math.abs(p.vy) * 0.008;
         x.fillStyle = P[0];
@@ -999,11 +1113,39 @@ const Sprites = {
     },
     vent(x, v, t, T) {        // the wind column: pale streaks that rise
         x.save(); const h = v.h * TS;
+        if (T.deco === 'frost') {      // 1.5: a snow geyser: flakes blown up the column
+            x.fillStyle = 'rgba(220,240,255,.85)';
+            for (let i = 0; i < 9; i++) { const u = ((t * 0.7 + i * 0.113 + v.seed * 0.07) % 1); x.globalAlpha = Math.sin(u * Math.PI) * 0.9; x.beginPath(); x.arc(v.x + 5 + ((i * 11 + v.seed * 5) % (TS - 10)) + Math.sin(t * 4 + i) * 3, v.y + TS - 6 - u * (h - 8), 1.6 + (i % 3) * 0.6, 0, 7); x.fill(); }
+            x.globalAlpha = 1;
+        }
         x.fillStyle = 'rgba(255,255,255,.07)'; x.fillRect(v.x + 4, v.y + TS - h, TS - 8, h);
         x.fillStyle = 'rgba(40,40,50,.8)'; x.fillRect(v.x + 2, v.y + TS - 5, TS - 4, 5);
         x.strokeStyle = 'rgba(255,255,255,.4)'; x.lineWidth = 1.5; x.lineCap = 'round';
         for (let i = 0; i < 5; i++) { const u = ((t * 0.55 + i * 0.21 + v.seed * 0.13) % 1), yy = v.y + TS - 6 - u * (h - 8), xx = v.x + 6 + ((i * 7 + v.seed * 3) % (TS - 12)) + Math.sin(t * 5 + i) * 2;
             x.globalAlpha = Math.sin(u * Math.PI) * 0.85; x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx, yy - 9); x.stroke(); }
+        x.restore();
+    },
+    // 1.5 Frostveil: a frostwisp (a fleck of The Gloom's smoke, frozen: it drifts at you) and a snowpuff (lobs snowballs)
+    wisp(x, e, t) {
+        const b = Math.sin(t * 3 + e.seed) * 3, a = e.chase ? 1 : 0.75;
+        x.save(); x.translate(e.x, e.y + b); x.globalAlpha = a;
+        x.fillStyle = 'rgba(150,200,255,.25)'; x.beginPath(); x.arc(0, 0, 17, 0, 7); x.fill();
+        x.strokeStyle = '#d8f0ff'; x.lineWidth = 2.2; x.lineCap = 'round';
+        for (let i = 0; i < 6; i++) { const ang = i / 6 * Math.PI * 2 + t * 0.8 + e.seed; x.beginPath(); x.moveTo(Math.cos(ang) * 4, Math.sin(ang) * 4); x.lineTo(Math.cos(ang) * 13, Math.sin(ang) * 13);
+            x.moveTo(Math.cos(ang) * 9 + Math.cos(ang + 0.9) * 3.5, Math.sin(ang) * 9 + Math.sin(ang + 0.9) * 3.5); x.lineTo(Math.cos(ang) * 9, Math.sin(ang) * 9); x.lineTo(Math.cos(ang) * 9 + Math.cos(ang - 0.9) * 3.5, Math.sin(ang) * 9 + Math.sin(ang - 0.9) * 3.5); x.stroke(); }
+        x.fillStyle = '#2a1a4a'; x.beginPath(); x.arc(0, 0, 6.5, 0, 7); x.fill();
+        x.fillStyle = e.chase ? '#ffffff' : '#9fd8ff'; x.beginPath(); x.arc(-2.4 + (e.dir || 0) * 1.2, -0.5, 1.5, 0, 7); x.arc(2.4 + (e.dir || 0) * 1.2, -0.5, 1.5, 0, 7); x.fill();
+        x.restore();
+    },
+    puff(x, e, t, T) {
+        const wind = e.wind || 0, sq = (e.sq || 0), bob = Math.sin(t * 4 + e.seed) * 1;
+        x.save(); x.translate(e.x, e.y + 16); x.scale(1 + sq * 0.25 - wind * 0.08, 1 - sq * 0.25 + wind * 0.12);
+        const g = x.createRadialGradient(-4, -18, 2, 0, -12, 18); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#a8c8e8');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, -12 + bob, 15, 13, 0, 0, 7); x.fill();
+        x.beginPath(); x.arc(-9, -20 + bob, 6, 0, 7); x.arc(8, -21 + bob, 5, 0, 7); x.fill();
+        x.fillStyle = '#1a2a44'; const ex = (e.dir || 1) * 3; x.beginPath(); x.arc(-4 + ex, -14 + bob, 1.8, 0, 7); x.arc(4 + ex, -14 + bob, 1.8, 0, 7); x.fill();
+        x.fillStyle = '#ff9ab0'; x.globalAlpha = 0.5; x.beginPath(); x.ellipse(-8 + ex, -10 + bob, 2.4, 1.3, 0, 0, 7); x.ellipse(8 + ex, -10 + bob, 2.4, 1.3, 0, 0, 7); x.fill(); x.globalAlpha = 1;
+        if (wind > 0) { x.fillStyle = '#fff'; x.beginPath(); x.arc((e.dir || 1) * 13, -26 - wind * 6, 5 + wind * 2, 0, 7); x.fill(); }      // the snowball, held up before the throw
         x.restore();
     },
     spark(x, e, t) {
@@ -1211,6 +1353,23 @@ const PEOPLE = {
         if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(2, -32, 2, 1.5 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
         darkLantern(x, -16, -10);
     },
+    // Sorrel (1.5): the pass-keeper: a thick wool coat, a fur hat with ear flaps, a crook with a goat bell on it
+    sorrel(x, t, face = 1, speaking = false) {
+        const { br, blink } = personBase(x, t, face, speaking);
+        x.fillStyle = '#3a2a22'; x.fillRect(-8, -7, 6, 7); x.fillRect(2, -7, 6, 7);
+        x.fillStyle = '#8a6a4a'; x.beginPath(); x.moveTo(-13, -4); x.quadraticCurveTo(-14, -30 - br, 0, -31 - br); x.quadraticCurveTo(14, -30 - br, 13, -4); x.closePath(); x.fill();
+        x.fillStyle = '#efe6d6'; for (let i = 0; i < 6; i++) { x.beginPath(); x.arc(-11 + i * 4.4, -5, 3, 0, 7); x.fill(); }                 // a woolly hem
+        x.fillStyle = '#5a3a2a'; x.fillRect(-1, -28, 2, 22);
+        x.strokeStyle = '#7a5a3a'; x.lineWidth = 2; x.beginPath(); x.moveTo(14, 0); x.lineTo(14, -52); x.arc(18, -52, 4, Math.PI, 0); x.stroke();    // the crook
+        x.fillStyle = '#d8b040'; x.beginPath(); x.arc(14, -40 + Math.sin(t * 3) * 0.6, 2.6, 0, 7); x.fill();                                  // its bell
+        x.fillStyle = '#e8c098'; x.beginPath(); x.arc(0, -38, 9, 0, 7); x.fill();
+        x.fillStyle = '#c8a070'; x.beginPath(); x.ellipse(0, -44, 11, 7, 0, Math.PI, 0); x.fill(); x.fillRect(-11, -45, 5, 12); x.fillRect(6, -45, 5, 12);   // fur hat, ear flaps
+        x.fillStyle = '#efe6d6'; x.fillRect(-11, -47, 22, 3);
+        x.fillStyle = 'rgba(255,120,120,.5)'; x.beginPath(); x.ellipse(-4, -35, 2.2, 1.4, 0, 0, 7); x.ellipse(6, -35, 2.2, 1.4, 0, 0, 7); x.fill();
+        eyesP(x, 1.5, -39, blink);
+        if (speaking) { x.fillStyle = '#6a2a2a'; x.beginPath(); x.ellipse(1.5, -34, 2, 1.2 + Math.abs(Math.sin(t * 14)), 0, 0, 7); x.fill(); }
+        darkLantern(x, -16, -10);
+    },
     // Quill (1.2): the librarian: round glasses, a long lilac robe, a stack of books
     quill(x, t, face = 1, speaking = false) {
         const { br, blink } = personBase(x, t, face, speaking);
@@ -1238,6 +1397,7 @@ const PEOPLE = {
 //   M  moving ledge, left/right (runs between walls or '|' markers)    N  moving ledge, up/down (between '|' markers)
 //   (1.2) j  hopper (a frog that hops at you: stomp it)  v  stalactite (falls when you walk under it)  f  fire jet (timed: watch the flicker)
 //         W  updraft vent (a column of wind that lifts you)  z  a lost lantern (a hidden secret)  ! (nothing)
+//   (1.5) I  ice (ground you slide on)   w  frostwisp (drifts at you: stomp it)   y  snowpuff (lobs snowballs: stomp it)
 //   G  The Gloom (the last boss)  Q  the world's guardian (mini boss: def.guard says which)  n  a person to talk to
 // ==========================================
 const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
@@ -1245,13 +1405,14 @@ const T_AIR = 0, T_SOLID = 1, T_ONEWAY = 2, T_SPIKE = 3, T_LAVA = 4, T_BACK = 5;
 function parseLevel(def) {
     const rows = def.map.slice(), h = rows.length, w = Math.max(...rows.map(r => r.length));
     const L = { def, w, h, world: def.world, tiles: new Uint8Array(w * h), spikes: [], lava: [], ents: [], crumbles: [], doors: [], movers: [],
-        sparks: 0, moths: 0, start: null, marks: new Set(), vents: [] };
+        sparks: 0, moths: 0, start: null, marks: new Set(), vents: [], ice: null };
     const at = (x, y) => (rows[y] || '')[x] || ' ';
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
         const c = at(x, y), px = x * TS + TS / 2, py = y * TS + TS / 2;
         const set = v => { L.tiles[y * w + x] = v; };
         switch (c) {
             case '#': set(T_SOLID); break;
+            case 'I': set(T_SOLID); (L.ice || (L.ice = new Uint8Array(w * h)))[y * w + x] = 1; break;
             case '=': set(T_ONEWAY); break;
             case '^': set(T_SPIKE); break;
             case 'l': set(T_LAVA); break;
@@ -1273,8 +1434,8 @@ function parseLevel(def) {
             }
             default:
                 if (c === 'W') { L.vents.push({ tx: x, ty: y, x: x * TS, y: y * TS, h: 0, seed: (x * 31 + y * 17) % 10 }); break; }
-                if ('oEL*SkubgthGQnjvfz'.includes(c)) {
-                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc', j: 'hopper', v: 'drip', f: 'jet', z: 'secret' }[c];
+                if ('oEL*SkubgthGQnjvfzwy'.includes(c)) {
+                    const kind = { o: 'spark', E: 'gate', L: 'lantern', '*': 'moth', S: 'spring', k: 'key', u: 'shrine', g: 'slime', b: 'bat', t: 'turret', h: 'thorn', G: 'boss', Q: 'guard', n: 'npc', j: 'hopper', v: 'drip', f: 'jet', z: 'secret', w: 'wisp', y: 'puff' }[c];
                     L.ents.push({ kind, x: px, y: py, sx: px, sy: py, seed: (x * 7919 + y * 104729) % 1000 / 100 });
                     if (c === 'o') L.sparks++;
                     if (c === '*') L.moths++;
@@ -1310,6 +1471,7 @@ function parseLevel(def) {
 }
 const tileAt = (L, x, y) => (x < 0 || x >= L.w) ? T_SOLID : (y < 0) ? T_AIR : (y >= L.h) ? T_AIR : L.tiles[y * L.w + x];
 const isSolidT = (L, x, y) => tileAt(L, x, y) === T_SOLID;
+const isIce = (L, x, y) => !!L.ice && x >= 0 && x < L.w && y >= 0 && y < L.h && L.ice[y * L.w + x] === 1;
 // what counts as ground for drawing (the level's edges look like solid rock)
 const solidForArt = L => (x, y) => x < 0 || x >= L.w || (y >= 0 && y < L.h && L.tiles[y * L.w + x] === T_SOLID);
 
@@ -1344,7 +1506,7 @@ function ledgeBelow(L, x, w, yOld, yNew) {
 // Feel: coyote time, jump buffering, variable jump height, corner nudges, squash and stretch.
 // ==========================================
 const PH = { g: 2050, fall: 880, run: 270, accG: 2900, accA: 1500, fricG: 3000, fricA: 2600, jump: 690, djump: 610,
-    wallFall: 140, wallJumpX: 320, wallJumpY: 650, dash: 760, dashT: 0.17, spring: 1080, coyote: 0.1, buffer: 0.13, stomp: 470 };
+    wallFall: 140, wallJumpX: 320, wallJumpY: 650, dash: 760, dashT: 0.17, spring: 1080, coyote: 0.1, buffer: 0.13, stomp: 470, glide: 95 };
 
 function makePlayer(x, y) {
     return { x, y, w: 18, h: 24, vx: 0, vy: 0, face: 1, ground: false, coyote: 0, buffer: 0, air: 0, wall: 0, wallT: 0, wallLock: 0,
@@ -1364,8 +1526,9 @@ function updatePlayer(G, dt) {
     p.downT = Input.held('down') && p.ground ? (p.downT || 0) + dt : 0;
     if (p.downT > 0.15) { p.dropT = 0.22; p.downT = 0; }
     p.dropT = Math.max(0, (p.dropT || 0) - dt);
-    const dir = (Input.held('right') ? 1 : 0) - (Input.held('left') ? 1 : 0);
-    if (Input.hit('jump')) p.buffer = PH.buffer;
+    const dir = (Input.held('right') ? 1 : 0) - (Input.held('left') ? 1 : 0), press = Input.hit('jump');
+    if (press) p.buffer = PH.buffer;
+    let jumped = false;
     p.buffer = Math.max(0, p.buffer - dt); p.coyote = Math.max(0, p.coyote - dt); p.wallT = Math.max(0, p.wallT - dt);
     p.wallLock = Math.max(0, p.wallLock - dt); p.hurtT = Math.max(0, p.hurtT - dt);
     // dash
@@ -1375,17 +1538,20 @@ function updatePlayer(G, dt) {
         burst(G, p.x, p.y, '#ffe9a8', 14, 220);
     }
     if (p.dashT > 0) {
-        p.dashT -= dt;
+        p.dashT -= dt; p.gliding = false;
         p.vx = p.dashDir * PH.dash * (p.dashDY ? 0.72 : 1); p.vy = p.dashDY * PH.dash * 0.72;
         if (Math.random() < 0.9) G.ghosts.push({ x: p.x, y: p.y, face: p.face, sx: p.sx, sy: p.sy, life: 0.22 });
         if (p.dashT <= 0) { p.vx *= 0.45; if (p.dashDY) p.vy *= 0.4; }
     } else {
-        // run
-        const target = dir * PH.run;
+        // run (1.5: on ice you get going slowly and slide a long way when you let go)
+        const target = dir * PH.run, fy = Math.floor((p.y + p.h / 2 + 2) / TS);
+        p.onIce = p.ground && !p.on && (isIce(L, Math.floor((p.x - 7) / TS), fy) || isIce(L, Math.floor((p.x + 7) / TS), fy));
+        const accG = p.onIce ? PH.accG * 0.32 : PH.accG, fricG = p.onIce ? PH.fricG * 0.09 : PH.fricG;
         if (p.wallLock <= 0) {
             // in the air: let go and you stop drifting almost at once; turning around takes a moment (no twitchy flips)
-            if (dir) { p.vx = approach(p.vx, target, (p.ground ? PH.accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? (p.ground ? 1.6 : 1.25) : 1)); p.face = dir; }
-            else p.vx = approach(p.vx, 0, (p.ground ? PH.fricG : PH.fricA) * dt);
+            if (dir) { p.vx = approach(p.vx, target, (p.ground ? accG : PH.accA) * dt * (sign(p.vx) !== dir && p.vx !== 0 ? (p.ground ? 1.6 : 1.25) : 1)); p.face = dir; }
+            else p.vx = approach(p.vx, 0, (p.ground ? fricG : PH.fricA) * dt);
+            if (p.onIce && Math.abs(p.vx) > 90 && Math.random() < 0.25) G.parts.push({ x: p.x - sign(p.vx) * 6, y: p.y + 12, vx: -p.vx * 0.2, vy: rand(-40, -10), life: 0.35, max: 0.35, size: rand(1.5, 3), color: '#e8f8ff', drag: 3 });
         }
         // gravity, wall slide
         p.vy = Math.min(p.vy + PH.g * dt * (p.vy > 0 ? 1.18 : 1), PH.fall);
@@ -1399,17 +1565,29 @@ function updatePlayer(G, dt) {
         // jump: from the ground (or just after leaving it), off a wall, or in the air
         if (p.buffer > 0) {
             if (p.ground || p.coyote > 0) {
-                p.vy = -PH.jump; p.ground = false; p.coyote = 0; p.buffer = 0; p.cut = false; p.on = null;
+                p.vy = -PH.jump; p.ground = false; p.coyote = 0; p.buffer = 0; p.cut = false; p.on = null; jumped = true;
                 p.sx = 0.72; p.sy = 1.32; Sound.play('jump'); dust(G, p.x, p.y + 12, 6); G.stats.jumps++; ST('jumps');
             } else if (A.wall && p.wallT > 0) {
-                p.vy = -PH.wallJumpY; p.vx = -p.wallDir * PH.wallJumpX; p.face = -p.wallDir; p.wallLock = 0.15; p.buffer = 0; p.cut = false; p.wallT = 0;
+                p.vy = -PH.wallJumpY; p.vx = -p.wallDir * PH.wallJumpX; p.face = -p.wallDir; p.wallLock = 0.15; p.buffer = 0; p.cut = false; p.wallT = 0; jumped = true;
                 p.sx = 0.75; p.sy = 1.28; Sound.play('walljump'); ST('walljumps'); dust(G, p.x + p.wallDir * 10, p.y, 6);
             } else if (A.double && p.air > 0) {
-                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump'); ST('djumps');
+                p.vy = -PH.djump; p.air--; p.buffer = 0; p.cut = false; p.sx = 0.7; p.sy = 1.35; Sound.play('djump'); ST('djumps'); jumped = true;
                 ring(G, p.x, p.y + 10, '#bff7ff');
             }
         }
         if (!Input.held('jump') && p.vy < -220 && !p.cut && !p.springing) { p.vy *= 0.5; p.cut = true; }
+        // 1.5 glide: press jump in the air when it has nothing else to do (no double jump left, no wall), and hold it: you
+        // float down slowly. Holding jump from the ground never glides, so the older levels feel exactly as they did.
+        if (A.glide) {
+            if (press && !jumped && !p.ground && p.coyote <= 0) p.glideArm = true;
+            if (!Input.held('jump') || p.ground || p.wall) p.glideArm = false;
+            const was = p.gliding; p.gliding = !!p.glideArm && p.vy > 0;
+            if (p.gliding) {
+                p.vy = Math.min(p.vy, PH.glide); ST('glide', dt);
+                if (!was) { Sound.play('glide'); ring(G, p.x, p.y + 6, '#e8fbff'); }
+                if (Math.random() < 0.35) G.parts.push({ x: p.x + rand(-16, 16), y: p.y + rand(-2, 6), vx: -p.vx * 0.1, vy: rand(10, 40), life: 0.5, max: 0.5, size: rand(1.5, 3), color: '#fff2c4', add: true });
+            }
+        } else p.gliding = false;
     }
     // move: x then y, against the level
     const wasGround = p.ground, vyBefore = p.vy;
@@ -1431,7 +1609,7 @@ function updatePlayer(G, dt) {
     if (!p.ground && p.dashT <= 0) { const st = clamp(Math.abs(p.vy) / 2600, 0, 0.18); p.sy = Math.max(p.sy, 1 + st * 0.5); p.sx = Math.min(p.sx, 1 - st * 0.4); }
     // trail of light when moving fast
     p.trailT -= dt;
-    if (p.trailT <= 0 && (Math.abs(p.vx) > 150 || Math.abs(p.vy) > 300)) { p.trailT = 0.03; G.parts.push({ x: p.x + rand(-4, 4), y: p.y + rand(-2, 6), vx: -p.vx * 0.05, vy: rand(-20, 10), life: 0.45, max: 0.45, size: rand(2, 4), color: '#ffd98a', add: true }); }
+    if (p.trailT <= 0 && (Math.abs(p.vx) > 150 || Math.abs(p.vy) > 300)) { p.trailT = 0.03; G.parts.push({ x: p.x + rand(-4, 4), y: p.y + rand(-2, 6), vx: -p.vx * 0.05, vy: rand(-20, 10), life: 0.45, max: 0.45, size: rand(2, 4), color: (LUMI_PALS[p.pal || 0] || LUMI_PALS[0])[1], add: true }); }
     // hazards
     if (p.hurtT <= 0 || true) hazards(G);
     if (p.y > L.h * TS + 24) hurt(G, 'pit');
@@ -1577,13 +1755,18 @@ function updateWorld(G, dt) {
             case 'hopper': hopper(G, e, dt); break;
             case 'drip': drip(G, e, dt); break;
             case 'jet': jet(G, e, dt); break;
+            case 'wisp': wisp(G, e, dt); break;
+            case 'puff': puff(G, e, dt); break;
             case 'heart':       // a heart that appears in a guardian fight; only picked up when you are missing one
                 if (!p.dead && near(p, e, 20) && p.hearts < G.maxHearts()) { e.gone = true; p.hearts++; Sound.play('lantern'); burst(G, e.x, e.y, '#ff9ab0', 16, 160, true); G.toast('A heart!'); G.hud(); }
                 break;
             case 'secret':      // a lost lantern, hidden away: finding it is remembered
                 if (!p.dead && near(p, e, 22)) {
                     e.gone = true; SAVE.d.secrets = SAVE.d.secrets || {}; const first = !SAVE.d.secrets[G.L.def.id]; SAVE.d.secrets[G.L.def.id] = true; if (first) ST('secrets'); SAVE.write();
-                    Sound.play('shrine'); G.white = 0.35; burst(G, e.x, e.y, '#bff7ff', 40, 260, true); ring(G, e.x, e.y, '#bff7ff'); UI.banner('A lost lantern', first ? 'Secret found' : 'You found it again', 'Hidden lanterns are scattered across the valley');
+                    Sound.play('shrine'); G.white = 0.35; burst(G, e.x, e.y, '#bff7ff', 40, 260, true); ring(G, e.x, e.y, '#bff7ff');
+                    lookCheck();
+                    if (G.L.world === 5) UI.banner('A frozen lantern', first ? 'It thaws in your light' : 'You found it again', frozenFound() + ' of 11 frozen lanterns found');
+                    else UI.banner('A lost lantern', first ? 'Secret found' : 'You found it again', 'Hidden lanterns are scattered across the valley');
                 }
                 break;
         }
@@ -1674,6 +1857,38 @@ function jet(G, e, dt) {
         if (!p.dead && p.hurtT <= 0 && p.dashT <= 0 && Math.abs(p.x - e.x) < 15 && p.y > e.y - TS * 3.4 && p.y < e.y + 18) hurt(G, 'enemy', { kind: 'jet', x: e.x, y: p.y + 30 });
     }
 }
+// 1.5 frostwisp: drifts about where it was left; come within 6 tiles and it drifts at you (slowly: outrun it, or stomp it).
+// It goes back home once it is 9 tiles from where it started. Smoke goes through walls.
+function wisp(G, e, dt) {
+    const p = G.p; if (e.dead) return;
+    const d = Math.hypot(p.x - e.x, p.y - e.y), home = Math.hypot(e.sx - e.x, e.sy - e.y);
+    e.chase = !p.dead && !G.done && d < TS * 6 && home < TS * 9;
+    if (e.chase && !e.was) Sound.play('wisp');
+    e.was = e.chase;
+    const tx = e.chase ? p.x : e.sx + Math.sin(G.t * 0.9 + e.seed) * 20, ty = e.chase ? p.y : e.sy + Math.cos(G.t * 1.3 + e.seed) * 10;
+    const dx = tx - e.x, dy = ty - e.y, dd = Math.hypot(dx, dy) || 1, sp = (e.chase ? 64 : 45) * dt;
+    e.x += dx / dd * Math.min(sp, dd); e.y += dy / dd * Math.min(sp, dd); e.dir = sign(dx);
+    if (d < 900 && Math.random() < 0.08) G.parts.push({ x: e.x + rand(-8, 8), y: e.y + rand(-8, 8), vx: rand(-10, 10), vy: rand(10, 30), life: 0.6, max: 0.6, size: rand(1, 2.5), color: '#d8f0ff', add: true });
+    contact(G, e, 13);
+}
+// 1.5 snowpuff: when you are in range it lifts a snowball over its head (the tell), then lobs it to land where you are
+function puff(G, e, dt) {
+    const p = G.p; if (e.dead) return;
+    e.sq = Math.max(0, (e.sq || 0) - dt * 4);
+    const dx = p.x - e.x, dy = p.y - e.y, near = !p.dead && !G.done && Math.abs(dx) < TS * 11 && Math.abs(dy) < TS * 7;
+    if (near) e.dir = sign(dx) || e.dir || 1;
+    e.cool = (e.cool ?? (1.2 + e.seed % 1.2)) - dt;
+    e.wind = near && e.cool < 0.65 ? Math.min(1, (0.65 - e.cool) / 0.65) : 0;
+    if (e.cool <= 0) {
+        e.cool = 2.4;
+        if (near) {
+            const T = clamp(Math.abs(dx) / 260, 0.55, 1.1), g = 1100, sx = e.x + e.dir * 12, sy = e.y - 14;
+            G.shots.push({ x: sx, y: sy, vx: (p.x + p.vx * 0.2 - sx) / T, vy: (p.y - sy) / T - 0.5 * g * T, g, life: 3, style: 'snow', kind: 'snowball', col: '#ffffff', light: '200,230,255' });
+            e.sq = 1; Sound.play('throw');
+        }
+    }
+    contact(G, e, 14);
+}
 // touching an enemy: from above it is a stomp (not the spiky ones), a dash goes straight through anything, else it hurts
 function contact(G, e, r) {
     const p = G.p; if (p.dead || e.dead) return;
@@ -1690,7 +1905,7 @@ function kill(G, e) {
     ring(G, e.x, e.y + 12, '#fff3c4'); burst(G, e.x, e.y - 6, '#fff3c4', 8, 140, true);
 }
 function popEnemy(G, e) {
-    const T = WORLDS[G.world], col = e.kind === 'hopper' ? '#8ee06a' : e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : '#b8481c';
+    const T = WORLDS[G.world], col = e.kind === 'hopper' ? '#8ee06a' : e.kind === 'slime' ? T.slime[0] : e.kind === 'bat' ? '#8a5aba' : e.kind === 'turret' ? '#ff7ab8' : e.kind === 'wisp' ? '#bfe8ff' : e.kind === 'puff' ? '#ffffff' : '#b8481c';
     for (let i = 0; i < 16; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-200, 200), vy: rand(-320, -40), life: 0.7, max: 0.7, size: rand(3, 6), color: col, g: 900 });
     for (let i = 0; i < 5; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-120, 120), vy: rand(-260, -120), life: 0.8, max: 0.8, size: rand(4, 6), color: '#ffe08a', g: 500, star: true });
     burst(G, e.x, e.y, '#fff3c4', 10, 160, true); Sound.play('pop');
@@ -1741,7 +1956,7 @@ function chunkCanvas(G, cx, cy) {
     }
     for (let ty = cy * CH - 1; ty < cy * CH + CH + 1; ty++) for (let tx = cx * CH - 1; tx < cx * CH + CH + 1; tx++) {
         const t = (tx < 0 || tx >= L.w || ty < 0 || ty >= L.h) ? (tx < 0 || tx >= L.w ? T_SOLID : T_AIR) : L.tiles[ty * L.w + tx];
-        if (t === T_SOLID) drawTile(x, T, tx, ty, solid, G.world, (tx * 73856093) ^ (ty * 19349663) ^ G.world);
+        if (t === T_SOLID) { drawTile(x, T, tx, ty, solid, G.world, (tx * 73856093) ^ (ty * 19349663) ^ G.world); if (isIce(L, tx, ty)) drawIce(x, tx, ty, !solid(tx, ty - 1)); }
         else if (t === T_ONEWAY) drawOneWay(x, T, tx, ty);
     }
     R.chunks.set(key, c); R.chunkOrder.push(key);
@@ -1788,7 +2003,7 @@ function render(G) {
     for (const v of G.L.vents) if (vis(v.x, v.y - v.h * TS / 2, v.h * TS)) Sprites.vent(x, v, t, T);
     for (const e of G.L.ents) {
         if (e.gone || !vis(e.x, e.y)) continue;
-        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc', hopper: 'hopper', drip: 'drip', jet: 'jet', heart: 'heart', secret: 'secret' }[e.kind];
+        const f = { spark: 'spark', moth: 'moth', lantern: 'lantern', gate: 'gate', spring: 'spring', key: 'key', shrine: 'shrine', slime: 'slime', bat: 'bat', turret: 'turret', thorn: 'thorn', npc: 'npc', hopper: 'hopper', drip: 'drip', jet: 'jet', heart: 'heart', secret: 'secret', wisp: 'wisp', puff: 'puff' }[e.kind];
         if (!f) continue;
         if (e.dying !== undefined) {          // stomped: flattened into the ground, then it pops
             const k = clamp(e.dying / 0.22, 0, 1), fy = e.y + 14;
@@ -1801,6 +2016,7 @@ function render(G) {
     // dash after-images
     for (const g of G.ghosts) { x.save(); x.globalAlpha = g.life / 0.22 * 0.45; x.globalCompositeOperation = 'lighter'; Sprites.lumi(x, { x: g.x, y: g.y, sx: g.sx, sy: g.sy, face: g.face, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0 }, t); x.restore(); }
     mpDraw(x, t);
+    if (G.trial) trialGhostDraw(x, t);
     const P = G.p;
     if (P.spawnT > 0) {      // arriving: a beam of light and you pop into being
         const a = clamp(P.spawnT / 0.75, 0, 1), g = x.createLinearGradient(0, P.y - 400, 0, P.y + 16); g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(1, `rgba(255,240,200,${a * 0.7})`);
@@ -1873,6 +2089,7 @@ function lightPass(G, cx, cy, vw, vh) {
         else if (e.kind === 'heart') add(e.x, e.y, 80, 0.8, '255,150,170');
         else if (e.kind === 'jet' && (e.fire || e.warn)) add(e.x, e.y - 30, e.fire ? 130 : 60, 0.8, '255,140,60');
         else if (e.kind === 'turret') add(e.x, e.y - 16, 50 + (e.charge || 0) * 40, 0.6, '255,140,190');
+        else if (e.kind === 'wisp' && !e.dead) add(e.x, e.y, e.chase ? 70 : 50, 0.6, '170,220,255');
     }
     // small lights: only the nearest dozen (each one costs a draw)
     const near = (a, b) => Math.abs(a[0] - p.x) + Math.abs(a[1] - p.y) - Math.abs(b[0] - p.x) - Math.abs(b[1] - p.y);
@@ -2229,6 +2446,9 @@ function drawBoss(x, G, t) {
 //   Shardwing (Hollow Caves)  a crystal bat: hovers raising crystal spikes from the floor, skims across the floor, then dives and gets stuck.
 //   The Bellkeeper (Sky)      a stone bell: fires rings of light, then tolls - crashes down, sends waves, sticks a moment.
 //   Cinderjaw (Ember Forge)   a magma beast: spits lava, then charges; hitting the wall knocks it silly.
+//   Hoarfrost (Frostveil, 1.5) a great snow owl: drops fans of ice feathers, swoops low, then beats up a gale that shoves you
+//                              away and is left out of breath, hanging in the air too high to jump to: ride a snow geyser up
+//                              and glide down onto it. (The guardian that tests the glide.)
 // A "!" means it is open: stomp it or dash into it.
 // ==========================================
 const GUARDS = {
@@ -2239,10 +2459,15 @@ const GUARDS = {
     bell: { name: 'The Bellkeeper', sub: 'Guardian of the Sky Ruins', hp: 5, r: 42, col: '#ffe08a', light: '255,230,150',
         free: 'The hour is late. He is waiting at the Forge.' },
     cinder: { name: 'Cinderjaw', sub: 'Guardian of the Ember Forge', hp: 5, r: 44, col: '#ff8a3a', light: '255,140,60',
-        free: 'You carry her light. He will know it.' }
+        free: 'You carry her light. He will know it.' },
+    owl: { name: 'Hoarfrost', sub: 'Guardian of Frostveil', hp: 5, r: 40, col: '#bfe8ff', light: '190,230,255',
+        free: 'The cold is gone out of my feathers. Thank you, little light.' }
 };
 function makeGuard(G, e) {
-    const L = G.L, kind = L.def.guard || 'moss', D = GUARDS[kind], floor = findFloor(L, e.x), fty = Math.round(floor / TS);
+    // the floor under it (1.5: searched from where it stands, so an arena with a roof works too)
+    const L = G.L, kind = L.def.guard || 'moss', D = GUARDS[kind], etx = Math.floor(e.x / TS);
+    let fty = Math.floor(e.y / TS); while (fty < L.h && !isSolidT(L, etx, fty)) fty++;
+    const floor = fty * TS;
     const doorTx = Math.floor(e.x / TS) - 19, ty0 = Math.max(0, fty - 11);       // the arena starts one column past the door
     return { kind, D, ent: e, x: e.x, y: floor - D.r, floor, top: Math.max(TS, floor - TS * 10), x0: (doorTx + 1) * TS, x1: L.w * TS,
         doorTx, doorTy: ty0, doorH: fty - ty0, hp: D.hp, max: D.hp, state: 'wait', t: 0, hitT: 0, open: false, vx: 0, vy: 0,
@@ -2280,6 +2505,11 @@ function guardHit(G, B) {
     if (B.kind === 'moss') { B.state = 'idle'; B.t = 1.2; B.vx = B.vy = 0; B.y = B.floor - B.D.r; }
     else if (B.kind === 'shard') { B.state = 'rise'; B.t = 0.9; }
     else if (B.kind === 'bell') { B.state = 'lift'; B.t = 0.8; }
+    else if (B.kind === 'owl') {
+        B.state = 'climb'; B.t = 0.9; B.blowing = false;
+        if (B.phase === 2 && !G.L.ents.some(e => e.kind === 'heart' && !e.gone)) G.L.ents.push({ kind: 'heart', x: (B.x0 + B.x1) / 2, y: B.floor - 40, sx: (B.x0 + B.x1) / 2, sy: B.floor - 40, seed: rand(9), spawned: true });
+        if (B.phase >= 3 && alive < 2) for (const fx of [B.x0 + 90, B.x1 - 90]) G.L.ents.push({ kind: 'wisp', x: fx, y: B.top + 40, sx: fx, sy: B.top + 40, seed: rand(9), spawned: true });
+    }
     else { B.state = 'stalk'; B.t = 1.2; }
     if (B.phase === B.max - 1) G.toast(B.D.name + ' is furious!');
     B.bounced = false;
@@ -2288,7 +2518,7 @@ function guardFree(G, B) {
     B.state = 'free'; B.t = 2.2; G.white = 0.55; Sound.play('shrine');
     for (const d of G.L.doors) if (d.boss) d.open = true;
     G.L.ents = G.L.ents.filter(e => !e.spawned); G.shots = G.shots.filter(s => !s.guard);
-    SAVE.d.guards = SAVE.d.guards || {}; SAVE.d.guards[B.kind] = true; ST('guardians'); SAVE.write();
+    SAVE.d.guards = SAVE.d.guards || {}; SAVE.d.guards[B.kind] = true; ST('guardians'); SAVE.write(); lookCheck();
     UI.bossbar(null); Sound.musicFor(G.world); B.clean = true;
     UI.talk(GUARD_TALK[B.kind].free.map(l => [B.kind, l]), () => { UI.banner(B.D.name + ' is free', 'The way is open'); G.revealGate(); });
 }
@@ -2326,6 +2556,56 @@ function guardFx(G, B, dt) {
     B.fx = B.fx.filter(f => f.t > 0);
 }
 const GUARD_AI = {
+    owl(G, B, dt) {
+        const p = G.p, sp = 1 + B.phase * 0.18, hy = B.top + 48, mid = (B.x0 + B.x1) / 2;
+        if (B.state === 'go') { B.state = 'climb'; B.t = 1; }
+        B.flap = (B.flap || 0) + dt * (B.state === 'tired' ? 4 : B.state === 'gust' ? 24 : 11);
+        switch (B.state) {
+            case 'climb': B.y = lerp(B.y, hy, dt * 2.5); B.x = lerp(B.x, B.rx !== undefined ? B.rx : mid, dt * 2);
+                if (B.t <= 0) { B.state = 'hover'; B.t = 2.6 / sp; B.drop = 0.7; B.rx = undefined; } break;
+            case 'hover':           // high up: fans of ice feathers (it spreads its wings first)
+                B.x = lerp(B.x, clamp(p.x, B.x0 + 70, B.x1 - 70), dt * 1.1); B.y = lerp(B.y, hy + Math.sin(B.wob * 2.5) * 8, dt * 3); B.face = sign(p.x - B.x) || B.face;
+                B.drop -= dt; B.flare = clamp(1 - B.drop / 0.45, 0, 1);
+                if (B.drop <= 0 && B.t > 0.3) {
+                    B.drop = 1.5 / sp; const n = B.phase >= 2 ? 5 : 3;
+                    for (let i = 0; i < n; i++) { const a = (i - (n - 1) / 2) * 0.34; G.shots.push({ x: B.x + Math.sin(a) * 20, y: B.y + 18, vx: Math.sin(a) * 170, vy: 90 + Math.cos(a) * 40, g: 420, life: 4, style: 'feather', guard: true, kind: 'owl', col: '#e8f6ff', light: '200,235,255' }); }
+                    Sound.play('throw');
+                }
+                if (B.t <= 0) {
+                    B.n++; B.flare = 0;
+                    if (B.n % 2) { B.state = 'swoop'; B.u = 0; B.sx = B.x; B.sy = B.y; B.ex = B.x < mid ? B.x1 - 70 : B.x0 + 70; B.k = B.phase >= 3 ? 2 : 1; Sound.play('screech'); }
+                    else { B.state = 'gust'; B.t = 2.2; B.gx = p.x < mid ? B.x1 - 80 : B.x0 + 80; Sound.play('hoot'); }
+                }
+                break;
+            case 'swoop': {         // skims the floor from one side to the other: jump it (or glide over it)
+                B.u += dt / (1.35 / sp); const u = Math.min(1, B.u), base = lerp(B.sy, hy, u);
+                B.x = lerp(B.sx, B.ex, u); B.y = base + (B.floor - B.D.r - 4 - base) * Math.sin(Math.PI * u); B.face = sign(B.ex - B.sx);
+                if (u >= 1) { if (--B.k > 0) { B.u = 0; B.sx = B.x; B.sy = B.y; B.ex = B.x < mid ? B.x1 - 70 : B.x0 + 70; } else { B.state = 'hover'; B.t = 2.2 / sp; B.drop = 0.8; } }
+                break;
+            }
+            case 'gust': {          // flies to one side and beats up a gale: it shoves you away (harder while you glide)
+                B.x = lerp(B.x, B.gx, dt * 3); B.y = lerp(B.y, B.floor - TS * 5, dt * 3); B.face = sign(mid - B.x) || 1;
+                if (B.t < 1.6) {
+                    if (!B.blowing) { B.blowing = true; Sound.play('gust'); }
+                    const away = sign(p.x - B.x) || 1;
+                    if (!p.dead) p.vx = clamp(p.vx + away * 1500 * (p.gliding ? 1.6 : 1) * dt, -360, 360);
+                    if (Math.random() < 0.8) G.parts.push({ x: B.x + away * rand(20, 60), y: B.floor - rand(10, TS * 9), vx: away * rand(420, 620), vy: rand(-20, 20), life: 0.8, max: 0.8, size: rand(1.5, 3), color: '#eaf6ff', sq: true });
+                }
+                if (B.t <= 0) {
+                    B.blowing = false; B.state = 'tired'; B.t = 3.0 - B.phase * 0.12; B.open = true;
+                    // it hangs about 6 tiles from the geyser nearest to you, 7 tiles up: out of jumping reach
+                    const v = G.L.vents.filter(q => q.x > B.x0 && q.x < B.x1).sort((a, b) => Math.abs(a.x - p.x) - Math.abs(b.x - p.x))[0];
+                    B.tx = v ? clamp(v.x + TS / 2 + sign(mid - v.x) * TS * 6, B.x0 + 60, B.x1 - 60) : mid;
+                    if (!G.owlHint) { G.owlHint = true; G.toast('Out of breath! Ride a geyser up and glide onto it'); }
+                }
+                break;
+            }
+            case 'tired':           // out of breath and open, just too high to jump to
+                B.x = lerp(B.x, B.tx, dt * 2.5); B.y = lerp(B.y, B.floor - TS * 7 + Math.sin(B.wob * 3) * 4, dt * 2.5); B.open = true;
+                if (B.t <= 0) { B.open = false; B.state = 'climb'; B.t = 0.9; }
+                break;
+        }
+    },
     moss(G, B, dt) {
         // 1.2: made fair. 4 hits (was 6); a long squat tell (1.1 s, was 0.7); a long rest after each landing (the moment to
         // run under it and bounce off its back); slower, floatier hops; waves only on every other landing and slower;
@@ -2505,7 +2785,7 @@ function drawGuard(x, G, t) {
     if (dying) x.translate(rand(-3, 3), rand(-3, 3));
     const hit = B.hitT > 0.4 && Math.floor(t * 20) % 2, lit = free || hit;
     // the sprites are drawn at a reference size and scaled up to the guardian's real size
-    const base = { moss: 38, shard: 30, bell: 36, cinder: 36 }[B.kind], k = B.D.r / base;
+    const base = { moss: 38, shard: 30, bell: 36, cinder: 36, owl: 34 }[B.kind], k = B.D.r / base;
     x.save(); x.scale(k, k); GUARD_ART[B.kind](x, Object.assign({}, B, { D: Object.assign({}, B.D, { r: base }) }), t, lit); x.restore();
     if (B.say && B.say.t > 0) { x.restore(); drawSay(x, B.x, B.y - B.D.r - 30, B.say); x.save(); x.translate(B.x, B.y); }
     if (B.open && !free) { x.fillStyle = '#fff'; x.font = 'bold 22px sans-serif'; x.textAlign = 'center'; x.globalAlpha = 0.6 + 0.4 * Math.sin(t * 10); x.fillText('!', 0, -B.D.r - 14); x.globalAlpha = 1;
@@ -2521,6 +2801,33 @@ function darkWisps(x, r, t) {
 }
 const eyes = (x, ex, ey, r, lit, look) => { for (const s of [-1, 1]) { x.fillStyle = lit ? '#fff' : '#d9b0ff'; x.beginPath(); x.ellipse(ex + s * r * 2.2, ey, r, r * 1.2, 0, 0, 7); x.fill(); x.fillStyle = '#1a0630'; x.beginPath(); x.arc(ex + s * r * 2.2 + look * r * 0.4, ey + r * 0.2, r * 0.5, 0, 7); x.fill(); } };
 const GUARD_ART = {
+    owl(x, B, t, lit) {
+        const r = B.D.r, tired = B.state === 'tired' || B.state === 'idle', fl = tired ? 0.35 + Math.sin((B.flap || t * 6)) * 0.1 : Math.sin(B.flap || t * 11), spread = Math.max(B.flare || 0, B.state === 'gust' ? 1 : 0);
+        x.scale(B.face < 0 ? -1 : 1, 1);
+        if (!lit && !B.clean) darkWisps(x, r, t);
+        // wings (spread wide before a volley and in the gale; drooping when tired)
+        for (const s of [-1, 1]) {
+            x.save(); x.scale(s, 1); x.rotate(tired ? 0.7 : -0.15 + fl * 0.4 - spread * 0.35);
+            const g = x.createLinearGradient(0, -10, 60, 20); g.addColorStop(0, lit ? '#ffffff' : '#eef8ff'); g.addColorStop(1, lit ? '#f4fbff' : '#7aa6d0');
+            x.fillStyle = g; x.beginPath(); x.moveTo(6, -8); x.quadraticCurveTo(34, -30 - spread * 8, 62 + spread * 8, -10); x.lineTo(54, -2); x.lineTo(58, 6); x.lineTo(46, 4); x.lineTo(48, 13); x.lineTo(34, 8); x.lineTo(30, 16); x.quadraticCurveTo(14, 12, 6, 10); x.closePath(); x.fill();
+            x.strokeStyle = lit ? '#e8f0f8' : 'rgba(60,100,150,.55)'; x.lineWidth = 1.4; x.beginPath(); x.moveTo(14, 4); x.lineTo(50, -6); x.moveTo(16, 9); x.lineTo(40, 6); x.stroke(); x.restore();
+        }
+        // body: round and fluffy, speckled
+        const g = x.createRadialGradient(-6, -10, 4, 0, 0, r); g.addColorStop(0, '#ffffff'); g.addColorStop(1, lit ? '#f0f8ff' : '#b8d4ec');
+        x.fillStyle = g; x.beginPath(); x.ellipse(0, 2, r * 0.68, r * 0.82, 0, 0, 7); x.fill();
+        x.fillStyle = lit ? '#e8f0f8' : '#5a7ea6'; for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(((i * 37) % 30) - 15, 6 + ((i * 23) % 22) - 4, 1.8, 0, 7); x.fill(); }
+        // ear tufts, the face disc, eyes (frost-blue while the dark is in it), beak
+        x.fillStyle = lit ? '#fff' : '#d8eaf8'; for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 10, -r * 0.62); x.lineTo(s * 20, -r * 1.05); x.lineTo(s * 22, -r * 0.5); x.fill(); }
+        x.fillStyle = lit ? '#fff' : '#f4fbff'; x.beginPath(); x.ellipse(-8, -r * 0.3, 11, 10, 0, 0, 7); x.ellipse(8, -r * 0.3, 11, 10, 0, 0, 7); x.fill();
+        for (const s of [-1, 1]) {
+            x.fillStyle = lit ? '#ffd36b' : '#9ff0ff'; x.beginPath(); x.arc(s * 8, -r * 0.3, 6.5, 0, 7); x.fill();
+            x.fillStyle = '#10142a'; x.beginPath(); x.arc(s * 8 + 1, -r * 0.3, 3.2, 0, 7); x.fill();
+            if (tired) { x.fillStyle = lit ? '#fff' : '#f4fbff'; x.fillRect(s * 8 - 7, -r * 0.3 - 8, 14, 7); }        // heavy eyelids
+        }
+        x.fillStyle = '#e0a040'; x.beginPath(); x.moveTo(-3.5, -r * 0.16); x.lineTo(3.5, -r * 0.16); x.lineTo(0, -r * 0.16 + 8); x.closePath(); x.fill();
+        // talons
+        x.strokeStyle = '#4a3a2a'; x.lineWidth = 2.2; for (const s of [-1, 1]) { x.beginPath(); x.moveTo(s * 8, r * 0.78); x.lineTo(s * 6, r * 0.95); x.moveTo(s * 8, r * 0.78); x.lineTo(s * 11, r * 0.95); x.stroke(); }
+    },
     moss(x, B, t, lit) {
         const r = B.D.r, sq = B.state === 'hop' ? clamp(-B.vy / 1400, -0.15, 0.25) : -(B.squat || 0) * 0.18 - B.land * 0.2;
         x.scale(B.face < 0 ? -1 : 1, 1); x.scale(1 - sq * 0.6, 1 + sq);
@@ -2600,6 +2907,8 @@ const GUARD_ART = {
 // guardian shots: crystal shards, lava blobs, falling rocks
 function drawGShot(x, b, t) {
     x.save(); x.translate(b.x, b.y);
+    if (b.style === 'snow') { x.fillStyle = '#ffffff'; x.beginPath(); x.arc(0, 0, 7, 0, 7); x.fill(); x.fillStyle = '#c8dcf0'; x.beginPath(); x.arc(2, 2, 3.5, 0, 7); x.fill(); x.restore(); return; }
+    if (b.style === 'feather') { x.rotate(Math.atan2(b.vy, b.vx) - Math.PI / 2); x.fillStyle = '#e8f6ff'; x.beginPath(); x.moveTo(0, 13); x.quadraticCurveTo(7, 0, 0, -13); x.quadraticCurveTo(-7, 0, 0, 13); x.fill(); x.strokeStyle = '#7ab0e0'; x.lineWidth = 1.3; x.beginPath(); x.moveTo(0, 12); x.lineTo(0, -12); x.stroke(); x.restore(); return; }
     if (b.style === 'shard') { x.rotate(Math.atan2(b.vy, b.vx) - Math.PI / 2); x.fillStyle = '#bff7ff'; x.beginPath(); x.moveTo(0, 12); x.lineTo(5, -4); x.lineTo(0, -12); x.lineTo(-5, -4); x.closePath(); x.fill(); x.fillStyle = '#fff'; x.fillRect(-1, -8, 2, 14); }
     else if (b.style === 'lava') { const g = x.createRadialGradient(0, 0, 1, 0, 0, 11); g.addColorStop(0, '#fff2a0'); g.addColorStop(0.5, '#ff8a2a'); g.addColorStop(1, 'rgba(200,40,0,0)'); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 11, 0, 7); x.fill(); }
     else { x.rotate(t * 6); x.fillStyle = '#5a3a30'; x.beginPath(); x.moveTo(-9, -4); x.lineTo(-2, -10); x.lineTo(9, -5); x.lineTo(7, 7); x.lineTo(-6, 9); x.closePath(); x.fill(); x.strokeStyle = '#ff8a3a'; x.lineWidth = 2; x.stroke(); }
@@ -2617,7 +2926,7 @@ function drawGShot(x, b, t) {
 // ==========================================
 const MP = { on: false, net: null, host: false, code: '', mode: 'race', level: 0, players: new Map(), me: 0, ghosts: new Map(), fin: [], t0: 0,
     sendT: 0, shoveT: 0, endT: 0, ended: false, name: '' };
-const MP_ABIL = { double: true, wall: true, dash: true };
+const MP_ABIL = { double: true, wall: true, dash: true, glide: true };
 const MP_MAX = 6;
 function mpHG() {
     const h = window.HGNet || (() => { try { return window.parent && window.parent.HGNet; } catch (e) { return null; } })();
@@ -2819,6 +3128,8 @@ const G = {
         const def = LEVELS[idx]; if (!def) return;
         this.idx = idx; this.L = parseLevel(def); this.world = def.world; this.levelKey = def.id + ':' + Date.now();
         this.p = makePlayer(this.L.start.x, this.L.start.y); this.p.hearts = this.maxHearts();
+        if (!this.mp) applyLook(this.p);                    // 1.5: the light you chose (multiplayer gives everyone their own)
+        if (this.trial && (this.trial.id !== def.id || this.mp || this.run)) this.trial = null;
         this.checkpoint = { x: this.L.start.x, y: this.L.start.y };
         this.parts = []; this.ghosts = []; this.rings = []; this.shots = []; this.t = 0; this.time = 0; this.done = false; this.flash = 0; this.white = 0; this.ambient = null;
         this.got = { sparks: 0, moths: [false, false, false] }; this.deathShown = false; this.cause = ''; this.stats = { deaths: 0, hits: 0, jumps: 0, stomps: 0, dashes: 0 };
@@ -2838,14 +3149,16 @@ const G = {
         Sound.musicFor(this.world);
         UI.show(null); $('#hud').classList.remove('hidden');
         this.hud();
-        UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
+        $('#h-trial').classList.add('hidden');
+        if (this.trial) trialBegin(this);
+        else UI.banner(def.world === 4 ? 'Final' : WORLDS[def.world].name + ' · ' + def.id, def.name);
     },
     update(dt) {
         if (this.state !== 'play') return;
         // a split-second freeze when a stomp lands: it makes the hit feel solid
         if (this.hitstop > 0) { this.hitstop -= dt; return; }
         this.t += dt; this.iris = Math.min(1, (this.iris ?? 1) + dt * 1.5); if (this.p.spawnT > 0) this.p.spawnT -= dt;
-        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } }
+        if (!this.done) { this.time += dt; SAVE.d.playTime += dt; this._sv = (this._sv || 0) + dt; if (this._sv > 10) { this._sv = 0; SAVE.write(); } if (this.trial) trialTick(this, dt); }
         updatePlayer(this, dt);
         if (this.mp) mpUpdate(this, dt);
         updateWorld(this, dt);
@@ -2869,12 +3182,13 @@ const G = {
         if (L.w * TS < vw) tx = L.w * TS / 2; if (L.h * TS < vh) ty = L.h * TS / 2;
         if (this.cam.snap > 0) { this.cam.snap -= dt; this.cam.x = tx; this.cam.y = ty; }
         else { this.cam.x = lerp(this.cam.x, tx, Math.min(1, dt * 6)); this.cam.y = lerp(this.cam.y, ty, Math.min(1, dt * 5)); }
-        if (Input.hit('retry') && !p.dead && !this.done) { respawn(this); this.toast('Back to the last lantern'); }
+        if (Input.hit('retry') && !p.dead && !this.done) { if (this.trial) { this.start(this.idx); return; } respawn(this); this.toast('Back to the last lantern'); }      // (a trial starts over)
     },
     revealGate() { const g = this.L.ents.find(e => e.kind === 'gate'); if (g) { g.gone = false; g.hidden = false; burst(this, g.x, g.y, '#fff2c4', 40, 260); } },
     shrine(e) {
         e.used = true;
-        const what = { double: ['Double jump', 'Press jump again in the air'], wall: ['Wall jump', 'Slide down a wall and jump off it'], dash: ['Dash', 'Press Shift or X to dash (hold up to dash upward)'] }[this.L.def.gives];
+        const what = { double: ['Double jump', 'Press jump again in the air'], wall: ['Wall jump', 'Slide down a wall and jump off it'], dash: ['Dash', 'Press Shift or X to dash (hold up to dash upward)'],
+            glide: ['Glide', 'In the air, press jump again and hold it: you float (after your double jump)'] }[this.L.def.gives];
         if (!what) return;
         const first = !SAVE.d.abilities[this.L.def.gives];
         SAVE.d.abilities[this.L.def.gives] = true; SAVE.write();
@@ -2887,6 +3201,7 @@ const G = {
         const gt = this.L.ents.find(e => e.kind === 'gate'); this.outro = { t: 0, x: gt ? gt.x : this.p.x, y: gt ? gt.y - 10 : this.p.y };
         burst(this, this.outro.x, this.outro.y, '#fff2c4', 40, 260, true);
         if (this.mp) { this.p.vx = 0; mpFinished(this.time); return; }       // playing together: no records, the host collects the finish order
+        if (this.trial) { trialFinish(this); return; }                       // 1.5: a trial keeps its own records
         const def = this.L.def, rec = SAVE.d.levels[def.id] || { best: null, moths: [false, false, false], sparks: 0, clears: 0 };
         const best = rec.best == null || this.time < rec.best, mothsBefore = rec.moths.filter(Boolean).length;
         rec.moths = rec.moths.map((m, i) => m || !!this.got.moths[i]);
@@ -2895,21 +3210,22 @@ const G = {
         const missing = flawlessMissing(def, { hits: this.stats.hits, moths: this.got.moths, sparks: this.got.sparks }, SAVE.d), flawNew = !missing.length && !rec.perfect;
         if (!missing.length) rec.perfect = true;
         ST('clears'); if (flawNew) ST('flawless'); if (def.world === 4) ST('bossKills');
-        SAVE.d.levels[def.id] = rec; SAVE.write();
+        SAVE.d.levels[def.id] = rec; SAVE.write(); lookCheck();
         this.p.vx = 0;
         // One Life run: no results screen, straight on to the next level (the run ends at the first fall)
         if (this.run) {
             this.run.cleared++; SAVE.d.runs = SAVE.d.runs || {}; SAVE.d.runs.onelife = Math.max(SAVE.d.runs.onelife || 0, this.run.cleared); SAVE.write();
             const nx = this.idx + 1;
             setTimeout(() => {
-                if (!LEVELS[nx]) { this.state = 'done'; UI.banner('One Life', 'You cleared the whole game!', 'Every level without falling once.'); this.run = null; setTimeout(() => UI.map(), 3500); return; }
+                if (!LEVELS[nx] || LEVELS[nx].world > 4) { this.state = 'done';      // (the run is the main game: it ends at The Gloom)
+                     UI.banner('One Life', 'You cleared the whole game!', 'Every level without falling once.'); this.run = null; setTimeout(() => UI.map(), 3500); return; }
                 fadeTo(() => { this.start(nx); UI.banner('One Life · ' + this.run.cleared + ' cleared', LEVELS[nx].name); });
             }, 1300);
             return;
         }
         setTimeout(() => {
             this.state = 'done';
-            (def.world === 4 ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, missing, flawNew, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
+            (def.world === 4 || def.id === '6-11' ? UI.ending.bind(UI) : UI.results.bind(UI))({ def, time: this.time, best, sparks: this.got.sparks, sparksOf: this.L.sparks, moths: this.got.moths, hits: this.stats.hits, missing, flawNew, kills: this.stats.stomps, jumps: this.stats.jumps, mothsNew: rec.moths.filter(Boolean).length - mothsBefore, deaths: this.stats.deaths, rec });
         }, 1500);
     },
     hud() {
@@ -2946,29 +3262,43 @@ const UI = {
     },
     unlocked(i) {
         if (i === 0) return true;
+        // 1.5: 6-11 opens when Frostveil's first ten frozen lanterns are found (or once it has been cleared)
+        if (LEVELS[i].id === '6-11') return !!SAVE.d.levels['6-11'] || LEVELS.filter(l => l.world === 5 && l.id !== '6-11').every(l => (SAVE.d.secrets || {})[l.id]);
         if (SAVE.d.levels[LEVELS[i - 1].id]) return true;
         for (let j = i + 1; j < LEVELS.length; j++) if (SAVE.d.levels[LEVELS[j].id]) return true;       // 1.2: saves from before the new levels keep everything they had
         return false;
     },
-    map() {
+    // the level map; 1.5: mode 'trial' shows the trials (cleared levels only, medals instead of stars)
+    map(mode) {
+        if (mode) this.mapMode = mode;
+        const trial = this.mapMode === 'trial'; if (!trial) G.trial = null;
         G.state = 'map'; $('#hud').classList.add('hidden'); Sound.musicFor(0);
         const box = $('#worlds'); box.innerHTML = '';
+        $('#m-ttl').textContent = trial ? 'Trials: beat the clock' : 'Choose a level'; $('#m-mode').textContent = trial ? 'Story' : 'Trials';
+        $('#s-map').classList.toggle('trialmode', trial);
         let moths = 0, mothsOf = 0;
         WORLDS.forEach((W, wi) => {
             const lv = LEVELS.map((l, i) => ({ l, i })).filter(o => o.l.world === wi); if (!lv.length) return;
-            const card = document.createElement('div'); card.className = 'world' + (this.unlocked(lv[0].i) ? '' : ' locked');
+            const card = document.createElement('div'); card.className = 'world' + ((trial ? trialOpen(lv[0].i) : this.unlocked(lv[0].i)) ? '' : ' locked');
             const art = document.createElement('div'); art.className = 'wart'; const cv = document.createElement('canvas'); cv.width = 600; cv.height = 240; art.appendChild(cv);
             const layers = paintBackground(wi, 600, 240), cx = cv.getContext('2d'); layers.forEach(l => cx.drawImage(l.c, 0, l.fixed ? 0 : 20 * (1 - l.k)));
             const done = lv.filter(o => SAVE.d.levels[o.l.id]).length;
             const fl = lv.filter(o => (SAVE.d.levels[o.l.id] || {}).perfect).length;
-            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${done}/${lv.length}${fl ? ` · <span class="flawtxt">✦ ${fl}</span>` : ''}</div>`);
+            const pts = lv.reduce((n, o) => n + (((SAVE.d.trials || {})[o.l.id] || {}).m | 0), 0);
+            art.insertAdjacentHTML('beforeend', `<div class="wname">${W.name}</div><div class="wsub">${trial ? `${medalHTML(3)} ${lv.filter(o => (((SAVE.d.trials || {})[o.l.id] || {}).m | 0) >= 3).length}/${lv.length} gold · ${pts} pts` : `${done}/${lv.length}${fl ? ` · <span class="flawtxt">✦ ${fl}</span>` : ''}`}</div>`);
             card.appendChild(art);
             const list = document.createElement('div'); list.className = 'lvls';
             lv.forEach(({ l, i }) => {
-                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : '') + (rec && rec.perfect ? ' flaw' : ''); b.disabled = !this.unlocked(i);
+                const rec = SAVE.d.levels[l.id], b = document.createElement('button'); b.className = 'lvl' + (l.world === 4 ? ' boss' : '') + (l.id === '6-11' ? ' secretlv' : '') + (rec && rec.perfect && !trial ? ' flaw' : ''); b.disabled = trial ? !trialOpen(i) : !this.unlocked(i);
                 const m = (rec && rec.moths) || [false, false, false], n = l.map.join('').split('*').length - 1;
                 moths += m.filter(Boolean).length; mothsOf += n;
-                b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? 'Locked' : 'New'}</small></span>`
+                const tr = (SAVE.d.trials || {})[l.id];
+                if (trial) {
+                    b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id.split('-')[1]}</span><span class="nm">${l.name}<small>${b.disabled ? 'Clear it first' : tr && tr.t != null ? 'Best ' + fmtTime(tr.t) : 'Gold ' + fmtTime(medalTime(l, 3))}</small></span><span class="moths">${medalHTML(tr ? tr.m : 0)}</span>`;
+                    b.onclick = () => { Sound.play('click'); trialStart(i); };
+                    list.appendChild(b); return;
+                }
+                b.innerHTML = `<span class="num">${l.world === 4 ? '☠' : l.id === '6-11' ? '✧' : l.id.split('-')[1]}</span><span class="nm">${b.disabled && l.id === '6-11' ? '???' : l.name}<small>${rec && rec.best != null ? 'Best ' + fmtTime(rec.best) : b.disabled ? (l.id === '6-11' ? 'Find the frozen lanterns (' + frozenFound() + '/10)' : 'Locked') : 'New'}</small></span>`
                     + (n ? `<span class="moths">${m.slice(0, n).map(x => `<span class="${x ? 'moth-on' : 'moth-off'}">★</span>`).join('')}${TALKS[l.id] ? `<span class="${SAVE.d.talks[l.id] ? 'mem-on' : 'moth-off'}" title="Talked to the person here">●</span>` : ''}</span>` : '');
                 if (rec && rec.perfect) b.insertAdjacentHTML('beforeend', '<span class="flawgem" title="Done flawless: no hits, every star, every spark, the lost lantern and the talk">✦</span>');
                 b.onclick = () => { Sound.play('click'); fadeTo(() => G.start(i)); };
@@ -2976,7 +3306,8 @@ const UI = {
             });
             card.appendChild(list); box.appendChild(card);
         });
-        $('#m-total').innerHTML = `<span class="moth-on">★</span> ${moths}/${mothsOf} &nbsp; <span class="flawtxt" title="Levels done flawless">✦ ${flawlessCount()}/${LEVELS.length}</span>`;
+        $('#m-total').innerHTML = trial ? `<span title="Medal points: bronze 1, silver 2, gold 3, Lumen 4">${medalHTML(3)} ${medalCount(3)} gold · ${medalPoints()} pts</span>`
+            : `<span class="moth-on">★</span> ${moths}/${mothsOf} &nbsp; <span class="flawtxt" title="Levels done flawless">✦ ${flawlessCount()}/${LEVELS.length}</span>`;
         this.show('map');
     },
     pause() {
@@ -2998,11 +3329,12 @@ const UI = {
             ['Enemies defeated', r.kills],
             ['Falls', r.deaths]
         ];
-        $('#d-title').textContent = r.def.world === 4 ? 'You relit the world!' : 'Level complete!';
+        $('#d-title').textContent = r.def.world === 4 ? 'You relit the world!' : r.def.id === '6-11' ? 'Every light is home!' : 'Level complete!'; $('#d-retry').textContent = 'Play again';
         $('#d-rows').innerHTML = rows.map(([a, b]) => `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
         const next = LEVELS[G.idx + 1];
         $('#d-unlock').textContent = r.def.gives && SAVE.d.abilities[r.def.gives] && r.rec.clears === 1 ? 'New world unlocked: ' + (next ? WORLDS[next.world].name : '') : (next && next.world !== r.def.world && r.rec.clears === 1 ? 'New world unlocked: ' + WORLDS[next.world].name : '');
-        $('#d-next').classList.toggle('hidden', !next);
+        if (next && next.id === '6-11' && !this.unlocked(G.idx + 1)) $('#d-unlock').textContent = 'Something is still hidden up here: ' + frozenFound() + ' of 10 frozen lanterns found';
+        $('#d-next').classList.toggle('hidden', !next || !this.unlocked(G.idx + 1));
         $('#d-next').textContent = next ? 'Next: ' + next.name : 'Next';
         $('#hud').classList.add('hidden');
         this.show('done');
@@ -3032,11 +3364,13 @@ const UI = {
 const CAUSE = { pit: 'You fell into the dark.', spike: 'Spikes.', lava: 'The lava took you.', slime: 'A slime got you.', bat: 'A bat got you.',
     thorn: 'A thornback. Never land on those spines.', turret: 'A flower turret hit you.', boss: 'The Gloom caught you.',
     moss: 'Mossback flattened you.', shard: 'Shardwing got you.', bell: 'The Bellkeeper got you.', cinder: 'Cinderjaw got you.',
-    hopper: 'A hopper got you.', drip: 'A stalactite fell on you.', jet: 'A fire jet got you.' };
+    hopper: 'A hopper got you.', drip: 'A stalactite fell on you.', jet: 'A fire jet got you.',
+    wisp: 'A frostwisp caught you.', puff: 'A snowpuff got you.', snowball: 'A snowball hit you.', owl: 'Hoarfrost got you.' };
 const TIPS = ['Lanterns are checkpoints: light every one you pass.', 'Hold jump longer to jump higher.', 'You can still jump a moment after running off a ledge.',
     'Stomp slimes, bats and turrets from above. Never thornbacks.', 'A dash goes straight through enemies.', 'Press R to go back to the last lantern.',
     'Crumbling blocks fall soon after you touch them: keep moving.', 'Turret shots fly straight: jump over them or dash through.', 'Hearts refill at every lantern.', 'Guardians can only be hurt when they show a !. Watch what they do first.', 'Talk to everyone you meet. Each of them knows part of what happened.', 'Press E or Enter next to someone to hear them again.',
-    'Hold down to drop through a thin ledge.'];
+    'Hold down to drop through a thin ledge.', 'Glide: after your double jump, press jump again and hold it.', 'Stop gliding over a snow geyser and it carries you up.',
+    'On ice, let go early: you slide.', 'Trials: every level you have cleared, against the clock. Win medals for new lights.'];
 UI.died = function () {
     G.state = 'dead'; Input.clear(); $('#banner').classList.remove('on'); $('#hud').classList.add('hidden'); $('#touch').classList.add('hidden');
     $('#dd-cause').textContent = (CAUSE[G.cause] || 'The light went out.') + (G.run ? '  One Life run over: ' + G.run.cleared + ' level' + (G.run.cleared === 1 ? '' : 's') + ' cleared (best ' + ((SAVE.d.runs || {}).onelife || 0) + ').' : '');
@@ -3056,10 +3390,11 @@ UI.stats = function () {
     const pt = SAVE.d.playTime || 0, tp = pt >= 3600 ? Math.floor(pt / 3600) + 'h ' + Math.floor(pt % 3600 / 60) + 'm' : Math.floor(pt / 60) + 'm ' + Math.floor(pt % 60) + 's';
     const enemy = n('death_enemy');
     const rows = [['sec', 'Progress'], ['Time played', tp], ['Levels cleared', done.length + ' / ' + LEVELS.length], ['Stars', moths + ' / ' + allMoths], ['Sparks collected', SAVE.d.sparks],
-        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).length + ' / 4'], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
+        ['Stories heard', talkCount() + ' / ' + TALK_N], ['Guardians freed', Object.keys(SAVE.d.guards || {}).filter(k => GUARDS[k]).length + ' / ' + Object.keys(GUARDS).length], ['Lost lanterns found', Object.keys(SAVE.d.secrets || {}).length + ' / ' + LEVELS.filter(l => l.map.some(r => r.includes('z'))).length],
         ['Levels done flawless', flawlessCount() + ' / ' + LEVELS.length], ['Bosses beaten', n('bossKills')], ['All best times', total == null ? 'clear every level' : fmtTime(total)],
+        ['Frozen lanterns', frozenFound() + ' / 11'], ['Trial medals', medalCount(1) + ' won · ' + medalCount(3) + ' gold · ' + medalPoints() + ' points'],
         ['sec', 'Falls'], ['Total', SAVE.d.deaths], ['Into pits', n('death_pit')], ['On spikes', n('death_spike')], ['In lava', n('death_lava')], ['To enemies', enemy], ['Hits taken', n('hits')],
-        ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
+        ['sec', 'Moves'], ['Jumps', n('jumps')], ['Double jumps', n('djumps')], ['Wall jumps', n('walljumps')], ['Dashes', n('dashes')], ['Time gliding', Math.round(S.glide || 0) + ' s'], ['Enemies defeated', n('kills')], ['Lanterns lit', n('lanterns')],
         ['Distance', n('dist').toLocaleString() + ' tiles']];
     $('#st-rows').innerHTML = rows.map(([a, b]) => a === 'sec' ? `<div class="sec">${b}</div>` : `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
     this.show('stats');
@@ -3196,6 +3531,138 @@ $('#t-saves').addEventListener('click', () => { Sound.play('click'); SVUI.mode =
 $('#sv-back').addEventListener('click', () => { Sound.play('click'); UI.show('title'); titleStats(); });
 svMeta();
 
+// ---- 64-trials.js ----
+// ==========================================
+// TRIALS (1.5): any level you have cleared, against the clock. No talking; lanterns still catch you but the clock never
+// stops; R starts the run over. A ghost of your best run races you. Medals: Bronze, Silver, Gold, and Lumen for the
+// very best (the gold time is each level's `par`, worked out by tools/levels.py from the shortest way through it).
+// Records: SAVE.d.trials[id] = { t: best seconds, m: best medal 0-4, n: runs }. Ghosts: their own key ('lumighost'),
+// on this device only (not synced: too big for a cloud save), the 10 most recent levels.
+// LOOKS: the colour of your light. Six to start with, five more to earn (Frostveil, the frozen lanterns, gold medals).
+// ==========================================
+const MEDALS = [null, { n: 'Bronze', k: 1.6, c: '#e0965a' }, { n: 'Silver', k: 1.25, c: '#dfe8f2' }, { n: 'Gold', k: 1, c: '#ffd23a' }, { n: 'Lumen', k: 0.85, c: '#9ff6ff' }];
+const medalTime = (def, m) => m === 4 ? Math.floor(def.par * 0.85) : Math.ceil(def.par * MEDALS[m].k);
+function medalFor(def, t) { let m = 0; for (let k = 1; k <= 4; k++) if (t <= medalTime(def, k)) m = k; return m; }
+const medalPoints = () => Object.keys(SAVE.d.trials || {}).reduce((n, k) => n + Math.min(4, (SAVE.d.trials[k] || {}).m | 0), 0);
+const medalCount = m => Object.keys(SAVE.d.trials || {}).filter(k => ((SAVE.d.trials[k] || {}).m | 0) >= m).length;
+const trialOpen = i => !!LEVELS[i] && !!SAVE.d.levels[LEVELS[i].id] && LEVELS[i].par > 0;
+const medalHTML = (m, big) => m ? `<span class="medal${big ? ' big' : ''}" style="--mc:${MEDALS[m].c}" title="${MEDALS[m].n}">${m === 4 ? '✦' : '●'}</span>` : `<span class="medal none${big ? ' big' : ''}">○</span>`;
+
+// ---------- ghosts: 10 positions a second, in quarter tiles, as differences in one short string ----------
+const GHOST_KEY = 'lumighost';
+function ghostAll() { try { const o = JSON.parse(localStorage.getItem(GHOST_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+function ghostLoad(id) {
+    const g = ghostAll()[id]; if (!g || typeof g.d !== 'string') return null;
+    const n = g.d.split(',').map(Number), out = []; let x = 0, y = 0;
+    for (let i = 0; i + 1 < n.length; i += 2) { x += n[i]; y += n[i + 1]; out.push([x * 8, y * 8]); }
+    return out.length ? out : null;
+}
+function ghostSave(id, pts, t) {
+    const all = ghostAll(), d = []; let px = 0, py = 0;
+    for (const [x, y] of pts) { const qx = Math.round(x / 8), qy = Math.round(y / 8); d.push(qx - px, qy - py); px = qx; py = qy; }
+    all[id] = { d: d.join(','), t, at: Date.now() };
+    for (const k of Object.keys(all).sort((a, b) => (all[b].at || 0) - (all[a].at || 0)).slice(10)) delete all[k];
+    try { localStorage.setItem(GHOST_KEY, JSON.stringify(all)); } catch (e) {}
+}
+
+// ---------- a trial run ----------
+function trialStart(i) { G.run = null; G.trial = { id: LEVELS[i].id }; fadeTo(() => G.start(i)); }
+// called by G.start when this.trial is set: the ghost, no talking, the first target
+function trialBegin(G) {
+    const def = G.L.def, rec = SAVE.d.trials[def.id];
+    Object.assign(G.trial, { rec: [], rt: 0, ghost: ghostLoad(def.id), best: rec ? rec.t : null, hudT: 0 });
+    for (const e of G.L.ents) if (e.kind === 'npc') e.talked = true;
+    G.guardSpoke = G.gloomSpoke = true;
+    const want = Math.min(4, ((rec && rec.m) | 0) + 1);
+    UI.banner('Trial · ' + def.id, def.name, (rec && rec.m >= 4 ? 'Every medal won: beat ' + fmtTime(rec.t) : MEDALS[want].n + ' medal: ' + fmtTime(medalTime(def, want))) + (G.trial.ghost ? ' · your ghost races you' : ''));
+    $('#h-trial').classList.remove('hidden'); trialHud(G);
+}
+function trialTick(G, dt) {
+    const T = G.trial; T.rt += dt;
+    if (T.rt >= 0.1 && T.rec.length < 9000) { T.rt -= 0.1; T.rec.push([G.p.x, G.p.y]); }
+    T.hudT -= dt; if (T.hudT <= 0) { T.hudT = 0.2; trialHud(G); }
+}
+// the best medal still in reach, and its time
+function trialHud(G) {
+    const def = G.L.def; let m = 0;
+    for (let k = 4; k >= 1; k--) if (G.time <= medalTime(def, k)) { m = k; break; }
+    const el = $('#h-trial'); if (!el) return;
+    el.innerHTML = m ? `${medalHTML(m)} ${MEDALS[m].n} ${fmtTime(medalTime(def, m))}` : 'No medal this run · R to start over';
+}
+function trialGhostDraw(x, t) {
+    const T = G.trial, gh = T && T.ghost; if (!gh) return;
+    const f = G.time * 10, i = Math.min(gh.length - 1, Math.floor(f)), j = Math.min(gh.length - 1, i + 1), u = f - Math.floor(f);
+    const gx = lerp(gh[i][0], gh[j][0], u), gy = lerp(gh[i][1], gh[j][1], u);
+    x.save(); x.globalAlpha = 0.38; Sprites.lumi(x, { x: gx, y: gy, sx: 1, sy: 1, face: gh[j][0] >= gh[i][0] ? 1 : -1, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0, pal: 6, shape: 2 }, t); x.restore();
+}
+function trialFinish(G) {
+    const def = G.L.def, t = +G.time.toFixed(2), rec = SAVE.d.trials[def.id] || { t: null, m: 0, n: 0 };
+    const best = rec.t == null || t < rec.t, m = medalFor(def, t), newMedal = m > (rec.m | 0);
+    if (best) { rec.t = t; ghostSave(def.id, G.trial.rec.concat([[G.p.x, G.p.y]]), t); }
+    rec.m = Math.max(rec.m | 0, m); rec.n = (rec.n | 0) + 1;
+    SAVE.d.trials[def.id] = rec; ST('trials'); SAVE.write();
+    G.p.vx = 0; $('#h-trial').classList.add('hidden');
+    setTimeout(() => { G.state = 'done'; UI.trialResults({ def, t, best, m, newMedal, rec }); if (newMedal) Sound.play('medal', m); lookCheck(); }, 1300);
+}
+UI.trialResults = function (r) {
+    const def = r.def, rows = [
+        ['Time', fmtTime(r.t) + (r.best ? '<span class="new">NEW BEST</span>' : '')],
+        ['Medal', r.m ? medalHTML(r.m) + ' ' + MEDALS[r.m].n + (r.newMedal ? '<span class="new">NEW</span>' : '') : 'none this time'],
+        ['Best', fmtTime(r.rec.t) + ' ' + medalHTML(r.rec.m)],
+        ['Medal times', [1, 2, 3, 4].map(k => `<span class="mt${r.rec.m >= k ? ' got' : ''}">${medalHTML(k)} ${fmtTime(medalTime(def, k))}</span>`).join(' ')]
+    ];
+    $('#d-title').textContent = 'Trial · ' + def.id + ' ' + def.name;
+    $('#d-rows').innerHTML = rows.map(([a, b]) => `<div class="drow"><span>${a}</span><b>${b}</b></div>`).join('');
+    $('#d-unlock').textContent = r.newMedal ? 'Medal points: ' + medalPoints() : '';
+    const nx = trialOpen(G.idx + 1);
+    $('#d-next').classList.toggle('hidden', !nx); $('#d-next').textContent = nx ? 'Next trial: ' + LEVELS[G.idx + 1].name : 'Next';
+    $('#d-retry').textContent = 'Try again';
+    $('#hud').classList.add('hidden'); this.show('done');
+};
+
+// ---------- looks: the colour of your light (and the shape of its flame) ----------
+const LOOKS = [
+    { pal: 0, n: 'Lantern' }, { pal: 1, n: 'Sky' }, { pal: 2, n: 'Rose' }, { pal: 3, n: 'Leaf' }, { pal: 4, n: 'Violet' }, { pal: 5, n: 'Ember' },
+    { pal: 6, n: 'Frost', need: 'Free Hoarfrost, the guardian of Frostveil', ok: () => !!SAVE.d.guards.owl },
+    { pal: 7, n: 'Dawn', need: 'Bring the eleventh light home (6-11)', ok: () => !!SAVE.d.levels['6-11'] },
+    { pal: 8, n: 'Aurora', need: 'Find all 11 frozen lanterns in Frostveil', ok: () => frozenFound() >= 11 },
+    { pal: 9, n: 'Sunlit', need: 'Win 10 gold trial medals', ok: () => medalCount(3) >= 10 },
+    { pal: 10, n: 'Gloomlight', need: 'Beat The Gloom flawless (5-1)', ok: () => !!(SAVE.d.levels['5-1'] || {}).perfect }
+];
+const SHAPES = ['Flame', 'Twin', 'Crown', 'Curl'];
+const lookOk = o => !o.ok || o.ok();
+// the light you play as (not in multiplayer: there everyone gets a colour of their own)
+function applyLook(p) {
+    const lk = SAVE.d.look || {}, o = LOOKS.find(q => q.pal === lk.pal);
+    p.pal = o && lookOk(o) ? o.pal : 0; p.shape = clamp(lk.shape | 0, 0, SHAPES.length - 1);
+}
+// a newly earned light says so once
+function lookCheck() {
+    const got = SAVE.d.looksGot = Array.isArray(SAVE.d.looksGot) ? SAVE.d.looksGot : [];
+    const fresh = LOOKS.filter(o => o.ok && o.ok() && !got.includes(o.pal));
+    if (!fresh.length) return;
+    for (const o of fresh) got.push(o.pal);
+    SAVE.write(); G.toast('New light: ' + fresh.map(o => o.n).join(', ') + ' (title, Your light)');
+}
+function lookCanvas(cv, pal, shape) {
+    const x = cv.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height);
+    x.translate(cv.width / 2, cv.height * 0.62); const k = cv.width / 44; x.scale(k, k);
+    Sprites.lumi(x, { x: 0, y: 0, sx: 1, sy: 1, face: 1, vx: 0, vy: 0, blinkSeed: 0, hurtT: 0, pal, shape }, 1);
+}
+UI.looks = function () {
+    const lk = SAVE.d.look = SAVE.d.look || { pal: 0, shape: 0 };
+    $('#lk-list').innerHTML = LOOKS.map(o => `<button class="look${o.pal === lk.pal ? ' on' : ''}${lookOk(o) ? '' : ' locked'}" data-pal="${o.pal}" title="${o.need && !lookOk(o) ? o.need : o.n}"><canvas width="56" height="60"></canvas><span>${o.n}</span>${lookOk(o) ? '' : `<small>${o.need}</small>`}</button>`).join('');
+    $('#lk-shapes').innerHTML = SHAPES.map((n, i) => `<button data-shape="${i}" class="${(lk.shape | 0) === i ? 'on' : ''}">${n}</button>`).join('');
+    for (const b of $('#lk-list').querySelectorAll('.look')) {
+        lookCanvas(b.querySelector('canvas'), +b.dataset.pal, lk.shape | 0);
+        b.onclick = () => { const o = LOOKS.find(q => q.pal === +b.dataset.pal); if (!lookOk(o)) { G.toast(o.need); return; } Sound.play('click'); lk.pal = o.pal; SAVE.write(); UI.looks(); };
+    }
+    for (const b of $('#lk-shapes').querySelectorAll('button')) b.onclick = () => { Sound.play('click'); lk.shape = +b.dataset.shape; SAVE.write(); UI.looks(); };
+    lookCanvas($('#lk-big'), LOOKS.some(o => o.pal === lk.pal && lookOk(o)) ? lk.pal : 0, lk.shape | 0);
+    $('#lk-n').textContent = LOOKS.filter(lookOk).length + ' of ' + LOOKS.length + ' lights';
+    this.show('look');
+};
+
 // ---- 65-lore.js ----
 // ==========================================
 // THE PEOPLE OF THE VALLEY: somebody waits by a lantern in every level. Walk up and they talk (E / Enter to hear them
@@ -3211,8 +3678,12 @@ const CAST = {
     moss: { name: 'Mossback', col: '#8fe07a' }, shard: { name: 'Shardwing', col: '#8ff0ff' }, bell: { name: 'The Bellkeeper', col: '#ffe08a' },
     tam: { name: 'Tamsin', col: '#9fe0c8', about: 'A mapmaker who walks the whole valley and draws what is left of it. Always looking for places other people walked past.' },
     quill: { name: 'Quill', col: '#d8b8ff', about: 'The last librarian of the sky temples. Took the best books down to the Forge so the fire could not have them.' },
-    cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' }
+    cinder: { name: 'Cinderjaw', col: '#ff8a3a' }, gloom: { name: 'The Gloom', col: '#b98aff' }, orin: { name: 'Orin, the Lamplighter', col: '#fff2c4' },
+    // 1.5
+    sorrel: { name: 'Sorrel', col: '#e8c8a0', about: 'Keeps the goat path over the high pass. Saw the dark smoke roll up the mountain the night The Gloom broke.' },
+    owl: { name: 'Hoarfrost', col: '#bfe8ff' }
 };
+CAST.orin.about = 'The Lamplighter. He held on to the light so tightly that he became The Gloom. Now he is learning to let go.';
 const TALKS = {
     '1-1': ['bram', ['Well, I’ll be. A light! A real one, walking about on its own.',
         'Haven’t seen one of those since the Lamplighter’s men came round with their carts. Took every lantern in the Glowwood. Said they’d bring them back.',
@@ -3314,7 +3785,40 @@ const TALKS = {
     '4-10': ['pip', ['I followed the ribbon all the way down. And I found you. I found... you.',
         'You’re her. Aren’t you? You’re Wren. The light of her. The part she gave away.',
         'You can’t talk. That’s okay. You always talked enough for both of us.',
-        'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']]
+        'Go get your papa back. I’ll be right here. I’m not going home without my best friend.']],
+    // 1.5 FROSTVEIL: after The Gloom. Wren is awake by day; at night, while she sleeps, her light slips out of the window.
+    '6-1': ['orin', ['Little light. You came up here too? Then you counted them as well.',
+        'Four thousand two hundred and eleven lanterns went into the Heart. Four thousand two hundred came home.',
+        'When the Gloom broke, the last of its smoke blew up the mountain. Eleven lights went with it, and the frost took them.',
+        'That shrine back there is Ilse’s wind shrine. Hold on to the wind and it will hold on to you. Help me bring the last ones home.']],
+    '6-2': ['sorrel', ['Ho there! Mind the ice, it has no manners. I am Sorrel. I keep the goat path over the pass.',
+        'The night the dark broke I saw it: a cloud of black smoke rolling UP the mountain, against the wind. It had lights in it, like fish in a net.',
+        'Then the frost came down behind it. My goats have not stopped complaining since.',
+        'Whatever is up there, it is cold and it is scared. Scared things hold on tight.']],
+    '6-3': ['pip', ['Don’t tell Wren I came. She’ll say it’s her turn to be the brave one.',
+        'She’s awake in the daytime now. She laughs at everything. But at night she sleeps SO deep, and her window is always open.',
+        'I knew it. I KNEW it was you. You go on adventures without her, and she dreams about them.',
+        'She told me about the geysers this morning. She said they tickle. Do they tickle?']],
+    '6-5': ['tam', ['Oh, wonderful, a light! Hold still, I am drawing the falls and I cannot see my own pencil.',
+        'Nobody has ever mapped Frostveil. Too high, too cold, and too many things that drift at you.',
+        'I marked every frozen lantern I could see from down here. Ten of them. There is an eleventh on my map with a question mark next to it.',
+        'Find the first ten and I think the last one will find you. That is how maps work. Mostly.']],
+    '6-6': ['sorrel', ['Snowpuffs! Do not be fooled. They are fluffy, and they are fiendish.',
+        'They were never so cross before the frost. The cold makes everything mean. I used to be quite nice.',
+        'The old owl lives above. Hoarfrost. She kept the pass for a thousand winters and never once let a traveller freeze.',
+        'Now she sits in her roost with all that cold smoke in her feathers, and the lights with her. She is not wicked. She is lost.']],
+    '6-8': ['orin', ['You glide like a moth on a summer night. Wren used to try that off the hayloft. I never let her.',
+        'I should have let her. I spent so long keeping her safe that I forgot to let her be anything.',
+        'I keep counting the lights we have found. Hob says I count like a man who lost something.',
+        'He is right. But I am trying to count what I have, now. It is a longer list than I thought.']],
+    '6-9': ['pip', ['I climbed all this way and my toes are ice cubes. Worth it, though. LOOK at that sky.',
+        'Sorrel says the owl up there is lost, not bad. Like Mossback was. Like the Lamplighter was.',
+        'Funny how everybody bad turns out to be somebody who got lost.',
+        'Go on. I’ll wait here. I’m good at waiting now. I got lots of practice.']],
+    '6-10': ['orin', ['Hoarfrost is through there. When I was a boy she carried me home through a blizzard, gentle as snowfall.',
+        'The smoke in her is my smoke. My grief. I made it, and she caught it.',
+        'She will throw the wind at you, and then she will tire. When she does, ride a geyser up and come down on her softly.',
+        'Bring her back, little light. Then let us go home.']]
 };
 // the guardians: before the fight, during it (one line each time it is hit), and once the dark is out of them
 const GUARD_TALK = {
@@ -3330,6 +3834,10 @@ const GUARD_TALK = {
         mid: ['TOLL!', 'The hour grows late...', 'You ring... out of time!', 'Who... rings me...?'],
         free: ['...The hour returns. Morning, I think. It has been so long since morning.', 'I rang for the girl, little flame. The last hour of the last night. She went down the mountain alone.',
             'The Forge lies below. He waits there. And so, I think, does she.'] },
+    owl: { pre: ['Hooo... who climbs my mountain in the dark?', 'More lights? MINE. Nothing warm leaves my roost again!'],
+        mid: ['So cold...', 'HOOO!', 'You cannot fly, little spark!', 'Let me keep them... let me keep SOMETHING...', 'The wind is MINE!'],
+        free: ['...Oh. The cold is gone out of my feathers. I can see the valley again.', 'The smoke came up the mountain crying for a girl. I thought if I held on to the lights it carried, it would stop crying.',
+            'Take them home. All but one: the last one fled from me, up to the very top of the peak. It was afraid. Be gentle with it.'] },
     cinder: { pre: ['GRRRAAH. Another lantern for the Heart?', 'No... you are no lantern. You are HER. He will want you back.'],
         mid: ['BURN!', 'The Heart is hungry...', 'Hold STILL!', 'Stop... hitting...!'],
         free: ['Hrrm. The fire in me is my own again. You hit hard, for a spark.', 'I guarded the Forge for a thousand years. I let him in because he was the Lamplighter. I trusted him.',
@@ -3346,11 +3854,14 @@ const GLOOM_TALK = {
         ['orin', 'I am so sorry, my girl. I held on so tight that I put out everything I loved.'], ['orin', 'Take them home, Wren. All of them. Light them all.']]
 };
 const talkCount = () => Object.keys(SAVE.d.talks || {}).filter(k => TALKS[k]).length;
+// the story of the main game (worlds 1-5): what the true ending at 5-1 asks for (Frostveil's talks come after it)
+const MAIN_TALKS = Object.keys(TALKS).filter(k => +k.split('-')[0] <= 5);
 const TALK_N = Object.keys(TALKS).length;
 
 // ---------- the dialogue box: a portrait, a name, the words typing out; jump / Enter / click goes on ----------
 const TK = { lines: null, i: 0, shown: 0, done: null, back: 'play' };
 UI.talk = function (lines, done) {
+    if (G.trial) { if (done) done(); return; }          // 1.5 trials: no talking, just the clock
     if (!lines || !lines.length) { if (done) done(); return; }
     TK.lines = lines; TK.i = 0; TK.shown = 0; TK.done = done || null; TK.back = G.state === 'talk' ? TK.back : G.state;
     G.state = 'talk'; Input.clear(); $('#touch').classList.add('hidden');
@@ -3383,7 +3894,7 @@ UI.talkNext = function () {
 };
 // a person in a level: the first time you come close they talk; afterwards E / Enter hears them again
 function meet(G, e, again) {
-    const t = TALKS[G.L.def.id]; if (!t) return;
+    const t = TALKS[G.L.def.id]; if (!t || G.trial) return;
     const [who, lines] = t, first = !SAVE.d.talks[G.L.def.id];
     e.talked = true; e.who = who;
     SAVE.d.talks[G.L.def.id] = true; if (first) ST('talks'); SAVE.write();
@@ -3395,7 +3906,7 @@ function drawPortrait(who, t = 0, speaking = false) {
     const g = x.createRadialGradient(48, 52, 4, 48, 52, 60); g.addColorStop(0, c.col + '55'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 96, 96);
     if (PEOPLE[who]) { x.translate(48, 108); x.scale(1.9, 1.9); PEOPLE[who](x, t, 1, speaking); }
     else if (GUARD_ART[who]) {
-        const base = { moss: 38, shard: 30, bell: 36, cinder: 36 }[who];
+        const base = { moss: 38, shard: 30, bell: 36, cinder: 36, owl: 34 }[who];
         x.translate(48, 54); x.scale(0.95, 0.95);
         GUARD_ART[who](x, { D: { r: base }, state: 'idle', face: 1, vx: 0, vy: 0, squat: speaking ? Math.abs(Math.sin(t * 12)) * 0.3 : 0, land: 0, glow: speaking ? 0.6 : 0, open: false, spit: speaking ? 1 : 0, clean: !!(G.guard && G.guard.state === 'free') }, t, false);
     } else if (who === 'gloom') {
@@ -3408,7 +3919,7 @@ function drawPortrait(who, t = 0, speaking = false) {
 
 // ---------- People: everyone you met and everything they told you ----------
 UI.people = function () {
-    const order = ['bram', 'pip', 'marta', 'ilse', 'hob', 'tam', 'quill'], heard = SAVE.d.talks || {};
+    const order = ['bram', 'pip', 'marta', 'ilse', 'hob', 'tam', 'quill', 'orin', 'sorrel'], heard = SAVE.d.talks || {};
     $('#lo-n').textContent = talkCount() + ' of ' + TALK_N + ' conversations heard' + (talkCount() === TALK_N ? ': the whole story.' : '');
     $('#lo-list').innerHTML = order.map(who => {
         const ids = Object.keys(TALKS).filter(id => TALKS[id][0] === who), got = ids.filter(id => heard[id]);
@@ -3419,11 +3930,16 @@ UI.people = function () {
     this.show('lore');
 };
 // the end of the game: the epilogue, then the usual results
+// 1.5: the last frozen lantern (6-11) has an epilogue of its own
+const FROST_END = ['At the top of the world the eleventh lantern was waiting, small and shaking, the way you were once.',
+    'You took it home. In the valley four thousand two hundred and eleven lanterns burned, and not one of them was missing.',
+    'Orin stopped counting.', 'And in the morning Wren woke up laughing, with snow in her hair, and nobody could explain it.'];
 UI.ending = function (r) {
-    const n = talkCount(), all = n === TALK_N;
+    const n = MAIN_TALKS.filter(k => (SAVE.d.talks || {})[k]).length, all = n === MAIN_TALKS.length, TALK_N = MAIN_TALKS.length, frost = r.def.id === '6-11';
     const lines = ['The Gloom came apart like smoke in the wind.', 'Four thousand two hundred and eleven lights flew home across the valley, and one by one the lanterns woke.',
         'At the edge of the Forge a boy with a red ribbon in his fist was waiting, exactly where he said he would be.',
         all ? 'And in the morning, in the Lamplighter’s house, a girl opened her eyes, and laughed, and asked why everyone was crying.' : 'Some say there is more to the story. (' + n + ' of ' + TALK_N + ' conversations heard)'];
+    if (frost) lines.splice(0, lines.length, ...FROST_END);
     $('#en-lines').innerHTML = lines.map((l, i) => `<p style="animation-delay:${0.6 + i * 1.6}s">${l}</p>`).join('');
     $('#en-stats').innerHTML = `<span>${fmtTime(SAVE.d.playTime || 0)} played</span><span>${SAVE.d.deaths} falls</span><span>${n} of ${TALK_N} stories</span>`;
     $('#en-go').onclick = () => { Sound.play('click'); UI.results(r); };
@@ -3458,6 +3974,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Arrows or A/D to run, Space to jump",
 "guard": null,
+"par": 25,
 "map": [
 "",
 "",
@@ -3486,6 +4003,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 26,
 "map": [
 "",
 "",
@@ -3518,6 +4036,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 26,
 "map": [
 "                                                                                                             #",
 "                                                                                                *            #",
@@ -3550,6 +4069,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Hoppers squat before they jump: land on them from above",
 "guard": null,
+"par": 29,
 "map": [
 "",
 "",
@@ -3580,6 +4100,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Crumbling bridges drop soon after you step on them: keep moving",
 "guard": null,
+"par": 31,
 "map": [
 "",
 "",
@@ -3612,6 +4133,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Springs throw you high: hold jump to go higher",
 "guard": null,
+"par": 28,
 "map": [
 "",
 "",
@@ -3650,6 +4172,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Thornbacks are spiky: jump over them, never onto them",
 "guard": null,
+"par": 29,
 "map": [
 "",
 "",
@@ -3682,6 +4205,7 @@ const LEVELS = [
 "gives": null,
 "hint": "A key opens the door: just walk up to it",
 "guard": null,
+"par": 31,
 "map": [
 "                                                              #",
 "                                                              #",
@@ -3716,6 +4240,7 @@ const LEVELS = [
 "gives": null,
 "hint": "The guardian is close. Light every lantern on the way",
 "guard": null,
+"par": 33,
 "map": [
 "",
 "",
@@ -3748,6 +4273,7 @@ const LEVELS = [
 "gives": "double",
 "hint": "",
 "guard": "moss",
+"par": 61,
 "map": [
 "                                                                                                                                            ##################################",
 "",
@@ -3780,6 +4306,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 26,
 "map": [
 "###############################              ####################################            #####################################",
 "###############################              ####################################            #####################################",
@@ -3812,6 +4339,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 26,
 "map": [
 "########################################################################################################################",
 "########################################################################################################################",
@@ -3852,6 +4380,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 27,
 "map": [
 "######################################################################################################################################################",
 "######################################################################################################################################################",
@@ -3884,6 +4413,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Stalactites tremble before they fall: step out from under them",
 "guard": null,
+"par": 29,
 "map": [
 "##############################################################################################################################################################################",
 "##############################################################################################################################################################################",
@@ -3916,6 +4446,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Climb. The way up is a staircase of cliffs",
 "guard": null,
+"par": 30,
 "map": [
 "############################################################################################################################################################",
 "############################################################################################################################################################",
@@ -3966,6 +4497,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Some crystals hide a lost lantern",
 "guard": null,
+"par": 30,
 "map": [
 "##############################################################################################################################################################################",
 "##############################################################################################################################################################################",
@@ -4002,6 +4534,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Ride the moving ledges: wait for them to come to you",
 "guard": null,
+"par": 26,
 "map": [
 "###############################################################################################################################################################",
 "###############################################################################################################################################################",
@@ -4034,6 +4567,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Crumbling stone: do not stop. Falling rock: do not stand still",
 "guard": null,
+"par": 25,
 "map": [
 "######################################################################################################################################################",
 "######################################################################################################################################################",
@@ -4068,6 +4602,7 @@ const LEVELS = [
 "gives": null,
 "hint": "The guardian is close. Take it slow, and light every lantern",
 "guard": null,
+"par": 30,
 "map": [
 "###################################################################################################################################################################################",
 "###################################################################################################################################################################################",
@@ -4102,6 +4637,7 @@ const LEVELS = [
 "gives": "wall",
 "hint": "",
 "guard": "shard",
+"par": 64,
 "map": [
 "################################################################################################################################################################",
 "##############################################################################################################################",
@@ -4144,6 +4680,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 30,
 "map": [
 "",
 "",
@@ -4184,6 +4721,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 28,
 "map": [
 "",
 "                   o o o o o",
@@ -4230,6 +4768,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 29,
 "map": [
 "                                                                                                #",
 "                                                                                                #",
@@ -4268,6 +4807,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Stand in the wind and it lifts you",
 "guard": null,
+"par": 27,
 "map": [
 "",
 "",
@@ -4306,6 +4846,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Walls are for jumping off: press jump against a wall",
 "guard": null,
+"par": 36,
 "map": [
 "",
 "",
@@ -4350,6 +4891,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Ride the wind from ledge to ledge",
 "guard": null,
+"par": 32,
 "map": [
 "                                                 *      oooo       oooo                                                           o    o",
 "                                                       o    o     o    o                   *                                     o      o",
@@ -4400,6 +4942,7 @@ const LEVELS = [
 "gives": null,
 "hint": "The causeway crumbles. Do not stop, and watch the bats",
 "guard": null,
+"par": 28,
 "map": [
 "",
 "",
@@ -4440,6 +4983,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Bookcases hold a key. The door is further on",
 "guard": null,
+"par": 34,
 "map": [
 "                                                                    #",
 "                                                                    #",
@@ -4484,6 +5028,7 @@ const LEVELS = [
 "gives": null,
 "hint": "The guardian is close. Everything you learned is here",
 "guard": null,
+"par": 32,
 "map": [
 "",
 "",
@@ -4534,6 +5079,7 @@ const LEVELS = [
 "gives": "dash",
 "hint": "",
 "guard": "bell",
+"par": 66,
 "map": [
 "",
 "",
@@ -4578,6 +5124,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 26,
 "map": [
 "############################################################################################################################################",
 "############################################################################################################################################",
@@ -4610,6 +5157,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 26,
 "map": [
 "##############################################################################################################################",
 "##############################################################################################################################",
@@ -4656,6 +5204,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 28,
 "map": [
 "######################################################################################################################################################",
 "######################################################################################################################################################",
@@ -4692,6 +5241,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Fire jets flicker first, then burst. Wait, or dash through",
 "guard": null,
+"par": 29,
 "map": [
 "################################################################################################################################################################################",
 "################################################################################################################################################################################",
@@ -4726,6 +5276,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Hop the rivets. Dash is the fast way over",
 "guard": null,
+"par": 29,
 "map": [
 "##################################################################################################################################################################################",
 "##################################################################################################################################################################################",
@@ -4762,6 +5313,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Ride the lifts. They stop at the top and the bottom",
 "guard": null,
+"par": 26,
 "map": [
 "####################################################################################################################################################",
 "####################################################################################################################################################",
@@ -4802,6 +5354,7 @@ const LEVELS = [
 "gives": null,
 "hint": "The bellows blow upward. Ride them, and mind the jets",
 "guard": null,
+"par": 24,
 "map": [
 "############################################################################################################################################",
 "############################################################################################################################################",
@@ -4852,6 +5405,7 @@ const LEVELS = [
 "gives": null,
 "hint": "Long jumps over the lava: jump, then dash",
 "guard": null,
+"par": 32,
 "map": [
 "################################################################################################################################################################################################",
 "################################################################################################################################################################################################",
@@ -4886,6 +5440,7 @@ const LEVELS = [
 "gives": null,
 "hint": "The guardian is close. Jets, lava and lifts: you know it all",
 "guard": null,
+"par": 28,
 "map": [
 "###########################################################################################################################################################################",
 "###########################################################################################################################################################################",
@@ -4926,6 +5481,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": "cinder",
+"par": 68,
 "map": [
 "######################################################################################################################################################",
 "######################################################################################################################################################",
@@ -4966,6 +5522,7 @@ const LEVELS = [
 "gives": null,
 "hint": "",
 "guard": null,
+"par": 89,
 "map": [
 "##############################################",
 "##############################################",
@@ -4988,6 +5545,531 @@ const LEVELS = [
 "##############################################",
 "##############################################"
 ]
+},
+{
+"id": "6-1",
+"name": "Snowline",
+"world": 5,
+"gives": "glide",
+"hint": "Hold jump in the air to glide",
+"guard": null,
+"par": 30,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                    *",
+"",
+"                                   ===",
+"",
+"",
+"                                ===",
+"                                         oooooo",
+"                     ooooo             oo      oo                                                         *                        z",
+"                    o     o  === o   oo          oo                                                                              ====     ooooooo              *",
+"                   o       o        o              o                  ooooooo                                                           oo     b oo",
+"   P L        u               h                      L  n           oo       oo                      oooooooooo                       oo           oo",
+"####################       ##########              ############## oo           oo                oooo          oooo                  o               o",
+"####################       ##########              ##############o               o  o o o  w   oo                  oo          #                        L       E",
+"####################       ##########              ##############                 o          oo             b        oo        #                     ##############",
+"####################       ##########              ##############                   L                                    L     #w                    ##############",
+"####################       ##########              ##############                 ############                        ################               ##############",
+"####################       ##########              ##############                 ############                        ################               ##############",
+"####################       ##########              ##############                 ############                        ################               ##############",
+"####################       ##########              ##############                 ############                        ################               ##############",
+"####################       ##########              ##############                 ############           WW           ################               ##############",
+"####################       ##########              ##############                 ############           ##           ################               ##############",
+"####################       ##########              ##############                 ############           ##           ################               ##############",
+"####################       ##########              ##############                 ############           ##           ################               ##############",
+"####################       ##########              ##############                 ############           ##           ################               ##############"
+]
+},
+{
+"id": "6-2",
+"name": "Slipstone Pass",
+"world": 5,
+"gives": null,
+"hint": "Ice is slippery: let go early to stop",
+"guard": null,
+"par": 35,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                            w",
+"                                            b",
+"",
+"                                                     *                   ##############",
+"                                                                         ##############",
+"                    h                               ===        b         ##############                                  *",
+"               ##########                                    oooooo        v   v    v",
+"               ##########                                  oo      oo                     ooo      ooo      ooo                                         h",
+"               ##########                        ===     oo          oo                  o   o    o   o    o   o  o o o                             ########",
+"                 v   v                                  o              o                o     o  o     o  o     o                                   ########     z             *       oooooo",
+"                             ooo        oooo                                       g   L                           L  n             oooooo          ########   ####                  oo      oo",
+"              o o o o       o   o      o    o ===                      IIIIIIIIIIIIIIIIII     IIII     IIII     ##############   ooo      ooo         v  v                          o          o",
+"                           o     o    o      o                         ##################     ####     ####     ############## oo            oo                      oooo          o            o",
+"   P    L                                      L     y                 ##################     ####     ####     ##############o                o                    o    o       w                 L       E",
+"############IIIIIIIIIIIIIIII     IIIIII      ############              ##################     ####     ####     ##############                  o                  o      o                     ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                    L           w                                 ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                  IIIIIIIIIIIIIIIIIIII      ##########            ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                  ####################      ##########            ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                  ####################      ##########            ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                  ####################      ##########            ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                  ####################      ##########            ##############",
+"############################     ######      ############              ##################     ####     ####     ##############                  ####################      ##########            ##############"
+]
+},
+{
+"id": "6-3",
+"name": "Geyser Fields",
+"world": 5,
+"gives": null,
+"hint": "Glide into a geyser and ride it up",
+"guard": null,
+"par": 37,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                       b",
+"",
+"",
+"",
+"",
+"                                                                                                               b",
+"",
+"                                                        oooooooo",
+"                                                    oooo        oooo                                                            *",
+"                                                  oo     *          oo                                                                                                          *",
+"                                                oo                    oo                                                       ===       oooooooooo",
+"                                               o                        o                                                            oooo          oooo                      oooooo",
+"                    oooooooooo                                            L  n                                                     oo                  oo                 ooo      ooo",
+"                 ooo          ooo                                       ##############        oooooooooo                    === ooo                      ooo         w  oo            oo",
+"  o o          oo                oo                                     ##############     ooo          ooo                    o                            o          o                o",
+"             oo                    oo                                   ##############  ooo                ooo                                                L                            L    y  E",
+"   P     L                            L     y                   WW      ##############oo                      oo  o o o  ===                                ############                ##############",
+"##############                      ############                ##      ##############                          o                                           ############                ##############",
+"##############                      ############                ##      ##############                             L      w                                 ############                ##############",
+"##############                      ############                ##      ##############                          ################                            ############                ##############",
+"##############          WW          ############        WW      ##      ##############            WW            ################                            ############                ##############",
+"##############          ##          ############        ##      ##      ##############            ##            ################         WW       WW        ############                ##############",
+"##############          ##          ############        ##      ##      ##############            ##            ################         ##       ##        ############                ##############",
+"##############          ##          ############        ##      ##      ##############  z         ##            ################         ##       ##        ############                ##############",
+"##############          ##          ############        ##      ##      ############## ===        ##            ################         ##       ##        ############                ##############",
+"##############          ##          ############        ##      ##      ##############            ##            ################         ##       ##        ############                ##############"
+]
+},
+{
+"id": "6-4",
+"name": "Wisp Hollow",
+"world": 5,
+"gives": null,
+"hint": "Frostwisps drift toward you. Stomp them, or glide clear",
+"guard": null,
+"par": 29,
+"map": [
+"###########################################################################################################################################################################",
+"###########################################################################################################################################################################",
+"###########################################################################################################################################################################",
+"                                                                                                                                                ####",
+"                                                                                                                                                ####",
+"                                                                                                                                                ####",
+"                                                                                                                                                ####",
+"                                                                                                                                                ####",
+"                                      b                                                                                                         ####",
+"                                                      *                                                               b                         ####",
+"                                                                                                                                                ####",
+"                                                     ===                                                                                        ####",
+"                                                                                                                                                ####",
+"                                                                                                              *                                 ####",
+"                          w                       ===                        g                                                                  ####",
+"                                                                        #########  ooooo          ooooo",
+"               oooo                 oooo                                ######### o     o        o     o                                          z",
+"  o o         o    o              oo    oo     ===         w            #########o       o      o       o                                       ####",
+"             o      o            o        o              oooooooo         v   v              w            L       y",
+"   P     L                   w              L     g    oo       woo   o o o              IIIIIIII       ##############    oooowooo                   ooooo",
+"##############      IIIIIIIIIIIIII        ############o            oo                    ########       ############## ooo        ooo               o     o",
+"##############      ##############        ############                L                  ########       ##############o              oo            o       o",
+"##############      ##############        ############              ##############       ########       ##############                  L      w              L       E",
+"##############      ##############        ############              ##############       ########       ##############                ##############       ##############",
+"##############      ##############        ############              ##############       ########       ##############                ##############       ##############",
+"##############      ##############        ############              ##############       ########       ##############                ##############       ##############",
+"##############      ##############        ############              ##############       ########       ##############                ##############       ##############",
+"##############      ##############        ############              ##############       ########       ##############        *       ##############       ##############",
+"##############      ##############        ############              ##############       ########       ##############       ===      ##############       ##############",
+"##############      ##############        ############              ##############       ########       ##############                ##############       ##############"
+]
+},
+{
+"id": "6-5",
+"name": "Frozen Falls",
+"world": 5,
+"gives": null,
+"hint": "Up the frozen falls: climb, ride the wind, then glide down",
+"guard": null,
+"par": 37,
+"map": [
+"",
+"",
+"                                                                                                         *",
+"",
+"                                                                                                        ===",
+"                                                                            z",
+"                                                                          ====",
+"                                                                                                     ===",
+"                                                                                     oooooo",
+"                                                                                   oo      oo",
+"                                                                         o o o   oo          oo   ===",
+"                                                                                o              o",
+"                                                                         L Wn                    L     y",
+"                                                                   #   ##########              ############",
+"                                                                   #   ##########              ############",
+"                                                                   #ooo##########              ############",
+"                                                                   #   ##########              ############",
+"                                                                   #   ##########              ############",
+"                                                                   #   ##########              ############",
+"                                                                   #   ##########              ############",
+"                                                                   #   ##########              ############                       b",
+"                                                                   #   ##########              ############          oooowooooo",
+"                                                                    ooo##########              ############      oooo          oooo",
+"                                                                       ##########              ############   ooo                  ooo",
+"                                                          L    w       ##########              ############ oo                        oo   o o o",
+"                                                 ======##########################              ############o                   *        oo",
+"                                                       ##########################              ############                                 L      g",
+"                                                       ##########################              ############                              ################",
+"                                                       ##########################              ############                              ################     oooooooo",
+"                                                       ##########################              ############                              ################  ooo        ooo",
+"                                             oooo      ##########################              ############                              ################oo              oo",
+"                                           oo    oo    ##########################              ############                              ################                  o",
+"                                          o        o   ##########################              ############                              ################                     L       E",
+"                                  L   g              L ##########################              ############                              ################                  ##############",
+"                           #   ############        ##############################              ############                              ################                  ##############",
+"                           #   ############   WW   ##############################              ############                              ################                  ##############",
+"                           #ooo############   ##   ##############################              ############                              ################                  ##############",
+"                           #   ############   ##   ##############################              ############                              ################                  ##############",
+"                           #   ############   ##   ##############################              ############                              ################                  ##############",
+"                           #   ############   ##   ##############################              ############                              ################                  ##############",
+"                           # * ############   ##   ##############################              ############                              ################                  ##############",
+"                           #   ############   ##   ##############################              ############                              ################                  ##############",
+"               ooo         #   ############   ##   ##############################              ############                              ################                  ##############",
+"  o o         o   o         ooo############   ##   ##############################              ############                              ################                  ##############",
+"             o     o           ############   ##   ##############################              ############                              ################                  ##############",
+"   P     L           L         ############   ##   ##############################              ############            b                 ################                  ##############",
+"##############     ########################   ##   ##############################              ############                              ################                  ##############",
+"##############     ########################   ##   ##############################              ############                              ################                  ##############",
+"##############     ########################   ##   ##############################              ############                              ################                  ##############",
+"##############     ########################   ##   ##############################              ############                              ################                  ##############",
+"##############     ########################   ##   ##############################              ############                              ################                  ##############",
+"##############     ########################   ##   ##############################              ############                              ################                  ##############"
+]
+},
+{
+"id": "6-6",
+"name": "Snowpuff Ridge",
+"world": 5,
+"gives": null,
+"hint": "Snowpuffs throw snowballs in an arc: keep moving",
+"guard": null,
+"par": 37,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                                                      b",
+"",
+"",
+"",
+"                                                                              *",
+"",
+"                                                                             ===",
+"                                                                                                                                                    y",
+"                                                                                                                                                   ===",
+"                                                                          ===                                                                                            b",
+"                                        ooooooo",
+"                                      oo       oo               oooo                          *",
+"                           y        oo           oo            o    o  ===                                              oooo            oooo   ===",
+"                         =====     o               o          o      o                                                 o    o          o    o",
+"               oooo                                      g             L  n    y         oooooooo                     o      o        o      o",
+"  o o         o    o                               IIIIIIIIIIII      ##############    oo        oo                                            L      y",
+"             o      o                              ############      ##############  oo            oo                        IIIIIIIIII      ##############       oooooooo                   *",
+"   P     L            L        y                   ############      ##############oo                oo  o o o               ##########      ##############    ooo        ooo",
+"##############      ################               ############      ##############                    o                     ##########      ##############  oo              oo                   oooo",
+"##############      ################               ############      ##############                      L     y    w        ##########      ##############oo                  oo                o    o",
+"##############      ################               ############      ##############                    ################      ##########      ##############                      o              o      o",
+"##############      ################               ############      ##############                    ################      ##########      ##############                         L       y             L       E",
+"##############      ################               ############      ##############          WW        ################      ##########      ##############                      ################      ##############",
+"##############      ################               ############      ##############          ##        ################      ##########      ##############                      ################      ##############",
+"##############      ################               ############      ##############          ##        ################      ##########      ##############                      ################      ##############",
+"##############      ################               ############      ##############          ##        ################      ##########      ##############                      ################      ##############",
+"##############      ################               ############      ##############          ##        ################      ##########      ##############  z                   ################      ##############"
+]
+},
+{
+"id": "6-7",
+"name": "Icicle Gallery",
+"world": 5,
+"gives": null,
+"hint": "Icicles tremble before they fall. Snow bridges will not hold you long",
+"guard": null,
+"par": 30,
+"map": [
+"######################################################################################################################################################################################",
+"######################################################################################################################################################################################",
+"                                                                                                                                ####",
+"                                                                                                                                ####",
+"                                                                                                                                ####",
+"                                                                                                                                ####",
+"                                                                                                                                ####",
+"                                                                                                                                ####",
+"                                                                                                                                ####",
+"                                                     *                   w                                                      ####",
+"                                                                                                                                ####",
+"                  y        g                        ===                                                                         ####",
+"                ###############                                      ############                                               ####",
+"                ###############                                      ############      b                                         z",
+"                ###############                  ===                 ############                                               ====    h",
+"                  v  v  v  v                                           v   v  v                                               #############             *",
+"                                  oooooo                 oooooo                                                               #############",
+"  o o                           oo      oo  o ===     ooo      ooo                                                            #############  oooo               oooo",
+"                               o          o          o            o                                                             v  v  v  v  o    o            oo    oo",
+"   P     L                g                 L      y               L         w        oooooooo                    oooooo                   o      o          o        o",
+"################################CCCCCCCCCC############CCCCCCCCCCCCIIIIIIIIIIIIIIII ooo        ooo               oo      oo                                               L       E",
+"################################          ############            ################o              oo            o          o                       IIIIIIIIIIII        ##############",
+"################################          ############            ################                  L      y                L          w          ############        ##############",
+"################################          ############     b      ################                ##############CCCCCCCCCC##################      ############        ##############",
+"################################          ############            ################                ##############          ##################      ############        ##############",
+"################################          ############            ################                ##############          ##################      ############        ##############",
+"################################          ############            ################        *       ##############          ##################      ############        ##############",
+"################################          ############            ################       ===      ##############          ##################      ############        ##############",
+"################################          ############            ################                ##############          ##################      ############        ##############",
+"################################          ############            ################                ##############          ##################      ############        ##############"
+]
+},
+{
+"id": "6-8",
+"name": "The Long Glide",
+"world": 5,
+"gives": null,
+"hint": "The long way down: hold jump and float",
+"guard": null,
+"par": 39,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                                                                                                                                                 b",
+"",
+"                                                                                                                                     *                          b",
+"",
+"                       oooooooooooo                                                                                                 ===",
+"                  ooowo            woooo",
+"  o o          ooo                      ooo",
+"             oo                            oo                     *                                                              ===",
+"   P     L                                    L                                                    oooooooooooooo",
+"##############                              ##########        oooooooo                        ooooo              ooooo",
+"##############                              ##########    oooo        oooo                 ooo                        ooo   o ===",
+"##############                              ##########  oo                oo             oo               w              oo                     oooooooooo",
+"##############                              ##########oo                    oo                                              L      g         owo          oow",
+"##############                              ##########                        o                                           ##############  ooo                ooo",
+"##############              WW              ##########                          L  n  y                                   ##############oo                      oo         w",
+"##############              ##              ##########                        ############                                ##############                          o                 oooooooooo",
+"##############              ##              ##########                        ############                                ##############                            L            ooo          ooo",
+"##############              ##              ##########                        ############                                ##############                          ############ oo                oo",
+"##############              ##              ##########                        ############          WW         WW         ##############                          ############o                    oo",
+"##############              ##              ##########                        ############          ##         ##         ##############                          ############                         L     y E",
+"##############              ##              ##########                        ############          ##         ##         ##############                          ############                      ##############",
+"##############              ##              ##########                        ############          ##         ##         ##############             WW           ############           *          ##############",
+"##############              ##              ##########                        ############          ##   z     ##         ##############             ##           ############                      ##############",
+"##############              ##              ##########                        ############          ##         ##         ##############             ##           ############                      ##############",
+"##############              ##              ##########                        ############          ##         ##         ##############             ##           ############                      ##############",
+"##############              ##              ##########                        ############          ##         ##         ##############             ##           ############                      ##############"
+]
+},
+{
+"id": "6-9",
+"name": "Aurora Steps",
+"world": 5,
+"gives": null,
+"hint": "The roost is close. Everything you learned, all at once",
+"guard": null,
+"par": 39,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                                                                                           *",
+"",
+"                                                                                                                          ===",
+"                                                                                                                                                                                                           b",
+"",
+"                                                                                                                       ===",
+"                                                                                 g",
+"                                                                            #########                        ooooo                           b",
+"                                                                            #########                       o     o ===",
+"                                                                  w         #########                      o       o",
+"                                                       oooooooooo             v   v                                      y",
+"                                                   oooo          oooo                   oooooo                     ##########",
+"                                                 oo  w               oo               oo      oo  o o o            ##########                                                                           oooooo",
+"                                               oo                      oo            o          o                  ##########         oooooooooo                                               *      oo      oo",
+"                                       L    y                             L      g                L  n   y         ##########     oooo          oooo                                                 o          o",
+"                                #   ############                        IIIIIIIIIIIIIICCCCCCCCCC############       ##########   oo                  oo                  oooo        oooo            o            o",
+"                                #   ############                        ##############          ############       ##########ooo                      ooo              o    o      o    o                           L       E",
+"                                #ooo############           WW           ##############          ############       ##########                            o            o      o    o      o                       ##############",
+"                                #   ############           ##           ##############          ############       ##########                              L       w                       L                     ##############",
+"                                #   ############           ##           ##############          ############       ##########                            ##############      IIIIII      ############            ##############",
+"                                # * ############           ##           ##############          ############       ##########                            ##############      ######      ############            ##############",
+"               oooo             #   ############           ##           ##############          ############       ##########                            ##############      ######      ############            ##############",
+"  o o         o    o             ooo############           ##           ##############          ############       ##########                   WW   z   ##############      ######      ############            ##############",
+"             o      o               ############           ##           ##############          ############       ##########                   ##  ===  ##############      ######      ############            ##############",
+"   P     L                 w        ############           ##           ##############          ############       ##########         WW        ##       ##############      ######      ############            ##############",
+"##############      IIIIIIIIIIII################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############",
+"##############      ############################           ##           ##############          ############       ##########         ##        ##       ##############      ######      ############            ##############"
+]
+},
+{
+"id": "6-10",
+"name": "Hoarfrost Roost",
+"world": 5,
+"gives": null,
+"hint": "The old owl of the peaks waits at the top",
+"guard": "owl",
+"par": 70,
+"map": [
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                                             ##################################",
+"                                                                                                                            b                ##################################",
+"                                                                *                                                                            ##################################",
+"                                                                                                                                             ##################################",
+"                                                               ===                                                                           ##################################",
+"                                                                                                                                             ##################################",
+"                                                                          b",
+"                                                            ===",
+"",
+"                        *                        ooooo",
+"                                                o     o  ===",
+"                    oooooooo                   o       o                  oooooooo                                *",
+"                 ooo        ooo                          L     y       ooo        ooo",
+"  o o         ooo              ooo                     ############  oo              oo                 ooooo          ooooo",
+"             o                    o                    ############oo                  oo  o o o       o     o        o     o",
+"   P     L                          L      w           ############                      o            o       o      o       o",
+"##############                    IIIIIIIIIIIIII       ############                        L       g                            L    n  L          WW            Q    WW    E",
+"##############                    ##############       ############                      ##############       IIIIIIII       ##############  ##################################",
+"##############                    ##############       ############                      ##############       ########       ##############  ##################################",
+"##############         WW         ##############       ############           z          ##############       ########       ##############  ##################################",
+"##############         ##         ##############       ############          ===         ##############       ########       ##############  ##################################",
+"##############         ##         ##############       ############                      ##############       ########       ##############  ##################################",
+"##############         ##         ##############       ############                      ##############       ########       ##############  ##################################",
+"##############         ##         ##############       ############                      ##############       ########       ##############  ##################################"
+]
+},
+{
+"id": "6-11",
+"name": "The Eleventh Light",
+"world": 5,
+"gives": null,
+"hint": "The last frozen lantern. No more lessons: just you and the wind",
+"guard": null,
+"par": 48,
+"map": [
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"                                                             w                                                                b",
+"",
+"",
+"                                                         #######",
+"                                                         #######                                                                                                              L    w",
+"                                                         #######              ===                                                                                      #   ############",
+"                                                          v v v                                                                                                        #   ############",
+"                                                                  oooooo                                                                                               #ooo############                  *",
+"                                                                oo      oo ===                                                                                         #   ############",
+"                                                               o          o                                                                                            #   ############",
+"                                                       L   y                  w                                                                                        #   ############",
+"                                                  #   IIIIIIIIIICCCCCCCCCC########                                                                                     # * ############",
+"                                                  #   ##########          ########                                                                                     #   ############",
+"                  b                               #ooo##########          ########                                                                                     #   ############           oooooooooooooo",
+"                                                  #   ##########          ########                                                                               *      ooo############       oooo              oooo",
+"                                                  #   ##########          ########           oooooooooooo                                                                  ############   oooo                      oooo",
+"                                                  #   ##########          ########      ooooo            ooooo                                                             ############ oo      w                 w     oo",
+"                                                  #   ##########          ########   ooow                     owo              oooo      ooooo       oooo              ################o                                  oo",
+"                     oooooooooooo    w            #   ##########          ######## oo                            oo           o    o    o     o    oo    oo            ################                                       L        z E",
+"                ooooo            ooooo            #   ##########          ########o                w               oo        o      o  o       o  o        o           ################                                    ################",
+"             ooo                      ooo          ooo##########          ########                                    L                                      L     y   ################                                    ################",
+"           oo                            oo           ##########          ########                                  ##########      IIII       IIII        ############################                                    ################",
+"   P    L                  w                          ##########          ########                                  ##########      ####       ####        ############################                  WW                ################",
+"############                              IIIIIIII##############          ########                                  ##########      ####       ####        ############################                  ##                ################",
+"############                              ######################          ########                                  ##########      ####       ####        ############################                  ##                ################",
+"############                              ######################          ########                                  ##########      ####       ####        ############################                  ##                ################",
+"############                              ######################          ########           WW          WW         ##########      ####       ####        ############################                  ##                ################",
+"############                              ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          WW                  ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          ##                  ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          ##        WW        ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          ##        ##        ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          ##        ##        ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          ##        ##        ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################",
+"############          ##        ##        ######################          ########           ##          ##         ##########      ####       ####        ############################                  ##                ################"
+]
 }
 ];
 
@@ -5001,7 +6083,13 @@ addEventListener('resize', () => R.resize());
 
 // buttons
 const on = (id, fn) => { const el = $(id); if (el) el.onclick = () => { Sound.init(); Sound.play('click'); fn(); }; };
-on('t-play', () => fadeTo(() => UI.map()));
+on('t-play', () => fadeTo(() => UI.map('story')));
+on('t-trials', () => fadeTo(() => UI.map('trial')));          // 1.5
+on('t-look', () => UI.looks());
+on('lk-done', () => UI.show('title'));
+on('t-ver', () => UI.show('new'));
+on('new-done', () => UI.show('title'));
+on('m-mode', () => UI.map(UI.mapMode === 'trial' ? 'story' : 'trial'));
 on('t-settings', () => UI.settings('title'));
 on('t-how', () => UI.show('how'));
 on('t-stats-btn', () => UI.stats());
@@ -5021,7 +6109,7 @@ on('p-restart', () => { G.run = null; if (G.mp) mpReset(); fadeTo(() => G.start(
 on('p-settings', () => UI.settings('pause'));
 on('p-map', () => { G.run = null; if (G.mp) mpReset(); fadeTo(() => UI.map()); });
 on('d-retry', () => fadeTo(() => G.start(G.idx)));
-on('d-next', () => fadeTo(() => G.start(G.idx + 1)));
+on('d-next', () => fadeTo(() => { if (G.trial) G.trial = trialOpen(G.idx + 1) ? { id: LEVELS[G.idx + 1].id } : null; G.start(G.idx + 1); }));
 on('d-map', () => fadeTo(() => UI.map()));
 on('set-done', () => UI.show(UI._back === 'pause' ? 'pause' : 'title'));
 addEventListener('pointerdown', () => Sound.init(), { once: true });
@@ -5080,7 +6168,9 @@ setTimeout(() => { const s = $('#splash'); if (!s) return; s.classList.add('out'
 // test hook (used by the launcher's automated tests)
 window.__lumi = {
     get G() { return G; }, get MP() { return MP; }, LEVELS, SAVE, R, UI, levelNeeds, flawlessCount,
-    start: i => G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i),
+    MEDALS, medalFor, medalTime, medalPoints, LOOKS, frozenFound, GUARDS,
+    trial: i => { G.run = null; G.trial = { id: LEVELS[typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i].id }; G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i); },
+    start: i => { G.trial = null; G.start(typeof i === 'string' ? LEVELS.findIndex(l => l.id === i) : i); },
     step(sec, keys = {}) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { for (const k in keys) Input.touchSet(k, !!keys[k]); G.update(STEP); Input.endFrame(); } for (const k in keys) Input.touchSet(k, false); },
     key(k, on = true) { Input.touchSet(k, on); },                           // hold / release, for scripted play
     tick(sec, watch) { const n = Math.round(sec * 120); for (let i = 0; i < n; i++) { G.update(STEP); Input.endFrame(); if (watch) watch(G); } },

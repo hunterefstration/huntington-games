@@ -71,6 +71,10 @@ const plant = P => P.evaluate(() => {
   S('spikes100_progress', { unlocked: 42, bestOneLife: 9, bestEndless: 17 });
   S('blocky21_life', { xp: 1234.5, prestige: 1, kills: 800, headshots: 90, best: { classic: 22 }, waves: 30, clsTotal: 37 });
   S('neonScores', [{ name: 'x', val: 4321 }]);
+  // Last Light: the 41 main-game levels at 20 s (full game 820), Frostveil's 6-3 at 44.5 (not in the full game), trial medals 3 + 4 + 1
+  const lv = {}; for (let w = 1; w <= 4; w++) for (let n = 1; n <= 10; n++) lv[w + '-' + n] = { best: 20, moths: [true, true, true], sparks: 9, clears: 1 }; lv['5-1'] = { best: 20, moths: [], sparks: 0, clears: 1 };
+  lv['1-1'].perfect = true; lv['6-3'] = { best: 44.5, moths: [true, false, false], sparks: 9, clears: 1, perfect: true };
+  S('lumi_save', { v: 3, levels: lv, abilities: { double: true, wall: true, dash: true, glide: true }, runs: { onelife: 12 }, trials: { '1-1': { t: 19, m: 3 }, '1-2': { t: 18, m: 4 }, '6-1': { t: 60, m: 1 } } });
 });
 const board = (P, k) => P.evaluate(k => HGGrapevine.eco.lbGet(k).then(m => ({ n: m.n, me: m.me && m.me.s, top: m.rows[0] && m.rows[0].s, d: (m.rows.find(r => r.me) || {}).d }), e => ({ err: e.message })), k);
 const want = async (P, k, v, label) => { const b = await until(async () => { const x = await board(P, k); return x.me === v ? x : null; }, 15000) || await board(P, k); check(label || k + ' = ' + v, b.me === v, JSON.stringify(b)); return b; };
@@ -92,6 +96,11 @@ try {
   await want(A, 'td:endless', 61); await want(A, 'td:best', 33);
   await want(A, 'steel:wins', 6); await want(A, 'steel:kills', 77);
   await want(A, 'mayhem:crowns', 3); await want(A, 'mayhem:qualified', 29);
+  await want(A, 'lumi:full', 820, 'Last Light: the full game is the 41 main levels (Frostveil left out)');
+  await want(A, 'lumi:lv6-3', 44.5, 'Last Light 1.5: a Frostveil level has its own board');
+  const md = await want(A, 'lumi:medals', 8, 'Last Light 1.5: trial medal points (gold 3 + Lumen 4 + bronze 1)');
+  check('...with how many golds', md.d && md.d.gold === 2, JSON.stringify(md.d));
+  await want(A, 'lumi:flawless', 1, 'Last Light: flawless counts the main game only'); await want(A, 'lumi:onelife', 12);
   await want(A, 'spikes:level', 42); await want(A, 'blocky:wave', 22); await want(A, 'blocky:classes', 37); await want(A, 'neon:best', 4321);
   check('a fractional XP total is taken (rounded down)', (await board(A, 'blocky:xp')).me > 1000, JSON.stringify(await board(A, 'blocky:xp')));
   console.log('\n=== 2. the tab shows it, and updates by itself ===');
