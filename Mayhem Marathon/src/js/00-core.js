@@ -19,16 +19,18 @@ let toastT = 0;
 function toast(t) { const e = $('#toast'); if (!e) return; e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2800); }
 const LP = () => { try { const p = window.parent; return p && p !== window ? p : null; } catch (e) { return null; } };
 
-// ---------- the save file: localStorage mayhem_save = {v:1, ...}. Old saves are migrated, never wiped. ----------
-const SAVE_KEY = 'mayhem_save', SAVE_V = 1;
+// ---------- the save file: localStorage mayhem_save = {v:2, ...}. Old saves are migrated, never wiped. ----------
+// The launcher's leaderboards (050-goons-feed.js) and rebuild tool read stats.crowns / stats.qualified: keep them there.
+// v2 (1.1): rp = per-round records { rid: { p: played, q: qualified/survived, w: won } }, look.cel, opts.pick, seenVer.
+const SAVE_KEY = 'mayhem_save', SAVE_V = 2;
 let save = null;
 function defaultSave() {
     return {
         v: SAVE_V, name: '', kudos: 150, fame: 0, owned: {},
-        look: { col: 'c0', col2: 'c5', pat: 'p0', hat: 'h0', visor: 'v0', trail: 't0', pose: 'e0' },
-        stats: { crowns: 0, shows: 0, qualified: 0, rounds: 0, eliminations: 0, finals: 0, kudosEarned: 0 },
+        look: { col: 'c0', col2: 'c5', pat: 'p0', hat: 'h0', visor: 'v0', trail: 't0', pose: 'e0', cel: 'k0' },
+        stats: { crowns: 0, shows: 0, qualified: 0, rounds: 0, eliminations: 0, finals: 0, kudosEarned: 0, bombsPassed: 0 },
         settings: { quality: 'med', music: 0.55, sfx: 0.8, mute: false, sens: 1, invertY: false, names: true },
-        opts: { bots: 15, skill: 1, length: 4, scoring: 'auto' }, seenHow: false
+        opts: { bots: 15, skill: 1, length: 4, scoring: 'auto', pick: [] }, seenHow: false, rp: {}, seenVer: ''
     };
 }
 // Older/foreign shapes are folded in: future versions add `if (s.v < 2) { ...; s.v = 2; }` steps, never delete fields.
@@ -39,6 +41,10 @@ function migrateSave(s) {
         if (Array.isArray(s.unlocked)) { s.owned = Object.assign({}, s.owned || {}); for (const id of s.unlocked) s.owned[id] = true; delete s.unlocked; }
         if (typeof s.coins === 'number' && typeof s.kudos !== 'number') { s.kudos = s.coins; delete s.coins; }
         s.v = 1;
+    }
+    if (s.v < 2) {                                     // 1.1: new fields come from defaultSave(); a v1 player has seen 1.0
+        if (typeof s.seenVer !== 'string') s.seenVer = '1.0';
+        s.v = 2;
     }
     return s;
 }
@@ -65,6 +71,9 @@ function fixSave(s) {
     if (!['low', 'med', 'high'].includes(s.settings.quality)) s.settings.quality = 'med';
     s.opts.bots = clamp(s.opts.bots | 0, 0, 15); s.opts.skill = clamp(s.opts.skill | 0, 0, 2); s.opts.length = clamp(s.opts.length | 0, 3, 5);
     if (!['auto', 'knockout', 'points'].includes(s.opts.scoring)) s.opts.scoring = 'auto';
+    s.opts.pick = Array.isArray(s.opts.pick) ? s.opts.pick.filter((id, i, a) => ROUND_INFO[id] && a.indexOf(id) === i) : [];
+    if (!s.rp || typeof s.rp !== 'object' || Array.isArray(s.rp)) s.rp = {};
+    for (const k of Object.keys(s.rp)) { const r = s.rp[k]; if (!r || typeof r !== 'object') { delete s.rp[k]; continue; } for (const f of ['p', 'q', 'w']) r[f] = r[f] >= 0 ? r[f] | 0 : 0; }
     return s;
 }
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
@@ -111,6 +120,12 @@ const SFX = {
     land: (c, t) => { noiseBurst(c, 0.1, 0.25, 600, 120, 'lowpass', t); },
     dive: (c, t) => { noiseBurst(c, 0.28, 0.35, 900, 3000, 'bandpass', t); tone(c, 'triangle', 500, 250, 0.2, 0.1, t); },
     bonk: (c, t) => { tone(c, 'sine', 420, 90, 0.25, 0.5, t); noiseBurst(c, 0.12, 0.4, 2000, 300, 'lowpass', t); },
+    boom: (c, t) => { noiseBurst(c, 0.9, 0.7, 1800, 60, 'lowpass', t); tone(c, 'sine', 110, 30, 0.7, 0.6, t); },
+    meteor: (c, t) => { tone(c, 'sine', 1400, 300, 0.6, 0.08, t); noiseBurst(c, 0.5, 0.4, 900, 120, 'lowpass', t + 0.45); },
+    fanfare: (c, t) => { [392, 523, 659, 784, 659, 784, 1046].forEach((f, i) => { tone(c, 'sawtooth', f, f, i === 6 ? 0.7 : 0.18, 0.09, t + i * 0.13); tone(c, 'square', f / 2, f / 2, i === 6 ? 0.7 : 0.18, 0.05, t + i * 0.13); }); },
+    pass: (c, t) => { tone(c, 'square', 300, 900, 0.12, 0.14, t); tone(c, 'square', 900, 500, 0.1, 0.1, t + 0.1); },
+    fuse: (c, t) => { noiseBurst(c, 0.06, 0.12, 6000, 3000, 'highpass', t); },
+
     boing: (c, t) => { tone(c, 'sine', 180, 720, 0.3, 0.35, t); },
     grab: (c, t) => { tone(c, 'square', 200, 160, 0.08, 0.12, t); },
     whoosh: (c, t) => { noiseBurst(c, 0.4, 0.25, 400, 2400, 'bandpass', t); },

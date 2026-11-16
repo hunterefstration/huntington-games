@@ -69,7 +69,8 @@ function boot() {
     G.scene = 'menu'; UI.toTitle();
     $('#boot').classList.add('hidden');
     requestAnimationFrame(frame);
-    if (!save.seenHow) { save.seenHow = true; writeSave(); setTimeout(() => toast('New here? Check "How to play" for the controls.'), 1200); }
+    if (!save.seenHow) { save.seenHow = true; save.seenVer = VERSION; writeSave(); setTimeout(() => toast('New here? Check "How to play" for the controls.'), 1200); }
+    else if (save.seenVer !== VERSION) setTimeout(() => { if (G.screen === 'title') UI.openNew(); }, 700);
     launcherBoot();
 }
 window.__mayhem = {
@@ -82,7 +83,8 @@ window.__mayhem = {
             mine: me && me.inRound ? { x: +me.vs.x.toFixed(2), y: +me.vs.y.toFixed(2), z: +me.vs.z.toFixed(2), st: me.vs.st, done: me.done, hide: me.hide, out: me.out } : null, spec: G.spec };
     },
     startRound(rid, o) { o = o || {}; startPractice(rid, o.bots, o.skill); },
-    startShow(o) { o = o || {}; if (o.skill != null) save.opts.skill = o.skill; if (o.length) save.opts.length = o.length; startSolo(); },
+    startShow(o) { o = o || {}; if (o.skill != null) save.opts.skill = o.skill; if (o.length) save.opts.length = o.length; save.opts.pick = o.pick || []; startSolo(); },
+    protoCheck() { return { same: guestRefusal({ pv: PROTO, ver: VERSION }) === null && hostRefusal({ info: { pv: PROTO } }) === null, older: guestRefusal({}) === null, none: hostRefusal({ info: { look: {} } }) === null, newer: guestRefusal({ pv: PROTO + 1, ver: '9.9' }), msg: guestRefusal({}) + ' / ' + hostRefusal({ info: {} }) }; },
     step(sec) { const n = Math.round(sec / STEP); for (let i = 0; i < n; i++) tick(STEP); return this.state(); },
     manual(on) { G.manual = !!on; }, noRender(on) { G.noRender = !!on; }, autopilot(on) { G.autopilot = !!on; },
     bots() { return G.R ? G.R.cs.filter(c => c.bot).map(c => ({ id: c.id, name: c.name, skill: c.skill, done: c.done, x: +c.vs.x.toFixed(1), y: +c.vs.y.toFixed(1), z: +c.vs.z.toFixed(1) })) : []; },
@@ -90,6 +92,8 @@ window.__mayhem = {
     key(code, down) { if (down) { INP.keys.add(code); INP.edge.add(code); } else INP.keys.delete(code); },
     renderInfo(sync) { draw(1 / 60); if (sync) { const gl = GFX.renderer.getContext(), px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } return Object.assign({}, GFX.info, { q: GFX.q, geometries: GFX.renderer.info.memory.geometries }); },
     quality(q) { save.settings.quality = q; applyQuality(); },
+    spawnOk(sp) { return spawnClear(sp) && sp[1] > killYOf(G.R) + 1; },
+    levelExtent() { const e = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const c of W.cs) { if (!c.solid) continue; const r = c.k === K_BOX ? Math.max(c.hx, c.hz) : c.r; e.x0 = Math.min(e.x0, c.p[0] - r); e.x1 = Math.max(e.x1, c.p[0] + r); e.z0 = Math.min(e.z0, c.p[2] - r); e.z1 = Math.max(e.z1, c.p[2] + r); } return e; },
     migrate(obj) { return fixSave(mergeInto(defaultSave(), migrateSave(JSON.parse(JSON.stringify(obj))))); },
     reloadSave() { save = loadSave(); return save; },
     toTitle() { UI.toTitle(); }, ui: UI, host: () => netHost(), join: c => netJoin(c), start: () => netStartShow(), toLobby: () => netToLobby()

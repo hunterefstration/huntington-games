@@ -120,6 +120,16 @@ kbd { display: inline-block; min-width: 26px; padding: 2px 6px; margin: 0 2px; b
 #toast.on { transform: translate(-50%, 0); }
 @media (max-width: 700px) { .menu { position: static; transform: none; margin-top: 10px; } .logo.big b { font-size: 46px; } #ann { font-size: 40px; } .ward { width: calc(100vw - 28px); max-height: 55vh; } }
 
+/* 1.1: summit meters, custom show picker, earned items, What's New */
+#h-fruit .mtr { font-size: 14px; display: inline-flex; flex-direction: column; min-width: 86px; } #h-fruit .mtr.me { color: var(--pink); }
+#h-fruit .mtr i { display: block; height: 7px; background: var(--yel); border: 2px solid var(--ink); border-radius: 6px; margin-top: 2px; min-width: 4px; }
+.it.earn .lv { color: #2f8a3a; }
+.pk-k { font-weight: 900; margin: 8px 0 4px; } .pk-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.pk { border: 3px solid var(--ink); border-radius: 12px; background: #fff; padding: 6px 10px; font-weight: 900; opacity: .55; font: inherit; font-weight: 900; cursor: pointer; }
+.pk.on { background: var(--yel); opacity: 1; } .pk.new::after { content: 'NEW'; font-size: 10px; color: var(--pink); margin-left: 5px; vertical-align: top; } .pk:disabled { cursor: default; }
+#pk-list { max-height: 60vh; overflow: auto; } #n-list { text-align: left; line-height: 1.45; padding-left: 20px; } #n-list li { margin: 6px 0; }
+.btn.newb { position: relative; } .btn.newb::after { content: 'NEW'; position: absolute; top: -8px; right: -8px; background: var(--pink); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 8px; }
+
 </style>
 <script type="importmap">
 { "imports": {
@@ -148,6 +158,7 @@ kbd { display: inline-block; min-width: 26px; padding: 2px 6px; margin: 0 2px; b
     <button class="btn" id="b-ward">Customise</button>
     <button class="btn" id="b-how">How to play</button>
     <button class="btn" id="b-set">Settings</button>
+    <button class="btn newb" id="b-new">What's new</button>
   </div>
   <div class="foot" id="t-stats"></div>
 </div>
@@ -162,6 +173,7 @@ kbd { display: inline-block; min-width: 26px; padding: 2px 6px; margin: 0 2px; b
         <p class="note">You and 15 bots. Rounds knock out part of the field until one Tumbler wins the crown.</p>
         <label>Bot skill</label><div class="seg" id="o-skill"><button data-v="0">Easy</button><button data-v="1">Normal</button><button data-v="2">Hard</button><button data-v="3">Mixed</button></div>
         <label>Show length</label><div class="seg" id="o-len"><button data-v="3">3 rounds</button><button data-v="4">4 rounds</button><button data-v="5">5 rounds</button></div>
+        <label>Rounds in the show</label><div class="row"><button class="btn small" id="b-pick" title="Custom show: pick which rounds can come up"><span id="o-pick">All rounds</span> - change</button></div>
         <button class="btn go" id="b-solo">Start solo show</button>
         <label>Practice one round</label>
         <div class="row"><select id="o-prac"></select><button class="btn small" id="b-prac">Go</button></div>
@@ -192,6 +204,7 @@ kbd { display: inline-block; min-width: 26px; padding: 2px 6px; margin: 0 2px; b
           <label>Bot skill</label><div class="seg" id="l-skill"><button data-v="0">Easy</button><button data-v="1">Normal</button><button data-v="2">Hard</button><button data-v="3">Mixed</button></div>
           <label>Show length</label><div class="seg" id="l-len"><button data-v="3">3</button><button data-v="4">4</button><button data-v="5">5</button></div>
           <label>Scoring</label><div class="seg" id="l-score"><button data-v="auto" title="Points with 2-4 players, knockout with more">Auto</button><button data-v="knockout">Knockout</button><button data-v="points">Points</button></div>
+          <label>Rounds (custom show)</label><button class="btn small" id="l-pick" title="Pick which rounds can come up">All rounds</button>
         </div>
         <div class="row end"><button class="btn small" id="l-ward">Customise</button><button class="btn" id="l-ready">Ready</button><button class="btn go" id="l-start">Start show</button></div>
         <div id="l-status" class="note"></div>
@@ -233,6 +246,7 @@ kbd { display: inline-block; min-width: 26px; padding: 2px 6px; margin: 0 2px; b
         <p><b>Races</b>: reach the finish before the spots run out.</p>
         <p><b>Survival</b>: stay on until the time is up.</p>
         <p><b>Team</b> rounds: the team with the lowest score is out. In Tail Chase, have a tail when time runs out.</p>
+        <p><b>Hunt</b>: in Bomb Tag, grab someone to pass your bomb on. Holding one when the fuse runs out knocks you out.</p>
         <p><b>Final</b>: the winner takes the crown!</p>
         <p>With 2-4 friends a show can be scored by points, so nobody is knocked out. Every round earns kudos and fame for new looks.</p>
       </div>
@@ -271,6 +285,23 @@ kbd { display: inline-block; min-width: 26px; padding: 2px 6px; margin: 0 2px; b
 </div>
 <div id="s-intro" class="hidden"><div class="ic-card"><div id="i-kind"></div><div id="i-name"></div><div id="i-desc"></div><div id="i-goal"></div></div></div>
 <div id="s-res" class="scr dim hidden"><div class="card wide" id="r-card"></div></div>
+<div id="s-pick" class="scr dim hidden">
+  <div class="card wide">
+    <div class="ch"><h2>Custom show: pick the rounds</h2><button class="x" data-back>&times;</button></div>
+    <div class="row"><button class="btn small" data-pk="*all">All</button><button class="btn small" data-pk="*none">None</button></div>
+    <div id="pk-list"></div>
+    <div class="note" id="pk-note"></div>
+    <div class="row end"><button class="btn go" id="pk-done">Done</button></div>
+  </div>
+</div>
+<div id="s-new" class="scr dim hidden">
+  <div class="card">
+    <div class="ch"><h2>What's new in 1.1</h2><button class="x" data-back>&times;</button></div>
+    <ul id="n-list"></ul>
+    <div class="row end"><button class="btn go" id="n-ok">Let's go!</button></div>
+  </div>
+</div>
+
 <div id="s-win" class="scr hidden"><div class="win-box" id="w-box"></div></div>
 <div id="s-pause" class="scr dim hidden">
   <div class="card"><h2 id="pa-title">Paused</h2><div class="note" id="pa-note"></div>
@@ -303,16 +334,18 @@ let toastT = 0;
 function toast(t) { const e = $('#toast'); if (!e) return; e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2800); }
 const LP = () => { try { const p = window.parent; return p && p !== window ? p : null; } catch (e) { return null; } };
 
-// ---------- the save file: localStorage mayhem_save = {v:1, ...}. Old saves are migrated, never wiped. ----------
-const SAVE_KEY = 'mayhem_save', SAVE_V = 1;
+// ---------- the save file: localStorage mayhem_save = {v:2, ...}. Old saves are migrated, never wiped. ----------
+// The launcher's leaderboards (050-goons-feed.js) and rebuild tool read stats.crowns / stats.qualified: keep them there.
+// v2 (1.1): rp = per-round records { rid: { p: played, q: qualified/survived, w: won } }, look.cel, opts.pick, seenVer.
+const SAVE_KEY = 'mayhem_save', SAVE_V = 2;
 let save = null;
 function defaultSave() {
     return {
         v: SAVE_V, name: '', kudos: 150, fame: 0, owned: {},
-        look: { col: 'c0', col2: 'c5', pat: 'p0', hat: 'h0', visor: 'v0', trail: 't0', pose: 'e0' },
-        stats: { crowns: 0, shows: 0, qualified: 0, rounds: 0, eliminations: 0, finals: 0, kudosEarned: 0 },
+        look: { col: 'c0', col2: 'c5', pat: 'p0', hat: 'h0', visor: 'v0', trail: 't0', pose: 'e0', cel: 'k0' },
+        stats: { crowns: 0, shows: 0, qualified: 0, rounds: 0, eliminations: 0, finals: 0, kudosEarned: 0, bombsPassed: 0 },
         settings: { quality: 'med', music: 0.55, sfx: 0.8, mute: false, sens: 1, invertY: false, names: true },
-        opts: { bots: 15, skill: 1, length: 4, scoring: 'auto' }, seenHow: false
+        opts: { bots: 15, skill: 1, length: 4, scoring: 'auto', pick: [] }, seenHow: false, rp: {}, seenVer: ''
     };
 }
 // Older/foreign shapes are folded in: future versions add `if (s.v < 2) { ...; s.v = 2; }` steps, never delete fields.
@@ -323,6 +356,10 @@ function migrateSave(s) {
         if (Array.isArray(s.unlocked)) { s.owned = Object.assign({}, s.owned || {}); for (const id of s.unlocked) s.owned[id] = true; delete s.unlocked; }
         if (typeof s.coins === 'number' && typeof s.kudos !== 'number') { s.kudos = s.coins; delete s.coins; }
         s.v = 1;
+    }
+    if (s.v < 2) {                                     // 1.1: new fields come from defaultSave(); a v1 player has seen 1.0
+        if (typeof s.seenVer !== 'string') s.seenVer = '1.0';
+        s.v = 2;
     }
     return s;
 }
@@ -349,6 +386,9 @@ function fixSave(s) {
     if (!['low', 'med', 'high'].includes(s.settings.quality)) s.settings.quality = 'med';
     s.opts.bots = clamp(s.opts.bots | 0, 0, 15); s.opts.skill = clamp(s.opts.skill | 0, 0, 2); s.opts.length = clamp(s.opts.length | 0, 3, 5);
     if (!['auto', 'knockout', 'points'].includes(s.opts.scoring)) s.opts.scoring = 'auto';
+    s.opts.pick = Array.isArray(s.opts.pick) ? s.opts.pick.filter((id, i, a) => ROUND_INFO[id] && a.indexOf(id) === i) : [];
+    if (!s.rp || typeof s.rp !== 'object' || Array.isArray(s.rp)) s.rp = {};
+    for (const k of Object.keys(s.rp)) { const r = s.rp[k]; if (!r || typeof r !== 'object') { delete s.rp[k]; continue; } for (const f of ['p', 'q', 'w']) r[f] = r[f] >= 0 ? r[f] | 0 : 0; }
     return s;
 }
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
@@ -395,6 +435,12 @@ const SFX = {
     land: (c, t) => { noiseBurst(c, 0.1, 0.25, 600, 120, 'lowpass', t); },
     dive: (c, t) => { noiseBurst(c, 0.28, 0.35, 900, 3000, 'bandpass', t); tone(c, 'triangle', 500, 250, 0.2, 0.1, t); },
     bonk: (c, t) => { tone(c, 'sine', 420, 90, 0.25, 0.5, t); noiseBurst(c, 0.12, 0.4, 2000, 300, 'lowpass', t); },
+    boom: (c, t) => { noiseBurst(c, 0.9, 0.7, 1800, 60, 'lowpass', t); tone(c, 'sine', 110, 30, 0.7, 0.6, t); },
+    meteor: (c, t) => { tone(c, 'sine', 1400, 300, 0.6, 0.08, t); noiseBurst(c, 0.5, 0.4, 900, 120, 'lowpass', t + 0.45); },
+    fanfare: (c, t) => { [392, 523, 659, 784, 659, 784, 1046].forEach((f, i) => { tone(c, 'sawtooth', f, f, i === 6 ? 0.7 : 0.18, 0.09, t + i * 0.13); tone(c, 'square', f / 2, f / 2, i === 6 ? 0.7 : 0.18, 0.05, t + i * 0.13); }); },
+    pass: (c, t) => { tone(c, 'square', 300, 900, 0.12, 0.14, t); tone(c, 'square', 900, 500, 0.1, 0.1, t + 0.1); },
+    fuse: (c, t) => { noiseBurst(c, 0.06, 0.12, 6000, 3000, 'highpass', t); },
+
     boing: (c, t) => { tone(c, 'sine', 180, 720, 0.3, 0.35, t); },
     grab: (c, t) => { tone(c, 'square', 200, 160, 0.08, 0.12, t); },
     whoosh: (c, t) => { noiseBurst(c, 0.4, 0.25, 400, 2400, 'bandpass', t); },
@@ -481,35 +527,69 @@ const item = (cat, id, name, price, extra) => ITEMS.push(Object.assign({ cat, id
  ['c10', 'Coral', 0xff7f6b, 80], ['c11', 'Lagoon', 0x1fc9d6, 80], ['c12', 'Lemonade', 0xfff17a, 100], ['c13', 'Cocoa', 0x8a5a3c, 100], ['c14', 'Royal', 0x3550ff, 120],
  ['c15', 'Lavender', 0xc9a8ff, 120], ['c16', 'Gold', 0xf2b705, 0, 12], ['c17', 'Neon', 0x39ff14, 0, 20]]
     .forEach(([id, n, hex, p, lvl]) => item('col', id, n, p, { hex, lvl }));
+// 1.1: earned items (see earned() below): unlocked by playing the new rounds, never bought
+[['c18', 'Mossy log', 0x5b8c32, { r: 'logs', k: 'q', n: 3 }], ['c19', 'Storm cloud', 0x6f86a6, { r: 'gust', k: 'q', n: 3 }], ['c20', 'Molten', 0xff5a1f, { r: 'pillars', k: 'q', n: 3 }],
+ ['c21', 'Platinum', 0xdfe3ea, { s: 'crowns', n: 5 }]].forEach(([id, n, hex, earn]) => item('col', id, n, 0, { hex, earn }));
 // patterns: drawn by the body shader (see 30-world.js), 0 = solid
 [['p0', 'Plain', 0, 0], ['p1', 'Stripes', 1, 80], ['p2', 'Polka', 2, 80], ['p3', 'Two-tone', 3, 100], ['p4', 'Belly', 4, 60],
  ['p5', 'Zigzag', 5, 140], ['p6', 'Checkers', 6, 140], ['p7', 'Spots', 7, 0, 6], ['p8', 'Sunset fade', 8, 160], ['p9', 'Starry', 9, 0, 16]]
     .forEach(([id, n, k, p, lvl]) => item('pat', id, n, p, { k, lvl }));
+[['p10', 'Paint splats', 10, { r: 'turf', k: 'q', n: 2 }], ['p11', 'Hazard stripes', 11, { r: 'bomb', k: 'q', n: 2 }], ['p12', 'Lava cracks', 12, { r: 'meteor', k: 'q', n: 2 }]]
+    .forEach(([id, n, k, earn]) => item('pat', id, n, 0, { k, earn }));
 // hats: built in 30-world.js (hatGeometry)
 [['h0', 'None', 0], ['h1', 'Ball cap', 60], ['h2', 'Party cone', 60], ['h3', 'Top hat', 120], ['h4', 'Antenna', 0, 3], ['h5', 'Bobble beanie', 100],
  ['h6', 'Horns', 150], ['h7', 'Chef hat', 150], ['h8', 'Halo', 0, 10], ['h9', 'Propeller', 180], ['h10', 'Bunny ears', 160], ['h11', 'Daisy', 90],
  ['h12', 'Traffic cone', 130], ['h13', 'Wizard hat', 220], ['h14', 'Headphones', 0, 8], ['h15', 'Viking helm', 0, 25]]
     .forEach(([id, n, p, lvl]) => item('hat', id, n, p, { lvl }));
+[['h16', 'Lumberjack cap', { r: 'logs', k: 'q', n: 1 }], ['h17', 'Pinwheel', { r: 'gust', k: 'q', n: 1 }], ['h18', 'Meteor hat', { r: 'meteor', k: 'q', n: 1 }],
+ ['h19', 'Paint bucket', { r: 'turf', k: 'q', n: 1 }], ['h20', 'Fuse beanie', { r: 'bomb', k: 'q', n: 1 }], ['h21', 'Flame crest', { r: 'pillars', k: 'q', n: 1 }],
+ ['h22', 'Laurel wreath', { r: 'hill', k: 'w', n: 1 }]].forEach(([id, n, earn]) => item('hat', id, n, 0, { earn }));
 // visors: glass tint + eye glow
 [['v0', 'Classic', 0x1b2340, 0x7cf9ff, 0], ['v1', 'Sunset', 0x40141f, 0xffb347, 60], ['v2', 'Toxic', 0x0f2a12, 0x8dff5a, 80], ['v3', 'Love', 0x3a0f2c, 0xff6ec7, 80],
  ['v4', 'Mirror', 0xc8d6e5, 0x1b2340, 120], ['v5', 'Ember', 0x2b0d05, 0xff4b1f, 0, 5], ['v6', 'Ghost', 0xe9f3ff, 0x6b8cff, 150], ['v7', 'Gold rim', 0x3b2a05, 0xffe066, 0, 18]]
     .forEach(([id, n, glass, eye, p, lvl]) => item('visor', id, n, p, { glass, eye, lvl }));
+[['v8', 'Starlight', 0x0b0f2e, 0xfff3a0, { r: 'meteor', k: 'q', n: 3 }], ['v9', 'Paint pop', 0x2a0b3a, 0x52f2c2, { r: 'turf', k: 'q', n: 3 }]]
+    .forEach(([id, n, glass, eye, earn]) => item('visor', id, n, 0, { glass, eye, earn }));
 // trails: particles behind a running Tumbler
 [['t0', 'None', 0, 0], ['t1', 'Dust puffs', 0xffffff, 0, 2], ['t2', 'Rainbow', -1, 200], ['t3', 'Hearts', 0xff5fa2, 150], ['t4', 'Sparks', 0xffd23f, 150],
  ['t5', 'Bubbles', 0x7fe7ff, 120], ['t6', 'Leaves', 0x7ee23a, 0, 14], ['t7', 'Stardust', 0xc9a8ff, 0, 22]]
     .forEach(([id, n, hex, p, lvl]) => item('trail', id, n, p, { hex, lvl }));
+[['t8', 'Paint drips', 0x52f2c2, { r: 'turf', k: 'q', n: 5 }], ['t9', 'Embers', 0xff6a1f, { r: 'pillars', k: 'q', n: 5 }], ['t10', 'Gold coins', 0xf2b705, { s: 'crowns', n: 3 }]]
+    .forEach(([id, n, hex, earn]) => item('trail', id, n, 0, { hex, earn }));
 // victory poses (winner ceremony, lobby)
 [['e0', 'Wave', 0], ['e1', 'Flex', 80], ['e2', 'Spin', 100], ['e3', 'Bounce', 0, 4], ['e4', 'Robot', 140], ['e5', 'Cheer', 120], ['e6', 'Moonwalk', 0, 28]]
     .forEach(([id, n, p, lvl]) => item('pose', id, n, p, { lvl }));
+[['e7', 'Hula', { r: 'bomb', k: 'q', n: 3 }], ['e8', 'Jumping jacks', { new: 7 }], ['e9', 'Royal wave', { r: 'hill', k: 'w', n: 1 }]]
+    .forEach(([id, n, earn]) => item('pose', id, n, 0, { earn }));
+// crown celebrations: what plays when YOU win a show (podium effects, and a grander crown the higher the tier)
+[['k0', 'Confetti'], ['k1', 'Fireworks', { s: 'crowns', n: 1 }], ['k2', 'Gold rain', { s: 'crowns', n: 3 }], ['k3', 'Meteor shower', { r: 'meteor', k: 'q', n: 5 }],
+ ['k4', 'Royal fanfare', { r: 'hill', k: 'w', n: 1 }], ['k5', 'Rainbow storm', { s: 'crowns', n: 10 }]]
+    .forEach(([id, n, earn], i) => item('cel', id, n, 0, { earn, tier: i }));
 const ITEM = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-const SLOT_CAT = { col: 'col', col2: 'col', pat: 'pat', hat: 'hat', visor: 'visor', trail: 'trail', pose: 'pose' };
-const CATS = [['col', 'Colour'], ['col2', 'Second colour'], ['pat', 'Pattern'], ['hat', 'Hat'], ['visor', 'Visor'], ['trail', 'Trail'], ['pose', 'Victory pose']];
+const SLOT_CAT = { col: 'col', col2: 'col', pat: 'pat', hat: 'hat', visor: 'visor', trail: 'trail', pose: 'pose', cel: 'cel' };
+const CATS = [['col', 'Colour'], ['col2', 'Second colour'], ['pat', 'Pattern'], ['hat', 'Hat'], ['visor', 'Visor'], ['trail', 'Trail'], ['pose', 'Victory pose'], ['cel', 'Crown celebration']];
+// earned items: { r: round id, k: 'p' played | 'q' qualified/survived | 'w' won, n } or { s: stats key, n } or { new: n } (play n of the 1.1 rounds)
+const NEW_ROUNDS = ['logs', 'gust', 'meteor', 'pillars', 'turf', 'bomb', 'hill'];
+function earned(e, s) {
+    s = s || save; const rp = s.rp || {};
+    if (e.r) return ((rp[e.r] || {})[e.k] || 0) >= e.n;
+    if (e.s) return (s.stats[e.s] || 0) >= e.n;
+    if (e.new) return NEW_ROUNDS.filter(r => (rp[r] || {}).p > 0).length >= e.new;
+    return false;
+}
+function earnText(e) {
+    if (e.s === 'crowns') return e.n === 1 ? 'Win a show' : 'Win ' + e.n + ' shows';
+    if (e.new) return 'Play all ' + e.new + ' new rounds';
+    const nm = ROUND_INFO[e.r] ? ROUND_INFO[e.r].name : e.r, x = e.n === 1 ? '' : ' ' + e.n + ' times';
+    if (e.k === 'w') return 'Win ' + nm + x;
+    return (ROUND_INFO[e.r] && ROUND_INFO[e.r].kind === 'survive' ? 'Survive ' : 'Qualify in ') + nm + x;
+}
 const FAME_MAX = 30;
 const fameNeed = l => 80 + l * 40;                  // fame to go from level l to l+1
 function fameLevel(f) { let l = 1; while (l < FAME_MAX && f >= fameNeed(l)) { f -= fameNeed(l); l++; } return l; }
 function fameProgress(f) { let l = 1; while (l < FAME_MAX && f >= fameNeed(l)) { f -= fameNeed(l); l++; } return { lvl: l, have: f, need: fameNeed(l) }; }
-function itemOwned(it, s) { s = s || save; if (!it) return false; if (it.lvl) return fameLevel(s.fame) >= it.lvl || !!s.owned[it.id]; return it.price === 0 || !!s.owned[it.id]; }
-const LOOK_SLOTS = ['col', 'col2', 'pat', 'hat', 'visor', 'trail', 'pose'];
+function itemOwned(it, s) { s = s || save; if (!it) return false; if (it.earn) return earned(it.earn, s) || !!s.owned[it.id]; if (it.lvl) return fameLevel(s.fame) >= it.lvl || !!s.owned[it.id]; return it.price === 0 || !!s.owned[it.id]; }
+const LOOK_SLOTS = ['col', 'col2', 'pat', 'hat', 'visor', 'trail', 'pose', 'cel'];
 function sanitizeLook(l) {     // looks from the network: unknown ids fall back to defaults
     const d = defaultSave().look, o = {};
     for (const k of LOOK_SLOTS) o[k] = l && ITEM[l[k]] && ITEM[l[k]].cat === SLOT_CAT[k] ? l[k] : d[k];
@@ -517,7 +597,7 @@ function sanitizeLook(l) {     // looks from the network: unknown ids fall back 
 }
 function randomLook(rnd) {
     const pick = cat => { const a = ITEMS.filter(i => i.cat === cat); return a[Math.floor(rnd() * a.length)].id; };
-    const l = { col: pick('col'), col2: pick('col'), pat: pick('pat'), hat: rnd() < 0.55 ? pick('hat') : 'h0', visor: pick('visor'), trail: rnd() < 0.3 ? pick('trail') : 't0', pose: pick('pose') };
+    const l = { col: pick('col'), col2: pick('col'), pat: pick('pat'), hat: rnd() < 0.55 ? pick('hat') : 'h0', visor: pick('visor'), trail: rnd() < 0.3 ? pick('trail') : 't0', pose: pick('pose'), cel: rnd() < 0.3 ? pick('cel') : 'k0' };
     if (l.col2 === l.col) l.col2 = 'c5';
     return l;
 }
@@ -525,7 +605,7 @@ const BOT_NAMES = ['Wobblesworth', 'Bolt Nibbler', 'Sir Topple', 'Pudding Pete',
     'Jellybean', 'Rusty Spud', 'Turbo Tot', 'Gizmo Gus', 'Pickles', 'Dizzy Dot', 'Waffles', 'Sprocket', 'Biscuit', 'Fizzwhit', 'Marbles', 'Tater Chip',
     'Boing Boing', 'Sparky Sue', 'Clunk', 'Puddle Jumper', 'Grumbles', 'Cosmo', 'Lil Rivet', 'Tumbleweed', 'Sprout', 'Wigglebot'];
 const SKILLS = ['Easy', 'Normal', 'Hard'];
-// The round list. kind: race | survive | team | final. min = fewest contestants it needs (knockout shows).
+// The round list. kind: race | survive | team | hunt | final. min = fewest contestants it needs (knockout shows).
 const ROUND_INFO = {
     spin: { name: 'Spin Cycle', kind: 'race', time: 120, min: 2, desc: 'Dodge the spinning bars and swinging hammers, ride the turntables and reach the finish!' },
     teeter: { name: 'Teeter Trek', kind: 'race', time: 120, min: 2, desc: 'Cross the rocking see-saw bridges and dodge the pushers. Mind the gaps!' },
@@ -539,10 +619,27 @@ const ROUND_INFO = {
     tail: { name: 'Tail Chase', kind: 'team', time: 75, min: 4, desc: 'Grab a tail (F or click) from someone who has one. Have a tail when time runs out!' },
     hoard: { name: 'Ball Hoard', kind: 'team', time: 90, min: 6, desc: 'Teams push the big balls into their own pen. The team with the fewest balls is out!' },
     hoops: { name: 'Hoop Hop', kind: 'team', time: 80, min: 6, desc: 'Jump through the glowing hoops to score for your team. Use the bounce pads!' },
+    logs: { name: 'Log Jam', kind: 'race', time: 120, min: 2, desc: 'Run up the rolling logs, jump the logs rolling at you and balance across the spinning log bridges!' },
+    gust: { name: 'Gust Gauntlet', kind: 'race', time: 120, min: 2, desc: 'Slip past the windmills, then cross the narrow bridges while giant fans blow you sideways. Lean into the wind!' },
+    meteor: { name: 'Meteor Mayhem', kind: 'survive', time: 80, min: 2, desc: 'Meteors are falling! Get out of the red rings - every hit blasts a hole in the floor. Stay on!' },
+    pillars: { name: 'Lava Pillars', kind: 'survive', time: 85, min: 2, desc: 'Hop between pillars over the lava. Shaking pillars sink a moment later - keep jumping to safe ones!' },
+    turf: { name: 'Turf War', kind: 'team', time: 70, min: 6, desc: 'Run over the floor to paint it your team colour. The team with the least floor painted is out!' },
+    bomb: { name: 'Bomb Tag', kind: 'hunt', time: 55, min: 4, desc: 'Got a bomb? Grab someone (F or click) to pass it on! Whoever holds a bomb when the fuse runs out is OUT.' },
+    hill: { name: 'Summit Showdown', kind: 'final', time: 120, min: 1, desc: 'The final! Stand on the summit to fill your meter - first to fill it wins the crown. Shove the others off!' },
     crown: { name: 'Crown Peak', kind: 'final', time: 150, min: 1, desc: 'The final climb! First Tumbler to grab the crown at the top wins the show!' },
     hex: { name: 'Hex Drop', kind: 'final', time: 150, min: 1, desc: 'The final! Hex tiles fall when stepped on. Last Tumbler standing wins!' }
 };
-const KIND_LABEL = { race: 'Race', survive: 'Survival', team: 'Team', final: 'Final' };
+const KIND_LABEL = { race: 'Race', survive: 'Survival', team: 'Team', hunt: 'Hunt', final: 'Final' };
+// ---------- version, multiplayer protocol and What's New ----------
+const VERSION = '1.1', PROTO = 2;          // PROTO: rooms only admit players with the same number (see 70-net.js)
+const WHATS_NEW = [
+    '7 new rounds (21 in all): the Log Jam and Gust Gauntlet races, Meteor Mayhem and Lava Pillars survival, Turf War (team), Bomb Tag (a new Hunt round) and the Summit Showdown final.',
+    'Custom shows: pick exactly which rounds a show can use (solo, or as the host of a room).',
+    '22 new things to wear, earned by playing the new rounds: 7 hats, colours, patterns, visors, trails and 3 poses.',
+    'Crown celebrations: win shows to unlock fireworks, gold rain and more for your winner podium, with a grander crown each tier.',
+    'Bots know how to play every new round, and Mayhem Marathon now has achievements in the launcher.'
+];
+
 const TEAM_COLS = [0xff4f6d, 0x3fa9ff, 0xffd23f, 0x7ee23a];
 const TEAM_NAMES = ['Red', 'Blue', 'Yellow', 'Green'];
 
@@ -882,7 +979,7 @@ function animStadium(t) {
 }
 // ---------- level meshes from the colliders ----------
 const LV = { group: null, inst: [], dyn: [] };
-const GEO = { box: new THREE.BoxGeometry(2, 2, 2), cyl: new THREE.CylinderGeometry(1, 1, 2, 24), sph: new THREE.SphereGeometry(1, 20, 14), hex: new THREE.CylinderGeometry(1, 1, 2, 6) };
+const GEO = { box: new THREE.BoxGeometry(2, 2, 2), cyl: new THREE.CylinderGeometry(1, 1, 2, 24), sph: new THREE.SphereGeometry(1, 20, 14), hex: new THREE.CylinderGeometry(1, 1, 2, 6), oct: new THREE.CylinderGeometry(1, 1, 2, 8) };
 function clearLevel() {
     if (LV.group) { GFX.scene.remove(LV.group); LV.group.traverse(o => { if (o.geometry && !Object.values(GEO).includes(o.geometry)) o.geometry.dispose(); }); }
     LV.group = null; LV.inst = []; LV.dyn = [];
@@ -890,10 +987,10 @@ function clearLevel() {
 // static colliders are merged into one mesh; colliders with a mover or marked dyn go into instanced meshes
 function buildLevelMeshes(extra) {
     clearLevel(); const g = LV.group = new THREE.Group(); GFX.scene.add(g);
-    const stat = [], dyn = { box: [], cyl: [], sph: [], hex: [] };
+    const stat = [], dyn = { box: [], cyl: [], sph: [], hex: [], oct: [] };
     for (const c of W.cs) {
         if (!c.vis) continue;
-        const shape = c.k === K_BOX ? 'box' : c.k === K_SPH ? 'sph' : c.hex ? 'hex' : 'cyl';
+        const shape = c.k === K_BOX ? 'box' : c.k === K_SPH ? 'sph' : c.hex ? 'hex' : c.oct ? 'oct' : 'cyl';      // oct: rolling logs (you can see them turn)
         if (c.mv || c.dyn) { dyn[shape].push(c); continue; }
         const geo = GEO[shape].clone(), sx = c.k === K_BOX ? c.hx : c.r, sy = c.k === K_BOX ? c.hy : c.k === K_SPH ? c.r : c.hy, sz = c.k === K_BOX ? c.hz : c.r;
         stat.push(colorGeo(placeGeo(geo, c.p[0], c.p[1], c.p[2], c.rot[0], c.rot[1], c.rot[2], sx, sy, sz), c.col));
@@ -938,8 +1035,13 @@ float patMask(vec3 p, float k){
   if (k < 6.5) { vec3 q = normalize(p); return mod(floor(atan(q.x, q.z) * 2.5) + floor(q.y * 4.0), 2.0); }
   if (k < 7.5) { vec3 q = p * 5.0; return step(0.62, fract(sin(dot(floor(q), vec3(12.9, 78.2, 37.7))) * 4375.5)) * 0.9; }
   if (k < 8.5) return smoothstep(-0.3, 0.45, p.y);
-  vec3 q = normalize(p); vec2 g = vec2(atan(q.x, q.z) * 3.0, q.y * 5.0); vec2 f = fract(g) - 0.5; float a = atan(f.y, f.x);
-  float r = 0.18 + 0.08 * cos(a * 5.0); return step(length(f), r) * step(0.5, fract(sin(dot(floor(g), vec2(3.1, 7.7))) * 91.3) + 0.4);
+  if (k < 9.5) { vec3 q = normalize(p); vec2 g = vec2(atan(q.x, q.z) * 3.0, q.y * 5.0); vec2 f = fract(g) - 0.5; float a = atan(f.y, f.x);
+    float r = 0.18 + 0.08 * cos(a * 5.0); return step(length(f), r) * step(0.5, fract(sin(dot(floor(g), vec2(3.1, 7.7))) * 91.3) + 0.4); }
+  if (k < 10.5) { vec3 q = p * 3.2; vec3 f = fract(q) - 0.5; float h = fract(sin(dot(floor(q), vec3(12.9, 78.2, 37.7))) * 4375.5);
+    return step(length(f) + 0.06 * sin(atan(f.y, f.x) * 6.0 + h * 9.0), 0.12 + 0.22 * h) * step(0.35, h); }
+  if (k < 11.5) return step(0.5, fract((p.x + p.y) * 3.2));
+  float c = abs(sin(p.x * 9.0 + sin(p.y * 7.0) * 1.8) * sin(p.z * 8.0 + sin(p.x * 6.0) * 1.5)) * abs(sin(p.y * 10.0 + p.z * 3.0));
+  return 1.0 - step(0.06, c);
 }`;
 function tumMat(withPattern) {
     const m = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
@@ -974,7 +1076,15 @@ function hatGeometry(id) {
         case 'h13': add(new THREE.ConeGeometry(0.33, 0.9, 16), 0x3550ff, 0, 0.42, -0.05, -0.2); add(new THREE.CylinderGeometry(0.55, 0.55, 0.04, 20), 0x3550ff, 0, 0.0); add(new THREE.OctahedronGeometry(0.07), 0xffe066, 0.12, 0.35, 0.22); break;
         case 'h14': add(new THREE.TorusGeometry(0.5, 0.045, 6, 20, PI), 0x2f3247, 0, -0.15, 0); add(new THREE.CylinderGeometry(0.16, 0.16, 0.14, 14), 0xff4f6d, 0.52, -0.2, 0, 0, 0, PI / 2); add(new THREE.CylinderGeometry(0.16, 0.16, 0.14, 14), 0xff4f6d, -0.52, -0.2, 0, 0, 0, PI / 2); break;
         case 'h15': add(new THREE.SphereGeometry(0.46, 16, 8, 0, TAU, 0, PI / 2), 0x9aa3ad, 0, -0.1); add(new THREE.ConeGeometry(0.08, 0.4, 10), 0xf4f1ea, 0.42, 0.12, 0, 0, 0, -1.0); add(new THREE.ConeGeometry(0.08, 0.4, 10), 0xf4f1ea, -0.42, 0.12, 0, 0, 0, 1.0); add(new THREE.BoxGeometry(0.07, 0.42, 0.06), 0x9aa3ad, 0, 0.0, 0.45); break;
+        case 'h16': add(new THREE.SphereGeometry(0.43, 16, 8, 0, TAU, 0, PI / 2), 0xd8332f, 0, -0.08); add(new THREE.BoxGeometry(0.88, 0.07, 0.9), 0x2a1d1d, 0, 0.02); add(new THREE.BoxGeometry(0.5, 0.05, 0.3), 0xd8332f, 0, -0.06, 0.48); add(new THREE.BoxGeometry(0.1, 0.32, 0.26), 0x2a1d1d, 0.44, -0.2, 0); add(new THREE.BoxGeometry(0.1, 0.32, 0.26), 0x2a1d1d, -0.44, -0.2, 0); add(new THREE.SphereGeometry(0.08, 8, 6), 0xffffff, 0, 0.36); break;
+        case 'h17': add(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), 0xf4f1ea, 0, 0.2); for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; add(new THREE.ConeGeometry(0.16, 0.42, 3), [0xff5fa2, 0xffd23f, 0x3fb8ff, 0x7ee23a][i], Math.sin(a) * 0.2, 0.46, Math.cos(a) * 0.2, PI / 2 - 0.35, a, 0); } add(new THREE.SphereGeometry(0.06, 8, 6), 0xffffff, 0, 0.46); break;
+        case 'h18': add(new THREE.DodecahedronGeometry(0.3, 0), 0x6b5a50, 0, 0.18); add(new THREE.SphereGeometry(0.08, 6, 4), 0x4a3d36, 0.12, 0.3, 0.2); for (let i = 0; i < 3; i++) add(new THREE.ConeGeometry(0.12 - i * 0.025, 0.7 - i * 0.12, 8), [0xff5a1f, 0xff9a1f, 0xffe066][i], (i - 1) * 0.12, 0.2 + i * 0.05, -0.42, -PI / 2 - 0.3, 0, 0); break;
+        case 'h19': add(new THREE.CylinderGeometry(0.3, 0.38, 0.44, 16), 0x3fb8ff, 0, 0.16); add(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 16), 0xffffff, 0, 0.39); add(new THREE.TorusGeometry(0.34, 0.025, 6, 16, PI), 0x888888, 0, 0.12, 0, 0, 0, 0); for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + 0.3; add(new THREE.CapsuleGeometry(0.045, 0.12 + (i % 3) * 0.06, 3, 6), [0xff5fa2, 0xffd23f, 0x52f2c2][i % 3], Math.sin(a) * 0.37, -0.02 - (i % 3) * 0.03, Math.cos(a) * 0.37); } break;
+        case 'h20': add(new THREE.SphereGeometry(0.42, 16, 8, 0, TAU, 0, PI / 2), 0x23242e, 0, -0.08); add(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 10), 0x55575f, 0, 0.32); add(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 6), 0xc9a26b, 0.04, 0.44, 0, 0, 0, -0.4); add(new THREE.SphereGeometry(0.07, 8, 6), 0xffd23f, 0.1, 0.56); add(new THREE.BoxGeometry(0.86, 0.06, 0.86), 0xffd23f, 0, -0.05); break;
+        case 'h21': for (let i = 0; i < 5; i++) add(new THREE.ConeGeometry(0.1, 0.36 + (2 - Math.abs(i - 2)) * 0.14, 8), [0xff3d1f, 0xff8a1f, 0xffd23f, 0xff8a1f, 0xff3d1f][i], 0, 0.14 + (2 - Math.abs(i - 2)) * 0.07, (i - 2) * 0.15, (i - 2) * 0.25, 0, 0); break;
+        case 'h22': add(new THREE.TorusGeometry(0.4, 0.04, 6, 20), 0x3f8f3a, 0, 0.0, 0, PI / 2); for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; if (Math.abs(a - PI) < 0.4) continue; add(new THREE.SphereGeometry(0.09, 6, 4).scale(1.8, 0.5, 0.8), i % 2 ? 0x5fb84a : 0x3f8f3a, Math.sin(a) * 0.4, 0.04, Math.cos(a) * 0.4, 0, a + 0.6, 0); } add(new THREE.SphereGeometry(0.05, 6, 4), 0xffd23f, 0, 0.03, 0.42); break;
         case 'tail': add(new THREE.ConeGeometry(0.16, 0.7, 10), 0xffd23f, 0, 0, 0, PI / 2); add(new THREE.SphereGeometry(0.2, 10, 8), 0xff8a2b, 0, 0, -0.38); break;
+        case 'bomb': add(new THREE.SphereGeometry(0.32, 14, 10), 0x23242e); add(new THREE.CylinderGeometry(0.09, 0.09, 0.1, 10), 0x55575f, 0, 0.32); add(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 6), 0xc9a26b, 0.03, 0.44, 0, 0, 0, -0.35); add(new THREE.SphereGeometry(0.08, 8, 6), 0xffd23f, 0.08, 0.56); add(new THREE.SphereGeometry(0.07, 8, 6), 0xffffff, -0.12, 0.12, 0.25); break;
         case 'crown': add(new THREE.CylinderGeometry(0.34, 0.3, 0.22, 16, 1, true), 0xffd23f); for (let i = 0; i < 5; i++) add(new THREE.ConeGeometry(0.08, 0.2, 6), 0xffd23f, Math.sin(i / 5 * TAU) * 0.3, 0.2, Math.cos(i / 5 * TAU) * 0.3); add(new THREE.SphereGeometry(0.06, 8, 6), 0xff4f6d, 0, 0, 0.33); break;
         default: return null;
     }
@@ -997,6 +1107,7 @@ function initTumblers() {
     instPart('band', new THREE.TorusGeometry(0.6, 0.07, 8, 28).rotateX(PI / 2), new THREE.MeshStandardMaterial({ roughness: 0.4, emissive: 0x222222 }), 1, false);
     instPart('tail', hatGeometry('tail'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }), 1);
     instPart('crown', hatGeometry('crown'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.7, emissive: 0x332200 }), 1, false);
+    instPart('bomb', hatGeometry('bomb'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }), 1);
     const blobGeo = new THREE.CircleGeometry(0.55, 16).rotateX(-PI / 2);
     TUM.blob = instPart('blob', blobGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }), 1, false);
     for (const it of ITEMS) if (it.cat === 'hat' && it.id !== 'h0') {
@@ -1035,6 +1146,9 @@ function drawTumbler(vs, look, opt) {
         if (p === 'e4') { armFwd = -1.57 * (Math.floor(s) % 2); legA = 0; armOut = 0.3; spinY = Math.floor(s / 2) % 2 ? 0.4 : -0.4; }
         if (p === 'e5') { armOut = 2.6 + Math.sin(s * 2) * 0.3; hop = Math.abs(Math.sin(s)) * 0.25; }
         if (p === 'e6') { legA = Math.sin(s * 1.5) * 0.6; spinY = PI * 0.5; armA = Math.sin(s * 1.5) * 0.5; }
+        if (p === 'e7') { spinY = Math.sin(s * 1.6) * 0.45; armOut = 1.4; armA = Math.sin(s * 1.6 + 1) * 0.6; bob = Math.abs(Math.sin(s * 1.6)) * 0.05; }
+        if (p === 'e8') { const j = Math.abs(Math.sin(s * 1.3)); hop = j * 0.45; armOut = 0.3 + j * 2.4; legA = 0; }
+        if (p === 'e9') { armOut = 0.3; armA = 0; armFwd = 0; spinY = Math.sin(s * 0.5) * 0.5; hop = 0.05 + Math.sin(s) * 0.03; }
     }
     const sq = vs.sq || 0, sy = 1 - sq, sxz = 1 + sq * 0.55, sc = opt.scale || 1;
     // ROOT = T(feet) * T(c) * Rtumble * Ry(yaw) * Rx(pitch) * T(-c) * S
@@ -1051,12 +1165,22 @@ function drawTumbler(vs, look, opt) {
     pushInst(TUM.parts.eyes, M3, st === ST_TUMBLE ? 0xffffff : vis.eye);
     for (let s = -1; s <= 1; s += 2) {
         QA.setFromAxisAngle(XA, legA * s); M1.compose(V3.set(0.22 * s, 0.34, 0), QA, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.legs, M3, 0x3a3d52);
-        const ao = vs.pose === 'e0' && s > 0 ? 2.6 + Math.sin(t * 9) * 0.4 : armOut; QA.setFromAxisAngle(XA, armA * s + armFwd); QB.setFromAxisAngle(ZA, ao * s); QB.multiply(QA); M1.compose(V3.set(0.55 * s, 0.98, 0), QB, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.arms, M3, col);
+        const ao = (vs.pose === 'e0' || vs.pose === 'e9') && s > 0 ? (vs.pose === 'e9' ? 2.2 + Math.sin(t * 5) * 0.25 : 2.6 + Math.sin(t * 9) * 0.4) : armOut;
+ QA.setFromAxisAngle(XA, armA * s + armFwd); QB.setFromAxisAngle(ZA, ao * s); QB.multiply(QA); M1.compose(V3.set(0.55 * s, 0.98, 0), QB, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.arms, M3, col);
     }
-    if (L.hat !== 'h0' && TUM.hats[L.hat]) { PART.makeTranslation(0, 1.36, 0); M3.multiplyMatrices(ROOT, PART); if (L.hat === 'h9') { M2.makeRotationY(t * 12); M3.multiply(M2); } pushInst(TUM.hats[L.hat], M3); }
+    if (L.hat !== 'h0' && TUM.hats[L.hat]) { PART.makeTranslation(0, 1.36, 0); M3.multiplyMatrices(ROOT, PART); if (L.hat === 'h9' || L.hat === 'h17') { M2.makeRotationY(t * (L.hat === 'h9' ? 12 : 7)); M3.multiply(M2); } pushInst(TUM.hats[L.hat], M3); }
     if (opt.team != null) { PART.makeTranslation(0, 0.72, 0); M3.multiplyMatrices(ROOT, PART); pushInst(TUM.parts.band, M3, TEAM_COLS[opt.team]); }
     if (opt.tail) { QA.setFromAxisAngle(XA, 0.5 + Math.sin(t * 10) * 0.15); M1.compose(V3.set(0, 0.55, -0.62), QA, S1.set(1, 1, 1)); M3.multiplyMatrices(ROOT, M1); pushInst(TUM.parts.tail, M3); }
-    if (opt.crown) { PART.makeTranslation(0, 1.5, 0); M3.multiplyMatrices(ROOT, PART); pushInst(TUM.parts.crown, M3); }
+    if (opt.crown) {             // crown celebrations make it grander: bigger, then spinning, then floating
+        const k = opt.crownTier || 0, s = 1 + Math.min(k, 3) * 0.14;
+        PART.makeTranslation(0, 1.5 + (k >= 4 ? 0.25 + Math.sin(t * 3) * 0.08 : 0), 0); M3.multiplyMatrices(ROOT, PART);
+        M2.makeScale(s, s, s); M3.multiply(M2); if (k >= 2) { M2.makeRotationY(t * (k >= 4 ? 2.5 : 1.2)); M3.multiply(M2); }
+        pushInst(TUM.parts.crown, M3);
+    }
+    if (opt.bomb) {               // Bomb Tag: the bomb rides above your head and swells as the fuse burns down
+        const s = 1 + (opt.bombHot || 0) * (0.15 + 0.15 * Math.sin(t * 20));
+        PART.makeTranslation(0, 1.85, 0); M3.multiplyMatrices(ROOT, PART); M2.makeScale(s, s, s); M3.multiply(M2); pushInst(TUM.parts.bomb, M3);
+    }
     if (TUM.blob.visible && opt.blobY != null) { M1.makeTranslation(vs.x, opt.blobY + 0.03, vs.z); pushInst(TUM.blob, M1); }
 }
 // ---------- particles: confetti + puffs (trails, dust, splashes) ----------
@@ -1068,9 +1192,10 @@ function initParticles() {
     PFX.conf.setColorAt(0, C1.setHex(0xffffff)); PFX.puff.setColorAt(0, C1.setHex(0xffffff));
 }
 const CONF_PAL = [0xff5fa2, 0xffd23f, 0x3fb8ff, 0x7ee23a, 0xff8a2b, 0x9a5cff, 0xffffff];
-function confetti(x, y, z, n, spread) {
+function confetti(x, y, z, n, spread, pal) {
+    pal = pal || CONF_PAL;
     const max = QUALITY[GFX.q].confetti;
-    for (let i = 0; i < n && PFX.confP.length < max; i++) PFX.confP.push({ x: x + (Math.random() - 0.5) * (spread || 1), y, z: z + (Math.random() - 0.5) * (spread || 1), vx: (Math.random() - 0.5) * 8, vy: 4 + Math.random() * 9, vz: (Math.random() - 0.5) * 8, r: Math.random() * 6, rv: (Math.random() - 0.5) * 14, life: 3 + Math.random() * 2, c: CONF_PAL[Math.floor(Math.random() * CONF_PAL.length)] });
+    for (let i = 0; i < n && PFX.confP.length < max; i++) PFX.confP.push({ x: x + (Math.random() - 0.5) * (spread || 1), y, z: z + (Math.random() - 0.5) * (spread || 1), vx: (Math.random() - 0.5) * 8, vy: 4 + Math.random() * 9, vz: (Math.random() - 0.5) * 8, r: Math.random() * 6, rv: (Math.random() - 0.5) * 14, life: 3 + Math.random() * 2, c: pal[Math.floor(Math.random() * pal.length)] });
 }
 function puff(x, y, z, hex, n, sp, up, life, size) {
     const max = QUALITY[GFX.q].puffs;
@@ -1467,8 +1592,9 @@ ROUNDS.squeeze = {
     build() {
         cyl(0, -0.5, 0, 13, 1, { col: 0xffd6f0, mv: (t, c) => { c.r = sqR(t); colBound(c); } });
         cyl(0, -1.6, 0, 13.6, 1, { col: 0x9a5cff, vis: true, solid: false, mv: (t, c) => { c.r = sqR(t) + 0.5; colBound(c); } });
-        for (let k = 0; k < 3; k++) cyl(0, 0.7, 0, 0.7, 1.4, { col: HAZ, fx: { knock: 5 }, mv: (t, c) => { const a = -0.5 * t + k * TAU / 3, rr = Math.min(6, sqR(t) - 1.2); c.p[0] = Math.sin(a) * rr; c.p[1] = 0.7; c.p[2] = Math.cos(a) * rr; } });
-        spawnRing(8.5, 0); L.killY = -6; L.center = [0, 0];
+        for (let k = 0; k < 3; k++) cyl(0, 0.7, 0, 0.7, 1.4, { col: HAZ, fx: { knock: 5 }, mv: (t, c) => { const a = -0.5 * Math.max(0, t) + k * TAU / 3, rr = Math.min(6, sqR(t) - 1.2); c.p[0] = Math.sin(a) * rr; c.p[1] = 0.7; c.p[2] = Math.cos(a) * rr; } });
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 9, PR + 0.05, Math.cos(a) * 9]); }     // one ring, clear of the pushers' path
+        L.killY = -6; L.center = [0, 0];
     },
     tick(R) { const w = sqWind(R.t), s = Math.hypot(w.x, w.z); if (s > 0.5 && Math.random() < s * 0.25) { const a = Math.random() * TAU, r = Math.random() * 14; puff(Math.sin(a) * r, 0.5 + Math.random() * 2, Math.cos(a) * r, 0xffffff, 1, 0, 0, 0.7, 0.5); const pp = PFX.puffP[PFX.puffP.length - 1]; if (pp) { pp.vx = w.x * 2.5; pp.vz = w.z * 2.5; pp.vy = 0; } } },
     bot(C, R, ai, inp) {
@@ -1575,7 +1701,7 @@ ROUNDS.tail = {
         box(0, 1, 0, 6, 2, 6, { col: YEL }); ramp(0, 3, 7.2, 2, 0, 6, 0xffe27a); ramp(0, -3, -7.2, 2, 0, 6, 0xffe27a);
         [[-10, -10], [10, -10], [-10, 10], [10, 10]].forEach(([x, z]) => cyl(x, 1.5, z, 1, 3, { col: BLU }));
         bouncePad(-12, 0, 5, 1.3, 14); bouncePad(12, 0, -5, 1.3, 14);
-        box(-6, 0.5, 9, 4, 1, 1, { col: PNK }); box(6, 0.5, -9, 4, 1, 1, { col: PNK });
+        box(-7, 0.5, 9, 4, 1, 1, { col: PNK }); box(7, 0.5, -9, 4, 1, 1, { col: PNK });      // 1.1: moved out from under two spawn points
         spawnRing(16, 0); L.killY = -8; L.center = [0, 0];     // radius 16: at 14 the diagonal spawns sat inside the corner pillars and dropped through the floor
     },
     onGrab(R, A, B) {
@@ -1610,7 +1736,8 @@ ROUNDS.hoard = {
         box(0, 0.6, 0, 3, 1.2, 3, { col: YEL });
         const n = R.nTeams * 3 + 2; R.balls = [];
         for (let i = 0; i < n; i++) { const a = i / n * TAU, rr = 4 + (i % 3) * 2.2; const b = { x: Math.sin(a) * rr, y: 0.9, z: Math.cos(a) * rr, vx: 0, vy: 0, vz: 0 }; R.balls.push(b); sph(b.x, b.y, b.z, 0.9, { col: [0xffffff, 0xffd23f, 0x52f2c2][i % 3], tag: 'ball', mv: (t, c) => { const s = R.balls[i]; c.p[0] = s.x; c.p[1] = s.y; c.p[2] = s.z; } }); }
-        spawnRing(9, 0); L.killY = -8; L.center = [0, 0];
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 12, PR + 0.05, Math.cos(a) * 12]); }     // outside the balls
+        L.killY = -8; L.center = [0, 0];
     },
     hostTick(R, dt) {
         const balls = R.balls;
@@ -1703,6 +1830,491 @@ ROUNDS.hoops = {
     }
 };
 
+// ---- 43-races2.js ----
+// ============================================================
+// 1.1 RACES: Log Jam and Gust Gauntlet. Courses run along +z from a start pad at z=0, like the others.
+// Everything that moves is a pure function of round time, so every machine agrees on it.
+// ============================================================
+const LOG = 0xa8703f, LOG2 = 0x8a5a33;
+// a log lying across the course (axis along x) spinning so its top moves toward the start: a treadmill
+function rollerLog(z, y, r, len, w, col) {
+    const c = cyl(0, y, z, r, len, { col, rz: PI / 2, mv: (t, c) => { setRot(c, -w * t, 0, PI / 2); c.p[0] = 0; c.p[1] = y; c.p[2] = z; } });
+    c.oct = true; return c;
+}
+// a log lying along the course (axis z) spinning so its top moves sideways (dir +1 = toward +x)
+function bridgeLog(x, z0, z1, r, w, dir, col) {
+    const zc = (z0 + z1) / 2, y = -r;
+    const c = cyl(x, y, zc, r, z1 - z0, { col, rz: PI / 2, ry: PI / 2, mv: (t, c) => { setRot(c, dir * w * t, PI / 2, PI / 2); c.p[0] = x; c.p[1] = y; c.p[2] = zc; } });
+    c.oct = true; return c;
+}
+const LJ = { lane0: 31.8, lane1: 62, per: 30.1 / 4.2, logR: 0.55 };      // three logs, one every ~2.4 s at 4.2 m/s
+ROUNDS.logs = {
+    build(rnd) {
+        startPad();
+        floorStrip(0, 4, 12, 14, 0, 0xfff2b3, 0xffe27a);
+        spinner(0, 8, 0, 12.5, 1.5, 0.4, HAZ2);
+        // A: the treadmill - six rolling logs that carry you backwards
+        for (let i = 0; i < 6; i++) rollerLog(13.05 + i * 2.05, -1.0, 1.0, 13, 2.6, i % 2 ? LOG : LOG2);
+        box(-7.1, 0.0, 18.2, 0.8, 2.4, 12.6, { col: 0x6b4a2b }); box(7.1, 0.0, 18.2, 0.8, 2.4, 12.6, { col: 0x6b4a2b });
+        floorStrip(0, 24.3, 30.2, 14, 0, 0xfff2b3, 0xffe27a);
+        // B: the log chute - logs roll down the lane at you; jump them (gap to jump first)
+        floorStrip(0, LJ.lane0, LJ.lane1, 14, 0, 0xe9d8b8, 0xd8c29a);
+        box(-7.4, 0.6, (LJ.lane0 + LJ.lane1) / 2, 0.8, 1.2, LJ.lane1 - LJ.lane0, { col: PNK }); box(7.4, 0.6, (LJ.lane0 + LJ.lane1) / 2, 0.8, 1.2, LJ.lane1 - LJ.lane0, { col: PNK });
+        box(0, 3.4, 59.5, 15.6, 1.6, 3.2, { col: 0x6b4a2b }); box(-7.4, 1.6, 59.5, 0.8, 3.2, 3.2, { col: 0x6b4a2b }); box(7.4, 1.6, 59.5, 0.8, 3.2, 3.2, { col: 0x6b4a2b });
+        for (let k = 0; k < 3; k++) {
+            const c = cyl(0, -20, 60, LJ.logR, 12.4, { col: k % 2 ? LOG : LOG2, rz: PI / 2, fx: { knock: 6, always: true }, mv: (t, c) => {
+                const s = ((((Math.max(0, t) + k * LJ.per / 3) / LJ.per) % 1) + 1) % 1, z = 60.5 - s * (60.5 - LJ.lane0 + 1.2);
+                let y = LJ.logR; if (z > 57) y += (z - 57) * 0.9; if (z < LJ.lane0 + 0.2) y -= (LJ.lane0 + 0.2 - z) * 5;
+                setRot(c, (60.5 - z) / LJ.logR, 0, PI / 2); c.p[0] = 0; c.p[1] = y; c.p[2] = z;
+            } });
+            c.oct = true; c.low = true;
+        }
+        floorStrip(0, LJ.lane1, 66, 14, 0, 0xfff2b3, 0xffe27a);
+        // C: two spinning log bridges over the water, each throws you outward
+        bridgeLog(-2.6, 66, 84, 0.95, 2.1, -1, LOG); bridgeLog(2.6, 66, 84, 0.95, 2.1, 1, LOG2);
+        floorStrip(0, 84, 88, 14, 0, 0xfff2b3, 0xffe27a);
+        // D: the lumber yard - swinging logs and pushers, then the finish
+        floorStrip(0, 88, 114, 14, 0, 0xe9d8b8, 0xd8c29a);
+        hammer(0, 94, 0, 0.4, 0.95, 1.55); pusher(-5, 5, 98.5, 0, 1.5, 1.2, 2.4, 1.4); hammer(0, 103, 0, 2.2, 0.95, 1.7);
+        finishArch(109, 0, 14);
+        cp(28, 0); cp(33.5, 0); cp(64, 0); cp(86, 0); cp(98.5, 0);
+        L.center = [0, 58]; L.killY = -8;
+        P(0, 0, 8, 3); P(0, 0, 12, 3); P(0, 0, 16, 3); P(0, 0, 20, 3); P(0, 0, 24, 3); P(0, 0, 27.5, 3); P(0, 0, 29.6, 2, true);
+        for (let z = 35; z <= 59; z += 4) P(0, 0, z, 3);
+        P(0, 0, 63, 3); P(0, 0, 65.4, 1);
+        P(0, 0, 86, 3); P(0, 0, 91, 3); P(0, 0, 96, 3); P(0, 0, 101, 3); P(0, 0, 106, 3); P(0, 0, 112, 3);
+        // water under the bridges (visual)
+        const wm = new THREE.Mesh(new THREE.BoxGeometry(16, 0.4, 20), new THREE.MeshLambertMaterial({ color: 0x3fb8ff, emissive: 0x0b3a66, transparent: true, opacity: 0.85 }));
+        wm.position.set(0, -2.6, 75); L.group.add(wm);
+    },
+    bot(C, R, ai, inp) {            // on the bridge logs: pick a log, run along its top, lean against the spin
+        const p = C.b.p;
+        if (p.z < 62.5 || p.z > 84.2 || p.y < -1.5) { ai.log = null; return false; }
+        if (ai.log == null) ai.log = Math.abs(p.x) > 0.8 ? Math.sign(p.x) * 2.6 : C.id % 2 ? 2.6 : -2.6;
+        if (p.z < 66.1 && Math.abs(p.x - ai.log) > 0.35) { botSteer(C, inp, ai.log, Math.min(p.z + 0.4, 65.6), 0); return true; }   // line up on the island first
+        const lean = [0.05, 0.18, 0.28][C.skill] * Math.sign(ai.log);
+        botSteer(C, inp, ai.log - lean, p.z + 3, 0); return true;
+    }
+};
+// ---------- Gust Gauntlet: windmills, then bridges in the path of giant fans ----------
+const gustPulse = (t, ph) => t < 0 ? 0 : Math.pow(Math.max(0, Math.sin(t * 1.15 + ph)), 0.6);
+function gustAt(t, p) {
+    if (p.y < 3 && p.z > 34 && p.z < 50) return { x: 5.2 * gustPulse(t, 0), z: 0 };
+    if (p.y < 3 && p.z > 54 && p.z < 72) return { x: -5.2 * gustPulse(t, 2.2), z: 0 };
+    if (p.y > 3 && p.z > 89 && p.z < 106) return { x: 0, z: -2.6 * gustPulse(t * 0.8, 1) };
+    return { x: 0, z: 0 };
+}
+function windmill(z, y, w, ph) {
+    const py = y + 7.3;
+    box(-5.6, y + 3.9, z + 0.9, 0.8, 7.8, 0.8, { col: WHT }); box(5.6, y + 3.9, z + 0.9, 0.8, 7.8, 0.8, { col: WHT });
+    box(0, y + 7.95, z + 0.9, 12, 0.5, 0.6, { col: WHT, solid: false });
+    deco(placeGeo(new THREE.CylinderGeometry(0.7, 0.7, 0.8, 16), 0, py, z + 0.4, PI / 2, 0, 0), YEL);
+    for (let k = 0; k < 2; k++) box(0, py, z, 14.6, 0.7, 0.7, { col: k ? HAZ : HAZ2, fx: { knock: 8 }, mv: (t, c) => { setRot(c, 0, 0, ph + w * t + k * PI / 2); c.p[0] = 0; c.p[1] = py; c.p[2] = z; } });
+    box(-6.1, y + 1.1, z, 3.8, 2.2, 6, { col: BLU }); box(6.1, y + 1.1, z, 3.8, 2.2, 6, { col: BLU });      // walls: the only way through is under the arms
+}
+function bigFan(x, z, dir) {                 // a fan housing on a stand with spinning blades (looks only)
+    deco(placeGeo(new THREE.CylinderGeometry(3.2, 3.2, 1.2, 24, 1, true), x, 2.4, z, 0, 0, PI / 2), 0x8a8fb0);
+    deco(placeGeo(new THREE.BoxGeometry(1.2, 2.6, 1.2), x - dir * 0.4, -1, z), 0x6b6f8f);
+    for (let k = 0; k < 2; k++) box(x + dir * 0.2, 2.4, z, 0.25, 5.6, 0.9, { col: WHT, solid: false, mv: (t, c) => { setRot(c, t * 7 + k * PI / 2, 0, 0); c.p[0] = x + dir * 0.2; c.p[1] = 2.4; c.p[2] = z; } });
+}
+ROUNDS.gust = {
+    windAt: gustAt,
+    build(rnd) {
+        startPad();
+        floorStrip(0, 4, 30, 16, 0, 0xe3f1ff, 0xc9e3ff);
+        windmill(12, 0, 0.85, 0); windmill(22, 0, -0.95, 0.6);
+        floorStrip(0, 30, 34, 14, 0, 0xfff2b3, 0xffe27a);
+        floorStrip(0, 34, 50, 3.2, 0, 0xe3f1ff, 0xc9e3ff);
+        [37, 42, 47].forEach(z => bigFan(-9, z, 1));
+        floorStrip(0, 50, 54, 14, 0, 0xfff2b3, 0xffe27a);
+        floorStrip(-2.4, 54, 63, 3.2, 0, 0xe3f1ff, 0xc9e3ff); box(0, -0.5, 63, 8, 1, 2, { col: 0xc9e3ff }); floorStrip(2.4, 63, 72, 3.2, 0, 0xe3f1ff, 0xc9e3ff);
+        [57, 63, 69].forEach(z => bigFan(10, z, -1));
+        floorStrip(0, 72, 76, 14, 0, 0xfff2b3, 0xffe27a);
+        ramp(0, 76, 88, 0, 4, 10, 0x4b4f6b, { fx: { conv: [0, -2.0] } });
+        for (const s of [-1, 1]) ramp(s * 5.3, 76, 88, 1, 5, 0.6, PNK, { th: 2 });
+        floorStrip(0, 88, 112, 14, 4, 0xe3f1ff, 0xc9e3ff);
+        spinner(0, 94, 4, 12.5, 1.6, 0.3, HAZ2); windmill(101, 4, 0.9, 1.1);
+        finishArch(107, 4, 14);
+        cp(32, 0); cp(52, 0); cp(74, 0); cp(90, 4);
+        L.center = [0, 56]; L.killY = -8;
+        P(0, 0, 8, 3); P(0, 0, 10.5, 2.5); P(0, 0, 15, 2.5); P(0, 0, 20.5, 2.5); P(0, 0, 25, 2.5); P(0, 0, 31, 3);
+        P(0, 0, 35, 0.2); P(0, 0, 40, 0.2); P(0, 0, 45, 0.2); P(0, 0, 49.6, 0.2); P(0, 0, 52.5, 1.5);
+        P(-2.4, 0, 55, 0.2); P(-2.4, 0, 59, 0.2); P(-2.4, 0, 62.4, 0.2); P(2.4, 0, 63.6, 0.2); P(2.4, 0, 67, 0.2); P(2.4, 0, 71.6, 0.2); P(0, 0, 74, 2);
+        P(0, 1.3, 80, 2.5); P(0, 4, 89, 3); P(0, 4, 92, 3); P(0, 4, 97, 2.5); P(0, 4, 103, 2.5); P(0, 4, 110, 3);
+    },
+    tick(R, dt) {                    // wind you can see: streaks fly with each gust
+        for (const [z0, z1, y, xs] of [[34, 50, 0, -8], [54, 72, 0, 9]]) {
+            const w = gustAt(R.t, { x: 0, y, z: (z0 + z1) / 2 }), s = Math.abs(w.x);
+            if (s > 0.6 && Math.random() < s * 0.18) { puff(xs, 0.6 + Math.random() * 3, z0 + Math.random() * (z1 - z0), 0xffffff, 1, 0, 0, 1.1, 0.6); const pp = PFX.puffP[PFX.puffP.length - 1]; if (pp) { pp.vx = w.x * 3; pp.vy = 0; pp.vz = 0; } }
+        }
+        const h = gustAt(R.t, { x: 0, y: 5, z: 95 }); if (Math.abs(h.z) > 0.6 && Math.random() < 0.3) { puff((Math.random() - 0.5) * 12, 4.6 + Math.random() * 2, 106, 0xffffff, 1, 0, 0, 1.4, 0.6); const pp = PFX.puffP[PFX.puffP.length - 1]; if (pp) { pp.vx = 0; pp.vy = 0; pp.vz = h.z * 4; } }
+    },
+    botAfter(C, R, ai, inp) {        // lean into the wind (hard bots fully, easy bots barely)
+        const w = gustAt(R.t, C.b.p); if (!w.x && !w.z) return;
+        const k = [0.5, 0.85, 1.05][C.skill] / (RUN * BOT_SPEED[C.skill]);
+        inp.mx -= w.x * k; inp.mz -= w.z * k;
+    }
+};
+
+// ---- 44-arenas2.js ----
+// ============================================================
+// 1.1 ARENA ROUNDS: Meteor Mayhem and Lava Pillars (survival), Turf War (team), Bomb Tag (hunt) and the
+// Summit Showdown final. Meteors and sinking pillars follow a plan made from the round seed, so every
+// machine knows when and where they land without any network traffic.
+// ============================================================
+const hyp = (x, z) => Math.sqrt(x * x + z * z);
+// ---------- Meteor Mayhem ----------
+const MET = { warn: 2.0, fall: 1.4, pool: 6, keep: 14 };
+function meteorPlan(seed, tiles) {
+    const rnd = mulberry(seed * 13 + 5), alive = new Set(tiles.map((t, i) => i)), out = [];
+    let T = 3.5, n = 0;
+    while (T < 100) {
+        const big = n % MET.pool === MET.pool - 1, arr = [...alive];
+        let i = arr[Math.floor(rnd() * arr.length)];
+        if (rnd() < 0.45) { const j = arr[Math.floor(rnd() * arr.length)]; if (hyp(tiles[j].x, tiles[j].z) < hyp(tiles[i].x, tiles[i].z)) i = j; }
+        const t0 = tiles[i], kill = [];
+        if (alive.size > MET.keep) {          // the last few tiles are never holed: someone can always survive
+            kill.push(i);
+            const nb = arr.filter(j => j !== i && hyp(tiles[j].x - t0.x, tiles[j].z - t0.z) < 2.5);
+            if (big) kill.push(...nb.slice(0, Math.min(nb.length, alive.size - MET.keep - 1)));
+            else if (nb.length && rnd() < 0.45) kill.push(nb[Math.floor(rnd() * nb.length)]);
+            kill.forEach(j => alive.delete(j));
+        }
+        out.push({ T, x: t0.x, z: t0.z, big, kill, k: n % MET.pool, dx: (rnd() - 0.5) * 6, dz: (rnd() - 0.5) * 6 });
+        n++; T += Math.max(0.6, 2.3 - T * 0.026) * (0.75 + rnd() * 0.5);
+    }
+    return out;
+}
+ROUNDS.meteor = {
+    build(rnd, R) {
+        const s = 1.32, cols = [0x8a7f9e, 0x9d93b0]; L.mtiles = [];
+        for (let q = -6; q <= 6; q++) for (let r = -6; r <= 6; r++) {
+            if (Math.abs(q + r) > 6) continue;
+            const x = s * Math.sqrt(3) * (q + r / 2), z = s * 1.5 * r, c = cyl(x, -0.3, z, 1.12, 0.6, { col: cols[(q - r + 99) % 2] });
+            c.hex = true; c.dyn = true; L.mtiles.push(c);
+        }
+        R.met = meteorPlan(R.seed, L.mtiles.map(c => ({ x: c.p[0], z: c.p[2] }))); R.mi = 0;
+        const slots = Array.from({ length: MET.pool }, () => []); R.met.forEach(m => slots[m.k].push(m));
+        slots.forEach((list, k) => {
+            const r = k === MET.pool - 1 ? 1.7 : 1.15;
+            const c = sph(0, -80, 0, r, { col: k === MET.pool - 1 ? 0x7a3b22 : 0x6b4a3a, fx: { knock: 11, always: true }, mv: (t, c) => {
+                let i = c.mi || 0; while (i < list.length - 1 && t > list[i].T + 0.8) i++; while (i > 0 && t < list[i - 1].T + 0.8) i--; c.mi = i;
+                const m = list[i];
+                if (!m || t < m.T - MET.fall || t > m.T + 0.8) { c.p[0] = 0; c.p[1] = -80; c.p[2] = 0; return; }
+                const u = Math.max(0, m.T - t) / MET.fall;
+                c.p[0] = m.x + m.dx * u; c.p[2] = m.z + m.dz * u; c.p[1] = t < m.T ? r + 34 * u * u : r - (t - m.T) * (m.kill.length ? 9 : 1.5);
+            } });
+            c.slot = k;
+        });
+        const rg = new THREE.RingGeometry(0.72, 1, 28).rotateX(-PI / 2);
+        L.rings = new THREE.InstancedMesh(rg, new THREE.MeshBasicMaterial({ color: 0xff3b2f, transparent: true, opacity: 0.85, depthWrite: false }), 12);
+        L.rings.count = 0; L.rings.frustumCulled = false; L.group.add(L.rings);
+        spawnRing(6.5, 0); L.killY = -6; L.center = [0, 0];
+    },
+    tick(R, dt) {
+        // impacts: holes, a shockwave that throws you (each machine moves its own Tumbler), boom
+        while (R.mi < R.met.length && R.met[R.mi].T <= R.t) {
+            const m = R.met[R.mi++], fresh = R.t - m.T < 0.35;
+            for (const j of m.kill) { const c = L.mtiles[j]; if (c.on) { c.on = false; c.shake = 0; } }
+            if (!fresh || R.phase === 'over') continue;
+            const rad = m.big ? 4.2 : 3.0;
+            sfx('boom', { x: m.x, y: 0, z: m.z }, m.big ? 1 : 0.7); puff(m.x, 0.5, m.z, 0xffa040, m.big ? 16 : 10, 6, 3, 0.7, 1.6); puff(m.x, 0.3, m.z, 0x6b5a50, 8, 5, 2, 0.9, 1.2);
+            for (const C of R.cs) {
+                if (C.hide || C.done) continue; const v = C.vs, d = hyp(v.x - m.x, v.z - m.z);
+                if (isMe(C) && d < 9) shake(m.big ? 0.6 : 0.35);
+                if (!C.sim || !C.b || d > rad || v.y > 3) continue;
+                const k = 3 + 8 * (1 - d / rad), nx = d > 0.05 ? (v.x - m.x) / d : 1, nz = d > 0.05 ? (v.z - m.z) / d : 0;
+                knock(C.b, nx * k, 5 + 3 * (1 - d / rad), nz * k, 0.9);
+            }
+        }
+        // warning rings under the meteors that are coming
+        const rings = L.rings; let n = 0;
+        for (let i = R.mi; i < R.met.length && n < 12; i++) {
+            const m = R.met[i], left = m.T - R.t; if (left > MET.warn) break;
+            const s = (m.big ? 2.3 : 1.5) * (1 + 0.08 * Math.sin(R.t * 18));
+            M1.makeScale(s, 1, s); M1.setPosition(m.x, 0.04, m.z); rings.setMatrixAt(n++, M1);
+            if (left < MET.fall && Math.random() < 0.6) { const u = left / MET.fall; puff(m.x + m.dx * u, (m.big ? 1.7 : 1.15) + 34 * u * u + 1, m.z + m.dz * u, Math.random() < 0.5 ? 0xff7a1f : 0xffd23f, 1, 0.6, 0.5, 0.45, 1.2); }
+            if (left < MET.fall && left + dt >= MET.fall) sfx('meteor', { x: m.x, y: 0, z: m.z }, 0.6);
+        }
+        rings.count = n; rings.instanceMatrix.needsUpdate = true;
+    },
+    bot(C, R, ai, inp) {
+        const b = C.b, p = b.p, look = [1.0, 1.6, 2.2][C.skill], danger = [];
+        for (let i = R.mi; i < R.met.length && R.met[i].T < R.t + look; i++) danger.push(R.met[i]);
+        const risk = (x, z) => { let s = 0; for (const m of danger) { const d = hyp(x - m.x, z - m.z), rad = m.big ? 4.4 : 3.2; if (d < rad) s += (rad - d) * 4 + (m.kill.length && d < 2.6 ? 20 : 0); } return s; };
+        ai.mt = (ai.mt || 0) - 1 / 60;
+        if (ai.mt <= 0 || !ai.tile || !ai.tile.on) {
+            ai.mt = [0.45, 0.3, 0.2][C.skill];
+            const here = risk(p.x, p.z);
+            if (!(ai.tile && ai.tile.on && here < 1 && risk(ai.tile.p[0], ai.tile.p[2]) < 1 && Math.random() < 0.85)) {
+                let best = null, bs = -1e9;
+                for (const c of L.mtiles) {
+                    if (!c.on) continue; const d = hyp(c.p[0] - p.x, c.p[2] - p.z); if (d > 8) continue;
+                    let crowd = 0; for (const o of R.cs) if (o !== C && !o.hide && hyp(o.vs.x - c.p[0], o.vs.z - c.p[2]) < 1.5) crowd++;
+                    const s = -d * 0.45 - hyp(c.p[0], c.p[2]) * 0.3 - crowd * 1.2 - risk(c.p[0], c.p[2]) + Math.random() * [3, 1.5, 0.6][C.skill];
+                    if (s > bs) { bs = s; best = c; }
+                }
+                ai.tile = best;
+            }
+        }
+        if (!ai.tile) { botSteer(C, inp, 0, 0, 0.5); return true; }
+        const d = botSteer(C, inp, ai.tile.p[0], ai.tile.p[2], 0.35);
+        if (b.ground && d > 0.9) { const h = Math.hypot(inp.mx, inp.mz) || 1, fx = p.x + inp.mx / h * 1.1, fz = p.z + inp.mz / h * 1.1; if (!solidAt(fx, p.y - 0.8, fz, 0.3) && Math.random() < [0.6, 0.9, 1][C.skill]) inp.jump = true; }
+        return true;
+    }
+};
+// ---------- Lava Pillars ----------
+function pillarPlan(seed, pills, spawnSet) {
+    const rnd = mulberry(seed * 31 + 7), left = pills.map((c, i) => i).filter(i => !pills[i].center), out = [];
+    let T = 5, w = 0;
+    while (left.length > 3 && T < 95) {
+        const n = Math.min(left.length - 3, 2 + Math.floor(w / 4), 4), cs = [];
+        for (let k = 0; k < n; k++) {
+            // outer pillars tend to go first; never a spawn pillar in the first waves
+            let bi = -1, bs = -1e9;
+            for (let t = 0; t < 4; t++) { const j = Math.floor(rnd() * left.length), c = pills[left[j]]; if (T < 9 && spawnSet.has(left[j])) continue; const s = hyp(c.p[0], c.p[2]) + rnd() * 5; if (s > bs) { bs = s; bi = j; } }
+            if (bi < 0) continue; cs.push(left[bi]); left.splice(bi, 1);
+        }
+        out.push({ T, cs }); w++; T += Math.max(1.6, 3.1 - T * 0.022) + rnd() * 0.6;
+    }
+    return out;
+}
+ROUNDS.pillars = {
+    build(rnd, R) {
+        const sp = 3.0, rr = 1.12, H = [0, 0.6, 1.2]; L.pills = [];
+        for (let q = -4; q <= 4; q++) for (let r = -4; r <= 4; r++) {
+            if (Math.abs(q + r) > 4) continue;
+            const x = sp * (q + r / 2), z = sp * 0.866 * r, ring = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
+            const h = ring === 0 ? 1.2 : H[Math.floor(rnd() * 3)], bob = ring >= 1 && ring <= 2 && rnd() < 0.25, ph = rnd() * TAU;
+            const col = [0x8a6f9e, 0x9f84b3, 0xb39ac6][H.indexOf(h)];
+            const o = { col, tag: 'tile' }; if (bob) o.mv = (t, c) => { c.p[0] = x; c.p[1] = (h - 3.6) / 2 + 0.45 * Math.sin(Math.max(0, t) * 1.7 + ph); c.p[2] = z; };
+            const c = cyl(x, (h - 3.6) / 2, z, rr, h + 3.6, o); c.hex = true; c.dyn = true; c.top = h; c.ring = ring; c.center = ring === 0;     // pillar feet hide in the lava
+            L.tiles.push(c); L.pills.push(c);
+        }
+        const ring3 = L.pills.map((c, i) => i).filter(i => L.pills[i].ring === 3 && !L.pills[i].mv);
+        const pick = ring3.filter((i, k) => k % Math.max(1, Math.round(ring3.length / 16)) === 0).slice(0, 16);
+        for (const i of L.pills.map((c, i) => i).filter(i => L.pills[i].ring === 2 && !L.pills[i].mv)) if (pick.length < 16) pick.push(i);
+        for (const i of pick) { const c = L.pills[i]; L.spawns.push([c.p[0], c.top + PR + 0.05, c.p[2]]); }
+        R.plan = pillarPlan(R.seed, L.pills, new Set(pick)); R.pi = 0;
+        const lava = new THREE.Mesh(new THREE.BoxGeometry(70, 1, 70), new THREE.MeshLambertMaterial({ color: 0xff5a1f, emissive: 0xc02a00 }));
+        lava.position.set(0, -2.7, 0); L.group.add(lava); L.lava = lava;
+        L.killY = -2.4; L.center = [0, 0];
+    },
+    tick(R, dt) {
+        for (; R.pi < R.plan.length && R.plan[R.pi].T - 2.2 <= R.t; R.pi++) {
+            const w = R.plan[R.pi];
+            for (const i of w.cs) { const c = L.pills[i]; if (!c.ts) { c.ts = 1; c.dropAt = w.T; c.shake = 1; setColColor(c, 0xff4f6d); } }
+        }
+        tilesTick(R);
+        if (Math.random() < 0.35) puff((Math.random() - 0.5) * 30, -2.1, (Math.random() - 0.5) * 30, Math.random() < 0.5 ? 0xff8a2b : 0xffd23f, 1, 0.4, 1.5, 0.8, 1.3);
+    },
+    bot(C, R, ai, inp) {
+        tileBot(C, R, ai, inp);
+        const b = C.b, p = b.p, t = ai.tile;
+        if (t && b.ground) { const top = t.p[1] + t.hy, d = hyp(t.p[0] - p.x, t.p[2] - p.z); if (top > p.y - PR + 0.25 && d < t.r + 1.3 && d > 0.5) inp.jump = true; }
+        return true;
+    }
+};
+// ---------- Turf War: the host paints, guests see the floor in snapshots ----------
+const TURF = { n: 12, s: 3, h: 18 };
+const turfIdx = (x, z) => { const i = Math.floor((x + TURF.h) / TURF.s), j = Math.floor((z + TURF.h) / TURF.s); return i < 0 || j < 0 || i >= TURF.n || j >= TURF.n ? -1 : i * TURF.n + j; };
+const turfPos = k => [-TURF.h + TURF.s / 2 + Math.floor(k / TURF.n) * TURF.s, -TURF.h + TURF.s / 2 + (k % TURF.n) * TURF.s];
+ROUNDS.turf = {
+    teams: true,
+    build(rnd, R) {
+        R.paint = new Uint8Array(TURF.n * TURF.n); L.ttiles = [];
+        for (let k = 0; k < R.paint.length; k++) { const [x, z] = turfPos(k), c = box(x, -0.5, z, 2.94, 1, 2.94, { col: (Math.floor(k / TURF.n) + k) % 2 ? 0xf3e9ff : 0xe2d6ff }); c.dyn = true; c.base = c.col; L.ttiles.push(c); }
+        walls(0, 0, 36, 36, 0, 1.6, 0x8a7bf0);
+        cyl(0, 0.9, 0, 0.6, 1.8, { col: 0x8a8fb0 });
+        R.sweep = box(0, 0.6, 0, 15, 0.5, 0.55, { col: HAZ, fx: { knock: 7 }, mv: (t, c) => { setRot(c, 0, Math.max(0, t) * 0.9, 0); c.p[0] = 0; c.p[1] = 0.6; c.p[2] = 0; } });
+        [[9.5, 0, 1, 5], [-9.5, 0, 1, 5], [0, 9.5, 5, 1], [0, -9.5, 5, 1]].forEach(([x, z, w, d]) => box(x, 0.5, z, w, 1, d, { col: YEL }));
+        [[13.5, 13.5], [-13.5, 13.5], [13.5, -13.5], [-13.5, -13.5]].forEach(([x, z]) => bouncePad(x, 0, z, 1.3, 14));
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 13, PR + 0.05, Math.cos(a) * 13]); }
+        L.killY = -8; L.center = [0, 0]; R.score = Array(R.nTeams).fill(0);
+    },
+    hostTick(R) {
+        let ch = false;
+        for (const C of R.cs) {
+            if (C.hide || C.done || C.team == null) continue; const v = C.vs; if (!v.ground || v.y > 1.2) continue;
+            const k = turfIdx(v.x, v.z); if (k >= 0 && R.paint[k] !== C.team + 1) { R.paint[k] = C.team + 1; ch = true; }
+        }
+        if (ch) { const sc = Array(R.nTeams).fill(0); for (const t of R.paint) if (t) sc[t - 1]++; R.score = sc; }
+    },
+    snap(R) { R.sn = (R.sn || 0) + 1; return R.sn % 3 ? null : [Array.from(R.paint).join(''), R.score]; },
+    unsnap(R, s) { if (!s || typeof s[0] !== 'string') return; for (let k = 0; k < R.paint.length; k++) R.paint[k] = +s[0][k] || 0; if (Array.isArray(s[1])) R.score = s[1]; },
+    syncOut(R) { return { paint: Array.from(R.paint).join('') }; },
+    syncIn(R, x) { if (x && typeof x.paint === 'string') for (let k = 0; k < R.paint.length; k++) R.paint[k] = +x.paint[k] || 0; },
+    tick(R) {
+        for (let k = 0; k < L.ttiles.length; k++) { const c = L.ttiles[k], t = R.paint[k]; if (c.pt !== t) { c.pt = t; setColColor(c, t ? TEAM_COLS[t - 1] : c.base); if (t && R.phase === 'play' && Math.random() < 0.5) puff(c.p[0], 0.1, c.p[2], TEAM_COLS[t - 1], 2, 2, 0.6, 0.4, 0.9); } }
+    },
+    bot(C, R, ai, inp) {
+        const b = C.b, p = b.p, mine = C.team + 1;
+        if (ai.tt == null || R.paint[ai.tt] === mine || Math.random() < 0.006) {
+            let best = -1, bs = -1e9;
+            for (let k = 0; k < R.paint.length; k++) {
+                if (R.paint[k] === mine) continue; const [x, z] = turfPos(k), d = hyp(x - p.x, z - p.z); if (d > 15) continue;
+                let mates = 0; for (const o of R.cs) if (o !== C && o.team === C.team && !o.hide && hyp(o.vs.x - x, o.vs.z - z) < 4) mates++;
+                const s = -d + (R.paint[k] ? 2 : 0) - mates * 2.5 + Math.random() * [6, 3, 1.5][C.skill];
+                if (s > bs) { bs = s; best = k; }
+            }
+            ai.tt = best < 0 ? null : best;
+        }
+        if (ai.tt == null) { botSteer(C, inp, 0, 0, 2); return true; }
+        const [tx, tz] = turfPos(ai.tt); botSteer(C, inp, tx, tz, 0.2);
+        if (b.ground && Math.random() < BOT_AWARE[C.skill] * 0.5) for (const tau of [0.15, 0.3]) { if (sphCol(predictCol(R.sweep, R.t + tau), p.x + inp.mx * tau * 7, p.y + 0.27, p.z + inp.mz * tau * 7, 0.7)) { inp.jump = true; break; } }
+        if (C.skill > 0 && b.ground && Math.random() < 0.012 * C.skill) for (const o of R.cs) { if (o.team === C.team || o.hide || o.done) continue; const dx = o.vs.x - p.x, dz = o.vs.z - p.z, d = hyp(dx, dz); if (d < 2.6 && d > 0.8) { botSteer(C, inp, o.vs.x, o.vs.z, 0); inp.dive = true; break; } }
+        return true;
+    }
+};
+// ---------- Bomb Tag: hand the bombs on by grabbing; holders when the fuse runs out are out ----------
+function onBombPass(R, from, to) {
+    const B = byId(to), A = byId(from); if (!B) return;
+    sfx('pass', B.vs, 0.9); puff(B.vs.x, B.vs.y + 1.6, B.vs.z, 0xffd23f, 8, 3, 1, 0.5);
+    if (isMe(B)) { announce('YOU GOT A BOMB! Pass it on!', 'bad'); shake(0.3); }
+    if (A && isMe(A)) { announce('PASSED IT!', 'good'); save.stats.bombsPassed = (save.stats.bombsPassed || 0) + 1; }
+}
+ROUNDS.bomb = {
+    passOnly: true,
+    goal: (R, S, n) => R.bombs.size + (R.bombs.size > 1 ? ' bombs' : ' bomb') + ' - ' + (n - R.bombs.size) + ' of ' + n + ' go through. Do not hold one at the end!' + (R.bombs.has(G.me) ? ' YOU START WITH ONE!' : ''),
+    status(R, me) { const left = Math.max(0, R.info.time - Math.max(0, R.t)); return 'Bombs: ' + R.bombs.size + ' · fuse ' + Math.ceil(left) + 's' + (me && R.bombs.has(me.id) ? ' · <b style="color:#ff4f6d">YOU HAVE A BOMB - grab someone (F)!</b>' : me && me.inRound && !me.hide ? ' · run from the bombs!' : ''); },
+    startEx(S, alive, msg, rnd) { const n = alive.length, k = S.pts ? Math.max(1, Math.floor(n / 3)) : clamp(n - msg.q, 1, n - 1); return { bombs: shuffle(alive.map(c => c.id), rnd).slice(0, k) }; },
+    build(rnd, R) {
+        R.bombs = new Set(R.ex.bombs || []);
+        const n = 8; for (let i = 0; i < n; i++) box(0, -0.5, -16 + 2 + i * 4, 32, 1, 4, { col: i % 2 ? 0x3b3350 : 0x463d5e });
+        walls(0, 0, 32, 32, 0, 1.6, HAZ2);
+        box(0, 0.75, 0, 8, 1.5, 8, { col: 0xff8a2b }); ramp(0, 4, 8, 1.5, 0, 3, 0xffb36b); ramp(0, -4, -8, 1.5, 0, 3, 0xffb36b);
+        [[-9, -9], [9, -9], [-9, 9], [9, 9]].forEach(([x, z]) => cyl(x, 1.5, z, 1, 3, { col: 0x8a7bf0 }));
+        [[-12.5, 0], [12.5, 0]].forEach(([x, z]) => bouncePad(x, 0, z, 1.3, 15));
+        box(-6, 0.6, 7, 5, 1.2, 1, { col: YEL }); box(6, 0.6, -7, 5, 1.2, 1, { col: YEL });
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 12.5, PR + 0.05, Math.cos(a) * 12.5]); }
+        L.killY = -8; L.center = [0, 0];
+    },
+    speedOf: (R, C) => R.bombs.has(C.id) ? 1.12 : 1,
+    shouldEnd: () => false,
+    onGrab(R, A, B) {
+        if (!R.bombs.has(A.id) || R.bombs.has(B.id) || (R.imm[B.id] || 0) > R.t) return false;
+        R.bombs.delete(A.id); R.bombs.add(B.id); R.imm[A.id] = R.t + 1.5;
+        netEvent({ k: 'bomb', from: A.id, to: B.id }); onBombPass(R, A.id, B.id);
+        return true;
+    },
+    onEvent(R, e) { if (e.k === 'bomb' && !G.host) { R.bombs.delete(e.from); R.bombs.add(e.to); onBombPass(R, e.from, e.to); } },
+    syncOut: R => ({ bombs: [...R.bombs] }),
+    syncIn(R, x) { if (x && Array.isArray(x.bombs)) R.bombs = new Set(x.bombs); },
+    endOrder(R, all) { const safe = all.filter(id => !R.bombs.has(id)), boom = all.filter(id => R.bombs.has(id)); return { order: safe.concat(boom), qual: safe }; },
+    endEx: R => ({ bombs: [...R.bombs] }),
+    onEnd(R, msg) {
+        if (msg.ex && Array.isArray(msg.ex.bombs)) R.bombs = new Set(msg.ex.bombs);
+        for (const id of R.bombs) {
+            const C = byId(id); if (!C || C.hide) continue; const v = C.vs;
+            puff(v.x, v.y + 1, v.z, 0xff8a2b, 14, 7, 3, 0.8, 1.8); puff(v.x, v.y + 1, v.z, 0x3b3350, 10, 5, 2, 1.0, 1.4);
+            if (C.sim && C.b) knock(C.b, (Math.random() - 0.5) * 8, 11, (Math.random() - 0.5) * 8, 2);
+            if (isMe(C)) shake(0.8);
+        }
+        if (R.bombs.size) sfx('boom');
+        R.bombs = new Set();
+    },
+    tick(R) {
+        if (R.phase !== 'play') return; const left = R.info.time - R.t, s = Math.ceil(left);
+        if (s !== R.lastFuse) { R.lastFuse = s; if (s <= 5 && s >= 1) sfx('tick'); }
+        for (const id of R.bombs) { const C = byId(id); if (C && !C.hide && Math.random() < 0.25) { const v = C.vs; puff(v.x + 0.1, v.y + 2.45, v.z, Math.random() < 0.5 ? 0xffd23f : 0xff8a2b, 1, 0.8, 0.6, 0.3, 0.6); } }
+        if (Math.random() < 0.05 && R.bombs.size) sfx('fuse', null, 0.4);
+    },
+    bot(C, R, ai, inp) {
+        const p = C.b.p, has = R.bombs.has(C.id); let best = null, bd = 1e9;
+        for (const o of R.cs) {
+            if (o === C || o.hide || o.done || R.bombs.has(o.id) === has) continue;
+            if (has && (R.imm[o.id] || 0) > R.t) continue;
+            const d = hyp(o.vs.x - p.x, o.vs.z - p.z); if (d < bd) { bd = d; best = o; }
+        }
+        if (has) {
+            if (!best) { botSteer(C, inp, 0, 0, 2); return true; }
+            const lead = [0.1, 0.3, 0.45][C.skill], ov = best.vv || { x: 0, z: 0 };
+            botSteer(C, inp, best.vs.x + ov.x * lead, best.vs.z + ov.z * lead, 0);
+            inp.grab = bd < 2.0;
+        } else if (best && bd < 10) {
+            let dx = p.x - best.vs.x, dz = p.z - best.vs.z; const d = hyp(dx, dz) || 1; dx /= d; dz /= d; dx -= p.x / 22; dz -= p.z / 22;
+            botSteer(C, inp, p.x + dx * 4, p.z + dz * 4, 0);
+            if (bd < 2.4 && C.b.ground && Math.random() < 0.06 * (C.skill + 1)) inp.jump = true;
+        } else { if (!ai.wan || Math.random() < 0.02) ai.wan = { x: (Math.random() - 0.5) * 22, z: (Math.random() - 0.5) * 22 }; botSteer(C, inp, ai.wan.x, ai.wan.z, 1); }
+        return true;
+    }
+};
+// ---------- Summit Showdown: fill your meter standing on the summit; the host keeps the meters ----------
+const HILL = { target: 12, tiers: [[10, 1.2], [6.5, 2.4], [3.4, 3.6]] };
+const hillAng = t => t < 0 ? 0 : 0.85 * t + 0.006 * t * t;
+ROUNDS.hill = {
+    crownText: ' TAKES THE SUMMIT!',
+    goal: () => 'First to ' + HILL.target + ' seconds on the summit wins the crown! (Sharing the top fills it at half speed.)',
+    status(R, me) { const m = me && me.inRound ? Math.min(100, (R.hold[me.id] || 0) / HILL.target * 100) : null; return 'Hold the summit!' + (m != null ? ' · your meter ' + m.toFixed(0) + '%' : ''); },
+    build(rnd, R) {
+        R.hold = {};
+        cyl(0, -0.5, 0, 17, 1, { col: 0xc9e8c0 });
+        for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; deco(placeGeo(new THREE.BoxGeometry(3.2, 0.3, 0.5), Math.sin(a) * 15.5, -0.05, Math.cos(a) * 15.5, 0, a + PI / 2, 0), i % 2 ? YEL : PNK); }
+        cyl(0, 0.6, 0, 10, 1.2, { col: 0x9fd88f }); cyl(0, 1.2, 0, 6.5, 2.4, { col: 0x7cc46b }); cyl(0, 1.8, 0, 3.4, 3.6, { col: 0xffd23f });
+        ramp(0, 13, 9.8, 0, 1.2, 3, 0xd9c8ff); ramp(0, -13, -9.8, 0, 1.2, 3, 0xd9c8ff);
+        ramp(5, 8, 4.4, 1.2, 2.4, 2.6, 0xd9c8ff); ramp(-5, -8, -4.4, 1.2, 2.4, 2.6, 0xd9c8ff);
+        ramp(0, 6.3, 3.2, 2.4, 3.6, 2.2, 0xffe27a); ramp(0, -6.3, -3.2, 2.4, 3.6, 2.2, 0xffe27a);
+        cyl(0, 4.0, 0, 0.35, 0.8, { col: 0x8a8fb0 });
+        R.sweep = box(0, 4.2, 0, 6.6, 0.5, 0.55, { col: HAZ, fx: { knock: 7, always: true }, mv: (t, c) => { setRot(c, 0, hillAng(t), 0); c.p[0] = 0; c.p[1] = 4.2; c.p[2] = 0; } });
+        for (let k = 0; k < 2; k++) cyl(0, 3.1, 0, 0.7, 1.4, { col: HAZ2, fx: { knock: 6 }, mv: (t, c) => { const a = Math.max(0, t) * 0.55 + k * PI; c.p[0] = Math.sin(a) * 5.0; c.p[1] = 3.1; c.p[2] = Math.cos(a) * 5.0; } });
+        for (let k = 0; k < 3; k++) cyl(0, 1.9, 0, 0.7, 1.4, { col: HAZ2, fx: { knock: 6 }, mv: (t, c) => { const a = -Math.max(0, t) * 0.4 + k * TAU / 3; c.p[0] = Math.sin(a) * 8.3; c.p[1] = 1.9; c.p[2] = Math.cos(a) * 8.3; } });
+        bouncePad(12.5, 0, 0, 1.3, 16); bouncePad(-12.5, 0, 0, 1.3, 16);
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 14.5, PR + 0.05, Math.cos(a) * 14.5]); }
+        L.killY = -8; L.center = [0, 0];
+        const fl = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3, 6), new THREE.MeshLambertMaterial({ color: 0xffffff })); fl.position.set(0, 5.1, 0); L.group.add(fl);
+        const fg = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.7), new THREE.MeshLambertMaterial({ color: 0xff5fa2, side: THREE.DoubleSide })); fg.position.set(0.62, 6.2, 0); L.group.add(fg); L.flag = fg;
+    },
+    shouldEnd: R => R.crownBy != null,
+    hostTick(R, dt) {
+        const on = R.cs.filter(C => !C.hide && !C.done && C.vs.y - PR > 3.3 && hyp(C.vs.x, C.vs.z) < 3.45 && C.vs.st !== ST_TUMBLE);
+        const rate = on.length > 1 ? 0.5 : 1;
+        for (const C of on) {
+            const h = R.hold[C.id] = (R.hold[C.id] || 0) + dt * rate;
+            if (h >= HILL.target && R.crownBy == null) hostCrown(C);
+        }
+    },
+    snap(R) { R.sn = (R.sn || 0) + 1; if (R.sn % 2) return null; return Object.keys(R.hold).map(id => [+id, Math.round(R.hold[id] * 10)]); },
+    unsnap(R, s) { if (!Array.isArray(s)) return; for (const e of s) if (Array.isArray(e)) R.hold[e[0]] = e[1] / 10; },
+    syncOut: R => ({ hold: R.hold }),
+    syncIn(R, x) { if (x && x.hold && typeof x.hold === 'object') R.hold = Object.assign({}, x.hold); },
+    endOrder(R, all, live) {
+        const h = id => R.hold[id] || 0, prog = id => { const C = byId(id); return C ? C.vs.y : 0; };
+        const order = all.slice().sort((a, b) => (b === R.crownBy) - (a === R.crownBy) || h(b) - h(a) || prog(b) - prog(a));
+        return { order, qual: [order[0]] };
+    },
+    tick(R) {
+        if (L.flag) { L.flag.rotation.y = Math.sin(R.t * 3) * 0.3; const lead = Object.keys(R.hold).sort((a, b) => R.hold[b] - R.hold[a])[0], C = lead && byId(+lead); if (C) L.flag.material.color.setHex(ITEM[C.look.col].hex); }
+    },
+    hud(R) {
+        const top = Object.keys(R.hold).map(id => [byId(+id), R.hold[id]]).filter(e => e[0]).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        const me = byId(G.me), mine = me ? R.hold[me.id] || 0 : 0;
+        let h = '<b>Summit meter</b>';
+        for (const [C, v] of top) h += ' <span class="mtr' + (isMe(C) ? ' me' : '') + '">' + esc(C.name) + ' <i style="width:' + Math.min(100, v / HILL.target * 100).toFixed(0) + '%"></i></span>';
+        if (me && me.inRound && !top.some(e => e[0] === me)) h += ' <span class="mtr me">You <i style="width:' + Math.min(100, mine / HILL.target * 100).toFixed(0) + '%"></i></span>';
+        return h;
+    },
+    bot(C, R, ai, inp) {
+        const b = C.b, p = b.p, feet = p.y - PR, r = hyp(p.x, p.z), T = HILL.tiers;
+        let lvl = 0; while (lvl < 3 && feet > T[lvl][1] - 0.35 && r < T[lvl][0] + 0.2) lvl++;
+        if (!ai.spot || Math.random() < 0.01) { const a = Math.random() * TAU, rr = Math.random() * 1.6; ai.spot = { x: Math.sin(a) * rr, z: Math.cos(a) * rr }; }
+        if (lvl < 3) {
+            // head for the middle; jump each tier edge
+            botSteer(C, inp, ai.spot.x, ai.spot.z, 0);
+            const R2 = T[lvl][0]; if (b.ground && r < R2 + 1.1 && r > R2 - 0.4 && feet < T[lvl][1] - 0.2) inp.jump = true;
+            if (b.ground && r > 15.5) botSteer(C, inp, 0, 0, 0);
+        } else {
+            botSteer(C, inp, ai.spot.x, ai.spot.z, 0.4);
+            if (C.skill > 0 && b.ground) for (const o of R.cs) {        // shove rivals off the summit
+                if (o === C || o.hide || o.done || o.vs.y < 3.6) continue; const dx = o.vs.x - p.x, dz = o.vs.z - p.z, d = hyp(dx, dz);
+                if (d < 2.4 && d > 0.6 && Math.random() < 0.015 * C.skill) { botSteer(C, inp, o.vs.x, o.vs.z, 0); inp.dive = true; break; }
+                if (d < 1.4 && Math.random() < 0.3) inp.grab = true;
+            }
+        }
+        if (b.ground && feet > 3.2 && Math.random() < [0.4, 0.8, 0.97][C.skill]) for (const tau of [0.12, 0.25, 0.4]) { if (sphCol(predictCol(R.sweep, R.t + tau), p.x + inp.mx * tau * 6, p.y + 0.27, p.z + inp.mz * tau * 6, 0.62)) { inp.jump = true; break; } }
+        return true;
+    }
+};
+
 // ---- 50-bots.js ----
 // ============================================================
 // BOTS (run on the host). Races: follow the course path, jump at marked gaps, look ahead at the
@@ -1753,6 +2365,7 @@ function botTick(C, R, dt) {
             }
             if (!hit) continue;
             if (c.k === K_SPH) { ai.dodge = { dir: (p.x > c.p[0] ? 1 : -1) * (Math.abs(p.x) > 8 ? -1 : 1), until: R.t + 0.6 }; break; }
+            if (c.low) { if (hit <= 0.4 && b.ground) inp.jump = true; break; }             // rolling logs: keep running, jump just in time
             const low = c.p[1] + (c.hy || 0.3) < p.y + 0.55 && c.hx > 2.5;
             if (low && hit <= 0.4 && b.ground) { inp.jump = true; break; }
             const here = sphCol(predictCol(c, R.t + hit), p.x, p.y + 0.27, p.z, 0.8);
@@ -1768,7 +2381,9 @@ function botTick(C, R, dt) {
         }
         if (C.skill > 0 && L.finZ - p.z < 3.5 && L.finZ - p.z > 1 && b.ground && Math.random() < 0.3) inp.dive = true;
     }
+    if (R.def.botAfter) R.def.botAfter(C, R, ai, inp, dt);
     botWobble(C, ai, inp, dt);
+
     return inp;
 }
 function botWobble(C, ai, inp, dt) {         // easy bots dither a bit
@@ -1797,10 +2412,11 @@ function makeShowConfig(humans, opts) {
     const names = shuffle(BOT_NAMES.slice(), rnd);
     for (let i = 0; i < opts.bots && cs.length < 16; i++) { let n = names[i % names.length]; if (used.has(n)) n += ' ' + (i + 2); used.add(n); cs.push({ id: 1000 + i, name: n, look: randomLook(rnd), bot: true, skill: opts.skill === 3 ? i % 3 : opts.skill }); }
     const nh = humans.length, pts = opts.scoring === 'points' || (opts.scoring === 'auto' && (nh >= 2 && nh <= 4 || cs.length <= 4));
-    return { t: 'show', seed: Math.floor(Math.random() * 1e9), len: opts.length, pts, cs, practice: opts.practice || null };
+    const pick = (opts.pick || []).filter(id => ROUND_INFO[id]);
+    return { t: 'show', seed: Math.floor(Math.random() * 1e9), len: opts.length, pts, cs, practice: opts.practice || null, pick: pick.length ? pick : null };
 }
 function beginShow(cfg) {
-    G.show = { seed: cfg.seed, len: cfg.len, pts: cfg.pts, cs: cfg.cs.map(mkContestant), used: [], idx: -1, N0: cfg.cs.length, practice: cfg.practice, results: [], over: false };
+    G.show = { seed: cfg.seed, len: cfg.len, pts: cfg.pts, cs: cfg.cs.map(mkContestant), used: [], idx: -1, N0: cfg.cs.length, practice: cfg.practice, results: [], over: false, pick: cfg.pick || null };
     G.R = null; G.paused = false;
     if (G.show.cs.some(isMe)) { save.stats.shows++; writeSave(); }
     UI.enterGame();
@@ -1808,11 +2424,15 @@ function beginShow(cfg) {
 function pickRound(S) {
     const alive = S.cs.filter(c => !c.out && !c.spect).length, finalNow = S.idx >= S.len - 1 || (!S.pts && alive <= 2 && S.idx > 0);
     if (S.practice) return S.practice;
-    const pool = Object.keys(ROUND_INFO).filter(id => {
-        const ri = ROUND_INFO[id]; if ((ri.kind === 'final') !== finalNow) return false; if (S.used.includes(id)) return false;
+    const fits = Object.keys(ROUND_INFO).filter(id => {
+        const ri = ROUND_INFO[id]; if ((ri.kind === 'final') !== finalNow) return false;
         if (ri.kind === 'team') return S.pts ? alive >= 2 : alive >= ri.min && alive >= 6;
+        if (ri.kind === 'hunt') return S.pts ? alive >= 2 : alive >= ri.min && alive - qualifyTarget(S, alive) >= 1;
         return true;
-    });
+    }), fresh = fits.filter(id => !S.used.includes(id));
+    // a custom show (the host picked rounds): only those, repeating them before falling back to the others
+    let pool = fresh;
+    if (S.pick && S.pick.length) { const a = fresh.filter(id => S.pick.includes(id)), b = fits.filter(id => S.pick.includes(id)); pool = a.length ? a : b.length ? b : fresh; }
     return pool[Math.floor(Math.random() * pool.length)] || (finalNow ? 'crown' : 'spin');
 }
 function qualifyTarget(S, alive) {
@@ -1833,6 +2453,7 @@ function hostStartRound() {
         const order = shuffle(alive.map(c => c.id), rnd); msg.teams = {}; order.forEach((id, i) => msg.teams[id] = i % nt);
     }
     if (rid === 'tail') { const k = S.pts ? Math.max(1, Math.floor(alive.length / 2)) : msg.q; msg.ex.tails = shuffle(alive.map(c => c.id), rnd).slice(0, k); }
+    if (ROUNDS[rid].startEx) Object.assign(msg.ex, ROUNDS[rid].startEx(S, alive, msg, rnd));
     S.lastRound = msg; netSendAll(msg);
     beginRound(msg);
     if (ROUNDS[rid].setup) { ROUNDS[rid].setup(G.R, rnd); netSendAll({ t: 'ev', e: { k: 'hoops', h: G.R.hoops, sc: G.R.score } }); }
@@ -1842,7 +2463,7 @@ function beginRound(msg) {
     const S = G.show, def = ROUNDS[msg.rid], info = ROUND_INFO[msg.rid];
     worldReset(); newLevel();
     const R = G.R = { rid: msg.rid, def, info, seed: msg.seed, idx: msg.idx, t: -8, phase: 'intro', q: msg.q, cs: [], finished: [], outs: [], nTeams: msg.nTeams || 0,
-        tails: new Set((msg.ex && msg.ex.tails) || []), imm: {}, hoops: [], score: [], crownBy: null, overT: 0, netT: 0, focusZ: 0, ended: false, lastHumanDone: 0, results: null };
+        tails: new Set((msg.ex && msg.ex.tails) || []), imm: {}, hoops: [], score: [], crownBy: null, overT: 0, netT: 0, focusZ: 0, ended: false, lastHumanDone: 0, results: null, ex: msg.ex || {} };
     const rnd = mulberry(msg.seed);
     def.build(rnd, R);
     buildLevelMeshes(L.extra); LV.group.add(L.group);
@@ -1855,7 +2476,7 @@ function beginRound(msg) {
         C.inRound = true; C.hide = false; C.done = null; C.cpi = -1; C.holding = C.heldBy = -1; C.grabHeld = false; C.spawnI = si; C.spawnY = sp[1]; C.buf = []; C.ai = null; C.sentFin = C.sentFell = false;
         C.team = msg.teams ? msg.teams[id] : null;
         C.sim = G.host ? (C.bot || isMe(C)) : isMe(C);
-        const yaw = L.spawns.length && L.center[1] === 0 && info.kind !== 'race' && msg.rid !== 'crown' ? Math.atan2(-sp[0], -sp[2]) : 0;
+        const yaw = L.spawns.length && L.center[1] === 0 && info.kind !== 'race' && msg.rid !== 'crown' ? Math.atan2(-(sp[0] - L.center[0]), -sp[2]) : 0;
         C.b = mkBody(sp[0], sp[1], sp[2], yaw);
         Object.assign(C.vs, { x: sp[0], y: sp[1], z: sp[2], yaw, st: 0, ground: true, spd: 0, rx: 0, rz: 0, sq: 0 });
         if (C.bot && G.host) botNew(C, rnd);
@@ -1865,6 +2486,7 @@ function beginRound(msg) {
     G.spec = me && me.inRound ? null : (R.cs[0] && R.cs[0].id);
     if (me && me.inRound) G.camYaw = me.b.yaw; else G.camYaw = 0;
     G.camPitch = 0.32; PFX.confP.length = 0; clearTags();
+    if (def.start) def.start(R);
     playMusic(info.kind === 'race' ? 'race' : info.kind === 'final' ? 'final' : 'survive');
     UI.roundIntro(R);
 }
@@ -1892,7 +2514,7 @@ function tick(dt) {
         if (!inp) continue;
         b.slow = C.heldBy >= 0 ? 0.4 : C.holding >= 0 ? 0.62 : 1;
         let hold = null; if (C.heldBy >= 0) { const H = byId(C.heldBy); if (H) hold = { x: H.vs.x + Math.sin(H.vs.yaw) * 0.95, y: H.vs.y, z: H.vs.z + Math.cos(H.vs.yaw) * 0.95 }; }
-        stepBody(b, inp, dt, { frozen, wind, hold });
+        stepBody(b, inp, dt, { frozen, wind: R.def.windAt ? R.def.windAt(R.t, b.p) : wind, hold, speed: R.def.speedOf ? R.def.speedOf(R, C) : 1 });
         C.grabHeld = !!inp.grab && b.st === ST_RUN;
         separateBody(C, R);
         if (inp.respawn && !survivalLike(R) && R.phase === 'play') respawnBody(C);
@@ -1998,7 +2620,7 @@ function hostGrabs(R) {
         }
         if (!best) continue;
         if (R.def.onGrab && R.def.onGrab(R, A, best)) { A.grabCd = R.t + 0.7; continue; }
-        if (R.rid === 'tail') { A.grabCd = R.t + 0.4; continue; }
+        if (R.rid === 'tail' || R.def.passOnly) { A.grabCd = R.t + 0.4; continue; }
         A.grabT = R.t; const e = { k: 'grab', a: A.id, b: best.id }; applyEvent(e); netEvent(e);
     }
 }
@@ -2012,6 +2634,7 @@ function hostCrown(C) { const R = G.R; if (R.crownBy != null || R.ended) return;
 function roundShouldEnd(R) {
     const S = G.show, kind = R.info.kind, live = R.cs.filter(c => !c.done && !c.hide), timeUp = R.t >= R.info.time;
     if (timeUp) return true;
+    if (R.def.shouldEnd) return R.def.shouldEnd(R, live);
     if (R.rid === 'crown') return R.crownBy != null || !live.length;
     if (R.rid === 'hex') return live.length <= (R.cs.length > 1 ? 1 : 0);
     if (kind === 'race') {
@@ -2030,7 +2653,8 @@ function hostEndRound() {
     const all = R.cs.map(c => c.id), kind = R.info.kind;
     let order = [], qual = [];
     const live = R.cs.filter(c => !c.done);
-    if (kind === 'race' || R.rid === 'crown') {
+    if (R.def.endOrder) ({ order, qual } = R.def.endOrder(R, all, live));
+    else if (kind === 'race' || R.rid === 'crown') {
         const rest = live.slice().sort((a, b) => progOf(b) - progOf(a)).map(c => c.id);
         order = (R.crownBy != null ? [R.crownBy] : []).concat(R.finished, rest.filter(id => id !== R.crownBy), R.outs.slice().reverse());
         if (R.rid === 'crown') qual = [order[0]];
@@ -2053,7 +2677,7 @@ function hostEndRound() {
     const pts = {}; const N = order.length, mul = kind === 'final' ? 2 : 1;
     order.forEach((id, i) => pts[id] = S.pts ? Math.max(1, N - i) * mul : 0);
     if (kind === 'team' && R.rid !== 'tail' && S.pts) for (const C of R.cs) pts[C.id] = (R.teamRanks.length - R.teamRanks.indexOf(C.team)) * 3 * mul;
-    const msg = { t: 'rend', q: qual, order, pts, winner: kind === 'final' ? order[0] : null, score: R.score };
+    const msg = { t: 'rend', q: qual, order, pts, winner: kind === 'final' ? order[0] : null, score: R.score, ex: R.def.endEx ? R.def.endEx(R) : undefined };
     netSendAll(msg); applyRoundEnd(msg);
 }
 function applyRoundEnd(msg) {
@@ -2062,17 +2686,29 @@ function applyRoundEnd(msg) {
     const qs = new Set(msg.q);
     for (const C of R.cs) { C.points += msg.pts[C.id] || 0; if (!S.pts && !qs.has(C.id)) C.out = true; }
     S.results.push({ rid: R.rid, q: msg.q, order: msg.order });
+    if (R.def.onEnd) R.def.onEnd(R, msg);
     const me = byId(G.me);
     if (me && me.inRound) {
         const ok = qs.has(me.id), place = msg.order.indexOf(me.id);
         let k = 10 + (ok ? 15 : 0) + (S.pts ? Math.max(0, 8 - place) * 2 : 0), f = 20 + (ok ? 30 : 0);
+        const before = unlockedIds();
         save.stats.rounds++; if (ok && R.info.kind !== 'final') save.stats.qualified++; if (!ok && !S.pts) save.stats.eliminations++;
         if (R.info.kind === 'final') save.stats.finals++;
+        // per-round records (earned items read them): in points shows "qualified" means a top-half finish
+        const rec = save.rp[R.rid] || (save.rp[R.rid] = { p: 0, q: 0, w: 0 }), good = S.pts ? place < Math.ceil(msg.order.length / 2) : ok;
+        rec.p++; if (good && R.info.kind !== 'final') rec.q++; if (R.info.kind === 'final' && msg.order[0] === me.id) rec.w++;
         R.reward = grantRewards(k, f);
+        R.unlocks = newUnlocks(before);
         if (!S.pts && !ok && !me.done) { announce('ELIMINATED', 'bad'); sfx('out'); }
     }
     announce(R.info.kind === 'final' ? 'FINISH!' : 'ROUND OVER!', 'go');
     if (!G.host) { R.resultsShown = false; }
+}
+const unlockedIds = () => new Set(ITEMS.filter(i => i.earn && itemOwned(i)).map(i => i.id));
+function newUnlocks(before) {
+    const got = ITEMS.filter(i => i.earn && itemOwned(i) && !before.has(i.id));
+    if (got.length) setTimeout(() => toast('Unlocked: ' + got.map(i => i.name).join(', ') + '!'), 1500);
+    return got.map(i => i.name);
 }
 function grantRewards(kudos, fame) {
     const before = fameLevel(save.fame); save.kudos += kudos; save.stats.kudosEarned += kudos; save.fame += fame;
@@ -2095,7 +2731,7 @@ function applyWin(msg) {
     const S = G.show; if (!S) return;
     S.over = true; S.winner = msg.id;
     const W0 = byId(msg.id);
-    if (!msg.practice && W0 && isMe(W0)) { save.stats.crowns++; grantRewards(150, 200); }
+    if (!msg.practice && W0 && isMe(W0)) { const before = unlockedIds(); save.stats.crowns++; grantRewards(150, 200); msg.unlocks = newUnlocks(before); }
     UI.ceremony(msg, W0);
 }
 // ---------- events (host -> everyone) ----------
@@ -2106,12 +2742,13 @@ function applyEvent(e) {
         case 'tile': { const c = W.cs[e.i]; if (c && c.tag === 'tile' && !c.ts) { c.ts = 1; c.dropAt = e.at; c.shake = 1; setColColor(c, 0xff4f6d); } break; }
         case 'q': if (C && !C.done) markDone(C, 'q', e.n); if (C && !R.finished.includes(C.id)) R.finished.push(C.id); break;
         case 'out': if (C && !C.done) markDone(C, 'out'); if (C && !R.outs.includes(C.id)) R.outs.push(C.id); break;
-        case 'crown': R.crownBy = e.id; if (C) { confetti(C.vs.x, C.vs.y + 2, C.vs.z, 120, 3); sfx('crown'); announce(esc(C.name) + ' GRABS THE CROWN!', 'go'); } break;
+        case 'crown': R.crownBy = e.id; if (C) { confetti(C.vs.x, C.vs.y + 2, C.vs.z, 120, 3); sfx('crown'); announce(esc(C.name) + (R.def.crownText || ' GRABS THE CROWN!'), 'go'); } break;
         case 'hit': if (C && C.sim && C.b) { knock(C.b, e.v[0], e.v[1], e.v[2], 1.0); if (isMe(C)) shake(0.4); } break;
         case 'grab': { const A = byId(e.a), B = byId(e.b); if (A && B) { A.holding = B.id; B.heldBy = A.id; if (isMe(A) || isMe(B)) sfx('grab'); } break; }
         case 'ungrab': { const A = byId(e.a), B = byId(e.b); if (A) A.holding = -1; if (B && B.heldBy === e.a) B.heldBy = -1; break; }
         case 'tail': if (!G.host) { R.tails.delete(e.from); R.tails.add(e.to); onTailEvent(e.from, e.to); } break;
         case 'hoops': if (!G.host || e.by == null) { R.hoops = e.h; R.score = e.sc; if (e.by != null) onHoopEvent(e.by, e.sc); } break;
+        default: if (R.def.onEvent) R.def.onEvent(R, e);
     }
 }
 function markDone(C, how, n) {
@@ -2177,7 +2814,9 @@ function drawContestants(dt) {
     for (const C of R.cs) {
         if (C.hide) { placeTag(C.id, '', 0, 0, 0, '', false); continue; }
         const v = C.vs; v.t = t + C.id * 0.37;
-        drawTumbler(v, C.look, { team: C.team, tail: R.tails.has(C.id), crown: R.crownBy === C.id, seed: C.id, blobY: v.ground ? v.y - PR : null });
+        drawTumbler(v, C.look, { team: C.team, tail: R.tails.has(C.id), crown: R.crownBy === C.id, crownTier: ITEM[C.look.cel].tier, seed: C.id, blobY: v.ground ? v.y - PR : null,
+            bomb: R.bombs && R.bombs.has(C.id), bombHot: R.bombs ? clamp(1 - (R.info.time - R.t) / 10, 0, 1) : 0 });
+
         const cd = G.camPos.distanceToSquared(V3.set(v.x, v.y, v.z));
         placeTag(C.id, C.name, v.x, v.y + 1.75, v.z, isMe(C) ? 'me' : C.bot ? 'bot' : 'pl', names && (!isMe(C) || R.phase !== 'play') && cd < (C.bot ? 400 : 1600));
         const tr = ITEM[C.look.trail];
@@ -2210,6 +2849,21 @@ function hgLoad() {
     if (h) return Promise.resolve(h);
     return new Promise(res => { const s = document.createElement('script'); s.src = '../gv/vendor/hgnet.js'; s.onload = () => res(window.HGNet || null); s.onerror = () => res(null); document.head.appendChild(s); });
 }
+// Versions: the host's room info and every guest's join info carry pv (PROTO) and ver (VERSION). A host refuses a
+// guest with a different pv (1.0 guests have none), and a guest leaves a host with a different pv (1.0 hosts accept
+// anyone), each with a message that says who needs to reload.
+function guestRefusal(info) {
+    const pv = info && info.pv, ver = info && typeof info.ver === 'string' ? info.ver.slice(0, 8) : '';
+    if (pv === PROTO) return null;
+    if (!(pv > PROTO)) return 'This room runs Mayhem Marathon ' + VERSION + ' and you have an older version. Reload the launcher (or this page) to update, then join again.';
+    return 'This room runs an older Mayhem Marathon (' + VERSION + ') than yours' + (ver ? ' (' + esc(ver) + ')' : '') + '. Ask the host to reload the launcher to update.';
+}
+function hostRefusal(hostInfo) {
+    const i = hostInfo && hostInfo.info, pv = i && i.pv, ver = i && typeof i.ver === 'string' ? i.ver.slice(0, 8) : '';
+    if (pv === PROTO) return null;
+    if (!(pv > PROTO)) return 'The host has an older Mayhem Marathon. Ask them to reload the launcher to update to ' + VERSION + ', then try again.';
+    return 'The host has a newer Mayhem Marathon' + (ver ? ' (' + esc(ver) + ')' : '') + '. Reload the launcher (or this page) to update, then join again.';
+}
 function netSendAll(msg, fast) { if (G.host && NET.net) NET.net.send('all', msg, fast ? { fast: true } : undefined); }
 function netSendHost(msg, fast) { if (!G.host && NET.net) NET.net.send('host', msg, fast ? { fast: true } : undefined); }
 function netEvent(e) { if (G.host && NET.net) NET.net.send('all', { t: 'ev', e }); }
@@ -2241,6 +2895,7 @@ function wireNet(net) {
     });
     net.on('message', (peer, m) => { try { onNetMsg(peer, m); } catch (e) { console.error(e); } });
     net.on('closed', (reason, text) => {
+        if (NET.quiet) return;                         // we left on purpose (version mismatch): keep our own message
         const was = !!G.show; netReset();
         toast(reason === 'host-left' ? 'The host left the room.' : (text || 'Left the room.'));
         if (was || G.screen === 'lobby') UI.toTitle();
@@ -2311,6 +2966,7 @@ function sendSync(id) {
         msg.round = S.lastRound; msg.rt = R.t;
         msg.done = R.cs.filter(c => c.done).map(c => [c.id, c.done]); msg.fin = R.finished; msg.outs = R.outs;
         msg.tiles = L.tiles.filter(c => c.ts).map(c => [c.id, c.dropAt]); msg.tails = [...R.tails]; msg.hoops = R.hoops; msg.score = R.score; msg.crownBy = R.crownBy;
+        if (R.def.syncOut) msg.rx = R.def.syncOut(R);
         if (C && C.inRound) msg.me = [C.vs.x, C.vs.y, C.vs.z];
     }
     NET.net.send(id, msg);
@@ -2327,6 +2983,7 @@ function applySync(m) {
     R.finished = m.fin || []; R.outs = m.outs || [];
     for (const [i, at] of m.tiles || []) { const c = W.cs[i]; if (c) { c.ts = 1; c.dropAt = at; if (R.t > at) c.on = false; setColColor(c, 0xff4f6d); } }
     R.tails = new Set(m.tails || []); R.hoops = m.hoops || []; R.score = m.score || []; R.crownBy = m.crownBy;
+    if (m.rx && R.def.syncIn) R.def.syncIn(R, m.rx);
     const me = byId(G.me);
     if (me && me.inRound && m.me && me.b) { me.b.p.x = m.me[0]; me.b.p.y = m.me[1] + 0.3; me.b.p.z = m.me[2]; }
     if (me && me.done) G.spec = nextSpec(null);
@@ -2343,7 +3000,7 @@ function netHost() {
     hgLoad().then(HG => {
         if (!HG) { NET.busy = false; return netStatus('Online play needs the Huntington Games launcher (or a connection to the game servers).', true); }
         const net = HG.create({ game: GAME_ID }); NET.net = net; wireNet(net);
-        net.host({ name: myName(), maxPlayers: MAXP, info: { look: save.look }, accept: () => hostRoster().length >= MAXP ? 'The room is full.' : true }).then(r => {
+        net.host({ name: myName(), maxPlayers: MAXP, info: { look: save.look, pv: PROTO, ver: VERSION }, accept: j => guestRefusal(j && j.info) || (hostRoster().length >= MAXP ? 'The room is full.' : true) }).then(r => {
             NET.host = true; G.host = true; G.me = 0; NET.code = r.code; NET.busy = false; rememberRoom(r.code); netStatus('Room open - share the code!'); broadcastLobby();
         }, e => { NET.busy = false; netReset(); netStatus(e.message || 'Could not open a room.', true); });
     });
@@ -2354,8 +3011,11 @@ function netJoin(code) {
     hgLoad().then(HG => {
         if (!HG) { NET.busy = false; return netStatus('Online play needs the Huntington Games launcher (or a connection to the game servers).', true); }
         const net = HG.create({ game: GAME_ID }); NET.net = net; wireNet(net);
-        net.join(code, { name: myName(), info: { look: save.look } }).then(r => {
+        net.join(code, { name: myName(), info: { look: save.look, pv: PROTO, ver: VERSION } }).then(r => {
+            const bad = hostRefusal(r.hostInfo);
+            if (bad) { NET.busy = false; NET.quiet = true; try { netReset(); } finally { NET.quiet = false; } netStatus(bad, true); return; }
             NET.host = false; G.host = false; NET.code = r.code || code; NET.myId = G.me = r.id; NET.busy = false; rememberRoom(NET.code);
+
             netStatus('In the room. Waiting for the host to start.'); sendHi(); UI.paintLobby();
         }, e => { NET.busy = false; netReset(); netStatus(e.message || 'Could not join.', true); });
     });
@@ -2365,7 +3025,7 @@ function netLeave() { netReset(); }
 function netStartShow() {
     if (!NET.host) return;
     const humans = hostRoster().map(h => ({ id: h.id, name: h.name, look: h.look }));
-    const o = save.opts, cfg = makeShowConfig(humans, { bots: Math.min(o.bots, MAXP - humans.length), skill: o.skill, length: o.length, scoring: o.scoring });
+    const o = save.opts, cfg = makeShowConfig(humans, { bots: Math.min(o.bots, MAXP - humans.length), skill: o.skill, length: o.length, scoring: o.scoring, pick: o.pick });
     NET.inShow = true; broadcastLobby(); netSendAll(cfg); beginShow(cfg); hostStartRound();
 }
 function netToLobby() { if (!NET.host) return; netSendAll({ t: 'tolobby' }); G.show = null; G.R = null; NET.inShow = false; broadcastLobby(); UI.showLobby(); }
@@ -2436,16 +3096,17 @@ function drawMenu(dt) {
     const t = performance.now() / 1000, cam = GFX.cam; MENU.t = t; tumBegin(); clearTags();
     const vs = (x, y, z, yaw, pose, extra) => Object.assign({ x, y: y + PR, z, yaw, st: 0, ground: true, spd: 0, anim: t * 2, t, pose, sq: Math.sin(t * 3) * 0.03 }, extra || {});
     if (MENU.scene === 'ceremony' && MENU.cer) {
-        const c = MENU.cer;
-        if (c.win) drawTumbler(vs(0, 1.5, 0, 0, c.win.look.pose), c.win.look, { crown: true, seed: 1 });
+        const c = MENU.cer, cel = c.win ? c.win.look.cel : 'k0';
+        if (c.win) drawTumbler(vs(0, 1.5, 0, 0, c.win.look.pose), c.win.look, { crown: true, crownTier: ITEM[cel].tier, seed: 1 });
         if (c.second) drawTumbler(vs(-3, 0.9, 0.3, 0.25, 'e5'), c.second.look, { seed: 2 });
         if (c.third) drawTumbler(vs(3, 0.6, 0.3, -0.25, 'e5'), c.third.look, { seed: 3 });
-        if (Math.random() < dt * 6) confetti((Math.random() - 0.5) * 8, 8, (Math.random() - 0.5) * 4, 10, 2);
+        celebrate(cel, dt, 0, 1.5, 0, 1);
         cam.position.set(Math.sin(t * 0.2) * 1.5, 3.2, 8.5); cam.lookAt(0, 1.6, 0);
     } else if (MENU.scene === 'ward') {
-        const look = MENU.tryLook || save.look;
-        drawTumbler(vs(0, 0.2, 0, MENU.wardYaw + Math.sin(t * 0.5) * 0.1, MENU.cat === 'pose' ? look.pose : null), look, { seed: 1, scale: 1 });
+        const look = MENU.tryLook || save.look, celCat = MENU.cat === 'cel';
+        drawTumbler(vs(0, 0.2, 0, MENU.wardYaw + Math.sin(t * 0.5) * 0.1, MENU.cat === 'pose' || celCat ? look.pose : null), look, { seed: 1, scale: 1, crown: celCat, crownTier: ITEM[look.cel].tier });
         if (look.trail !== 't0' && Math.random() < dt * 10) { const tr = ITEM[look.trail]; puff(Math.sin(t * 2) * 1.2, 0.3, Math.cos(t * 2) * 1.2, tr.hex, 1, 0.5, 0.6, 0.8, 0.8); }
+        if (celCat) celebrate(look.cel, dt, 0, 0.2, 0, 0.45);
         const narrow = innerWidth < 700;
         cam.position.set(narrow ? 0 : -1.25, narrow ? 2.6 : 1.6, narrow ? 5.5 : 3.9); cam.lookAt(narrow ? 0 : -1.25, narrow ? 0.4 : 0.95, 0);
         if (!narrow) { cam.position.x = -1.25; cam.lookAt(-1.25, 0.95, 0); cam.position.x = -1.2; }
@@ -2457,8 +3118,38 @@ function drawMenu(dt) {
     tumEnd(); listenerPos = null;
     GFX.sun.position.set(30, 60, 20); GFX.sun.target.position.set(0, 0, 0);
 }
+// crown celebrations (cel items): podium effects around (x,y,z); k scales them down for the wardrobe preview
+const GOLD_PAL = [0xf2b705, 0xffd23f, 0xffe066, 0xfff2b3], ROYAL_PAL = [0x9a5cff, 0xf2b705, 0xffffff, 0x3550ff], RAIN_PAL = [0xff4f6d, 0xff8a2b, 0xffd23f, 0x7ee23a, 0x3fb8ff, 0x9a5cff];
+function celebrate(id, dt, x, y, z, k) {
+    const r = Math.random, s = k || 1, t = performance.now() / 1000;
+    if (id === 'k1') {                      // fireworks: a rocket trail, then a burst
+        if (r() < dt * 1.6) { const bx = x + (r() - 0.5) * 9 * s, by = y + (5 + r() * 3) * s, bz = z - 2 * s + (r() - 0.5) * 3 * s; confetti(bx, by, bz, Math.round(40 * s), 0.6, [RAIN_PAL[Math.floor(r() * 6)], 0xffffff]); puff(bx, by, bz, 0xfff2b3, 6, 6, 1, 0.5, 1.3); if (s > 0.9) sfx('pop', null, 0.4); }
+        if (r() < dt * 8) puff(x + (r() - 0.5) * 8 * s, y + r() * 4 * s, z - 2 * s, 0xffe066, 1, 0.3, 3, 0.6, 0.7);
+    } else if (id === 'k2') {               // gold rain
+        if (r() < dt * 14) confetti(x + (r() - 0.5) * 8 * s, y + 6 * s, z + (r() - 0.5) * 4 * s, 6, 1.5, GOLD_PAL);
+        if (r() < dt * 4) puff(x + (r() - 0.5) * 2 * s, y + 1.4 * s, z, 0xffe066, 2, 1, 1, 0.6, 0.9);
+    } else if (id === 'k3') {               // meteor shower: flaming streaks falling behind the podium
+        if (r() < dt * 5) { const mx = x + (r() - 0.5) * 12 * s; for (let i = 0; i < 6; i++) puff(mx + i * 0.35 * s, y + (7 - i * 0.6) * s, z - 4 * s, i < 2 ? 0xffd23f : 0xff5a1f, 1, 0.2, -2, 0.6 + i * 0.05, 1.4 - i * 0.12); }
+        if (r() < dt * 3) confetti(x, y + 4 * s, z, 8, 3, [0xff5a1f, 0xffd23f]);
+    } else if (id === 'k4') {               // royal fanfare: purple and gold, plus trumpets once
+        if (r() < dt * 7) confetti(x + (r() - 0.5) * 7 * s, y + 7 * s, z + (r() - 0.5) * 3 * s, 10, 2, ROYAL_PAL);
+        if (k >= 1 && !MENU.fanfare) { MENU.fanfare = true; sfx('fanfare'); }
+    } else if (id === 'k5') {               // rainbow storm: a spinning spiral of every colour
+        for (let i = 0; i < 2; i++) if (r() < dt * 30) { const a = t * 3 + i * PI, rr = 2.2 * s; confetti(x + Math.sin(a) * rr, y + (1 + (t * 2 % 4)) * s, z + Math.cos(a) * rr, 3, 0.3, [RAIN_PAL[Math.floor(t * 4 + i * 3) % 6]]); }
+        if (r() < dt * 6) confetti(x + (r() - 0.5) * 8 * s, y + 7 * s, z, 8, 2);
+    } else if (r() < dt * 6) confetti(x + (r() - 0.5) * 8 * s, y + 6.5 * s, z + (r() - 0.5) * 4 * s, Math.round(10 * s), 2);
+}
+// ---------- custom shows: which rounds a show may use (save.opts.pick, [] = all) ----------
+// [] means every round, so a picker emptied with 'None' is kept as MENU.pickNone until a round is picked again
+function pickedSet() { const p = save.opts.pick; return MENU.pickNone ? new Set() : new Set(p && p.length ? p : Object.keys(ROUND_INFO)); }
+function pickLabel(o) { const p = (o || save.opts).pick; return p && p.length ? p.length + ' of ' + Object.keys(ROUND_INFO).length + ' rounds' : 'All ' + Object.keys(ROUND_INFO).length + ' rounds'; }
+function pickToggle(id) {
+    const all = Object.keys(ROUND_INFO), set = pickedSet();
+    if (id === '*all') set.clear(), all.forEach(x => set.add(x)); else if (id === '*none') set.clear(); else if (set.has(id)) set.delete(id); else set.add(id);
+    MENU.pickNone = set.size === 0; save.opts.pick = set.size === all.length || !set.size ? [] : all.filter(x => set.has(x)); writeSave();
+}
 // ---------- screens ----------
-const SCREENS = ['#s-title', '#s-play', '#s-lobby', '#s-ward', '#s-how', '#s-set', '#s-res', '#s-win', '#s-pause'];
+const SCREENS = ['#s-title', '#s-play', '#s-lobby', '#s-ward', '#s-how', '#s-set', '#s-res', '#s-win', '#s-pause', '#s-pick', '#s-new'];
 const UI = {
     back: null,
     show(id) { for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id); G.screen = id ? id.slice(3) : 'game'; },
@@ -2472,10 +3163,29 @@ const UI = {
         $('#t-crowns').textContent = s.crowns; $$('.v-kudos').forEach(e => e.textContent = save.kudos);
         $('#t-lvl').textContent = fp.lvl; $('#t-fame').style.width = (fp.lvl >= FAME_MAX ? 100 : fp.have / fp.need * 100).toFixed(0) + '%';
         const nm = $('#t-name'); nm.value = myName(); nm.disabled = signedIn();
-        $('#t-stats').textContent = 'Shows ' + s.shows + ' · Crowns ' + s.crowns + ' · Rounds qualified ' + s.qualified + ' · Finals reached ' + s.finals;
+        $('#t-stats').textContent = 'Shows ' + s.shows + ' · Crowns ' + s.crowns + ' · Rounds qualified ' + s.qualified + ' · Finals reached ' + s.finals + ' · v' + VERSION;
+    },
+    openNew() {
+        UI.back = G.screen; UI.show('#s-new');
+        $('#n-list').innerHTML = WHATS_NEW.map(x => '<li>' + esc(x) + '</li>').join('');
+        if (save.seenVer !== VERSION) { save.seenVer = VERSION; writeSave(); }
+    },
+    openPick(from) {
+        UI.back = from || G.screen; MENU.pickNone = false; UI.show('#s-pick'); UI.paintPick();
+    },
+    paintPick() {
+        const set = pickedSet(), can = !NET.net || NET.host;
+        let h = '';
+        for (const kind of ['race', 'survive', 'team', 'hunt', 'final']) {
+            const ids = Object.keys(ROUND_INFO).filter(id => ROUND_INFO[id].kind === kind); if (!ids.length) continue;
+            h += '<div class="pk-k">' + KIND_LABEL[kind] + '</div><div class="pk-row">' + ids.map(id => '<button class="pk' + (set.has(id) ? ' on' : '') + (NEW_ROUNDS.includes(id) ? ' new' : '') + '" data-r="' + id + '" title="' + esc(ROUND_INFO[id].desc) + '"' + (can ? '' : ' disabled') + '>' + esc(ROUND_INFO[id].name) + '</button>').join('') + '</div>';
+        }
+        $('#pk-list').innerHTML = h;
+        const fin = [...set].some(id => ROUND_INFO[id].kind === 'final'), other = [...set].some(id => ROUND_INFO[id].kind !== 'final');
+        $('#pk-note').textContent = MENU.pickNone ? 'Nothing picked yet: pick some rounds (with none picked, a show uses them all).' : pickLabel() + ' picked.' + (!fin ? ' No final picked: a random final ends the show.' : '') + (!other ? ' No other rounds picked: random ones fill the show.' : '') + ' Team and hunt rounds need enough players left.';
     },
     openPlay() {
-        UI.show('#s-play'); segPaint('#o-skill', save.opts.skill); segPaint('#o-len', save.opts.length);
+        UI.show('#s-play'); segPaint('#o-skill', save.opts.skill); segPaint('#o-len', save.opts.length); $('#o-pick').textContent = pickLabel();
         const rc = lastRoom(); $('#b-rejoin').classList.toggle('hidden', !rc); if (rc) $('#b-rejoin').textContent = 'Rejoin room ' + rc;
         $('#p-status').textContent = '';
     },
@@ -2497,6 +3207,7 @@ const UI = {
         if (nb > 0) { const d = document.createElement('div'); d.className = 'pl bot'; d.textContent = '+ ' + nb + ' bot' + (nb > 1 ? 's' : '') + ' (' + (SKILLS[o.skill] || 'Mixed') + ')'; list.appendChild(d); }
         $('#l-n').textContent = r.length + ' / ' + MAXP;
         segPaint('#l-bots', o.bots); segPaint('#l-skill', o.skill); segPaint('#l-len', o.length); segPaint('#l-score', o.scoring);
+        $('#l-pick').textContent = pickLabel(o); $('#l-pick').disabled = !NET.host;
         $$('#l-opts .seg').forEach(s => s.classList.toggle('locked', !NET.host));
         $('#l-hostonly').textContent = NET.host ? '' : '(the host picks)';
         $('#l-start').classList.toggle('hidden', !NET.host); $('#l-ready').classList.toggle('hidden', NET.host || !NET.net);
@@ -2513,8 +3224,9 @@ const UI = {
         $('#w-grid').innerHTML = ITEMS.filter(i => i.cat === cat).map(it => {
             const own = itemOwned(it), sw = it.hex != null && it.hex >= 0 ? 'background:#' + it.hex.toString(16).padStart(6, '0') : it.cat === 'visor' ? 'background:radial-gradient(circle at 50% 45%, #' + it.eye.toString(16).padStart(6, '0') + ' 0 18%, #' + it.glass.toString(16).padStart(6, '0') + ' 20%)' : it.hex === -1 ? 'background:conic-gradient(red,orange,yellow,lime,cyan,blue,violet,red)' : 'background:#f0eaff';
             const lab = it.cat === 'pat' ? 'background:repeating-linear-gradient(45deg,#ff5fa2 0 6px,#fff 6px 12px)' : sw;
-            return '<button class="it' + (cur === it.id ? ' on' : '') + (own ? '' : ' lock') + '" data-id="' + it.id + '"><span class="sw" style="' + (it.cat === 'col' || it.cat === 'visor' || it.cat === 'trail' ? sw : it.cat === 'pat' ? lab : 'background:#f0eaff') + '"></span>' + esc(it.name) +
-                (own ? '' : it.lvl ? '<span class="lv">Fame ' + it.lvl + '</span>' : '<span class="pr">' + it.price + ' kudos</span>') + '</button>';
+            const cel = it.cat === 'cel' ? 'background:conic-gradient(#f2b705,#fff2b3,#f2b705,#ffe066,#f2b705)' : 'background:#f0eaff';
+            return '<button class="it' + (cur === it.id ? ' on' : '') + (own ? '' : ' lock') + (it.earn ? ' earn' : '') + '" data-id="' + it.id + '"><span class="sw" style="' + (it.cat === 'col' || it.cat === 'visor' || it.cat === 'trail' ? sw : it.cat === 'pat' ? lab : cel) + '"></span>' + esc(it.name) +
+                (own ? '' : it.earn ? '<span class="lv">' + esc(earnText(it.earn)) + '</span>' : it.lvl ? '<span class="lv">Fame ' + it.lvl + '</span>' : '<span class="pr">' + it.price + ' kudos</span>') + '</button>';
         }).join('');
         const n = ITEMS.filter(i => itemOwned(i)).length; if (!MENU.tryLook) $('#w-note').innerHTML = 'You own ' + n + ' of ' + ITEMS.length + ' items. Fame level ' + lvl + '. Click to wear; locked items can be tried on.';
     },
@@ -2522,7 +3234,8 @@ const UI = {
         const it = ITEM[id]; if (!it) return; sfx('click');
         if (itemOwned(it)) { save.look[MENU.cat] = id; MENU.tryLook = null; writeSave(); UI.paintWard(); if (NET.net) { if (NET.host) broadcastLobby(); else sendHi(); } return; }
         MENU.tryLook = Object.assign({}, save.look, { [MENU.cat]: id }); UI.paintWard();
-        if (it.lvl && !it.price) $('#w-note').innerHTML = '<b>' + esc(it.name) + '</b> unlocks at fame level ' + it.lvl + '.';
+        if (it.earn) $('#w-note').innerHTML = '<b>' + esc(it.name) + '</b> is earned, not bought: ' + esc(earnText(it.earn)) + '.';
+        else if (it.lvl && !it.price) $('#w-note').innerHTML = '<b>' + esc(it.name) + '</b> unlocks at fame level ' + it.lvl + '.';
         else $('#w-note').innerHTML = 'Trying on <b>' + esc(it.name) + '</b>. <button class="btn small go" id="w-buy" ' + (save.kudos < it.price ? 'disabled' : '') + '>Buy for ' + it.price + ' kudos</button>' + (save.kudos < it.price ? ' <span class="note bad">Not enough kudos yet</span>' : '');
         const bb = $('#w-buy'); if (bb) bb.onclick = () => { if (save.kudos < it.price) return; save.kudos -= it.price; save.owned[id] = true; save.look[MENU.cat] = id; MENU.tryLook = null; writeSave(); sfx('buy'); confetti(-1.2, 2, 0, 30, 1); UI.paintWard(); };
     },
@@ -2535,6 +3248,8 @@ const UI = {
     goBack() {
         const b = UI.back; UI.back = null;
         if (b === 'pause') { UI.show('#s-pause'); return; }
+        if (b === 'play') { UI.openPlay(); return; }
+        if (b === 'lobby' && NET.net && !G.show) { UI.showLobby(); return; }
         if (G.show && !G.show.over) { UI.show(null); $('#hud').classList.remove('hidden'); return; }
         if (MENU.scene !== 'title') menuWorld('title');
         if (b === 'lobby' && NET.net) UI.showLobby(); else UI.toTitle();
@@ -2545,7 +3260,7 @@ const UI = {
         $('#i-kind').textContent = KIND_LABEL[R.info.kind] + ' · Round ' + (R.idx + 1) + (S.practice ? '' : ' of ' + S.len);
         $('#i-name').textContent = R.info.name; $('#i-desc').textContent = R.info.desc;
         const me = byId(G.me), n = R.cs.length;
-        let goal = S.pts ? 'Points round: everyone plays on!' : R.info.kind === 'race' ? 'The first ' + R.q + ' of ' + n + ' qualify' : R.info.kind === 'survive' ? 'Survive! ' + R.q + ' of ' + n + ' go through' : R.rid === 'tail' ? R.q + ' tails - hold one at the end!' : R.info.kind === 'team' ? R.nTeams + ' teams - the lowest team is out' : 'Winner takes the crown!';
+        let goal = R.def.goal && !S.pts ? R.def.goal(R, S, n) : S.pts ? 'Points round: everyone plays on!' : R.info.kind === 'race' ? 'The first ' + R.q + ' of ' + n + ' qualify' : R.info.kind === 'survive' ? 'Survive! ' + R.q + ' of ' + n + ' go through' : R.rid === 'tail' ? R.q + ' tails - hold one at the end!' : R.info.kind === 'team' ? R.nTeams + ' teams - the lowest team is out' : 'Winner takes the crown!';
         if (!me || !me.inRound) goal += ' (you are spectating)';
         $('#i-goal').textContent = goal; $('#s-intro').classList.remove('hidden');
         if (me && me.inRound && R.team != null) {}
@@ -2558,7 +3273,7 @@ const UI = {
         const S = G.show, msg = R.results; if (!msg) return;
         const qs = new Set(msg.q), me = byId(G.me);
         let h = '<div class="ch"><h2>' + esc(R.info.name) + ' - results</h2></div>';
-        if (me && me.inRound && R.reward) { const ok = qs.has(me.id); h += '<div class="reward">' + (S.pts ? 'Placed ' + (msg.order.indexOf(me.id) + 1) + ' of ' + msg.order.length + '! ' : ok ? (R.info.kind === 'final' ? 'You won the final! ' : 'You qualified! ') : 'You were eliminated. ') + '+' + R.reward.kudos + ' kudos, +' + R.reward.fame + ' fame' + (R.reward.lvlUp ? ' · <b>FAME LEVEL ' + R.reward.lvlUp + '!</b>' : '') + '</div>'; }
+        if (me && me.inRound && R.reward) { const ok = qs.has(me.id); h += '<div class="reward">' + (S.pts ? 'Placed ' + (msg.order.indexOf(me.id) + 1) + ' of ' + msg.order.length + '! ' : ok ? (R.info.kind === 'final' ? 'You won the final! ' : 'You qualified! ') : 'You were eliminated. ') + '+' + R.reward.kudos + ' kudos, +' + R.reward.fame + ' fame' + (R.reward.lvlUp ? ' · <b>FAME LEVEL ' + R.reward.lvlUp + '!</b>' : '') + (R.unlocks && R.unlocks.length ? ' · <b>Unlocked: ' + esc(R.unlocks.join(', ')) + '!</b>' : '') + '</div>'; }
         h += '<div class="res">';
         for (const id of msg.order) { const C = byId(id); if (!C) continue; const ok = qs.has(id); h += '<div class="pl ' + (S.pts ? 'q' : ok ? 'q' : 'o') + (isMe(C) ? ' me' : '') + '"><span>' + esc(C.name) + '</span>' + (S.pts ? '<b>+' + (msg.pts[id] || 0) + ' (' + C.points + ')</b>' : ok ? '<b>✔</b>' : '') + '</div>'; }
         h += '</div><div class="note">' + (S.pts ? 'Points show: total points in brackets.' : qs.size + ' qualified, ' + (msg.order.length - qs.size) + ' eliminated.') + ' Next up in a moment...</div>';
@@ -2570,10 +3285,11 @@ const UI = {
         G.R = null; G.scene = 'menu'; menuWorld('ceremony'); $('#s-intro').classList.add('hidden'); $('#hud').classList.add('hidden'); clearTags();
         const st = msg.standings || [], get = i => st[i] ? byId(st[i].id) : null;
         MENU.cer = { win: W0, second: get(st[0] && st[0].id === msg.id ? 1 : 0), third: get(st[0] && st[0].id === msg.id ? 2 : 1) };
-        playMusic('win'); sfx('crown'); confetti(0, 6, 0, 150, 4);
-        const me = isMe(W0);
+        playMusic('win'); sfx('crown'); confetti(0, 6, 0, 150, 4); MENU.fanfare = false;
+        const me = isMe(W0), cel = W0 && W0.look.cel !== 'k0' ? ITEM[W0.look.cel] : null;
         let h = '<h1>' + (msg.practice ? 'Practice over' : me ? 'YOU WIN THE CROWN!' : esc(W0 ? W0.name : 'Nobody') + ' wins!') + '</h1>';
-        if (!msg.practice && me) h += '<div class="reward">+1 crown · +150 kudos · +200 fame</div>';
+        if (!msg.practice && me) h += '<div class="reward">+1 crown · +150 kudos · +200 fame' + (msg.unlocks && msg.unlocks.length ? ' · <b>Unlocked: ' + esc(msg.unlocks.join(', ')) + '!</b>' : '') + '</div>';
+        if (!msg.practice && cel) h += '<div class="note">Celebration: ' + esc(cel.name) + '</div>';
         h += '<div class="st">' + st.slice(0, 16).map((s, i) => '<span>' + (i + 1) + '. ' + esc(s.name) + (S && S.pts ? ' ' + s.pts : '') + '</span>').join('') + '</div><div class="row" style="justify-content:center">';
         if (!NET.net) h += '<button class="btn go" id="w-again">Play again</button><button class="btn" id="w-menu">Main menu</button>';
         else if (NET.host) h += '<button class="btn go" id="w-lobby">Back to the lobby</button>';
@@ -2597,7 +3313,7 @@ function segPaint(sel, v) { $$(sel + ' button').forEach(b => b.classList.toggle(
 const isTouch = () => matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window && navigator.maxTouchPoints > 0;
 function startSolo() {
     netReset(); ac();
-    const o = save.opts, cfg = makeShowConfig([{ id: 0, name: myName(), look: save.look }], { bots: 15, skill: o.skill, length: o.length, scoring: 'knockout' });
+    const o = save.opts, cfg = makeShowConfig([{ id: 0, name: myName(), look: save.look }], { bots: 15, skill: o.skill, length: o.length, scoring: 'knockout', pick: o.pick });
     G.host = true; G.me = 0; beginShow(cfg); hostStartRound();
 }
 function startPractice(rid, bots, skill) {
@@ -2617,13 +3333,15 @@ function updateHud() {
     else if (R.rid === 'hex') st = 'Still standing: ' + live;
     else if (info.kind === 'race') st = S.pts ? 'Finished: ' + R.finished.length + ' / ' + R.cs.length : 'Qualified: ' + R.finished.length + ' / ' + R.q;
     else if (info.kind === 'survive') st = 'Still on: ' + live + (S.pts ? '' : ' · ' + R.q + ' qualify');
+    else if (R.def.status) st = R.def.status(R, me, S, live);
     else if (R.rid === 'tail') st = 'Tails: ' + R.tails.size + (me && R.tails.has(me.id) ? ' · <b style="color:#e8a400">YOU HAVE ONE!</b>' : me && me.inRound ? ' · grab one (F)!' : '');
     $('#h-stat').innerHTML = st;
     let tm = '';
     if (R.nTeams && R.rid !== 'tail') for (let k = 0; k < R.nTeams; k++) tm += '<span class="' + (me && me.team === k ? 'mine' : '') + '" style="background:#' + TEAM_COLS[k].toString(16).padStart(6, '0') + '">' + TEAM_NAMES[k] + ' ' + ((R.score && R.score[k]) || 0) + '</span>';
     $('#h-teams').innerHTML = tm;
     $('#h-fruit').innerHTML = R.def.hud ? R.def.hud(R) : '';
-    const wd = $('#h-wind'); if (R.def.wind && R.phase === 'play') { const w = R.def.wind(R.t); wd.style.display = 'block'; wd.firstChild.style.transform = 'rotate(' + (Math.atan2(w.x, w.z) - G.camYaw + PI) * -180 / PI + 'deg) scaleY(' + clamp(Math.hypot(w.x, w.z) / 4, 0.3, 1.3) + ')'; } else wd.style.display = 'none';
+    const wd = $('#h-wind'), wfn = R.def.windAt && me && me.inRound && !me.hide ? (t => R.def.windAt(t, me.vs)) : R.def.wind;
+    if (wfn && R.phase === 'play' && (R.def.wind || Math.hypot(wfn(R.t).x, wfn(R.t).z) > 0.3)) { const w = wfn(R.t); wd.style.display = 'block'; wd.firstChild.style.transform = 'rotate(' + (Math.atan2(w.x, w.z) - G.camYaw + PI) * -180 / PI + 'deg) scaleY(' + clamp(Math.hypot(w.x, w.z) / 4, 0.3, 1.3) + ')'; } else wd.style.display = 'none';
     const spec = !me || !me.inRound || me.hide, sp = byId(G.spec);
     $('#h-spec').classList.toggle('hidden', !spec || !sp || R.phase === 'intro');
     if (spec && sp) $('#h-spec').textContent = 'Spectating ' + sp.name + ' · click or Space to switch';
@@ -2633,7 +3351,11 @@ function updateHud() {
 // ---------- wiring ----------
 function wireUI() {
     const click = (sel, fn) => $(sel).addEventListener('click', e => { ac(); sfx('click'); fn(e); });
-    click('#b-play', () => UI.openPlay()); click('#b-ward', () => UI.openWard()); click('#b-how', () => { UI.back = G.screen; UI.show('#s-how'); }); click('#b-set', () => UI.openSettings());
+    click('#b-play', () => UI.openPlay()); click('#b-ward', () => UI.openWard()); click('#b-new', () => UI.openNew()); click('#n-ok', () => UI.goBack());
+    click('#b-pick', () => UI.openPick('play')); click('#l-pick', () => { if (NET.host) UI.openPick('lobby'); }); click('#pk-done', () => UI.goBack());
+    $('#pk-list').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || (NET.net && !NET.host)) return; sfx('click'); pickToggle(b.dataset.r); UI.paintPick(); if (NET.host) broadcastLobby(); });
+    $$('#s-pick [data-pk]').forEach(b => b.addEventListener('click', () => { if (NET.net && !NET.host) return; sfx('click'); pickToggle(b.dataset.pk); UI.paintPick(); if (NET.host) broadcastLobby(); }));
+ click('#b-how', () => { UI.back = G.screen; UI.show('#s-how'); }); click('#b-set', () => UI.openSettings());
     $$('[data-back]').forEach(b => b.addEventListener('click', () => { sfx('click'); if (G.screen === 'ward') { MENU.tryLook = null; menuWorld('title'); } UI.goBack(); }));
     $('#t-name').addEventListener('change', e => { save.name = e.target.value.trim().slice(0, 16) || save.name; writeSave(); e.target.value = myName(); });
     const seg = (sel, fn) => $(sel).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; ac(); sfx('click'); fn(b.dataset.v); });
@@ -2734,7 +3456,8 @@ function boot() {
     G.scene = 'menu'; UI.toTitle();
     $('#boot').classList.add('hidden');
     requestAnimationFrame(frame);
-    if (!save.seenHow) { save.seenHow = true; writeSave(); setTimeout(() => toast('New here? Check "How to play" for the controls.'), 1200); }
+    if (!save.seenHow) { save.seenHow = true; save.seenVer = VERSION; writeSave(); setTimeout(() => toast('New here? Check "How to play" for the controls.'), 1200); }
+    else if (save.seenVer !== VERSION) setTimeout(() => { if (G.screen === 'title') UI.openNew(); }, 700);
     launcherBoot();
 }
 window.__mayhem = {
@@ -2747,7 +3470,8 @@ window.__mayhem = {
             mine: me && me.inRound ? { x: +me.vs.x.toFixed(2), y: +me.vs.y.toFixed(2), z: +me.vs.z.toFixed(2), st: me.vs.st, done: me.done, hide: me.hide, out: me.out } : null, spec: G.spec };
     },
     startRound(rid, o) { o = o || {}; startPractice(rid, o.bots, o.skill); },
-    startShow(o) { o = o || {}; if (o.skill != null) save.opts.skill = o.skill; if (o.length) save.opts.length = o.length; startSolo(); },
+    startShow(o) { o = o || {}; if (o.skill != null) save.opts.skill = o.skill; if (o.length) save.opts.length = o.length; save.opts.pick = o.pick || []; startSolo(); },
+    protoCheck() { return { same: guestRefusal({ pv: PROTO, ver: VERSION }) === null && hostRefusal({ info: { pv: PROTO } }) === null, older: guestRefusal({}) === null, none: hostRefusal({ info: { look: {} } }) === null, newer: guestRefusal({ pv: PROTO + 1, ver: '9.9' }), msg: guestRefusal({}) + ' / ' + hostRefusal({ info: {} }) }; },
     step(sec) { const n = Math.round(sec / STEP); for (let i = 0; i < n; i++) tick(STEP); return this.state(); },
     manual(on) { G.manual = !!on; }, noRender(on) { G.noRender = !!on; }, autopilot(on) { G.autopilot = !!on; },
     bots() { return G.R ? G.R.cs.filter(c => c.bot).map(c => ({ id: c.id, name: c.name, skill: c.skill, done: c.done, x: +c.vs.x.toFixed(1), y: +c.vs.y.toFixed(1), z: +c.vs.z.toFixed(1) })) : []; },
@@ -2755,6 +3479,8 @@ window.__mayhem = {
     key(code, down) { if (down) { INP.keys.add(code); INP.edge.add(code); } else INP.keys.delete(code); },
     renderInfo(sync) { draw(1 / 60); if (sync) { const gl = GFX.renderer.getContext(), px = new Uint8Array(4); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } return Object.assign({}, GFX.info, { q: GFX.q, geometries: GFX.renderer.info.memory.geometries }); },
     quality(q) { save.settings.quality = q; applyQuality(); },
+    spawnOk(sp) { return spawnClear(sp) && sp[1] > killYOf(G.R) + 1; },
+    levelExtent() { const e = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const c of W.cs) { if (!c.solid) continue; const r = c.k === K_BOX ? Math.max(c.hx, c.hz) : c.r; e.x0 = Math.min(e.x0, c.p[0] - r); e.x1 = Math.max(e.x1, c.p[0] + r); e.z0 = Math.min(e.z0, c.p[2] - r); e.z1 = Math.max(e.z1, c.p[2] + r); } return e; },
     migrate(obj) { return fixSave(mergeInto(defaultSave(), migrateSave(JSON.parse(JSON.stringify(obj))))); },
     reloadSave() { save = loadSave(); return save; },
     toTitle() { UI.toTitle(); }, ui: UI, host: () => netHost(), join: c => netJoin(c), start: () => netStartShow(), toLobby: () => netToLobby()

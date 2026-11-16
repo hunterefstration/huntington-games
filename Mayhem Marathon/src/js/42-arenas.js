@@ -81,8 +81,9 @@ ROUNDS.squeeze = {
     build() {
         cyl(0, -0.5, 0, 13, 1, { col: 0xffd6f0, mv: (t, c) => { c.r = sqR(t); colBound(c); } });
         cyl(0, -1.6, 0, 13.6, 1, { col: 0x9a5cff, vis: true, solid: false, mv: (t, c) => { c.r = sqR(t) + 0.5; colBound(c); } });
-        for (let k = 0; k < 3; k++) cyl(0, 0.7, 0, 0.7, 1.4, { col: HAZ, fx: { knock: 5 }, mv: (t, c) => { const a = -0.5 * t + k * TAU / 3, rr = Math.min(6, sqR(t) - 1.2); c.p[0] = Math.sin(a) * rr; c.p[1] = 0.7; c.p[2] = Math.cos(a) * rr; } });
-        spawnRing(8.5, 0); L.killY = -6; L.center = [0, 0];
+        for (let k = 0; k < 3; k++) cyl(0, 0.7, 0, 0.7, 1.4, { col: HAZ, fx: { knock: 5 }, mv: (t, c) => { const a = -0.5 * Math.max(0, t) + k * TAU / 3, rr = Math.min(6, sqR(t) - 1.2); c.p[0] = Math.sin(a) * rr; c.p[1] = 0.7; c.p[2] = Math.cos(a) * rr; } });
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 9, PR + 0.05, Math.cos(a) * 9]); }     // one ring, clear of the pushers' path
+        L.killY = -6; L.center = [0, 0];
     },
     tick(R) { const w = sqWind(R.t), s = Math.hypot(w.x, w.z); if (s > 0.5 && Math.random() < s * 0.25) { const a = Math.random() * TAU, r = Math.random() * 14; puff(Math.sin(a) * r, 0.5 + Math.random() * 2, Math.cos(a) * r, 0xffffff, 1, 0, 0, 0.7, 0.5); const pp = PFX.puffP[PFX.puffP.length - 1]; if (pp) { pp.vx = w.x * 2.5; pp.vz = w.z * 2.5; pp.vy = 0; } } },
     bot(C, R, ai, inp) {
@@ -189,7 +190,7 @@ ROUNDS.tail = {
         box(0, 1, 0, 6, 2, 6, { col: YEL }); ramp(0, 3, 7.2, 2, 0, 6, 0xffe27a); ramp(0, -3, -7.2, 2, 0, 6, 0xffe27a);
         [[-10, -10], [10, -10], [-10, 10], [10, 10]].forEach(([x, z]) => cyl(x, 1.5, z, 1, 3, { col: BLU }));
         bouncePad(-12, 0, 5, 1.3, 14); bouncePad(12, 0, -5, 1.3, 14);
-        box(-6, 0.5, 9, 4, 1, 1, { col: PNK }); box(6, 0.5, -9, 4, 1, 1, { col: PNK });
+        box(-7, 0.5, 9, 4, 1, 1, { col: PNK }); box(7, 0.5, -9, 4, 1, 1, { col: PNK });      // 1.1: moved out from under two spawn points
         spawnRing(16, 0); L.killY = -8; L.center = [0, 0];     // radius 16: at 14 the diagonal spawns sat inside the corner pillars and dropped through the floor
     },
     onGrab(R, A, B) {
@@ -224,7 +225,8 @@ ROUNDS.hoard = {
         box(0, 0.6, 0, 3, 1.2, 3, { col: YEL });
         const n = R.nTeams * 3 + 2; R.balls = [];
         for (let i = 0; i < n; i++) { const a = i / n * TAU, rr = 4 + (i % 3) * 2.2; const b = { x: Math.sin(a) * rr, y: 0.9, z: Math.cos(a) * rr, vx: 0, vy: 0, vz: 0 }; R.balls.push(b); sph(b.x, b.y, b.z, 0.9, { col: [0xffffff, 0xffd23f, 0x52f2c2][i % 3], tag: 'ball', mv: (t, c) => { const s = R.balls[i]; c.p[0] = s.x; c.p[1] = s.y; c.p[2] = s.z; } }); }
-        spawnRing(9, 0); L.killY = -8; L.center = [0, 0];
+        for (let i = 0; i < 16; i++) { const a = (i + 0.5) / 16 * TAU; L.spawns.push([Math.sin(a) * 12, PR + 0.05, Math.cos(a) * 12]); }     // outside the balls
+        L.killY = -8; L.center = [0, 0];
     },
     hostTick(R, dt) {
         const balls = R.balls;

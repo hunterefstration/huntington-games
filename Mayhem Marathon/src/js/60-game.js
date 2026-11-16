@@ -18,10 +18,11 @@ function makeShowConfig(humans, opts) {
     const names = shuffle(BOT_NAMES.slice(), rnd);
     for (let i = 0; i < opts.bots && cs.length < 16; i++) { let n = names[i % names.length]; if (used.has(n)) n += ' ' + (i + 2); used.add(n); cs.push({ id: 1000 + i, name: n, look: randomLook(rnd), bot: true, skill: opts.skill === 3 ? i % 3 : opts.skill }); }
     const nh = humans.length, pts = opts.scoring === 'points' || (opts.scoring === 'auto' && (nh >= 2 && nh <= 4 || cs.length <= 4));
-    return { t: 'show', seed: Math.floor(Math.random() * 1e9), len: opts.length, pts, cs, practice: opts.practice || null };
+    const pick = (opts.pick || []).filter(id => ROUND_INFO[id]);
+    return { t: 'show', seed: Math.floor(Math.random() * 1e9), len: opts.length, pts, cs, practice: opts.practice || null, pick: pick.length ? pick : null };
 }
 function beginShow(cfg) {
-    G.show = { seed: cfg.seed, len: cfg.len, pts: cfg.pts, cs: cfg.cs.map(mkContestant), used: [], idx: -1, N0: cfg.cs.length, practice: cfg.practice, results: [], over: false };
+    G.show = { seed: cfg.seed, len: cfg.len, pts: cfg.pts, cs: cfg.cs.map(mkContestant), used: [], idx: -1, N0: cfg.cs.length, practice: cfg.practice, results: [], over: false, pick: cfg.pick || null };
     G.R = null; G.paused = false;
     if (G.show.cs.some(isMe)) { save.stats.shows++; writeSave(); }
     UI.enterGame();
@@ -29,11 +30,15 @@ function beginShow(cfg) {
 function pickRound(S) {
     const alive = S.cs.filter(c => !c.out && !c.spect).length, finalNow = S.idx >= S.len - 1 || (!S.pts && alive <= 2 && S.idx > 0);
     if (S.practice) return S.practice;
-    const pool = Object.keys(ROUND_INFO).filter(id => {
-        const ri = ROUND_INFO[id]; if ((ri.kind === 'final') !== finalNow) return false; if (S.used.includes(id)) return false;
+    const fits = Object.keys(ROUND_INFO).filter(id => {
+        const ri = ROUND_INFO[id]; if ((ri.kind === 'final') !== finalNow) return false;
         if (ri.kind === 'team') return S.pts ? alive >= 2 : alive >= ri.min && alive >= 6;
+        if (ri.kind === 'hunt') return S.pts ? alive >= 2 : alive >= ri.min && alive - qualifyTarget(S, alive) >= 1;
         return true;
-    });
+    }), fresh = fits.filter(id => !S.used.includes(id));
+    // a custom show (the host picked rounds): only those, repeating them before falling back to the others
+    let pool = fresh;
+    if (S.pick && S.pick.length) { const a = fresh.filter(id => S.pick.includes(id)), b = fits.filter(id => S.pick.includes(id)); pool = a.length ? a : b.length ? b : fresh; }
     return pool[Math.floor(Math.random() * pool.length)] || (finalNow ? 'crown' : 'spin');
 }
 function qualifyTarget(S, alive) {
@@ -54,6 +59,7 @@ function hostStartRound() {
         const order = shuffle(alive.map(c => c.id), rnd); msg.teams = {}; order.forEach((id, i) => msg.teams[id] = i % nt);
     }
     if (rid === 'tail') { const k = S.pts ? Math.max(1, Math.floor(alive.length / 2)) : msg.q; msg.ex.tails = shuffle(alive.map(c => c.id), rnd).slice(0, k); }
+    if (ROUNDS[rid].startEx) Object.assign(msg.ex, ROUNDS[rid].startEx(S, alive, msg, rnd));
     S.lastRound = msg; netSendAll(msg);
     beginRound(msg);
     if (ROUNDS[rid].setup) { ROUNDS[rid].setup(G.R, rnd); netSendAll({ t: 'ev', e: { k: 'hoops', h: G.R.hoops, sc: G.R.score } }); }
@@ -63,7 +69,7 @@ function beginRound(msg) {
     const S = G.show, def = ROUNDS[msg.rid], info = ROUND_INFO[msg.rid];
     worldReset(); newLevel();
     const R = G.R = { rid: msg.rid, def, info, seed: msg.seed, idx: msg.idx, t: -8, phase: 'intro', q: msg.q, cs: [], finished: [], outs: [], nTeams: msg.nTeams || 0,
-        tails: new Set((msg.ex && msg.ex.tails) || []), imm: {}, hoops: [], score: [], crownBy: null, overT: 0, netT: 0, focusZ: 0, ended: false, lastHumanDone: 0, results: null };
+        tails: new Set((msg.ex && msg.ex.tails) || []), imm: {}, hoops: [], score: [], crownBy: null, overT: 0, netT: 0, focusZ: 0, ended: false, lastHumanDone: 0, results: null, ex: msg.ex || {} };
     const rnd = mulberry(msg.seed);
     def.build(rnd, R);
     buildLevelMeshes(L.extra); LV.group.add(L.group);
@@ -76,7 +82,7 @@ function beginRound(msg) {
         C.inRound = true; C.hide = false; C.done = null; C.cpi = -1; C.holding = C.heldBy = -1; C.grabHeld = false; C.spawnI = si; C.spawnY = sp[1]; C.buf = []; C.ai = null; C.sentFin = C.sentFell = false;
         C.team = msg.teams ? msg.teams[id] : null;
         C.sim = G.host ? (C.bot || isMe(C)) : isMe(C);
-        const yaw = L.spawns.length && L.center[1] === 0 && info.kind !== 'race' && msg.rid !== 'crown' ? Math.atan2(-sp[0], -sp[2]) : 0;
+        const yaw = L.spawns.length && L.center[1] === 0 && info.kind !== 'race' && msg.rid !== 'crown' ? Math.atan2(-(sp[0] - L.center[0]), -sp[2]) : 0;
         C.b = mkBody(sp[0], sp[1], sp[2], yaw);
         Object.assign(C.vs, { x: sp[0], y: sp[1], z: sp[2], yaw, st: 0, ground: true, spd: 0, rx: 0, rz: 0, sq: 0 });
         if (C.bot && G.host) botNew(C, rnd);
@@ -86,6 +92,7 @@ function beginRound(msg) {
     G.spec = me && me.inRound ? null : (R.cs[0] && R.cs[0].id);
     if (me && me.inRound) G.camYaw = me.b.yaw; else G.camYaw = 0;
     G.camPitch = 0.32; PFX.confP.length = 0; clearTags();
+    if (def.start) def.start(R);
     playMusic(info.kind === 'race' ? 'race' : info.kind === 'final' ? 'final' : 'survive');
     UI.roundIntro(R);
 }
@@ -113,7 +120,7 @@ function tick(dt) {
         if (!inp) continue;
         b.slow = C.heldBy >= 0 ? 0.4 : C.holding >= 0 ? 0.62 : 1;
         let hold = null; if (C.heldBy >= 0) { const H = byId(C.heldBy); if (H) hold = { x: H.vs.x + Math.sin(H.vs.yaw) * 0.95, y: H.vs.y, z: H.vs.z + Math.cos(H.vs.yaw) * 0.95 }; }
-        stepBody(b, inp, dt, { frozen, wind, hold });
+        stepBody(b, inp, dt, { frozen, wind: R.def.windAt ? R.def.windAt(R.t, b.p) : wind, hold, speed: R.def.speedOf ? R.def.speedOf(R, C) : 1 });
         C.grabHeld = !!inp.grab && b.st === ST_RUN;
         separateBody(C, R);
         if (inp.respawn && !survivalLike(R) && R.phase === 'play') respawnBody(C);
@@ -219,7 +226,7 @@ function hostGrabs(R) {
         }
         if (!best) continue;
         if (R.def.onGrab && R.def.onGrab(R, A, best)) { A.grabCd = R.t + 0.7; continue; }
-        if (R.rid === 'tail') { A.grabCd = R.t + 0.4; continue; }
+        if (R.rid === 'tail' || R.def.passOnly) { A.grabCd = R.t + 0.4; continue; }
         A.grabT = R.t; const e = { k: 'grab', a: A.id, b: best.id }; applyEvent(e); netEvent(e);
     }
 }
@@ -233,6 +240,7 @@ function hostCrown(C) { const R = G.R; if (R.crownBy != null || R.ended) return;
 function roundShouldEnd(R) {
     const S = G.show, kind = R.info.kind, live = R.cs.filter(c => !c.done && !c.hide), timeUp = R.t >= R.info.time;
     if (timeUp) return true;
+    if (R.def.shouldEnd) return R.def.shouldEnd(R, live);
     if (R.rid === 'crown') return R.crownBy != null || !live.length;
     if (R.rid === 'hex') return live.length <= (R.cs.length > 1 ? 1 : 0);
     if (kind === 'race') {
@@ -251,7 +259,8 @@ function hostEndRound() {
     const all = R.cs.map(c => c.id), kind = R.info.kind;
     let order = [], qual = [];
     const live = R.cs.filter(c => !c.done);
-    if (kind === 'race' || R.rid === 'crown') {
+    if (R.def.endOrder) ({ order, qual } = R.def.endOrder(R, all, live));
+    else if (kind === 'race' || R.rid === 'crown') {
         const rest = live.slice().sort((a, b) => progOf(b) - progOf(a)).map(c => c.id);
         order = (R.crownBy != null ? [R.crownBy] : []).concat(R.finished, rest.filter(id => id !== R.crownBy), R.outs.slice().reverse());
         if (R.rid === 'crown') qual = [order[0]];
@@ -274,7 +283,7 @@ function hostEndRound() {
     const pts = {}; const N = order.length, mul = kind === 'final' ? 2 : 1;
     order.forEach((id, i) => pts[id] = S.pts ? Math.max(1, N - i) * mul : 0);
     if (kind === 'team' && R.rid !== 'tail' && S.pts) for (const C of R.cs) pts[C.id] = (R.teamRanks.length - R.teamRanks.indexOf(C.team)) * 3 * mul;
-    const msg = { t: 'rend', q: qual, order, pts, winner: kind === 'final' ? order[0] : null, score: R.score };
+    const msg = { t: 'rend', q: qual, order, pts, winner: kind === 'final' ? order[0] : null, score: R.score, ex: R.def.endEx ? R.def.endEx(R) : undefined };
     netSendAll(msg); applyRoundEnd(msg);
 }
 function applyRoundEnd(msg) {
@@ -283,17 +292,29 @@ function applyRoundEnd(msg) {
     const qs = new Set(msg.q);
     for (const C of R.cs) { C.points += msg.pts[C.id] || 0; if (!S.pts && !qs.has(C.id)) C.out = true; }
     S.results.push({ rid: R.rid, q: msg.q, order: msg.order });
+    if (R.def.onEnd) R.def.onEnd(R, msg);
     const me = byId(G.me);
     if (me && me.inRound) {
         const ok = qs.has(me.id), place = msg.order.indexOf(me.id);
         let k = 10 + (ok ? 15 : 0) + (S.pts ? Math.max(0, 8 - place) * 2 : 0), f = 20 + (ok ? 30 : 0);
+        const before = unlockedIds();
         save.stats.rounds++; if (ok && R.info.kind !== 'final') save.stats.qualified++; if (!ok && !S.pts) save.stats.eliminations++;
         if (R.info.kind === 'final') save.stats.finals++;
+        // per-round records (earned items read them): in points shows "qualified" means a top-half finish
+        const rec = save.rp[R.rid] || (save.rp[R.rid] = { p: 0, q: 0, w: 0 }), good = S.pts ? place < Math.ceil(msg.order.length / 2) : ok;
+        rec.p++; if (good && R.info.kind !== 'final') rec.q++; if (R.info.kind === 'final' && msg.order[0] === me.id) rec.w++;
         R.reward = grantRewards(k, f);
+        R.unlocks = newUnlocks(before);
         if (!S.pts && !ok && !me.done) { announce('ELIMINATED', 'bad'); sfx('out'); }
     }
     announce(R.info.kind === 'final' ? 'FINISH!' : 'ROUND OVER!', 'go');
     if (!G.host) { R.resultsShown = false; }
+}
+const unlockedIds = () => new Set(ITEMS.filter(i => i.earn && itemOwned(i)).map(i => i.id));
+function newUnlocks(before) {
+    const got = ITEMS.filter(i => i.earn && itemOwned(i) && !before.has(i.id));
+    if (got.length) setTimeout(() => toast('Unlocked: ' + got.map(i => i.name).join(', ') + '!'), 1500);
+    return got.map(i => i.name);
 }
 function grantRewards(kudos, fame) {
     const before = fameLevel(save.fame); save.kudos += kudos; save.stats.kudosEarned += kudos; save.fame += fame;
@@ -316,7 +337,7 @@ function applyWin(msg) {
     const S = G.show; if (!S) return;
     S.over = true; S.winner = msg.id;
     const W0 = byId(msg.id);
-    if (!msg.practice && W0 && isMe(W0)) { save.stats.crowns++; grantRewards(150, 200); }
+    if (!msg.practice && W0 && isMe(W0)) { const before = unlockedIds(); save.stats.crowns++; grantRewards(150, 200); msg.unlocks = newUnlocks(before); }
     UI.ceremony(msg, W0);
 }
 // ---------- events (host -> everyone) ----------
@@ -327,12 +348,13 @@ function applyEvent(e) {
         case 'tile': { const c = W.cs[e.i]; if (c && c.tag === 'tile' && !c.ts) { c.ts = 1; c.dropAt = e.at; c.shake = 1; setColColor(c, 0xff4f6d); } break; }
         case 'q': if (C && !C.done) markDone(C, 'q', e.n); if (C && !R.finished.includes(C.id)) R.finished.push(C.id); break;
         case 'out': if (C && !C.done) markDone(C, 'out'); if (C && !R.outs.includes(C.id)) R.outs.push(C.id); break;
-        case 'crown': R.crownBy = e.id; if (C) { confetti(C.vs.x, C.vs.y + 2, C.vs.z, 120, 3); sfx('crown'); announce(esc(C.name) + ' GRABS THE CROWN!', 'go'); } break;
+        case 'crown': R.crownBy = e.id; if (C) { confetti(C.vs.x, C.vs.y + 2, C.vs.z, 120, 3); sfx('crown'); announce(esc(C.name) + (R.def.crownText || ' GRABS THE CROWN!'), 'go'); } break;
         case 'hit': if (C && C.sim && C.b) { knock(C.b, e.v[0], e.v[1], e.v[2], 1.0); if (isMe(C)) shake(0.4); } break;
         case 'grab': { const A = byId(e.a), B = byId(e.b); if (A && B) { A.holding = B.id; B.heldBy = A.id; if (isMe(A) || isMe(B)) sfx('grab'); } break; }
         case 'ungrab': { const A = byId(e.a), B = byId(e.b); if (A) A.holding = -1; if (B && B.heldBy === e.a) B.heldBy = -1; break; }
         case 'tail': if (!G.host) { R.tails.delete(e.from); R.tails.add(e.to); onTailEvent(e.from, e.to); } break;
         case 'hoops': if (!G.host || e.by == null) { R.hoops = e.h; R.score = e.sc; if (e.by != null) onHoopEvent(e.by, e.sc); } break;
+        default: if (R.def.onEvent) R.def.onEvent(R, e);
     }
 }
 function markDone(C, how, n) {
@@ -398,7 +420,9 @@ function drawContestants(dt) {
     for (const C of R.cs) {
         if (C.hide) { placeTag(C.id, '', 0, 0, 0, '', false); continue; }
         const v = C.vs; v.t = t + C.id * 0.37;
-        drawTumbler(v, C.look, { team: C.team, tail: R.tails.has(C.id), crown: R.crownBy === C.id, seed: C.id, blobY: v.ground ? v.y - PR : null });
+        drawTumbler(v, C.look, { team: C.team, tail: R.tails.has(C.id), crown: R.crownBy === C.id, crownTier: ITEM[C.look.cel].tier, seed: C.id, blobY: v.ground ? v.y - PR : null,
+            bomb: R.bombs && R.bombs.has(C.id), bombHot: R.bombs ? clamp(1 - (R.info.time - R.t) / 10, 0, 1) : 0 });
+
         const cd = G.camPos.distanceToSquared(V3.set(v.x, v.y, v.z));
         placeTag(C.id, C.name, v.x, v.y + 1.75, v.z, isMe(C) ? 'me' : C.bot ? 'bot' : 'pl', names && (!isMe(C) || R.phase !== 'play') && cd < (C.bot ? 400 : 1600));
         const tr = ITEM[C.look.trail];

@@ -10,6 +10,21 @@ function hgLoad() {
     if (h) return Promise.resolve(h);
     return new Promise(res => { const s = document.createElement('script'); s.src = '../gv/vendor/hgnet.js'; s.onload = () => res(window.HGNet || null); s.onerror = () => res(null); document.head.appendChild(s); });
 }
+// Versions: the host's room info and every guest's join info carry pv (PROTO) and ver (VERSION). A host refuses a
+// guest with a different pv (1.0 guests have none), and a guest leaves a host with a different pv (1.0 hosts accept
+// anyone), each with a message that says who needs to reload.
+function guestRefusal(info) {
+    const pv = info && info.pv, ver = info && typeof info.ver === 'string' ? info.ver.slice(0, 8) : '';
+    if (pv === PROTO) return null;
+    if (!(pv > PROTO)) return 'This room runs Mayhem Marathon ' + VERSION + ' and you have an older version. Reload the launcher (or this page) to update, then join again.';
+    return 'This room runs an older Mayhem Marathon (' + VERSION + ') than yours' + (ver ? ' (' + esc(ver) + ')' : '') + '. Ask the host to reload the launcher to update.';
+}
+function hostRefusal(hostInfo) {
+    const i = hostInfo && hostInfo.info, pv = i && i.pv, ver = i && typeof i.ver === 'string' ? i.ver.slice(0, 8) : '';
+    if (pv === PROTO) return null;
+    if (!(pv > PROTO)) return 'The host has an older Mayhem Marathon. Ask them to reload the launcher to update to ' + VERSION + ', then try again.';
+    return 'The host has a newer Mayhem Marathon' + (ver ? ' (' + esc(ver) + ')' : '') + '. Reload the launcher (or this page) to update, then join again.';
+}
 function netSendAll(msg, fast) { if (G.host && NET.net) NET.net.send('all', msg, fast ? { fast: true } : undefined); }
 function netSendHost(msg, fast) { if (!G.host && NET.net) NET.net.send('host', msg, fast ? { fast: true } : undefined); }
 function netEvent(e) { if (G.host && NET.net) NET.net.send('all', { t: 'ev', e }); }
@@ -41,6 +56,7 @@ function wireNet(net) {
     });
     net.on('message', (peer, m) => { try { onNetMsg(peer, m); } catch (e) { console.error(e); } });
     net.on('closed', (reason, text) => {
+        if (NET.quiet) return;                         // we left on purpose (version mismatch): keep our own message
         const was = !!G.show; netReset();
         toast(reason === 'host-left' ? 'The host left the room.' : (text || 'Left the room.'));
         if (was || G.screen === 'lobby') UI.toTitle();
@@ -111,6 +127,7 @@ function sendSync(id) {
         msg.round = S.lastRound; msg.rt = R.t;
         msg.done = R.cs.filter(c => c.done).map(c => [c.id, c.done]); msg.fin = R.finished; msg.outs = R.outs;
         msg.tiles = L.tiles.filter(c => c.ts).map(c => [c.id, c.dropAt]); msg.tails = [...R.tails]; msg.hoops = R.hoops; msg.score = R.score; msg.crownBy = R.crownBy;
+        if (R.def.syncOut) msg.rx = R.def.syncOut(R);
         if (C && C.inRound) msg.me = [C.vs.x, C.vs.y, C.vs.z];
     }
     NET.net.send(id, msg);
@@ -127,6 +144,7 @@ function applySync(m) {
     R.finished = m.fin || []; R.outs = m.outs || [];
     for (const [i, at] of m.tiles || []) { const c = W.cs[i]; if (c) { c.ts = 1; c.dropAt = at; if (R.t > at) c.on = false; setColColor(c, 0xff4f6d); } }
     R.tails = new Set(m.tails || []); R.hoops = m.hoops || []; R.score = m.score || []; R.crownBy = m.crownBy;
+    if (m.rx && R.def.syncIn) R.def.syncIn(R, m.rx);
     const me = byId(G.me);
     if (me && me.inRound && m.me && me.b) { me.b.p.x = m.me[0]; me.b.p.y = m.me[1] + 0.3; me.b.p.z = m.me[2]; }
     if (me && me.done) G.spec = nextSpec(null);
@@ -143,7 +161,7 @@ function netHost() {
     hgLoad().then(HG => {
         if (!HG) { NET.busy = false; return netStatus('Online play needs the Huntington Games launcher (or a connection to the game servers).', true); }
         const net = HG.create({ game: GAME_ID }); NET.net = net; wireNet(net);
-        net.host({ name: myName(), maxPlayers: MAXP, info: { look: save.look }, accept: () => hostRoster().length >= MAXP ? 'The room is full.' : true }).then(r => {
+        net.host({ name: myName(), maxPlayers: MAXP, info: { look: save.look, pv: PROTO, ver: VERSION }, accept: j => guestRefusal(j && j.info) || (hostRoster().length >= MAXP ? 'The room is full.' : true) }).then(r => {
             NET.host = true; G.host = true; G.me = 0; NET.code = r.code; NET.busy = false; rememberRoom(r.code); netStatus('Room open - share the code!'); broadcastLobby();
         }, e => { NET.busy = false; netReset(); netStatus(e.message || 'Could not open a room.', true); });
     });
@@ -154,8 +172,11 @@ function netJoin(code) {
     hgLoad().then(HG => {
         if (!HG) { NET.busy = false; return netStatus('Online play needs the Huntington Games launcher (or a connection to the game servers).', true); }
         const net = HG.create({ game: GAME_ID }); NET.net = net; wireNet(net);
-        net.join(code, { name: myName(), info: { look: save.look } }).then(r => {
+        net.join(code, { name: myName(), info: { look: save.look, pv: PROTO, ver: VERSION } }).then(r => {
+            const bad = hostRefusal(r.hostInfo);
+            if (bad) { NET.busy = false; NET.quiet = true; try { netReset(); } finally { NET.quiet = false; } netStatus(bad, true); return; }
             NET.host = false; G.host = false; NET.code = r.code || code; NET.myId = G.me = r.id; NET.busy = false; rememberRoom(NET.code);
+
             netStatus('In the room. Waiting for the host to start.'); sendHi(); UI.paintLobby();
         }, e => { NET.busy = false; netReset(); netStatus(e.message || 'Could not join.', true); });
     });
@@ -165,7 +186,7 @@ function netLeave() { netReset(); }
 function netStartShow() {
     if (!NET.host) return;
     const humans = hostRoster().map(h => ({ id: h.id, name: h.name, look: h.look }));
-    const o = save.opts, cfg = makeShowConfig(humans, { bots: Math.min(o.bots, MAXP - humans.length), skill: o.skill, length: o.length, scoring: o.scoring });
+    const o = save.opts, cfg = makeShowConfig(humans, { bots: Math.min(o.bots, MAXP - humans.length), skill: o.skill, length: o.length, scoring: o.scoring, pick: o.pick });
     NET.inShow = true; broadcastLobby(); netSendAll(cfg); beginShow(cfg); hostStartRound();
 }
 function netToLobby() { if (!NET.host) return; netSendAll({ t: 'tolobby' }); G.show = null; G.R = null; NET.inShow = false; broadcastLobby(); UI.showLobby(); }
