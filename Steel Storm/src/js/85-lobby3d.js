@@ -1,8 +1,10 @@
 // ============================================================
-// THE 3D LOBBY: your vehicle on a lit pad, party members' vehicles on pads beside it with their names above.
+// THE 3D LOBBY: your vehicle on a lit pad, party members' vehicles on pads beside it with their names above. Shown in the party
+// lobby, and behind the menu when the showcase is off. Models are rebuilt only when what is shown changes (2.2: it used to rebuild
+// every model and label each time the host's roster went out, every 3 s), and it draws at most ~30 frames a second.
 // ============================================================
 const Lobby = {
-    scene: new THREE.Scene(), cam: new THREE.PerspectiveCamera(42, 1, 0.5, 200), pads: [], items: [], t: 0, built: false,
+    scene: new THREE.Scene(), cam: new THREE.PerspectiveCamera(42, 1, 0.5, 200), pads: [], items: [], t: 0, built: false, sig: '', acc: 0,
     PADX: [0, -4.6, 4.6, -8.6, 8.6],
     init() {
         const s = this.scene, cv = document.createElement('canvas'); cv.width = 4; cv.height = 256; const x = cv.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 256);
@@ -30,12 +32,16 @@ const Lobby = {
         x.textAlign = 'center'; x.fillStyle = '#fff'; x.font = 'bold 34px Trebuchet MS,sans-serif'; x.fillText((star ? '★ ' : '') + name, 160, 50); x.fillStyle = '#9fb0e8'; x.font = '22px Trebuchet MS,sans-serif'; x.fillText(sub, 160, 76);
         const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false })); sp.scale.set(me ? 5.2 : 4, me ? 1.56 : 1.2, 1); return sp;
     },
+    list() {      // in a party: everyone (me first); otherwise the vehicle the menu is looking at
+        if (!PARTY.net) { const id = typeof focusVeh === 'function' ? focusVeh() : myVeh(); return [{ id: 0, name: myName(), veh: id, mm: modMask(id), team: 0 }]; }
+        const list = rosterNow().slice(), meId = PARTY.myId, mi = list.findIndex(p => p.id === meId); if (mi > 0) list.unshift(list.splice(mi, 1)[0]); return list;
+    },
     refresh() {
         if (!this.built) return;
+        const list = this.list(), sig = list.slice(0, 5).map(p => [p.id, p.name, p.veh, p.mm | 0, p.team | 0].join(',')).join('|') + (PARTY.net ? '*' : '');
+        if (sig === this.sig) return; this.sig = sig;
         for (const it of this.items) { this.scene.remove(it.root); disposeModel(it.m); if (it.sp) { this.scene.remove(it.sp); it.sp.material.map.dispose(); it.sp.material.dispose(); } }
         this.items = [];
-        const list = rosterNow().slice(), meId = PARTY.net ? PARTY.myId : 0;
-        const mi = list.findIndex(p => p.id === meId); if (mi > 0) list.unshift(list.splice(mi, 1)[0]);
         list.forEach((p, i) => {
             if (i >= 5) return; const def = vdef(VBY[p.veh] ? p.veh : 'g1a', p.mm | 0), m = makeModel(def, p.team | 0), P = getParts(def, p.team | 0);
             const size = def.ln === 'a' ? Math.max(P.len, P.span) * 0.9 : P.len, k = (i === 0 ? 4.4 : 3.3) / size; m.root.scale.setScalar(k);
@@ -47,7 +53,8 @@ const Lobby = {
         this.pads.forEach((p, i) => { p.children[2].visible = i < this.items.length; p.children[1].material.color.setHex(i < this.items.length ? (i === 0 ? 0xffd21f : 0x4fe0ff) : 0x333a66); });
     },
     render(dt) {
-        if (!this.built) return; this.t += dt;
+        if (!this.built) return;
+        this.acc += dt; if (this.acc < 1 / 30 - .004) return; dt = Math.min(this.acc, .1); this.acc = 0; this.t += dt;
         this.items.forEach((it, i) => {
             it.ry += dt * (i === 0 ? 0.55 : 0.35); const r = it.root; r.rotation.set(0, it.ry, 0);
             if (it.def.ln === 'a') { r.position.y = 2.4 + Math.sin(this.t * 1.6 + i) * 0.18; r.rotation.z = Math.sin(this.t + i) * 0.12; for (const p of it.m.props) { const ax = p.userData.ax; if (ax === 'y' || ax === '-y') p.rotation.y += dt * (ax === 'y' ? 20 : -20); else if (ax === 'x') p.rotation.x += dt * 30; else p.rotation.z += dt * 30; } }
@@ -56,6 +63,6 @@ const Lobby = {
         this.dust.rotation.y += dt * 0.02;
         this.cam.aspect = innerWidth / innerHeight; this.cam.position.set(0, 5.4 + Math.sin(this.t * .3) * .2, 23.5 + (innerWidth / innerHeight < 1.4 ? 7 : 0)); this.cam.lookAt(0, 1.9, 0); this.cam.updateProjectionMatrix();
         renderer.render(this.scene, this.cam);
-        if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} }      // the launcher's loading screen can go
+        gameReady();
     }
 };
