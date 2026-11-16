@@ -90,7 +90,7 @@ function qolDecorate() {
 // The page used to be one tall column of big cards, which stopped working past twenty games. Now: a banner, a shelf
 // per kind of game (each scrolls sideways, so a shelf never gets longer), then every game as a small tile. A tile's
 // description shows when you rest on it (qolPeek). NEW_NOW names what this release added or changed.
-var NEW_NOW = ['Blocky Shooter V2', 'Last Light', 'Sovereign', 'Mayhem Marathon'];
+var NEW_NOW = ['Steel Storm', 'Blocky Shooter V2', 'Sovereign', 'Mayhem Marathon', 'Brown E Clicker', 'Last Light'];
 var FEATURED_PIN = ['Beat Lab'];      // always first in Featured, whatever the release (the owner's ask, 2026-11-16)
 var SHELF_OF = { '3D': 'action', Shooter: 'action', Strategy: 'think', Tycoon: 'think', Sim: 'think', Clicker: 'think', Platformer: 'run', Puzzle: 'run', Arcade: 'run', Party: 'party', Minigame: 'party', Casino: 'party', Sandbox: 'make' };
 var SHELVES = [['fav', '\u2605 Your favourites'], ['new', 'New and updated'], ['mp', 'Play with friends'], ['action', 'Action and shooters'], ['think', 'Strategy, tycoon and idle'], ['run', 'Platformers, puzzles and arcade'], ['party', 'Party games and minigames'], ['make', 'Sandbox and the rest']];
@@ -274,9 +274,9 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r77', items: [
-  ['Beat Lab: learn it step by step', 'New interactive lessons: Simple mode in a minute, then your first beat, a melody, arranging, mixing and sharing in the Studio. Press Learn in Beat Lab. Turn on ? and point at anything to see what it does.'],
-  ['Your song in a game?', 'The best songs players make in Beat Lab may be picked to play in one of our games. Share yours in #music.']
+var WHATSNEW = { id: 'r78', items: [
+  ['Training in every big game', 'New hands-on lessons in Steel Storm, Blocky Shooter, Sovereign, Mayhem Marathon, Brown E Clicker and Last Light. Look for Training (or How to play) in each game. Practice never touches your saves or the leaderboards.'],
+  ['Beat Lab: learn it step by step', 'Press Learn in Beat Lab for lessons, or turn on ? and point at anything. The best songs players make may be picked to play in one of our games.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;
