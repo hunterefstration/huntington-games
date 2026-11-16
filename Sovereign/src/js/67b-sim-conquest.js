@@ -106,6 +106,14 @@ function sovAch() {
     if (G.dominated) o.domination = o.domination || Date.now();
     o.genWins = Math.max(o.genWins || 0, n.genWins || 0);
     if (G.online) o.online = Math.max(o.online || 0, 1);
+    if (G.council && !G.sim) { // 1.4: World Council, global crises, victories, scenarios
+      const st = G.council.stats || {};
+      o.councilPassed = Math.max(o.councilPassed || 0, st.passed || 0);
+      o.crises = Math.max(o.crises || 0, st.crises || 0);
+      o.influence = Math.max(o.influence || 0, Math.round(clamp(Council.influence(n), 0, 100)));
+      o.victories = Math.max(o.victories || 0, Object.keys(G.vic || {}).length);
+      if (G.scenario && G.scenario.id !== 'standard') o.scnYears = Math.max(o.scnYears || 0, Math.floor(Math.max(0, G.day - (G.player.startDay || 0)) / 365));
+    }
     Store.set('hgach', o);
   } catch (e) {}
 }

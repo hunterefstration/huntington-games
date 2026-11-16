@@ -44,6 +44,8 @@ function researchPoints(n) { // per month
   return (1 + n.k.know * 6 + n.k.human * 0.4) * (0.5 + n.dev) * (G.player.traits.includes('scholar') ? 1.3 : 1) * (1 + ((n.lawFx || {}).t || 0) * 0.1 + (n.techFx ? n.techFx.t || 0 : 0))
     + G.treaties.filter(x => x.type === 'tech' && (x.a === n.idx || x.b === n.idx)).length * 1.5;
 }
+// world laws can ban some research (AI Safety Pact, Peaceful Space Treaty) and slow the rest
+function techBanned(id) { return !!(G.council && ((['agi', 'swarm'].includes(id) && Council.lawActive('aisafety')) || (id === 'spaceshield' && Council.lawActive('spacetreaty')))); }
 function techDone(id) { return G.tech.done.includes(id); }
 function techAvailable(t) { return !techDone(t.id) && t.needs.every(techDone); }
 function applyTech(n) {
@@ -55,9 +57,9 @@ function applyTech(n) {
 }
 function techMonth() {
   const n = G.nations[G.player.idx], T0 = G.tech;
-  if (!T0.current || techDone(T0.current)) T0.current = (TECHS.find(techAvailable) || {}).id || null;
+  if (!T0.current || techDone(T0.current)) T0.current = (TECHS.find(t => techAvailable(t) && !techBanned(t.id)) || {}).id || null;
   if (!T0.current) return;
-  T0.progress += researchPoints(n) + (n.techLv || 0) * 0.02;
+  T0.progress += (researchPoints(n) + (n.techLv || 0) * 0.02) * (G.council && Council.lawActive('aisafety') ? 0.9 : 1);
   const t = TECHS.find(x => x.id === T0.current);
   if (T0.progress >= t.cost) {
     T0.progress -= t.cost; T0.done.push(t.id); T0.current = null;

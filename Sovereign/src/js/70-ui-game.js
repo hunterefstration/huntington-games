@@ -64,7 +64,7 @@ const Game = {
     Tutorial.start();
   },
   renderNav() {
-    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['election', '🗳', 'Elections'], ['news', '📰', 'News'], ['diplomacy', '🤝', 'Diplomacy'], ['military', '⚔', 'Military'], ['technology', '🔬', 'Technology'], ['world', '🌍', 'World'], ['goals', '🏆', 'Goals'], ['inbox', '✉', 'Inbox'], ['help', '?', 'Help']];
+    const items = [['overview', '◉', 'Overview'], ['economy', '📈', 'Economy'], ['budget', '⚖', 'Budget'], ['money', '💰', 'Money & Debt'], ['laws', '📜', 'Laws'], ['parliament', '🏛', 'Parliament'], ['cabinet', '👥', 'Cabinet'], ['projects', '🏗', 'Projects'], ['people', '🗣', 'People'], ['election', '🗳', 'Elections'], ['news', '📰', 'News'], ['diplomacy', '🤝', 'Diplomacy'], ['council', '🕊', 'Council'], ['military', '⚔', 'Military'], ['technology', '🔬', 'Technology'], ['world', '🌍', 'World'], ['goals', '🏆', 'Goals'], ['inbox', '✉', 'Inbox'], ['help', '?', 'Help']];
     $('#nav').innerHTML = items.map(([id, ic, name]) => `<button data-panel="${id}"><i>${ic}</i>${name}</button>`).join('');
   },
   renderSpeeds() { $('#speeds').innerHTML = [1, 2, 3, 4, 5].map(s => `<button data-speed="${s}" title="Speed ${s} (${s})"></button>`).join(''); },

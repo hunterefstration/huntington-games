@@ -236,7 +236,7 @@ function fxSummary(fx, n) {
   const t = [], gl = gdpUsd(n);
   if (fx.a) t.push(['Approval', fx.a]); if (fx.s) t.push(['Stability', fx.s]); if (fx.g) t.push(['Growth', fx.g, '%']); if (fx.i) t.push(['Inflation', -fx.i, '%', true]);
   if (fx.$) t.push(['Cost', -fx.$, '', false, '$' + fmtBig(Math.abs(fx.$) / 100 * gl)]); if (fx.pc) t.push(['Capital', fx.pc]); if (fx.r) t.push(['Relations', fx.r]); if (fx.x) t.push(['Prestige', fx.x]);
-  if (fx.f) t.push(['Freedom', fx.f]); if (fx.abroad) t.push(['World opinion', fx.abroad]);
+  if (fx.f) t.push(['Freedom', fx.f]); if (fx.inf) t.push(['Council influence', fx.inf]); if (fx.abroad) t.push(['World opinion', fx.abroad]);
   return t.map(([k, v, u, inv, txt]) => `<span class="${v > 0 ? 'up' : 'down'}">${k} ${txt ? (v > 0 ? '+' : '-') + txt : (inv ? (v > 0 ? '-' : '+') + Math.abs(v) : (v > 0 ? '+' : '') + v) + (u || '')}</span>`).join(' · ')
     + (fx.grp ? ' · ' + Object.entries(fx.grp).map(([g, v]) => `<span class="${v > 0 ? 'up' : 'down'}">${GROUPS[G_IDX[g]].icon}${v > 0 ? '+' : ''}${v}</span>`).join(' ') : '');
 }
@@ -265,6 +265,8 @@ function applyEventFx(n, fx, ev, ctx, label) {
   if (fx.mobilize) War.mobilize(true);
   if (fx.worldAid) { for (const m of G.nations) if (m && m.idx !== n.idx && relation(m.idx, n.idx) > 20) addRel(n.idx, m.idx, 2); n.debt -= 0.001 * gl; }
   if (fx.debtTrap) n.debtTrap = ctx.rival;
+  if (fx.inf && G.council) Council.stand(fx.inf);
+  if (typeof fx.fn === 'function') fx.fn(n, ctx);
   if (fx.referendum) { if (G.rng() < 0.35) { const lost = 0.06; n.real *= 1 - lost; n.pop *= 1 - lost; react(n, { title: 'Region votes to leave', stance: { military: -5 }, size: 2, mood: -0.8 }); } else react(n, { title: 'Region votes to stay', stance: {}, size: 1, mood: 0.4 }); }
   react(n, { title: fillText(ev.title, ctx) + ': ' + label, stance: fx.grp || {}, size: 0.9, abroad: fx.abroad || 0, mood: ((fx.a || 0) > 0 ? 0.15 : (fx.a || 0) < 0 ? -0.15 : 0), city: ctx.city, topic: ev.id });
   if (ev.crowd) addCrowd(n, ctx.city, 'protest', GROUPS[G_IDX[ev.crowd]], 5, ev.title);

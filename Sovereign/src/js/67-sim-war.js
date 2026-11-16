@@ -181,7 +181,7 @@ function annex(w, att, def) {
   newsWorld(World.countries[att].name + ' annexes ' + taken.length + ' cities from ' + World.countries[def].name);
 }
 function aiWars() {
-  if (G.rng() > 0.25) return;
+  if (G.rng() > (G.council && Council.lawActive('armscap') ? 0.15 : 0.25)) return; // the World Council's Arms Control Treaty calms the world
   const cands = [];
   for (const n of G.nations) {
     if (!n || isHuman(n.idx) || n.atWar || n.owner != null) continue;

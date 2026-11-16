@@ -96,6 +96,8 @@ input { font: inherit; color: var(--text); }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button { background: transparent; border: 0; padding: 6px 10px; font-size: 13px; color: var(--dim); }
 .seg button.on { background: var(--gold); color: #1b1407; }
+.seg.scn { flex-wrap: wrap; border: 0; gap: 4px; overflow: visible; }
+.seg.scn button { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; }
 .credits p { margin: 0 0 10px; color: var(--dim); }
 .credits b { color: var(--text); }
 .credits .hg { text-align: center; font-family: var(--title); font-size: 18px; color: var(--gold2); margin: 4px 0 16px; }
