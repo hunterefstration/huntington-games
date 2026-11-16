@@ -849,7 +849,7 @@ var GAMES = [
   { dir: 'Mayhem Marathon', name: 'Mayhem Marathon', img: 'mayhem', tags: ['New', '3D', 'Multiplayer', 'Party'], desc: "NEW: a knockout party game for up to 16. Race over spinning bars, swinging hammers and vanishing floors, survive the arenas, and be the last one standing to take the crown. 14 rounds, picked at random every show. Play with friends on a 6-digit code, or against bots." },
   { dir: 'Blocky Shooter V2', name: 'Blocky Shooter 5.4', img: 'blocky', tags: ['New', '3D', 'Shooter', 'Multiplayer'], desc: 'NEW 5.4 CLASS REWORK: 8 classes (new: Heavy, Demolitions, Marksman, Scout), and every class now levels up for good, to level 30. Spend skill points on a 15-node tree and pick specialisations that change your ability, all from the new Classes screen in the menu (no more buying class upgrades mid-run). Your old progress gives every class a head start. PvP stays fair: everyone plays at the same baseline. Also in 5.3: 7 multiplayer modes, bots, and the Tournament Arena.' },
   { dir: 'Sovereign', name: 'Sovereign 1.3', img: 'sovereign', tags: ['New', '3D', 'Strategy', 'Multiplayer'], desc: 'NEW 1.3: play ONLINE with 2-6 friends as rival world leaders in the same world (wars between players, ceasefires, a leaders board and chat). Simulator mode: watch the AI run the world and take over any country, on either side of any war, at any moment. General War: lead a battle yourself as a general with your own unit. Annex a beaten country (costs political capital) or half-annex it for free. The late-game NaN bug is fixed and your political capital is in the top bar.' },
-  { dir: 'Last Light', name: "Last Light 1.4", img: 'lastlight', tags: ['New', 'Platformer', 'Multiplayer'], desc: "NEW 1.4: the final boss fights back. The Gloom has six new attacks (a sweeping beam, an orb ring with a gap, a charge, shadow rain, a double slam, and a golden orb you can dash back at it), and stomping any boss no longer hurts you afterwards. Also: flawless clears with their own leaderboard, 3 save slots, 41 levels and co-op." },
+  { dir: 'Last Light', name: "Last Light 1.5", img: 'lastlight', tags: ['New', 'Platformer', 'Multiplayer'], desc: "NEW 1.5: Frostveil, a whole new world past The Gloom. Eleven lights never came home: glide over ice, snow geysers and bottomless drops to find them, meet the people on the peaks, and free Hoarfrost the snow owl. The new glide works in every level, Trials put every level against the clock (Bronze to Lumen medals, with a ghost of your best run), pick the colour of your light, and find a secret level. Your saves carry over." },
   { dir: 'Tower Defense 2.0', name: 'Tower Defense 3.0', img: 'td', tags: ['New', 'Strategy'], desc: 'NEW 3.0: pick one of 6 heroes with 2 abilities each, 18 new towers including a whole Alien tab, 7 alien enemies and the Mothership boss. 12 new maps with terrain and stars, boss waves every 10, a Daily Challenge, and a Map Editor with share codes. Still two modes: Tower Mode or Troop Mode, 1900 to the future.' },
   { dir: 'Frontline', chatShift: true, name: 'Frontline: Command 3.1', img: 'frontline', tags: ['New', '3D', 'Multiplayer'], desc: 'NEW 3.1: Resource Farms that grow money (more the longer they stand), and every side now gets 5 Upgrades per battle, so pick them well. 3.0: a second faction, the Iron Legion - 24 units with shields, their own upgrades and AI commander Kael (pick your side online too). 5 new maps, including 2 coastal ones with a Shipyard, Gunboats, Landing Craft and Destroyers. Night battles with rain, fog or snow, and a General perk tree with 18 perks. Plus new achievements and a Field Guide. Still here: Endless War, the 7-battle Campaign and online battles with a 6-digit code.' },
   { dir: 'Imposter', name: 'Imposter: Shades in the Lighthouse', img: 'imposter', tags: ['New', 'Multiplayer', 'Party'], desc: "NEW: one or more Shades hide among the lighthouse keepers. Do your chores, ring the bell, call a gathering and vote them into the fog before the lights go out. Up to 10 players with a 6-digit code (bots fill the empty seats), or play alone against 9 bots, on two maps." },
@@ -2576,16 +2576,21 @@ var LB_FEED = [
   ['blocky:classes', function () { var l = feedRd('blocky21_life') || {}; return [Math.min(240, feedNum(l.clsTotal)), null]; }],      // (5.4: the sum of the 8 class levels)
   ['elementlab:ch', function () { var d = feedRd('elementlab_challenges') || {}; return [Object.keys(d).length]; }],
   ['imposter:wins', function () { var s = feedRd('imposter_save') || {}, st = s.stats || s; return [feedNum(st.wins) || (feedNum(st.crewWins) + feedNum(st.impWins))]; }],
-  // Last Light: every level's best time, and the full game = all of them added up (only once all 17 are done)
+  // Last Light: every level's best time, and the full game = the 41 levels of the main game added up (only once all are done).
+  // 1.5: Frostveil (6-1..6-11, after The Gloom) has its own level boards but stays out of the full game, One Life and
+  // flawless (those keep meaning the main game); trial medals are one more board (bronze 1, silver 2, gold 3, Lumen 4).
   ['lumi:*', function () {
-    var lv = (feedRd('lumi_save') || {}).levels || {}, out = [], ids = [], sum = 0;
+    var lr = feedRd('lumi_save') || {}, lv = lr.levels || {}, out = [], ids = [], sum = 0, done = 0;
     for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) ids.push(w + '-' + n); ids.push('5-1');      // (Last Light 1.2: 10 levels a world)
-    ids.forEach(function (id) { var b = lv[id] && feedNum(lv[id].best); if (b > 0) { out.push(['lumi:lv' + id, b]); sum += b; } });
-    if (out.length === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 41 }]);
-    var lr = feedRd('lumi_save') || {};
+    ids.forEach(function (id) { var b = lv[id] && feedNum(lv[id].best); if (b > 0) { out.push(['lumi:lv' + id, b]); sum += b; done++; } });
+    if (done === ids.length) out.push(['lumi:full', +sum.toFixed(2), { levels: 41 }]);
+    for (var f = 1; f <= 11; f++) { var fb = lv['6-' + f] && feedNum(lv['6-' + f].best); if (fb > 0) out.push(['lumi:lv6-' + f, fb]); }
     if (lr.runs && feedNum(lr.runs.onelife) > 0) out.push(['lumi:onelife', feedNum(lr.runs.onelife)]);
-    var fl = 0; for (var k in lv) if (lv[k] && lv[k].perfect === true) fl++;
+    var fl = 0; ids.forEach(function (id) { if (lv[id] && lv[id].perfect === true) fl++; });
     if (fl > 0) out.push(['lumi:flawless', Math.min(fl, 41), { of: 41 }]);
+    var tr = lr.trials && typeof lr.trials === 'object' ? lr.trials : {}, pts = 0, gold = 0;
+    for (var tk in tr) { var m = Math.min(4, Math.max(0, Math.floor(feedNum(tr[tk] && tr[tk].m)))); pts += m; if (m >= 3) gold++; }
+    if (pts > 0) out.push(['lumi:medals', Math.min(pts, 208), { gold: gold }]);
     return out;
   }]
 ];
@@ -3915,8 +3920,8 @@ document.addEventListener('change', function (e) {
 // account's saves: only ever RAISING a number, never lowering one, and the server keeps whatever it replaces ('~pre:').
 // What the boards do not say cannot come back: which Last Light levels were flawless, stars on the others, the exact
 // Brown E Clicker run (its heavenly chips come back as at least what one run of the lifetime total would give).
-var RB_LUMI = (function () { var a = []; for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) a.push(w + '-' + n); a.push('5-1'); return a; })();
-var RB_GIVES = { '1-10': 'double', '2-10': 'wall', '3-10': 'dash' };
+var RB_LUMI = (function () { var a = []; for (var w = 1; w <= 4; w++) for (var n = 1; n <= 10; n++) a.push(w + '-' + n); a.push('5-1'); for (var f = 1; f <= 11; f++) a.push('6-' + f); return a; })();      // (1.5: + Frostveil)
+var RB_GIVES = { '1-10': 'double', '2-10': 'wall', '3-10': 'dash', '6-1': 'glide' };
 function rbJ(v) { try { var o = JSON.parse(v); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } }
 function rbN(v) { v = Number(v); return isFinite(v) ? v : 0; }
 function rbMax(o, k, v) { if (!(v > 0)) return false; if (!(rbN(o[k]) >= v)) { o[k] = v; return true; } return false; }
@@ -3943,10 +3948,10 @@ function rbBuild(boards, cur, ach) {
       if (!(rbN(r.clears) >= 1)) { r.clears = 1; ch = true; }
       if (RB_GIVES[id] && !ab[RB_GIVES[id]]) { ab[RB_GIVES[id]] = true; ch = true; }
     });
-    var fl = B['lumi:flawless'] ? rbN(B['lumi:flawless'].s) : 0;
-    if (fl > 0 && fl >= lumi.length) lumi.forEach(function (id) { var r = lv[id]; if (!r.perfect) { r.perfect = true; r.flawless = true; r.moths = [true, true, true]; ch = true; } });   // every finished level was flawless: so all of them
+    var fl = B['lumi:flawless'] ? rbN(B['lumi:flawless'].s) : 0, main = lumi.filter(function (id) { return !/^6-/.test(id); });      // (flawless counts the main game)
+    if (fl > 0 && fl >= main.length) main.forEach(function (id) { var r = lv[id]; if (!r.perfect) { r.perfect = true; r.flawless = true; r.moths = [true, true, true]; ch = true; } });   // every finished level was flawless: so all of them
     if (B['lumi:onelife']) { var ru = rbObj(o, 'runs'); if (rbMax(ru, 'onelife', rbN(B['lumi:onelife'].s))) ch = true; }
-    if (ch) notes.push('Last Light: ' + lumi.length + ' finished levels with their best times' + (fl > 0 && fl < lumi.length ? ' (which ' + fl + ' were flawless is not known)' : ''));
+    if (ch) notes.push('Last Light: ' + lumi.length + ' finished levels with their best times' + (fl > 0 && fl < main.length ? ' (which ' + fl + ' were flawless is not known)' : ''));
     return ch;
   });
   // Blocky Shooter: XP over every prestige (49 ranks of 600 + 200r), kills, best waves

@@ -62,7 +62,7 @@ async function createAccount(page, name) {
   await page.click('#gate #gl-fin');
   return key;
 }
-const LV = []; for (let w = 1; w <= 2; w++) for (let n = 1; n <= 10; n++) LV.push(w + '-' + n); LV.push('3-1', '3-2');      // 22 levels done, both first guardians
+const LV = []; for (let w = 1; w <= 2; w++) for (let n = 1; n <= 10; n++) LV.push(w + '-' + n); LV.push('3-1', '3-2', '6-1', '6-2');      // 24 levels done, both first guardians, and (1.5) two in Frostveil
 try {
   const D = await device(await browser.newContext({ viewport: { width: 1280, height: 900 } }));
   await createAccount(D, 'RebBoss'); await until(async () => (await status(D)) === 'online', 60000);
@@ -108,6 +108,7 @@ try {
   const got = await U.evaluate(() => ({ lumi: JSON.parse(localStorage.getItem('lumi_save')), bl: JSON.parse(localStorage.getItem('blocky21_life')), cl: JSON.parse(localStorage.getItem('brownEClickerSave')), sp: JSON.parse(localStorage.getItem('spikes100_progress')), ach: JSON.parse(localStorage.getItem('hgach:v1') || '{}') }));
   check('Last Light: every level finished, with its best time', LV.every((id, i) => got.lumi.levels[id] && got.lumi.levels[id].clears >= 1 && got.lumi.levels[id].best === 20 + i), JSON.stringify(got.lumi.levels['2-10']));
   check('...the two guardians\' abilities, and the one-life best', got.lumi.abilities.double && got.lumi.abilities.wall && !got.lumi.abilities.dash && got.lumi.runs && got.lumi.runs.onelife === 7);
+  check('...and Frostveil\'s glide (6-1 has a time)', got.lumi.abilities.glide === true, JSON.stringify(got.lumi.abilities));
   check('Blocky: prestige, XP and kills', got.bl.prestige === 2 && got.bl.xp === 5000 && got.bl.kills === 4321 && got.bl.best.classic === 31, JSON.stringify(got.bl));
   check('Brown E Clicker: Brown E\'s made, ascensions, and heavenly chips worth one run of the lifetime total', got.cl.life.earned === 8e20 && got.cl.meta.ascensions === 12 && got.cl.meta.chipsTotal === Math.floor(Math.cbrt(8e20 / 1e9)), JSON.stringify(got.cl.meta));
   check('Spikes: levels unlocked', got.sp.unlocked === 64 && got.sp.bestOneLife === 12);
