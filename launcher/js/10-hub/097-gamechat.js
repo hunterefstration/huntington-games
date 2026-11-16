@@ -44,7 +44,9 @@ function gcPaint() {
 function gcColor(k) { var h = 0; for (var i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 360; return 'hsl(' + h + ',85%,72%)'; }
 function gcLine(l) { l.at = Date.now(); GC.lines.push(l); if (GC.lines.length > 60) GC.lines.shift(); gcPaint(); setTimeout(gcPaint, 9200); setTimeout(gcPaint, 7100); }
 function gcOpen() {
-  var L = window.HGGrapevine; if (!L || !L.me || !L.me() || !GC.room) return false;
+  var L = window.HGGrapevine; if (!L || !L.me || !L.me()) return false;
+  if (!GC.room) gcSync();      // (T pressed the moment the game opened: pick the room now)
+  if (!GC.room) return false;
   gcEl(); GC.open = true; gcPaint();
   try { var fd = frame.contentDocument; if (fd && fd.exitPointerLock) fd.exitPointerLock(); } catch (e) {}
   setTimeout(function () { GC.inp.focus(); }, 0);

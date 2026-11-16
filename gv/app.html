@@ -8508,8 +8508,9 @@ window.GVEmbed = {
   ready(){ return !!(S.joined && !S.guest); },
   convs(){
     const last = c => { let t = 0; for (const m of msgsOf(c.id).values()) if (m.ts > t) t = m.ts; return t; };
-    return [...S.convs.values()].filter(c => !c.local && !c.frozen).map(c => ({ id:c.id, title:convTitle(c), kind:c.kind, unread:c.unread || 0, t:last(c) }))
-      .sort((a, b) => (b.t - a.t) || a.title.localeCompare(b.title));
+    // (#announcements is read-only for players: not offered; with no recent activity, #main comes first)
+    return [...S.convs.values()].filter(c => !c.local && !c.frozen && !(c.id === 'announcements' && !S.isAdmin)).map(c => ({ id:c.id, title:convTitle(c), kind:c.kind, unread:c.unread || 0, t:last(c) }))
+      .sort((a, b) => (b.t - a.t) || ((b.id === MAIN) - (a.id === MAIN)) || a.title.localeCompare(b.title));
   },
   msgs(id, n){
     return [...msgsOf(id).values()].filter(m => m.kind !== 'system').sort((a, b) => a.ts - b.ts).slice(-(n || 30))

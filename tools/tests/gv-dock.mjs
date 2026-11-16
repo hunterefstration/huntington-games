@@ -81,7 +81,10 @@ try {
   await A.press('#dk-in', 'Escape');
   check('Esc closes it and the game gets its full width back', !!(await until(() => A.evaluate(w => !document.getElementById('chatdock').classList.contains('on') && document.getElementById('frame').getBoundingClientRect().width >= w - 2, w0), 5000)));
   await A.evaluate(() => frame.contentDocument.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true })));
-  check('T in the game opens the dock (not a box inside the game)', !!(await until(() => A.evaluate(() => document.getElementById('chatdock').classList.contains('on')), 5000)) && !(await A.evaluate(() => !!frame.contentDocument.getElementById('hgc-box'))));
+  // (2026-11-16: T opens the game chat over the game; Tab there opens your chats in the dock)
+  check('T in the game opens the game chat over it', !!(await until(() => A.evaluate(() => document.getElementById('gchat').classList.contains('open')), 5000)));
+  await A.press('#gchat input', 'Tab');
+  check('...and Tab opens the dock (not a box inside the game)', !!(await until(() => A.evaluate(() => document.getElementById('chatdock').classList.contains('on')), 5000)) && !(await A.evaluate(() => !!frame.contentDocument.getElementById('hgc-box'))));
 } catch (e) { console.log('ERROR', e.stack || e); failures++; }
 await browser.close();
 console.log(failures ? `\n${failures} FAILED` : '\nALL PASSED');

@@ -126,8 +126,10 @@ try {
   await A.evaluate(() => document.getElementById('frame').contentWindow.focus());
   await A.evaluate(() => { const w = document.getElementById('frame').contentWindow; w.__keys = []; w.addEventListener('keydown', e => w.__keys.push(e.key), true); });
   await A.keyboard.press('t');
+  await until(() => A.evaluate(() => document.getElementById('gchat').classList.contains('open')), 8000);
+  await A.keyboard.press('Tab');      // (2026-11-16: T opens the game chat over the game; Tab there opens your chats in the dock)
   const dockOn = () => A.evaluate(() => document.getElementById('chatdock').classList.contains('on'));
-  check('pressing T opens the chat dock beside the game', !!(await until(dockOn, 8000)));
+  check('pressing T then Tab opens the chat dock beside the game', !!(await until(dockOn, 8000)));
   check('...and the typed t did not land in the box', await A.evaluate(() => document.getElementById('dk-in').value === ''));
   check('...it lists the conversation and its messages', !!(await until(() => A.evaluate(() => /toast test hello/.test(document.getElementById('dk-ls').textContent)), 10000)));
   await A.keyboard.type('sent from inside tetris'); await A.keyboard.press('Enter');
@@ -136,7 +138,7 @@ try {
   await A.keyboard.press('Escape'); await A.waitForTimeout(300);
   check('Escape closes it', !(await dockOn()));
   // a live message while the box is open appears in it, without a pop-up for that conversation
-  await A.keyboard.press('t');
+  await A.keyboard.press('t'); await A.waitForTimeout(200); await A.keyboard.press('Tab');
   await say(appB, 'live line');
   check('a message that arrives while the window is open shows up in it', !!(await until(() => A.evaluate(() => /live line/.test(document.getElementById('dk-ls').textContent)), 20000)));
   await A.keyboard.press('Escape');

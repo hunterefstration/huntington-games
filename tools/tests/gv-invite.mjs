@@ -125,7 +125,7 @@ try {
   await B.evaluate(() => document.getElementById('back').click());
   const tf = await (async () => { await B.evaluate(() => { [...document.querySelectorAll('.game')].find(g => /Tetris Surge/.test(g.textContent)).click(); }); return until(() => B.frames().find(f => /Tetris/.test(f.url())), 60000); })();
   await B.waitForTimeout(1500);
-  await B.evaluate(() => document.getElementById('frame').contentWindow.focus()); await B.keyboard.press('t');
+  await B.evaluate(() => document.getElementById('frame').contentWindow.focus()); await B.keyboard.press('t'); await B.waitForTimeout(300); await B.keyboard.press('Tab');
   check('an invite in the chat dock has a Join button', !!(await until(() => B.evaluate(() => document.getElementById('chatdock').classList.contains('on') && [...document.querySelectorAll('#dk-ls button')].some(b => b.textContent === 'Join')), 15000)));
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
 await browser.close();
