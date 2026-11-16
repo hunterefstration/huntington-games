@@ -55,12 +55,15 @@
     const PPQ = E.PPQ, STEP = E.STEP, tpc = PPQ / s.split, steps = s.bars * s.beats * 4, cols = E.simpleCols(s), rows = E.simpleRows(s);
     // swing: 16ths swing in the engine; with beats split in two the off-beat 8ths are pushed late here instead
     const sw8 = s.swing && s.split === 2, at = c => Math.round(c * tpc) + (sw8 && c % 2 ? 8 : 0), len = c => Math.round(tpc) - (sw8 && c % 2 ? 8 : 0);
-    const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing && s.split === 4 ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(4) });
+    const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing && s.split === 4 ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(3) });
     const inst = E.SIMPLE_INST.find(x => x.id === s.inst), kit = E.SIMPLE_KITS.find(x => x.id === s.kit);
     const melody = E.addChannel(p, inst.p, { n: inst.n, mix: 1 });
     const drums = kit.p.map((pid, i) => E.addChannel(p, pid, { n: E.SIMPLE_LANES[i], mix: 2, vol: i === 2 ? 0.7 : 0.8 }));
     p.mix[1].n = 'Melody'; p.mix[2].n = 'Drums';
-    if (s.echo) { p.mix[1].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 2.4, mix: 0.3 }) }); p.mix[2].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 1.2, mix: 0.12 }) }); }
+    if (s.echo) {                                  // one shared reverb (a send bus) keeps it light on slow computers
+      p.mix[3].n = 'Echo'; p.mix[3].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 2.4, lc: 200, mix: 1 }) });
+      p.mix[1].snd = [3, 0.42]; p.mix[2].snd = [3, 0.14];
+    }
     p.mix[2].fx.push({ t: 'comp', on: 1, p: Object.assign(E.fxDefaults('comp'), { th: -16, ra: 3, mk: 2 }) });
     const pat = p.pat[0]; pat.len = steps; pat.n = 'Song';
     pat.nt[melody.id] = s.mel.filter(([c, r]) => c < cols && r < rows).map(([c, r]) => [at(c), len(c), E.simpleMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);

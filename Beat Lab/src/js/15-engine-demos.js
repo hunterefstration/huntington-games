@@ -45,9 +45,10 @@
       const kick = B.ch('lo-fi-kick', { mix: 1 }), snare = B.ch('lo-fi-snare', { mix: 1 }), hat = B.ch('lo-fi-hat', { mix: 1, vol: 0.7 }), rim = B.ch('lo-fi-rim', { mix: 1, vol: 0.6 });
       const vin = B.ch('lo-fi-vinyl-crackle', { mix: 1, vol: 0.55 }), keys = B.ch('lo-fi-piano', { mix: 2 }), bass = B.ch('upright-bass', { mix: 3 }), mel = B.ch('vibraphone', { mix: 4, vol: 0.62 });
       B.track(1, 'Drums', { vol: 0.7 }); B.fx(1, 'comp', { th: -20, ra: 3, mk: 2 }); B.fx(1, 'filter', { type: 'lowpass', f: 7000, q: 0.8 });
-      B.track(2, 'Keys'); B.fx(2, 'eq', { lo: -6, hi: -3 }); B.fx(2, 'reverb', { size: 2.4, mix: 0.25, damp: 4000 });
+      B.track(2, 'Keys', { snd: [8, 0.4] }); B.fx(2, 'eq', { lo: -6, hi: -3 });
       B.track(3, 'Bass');
-      B.track(4, 'Melody'); B.fx(4, 'delay', { time: '1/8.', fb: 0.35, mix: 0.22, damp: 3000 }); B.fx(4, 'reverb', { size: 3, mix: 0.3 });
+      B.track(4, 'Melody', { snd: [8, 0.5] }); B.fx(4, 'delay', { time: '1/8.', fb: 0.35, mix: 0.22, damp: 3000 });
+      B.track(8, 'Reverb'); B.fx(8, 'reverb', { size: 2.8, damp: 4000, lc: 200, mix: 1 });
       B.fx(0, 'eq', { lo: 1.5, hi: -2 });
       const drums = B.pat('Beat', 2, h => {
         h.steps(kick, 'x.........x.....x......x..x.....'); h.steps(snare, '....x.......x...'); h.steps(hat, 'x-o-x-o-x-o-x-ox'); h.steps(rim, '..............o.....o...........'); h.steps(vin, 'x...............');
@@ -72,8 +73,9 @@
       B.track(1, 'Drums', { vol: 0.72 }); B.fx(1, 'comp', { th: -14, ra: 4, mk: 2 });
       B.track(2, 'Hats'); B.fx(2, 'eq', { lo: -12, hi: 2 });
       B.track(3, '808', { vol: 0.74 }); B.fx(3, 'dist', { mode: 'tube', drive: 0.25, mix: 0.4, out: -2 });
-      B.track(4, 'Bells'); B.fx(4, 'delay', { time: '1/4.', fb: 0.4, mix: 0.25 }); B.fx(4, 'reverb', { size: 2.5, mix: 0.3 });
-      B.track(5, 'Pad'); B.fx(5, 'reverb', { size: 4, mix: 0.4 }); B.fx(5, 'eq', { lo: -10 });
+      B.track(4, 'Bells', { snd: [8, 0.45] }); B.fx(4, 'delay', { time: '1/4.', fb: 0.4, mix: 0.25 });
+      B.track(5, 'Pad', { snd: [8, 0.65] }); B.fx(5, 'eq', { lo: -10 });
+      B.track(8, 'Reverb'); B.fx(8, 'reverb', { size: 3.4, lc: 250, mix: 1 });
       const drums = B.pat('Drums', 2, h => { h.steps(kick, 'x.........x.....x......x..x.....'); h.steps(clap, '........x.......'); h.steps(snare, '........o.......'); });
       const hats = B.pat('Hats', 2, h => {
         for (let s = 0; s < 32; s += 2) if (!(s >= 12 && s < 16) && !(s >= 28)) h.note(hat, s, 1, 60, s % 4 ? 80 : 110);
@@ -99,11 +101,12 @@
       const kick = B.ch('909-kick', { mix: 1 }), snare = B.ch('808-snare', { mix: 2 }), clap = B.ch('808-clap', { mix: 2, vol: 0.6 }), hat = B.ch('909-closed-hat', { mix: 1, vol: 0.65 });
       const tom = B.ch('808-mid-tom', { mix: 2, vol: 0.7 }), bass = B.ch('synthwave-bass', { mix: 3 }), arp = B.ch('juno-keys', { mix: 4, vol: 0.55 }), pad = B.ch('synthwave-pad', { mix: 5, vol: 0.6 }), lead = B.ch('synthwave-lead', { mix: 6, vol: 0.62 });
       B.track(1, 'Kick+Hats'); B.fx(1, 'comp', { th: -16, ra: 4, mk: 2 });
-      B.track(2, 'Snare'); B.fx(2, 'reverb', { size: 1.6, pre: 0.01, mix: 0.4, damp: 7000 });
+      B.track(2, 'Snare', { snd: [8, 0.55] });
       B.track(3, 'Bass'); B.fx(3, 'eq', { lo: 2, mid: -2 });
       B.track(4, 'Arp'); B.fx(4, 'delay', { time: '1/8.', fb: 0.45, mix: 0.3 }); B.fx(4, 'chorus', { rate: 0.6, mix: 0.4 });
-      B.track(5, 'Pad'); B.fx(5, 'chorus', { rate: 0.4, depth: 0.7, mix: 0.5 }); B.fx(5, 'reverb', { size: 4, mix: 0.35 });
-      B.track(6, 'Lead'); B.fx(6, 'delay', { time: '1/4', fb: 0.35, mix: 0.25 }); B.fx(6, 'reverb', { size: 3, mix: 0.3 });
+      B.track(5, 'Pad', { snd: [8, 0.5] }); B.fx(5, 'chorus', { rate: 0.4, depth: 0.7, mix: 0.5 });
+      B.track(6, 'Lead', { snd: [8, 0.45] }); B.fx(6, 'delay', { time: '1/4', fb: 0.35, mix: 0.25 });
+      B.track(8, 'Reverb'); B.fx(8, 'reverb', { size: 3, pre: 0.02, damp: 7000, lc: 200, mix: 1 });
       const roots = [33, 29, 36, 31], chords = [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]];
       const beat = B.pat('Beat', 1, h => { h.steps(kick, 'x.......x.......'); h.steps(snare, '....x.......x...'); h.steps(clap, '....o.......o...'); h.steps(hat, 'x-o-x-o-x-o-x-o-'); });
       const fill = B.pat('Fill', 1, h => { h.steps(kick, 'x.......x.......'); h.steps(snare, '....x.......x.xx'); h.steps(hat, 'x-o-x-o-x-o-....'); h.notes(tom, [[8, 1, 67], [9, 1, 67], [10, 1, 62], [11, 1, 62], [12, 1, 57], [13, 1, 57]]); });
@@ -123,10 +126,11 @@
       const B = build('Sunset House', 124, { key: 5, scale: 'minor' });
       const kick = B.ch('house-kick', { mix: 1 }), clap = B.ch('house-clap', { mix: 2 }), hat = B.ch('house-closed-hat', { mix: 2, vol: 0.6 }), oh = B.ch('house-open-hat', { mix: 2, vol: 0.65 }), shk = B.ch('house-shaker', { mix: 2, vol: 0.5 });
       const bass = B.ch('deep-house-bass', { mix: 3 }), piano = B.ch('grand-piano', { mix: 4, vol: 0.68 }), pad = B.ch('warm-pad', { mix: 5, vol: 0.55 }), stab = B.ch('house-stab', { mix: 4, vol: 0.5 });
-      B.track(1, 'Kick'); B.track(2, 'Tops'); B.fx(2, 'eq', { lo: -8, hi: 1 }); B.fx(2, 'reverb', { size: 1, mix: 0.15 });
+      B.track(1, 'Kick'); B.track(2, 'Tops', { snd: [8, 0.2] }); B.fx(2, 'eq', { lo: -8, hi: 1 });
       B.track(3, 'Bass'); B.fx(3, 'comp', { th: -18, ra: 4, mk: 3 });
-      B.track(4, 'Keys'); B.fx(4, 'eq', { lo: -6, mid: 1 }); B.fx(4, 'reverb', { size: 2, mix: 0.22 });
-      B.track(5, 'Pad'); B.fx(5, 'filter', { type: 'lowpass', f: 2500, q: 2, lr: '1/1', ld: 0.3 }); B.fx(5, 'reverb', { size: 3.5, mix: 0.4 });
+      B.track(4, 'Keys', { snd: [8, 0.35] }); B.fx(4, 'eq', { lo: -6, mid: 1 });
+      B.track(5, 'Pad', { snd: [8, 0.6] }); B.fx(5, 'filter', { type: 'lowpass', f: 2500, q: 2, lr: '1/1', ld: 0.3 });
+      B.track(8, 'Reverb'); B.fx(8, 'reverb', { size: 2.6, lc: 250, mix: 1 });
       B.fx(0, 'comp', { th: -10, ra: 2, at: 0.02, mk: 1 });
       const ch = [[56, 60, 63, 67], [53, 56, 60, 63], [55, 58, 63, 65], [55, 58, 63, 67]], rt = [41, 37, 39, 36];
       const drums = B.pat('Drums', 1, h => { h.steps(kick, 'x...x...x...x...'); h.steps(clap, '....x.......x...'); h.steps(hat, 'o.o.o.o.o.o.o.o.'); h.steps(oh, '..x...x...x...x.'); h.steps(shk, 'xoxoxoxoxoxoxoxo'); });
