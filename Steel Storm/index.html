@@ -2203,21 +2203,25 @@ function smokeDamaged(e, dt) {
 const BOTD = {
     easy: { react: [1.1, 1.8], e0: .075, e1: .03, tau: 4, burst: [.6, 1], cd: [2.4, 3.6], rng: .6, lead: [.3, .6], dmg: .55, turn: .7, skill: [.4, .7] },
     normal: { react: [.6, 1.2], e0: .055, e1: .018, tau: 3.5, burst: [.7, 1.2], cd: [1.8, 2.8], rng: .72, lead: [.5, .8], dmg: .75, turn: .85, skill: [.55, .88] },
-    hard: { react: [.3, .6], e0: .03, e1: .007, tau: 2.5, burst: [.9, 1.5], cd: [.8, 1.4], rng: .88, lead: [.8, 1], dmg: 1, turn: 1, skill: [.75, .95] }
+    hard: { react: [.3, .6], e0: .03, e1: .007, tau: 2.5, burst: [.9, 1.5], cd: [.8, 1.4], rng: .88, lead: [.8, 1], dmg: 1, turn: 1, skill: [.75, .95] },
+    // the menu showcase's hero (87-showcase.js): what a very good player does; never used in a real match
+    elite: { react: [.12, .25], e0: .016, e1: .002, tau: 1.2, burst: [1.2, 2], cd: [.25, .55], rng: 1, lead: [.95, 1], dmg: 1, turn: 1.1, skill: [.96, 1] }
 };
-const aiDiff = () => BOTD[M && M.cfg && M.cfg.diff] || BOTD.normal;
+const aiDiff = e => e && e.ai && e.ai.elite ? BOTD.elite : BOTD[M && M.cfg && M.cfg.diff] || BOTD.normal;
+// a bot with a home area (the showcase) patrols there instead of the whole map
+const aiHomeWp = (e, r) => { const h = e.ai.home; return { x: h.x + rnd(-1, 1) * (r || h.r), z: h.z + rnd(-1, 1) * (r || h.r) }; };
 function aiAcquire(e, t) {      // a new target: wait a human-ish moment before shooting, start with a sloppy aim
-    const a = e.ai, D = aiDiff(); a.tgt = t; a.react = t ? rnd(D.react[0], D.react[1]) : 0; a.track = 0; a.lead = rnd(D.lead[0], D.lead[1]); a.bOn = false; a.bT = 0; a.cdT = rnd(0, .5); a.lostT = 0;
+    const a = e.ai, D = aiDiff(e); a.tgt = t; a.react = t ? rnd(D.react[0], D.react[1]) : 0; a.track = 0; a.lead = rnd(D.lead[0], D.lead[1]); a.bOn = false; a.bT = 0; a.cdT = rnd(0, .5); a.lostT = 0;
 }
 function aiReset(e) { const a = e.ai; a.tgt = null; a.brk = 0; a.react = 0; a.track = 0; a.bOn = false; a.bT = 0; a.cdT = 0; a.rkCd = 0; a.bmCd = 0; a.flee = a.fcd = 0; a.rkN = a.bmN = 0; a.lostT = 0; a.tT = rnd(.1, .5); a.msCd = rnd(2, 5); a.role = Math.random(); }
 function aiErr(e, dt) {         // aim error (radians): shrinks the longer the bot keeps tracking, never reaches zero; drifts, so it is not a fixed offset
-    const a = e.ai, D = aiDiff(); a.track += dt;
+    const a = e.ai, D = aiDiff(e); a.track += dt;
     const k = (D.e1 + (D.e0 - D.e1) * Math.exp(-a.track / D.tau)) * (1.5 - a.skill) * (e.def.ln === 'g' ? 1.7 : e.def.ln === 'n' ? 1.4 : .55);
     a.eT -= dt; if (a.eT <= 0) { a.eT = rnd(.3, .7); a.gy = (Math.random() < .5 ? -1 : 1) * rnd(.4, 1) * k; a.gp = (Math.random() < .5 ? -1 : 1) * rnd(.4, 1) * k; }
     const f = Math.min(1, dt * 5); a.ey += ((a.gy || 0) - a.ey) * f; a.ep += ((a.gp || 0) - a.ep) * f; return k;
 }
 function aiTrigger(e, dt, rl, seen, ready) {     // burst fire: reaction time, then bursts with pauses in between (reloads are still enforced by weaponFire)
-    const a = e.ai, D = aiDiff();
+    const a = e.ai, D = aiDiff(e);
     if (!seen) return false;
     if (a.react > 0) { a.react -= dt; return false; }
     if (a.cdT > 0) { a.cdT -= dt; return false; }
@@ -2227,7 +2231,7 @@ function aiTrigger(e, dt, rl, seen, ready) {     // burst fire: reaction time, t
     return true;
 }
 function aiNew(e) {
-    const SK = aiDiff().skill; e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(SK[0], SK[1]), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.6, 1.2), track: 0, lead: .7, bOn: false, bT: 0, cdT: 0, lostT: 0, rkCd: 0, bmCd: 0, rkN: 0, bmN: 0, flee: 0, fcd: 0, gy: 0, gp: 0, msCd: 3, role: Math.random(), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
+    const SK = aiDiff(e).skill; e.ai = { tgt: null, tT: Math.random() * .5, skill: rnd(SK[0], SK[1]), ey: 0, ep: 0, eT: 0, side: Math.random() < .5 ? -1 : 1, rev: 0, lx: e.x, lz: e.z, sT: 1.5, wp: null, wpT: 0, brk: 0, brkT: 0, turnDir: 1, react: rnd(.6, 1.2), track: 0, lead: .7, bOn: false, bT: 0, cdT: 0, lostT: 0, rkCd: 0, bmCd: 0, rkN: 0, bmN: 0, flee: 0, fcd: 0, gy: 0, gp: 0, msCd: 3, role: Math.random(), pref: [rnd(0, 160), rnd(0, 160), rnd(0, 160)] };
     e.remote = false;
 }
 const d3 = (a, b) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2);
@@ -2272,7 +2276,9 @@ function aiAim(e, c, t, dt, high) {          // turret aim at the target with im
     const a = e.ai, w = e.def.w1;
     aiErr(e, dt);
     const m = e.mdl ? muzzleWorld(e, 0) : e, D = d3(e, t), v = w.v || 200, tt = D / v * a.lead * (high ? 2.2 : 1), py = t.y + (t.def.ln === 'a' ? 0 : 1.2);
-    const b = ballistic(m.x, m.y, m.z, t.x + t.vx * tt, py + t.vy * tt, t.z + t.vz * tt, v, w.g, high);
+    const px = t.x + t.vx * tt, pz = t.z + t.vz * tt; let b = ballistic(m.x, m.y, m.z, px, py + t.vy * tt, pz, v, w.g, high);
+    // 2.2: the lobbed arc only when the gun can elevate that far and the shell lives long enough (up close it used to fly too high and burst in the sky)
+    if (high && (!b.ok || b.pitch > (e.def.el || .5) || Math.hypot(px - m.x, pz - m.z) / (v * Math.cos(b.pitch)) > (w.life || 9) * .92)) b = ballistic(m.x, m.y, m.z, px, py + t.vy * tt, pz, v, w.g, false);
     c.aimYaw = b.yaw + a.ey; c.aimPitch = b.pitch + a.ep * (high ? .4 : 1); a.solOk = b.ok; return D;
 }
 function hasLOS(e, t) {         // is there open air between me and the target (hills and houses block shells)?
@@ -2291,13 +2297,13 @@ function aiObjective(e) {
         if (a.role < .55 && theirs.st !== 'carry') return theirs;
         if (mine.st === 'carry') { const c = EN.get(mine.by); if (c) return c; }
     }
-    if (!a.wp || (a.wpT -= 1 / 30) < 0 || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 20) { a.wp = { x: rnd(-150, 150) + (M && M.mode === 'ffa' ? 0 : e.team ? 60 : -60), z: rnd(-120, 120) }; a.wpT = 25; }
+    if (!a.wp || (a.wpT -= 1 / 30) < 0 || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 20) { if (a.home) { a.wp = aiHomeWp(e); a.wpT = 25; return a.wp; } a.wp = { x: rnd(-150, 150) + (M && M.mode === 'ffa' ? 0 : e.team ? 60 : -60), z: rnd(-120, 120) }; a.wpT = 25; }
     return a.wp;
 }
 function aiSurface(e, dt, c) {
     const a = e.ai, d = e.def, sea = d.ln === 'n', cls = d.cls, t = a.tgt && a.tgt.alive ? a.tgt : null, arty = cls === 'arty';
     c.aimYaw = e.tur; c.aimPitch = 0;
-    const DD = aiDiff(), rng = (sea ? 430 : arty ? 1000 : cls === 'spaa' && t && t.def.ln === 'a' ? 480 : 310) * DD.rng; let los = false, D = 1e9;
+    const DD = aiDiff(e), rng = (sea ? 430 : arty ? 1000 : cls === 'spaa' && t && t.def.ln === 'a' ? 480 : 310) * DD.rng; let los = false, D = 1e9;
     a.losT = (a.losT || 0) - dt; if (t && a.losT <= 0) { a.losT = .3; a.los = hasLOS(e, t); }
     if (t) {
         D = aiAim(e, c, t, dt, arty && !a.los);
@@ -2322,19 +2328,21 @@ function aiSurface(e, dt, c) {
     let gx, gz, spd = 1, hold = false;
     if (arty) {      // artillery hangs back behind its own lines
         const R = battleR(), hx = (e.team === 0 ? -1 : 1) * Math.min(330, R - 80);
-        if (!a.wp || a.wpT-- < 0) { a.wp = { x: hx + rnd(-40, 40), z: rnd(-80, 80) }; a.wpT = 900; }
+        if (!a.wp || a.wpT-- < 0) { a.wp = a.home ? aiHomeWp(e, 30) : { x: hx + rnd(-40, 40), z: rnd(-80, 80) }; a.wpT = 900; }
         gx = a.wp.x; gz = a.wp.z; if (Math.hypot(gx - e.x, gz - e.z) < 25) { spd = 0; hold = true; }
     }
     else if (surf && los && D < (sea ? rng * .85 : Math.min(150 + a.skill * 60, rng * .85))) { hold = true; gx = t.x; gz = t.z; spd = D < (sea ? 150 : 70) ? -.4 : 0; }
     else if (surf && D < 520 && (!M || M.mode !== 'conq' || D < 200 || !los) && !(M && M.mode === 'ctf' && e.carry >= 0)) { gx = t.x; gz = t.z; spd = 1; }
     else if (sea) {
-        if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 70 || (a.wpT -= dt) < 0) { const zs = e.z < 0 ? -1 : 1, R = battleR(); a.wp = { x: rnd(-Math.min(300, R - 100), Math.min(300, R - 100)), z: zs * rnd(470, 560) }; a.wpT = 40; }
+        if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 70 || (a.wpT -= dt) < 0) { if (a.home) { a.wp = aiHomeWp(e); a.wpT = 40; } else { const zs = e.z < 0 ? -1 : 1, R = battleR(); a.wp = { x: rnd(-Math.min(300, R - 100), Math.min(300, R - 100)), z: zs * rnd(470, 560) }; a.wpT = 40; } }
         gx = a.wp.x; gz = a.wp.z;
     } else {
         const tp = aiObjective(e);
         gx = tp.x; gz = tp.z; if (Math.hypot(gx - e.x, gz - e.z) < 24 && tp.name) { spd = 0; hold = true; }
         if (!t) c.aimYaw = Math.atan2(gx - e.x, gz - e.z);
     }
+    // an elite warship turns broadside on to bring every turret to bear, and keeps moving so it is harder to hit
+    if (sea && a.elite && t && !d.sub && D < rng * 1.1) { const ang = Math.atan2(t.x - e.x, t.z - e.z) + a.side * PI / 2 + (D < 200 ? a.side * .5 : D > rng * .8 ? -a.side * .45 : 0); gx = e.x + Math.sin(ang) * 120; gz = e.z + Math.cos(ang) * 120; spd = .75; hold = false; if (!aiPassable(e, gx, gz)) a.side = -a.side; }
     steerTo(e, c, gx, gz, spd);
     if (hold && spd <= 0.01) { c.thr = spd; c.steer = 0; if (spd === 0 && t && !sea && !arty) { a.stT = (a.stT || 0) - dt; if (a.stT <= 0) { a.stT = rnd(1.5, 3); a.strafe = Math.random() < .5 ? -.6 : .6; } c.thr = .3; c.steer = a.strafe || 0; } }
     else if (spd < 0 && !a.rev) { c.thr = spd; c.steer = 0; }
@@ -2346,10 +2354,11 @@ function aiAir(e, dt, c) {
     const a = e.ai, d = e.def, t = a.tgt && a.tgt.alive ? a.tgt : null, w = d.w1, bomber = !!d.w3 && d.w3.k === 'bomb', R = battleR();
     c.thr = 1; c.aimYaw = e.yaw; c.aimPitch = 0;
     const fx = Math.sin(e.yaw) * Math.cos(e.pitch), fy = Math.sin(e.pitch), fz = Math.cos(e.yaw) * Math.cos(e.pitch);
-    if (a.brk > 0) {
+    if (a.ext > 0) { a.ext -= dt; c.aimYaw = e.yaw; c.aimPitch = clamp((150 - e.y) * .01, -.2, .25); }      // an elite bomber flies on after a run, then turns back for a straight one
+    else if (a.brk > 0) {
         a.brk -= dt; c.aimYaw = e.yaw + a.turnDir * .9; c.aimPitch = clamp((160 - e.y) * .012, -.2, .35);
     } else if (t) {
-        const DD = aiDiff(), D = d3(e, t), tt = D / (w.v + e.speed * .6) * (1 - (1 - a.lead) * .35), grd = t.def.ln !== 'a';
+        const DD = aiDiff(e), D = d3(e, t), tt = D / (w.v + e.speed * .6) * (1 - (1 - a.lead) * .35), grd = t.def.ln !== 'a';
         const tx = t.x + t.vx * tt, tz = t.z + t.vz * tt; let ty = t.y + (grd ? (bomber ? 65 : 2) : t.vy * tt);
         const dx = tx - e.x, dy = ty - e.y, dz = tz - e.z, hd = Math.hypot(dx, dz);
         aiErr(e, dt);
@@ -2364,11 +2373,17 @@ function aiAir(e, dt, c) {
         a.rkCd -= dt; a.bmCd -= dt;
         if (d.w2 && d.w2.k === 'missile') { if (!grd && D > 150 && D < 900 && dot > .8 && e.a2 > 0 && a.rkCd <= 0 && a.react <= 0) { c.f2 = true; c.tgt = t.id; a.rkCd = rnd(4, 8); } }
         else if (d.w2 && go && D > 120 && D < rA * 1.2 && e.a2 > 0 && a.rkCd <= 0 && e.t2 <= 0) { c.f2 = true; if (++a.rkN >= 2) { a.rkN = 0; a.rkCd = rnd(4, 7); } }
-        if (bomber && grd && e.a3 > 0 && hd < 110 && a.bmCd <= 0 && a.react <= 0) { const hh = Math.max(10, e.y - t.y), adv = e.speed * Math.sqrt(2 * hh / d.w3.g); if (Math.abs(hd - adv) < 28 && dot > .8 && e.t3 <= 0) { c.f3 = true; if (++a.bmN >= 2) { a.bmN = 0; a.bmCd = rnd(4, 6); } } }
+        if (bomber && grd && e.a3 > 0 && hd < 450 && a.bmCd <= 0 && a.react <= 0) {      // 2.2: release where the bomb will really land (it used to need the target within 110 m, so bots never dropped)
+            const hh = Math.max(10, e.y - t.y), vu = e.speed * Math.sin(e.pitch), tf = (vu + Math.sqrt(vu * vu + 2 * d.w3.g * hh)) / d.w3.g, adv = e.speed * Math.cos(e.pitch) * tf;
+            const bx = t.x + t.vx * tf - e.x, bz = t.z + t.vz * tf - e.z;
+            const bh = Math.hypot(bx, bz);
+            if (Math.abs(bh - adv) < (a.bmN ? 40 : 10) && Math.abs(angDiff(e.yaw, Math.atan2(bx, bz))) < .08 && e.t3 <= 0) { c.f3 = true; if (++a.bmN >= (a.elite ? 1 : 2)) { a.bmN = 0; a.bmCd = a.elite ? 2 : rnd(4, 6); if (a.elite) a.ext = 4.5; } }
+            else if (a.elite && !a.bmN && bh < adv - 30) a.ext = 3.5;      // too close to line up: fly on, come back for a straight run
+        }
         if ((grd && bomber && hd < 45) || (D < 55 && !grd) || (grd && !bomber && D < 90 && e.y - t.y < 40)) { a.brk = rnd(1.1, 2); a.turnDir = Math.random() < .5 ? -1 : 1; a.bmN = 0; }
     } else {
         const dx = (a.wp ? a.wp.x : 0) - e.x, dz = (a.wp ? a.wp.z : 0) - e.z;
-        if (!a.wp || Math.hypot(dx, dz) < 100) a.wp = { x: rnd(-.6, .6) * R, z: rnd(-300, 300) };
+        if (!a.wp || Math.hypot(dx, dz) < 100) a.wp = a.home ? aiHomeWp(e) : { x: rnd(-.6, .6) * R, z: rnd(-300, 300) };
         c.aimYaw = Math.atan2(a.wp.x - e.x, a.wp.z - e.z); c.aimPitch = (100 - e.y) * .004;
     }
     if (d.flares && e.flareT <= 0) for (const p of PR) if (p.k === 'missile' && p.tg === e.id && Math.hypot(p.x - e.x, p.y - e.y, p.z - e.z) < 300) { dropFlares(e); break; }
@@ -2396,8 +2411,9 @@ function aiHeli(e, dt, c) {
         const nose = Math.abs(angDiff(e.yaw, c.bodyYaw)) < .08;
         if (d.w2 && los && nose && D < 380 && D > 90 && e.a2 > 0 && a.rkCd <= 0 && a.react <= 0 && t.def.ln !== 'a') { c.f2 = true; if (++a.rkN >= 3) { a.rkN = 0; a.rkCd = rnd(3, 6); } }
         if (d.w3 && d.w3.k === 'missile' && los && D < 650 && e.a3 > 0 && a.msCd <= 0 && a.react <= 0 && t.def.ln !== 'a') { c.f3 = true; c.tgt = t.id; a.msCd = rnd(4, 7); }
+        if (a.elite && t.def.ln !== 'a') { want = a.msCd < 1.2 || a.bOn ? 30 : 16; c.thr = hd > 420 ? 1 : hd < 240 ? -.5 : c.thr; }      // nap of the earth: low behind cover, pop up to fire
     } else {
-        if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 40) { const tp = M && M.mode === 'conq' ? PTS[Math.floor(Math.random() * 3)] : { x: rnd(-.5, .5) * R, z: rnd(-150, 150) }; a.wp = { x: tp.x + rnd(-60, 60), z: tp.z + rnd(-60, 60) }; }
+        if (!a.wp || Math.hypot(a.wp.x - e.x, a.wp.z - e.z) < 40) { if (a.home) a.wp = aiHomeWp(e); else { const tp = M && M.mode === 'conq' ? PTS[Math.floor(Math.random() * 3)] : { x: rnd(-.5, .5) * R, z: rnd(-150, 150) }; a.wp = { x: tp.x + rnd(-60, 60), z: tp.z + rnd(-60, 60) }; } }
         gx = a.wp.x; gz = a.wp.z; c.bodyYaw = Math.atan2(gx - e.x, gz - e.z); c.aimYaw = c.bodyYaw; c.aimPitch = -.2; c.thr = Math.abs(angDiff(e.yaw, c.bodyYaw)) < .5 ? 1 : .2; c.side = 0;
     }
     // terrain ahead
@@ -2414,7 +2430,7 @@ function aiStep(e, dt) {
         a.tT = .6 + Math.random() * .3; const n = aiPickTarget(e), cur = a.tgt;
         if (n !== cur && !(cur && n && d3(e, cur) < d3(e, n) * 1.4 && d3(e, cur) < 900)) aiAcquire(e, n);      // keep the current target unless a much closer one shows up
     }
-    e.turnK = aiDiff().turn;      // easier bots also bank a little slower
+    e.turnK = aiDiff(e).turn;      // easier bots also bank a little slower
     const c = e.ctl; c.thr = 0; c.steer = 0; c.side = 0; c.up = 0; c.aimYaw = e.tur; c.aimPitch = 0; c.f1 = c.f2 = c.f3 = false; c.tgt = -1; c.bodyYaw = undefined;
     if (e.def.heli) aiHeli(e, dt, c); else if (e.def.ln === 'a') aiAir(e, dt, c); else aiSurface(e, dt, c);
     if (a.mute) c.f1 = c.f2 = c.f3 = false;
