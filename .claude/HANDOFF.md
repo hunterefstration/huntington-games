@@ -2,7 +2,7 @@
 Current state and the facts you need to change things. What each round did and why: `.claude/HISTORY.md` (grep it, do not read it all).
 
 ## Where things stand
-- Live: **r74** (`latest.json` on `main`). r74: Round 10 (section below). r73: Steel Storm performance pass. r72: Steel Storm 2.1, admin powers, nicknames, tags. Every game in the launcher is released.
+- Live: **r75** (`latest.json` on `main`). r75: Blocky 5.5, Last Light 1.5, Sovereign 1.4, Mayhem Marathon 1.1 (below). r74: Round 10 (section below). r73: Steel Storm performance.
 - r70: admin "Rebuild from leaderboards" (`launcher/js/10-hub/098-rebuild.js`, suite `gv-rebuild`). r69: saves never lost (other-tab
   guard, mass-delete guard, server copies, admin lookup/restore, device backups; Saves tab "Look for older saves"; suite `gv-recover`).
 - 2026-11-14 cleanup: launcher `001-util.js` (`hubShown`, `hubWake`, `setHtml`): hub repaint/poll timers skip work while a game is open or
@@ -37,6 +37,14 @@ Current state and the facts you need to change things. What each round did and w
 - **One-time jobs** (grapevine `079-once.js`, `~once`): the BOBERTODAROBERTO rebuild ran from there.
 - Auto-click guards (Brown E Clicker 095, Market Life 090): warn first, near-perfect timing over 40 fast clicks or 16+/s for 6 s.
 - Suites added: `gv-mod`, `gv-social`.
+- **r75 content**: Blocky 5.5 (`07d-maps-55.js`, HUNTED mode, 4 weapons, protocol bump: 5.4 and 5.5 refuse each other; test
+  `tools/tests/blocky-55.mjs`). Last Light 1.5 (Frostveil 6-1..6-11, Glide, Trials with ghosts in `lumighost`; boards `lumi:lv6-*`,
+  `lumi:medals` in grapevine 074; rebuild knows world 6). Sovereign 1.4 (`69b-sim-council.js`, `69c-sim-scenarios.js`, `68f-sim-events5.js`,
+  online protocol 14). Mayhem 1.1 (21 rounds, save v2, protocol 2; test `Mayhem Marathon/tools/test.mjs`, `mp` for two players).
+  Steel Storm 2.2 menus (`82-menu.js`, showcase `87-showcase.js`, test `tools/tests/ss-menus.mjs`).
+- Launchers per account: 4 (grapevine 040); a launcher dropped for too many sessions waits 30-60 s (`gv/core.js` kickedAt), or two
+  would knock each other off forever (each hello ~60 queries).
+- `tools/tests/smoke.mjs` now lets three.js through (the block-all route used to win), so the 3D games really start in smoke.
 
 ## Admin powers, progress editor, nicknames, tags (r72, 2026-11-15)
 - **Powers** (`ADMIN_PERMS` in grapevine `020`): reports, moderate, ban, announce, inspect, peek, rooms, titles, goons,
