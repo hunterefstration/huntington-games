@@ -604,7 +604,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     if (lfo) {
       c.lfo = ctx.createOscillator(); c.lfo.type = lfo.w || 'sine'; c.lfoG = ctx.createGain();
       c.lfo.connect(c.lfoG); c.lfo.start();
-      if (lfo.tgt === 'amp') { c.trem.gain.cancelScheduledValues(0); c.trem.gain.value = 1 - lfo.amt * 0.5; c.trem.gain.__v = undefined; c.lfoG.connect(c.trem.gain); }
+      if (lfo.tgt === 'amp') { c.trem.gain.cancelScheduledValues(0); c.trem.gain.value = 1 - Math.min(1, lfo.amt) * 0.5; c.trem.gain.__v = undefined; c.lfoG.connect(c.trem.gain); }
     }
     c.lfoTgt = lfo ? lfo.tgt : 'off';
   };
@@ -624,7 +624,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const ctx = this.ctx, s = d.s;
     c.data = d; c.s = s;
     const lfo = s.lfo || {};
-    const sig = s.k + '|' + (s.k === 'syn' && s.drive > 0 ? s.drive : 0) + '|' + (s.vowel || '') + '|' + (s.k === 'syn' && lfo.amt > 0 ? lfo.tgt + lfo.w : 'off');
+    const sig = s.k + '|' + (s.k === 'syn' && s.drive > 0 ? s.drive : 0) + '|' + (s.vowel || '') + '|' + (s.k === 'syn' && lfo.amt > 0 ? lfo.tgt + lfo.w + (lfo.tgt === 'amp' ? Math.min(1, lfo.amt).toFixed(2) : '') : 'off');
     if (sig !== c.sig) { this._chainChan(c, s); c.sig = sig; }
     c.muted = !!(d.mute || (anySolo && !d.solo));
     sp(c.vol.gain, c.muted ? 0 : volGain(d.vol), ctx);
@@ -632,7 +632,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     if (c.lfo) {
       const rate = lfo.sync && E.SYNC[lfo.sync] ? (this.proj.bpm / 60) / E.SYNC[lfo.sync] : lfo.r;
       sp(c.lfo.frequency, Math.max(0.01, rate), ctx);
-      const depth = lfo.tgt === 'pitch' ? lfo.amt * 100 : lfo.tgt === 'filter' ? lfo.amt * 2400 : lfo.amt * 0.5;
+      const depth = lfo.tgt === 'pitch' ? lfo.amt * 100 : lfo.tgt === 'filter' ? lfo.amt * 2400 : Math.min(1, lfo.amt) * 0.5;
       sp(c.lfoG.gain, depth, ctx);
     }
     const tr = this.mix[d.mix] || this.mix[0];
@@ -2301,6 +2301,7 @@ const Store = {
     } catch (e) {}
     return out.sort((a, b) => b.t - a.t);
   },
+  count() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(KEY_P)) n++; } } catch (e) {} return n; },
   usage() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('beatlab_')) n += (localStorage.getItem(k) || '').length; } } catch (e) {} return n; },
   load(id) { const v = Store.get(KEY_P + id); if (!v) return null; try { return openProject(JSON.parse(v)); } catch (e) { reportErr(e); return null; } },
   save(p) {
@@ -2312,7 +2313,10 @@ const Store = {
       toast('This project is ' + Math.round(json.length / 1024) + ' KB: it still saves on this computer, but projects over 400 KB do not sync to your account. Export it to keep a copy.', 7000);
     }
     const ok = Store.put(KEY_P + p.id, json);
-    if (ok && !Store.warned.all && Store.usage() > LIMIT_ALL * 0.9) { Store.warned.all = 1; toast('Your Beat Lab projects are close to the 6 MB your account can sync. Export and delete old ones to make room.', 7000); }
+    const now = Date.now(), check = ok && now - (Store.lastCheck || 0) > 30000;          // the storage-wide checks, at most every 30 s
+    if (check) Store.lastCheck = now;
+    if (check && !Store.warned.keys && Store.count() > 300) { Store.warned.keys = 1; toast('You have over 300 Beat Lab projects; your account syncs at most 400 saves in all. Delete ones you no longer need.', 7000); }
+    if (check && !Store.warned.all && Store.usage() > LIMIT_ALL * 0.9) { Store.warned.all = 1; toast('Your Beat Lab projects are close to the 6 MB your account can sync. Export and delete old ones to make room.', 7000); }
     return ok;
   },
   remove(id) { try { localStorage.removeItem(KEY_P + id); } catch (e) {} },
@@ -2484,7 +2488,7 @@ function select(options, value, onChange, cls) {
     s.appendChild(h('option', { value: v }, l));
   }
   s.value = value;
-  s.addEventListener('change', () => onChange(s.value));
+  s.addEventListener('change', () => { onChange(s.value); s.blur(); });
   s.addEventListener('keydown', e => e.stopPropagation());
   return s;
 }
@@ -2564,7 +2568,9 @@ function newSimpleProject(name) { return { id: uid(), name: name || 'My song', m
 
 function simpleToProject(s, name) {
   const tpc = PPQ / s.split, steps = s.bars * s.beats * 4;
-  const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(4) });
+  // swing: 16ths swing in the engine; with beats split in two the off-beat 8ths are pushed late here instead
+  const sw8 = s.swing && s.split === 2, at = c => Math.round(c * tpc) + (sw8 && c % 2 ? 8 : 0);
+  const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing && s.split === 4 ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(4) });
   const inst = SIMPLE_INST.find(x => x.id === s.inst), kit = SIMPLE_KITS.find(x => x.id === s.kit);
   const melody = newChannel(p, inst.p, { n: inst.n, mix: 1 });
   const drums = kit.p.map((pid, i) => newChannel(p, pid, { n: LANES[i], mix: 2, vol: i === 2 ? 0.7 : 0.8 }));
@@ -2572,12 +2578,12 @@ function simpleToProject(s, name) {
   if (s.echo) { p.mix[1].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 2.4, mix: 0.3 }) }); p.mix[2].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 1.2, mix: 0.12 }) }); }
   p.mix[2].fx.push({ t: 'comp', on: 1, p: Object.assign(E.fxDefaults('comp'), { th: -16, ra: 3, mk: 2 }) });
   const pat = p.pat[0]; pat.len = steps; pat.n = 'Song';
-  pat.nt[melody.id] = s.mel.filter(([c, r]) => c < sCols(s) && r < sRows(s)).map(([c, r]) => [Math.round(c * tpc), Math.round(tpc), sMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);
+  pat.nt[melody.id] = s.mel.filter(([c, r]) => c < sCols(s) && r < sRows(s)).map(([c, r]) => [at(c), Math.round(tpc) - (sw8 && c % 2 ? 8 : 0), sMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);
   const stepsOk = Number.isInteger(STEP / tpc) || Number.isInteger(tpc / STEP);
   drums.forEach((ch, lane) => {
     const hits = s.drm.filter(([c, l]) => l === lane && c < sCols(s));
-    if (tpc % STEP === 0 && stepsOk) { const st = pat.st[ch.id] = new Array(steps).fill(0); for (const [c] of hits) st[Math.round(c * tpc / STEP)] = (c * tpc) % PPQ === 0 ? 112 : 96; }
-    else pat.nt[ch.id] = hits.map(([c]) => [Math.round(c * tpc), Math.round(tpc), 60, (c * tpc) % PPQ === 0 ? 112 : 96]).sort((a, b) => a[0] - b[0]);
+    if (tpc % STEP === 0 && stepsOk && !sw8) { const st = pat.st[ch.id] = new Array(steps).fill(0); for (const [c] of hits) st[Math.round(c * tpc / STEP)] = (c * tpc) % PPQ === 0 ? 112 : 96; }
+    else pat.nt[ch.id] = hits.map(([c]) => [at(c), Math.round(tpc) - (sw8 && c % 2 ? 8 : 0), 60, (c * tpc) % PPQ === 0 ? 112 : 96]).sort((a, b) => a[0] - b[0]);
   });
   p.pl.cl = [[pat.id, 0, 0, steps]];
   return p;
@@ -2823,9 +2829,11 @@ function buildStudio() {
   sig.title = 'Time signature';
   const metro = toggleBtn('Metronome', false, v => { A.set.metro = v ? 1 : 0; A.eng.metro = v; Store.saveSet(); }, 'Click on every beat');
   const countIn = toggleBtn('Count-in', true, v => { A.set.countIn = v ? 1 : 0; Store.saveSet(); }, 'One bar of clicks before recording starts');
+  const recQ = select([[0, 'Rec: no snap'], [3, 'Rec: 1/16 beat'], [6, 'Rec: 1/8 beat'], [12, 'Rec: 1/4 beat'], [24, 'Rec: 1/2 beat'], [48, 'Rec: 1 beat'], [8, 'Rec: 1/6 beat'], [16, 'Rec: 1/3 beat']], A.set.recQ, v => { A.set.recQ = +v; Store.saveSet(); }, 'small');
+  recQ.title = 'Recording quantize: recorded notes snap to this grid';
   const swing = knob({ label: 'Swing', min: 0, max: 100, value: 0, def: 0, curve: 'int', small: true, unit: '%', fmt: v => v + '%', undo: 'Change swing', onInput: v => { A.p.swing = v; changed(); } });
   const patSel = h('select', { class: 'sel pat', title: 'Pattern to edit (and to play in Pattern mode)' });
-  patSel.addEventListener('change', () => selectPattern(+patSel.value));
+  patSel.addEventListener('change', () => { selectPattern(+patSel.value); patSel.blur(); });
   patSel.addEventListener('keydown', e => e.stopPropagation());
   const patAdd = h('button', { class: 'btn small', title: 'New pattern', onclick: () => newPattern() }, '+');
   const patMenu = h('button', { class: 'btn small', title: 'Pattern options', onclick: e => patternMenu(e.clientX, e.clientY) }, '⋯');
@@ -2833,7 +2841,7 @@ function buildStudio() {
   const midiB = h('button', { class: 'btn small', title: 'Use a MIDI keyboard', onclick: () => connectMidi() }, 'MIDI');
   const wav = h('button', { class: 'btn small', title: 'Export the song as a WAV file', onclick: () => exportWav() }, 'Export WAV');
   const cpu = h('div', { class: 'cpu', title: 'Notes sounding right now' }, '');
-  const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, swing,
+  const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, recQ, swing,
     h('div', { class: 'grp' }, h('span', { class: 'lab' }, 'Pattern'), patSel, patAdd, patMenu),
     h('div', { class: 'grp' }, h('button', { class: 'btn small', title: 'Undo (Ctrl+Z)', onclick: () => Hist.doUndo() }, 'Undo'), h('button', { class: 'btn small', title: 'Redo (Ctrl+Y)', onclick: () => Hist.doRedo() }, 'Redo')),
     keysT, midiB, wav, cpu);
@@ -2847,7 +2855,7 @@ function buildStudio() {
   const tabs = h('nav', { class: 'tabs' }, TABS.map(([id, n, k]) => h('button', { 'data-t': id, title: n + ' (' + k + ' or Alt+' + (TABS.findIndex(t => t[0] === id) + 1) + ')', onclick: () => showTab(id) }, n)));
   const panes = h('div', { class: 'panes' }, TABS.map(([id]) => h('div', { class: 'pane', id: 'pane-' + id })));
   root.append(bar, h('div', { class: 'st-main' }, browser, h('section', { class: 'st-work' }, tabs, panes)));
-  Object.assign(ST, { modeBtn, play, rec, pos, tempo, sig, metro, countIn, swing, patSel, keysT, cpu, list, search, tabs });
+  Object.assign(ST, { modeBtn, play, rec, pos, tempo, sig, metro, countIn, recQ, swing, patSel, keysT, cpu, list, search, tabs });
   buildRack($('#pane-rack')); buildRoll($('#pane-roll')); buildPlaylist($('#pane-playlist')); buildMixer($('#pane-mixer')); buildSynth($('#pane-synth'));
   fillBrowser('');
 }
@@ -2856,9 +2864,9 @@ function refreshStudio() {
   ST.tempo.set(A.p.bpm); ST.sig.value = A.p.sig.join(','); ST.swing.set(A.p.swing);
   ST.metro.set(A.set.metro); ST.countIn.set(A.set.countIn); ST.keysT.set(A.set.keys);
   $$('button', ST.modeBtn).forEach(b => b.classList.toggle('on', b.dataset.m === A.ui.playMode));
-  const sel = ST.patSel; sel.innerHTML = '';
-  for (const q of A.p.pat) sel.appendChild(h('option', { value: q.id }, q.n));
-  sel.value = A.ui.pat;
+  const sel = ST.patSel, psig = A.p.pat.map(q => q.id + q.n).join('|');
+  if (psig !== ST.psig) { ST.psig = psig; sel.innerHTML = ''; for (const q of A.p.pat) sel.appendChild(h('option', { value: q.id }, q.n)); }
+  sel.value = A.ui.pat; ST.recQ.value = A.set.recQ;
   $$('button', ST.tabs).forEach(b => b.classList.toggle('on', b.dataset.t === A.ui.tab));
   $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + A.ui.tab));
 }
@@ -2875,7 +2883,7 @@ function setPlayMode(m) {
   if (A.playing) { A.eng.setMode(m, A.ui.pat); A.eng.seek(m === 'song' ? A.ui.startTick : 0); }
 }
 function selectPattern(id) {
-  A.ui.pat = id; A.ui.brush = id;
+  A.ui.pat = id; A.ui.brush = id; RL.init = false; RL.sel.clear();
   if (ST.patSel) ST.patSel.value = id;
   if (A.playing && A.ui.playMode === 'pat') A.eng.setMode('pat', id);
   markViews();
@@ -2952,6 +2960,7 @@ function startPlay(countIn) {
   A.eng.audio();
   if (A.p.mode === 'simple') { simpleSync(); A.eng.metro = false; A.eng.play({ mode: 'pat', pat: 1 }); }
   else {
+    if (A.ui.playMode === 'song' && !A.p.pl.cl.length) { setPlayMode('pat'); toast('The playlist is empty, so the pattern plays. Place patterns in the Playlist to build a song.', 3500); }
     A.eng.load(A.p); A.eng.metro = !!A.set.metro;
     A.eng.play({ mode: A.ui.playMode, pat: A.ui.pat, from: A.ui.playMode === 'song' ? A.ui.startTick : 0, countIn: countIn || 0 });
   }
@@ -3217,7 +3226,7 @@ function buildRoll(root) {
   const toolBtns = h('div', { class: 'seg tools' }, [['draw', 'Draw', 'Click to add, drag to move, drag the end to resize, right-click to delete'], ['paint', 'Paint', 'Drag to paint a run of notes'], ['select', 'Select', 'Drag a box to select'], ['erase', 'Erase', 'Click or drag over notes to delete them'], ['chord', 'Chord', 'Click to stamp a whole chord']]
     .map(([id, n, t]) => h('button', { 'data-t': id, title: t, onclick: () => { RL.tool = id; syncRollTools(); } }, n)));
   const chSel = h('select', { class: 'sel', title: 'Channel to edit' });
-  chSel.addEventListener('change', () => { A.ui.ch = +chSel.value; RL.sel.clear(); RL.init = false; markViews(); });
+  chSel.addEventListener('change', () => { chSel.blur(); A.ui.ch = +chSel.value; RL.sel.clear(); RL.init = false; markViews(); });
   chSel.addEventListener('keydown', e => e.stopPropagation());
   const snap = select(SNAPS, RL.snap, v => { RL.snap = v; }, 'small'); snap.title = 'Snap to grid';
   const chord = select(Object.keys(CHORDS), RL.chord, v => { RL.chord = v; RL.tool = 'chord'; syncRollTools(); }, 'small'); chord.title = 'Chord to stamp';
@@ -3557,7 +3566,7 @@ function buildPlaylist(root) {
   const tools = h('div', { class: 'seg tools' }, [['draw', 'Draw', 'Click to place the pattern, drag to move, drag the end to make it longer (it repeats), right-click to delete, shift-drag to copy'], ['select', 'Select', 'Drag a box to select clips']]
     .map(([id, n, t]) => h('button', { 'data-t': id, title: t, onclick: () => { PL.tool = id; syncPlTools(); } }, n)));
   const brush = h('select', { class: 'sel', title: 'Pattern you place with a click' });
-  brush.addEventListener('change', () => { A.ui.brush = +brush.value; });
+  brush.addEventListener('change', () => { A.ui.brush = +brush.value; brush.blur(); });
   brush.addEventListener('keydown', e => e.stopPropagation());
   const snap = select([['bar', 'Bar'], ['beat', 'Beat'], ['step', 'Step']], 'bar', v => { PL.snap = v; }, 'small'); snap.title = 'Snap';
   const loop = toggleBtn('Loop', false, v => Hist.edit('Loop', () => { A.p.loop = v ? (PL.lastLoop || [0, Math.round(E.songTicks(A.p) / STEP)]) : null; }), 'Loop a part of the song (drag in the ruler to set it)');
@@ -3876,7 +3885,7 @@ function buildFxEditor() {
       MX.knobs.push({ refresh: () => { const p = get(); if (p) k.set(p[key]); } });
     }
   }
-  ed.appendChild(h('div', { class: 'fx-title' }, spec.name), box);
+  ed.append(h('div', { class: 'fx-title' }, spec.name), box);
 }
 function mixerMeters() {
   if (++MX.frame % 2) return;
@@ -4106,7 +4115,7 @@ function connectMidi() {
     acc.onstatechange = hook;
     const n = hook();
     toast(n.length ? 'MIDI keyboard ready: ' + n.join(', ') : 'MIDI is on. Plug in a keyboard and it will be used.', 3000);
-  }, () => toast('MIDI was not allowed. The computer keyboard still works as a piano.', 3000));
+  }, () => toast('MIDI is blocked here (the browser or the page Beat Lab runs in did not allow it). The computer keyboard still works as a piano.', 4500));
 }
 function midiMsg(ev) {
   if (!A.p || A.p.mode !== 'studio') return;
@@ -4189,10 +4198,11 @@ async function exportWav(simple) {
       const t0 = performance.now();
       const buf = await E.render(proj, Object.assign({}, opts, { onProgress: f => { $('i', bar).style.width = Math.round(f * 100) + '%'; txt.textContent = 'Rendering... ' + Math.round(f * 100) + '%'; } }));
       const st = E.bufferStats(buf); A.lastRender = st;
-      const wav = E.toWav(buf);
-      download(safeName(A.p.name) + '.wav', new Blob([wav], { type: 'audio/wav' }));
+      const wav = E.toWav(buf), fname = safeName(A.p.name) + '.wav', blob = new Blob([wav], { type: 'audio/wav' });
       closeModal();
-      toast('Saved ' + safeName(A.p.name) + '.wav (' + fmtTime(buf.duration) + ', ' + (wav.byteLength / 1048576).toFixed(1) + ' MB) in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s', 4000);
+      // a click of its own: browsers may refuse a download that comes seconds after the original click
+      modal('Your WAV is ready', h('p', null, fname + ': ' + fmtTime(buf.duration) + ', ' + (wav.byteLength / 1048576).toFixed(1) + ' MB, made in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s.'),
+        [{ t: 'Close' }, { t: 'Download', primary: true, f: () => download(fname, blob) }]);
     } catch (e) { reportErr(e); closeModal(); toast('Export failed: ' + e.message, 5000); }
     A.rendering = false;
     void box;
@@ -4263,6 +4273,7 @@ function setMode(mode) {
   refreshAppBar();
   emit('changed', true);
   queueWarm();
+  if (mode === 'studio' && !A.set.seenStudio) { A.set.seenStudio = 1; Store.saveSet(); setTimeout(() => toast('Welcome to the Studio! Space plays. Click steps in the Channel rack, draw notes in the Piano roll, arrange patterns in the Playlist. Help explains the rest.', 6000), 400); }
 }
 on('changed', () => {
   if (!A.p) return;

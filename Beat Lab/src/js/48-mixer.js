@@ -94,7 +94,7 @@ function buildFxEditor() {
       MX.knobs.push({ refresh: () => { const p = get(); if (p) k.set(p[key]); } });
     }
   }
-  ed.appendChild(h('div', { class: 'fx-title' }, spec.name), box);
+  ed.append(h('div', { class: 'fx-title' }, spec.name), box);
 }
 function mixerMeters() {
   if (++MX.frame % 2) return;

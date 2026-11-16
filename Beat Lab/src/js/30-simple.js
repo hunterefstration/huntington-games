@@ -45,7 +45,9 @@ function newSimpleProject(name) { return { id: uid(), name: name || 'My song', m
 
 function simpleToProject(s, name) {
   const tpc = PPQ / s.split, steps = s.bars * s.beats * 4;
-  const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(4) });
+  // swing: 16ths swing in the engine; with beats split in two the off-beat 8ths are pushed late here instead
+  const sw8 = s.swing && s.split === 2, at = c => Math.round(c * tpc) + (sw8 && c % 2 ? 8 : 0);
+  const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing && s.split === 4 ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(4) });
   const inst = SIMPLE_INST.find(x => x.id === s.inst), kit = SIMPLE_KITS.find(x => x.id === s.kit);
   const melody = newChannel(p, inst.p, { n: inst.n, mix: 1 });
   const drums = kit.p.map((pid, i) => newChannel(p, pid, { n: LANES[i], mix: 2, vol: i === 2 ? 0.7 : 0.8 }));
@@ -53,12 +55,12 @@ function simpleToProject(s, name) {
   if (s.echo) { p.mix[1].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 2.4, mix: 0.3 }) }); p.mix[2].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 1.2, mix: 0.12 }) }); }
   p.mix[2].fx.push({ t: 'comp', on: 1, p: Object.assign(E.fxDefaults('comp'), { th: -16, ra: 3, mk: 2 }) });
   const pat = p.pat[0]; pat.len = steps; pat.n = 'Song';
-  pat.nt[melody.id] = s.mel.filter(([c, r]) => c < sCols(s) && r < sRows(s)).map(([c, r]) => [Math.round(c * tpc), Math.round(tpc), sMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);
+  pat.nt[melody.id] = s.mel.filter(([c, r]) => c < sCols(s) && r < sRows(s)).map(([c, r]) => [at(c), Math.round(tpc) - (sw8 && c % 2 ? 8 : 0), sMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);
   const stepsOk = Number.isInteger(STEP / tpc) || Number.isInteger(tpc / STEP);
   drums.forEach((ch, lane) => {
     const hits = s.drm.filter(([c, l]) => l === lane && c < sCols(s));
-    if (tpc % STEP === 0 && stepsOk) { const st = pat.st[ch.id] = new Array(steps).fill(0); for (const [c] of hits) st[Math.round(c * tpc / STEP)] = (c * tpc) % PPQ === 0 ? 112 : 96; }
-    else pat.nt[ch.id] = hits.map(([c]) => [Math.round(c * tpc), Math.round(tpc), 60, (c * tpc) % PPQ === 0 ? 112 : 96]).sort((a, b) => a[0] - b[0]);
+    if (tpc % STEP === 0 && stepsOk && !sw8) { const st = pat.st[ch.id] = new Array(steps).fill(0); for (const [c] of hits) st[Math.round(c * tpc / STEP)] = (c * tpc) % PPQ === 0 ? 112 : 96; }
+    else pat.nt[ch.id] = hits.map(([c]) => [at(c), Math.round(tpc) - (sw8 && c % 2 ? 8 : 0), 60, (c * tpc) % PPQ === 0 ? 112 : 96]).sort((a, b) => a[0] - b[0]);
   });
   p.pl.cl = [[pat.id, 0, 0, steps]];
   return p;

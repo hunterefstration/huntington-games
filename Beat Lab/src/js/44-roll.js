@@ -8,7 +8,7 @@ function buildRoll(root) {
   const toolBtns = h('div', { class: 'seg tools' }, [['draw', 'Draw', 'Click to add, drag to move, drag the end to resize, right-click to delete'], ['paint', 'Paint', 'Drag to paint a run of notes'], ['select', 'Select', 'Drag a box to select'], ['erase', 'Erase', 'Click or drag over notes to delete them'], ['chord', 'Chord', 'Click to stamp a whole chord']]
     .map(([id, n, t]) => h('button', { 'data-t': id, title: t, onclick: () => { RL.tool = id; syncRollTools(); } }, n)));
   const chSel = h('select', { class: 'sel', title: 'Channel to edit' });
-  chSel.addEventListener('change', () => { A.ui.ch = +chSel.value; RL.sel.clear(); RL.init = false; markViews(); });
+  chSel.addEventListener('change', () => { chSel.blur(); A.ui.ch = +chSel.value; RL.sel.clear(); RL.init = false; markViews(); });
   chSel.addEventListener('keydown', e => e.stopPropagation());
   const snap = select(SNAPS, RL.snap, v => { RL.snap = v; }, 'small'); snap.title = 'Snap to grid';
   const chord = select(Object.keys(CHORDS), RL.chord, v => { RL.chord = v; RL.tool = 'chord'; syncRollTools(); }, 'small'); chord.title = 'Chord to stamp';

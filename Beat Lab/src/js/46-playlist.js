@@ -6,7 +6,7 @@ function buildPlaylist(root) {
   const tools = h('div', { class: 'seg tools' }, [['draw', 'Draw', 'Click to place the pattern, drag to move, drag the end to make it longer (it repeats), right-click to delete, shift-drag to copy'], ['select', 'Select', 'Drag a box to select clips']]
     .map(([id, n, t]) => h('button', { 'data-t': id, title: t, onclick: () => { PL.tool = id; syncPlTools(); } }, n)));
   const brush = h('select', { class: 'sel', title: 'Pattern you place with a click' });
-  brush.addEventListener('change', () => { A.ui.brush = +brush.value; });
+  brush.addEventListener('change', () => { A.ui.brush = +brush.value; brush.blur(); });
   brush.addEventListener('keydown', e => e.stopPropagation());
   const snap = select([['bar', 'Bar'], ['beat', 'Beat'], ['step', 'Step']], 'bar', v => { PL.snap = v; }, 'small'); snap.title = 'Snap';
   const loop = toggleBtn('Loop', false, v => Hist.edit('Loop', () => { A.p.loop = v ? (PL.lastLoop || [0, Math.round(E.songTicks(A.p) / STEP)]) : null; }), 'Loop a part of the song (drag in the ruler to set it)');

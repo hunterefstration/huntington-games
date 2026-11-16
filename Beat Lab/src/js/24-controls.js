@@ -74,7 +74,7 @@ function select(options, value, onChange, cls) {
     s.appendChild(h('option', { value: v }, l));
   }
   s.value = value;
-  s.addEventListener('change', () => onChange(s.value));
+  s.addEventListener('change', () => { onChange(s.value); s.blur(); });
   s.addEventListener('keydown', e => e.stopPropagation());
   return s;
 }

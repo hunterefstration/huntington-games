@@ -71,10 +71,11 @@ async function exportWav(simple) {
       const t0 = performance.now();
       const buf = await E.render(proj, Object.assign({}, opts, { onProgress: f => { $('i', bar).style.width = Math.round(f * 100) + '%'; txt.textContent = 'Rendering... ' + Math.round(f * 100) + '%'; } }));
       const st = E.bufferStats(buf); A.lastRender = st;
-      const wav = E.toWav(buf);
-      download(safeName(A.p.name) + '.wav', new Blob([wav], { type: 'audio/wav' }));
+      const wav = E.toWav(buf), fname = safeName(A.p.name) + '.wav', blob = new Blob([wav], { type: 'audio/wav' });
       closeModal();
-      toast('Saved ' + safeName(A.p.name) + '.wav (' + fmtTime(buf.duration) + ', ' + (wav.byteLength / 1048576).toFixed(1) + ' MB) in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s', 4000);
+      // a click of its own: browsers may refuse a download that comes seconds after the original click
+      modal('Your WAV is ready', h('p', null, fname + ': ' + fmtTime(buf.duration) + ', ' + (wav.byteLength / 1048576).toFixed(1) + ' MB, made in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s.'),
+        [{ t: 'Close' }, { t: 'Download', primary: true, f: () => download(fname, blob) }]);
     } catch (e) { reportErr(e); closeModal(); toast('Export failed: ' + e.message, 5000); }
     A.rendering = false;
     void box;

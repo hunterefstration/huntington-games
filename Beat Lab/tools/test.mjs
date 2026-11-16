@@ -117,6 +117,73 @@ try {
   ok(pb > pa, 'pattern mode plays the edited pattern', { notes: pb - pa });
   if (SHOTS) { await ev(() => window.__beatlab.loadDemo('house')); await ev(() => window.__beatlab.tab('roll')); await ev(() => { const A = window.__beatlab.app; A.ui.pat = 3; A.ui.ch = 7; window.__beatlab.tab('roll'); }); await page.waitForTimeout(400); await page.screenshot({ path: '/tmp/beatlab-studio.png' }); await ev(() => window.__beatlab.newStudio()); }
 
+  // ---- playlist: place a clip, set a loop region in the ruler, play the song
+  await ev(() => window.__beatlab.newStudio());
+  await ev(() => window.__beatlab.tab('playlist'));
+  await page.waitForTimeout(200);
+  const pl = await page.locator('.pl-cv').boundingBox();
+  const c0 = (await ev(() => window.__beatlab.counts())).clips;
+  await page.mouse.click(pl.x + 300, pl.y + 40 * 2 + 20);
+  const c1 = (await ev(() => window.__beatlab.counts())).clips;
+  ok(c1 === c0 + 1, 'playlist: clicking places a pattern clip', { c0, c1 });
+  const ru = await page.locator('.pl-rul').boundingBox();
+  await page.mouse.move(ru.x + 10, ru.y + 12); await page.mouse.down(); await page.mouse.move(ru.x + 150, ru.y + 12, { steps: 5 }); await page.mouse.up();
+  const loop = await ev(() => window.__beatlab.project.loop);
+  ok(Array.isArray(loop) && loop[1] > loop[0], 'playlist: dragging in the ruler sets a loop region', loop);
+  // ---- mixer: add an effect from the UI, the engine builds it
+  await ev(() => window.__beatlab.tab('mixer'));
+  await page.waitForTimeout(200);
+  await page.locator('.mx-strip').nth(1).locator('.slot.add').click();
+  await page.locator('#ctxmenu button', { hasText: 'Reverb' }).click();
+  await page.waitForTimeout(100);
+  const fx = await ev(() => ({ p: window.__beatlab.project.mix[1].fx.map(f => f.t), e: !!(window.__beatlab.engine.mix[1] && window.__beatlab.engine.mix[1].fx[0]) }));
+  ok(fx.p[0] === 'reverb' && fx.e, 'mixer: "+ effect" adds a reverb and the engine builds it', fx);
+  const kn = page.locator('.mx-editor .knob').first().locator('.dial'), kb = await kn.boundingBox();
+  const v0 = await ev(() => window.__beatlab.project.mix[1].fx[0].p.size);
+  await page.mouse.move(kb.x + 10, kb.y + 10); await page.mouse.down(); await page.mouse.move(kb.x + 10, kb.y - 30, { steps: 4 }); await page.mouse.up();
+  const v1 = await ev(() => window.__beatlab.project.mix[1].fx[0].p.size);
+  ok(v1 > v0, 'mixer: dragging an effect knob changes it', { v0, v1 });
+  // ---- instrument editor: a knob edits the sound, undo puts it back, save as user preset
+  await ev(() => { const A = window.__beatlab.app; A.ui.ch = A.p.ch[4].id; window.__beatlab.tab('synth'); });
+  await page.waitForTimeout(200);
+  const cut = page.locator('.sy-card', { hasText: 'Filter' }).locator('.knob', { hasText: 'Cutoff' }).first().locator('.dial'), cb = await cut.boundingBox();
+  const f0 = await ev(() => window.__beatlab.app.p.ch[4].s.f.fc);
+  await page.mouse.move(cb.x + 10, cb.y + 10); await page.mouse.down(); await page.mouse.move(cb.x + 10, cb.y + 60, { steps: 4 }); await page.mouse.up();
+  const f1 = await ev(() => window.__beatlab.app.p.ch[4].s.f.fc);
+  await ev(() => window.__beatlab.undo());
+  const f2 = await ev(() => window.__beatlab.app.p.ch[4].s.f.fc);
+  ok(f1 < f0 && f2 === f0, 'instrument: cutoff knob edits the synth, undo restores it', { f0, f1, f2 });
+  await page.locator('.ptools button', { hasText: 'Save as preset' }).click();
+  await page.locator('.mbox input').fill('My Keys');
+  await page.keyboard.press('Enter');
+  const up = await ev(() => window.__beatlab.Store.userPresets().map(p => p.n));
+  ok(up.includes('My Keys'), 'instrument: Save as preset adds a user preset', up);
+  // ---- browser: + adds a channel with that sound
+  const ch0 = (await ev(() => window.__beatlab.counts())).channels;
+  const item = page.locator('.bitem', { hasText: 'Grand Piano' }).first();
+  await item.hover(); await item.locator('.badd').click();
+  const ch1 = (await ev(() => window.__beatlab.counts())).channels;
+  ok(ch1 === ch0 + 1, 'browser: + adds a channel', { ch0, ch1 });
+  // ---- recording from the computer keyboard (no count-in)
+  await ev(() => { const A = window.__beatlab.app; A.set.countIn = 0; A.ui.ch = A.p.ch[A.p.ch.length - 1].id; window.__beatlab.tab('roll'); });
+  const r0 = (await ev(() => window.__beatlab.counts())).notes;
+  await page.locator('.tbtn.rec').click();
+  await page.waitForTimeout(300);
+  for (const k of ['KeyZ', 'KeyX', 'KeyC']) { await page.keyboard.down(k); await page.waitForTimeout(140); await page.keyboard.up(k); await page.waitForTimeout(60); }
+  await page.keyboard.press('Space');
+  const r1 = await ev(() => ({ notes: window.__beatlab.counts().notes, rec: window.__beatlab.state.rec, undo: window.__beatlab.state.undo }));
+  ok(r1.notes === r0 + 3 && !r1.rec, 'recording: three keys become three notes', { r0, r1 });
+  // ---- export the project file and import it back
+  const dj = page.waitForEvent('download');
+  await page.locator('#appbar button', { hasText: 'Export' }).click();
+  const jf = await (await dj).path();
+  const exported = JSON.parse(fs.readFileSync(jf, 'utf8'));
+  await page.locator('#appbar button', { hasText: 'Projects' }).click();
+  await page.locator('.mbox input[type=file]').setInputFiles(jf);
+  await page.waitForTimeout(300);
+  const imp = await ev(() => ({ id: window.__beatlab.project.id, name: window.__beatlab.project.name, n: window.__beatlab.counts().notes }));
+  ok(exported.name === imp.name && imp.id !== exported.id && imp.n === r1.notes, 'export then import gives the same song as a new project', { name: imp.name, n: imp.n });
+
   // ---- save / load round trip
   await ev(() => window.__beatlab.loadDemo('trap'));
   const id = await ev(() => { window.__beatlab.project.name = 'Round trip'; window.__beatlab.save(); return window.__beatlab.project.id; });
@@ -138,6 +205,7 @@ try {
   await ev(() => { window.__beatlab.app.p.pl.cl = window.__beatlab.app.p.pl.cl.filter(c => c[2] < 64); });
   await page.locator('.st-bar button', { hasText: 'Export WAV' }).click();
   await page.locator('.mbox button', { hasText: 'Export' }).click();
+  await page.locator('.mbox button', { hasText: 'Download' }).click({ timeout: 60000 });
   const d = await dl;
   const f = await d.path(), size = fs.statSync(f).size, head = fs.readFileSync(f).subarray(0, 4).toString();
   ok(head === 'RIFF' && size > 100000, 'Export WAV button downloads a WAV file', { size });

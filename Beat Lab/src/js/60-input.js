@@ -77,7 +77,7 @@ function connectMidi() {
     acc.onstatechange = hook;
     const n = hook();
     toast(n.length ? 'MIDI keyboard ready: ' + n.join(', ') : 'MIDI is on. Plug in a keyboard and it will be used.', 3000);
-  }, () => toast('MIDI was not allowed. The computer keyboard still works as a piano.', 3000));
+  }, () => toast('MIDI is blocked here (the browser or the page Beat Lab runs in did not allow it). The computer keyboard still works as a piano.', 4500));
 }
 function midiMsg(ev) {
   if (!A.p || A.p.mode !== 'studio') return;

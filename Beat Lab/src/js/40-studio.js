@@ -16,9 +16,11 @@ function buildStudio() {
   sig.title = 'Time signature';
   const metro = toggleBtn('Metronome', false, v => { A.set.metro = v ? 1 : 0; A.eng.metro = v; Store.saveSet(); }, 'Click on every beat');
   const countIn = toggleBtn('Count-in', true, v => { A.set.countIn = v ? 1 : 0; Store.saveSet(); }, 'One bar of clicks before recording starts');
+  const recQ = select([[0, 'Rec: no snap'], [3, 'Rec: 1/16 beat'], [6, 'Rec: 1/8 beat'], [12, 'Rec: 1/4 beat'], [24, 'Rec: 1/2 beat'], [48, 'Rec: 1 beat'], [8, 'Rec: 1/6 beat'], [16, 'Rec: 1/3 beat']], A.set.recQ, v => { A.set.recQ = +v; Store.saveSet(); }, 'small');
+  recQ.title = 'Recording quantize: recorded notes snap to this grid';
   const swing = knob({ label: 'Swing', min: 0, max: 100, value: 0, def: 0, curve: 'int', small: true, unit: '%', fmt: v => v + '%', undo: 'Change swing', onInput: v => { A.p.swing = v; changed(); } });
   const patSel = h('select', { class: 'sel pat', title: 'Pattern to edit (and to play in Pattern mode)' });
-  patSel.addEventListener('change', () => selectPattern(+patSel.value));
+  patSel.addEventListener('change', () => { selectPattern(+patSel.value); patSel.blur(); });
   patSel.addEventListener('keydown', e => e.stopPropagation());
   const patAdd = h('button', { class: 'btn small', title: 'New pattern', onclick: () => newPattern() }, '+');
   const patMenu = h('button', { class: 'btn small', title: 'Pattern options', onclick: e => patternMenu(e.clientX, e.clientY) }, '⋯');
@@ -26,7 +28,7 @@ function buildStudio() {
   const midiB = h('button', { class: 'btn small', title: 'Use a MIDI keyboard', onclick: () => connectMidi() }, 'MIDI');
   const wav = h('button', { class: 'btn small', title: 'Export the song as a WAV file', onclick: () => exportWav() }, 'Export WAV');
   const cpu = h('div', { class: 'cpu', title: 'Notes sounding right now' }, '');
-  const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, swing,
+  const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, recQ, swing,
     h('div', { class: 'grp' }, h('span', { class: 'lab' }, 'Pattern'), patSel, patAdd, patMenu),
     h('div', { class: 'grp' }, h('button', { class: 'btn small', title: 'Undo (Ctrl+Z)', onclick: () => Hist.doUndo() }, 'Undo'), h('button', { class: 'btn small', title: 'Redo (Ctrl+Y)', onclick: () => Hist.doRedo() }, 'Redo')),
     keysT, midiB, wav, cpu);
@@ -40,7 +42,7 @@ function buildStudio() {
   const tabs = h('nav', { class: 'tabs' }, TABS.map(([id, n, k]) => h('button', { 'data-t': id, title: n + ' (' + k + ' or Alt+' + (TABS.findIndex(t => t[0] === id) + 1) + ')', onclick: () => showTab(id) }, n)));
   const panes = h('div', { class: 'panes' }, TABS.map(([id]) => h('div', { class: 'pane', id: 'pane-' + id })));
   root.append(bar, h('div', { class: 'st-main' }, browser, h('section', { class: 'st-work' }, tabs, panes)));
-  Object.assign(ST, { modeBtn, play, rec, pos, tempo, sig, metro, countIn, swing, patSel, keysT, cpu, list, search, tabs });
+  Object.assign(ST, { modeBtn, play, rec, pos, tempo, sig, metro, countIn, recQ, swing, patSel, keysT, cpu, list, search, tabs });
   buildRack($('#pane-rack')); buildRoll($('#pane-roll')); buildPlaylist($('#pane-playlist')); buildMixer($('#pane-mixer')); buildSynth($('#pane-synth'));
   fillBrowser('');
 }
@@ -49,9 +51,9 @@ function refreshStudio() {
   ST.tempo.set(A.p.bpm); ST.sig.value = A.p.sig.join(','); ST.swing.set(A.p.swing);
   ST.metro.set(A.set.metro); ST.countIn.set(A.set.countIn); ST.keysT.set(A.set.keys);
   $$('button', ST.modeBtn).forEach(b => b.classList.toggle('on', b.dataset.m === A.ui.playMode));
-  const sel = ST.patSel; sel.innerHTML = '';
-  for (const q of A.p.pat) sel.appendChild(h('option', { value: q.id }, q.n));
-  sel.value = A.ui.pat;
+  const sel = ST.patSel, psig = A.p.pat.map(q => q.id + q.n).join('|');
+  if (psig !== ST.psig) { ST.psig = psig; sel.innerHTML = ''; for (const q of A.p.pat) sel.appendChild(h('option', { value: q.id }, q.n)); }
+  sel.value = A.ui.pat; ST.recQ.value = A.set.recQ;
   $$('button', ST.tabs).forEach(b => b.classList.toggle('on', b.dataset.t === A.ui.tab));
   $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + A.ui.tab));
 }
@@ -68,7 +70,7 @@ function setPlayMode(m) {
   if (A.playing) { A.eng.setMode(m, A.ui.pat); A.eng.seek(m === 'song' ? A.ui.startTick : 0); }
 }
 function selectPattern(id) {
-  A.ui.pat = id; A.ui.brush = id;
+  A.ui.pat = id; A.ui.brush = id; RL.init = false; RL.sel.clear();
   if (ST.patSel) ST.patSel.value = id;
   if (A.playing && A.ui.playMode === 'pat') A.eng.setMode('pat', id);
   markViews();
@@ -145,6 +147,7 @@ function startPlay(countIn) {
   A.eng.audio();
   if (A.p.mode === 'simple') { simpleSync(); A.eng.metro = false; A.eng.play({ mode: 'pat', pat: 1 }); }
   else {
+    if (A.ui.playMode === 'song' && !A.p.pl.cl.length) { setPlayMode('pat'); toast('The playlist is empty, so the pattern plays. Place patterns in the Playlist to build a song.', 3500); }
     A.eng.load(A.p); A.eng.metro = !!A.set.metro;
     A.eng.play({ mode: A.ui.playMode, pat: A.ui.pat, from: A.ui.playMode === 'song' ? A.ui.startTick : 0, countIn: countIn || 0 });
   }

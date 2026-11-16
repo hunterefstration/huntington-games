@@ -39,6 +39,7 @@ function setMode(mode) {
   refreshAppBar();
   emit('changed', true);
   queueWarm();
+  if (mode === 'studio' && !A.set.seenStudio) { A.set.seenStudio = 1; Store.saveSet(); setTimeout(() => toast('Welcome to the Studio! Space plays. Click steps in the Channel rack, draw notes in the Piano roll, arrange patterns in the Playlist. Help explains the rest.', 6000), 400); }
 }
 on('changed', () => {
   if (!A.p) return;

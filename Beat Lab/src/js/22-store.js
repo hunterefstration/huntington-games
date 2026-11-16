@@ -22,6 +22,7 @@ const Store = {
     } catch (e) {}
     return out.sort((a, b) => b.t - a.t);
   },
+  count() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(KEY_P)) n++; } } catch (e) {} return n; },
   usage() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('beatlab_')) n += (localStorage.getItem(k) || '').length; } } catch (e) {} return n; },
   load(id) { const v = Store.get(KEY_P + id); if (!v) return null; try { return openProject(JSON.parse(v)); } catch (e) { reportErr(e); return null; } },
   save(p) {
@@ -33,7 +34,10 @@ const Store = {
       toast('This project is ' + Math.round(json.length / 1024) + ' KB: it still saves on this computer, but projects over 400 KB do not sync to your account. Export it to keep a copy.', 7000);
     }
     const ok = Store.put(KEY_P + p.id, json);
-    if (ok && !Store.warned.all && Store.usage() > LIMIT_ALL * 0.9) { Store.warned.all = 1; toast('Your Beat Lab projects are close to the 6 MB your account can sync. Export and delete old ones to make room.', 7000); }
+    const now = Date.now(), check = ok && now - (Store.lastCheck || 0) > 30000;          // the storage-wide checks, at most every 30 s
+    if (check) Store.lastCheck = now;
+    if (check && !Store.warned.keys && Store.count() > 300) { Store.warned.keys = 1; toast('You have over 300 Beat Lab projects; your account syncs at most 400 saves in all. Delete ones you no longer need.', 7000); }
+    if (check && !Store.warned.all && Store.usage() > LIMIT_ALL * 0.9) { Store.warned.all = 1; toast('Your Beat Lab projects are close to the 6 MB your account can sync. Export and delete old ones to make room.', 7000); }
     return ok;
   },
   remove(id) { try { localStorage.removeItem(KEY_P + id); } catch (e) {} },

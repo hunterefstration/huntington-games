@@ -310,7 +310,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     if (lfo) {
       c.lfo = ctx.createOscillator(); c.lfo.type = lfo.w || 'sine'; c.lfoG = ctx.createGain();
       c.lfo.connect(c.lfoG); c.lfo.start();
-      if (lfo.tgt === 'amp') { c.trem.gain.cancelScheduledValues(0); c.trem.gain.value = 1 - lfo.amt * 0.5; c.trem.gain.__v = undefined; c.lfoG.connect(c.trem.gain); }
+      if (lfo.tgt === 'amp') { c.trem.gain.cancelScheduledValues(0); c.trem.gain.value = 1 - Math.min(1, lfo.amt) * 0.5; c.trem.gain.__v = undefined; c.lfoG.connect(c.trem.gain); }
     }
     c.lfoTgt = lfo ? lfo.tgt : 'off';
   };
@@ -330,7 +330,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const ctx = this.ctx, s = d.s;
     c.data = d; c.s = s;
     const lfo = s.lfo || {};
-    const sig = s.k + '|' + (s.k === 'syn' && s.drive > 0 ? s.drive : 0) + '|' + (s.vowel || '') + '|' + (s.k === 'syn' && lfo.amt > 0 ? lfo.tgt + lfo.w : 'off');
+    const sig = s.k + '|' + (s.k === 'syn' && s.drive > 0 ? s.drive : 0) + '|' + (s.vowel || '') + '|' + (s.k === 'syn' && lfo.amt > 0 ? lfo.tgt + lfo.w + (lfo.tgt === 'amp' ? Math.min(1, lfo.amt).toFixed(2) : '') : 'off');
     if (sig !== c.sig) { this._chainChan(c, s); c.sig = sig; }
     c.muted = !!(d.mute || (anySolo && !d.solo));
     sp(c.vol.gain, c.muted ? 0 : volGain(d.vol), ctx);
@@ -338,7 +338,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     if (c.lfo) {
       const rate = lfo.sync && E.SYNC[lfo.sync] ? (this.proj.bpm / 60) / E.SYNC[lfo.sync] : lfo.r;
       sp(c.lfo.frequency, Math.max(0.01, rate), ctx);
-      const depth = lfo.tgt === 'pitch' ? lfo.amt * 100 : lfo.tgt === 'filter' ? lfo.amt * 2400 : lfo.amt * 0.5;
+      const depth = lfo.tgt === 'pitch' ? lfo.amt * 100 : lfo.tgt === 'filter' ? lfo.amt * 2400 : Math.min(1, lfo.amt) * 0.5;
       sp(c.lfoG.gain, depth, ctx);
     }
     const tr = this.mix[d.mix] || this.mix[0];
