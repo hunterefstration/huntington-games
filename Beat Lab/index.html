@@ -4823,6 +4823,7 @@ function boot() {
 window.__beatlab = {
   get state() { return { mode: A.p && A.p.mode, playing: A.playing, tick: A.eng.position(), name: A.p && A.p.name, tab: A.ui.tab, ch: A.ui.ch, pat: A.ui.pat, playMode: A.ui.playMode, undo: Hist.undo.length, redo: Hist.redo.length, audio: A.eng.ctx ? A.eng.ctx.state : 'none', rec: A.ui.rec }; },
   get project() { return A.p; },
+  songsApi: () => songsApi(), openSharedCode: c => openSharedCode(c), saveData: () => { saveNow(); try { return localStorage.getItem(KEY_P + A.p.id); } catch (e) { return null; } },
   get lastError() { return A.lastError || E.lastError || ''; },
   app: A, engine: A.eng, E, Store, Hist,
   load(p) { openProjectObj(typeof p === 'string' ? JSON.parse(p) : E.clone(p)); return A.p.id; },

@@ -90,7 +90,7 @@ function qolDecorate() {
 // The page used to be one tall column of big cards, which stopped working past twenty games. Now: a banner, a shelf
 // per kind of game (each scrolls sideways, so a shelf never gets longer), then every game as a small tile. A tile's
 // description shows when you rest on it (qolPeek). NEW_NOW names what this release added or changed.
-var NEW_NOW = ['Blocky Shooter V2', 'Last Light', 'Sovereign', 'Mayhem Marathon'];
+var NEW_NOW = ['Beat Lab', 'Blocky Shooter V2', 'Last Light', 'Sovereign'];
 var SHELF_OF = { '3D': 'action', Shooter: 'action', Strategy: 'think', Tycoon: 'think', Sim: 'think', Clicker: 'think', Platformer: 'run', Puzzle: 'run', Arcade: 'run', Party: 'party', Minigame: 'party', Casino: 'party', Sandbox: 'make' };
 var SHELVES = [['fav', '\u2605 Your favourites'], ['new', 'New and updated'], ['mp', 'Play with friends'], ['action', 'Action and shooters'], ['think', 'Strategy, tycoon and idle'], ['run', 'Platformers, puzzles and arcade'], ['party', 'Party games and minigames'], ['make', 'Sandbox and the rest']];
 function qolShelfOf(g) { var t = g.tags || [], out = {}; for (var i = 0; i < t.length; i++) if (SHELF_OF[t[i]]) out[SHELF_OF[t[i]]] = 1; if (!Object.keys(out).length) out.make = 1; if (t.indexOf('Multiplayer') >= 0) out.mp = 1; if (NEW_NOW.indexOf(g.dir) >= 0) out['new'] = 1; if (qolIsFav(g.dir)) out.fav = 1; return out; }
@@ -273,12 +273,10 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r75', items: [
-  ['Blocky Shooter 5.5', 'Two new maps (Frostbite and Carnival), the new HUNTED mode, four new weapons (Drum Shotgun, Cryo Blaster, Plasma Rifle, Seeker Launcher), new enemies and the Winter King boss.'],
-  ['Last Light 1.5', 'Frostveil: a whole new world after the final boss with a new ability (Glide), a snow owl guardian, a secret level, Trials with medals and ghosts, and new colours for your light.'],
-  ['Sovereign 1.4', 'The World Council (vote on sanctions, peacekeepers and world laws), global crises, four new scenarios like Cold War II, and 25 new events.'],
-  ['Mayhem Marathon 1.1', 'Seven new rounds (21 in all) including Bomb Tag, Turf War and Meteor Mayhem, custom shows, and 22 new things to wear.'],
-  ['New achievements', 'Every update above comes with new achievements to chase.']
+var WHATSNEW = { id: 'r76', items: [
+  ['Beat Lab 1.1: share your songs', 'Share any song with a 6-digit code (or post it in #music), open anyone else\'s with theirs, and download songs as audio or a project file.'],
+  ['More instruments at once', 'Layer up to 4 instruments in Simple mode, play 8-lane drum kits (new Rock, World and Orchestra kits), and add a whole drum kit in one click in Studio.'],
+  ['Play notes your way', 'Articulations for any note: accent, staccato, slide, vibrato, soft, bend up and fall, plus flams and rolls for drums.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;

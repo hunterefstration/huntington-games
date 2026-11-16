@@ -122,6 +122,16 @@ try {
   check('a wrong code says so', !(await B.evaluate(() => HGGrapevine.songs.get('000001'))).ok);
   const appB = await until(async () => { const f = B.frames().find(x => x !== B.mainFrame() && x.url().startsWith('about:srcdoc')); return f && (await f.evaluate(() => !!(window.S && S.ready)).catch(() => false)) ? f : null; }, 60000);
   check('...and "post it" puts the code in #music', !!appB && !!(await until(() => appB.evaluate(c => { const m = [...msgsOf('music').values()]; return m.some(x => x.text.includes(c) && /Test Tune/.test(x.text)); }, sh.code), 15000)));
+  // the same, from inside Beat Lab in the launcher (its Share and Open-a-code use these)
+  const bl = async P => { await P.evaluate(() => { showTab('games'); playNow(GAMES.find(g => g.dir === 'Beat Lab')); }); return until(async () => { const f = P.frames().find(x => /Beat%20Lab\/index/.test(x.url())); return f && (await f.evaluate(() => !!window.__beatlab).catch(() => false)) ? f : null; }, 40000); };
+  const fa = await bl(A);
+  const c2 = fa && await fa.evaluate(async () => { const d = __beatlab.saveData(); const r = await __beatlab.songsApi().share({ name: 'From Beat Lab', data: d }); return r.ok ? r.code : r.err; });
+  check('Beat Lab shares through the launcher', /^\d{6}$/.test(String(c2)), String(c2));
+  await A.evaluate(() => closePlayer());
+  const fb = await bl(B);
+  const opened = fb && await fb.evaluate(async c => { await __beatlab.openSharedCode(c); await new Promise(r => setTimeout(r, 800)); return __beatlab.project && __beatlab.project.name; }, c2);
+  check('...and the other player opens it in their Beat Lab as a new song with the maker\'s name', /From Beat Lab \(by PlayAva\)/.test(String(opened)), String(opened));
+  await B.evaluate(() => closePlayer());
   let refused = null; for (let i = 0; i < 11 && !refused; i++) { const r = await B.evaluate(d => HGGrapevine.songs.share({ name: 'Spam ' + Math.random(), data: d }), song).catch(e => ({ ok: false, err: String(e.message) })); if (!r.ok) refused = r.err; await sleep(2100); }
   check('ten shares a day, then a polite no', /10 songs a day/.test(refused || ''), refused);
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }
