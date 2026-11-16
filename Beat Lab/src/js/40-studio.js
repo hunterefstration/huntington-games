@@ -27,7 +27,7 @@ function buildStudio() {
   const keysT = toggleBtn('Keys', true, v => { A.set.keys = v ? 1 : 0; Store.saveSet(); }, 'Play the selected instrument with your computer keyboard: Z S X D C... and Q 2 W 3 E... ([ and ] change octave)');
   const midiB = h('button', { class: 'btn small', title: 'Use a MIDI keyboard', onclick: () => connectMidi() }, 'MIDI');
   const wav = h('button', { class: 'btn small', title: 'Export the song as a WAV file', onclick: () => exportWav() }, 'Export WAV');
-  const lm = h('button', { class: 'btn small', title: 'Play this song on the launcher\'s pages (your launcher music)', onclick: () => launcherMusic() }, '♪ Launcher music');
+  const lm = h('button', { class: 'btn small lmbtn', title: 'Play this song on the launcher\'s pages (your launcher music)', onclick: () => launcherMusic() }, '♪ Launcher music');
   const cpu = h('div', { class: 'cpu', title: 'Notes sounding right now' }, '');
   const bar = h('div', { class: 'st-bar' }, modeBtn, play, stop, rec, pos, tempo, sig, metro, countIn, recQ, swing,
     h('div', { class: 'grp' }, h('span', { class: 'lab' }, 'Pattern'), patSel, patAdd, patMenu),
@@ -203,7 +203,7 @@ document.addEventListener('keydown', e => {
   if (k === ' ' && !ctrl) { e.preventDefault(); if (t && t.blur) t.blur(); togglePlay(); return; }
   if (ctrl && (k === 'z' || k === 'Z')) { e.preventDefault(); if (e.shiftKey) Hist.doRedo(); else Hist.doUndo(); return; }
   if (ctrl && (k === 'y' || k === 'Y')) { e.preventDefault(); Hist.doRedo(); return; }
-  if (ctrl && (k === 's' || k === 'S')) { e.preventDefault(); if (saveNow()) toast('Saved'); return; }
+  if (ctrl && (k === 's' || k === 'S')) { e.preventDefault(); saveClick(); return; }
   if (A.p.mode !== 'studio') return;
   if (ctrl && k === 'Enter') { e.preventDefault(); toggleRecord(); return; }
   const fk = { F5: 'playlist', F6: 'rack', F7: 'roll', F8: 'synth', F9: 'mixer' }[k];

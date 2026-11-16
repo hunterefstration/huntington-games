@@ -27,6 +27,7 @@ const Store = {
   load(id) { const v = Store.get(KEY_P + id); if (!v) return null; try { return openProject(JSON.parse(v)); } catch (e) { reportErr(e); return null; } },
   save(p) {
     if (!p) return false;
+    if (A.temp.has(p.id)) return true;                // a tutorial's practice song: never saved unless the player keeps it
     p.t = Date.now();
     const json = JSON.stringify(p);
     if (json.length > LIMIT_KEY && !Store.warned[p.id]) {
@@ -128,5 +129,7 @@ function changed(all) {
   clearTimeout(saveT); saveT = setTimeout(() => Store.save(A.p), 1200);
 }
 function saveNow() { clearTimeout(saveT); return Store.save(A.p); }
+// before switching projects: save only if something changed, so opening a lesson (or another song) leaves an unchanged song's save as it was
+function saveIfChanged() { if (!A.p) return; let same = false; try { same = Store.get(KEY_P + A.p.id) === JSON.stringify(A.p); } catch (e) {} if (same) clearTimeout(saveT); else saveNow(); }
 window.addEventListener('pagehide', () => { if (A.p) saveNow(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && A.p) saveNow(); });

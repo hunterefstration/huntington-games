@@ -84,6 +84,8 @@ Current state and the facts you need to change things. What each round did and w
 - **Beat Lab** (music studio): `src/js/10-16-engine-*.js` are a standalone Web Audio engine (API documented at the top of
   10-engine.js; `BeatLabEngine.fromSave(localStorage beatlab_p_<id>)` plays any saved song, e.g. for the launcher's music
   player). Saves: one project per `beatlab_p_<id>` key. Debug hook `__beatlab`; test: `node "Beat Lab/tools/test.mjs"`.
+  1.2 tutorials: `src/js/80-tutor.js` (coach-mark engine `Tutor`, API at its top; lessons; Learn hub; "?" helper). Lessons run in
+  practice projects whose ids are in `A.temp` (Store.save skips them); done lessons in `beatlab_set` `.tut`. Reuse its look for other games.
 
 ## Rules that matter
 - **Saves**: only keys matching `GAME_KEYS` sync. Sync is a three-way merge (`meta[k].b` base hash; both changed -> more progress wins,

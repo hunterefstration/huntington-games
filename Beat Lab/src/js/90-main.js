@@ -2,14 +2,17 @@
 function buildAppBar() {
   const bar = $('#appbar'); bar.innerHTML = '';
   const name = h('button', { class: 'pname', title: 'Rename this project', onclick: () => ask('Rename project', A.p.name, v => { A.p.name = v; saveNow(); refreshAppBar(); }) });
+  let save, share, dl;
+  const learn = h('button', { class: 'btn small learn', title: 'Short hands-on lessons: Simple mode and every part of the Studio', onclick: learnHub }, 'Learn');
+  const q = h('button', { class: 'btn small qbtn', title: 'What is this? Turn on, then point at any part of the Studio', onclick: () => setExplain(!HX.on) }, '?');
   const seg = h('div', { class: 'seg mode' }, h('button', { 'data-m': 'simple', title: 'Big, simple song grid', onclick: () => switchMode('simple') }, 'Simple'), h('button', { 'data-m': 'studio', title: 'Full studio: channel rack, piano roll, playlist, mixer', onclick: () => switchMode('studio') }, 'Studio'));
   bar.append(h('div', { class: 'logo' }, h('i', { class: 'lg' }), h('span', null, 'Beat', h('b', null, 'Lab'))), name,
     h('button', { class: 'btn small', title: 'Open, start or import a project, or open a demo', onclick: projectsDialog }, 'Projects'),
-    h('button', { class: 'btn small', title: 'Save now (Ctrl+S); Beat Lab also saves as you go', onclick: () => { if (saveNow()) toast('Saved'); } }, 'Save'),
-    h('button', { class: 'btn small', title: 'Share this song with a 6-digit code', onclick: () => shareDialog() }, 'Share'),
-    h('button', { class: 'btn small', title: 'Download the song as audio (WAV), just the drums or melody, or the project file', onclick: () => downloadDialog() }, 'Download'),
-    h('div', { class: 'spacer' }), seg, h('button', { class: 'btn small', title: 'How it works', onclick: helpDialog }, 'Help'));
-  A.appbar = { name, seg };
+    save = h('button', { class: 'btn small', title: 'Save now (Ctrl+S); Beat Lab also saves as you go', onclick: () => saveClick() }, 'Save'),
+    share = h('button', { class: 'btn small', title: 'Share this song with a 6-digit code', onclick: () => shareDialog() }, 'Share'),
+    dl = h('button', { class: 'btn small', title: 'Download the song as audio (WAV), just the drums or melody, or the project file', onclick: () => downloadDialog() }, 'Download'),
+    h('div', { class: 'spacer' }), learn, seg, q, h('button', { class: 'btn small', title: 'How it works', onclick: helpDialog }, 'Help'));
+  A.appbar = { name, seg, save, share, dl, learn, q };
 }
 function refreshAppBar() {
   if (!A.appbar) return;
@@ -18,9 +21,10 @@ function refreshAppBar() {
 }
 function switchMode(target) {
   if (target === A.p.mode) return;
+  if (Tutor.active && target === 'simple') return toast('Finish or skip the lesson first (Esc)', 2200);
   if (target === 'studio') {
     const empty = A.p.simple.ly.every(L => !L.mel.length) && !A.p.simple.drm.length;
-    if (empty) { const p = newStudioProject('New song'); saveNow(); openProjectObj(p); Store.save(A.p); return; }
+    if (empty) { const p = newStudioProject('New song'); tutFollow(p); saveNow(); openProjectObj(p); Store.save(A.p); return; }
     confirmBox('Open in the Studio?', 'Your song becomes a full Studio project (a copy: this simple song stays saved too).', 'Open in Studio', openInStudio);
     return;
   }
@@ -31,6 +35,7 @@ function switchMode(target) {
     { t: 'New simple song', primary: true, f: () => { openProjectObj(newSimpleProject()); Store.save(A.p); } }].filter(Boolean));
 }
 function setMode(mode) {
+  hideOffer(); if (mode !== 'studio') setExplain(false);
   A.set.mode = mode; Store.saveSet();
   document.body.dataset.mode = mode;
   $('#simple').classList.toggle('hidden', mode !== 'simple');
@@ -40,7 +45,8 @@ function setMode(mode) {
   refreshAppBar();
   emit('changed', true);
   queueWarm();
-  if (mode === 'studio' && !A.set.seenStudio) { A.set.seenStudio = 1; Store.saveSet(); setTimeout(() => toast('Welcome to the Studio! Space plays. Click steps in the Channel rack, draw notes in the Piano roll, arrange patterns in the Playlist. Help explains the rest.', 6000), 400); }
+  // the first time in the Studio: offer the tour once (seenStudio is remembered whatever the answer)
+  if (mode === 'studio' && !A.set.seenStudio && !Tutor.active) { A.set.seenStudio = 1; Store.saveSet(); if (!Tutor.done('studio1')) setTimeout(() => { if (!Tutor.active && A.p.mode === 'studio') offer('studio'); }, 400); }
 }
 on('changed', () => {
   if (!A.p) return;
@@ -94,10 +100,10 @@ function boot() {
   document.addEventListener('keydown', wake, { capture: true });
   requestAnimationFrame(frame);
   if (A.set.ver !== BL_VERSION) {                // a returning player gets What's New once per version
-    if (A.set.seenHelp) setTimeout(() => modal('New in Beat Lab ' + BL_VERSION, whatsNew(), [{ t: 'Help' , f: () => { setTimeout(helpDialog, 30); } }, { t: 'Let\'s go', primary: true }], { wide: true }), 500);
+    if (A.set.seenHelp) setTimeout(() => modal('New in Beat Lab ' + BL_VERSION, whatsNew(), [{ t: 'Help', f: () => { setTimeout(helpDialog, 30); } }, { t: 'Try a lesson', f: () => { setTimeout(learnHub, 30); } }, { t: 'Let\'s go', primary: true }], { wide: true }), 500);
     A.set.ver = BL_VERSION; Store.saveSet();
   }
-  if (!A.set.seenHelp && A.p.mode === 'simple') { A.set.seenHelp = 1; Store.saveSet(); setTimeout(() => toast('Click the grid to add notes, then press Play. Try "Surprise me!" for a quick start.', 5000), 600); }
+  if (!A.set.seenHelp && A.p.mode === 'simple') { A.set.seenHelp = 1; Store.saveSet(); setTimeout(() => { if (!Tutor.active && A.p.mode === 'simple') offer('simple'); }, 600); }
 }
 
 // ---- debug hook for tests
@@ -126,6 +132,9 @@ window.__beatlab = {
   tab(t) { showTab(t); },
   async render(o) { const proj = A.p.mode === 'simple' ? simpleToProject(A.p.simple, A.p.name) : A.p; const buf = await E.render(proj, o || (A.p.mode === 'simple' ? { mode: 'pat', pat: 1 } : { mode: 'song' })); return E.bufferStats(buf); },
   simpleProject() { return SP; }, stemProject,
+  tut: { start: id => tutStart(id), stop: () => tutStop('skip'), next: () => Tutor.next(), back: () => Tutor.back(), keep: () => tutKeep(), xy: tutXY, learn: () => learnHub(), explain: on => setExplain(on),
+    lessons: () => LESSONS.map(l => ({ id: l.id, title: l.title, steps: l.steps.length })),
+    get state() { const l = TT.les; return { active: !!l, id: l ? l.id : null, step: TT.i, of: l ? l.steps.length : 0, finale: !!l && TT.i >= l.steps.length, title: l && TT.i < l.steps.length ? l.steps[TT.i].title : '', done: Object.assign({}, A.set.tut), temp: isTemp(), kept: TT.kept, prog: TT.el ? TT.el.prog.textContent : '' }; } },
   presets() { return { total: E.PRESETS.length, categories: E.CATEGORIES.length, drums: E.PRESETS.filter(x => x.p.k === 'drm').length }; }
 };
 boot();

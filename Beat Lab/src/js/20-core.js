@@ -1,6 +1,6 @@
 // ===== Beat Lab app: shared state and small DOM helpers =====
 const E = BeatLabEngine, PPQ = E.PPQ, STEP = E.STEP;
-const BL_VERSION = '1.1';                         // shown in Help; bump with every change players should hear about
+const BL_VERSION = '1.2';                         // shown in Help; bump with every change players should hear about
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -32,7 +32,8 @@ const A = {
   p: null,                       // the open project
   eng: E.create(),
   set: { mode: '', last: '', oct: 4, keys: 1, metro: 0, countIn: 1, recQ: 12, ghosts: 1, follow: 1 },
-  ui: { tab: 'rack', ch: null, pat: 1, playMode: 'pat', brush: 1, startTick: 0, rec: false },
+  ui: { tab: 'rack', ch: null, pat: 1, playMode: 'pat', brush: 1, startTick: 0, rec: false, dlg: '' },   // dlg: the open dialog (share, download, learn)
+  temp: new Set(),               // ids of tutorial practice projects: never saved (80-tutor.js)
   playing: false,
   views: {},                      // name -> { el, draw(), dirty }
   lastError: ''
@@ -64,7 +65,7 @@ function modal(title, body, buttons, opts) {
   const first = box.querySelector('input,select'); if (first) setTimeout(() => { first.focus(); if (first.select) first.select(); }, 30);
   return box;
 }
-function closeModal() { const m = $('#modal'); if (m) m.remove(); }
+function closeModal() { const m = $('#modal'); if (m) m.remove(); A.ui.dlg = ''; }
 function ask(title, value, cb, label) {
   const inp = h('input', { type: 'text', value: value || '', maxlength: 60, class: 'txt' });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); const v = inp.value.trim(); closeModal(); if (v) cb(v); } e.stopPropagation(); });

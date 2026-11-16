@@ -1,10 +1,10 @@
 // ===== Projects: open/new/rename/duplicate/delete, demos, import/export (.json), WAV export, help, share codes, downloads =====
 function openProjectObj(p, keepHist) {
   if (A.playing) stopPlay();
-  if (A.p) saveNow();
+  saveIfChanged();
   A.p = openProject(p);
   if (!keepHist) Hist.clear();
-  A.set.last = A.p.id; Store.saveSet();
+  if (!A.temp.has(A.p.id)) { A.set.last = A.p.id; Store.saveSet(); }          // a tutorial's practice song is never "last"
   if (A.p.mode === 'studio') { A.ui.pat = A.p.pat[0].id; A.ui.brush = A.ui.pat; A.ui.ch = A.p.ch[0] ? A.p.ch[0].id : null; A.ui.startTick = 0; RL.init = false; PL.sx = 0; }
   setMode(A.p.mode);
 }
@@ -33,6 +33,7 @@ function projectsDialog() {
   const file = h('input', { type: 'file', accept: '.json,application/json', style: { display: 'none' } });
   file.addEventListener('change', () => { const f = file.files[0]; if (f) importFile(f); });
   const body = h('div', null,
+    h('p', { class: 'in-game' }, h('b', null, 'Your song could be in a game! '), 'Great songs may be picked to play in one of our games: share yours in #music.'),
     h('div', { class: 'prow-top' },
       h('button', { class: 'btn primary', onclick: () => { closeModal(); ask('New Studio project', 'New song', n => { openProjectObj(newStudioProject(n)); Store.save(A.p); }); } }, 'New Studio project'),
       h('button', { class: 'btn', onclick: () => { closeModal(); ask('New simple song', 'My song', n => { openProjectObj(newSimpleProject(n)); Store.save(A.p); }); } }, 'New simple song'),
@@ -93,6 +94,13 @@ async function exportWav(simple, stem) {               // stem: 'drums' | 'melod
 function whatsNew() {
   return h('div', { class: 'help' },
     h('ul', null,
+      h('li', null, h('b', null, 'Learn'), ': hands-on lessons (the Learn button, top right). Six short ones, from Simple mode in 1 minute to finishing and sharing a Studio song. You do each step yourself, with a practice song, so your own songs are never touched. Finished lessons get a tick.'),
+      h('li', null, h('b', null, 'What is this?'), ': in the Studio, press ? (top right) and point at any panel (or press and hold on a touch screen) for a one-line explanation.'),
+      h('li', null, h('b', null, 'Your song could be in a game'), ': great songs may be picked to play in one of our games. Share yours in #music!')));
+}
+function whatsNew11() {
+  return h('div', { class: 'help' },
+    h('ul', null,
       h('li', null, h('b', null, 'Layers'), ': in Simple mode, "+ Layer" stacks up to 4 instruments, each with its own notes, volume and mute (M). Click a layer to paint in it; the others show faintly in their colours. ⋯ doubles a layer with a second sound or copies its notes to a new layer. Open in Studio gives every layer its own channel.'),
       h('li', null, h('b', null, 'More drums'), ': 8 drum rows (kick, snare, closed and open hat, clap, tom, percussion, crash) and new kits: Rock, World percussion and Orchestra (timpani, snare roll, cymbals, gong). In the Studio, "+ New drum kit" adds a whole kit at once and the browser has a Drums & Percussion section.'),
       h('li', null, h('b', null, 'Articulations'), ': play notes differently: Accent (>), Staccato (•), Slide (/), Vibrato (~), Soft (p), Bend up, Fall, Flam and Roll. Simple mode: pick a Brush and click notes. Piano roll: select notes and pick a Style. Channel rack: pick a Style and click steps.'),
@@ -101,6 +109,8 @@ function whatsNew() {
 function helpDialog() {
   const body = h('div', { class: 'help' },
     h('h4', null, 'New in version ' + BL_VERSION), whatsNew(),
+    h('h4', null, 'Learn by doing'),
+    h('p', null, 'New to music software? Press ', h('b', null, 'Learn'), ' for short lessons that walk you through Simple mode and every part of the Studio. Esc or "Skip lesson" leaves a lesson at any time.'),
     h('h4', null, 'Simple mode'),
     h('p', null, 'Click squares to add notes, click again to remove them, drag to paint. The top part is the tune (higher rows are higher notes), the bottom rows are drums. Pick an instrument and a drum kit with the big buttons, then press Play. Try "Surprise me!" or a song to start from. "+ Layer" adds another instrument on top; the Brush buttons (Accent, Staccato, Slide...) change how the notes you click are played. When you want more, press "Open in Studio".'),
     h('h4', null, 'Studio mode'),
@@ -110,6 +120,7 @@ function helpDialog() {
       h('li', null, h('b', null, 'Patterns and Playlist'), ': a pattern is a loop of steps and notes. Put patterns on the playlist to arrange the song. Drag in the ruler to loop a part. Switch between Pattern and Song at the top.'),
       h('li', null, h('b', null, 'Mixer'), ': each channel plays into a mixer track (the number next to its name). Add effects (EQ, compressor, reverb, delay...) to tracks. The master has a limiter so nothing clips.'),
       h('li', null, h('b', null, 'Recording'), ': choose a channel, press the red button (or Ctrl+Enter), and play with your computer keyboard (Z S X D C V... is the lower octave, Q 2 W 3 E... the upper one, [ and ] change octave) or a MIDI keyboard.')),
+    h('h4', null, 'New in version 1.1'), whatsNew11(),
     h('h4', null, 'Shortcuts'),
     h('p', null, 'Space play/stop · Ctrl+Z undo · Ctrl+Y redo · Ctrl+S save · Delete removes the selection · F5-F9 or Alt+1-5 switch views · Ctrl+mouse wheel zooms, Shift+wheel scrolls sideways, Alt+wheel changes row height. Shift+T opens the chat.'));
   modal('How Beat Lab works (version ' + BL_VERSION + ')', body, [{ t: 'Got it', primary: true }], { wide: true });
@@ -122,7 +133,7 @@ const SHARE_MAX = 200 * 1024;
 function songsApi() { try { const g = parent.HGGrapevine; return g && g.songs && typeof g.songs.share === 'function' ? g.songs : null; } catch (e) { return null; } }
 function shareDialog() {
   const api = songsApi();
-  if (!api) return modal('Share this song', h('div', null, h('p', null, 'Sign in to the launcher to share. Shared songs get a 6-digit code your friends type into Beat Lab to hear (and remix) your song.'), codeField()), [{ t: 'OK' }]);
+  if (!api) { modal('Share this song', h('div', null, h('p', null, 'Sign in to the launcher to share. Shared songs get a 6-digit code your friends type into Beat Lab to hear (and remix) your song.'), h('p', { class: 'in-game' }, h('b', null, 'Your song could be in a game! '), 'Great songs may be picked to play in one of our games: share yours in #music.'), codeField()), [{ t: 'OK' }]); A.ui.dlg = 'share'; return; }
   saveNow();
   const data = JSON.stringify(A.p);
   const big = data.length > SHARE_MAX;
@@ -142,8 +153,10 @@ function shareDialog() {
     h('p', null, 'Get a 6-digit code for this song. Anyone with the code can open their own copy (yours stays yours).'),
     big ? h('p', { class: 'sh-err' }, 'This song is ' + Math.round(data.length / 1024) + ' KB: songs over 200 KB are too big to share. Try fewer patterns or a shorter song.') : null,
     h('label', { class: 'sh-row' }, post, ' Post it in #music (everyone sees the name and the code)'),
+    h('p', { class: 'in-game' }, h('b', null, 'Your song could be in a game! '), 'Great songs may be picked to play in one of our games: share yours in #music.'),
     h('div', { class: 'sh-row' }, big ? null : go), out,
     h('h4', null, 'Got a code from a friend?'), codeField()), [{ t: 'Close' }]);
+  A.ui.dlg = 'share';
 }
 // "Open a code": a small field; opening loads the song as a NEW project named "<name> (by <player>)"
 function codeField() {
@@ -179,6 +192,7 @@ function downloadDialog() {
     row('Just the drums (WAV)', 'Only the drum and percussion channels.', () => exportWav(false, 'drums')),
     row('Just the melody (WAV)', 'Everything except the drums.', () => exportWav(false, 'melody')),
     row('Project file (.json)', 'Open it later in Beat Lab (Projects, "Import") or give it to a friend.', () => exportProject(A.p))), [{ t: 'Close' }]);
+  A.ui.dlg = 'download';
 }
 // mute every channel that is not in the stem (drum channels = drum voices)
 function stemProject(proj, stem) {
@@ -191,6 +205,8 @@ function stemProject(proj, stem) {
 // ---- your song as the launcher's music: the launcher plays the project named in beatlab_launcher on its own pages, with
 // Beat Lab's engine (Beat Lab/engine.js, loaded only when needed). The key syncs with the account like the songs do.
 function launcherMusic() {
+  if (isTemp()) return modal('Launcher music', h('p', null, 'This is a practice song from a lesson, so it is not saved yet. Keep it as one of your songs first, then it can be your launcher music.'),
+    [{ t: 'Cancel' }, { t: 'Keep this song', primary: true, f: () => { tutKeep(); setTimeout(launcherMusic, 30); } }]);
   const cur = (() => { try { return localStorage.getItem('beatlab_launcher'); } catch (e) { return null; } })();
   const mine = cur === A.p.id;
   const tell = () => { try { if (parent !== window && parent.HG_musicChanged) parent.HG_musicChanged(); } catch (e) {} };
