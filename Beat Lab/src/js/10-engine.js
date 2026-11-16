@@ -27,7 +27,12 @@
 //   { v: 1, id, name, bpm, sig: [beats, unit], swing: 0..100, key: 0..11, scale: 'minor',
 //     ch:  [{ id, n: name, col: '#rrggbb', p: presetId, s: params (see 13-engine-voice.js), mix: mixer track,
 //             vol: 0..1 (0.8 = unity), pan: -1..1, mute, solo, root: midi note the step sequencer plays }],
-//     pat: [{ id, n: name, len: steps, st: { chId: [velocity 0-127 per step] }, nt: { chId: [[tick, len, midi, vel 1-127]] } }],
+//     pat: [{ id, n: name, len: steps, st: { chId: [velocity 0-127 per step] }, nt: { chId: [[tick, len, midi, vel 1-127, art]] },
+//             sa: { chId: [articulation per step, 0 or '' = normal] } (optional) }],
+//            art (optional, absent = normal; 2026-11-16) is how the note is played, one of E.ARTS:
+//              'acc' accent (louder, brighter)  'stac' staccato (short, detached)  'slide' legato (glides from the
+//              previous note's pitch on that channel)  'vib' vibrato  'soft' ghost note  'bend' bends up into the note
+//              'fall' falls off at the end  'flam' a grace hit just before  'roll' repeated fast hits (drum roll / tremolo)
 //     pl:  { tr: [{ n: name, mute }], cl: [[patId, track, startStep, lengthSteps]] },
 //     mix: [{ n, vol, pan, mute, solo, out: track it feeds (0 = master), snd: [track, amount] | null,
 //             fx: [{ t: 'eq'|'filter'|'comp'|'dist'|'crush'|'delay'|'reverb'|'chorus'|'phaser'|'limit', on: 1, p: {...} }] }]
@@ -45,6 +50,14 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
   E.SYNC = { '4/1': 16, '2/1': 8, '1/1': 4, '1/2': 2, '1/2.': 3, '1/4': 1, '1/4.': 1.5, '1/4T': 2 / 3, '1/8': 0.5, '1/8.': 0.75, '1/8T': 1 / 3, '1/16': 0.25, '1/16T': 1 / 6, '1/32': 0.125 };
   const volGain = v => v * v * 1.5625;                  // fader 0..1 -> gain, 0.8 = unity
   E.volGain = volGain;
+  // articulations: id, name, marker glyph, colour, drums (offered in drum lanes / step sequencer)
+  E.ARTS = [
+    { id: 'acc', n: 'Accent', g: '>', col: '#ff4d4f', d: 1 }, { id: 'stac', n: 'Staccato', g: '•', col: '#228be6' },
+    { id: 'slide', n: 'Slide', g: '/', col: '#7950f2' }, { id: 'vib', n: 'Vibrato', g: '~', col: '#12b886' },
+    { id: 'soft', n: 'Soft', g: 'p', col: '#868e96', d: 1 }, { id: 'bend', n: 'Bend up', g: '↗', col: '#f76707' },
+    { id: 'fall', n: 'Fall', g: '↘', col: '#e8590c' }, { id: 'flam', n: 'Flam', g: 'ƒ', col: '#d6336c', d: 1 },
+    { id: 'roll', n: 'Roll', g: '≡', col: '#ae3ec9', d: 1 }];
+  E.ART = {}; for (const a of E.ARTS) E.ART[a.id] = a;
   E.lastError = '';
   const errs = [];
   function report(where, e) {
@@ -114,9 +127,22 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const out = [], len = E.patTicks(pat);
     for (const ch of p.ch) {
       const st = pat.st && pat.st[ch.id];
-      if (st) for (let i = 0, n = Math.min(st.length, pat.len); i < n; i++) if (st[i] > 0) out.push({ t: i * STEP, d: STEP, c: ch.id, n: ch.root || 60, v: st[i] / 127, sw: i & 1 });
+      const sa = pat.sa && pat.sa[ch.id];
+      if (st) for (let i = 0, n = Math.min(st.length, pat.len); i < n; i++) if (st[i] > 0) { const e = { t: i * STEP, d: STEP, c: ch.id, n: ch.root || 60, v: st[i] / 127, sw: i & 1 }; if (sa && sa[i] && E.ART[sa[i]]) e.a = sa[i]; out.push(e); }
       const nt = pat.nt && pat.nt[ch.id];
-      if (nt) for (const n of nt) if (n[0] < len) out.push({ t: n[0], d: Math.max(1, n[1]), c: ch.id, n: n[2], v: (n[3] || 100) / 127, sw: n[0] % 24 === 12 ? 1 : 0 });
+      if (nt) {
+        for (const n of nt) if (n[0] < len) {
+          const e = { t: n[0], d: Math.max(1, n[1]), c: ch.id, n: n[2], v: (n[3] || 100) / 127, sw: n[0] % 24 === 12 ? 1 : 0 };
+          if (n[4] && E.ART[n[4]]) {
+            e.a = n[4];
+            if (e.a === 'slide') {                  // the pitch it glides from: the latest note before it on this channel
+              let pf = null, pt = -1; for (const m of nt) if (m[0] < n[0] && m[0] >= pt) { pt = m[0]; pf = m[2]; }
+              e.f = pf == null ? n[2] - 2 : pf;
+            }
+          }
+          out.push(e);
+        }
+      }
     }
     out.sort((a, b) => a.t - b.t);
     return out;
@@ -131,7 +157,8 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
       const plen = E.patTicks(pat), start = cl[2] * STEP, end = (cl[2] + cl[3]) * STEP;
       for (let off = 0; start + off < end; off += plen) for (const e of ev) {
         const t = start + off + e.t; if (t >= end) break;
-        out.push({ t, d: Math.min(e.d, end - t), c: e.c, n: e.n, v: e.v, sw: e.sw });
+        const o = { t, d: Math.min(e.d, end - t), c: e.c, n: e.n, v: e.v, sw: e.sw }; if (e.a) { o.a = e.a; if (e.f != null) o.f = e.f; }
+        out.push(o);
       }
     }
     out.sort((a, b) => a.t - b.t);
@@ -357,12 +384,33 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
   };
 
   // ---------------------------------------------------------------- notes
-  P._fire = function (chId, midi, vel, t, dur) {
+  // art: an articulation id (E.ARTS), from: the midi note a slide starts at
+  P._fire = function (chId, midi, vel, t, dur, art, from) {
     const c = this.ch.get(chId);
     if (!c || !c.s) return null;
     if (c.muted && chId !== '__pv' && dur != null) return null;
+    let x = null;
+    if (art && dur != null) {
+      const now = this.ctx.currentTime;
+      switch (art) {
+        case 'acc': x = { amp: 1.45, bright: 1 }; vel = Math.min(1, vel * 1.15 + 0.05); break;
+        case 'soft': x = { amp: 0.5 }; vel *= 0.6; break;
+        case 'stac': dur = Math.max(0.03, Math.min(dur * 0.4, 0.22)); x = { rel: 0.04 }; break;
+        case 'slide': x = { from: from == null ? midi - 2 : from, gt: Math.min(0.12, dur * 0.5) }; break;
+        case 'vib': x = { vib: 1 }; break;
+        case 'bend': x = { from: midi - 2, gt: Math.min(0.25, dur * 0.6), bend: 1 }; break;
+        case 'fall': x = { fall: Math.max(0.06, dur * 0.5) }; break;
+        case 'flam': if (t - 0.035 >= now) this._fire(chId, midi, vel * 0.55, t - 0.035, Math.min(dur, 0.06)); break;
+        case 'roll': {                        // 32nd notes across the note's length
+          const iv = Math.max(0.035, this.spt() * 6), n = Math.max(2, Math.min(32, Math.round(dur / iv)));
+          for (let k = 1; k < n; k++) this._fire(chId, midi, vel * (k % 2 ? 0.72 : 0.85), t + k * iv, iv * 0.9);
+          dur = iv * 0.9;
+          break;
+        }
+      }
+    }
     let v = null;
-    try { v = E.voiceStart(this, c, midi, vel, t, dur); } catch (e) { report('note', e); }
+    try { v = E.voiceStart(this, c, midi, vel, t, dur, x); } catch (e) { report('note', e); }
     if (v) {
       this.stats.notes++;
       const r = this.stats.recent; r.push([chId, midi, t]); if (r.length > 32) r.shift();
@@ -398,9 +446,9 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const k = chId + ':' + midi, v = this.held.get(k);
     if (v) { E.voiceRelease(this, v, this.ctx.currentTime); this.held.delete(k); }
   };
-  P.hit = function (chId, midi, vel, dur) {          // one short note on a project channel, now
+  P.hit = function (chId, midi, vel, dur, art) {     // one short note on a project channel, now (art: an articulation)
     this.audio();
-    return this._fire(chId, midi, vel == null ? 0.8 : vel, this.ctx.currentTime + 0.005, dur == null ? 0.3 : dur);
+    return this._fire(chId, midi, vel == null ? 0.8 : vel, this.ctx.currentTime + (art === 'flam' ? 0.04 : 0.005), dur == null ? 0.3 : dur, art);
   };
   P.allOff = function () {
     if (!this.ctx) return;
@@ -488,7 +536,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
             const tt = e.t + (e.sw ? swingT : 0);
             const time = this.segTime + (tt - this.segTick) * spt;
             if (time < this.ctx.currentTime + this._virt - 0.02) continue;     // too late (tab was asleep)
-            this._fire(e.c, e.n, e.v, time - this._virt, e.d * spt);
+            this._fire(e.c, e.n, e.v, time - this._virt, e.d * spt, e.a, e.f);
           }
         }
         this.cursor = upto;
@@ -543,7 +591,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const swingT = (p.swing / 100) * STEP * 0.66;
     const times = ev.map(e => (e.t + (e.sw ? swingT : 0)) * spt + 0.02);
     let i = 0;
-    const until = tEnd => { for (; i < ev.length && times[i] < tEnd; i++) eng._fire(ev[i].c, ev[i].n, ev[i].v, times[i], ev[i].d * spt); };
+    const until = tEnd => { for (; i < ev.length && times[i] < tEnd; i++) eng._fire(ev[i].c, ev[i].n, ev[i].v, times[i], ev[i].d * spt, ev[i].a, ev[i].f); };
     const CH = 2;                                                   // seconds of notes set up at a time
     until(CH * 2);
     const marks = [];

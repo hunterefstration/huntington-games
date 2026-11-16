@@ -28,7 +28,12 @@
 //   { v: 1, id, name, bpm, sig: [beats, unit], swing: 0..100, key: 0..11, scale: 'minor',
 //     ch:  [{ id, n: name, col: '#rrggbb', p: presetId, s: params (see 13-engine-voice.js), mix: mixer track,
 //             vol: 0..1 (0.8 = unity), pan: -1..1, mute, solo, root: midi note the step sequencer plays }],
-//     pat: [{ id, n: name, len: steps, st: { chId: [velocity 0-127 per step] }, nt: { chId: [[tick, len, midi, vel 1-127]] } }],
+//     pat: [{ id, n: name, len: steps, st: { chId: [velocity 0-127 per step] }, nt: { chId: [[tick, len, midi, vel 1-127, art]] },
+//             sa: { chId: [articulation per step, 0 or '' = normal] } (optional) }],
+//            art (optional, absent = normal; 2026-11-16) is how the note is played, one of E.ARTS:
+//              'acc' accent (louder, brighter)  'stac' staccato (short, detached)  'slide' legato (glides from the
+//              previous note's pitch on that channel)  'vib' vibrato  'soft' ghost note  'bend' bends up into the note
+//              'fall' falls off at the end  'flam' a grace hit just before  'roll' repeated fast hits (drum roll / tremolo)
 //     pl:  { tr: [{ n: name, mute }], cl: [[patId, track, startStep, lengthSteps]] },
 //     mix: [{ n, vol, pan, mute, solo, out: track it feeds (0 = master), snd: [track, amount] | null,
 //             fx: [{ t: 'eq'|'filter'|'comp'|'dist'|'crush'|'delay'|'reverb'|'chorus'|'phaser'|'limit', on: 1, p: {...} }] }]
@@ -46,6 +51,14 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
   E.SYNC = { '4/1': 16, '2/1': 8, '1/1': 4, '1/2': 2, '1/2.': 3, '1/4': 1, '1/4.': 1.5, '1/4T': 2 / 3, '1/8': 0.5, '1/8.': 0.75, '1/8T': 1 / 3, '1/16': 0.25, '1/16T': 1 / 6, '1/32': 0.125 };
   const volGain = v => v * v * 1.5625;                  // fader 0..1 -> gain, 0.8 = unity
   E.volGain = volGain;
+  // articulations: id, name, marker glyph, colour, drums (offered in drum lanes / step sequencer)
+  E.ARTS = [
+    { id: 'acc', n: 'Accent', g: '>', col: '#ff4d4f', d: 1 }, { id: 'stac', n: 'Staccato', g: '•', col: '#228be6' },
+    { id: 'slide', n: 'Slide', g: '/', col: '#7950f2' }, { id: 'vib', n: 'Vibrato', g: '~', col: '#12b886' },
+    { id: 'soft', n: 'Soft', g: 'p', col: '#868e96', d: 1 }, { id: 'bend', n: 'Bend up', g: '↗', col: '#f76707' },
+    { id: 'fall', n: 'Fall', g: '↘', col: '#e8590c' }, { id: 'flam', n: 'Flam', g: 'ƒ', col: '#d6336c', d: 1 },
+    { id: 'roll', n: 'Roll', g: '≡', col: '#ae3ec9', d: 1 }];
+  E.ART = {}; for (const a of E.ARTS) E.ART[a.id] = a;
   E.lastError = '';
   const errs = [];
   function report(where, e) {
@@ -115,9 +128,22 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const out = [], len = E.patTicks(pat);
     for (const ch of p.ch) {
       const st = pat.st && pat.st[ch.id];
-      if (st) for (let i = 0, n = Math.min(st.length, pat.len); i < n; i++) if (st[i] > 0) out.push({ t: i * STEP, d: STEP, c: ch.id, n: ch.root || 60, v: st[i] / 127, sw: i & 1 });
+      const sa = pat.sa && pat.sa[ch.id];
+      if (st) for (let i = 0, n = Math.min(st.length, pat.len); i < n; i++) if (st[i] > 0) { const e = { t: i * STEP, d: STEP, c: ch.id, n: ch.root || 60, v: st[i] / 127, sw: i & 1 }; if (sa && sa[i] && E.ART[sa[i]]) e.a = sa[i]; out.push(e); }
       const nt = pat.nt && pat.nt[ch.id];
-      if (nt) for (const n of nt) if (n[0] < len) out.push({ t: n[0], d: Math.max(1, n[1]), c: ch.id, n: n[2], v: (n[3] || 100) / 127, sw: n[0] % 24 === 12 ? 1 : 0 });
+      if (nt) {
+        for (const n of nt) if (n[0] < len) {
+          const e = { t: n[0], d: Math.max(1, n[1]), c: ch.id, n: n[2], v: (n[3] || 100) / 127, sw: n[0] % 24 === 12 ? 1 : 0 };
+          if (n[4] && E.ART[n[4]]) {
+            e.a = n[4];
+            if (e.a === 'slide') {                  // the pitch it glides from: the latest note before it on this channel
+              let pf = null, pt = -1; for (const m of nt) if (m[0] < n[0] && m[0] >= pt) { pt = m[0]; pf = m[2]; }
+              e.f = pf == null ? n[2] - 2 : pf;
+            }
+          }
+          out.push(e);
+        }
+      }
     }
     out.sort((a, b) => a.t - b.t);
     return out;
@@ -132,7 +158,8 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
       const plen = E.patTicks(pat), start = cl[2] * STEP, end = (cl[2] + cl[3]) * STEP;
       for (let off = 0; start + off < end; off += plen) for (const e of ev) {
         const t = start + off + e.t; if (t >= end) break;
-        out.push({ t, d: Math.min(e.d, end - t), c: e.c, n: e.n, v: e.v, sw: e.sw });
+        const o = { t, d: Math.min(e.d, end - t), c: e.c, n: e.n, v: e.v, sw: e.sw }; if (e.a) { o.a = e.a; if (e.f != null) o.f = e.f; }
+        out.push(o);
       }
     }
     out.sort((a, b) => a.t - b.t);
@@ -358,12 +385,33 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
   };
 
   // ---------------------------------------------------------------- notes
-  P._fire = function (chId, midi, vel, t, dur) {
+  // art: an articulation id (E.ARTS), from: the midi note a slide starts at
+  P._fire = function (chId, midi, vel, t, dur, art, from) {
     const c = this.ch.get(chId);
     if (!c || !c.s) return null;
     if (c.muted && chId !== '__pv' && dur != null) return null;
+    let x = null;
+    if (art && dur != null) {
+      const now = this.ctx.currentTime;
+      switch (art) {
+        case 'acc': x = { amp: 1.45, bright: 1 }; vel = Math.min(1, vel * 1.15 + 0.05); break;
+        case 'soft': x = { amp: 0.5 }; vel *= 0.6; break;
+        case 'stac': dur = Math.max(0.03, Math.min(dur * 0.4, 0.22)); x = { rel: 0.04 }; break;
+        case 'slide': x = { from: from == null ? midi - 2 : from, gt: Math.min(0.12, dur * 0.5) }; break;
+        case 'vib': x = { vib: 1 }; break;
+        case 'bend': x = { from: midi - 2, gt: Math.min(0.25, dur * 0.6), bend: 1 }; break;
+        case 'fall': x = { fall: Math.max(0.06, dur * 0.5) }; break;
+        case 'flam': if (t - 0.035 >= now) this._fire(chId, midi, vel * 0.55, t - 0.035, Math.min(dur, 0.06)); break;
+        case 'roll': {                        // 32nd notes across the note's length
+          const iv = Math.max(0.035, this.spt() * 6), n = Math.max(2, Math.min(32, Math.round(dur / iv)));
+          for (let k = 1; k < n; k++) this._fire(chId, midi, vel * (k % 2 ? 0.72 : 0.85), t + k * iv, iv * 0.9);
+          dur = iv * 0.9;
+          break;
+        }
+      }
+    }
     let v = null;
-    try { v = E.voiceStart(this, c, midi, vel, t, dur); } catch (e) { report('note', e); }
+    try { v = E.voiceStart(this, c, midi, vel, t, dur, x); } catch (e) { report('note', e); }
     if (v) {
       this.stats.notes++;
       const r = this.stats.recent; r.push([chId, midi, t]); if (r.length > 32) r.shift();
@@ -399,9 +447,9 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const k = chId + ':' + midi, v = this.held.get(k);
     if (v) { E.voiceRelease(this, v, this.ctx.currentTime); this.held.delete(k); }
   };
-  P.hit = function (chId, midi, vel, dur) {          // one short note on a project channel, now
+  P.hit = function (chId, midi, vel, dur, art) {     // one short note on a project channel, now (art: an articulation)
     this.audio();
-    return this._fire(chId, midi, vel == null ? 0.8 : vel, this.ctx.currentTime + 0.005, dur == null ? 0.3 : dur);
+    return this._fire(chId, midi, vel == null ? 0.8 : vel, this.ctx.currentTime + (art === 'flam' ? 0.04 : 0.005), dur == null ? 0.3 : dur, art);
   };
   P.allOff = function () {
     if (!this.ctx) return;
@@ -489,7 +537,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
             const tt = e.t + (e.sw ? swingT : 0);
             const time = this.segTime + (tt - this.segTick) * spt;
             if (time < this.ctx.currentTime + this._virt - 0.02) continue;     // too late (tab was asleep)
-            this._fire(e.c, e.n, e.v, time - this._virt, e.d * spt);
+            this._fire(e.c, e.n, e.v, time - this._virt, e.d * spt, e.a, e.f);
           }
         }
         this.cursor = upto;
@@ -544,7 +592,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
     const swingT = (p.swing / 100) * STEP * 0.66;
     const times = ev.map(e => (e.t + (e.sw ? swingT : 0)) * spt + 0.02);
     let i = 0;
-    const until = tEnd => { for (; i < ev.length && times[i] < tEnd; i++) eng._fire(ev[i].c, ev[i].n, ev[i].v, times[i], ev[i].d * spt); };
+    const until = tEnd => { for (; i < ev.length && times[i] < tEnd; i++) eng._fire(ev[i].c, ev[i].n, ev[i].v, times[i], ev[i].d * spt, ev[i].a, ev[i].f); };
     const CH = 2;                                                   // seconds of notes set up at a time
     until(CH * 2);
     const marks = [];
@@ -628,7 +676,7 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
 
   // ------------------------------------------------------------------------------------------ drums
   // d: { type, tune (semitones), dec (decay x), tone 0..1, snap 0..1, drive 0..1, crush 0..1 }
-  D.DRUM_TYPES = ['kick', 'snare', 'clap', 'hat', 'ohat', 'cymbal', 'ride', 'tom', 'rim', 'cowbell', 'clave', 'shaker', 'tamb', 'conga', 'bongo', 'block', 'triangle', 'agogo', 'snap', 'timpani', 'zap', 'impact', 'revcym', 'chipkick', 'chipsnare', 'chiphat', 'vinyl', 'brush'];
+  D.DRUM_TYPES = ['kick', 'snare', 'clap', 'hat', 'ohat', 'cymbal', 'ride', 'tom', 'rim', 'cowbell', 'clave', 'shaker', 'tamb', 'conga', 'bongo', 'block', 'triangle', 'agogo', 'snap', 'timpani', 'zap', 'impact', 'revcym', 'chipkick', 'chipsnare', 'chiphat', 'vinyl', 'brush', 'sroll', 'gong'];
   D.drum = function (d, sr) {
     const r = rng(1234 + (D.DRUM_TYPES.indexOf(d.type) + 1) * 97);
     const T = tun(d.tune), dec = Math.max(0.05, d.dec == null ? 1 : d.dec), tone = d.tone == null ? 0.5 : d.tone, snap = d.snap == null ? 0.5 : d.snap;
@@ -771,6 +819,27 @@ const BeatLabEngine = (globalThis.BeatLabEngine = globalThis.BeatLabEngine || {}
         x = mk(2 * dec); const nz = biquad(noise(x.length, r), 'bp', 3000, 0.5, sr);
         for (let i = 0; i < x.length; i++) x[i] = nz[i] * 0.05 + (r() < 0.0009 ? (r() - 0.5) * 1.6 : 0);
         biquad(x, 'lp', 6000, 0.7, sr); fadeOut(x, 400);
+        break;
+      }
+      case 'sroll': {                             // orchestral snare roll: fast strokes on a rattling snare, swelling then fading
+        const len = 1.1 * dec; x = mk(len + 0.15);
+        const nz = biquad(biquad(noise(x.length, r), 'hp', 1500 + tone * 2000, 0.7, sr), 'lp', 8000 + tone * 4000, 0.7, sr);
+        const rate = 26 + snap * 10;
+        for (let i = 0; i < x.length; i++) {
+          const t = i / sr, ph = (t * rate) % 1, stroke = Math.exp(-ph / 0.18) * (0.75 + 0.25 * Math.sin(t * 7.3));
+          const sw = t < len ? 0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, t / len) * 0.9) : Math.exp(-(t - len) / 0.04);
+          x[i] = nz[i] * (0.35 + stroke * 0.65) * sw;
+        }
+        break;
+      }
+      case 'gong': {                              // tam-tam: low inharmonic partials that bloom and ring
+        const dd = 2.6 * dec; x = mk(Math.min(8, dd * 2.5));
+        const fs = [92, 131, 187, 243, 311, 398, 517].map(f => f * T), ph = fs.map(() => r() * TAU);
+        for (let i = 0; i < x.length; i++) {
+          const t = i / sr, bloom = Math.min(1, t / 0.25); let v = 0;
+          for (let k = 0; k < fs.length; k++) v += Math.sin(ph[k] + TAU * fs[k] * t * (1 + 0.002 * Math.sin(t * 3 + k))) * Math.exp(-t / (dd * (1 - k * 0.09))) * (k < 2 ? 1 : 0.35 + bloom * 0.4);
+          x[i] = v * Math.min(1, t / 0.004);
+        }
         break;
       }
       default: x = mk(0.1);
@@ -1250,21 +1319,28 @@ registerProcessor('bl-crush',C);`;
   const FT = { lp: 'lowpass', hp: 'highpass', bp: 'bandpass', notch: 'notch' };
 
   // ---------------------------------------------------------------- start a voice (dur: seconds, or null = held)
-  E.voiceStart = function (eng, c, midi, vel, t, dur) {
+  // x: articulation (from eng._fire), all optional: { amp: gain x, bright: open the filter, rel: release seconds,
+  //    from: midi to glide from over gt seconds (bend: keep the last note sounding), vib: vibrato, fall: seconds }
+  E.voiceStart = function (eng, c, midi, vel, t, dur, x) {
     const ctx = eng.ctx, s = c.s;
     if (t < ctx.currentTime) t = ctx.currentTime;
     vel = Math.max(0.01, Math.min(1, vel));
-    if (s.k === 'drm') return drumVoice(eng, c, s, midi, vel, t, dur);
+    x = x || {};
+    if (s.k === 'drm') return drumVoice(eng, c, s, midi, vel, t, dur, x);
     // polyphony per channel / mono legato
-    let glideFrom = null;
+    let glideFrom = null, glideT = s.glide;
     const live = c.voices.filter(v => !v.dead && v.end > t);
-    if (s.mono) {
+    if (x.from != null) {                        // slide / bend: start at another pitch and glide to this one
+      glideFrom = x.from; glideT = x.gt;
+      if (!x.bend) for (const v of live) if (v.t0 < t) E.voiceRelease(eng, v, t, 0.03);     // legato: the last note hands over
+    } else if (s.mono) {
       const prev = live[live.length - 1];
       if (prev && (prev.rel == null || prev.rel > t + 0.002)) glideFrom = prev.midi;
       for (const v of live) E.voiceKill(eng, v, t);
     } else if (live.length >= (s.poly || 12)) E.voiceKill(eng, live[0], t);
 
     const v = { c, midi, t0: t, srcs: [], lfoT: [], end: Infinity, rel: null, s };
+    const dets = [];                           // detune params the vibrato and fall act on
     const out = ctx.createGain(); out.gain.value = 0; v.out = out;
     let dest = out;
     const useF = s.f.fc < 17500 || s.f.env !== 0 || s.f.t !== 'lp' || (c.lfoTgt === 'filter');
@@ -1290,7 +1366,8 @@ registerProcessor('bl-crush',C);`;
       const n = midi + o.oct * 12 + o.semi;
       if (o.w === 'pluck' || o.w.startsWith('m:')) {
         const b = ctx.createBufferSource(); b.buffer = srcBuffer(ctx, s, o.w, Math.round(n));
-        b.detune.value = o.fine + (n - Math.round(n)) * 100;
+        b.detune.value = o.fine + (n - Math.round(n)) * 100; dets.push([b.detune, b.detune.value]);
+        if (glideFrom != null && x.from != null && glideFrom !== midi) { b.detune.setValueAtTime(b.detune.value + (glideFrom - midi) * 100, t); b.detune.linearRampToValueAtTime(b.detune.value, t + Math.max(0.01, glideT)); }
         const g = ctx.createGain(); g.gain.value = o.lvl; b.connect(g); g.connect(dest);
         v.srcs.push(b); v.bufEnd = Math.max(v.bufEnd || 0, t + b.buffer.duration);
         if (s.pe) { b.detune.setValueAtTime(o.fine + s.pe * 100, t); b.detune.setTargetAtTime(o.fine, t, s.pt / 3); }
@@ -1312,7 +1389,7 @@ registerProcessor('bl-crush',C);`;
         osc.frequency.value = f; osc.detune.value = base;
         if (s.pe) { osc.detune.setValueAtTime(base + s.pe * 100, t); osc.detune.setTargetAtTime(base, t, s.pt / 3); }
         osc.connect(gs[uni > 1 ? u % 2 : 0]);
-        v.srcs.push(osc); carriers.push({ osc, f });
+        v.srcs.push(osc); carriers.push({ osc, f }); dets.push([osc.detune, base]);
         if (c.lfoTgt === 'pitch' && c.lfoG) { c.lfoG.connect(osc.detune); v.lfoT.push(osc.detune); }
       }
     };
@@ -1320,13 +1397,23 @@ registerProcessor('bl-crush',C);`;
     if (s.sub > 0) addOsc({ w: 'sine', oct: -1, semi: s.o1.semi, fine: 0, lvl: s.sub, uni: 1, det: 0 });
     if (s.nz > 0) addOsc({ w: 'noise', lvl: s.nz });
     if (fmG) for (const cr of carriers) fmG.connect(cr.osc.frequency);
-    if (glideFrom != null && s.glide > 0 && glideFrom !== midi) {
+    if (glideFrom != null && glideT > 0 && glideFrom !== midi) {
       const ratio = Math.pow(2, (glideFrom - midi) / 12);
-      for (const cr of carriers) { cr.osc.frequency.setValueAtTime(cr.f * ratio, t); cr.osc.frequency.exponentialRampToValueAtTime(cr.f, t + s.glide); }
+      for (const cr of carriers) { cr.osc.frequency.setValueAtTime(cr.f * ratio, t); cr.osc.frequency.exponentialRampToValueAtTime(cr.f, t + glideT); }
+    }
+    if (x.vib && dets.length) {                  // vibrato: a sine wobble of the pitch that fades in
+      const lo = ctx.createOscillator(), lg = ctx.createGain();
+      lo.frequency.value = 5.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(38, t + 0.22);
+      lo.connect(lg); for (const [d] of dets) lg.connect(d);
+      v.srcs.push(lo);
+    }
+    if (x.fall && dur != null) {                 // fall: the pitch drops away at the end of the note
+      const ts = t + Math.max(0.01, dur - x.fall);
+      for (const [d, base] of dets) { d.setValueAtTime(base, ts); d.linearRampToValueAtTime(base - 900, ts + x.fall + 0.12); }
     }
     // filter envelope
     if (v.filt) {
-      const F = s.f, fc0 = clampF(F.fc * Math.pow(2, F.kt * (midi - 60) / 12) * Math.pow(2, F.vel * (vel - 1)), ctx);
+      const F = s.f, fc0 = clampF(F.fc * Math.pow(2, F.kt * (midi - 60) / 12) * Math.pow(2, F.vel * (vel - 1)) * (x.bright ? 2.2 : 1), ctx);
       v.fc0 = fc0;
       const fp = v.filt.frequency;
       if (F.env) {
@@ -1335,7 +1422,7 @@ registerProcessor('bl-crush',C);`;
       } else fp.setValueAtTime(fc0, t);
     }
     // amp envelope
-    const A = s.amp, peak = s.gain * 0.24 * (1 - s.vel + s.vel * Math.pow(vel, 1.3));
+    const A = s.amp, peak = s.gain * 0.24 * (1 - s.vel + s.vel * Math.pow(vel, 1.3)) * (x.amp || 1);
     const g = out.gain;
     g.setValueAtTime(0, t); g.linearRampToValueAtTime(peak, t + Math.max(0.0015, A.a));
     g.setTargetAtTime(peak * A.s, t + Math.max(0.0015, A.a), Math.max(0.005, A.d) / 4);
@@ -1347,7 +1434,7 @@ registerProcessor('bl-crush',C);`;
     v.natural = natural;
     for (const src of v.srcs) src.start(t, src.__off || 0);
     if (natural < Infinity) { v.end = natural; for (const src of v.srcs) src.stop(natural); }
-    if (dur != null) E.voiceRelease(eng, v, t + Math.max(0.01, dur));
+    if (dur != null) E.voiceRelease(eng, v, t + Math.max(0.01, dur), x.rel);
     else v.live = true;
     return v;
   };
@@ -1380,7 +1467,7 @@ registerProcessor('bl-crush',C);`;
     try { v.out.disconnect(); } catch (e) {}
   };
 
-  function drumVoice(eng, c, s, midi, vel, t, dur) {
+  function drumVoice(eng, c, s, midi, vel, t, dur, x) {
     const ctx = eng.ctx;
     if (!c.buf || c.bufCtx !== ctx) { c.buf = E.drumBuffer(ctx, s.d); c.bufCtx = ctx; }
     const v = { c, midi, t0: t, srcs: [], lfoT: [], end: Infinity, rel: null, s };
@@ -1391,7 +1478,7 @@ registerProcessor('bl-crush',C);`;
     }
     const b = ctx.createBufferSource(); b.buffer = c.buf;
     const rate = Math.pow(2, (midi - 60) / 12); b.playbackRate.value = rate;
-    const g = ctx.createGain(); g.gain.value = s.gain * 0.38 * (0.25 + 0.75 * Math.pow(vel, 1.2));
+    const g = ctx.createGain(); g.gain.value = s.gain * 0.38 * (0.25 + 0.75 * Math.pow(vel, 1.2)) * (x.amp || 1);
     b.connect(g); g.connect(c.input);
     v.out = g; v.srcs.push(b); v.natural = t + c.buf.duration / rate; v.end = v.natural;
     b.start(t); b.stop(v.end);
@@ -1663,6 +1750,17 @@ registerProcessor('bl-crush',C);`;
   kit('Percussion', 'Perc', [['Conga High', d('conga', 5), 0.7], ['Conga Low', d('conga', 0), 0.7], ['Bongo High', d('bongo', 3), 0.65], ['Bongo Low', d('bongo', -3), 0.65],
     ['Shaker', d('shaker'), 0.4], ['Tambourine', d('tamb'), 0.45], ['Cowbell', d('cowbell', 0, 1, 0.5), 0.5], ['Woodblock', d('block'), 0.6], ['Triangle', d('triangle'), 0.4],
     ['Agogo', d('agogo'), 0.5], ['Claves', d('clave'), 0.5], ['Timpani', d('timpani'), 0.9], ['Finger Snap', d('snap'), 0.6]]);
+  // 2026-11-16: two more kits (Simple mode's Rock and Orchestra), and the drums some kits lacked for 8 Simple lanes
+  kit('Drums: Rock', 'Rock', [['Kick', d('kick', 4, 0.7, 0.75, 0.85, { drive: 0.25 }), 1], ['Snare', d('snare', 4, 1.2, 0.85, 0.9, { drive: 0.2 }), 0.8],
+    ['Closed Hat', d('hat', -1, 1.3, 0.85), 0.4, 1], ['Open Hat', d('ohat', -1, 1.4, 0.85), 0.4, 1], ['Ride', d('ride', -2, 1.4, 0.75), 0.42], ['Crash', d('cymbal', -1, 1.4, 0.85), 0.5],
+    ['Rack Tom', d('tom', 2, 1.1, 0.5, 0.7, { drive: 0.15 }), 0.85], ['Floor Tom', d('tom', -6, 1.3, 0.5, 0.7, { drive: 0.15 }), 0.9], ['Rim', d('rim', 0), 0.6], ['Cowbell', d('cowbell', -1), 0.5]]);
+  kit('Drums: Orchestral', 'Orch', [['Bass Drum', d('kick', -9, 3, 0.15, 0.08), 1], ['Snare', d('snare', 2, 0.9, 0.75, 0.95), 0.75], ['Snare Roll', d('sroll', 0, 1, 0.6, 0.5), 0.6],
+    ['Cymbals', d('cymbal', -2, 1.8, 0.9), 0.55], ['Timpani Low', d('timpani', -5, 1.2), 0.95], ['Timpani High', d('timpani', 2, 1.1), 0.9], ['Gong', d('gong', 0, 1), 0.8],
+    ['Triangle', d('triangle', 0, 1.4), 0.4], ['Suspended Cymbal', d('revcym', 0, 1.2), 0.5]]);
+  kit('Drums: Lo-fi', 'Lo-fi', [['Tom', d('tom', -2, 1, 0.4, 0.5, { crush: 0.5 }), 0.75], ['Crash', d('cymbal', -3, 1, 0.5, 0.5, { crush: 0.5 }), 0.4]]);
+  kit('Drums: Trap', 'Trap', [['Tom', d('tom', -4, 1.6, 0.4, 0.4, { drive: 0.2 }), 0.85], ['Crash', d('cymbal', 1, 1.1, 0.6), 0.45]]);
+  kit('Drums: Chip', 'Chip', [['Clap', d('chipsnare', 5, 0.6), 0.7], ['Blip', d('chipkick', 24, 0.5), 0.6], ['Crash', d('chiphat', -5, 8), 0.4]]);
+  kit('Percussion', 'Perc', [['Rainstick', d('shaker', -5, 6, 0.3, 0.1), 0.35]]);
 
   const slug = s => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const seen = new Set();
@@ -1874,7 +1972,7 @@ registerProcessor('bl-crush',C);`;
 })(BeatLabEngine);
 
 // Beat Lab engine, part 7: Simple-mode songs. A simple song is a grid (notes stored as [column, scale row], drums as
-// [column, lane]); E.fromSimple turns one into a normal one-pattern project, and E.fromSave turns anything Beat Lab
+// [column, lane], format below); E.fromSimple turns one into a normal one-pattern project, and E.fromSave turns anything Beat Lab
 // saved (localStorage beatlab_p_<id>) into a project the engine can play.
 (function (E) {
   'use strict';
@@ -1887,32 +1985,62 @@ registerProcessor('bl-crush',C);`;
     phrygian: { n: 'Phrygian', s: [0, 1, 3, 5, 7, 8, 10] }, lydian: { n: 'Lydian', s: [0, 2, 4, 6, 7, 9, 11] },
     chromatic: { n: 'Chromatic', s: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
   };
-  E.SIMPLE_DEF = { key: 0, scale: 'major', oct: 4, range: 2, inst: 'piano', kit: 'electronic', bars: 4, beats: 4, split: 2, bpm: 110, echo: 1, swing: 0, mel: [], drm: [] };
+  // A simple song (format of 2026-11-16; older songs are migrated by E.simpleNormalize, and play exactly as before):
+  //   { key, scale, oct, range, bars, beats, split, bpm, echo, swing, kit, dv: 2,
+  //     ly: [{ inst, mel: [[column, scale row, art?]], vol: 0..1 (0.8 = unity), mute, dbl: '' | second instrument }]  (1-4 layers),
+  //     cur: the layer being edited, drm: [[column, lane 0-7, art?]] }   art: an E.ARTS id
+  //   Before: one instrument (inst + mel) and 4 drum lanes (kick, snare, hat, clap) = today's lanes 0, 1, 2, 4.
+  E.SIMPLE_DEF = { key: 0, scale: 'major', oct: 4, range: 2, kit: 'electronic', bars: 4, beats: 4, split: 2, bpm: 110, echo: 1, swing: 0, drm: [], cur: 0 };
+  E.SIMPLE_LAYER = { inst: 'piano', mel: [], vol: 0.8, mute: 0, dbl: '' };
+  E.SIMPLE_MAX_LAYERS = 4;
   E.SIMPLE_INST = [
     { id: 'piano', n: 'Piano', p: 'grand-piano' }, { id: 'marimba', n: 'Marimba', p: 'marimba' }, { id: 'guitar', n: 'Guitar', p: 'nylon-guitar' },
     { id: 'strings', n: 'Strings', p: 'string-ensemble' }, { id: 'flute', n: 'Flute', p: 'flute' }, { id: 'synth', n: 'Synth', p: 'juno-keys' },
     { id: 'choir', n: 'Choir', p: 'choir-aahs' }, { id: 'bells', n: 'Bells', p: 'glockenspiel' }, { id: 'chip', n: '8-bit', p: 'chip-pulse-25' }, { id: 'bass', n: 'Bass', p: 'finger-bass' }
   ];
+  // 8 drum lanes per kit; lanes 0, 1, 2 and 4 are the sounds the 4-lane kits had (so old songs sound the same)
+  E.SIMPLE_LANES = ['Kick', 'Snare', 'Closed hat', 'Open hat', 'Clap', 'Tom', 'Perc', 'Crash'];
+  const kit = (id, n, p, names) => ({ id, n, p, ln: E.SIMPLE_LANES.map((x, i) => (names && names[i]) || x) });
   E.SIMPLE_KITS = [
-    { id: 'electronic', n: 'Electronic', p: ['808-kick', '808-snare', '808-closed-hat', '808-clap'] },
-    { id: 'acoustic', n: 'Acoustic', p: ['acoustic-kick', 'acoustic-snare', 'acoustic-closed-hat', 'acoustic-side-stick'] },
-    { id: 'lofi', n: 'Lo-fi', p: ['lo-fi-kick', 'lo-fi-snare', 'lo-fi-hat', 'lo-fi-rim'] },
-    { id: 'trap', n: 'Trap', p: ['trap-808-kick', 'trap-snare', 'trap-hat', 'trap-clap'] },
-    { id: 'house', n: 'House', p: ['house-kick', 'house-snare', 'house-closed-hat', 'house-clap'] },
-    { id: 'latin', n: 'Bongos', p: ['perc-conga-low', 'perc-conga-high', 'perc-shaker', 'perc-cowbell'] },
-    { id: 'chip', n: '8-bit', p: ['chip-kick', 'chip-snare', 'chip-hat', 'chip-tom'] }
+    kit('electronic', 'Electronic', ['808-kick', '808-snare', '808-closed-hat', '808-open-hat', '808-clap', '808-mid-tom', '808-cowbell', '808-cymbal'], { 6: 'Cowbell' }),
+    kit('acoustic', 'Acoustic', ['acoustic-kick', 'acoustic-snare', 'acoustic-closed-hat', 'acoustic-open-hat', 'acoustic-side-stick', 'acoustic-rack-tom', 'acoustic-ride', 'acoustic-crash'], { 4: 'Side stick', 6: 'Ride' }),
+    kit('rock', 'Rock', ['rock-kick', 'rock-snare', 'rock-closed-hat', 'rock-open-hat', 'rock-floor-tom', 'rock-rack-tom', 'rock-ride', 'rock-crash'], { 4: 'Floor tom', 5: 'Rack tom', 6: 'Ride' }),
+    kit('lofi', 'Lo-fi', ['lo-fi-kick', 'lo-fi-snare', 'lo-fi-hat', 'lo-fi-open-hat', 'lo-fi-rim', 'lo-fi-tom', 'lo-fi-shaker', 'lo-fi-crash'], { 4: 'Rim', 6: 'Shaker' }),
+    kit('trap', 'Trap', ['trap-808-kick', 'trap-snare', 'trap-hat', 'trap-open-hat', 'trap-clap', 'trap-tom', 'trap-perc', 'trap-crash']),
+    kit('house', 'House', ['house-kick', 'house-snare', 'house-closed-hat', 'house-open-hat', 'house-clap', '909-low-tom', 'house-shaker', '909-crash'], { 6: 'Shaker' }),
+    kit('latin', 'Bongos', ['perc-conga-low', 'perc-conga-high', 'perc-shaker', 'perc-tambourine', 'perc-cowbell', 'perc-bongo-high', 'perc-woodblock', 'perc-agogo'], ['Conga low', 'Conga high', 'Shaker', 'Tambourine', 'Cowbell', 'Bongo', 'Woodblock', 'Agogo']),
+    kit('world', 'World', ['perc-bongo-low', 'perc-bongo-high', 'perc-shaker', 'perc-tambourine', 'perc-claves', 'perc-conga-low', 'perc-cowbell', 'perc-triangle'], ['Bongo low', 'Bongo high', 'Shaker', 'Tambourine', 'Claves', 'Conga', 'Cowbell', 'Triangle']),
+    kit('orchestra', 'Orchestra', ['orch-bass-drum', 'orch-snare', 'orch-triangle', 'orch-suspended-cymbal', 'orch-snare-roll', 'orch-timpani-low', 'orch-timpani-high', 'orch-cymbals'], ['Bass drum', 'Snare', 'Triangle', 'Swell', 'Snare roll', 'Timpani low', 'Timpani high', 'Cymbals']),
+    kit('chip', '8-bit', ['chip-kick', 'chip-snare', 'chip-hat', 'chip-open-hat', 'chip-tom', 'chip-clap', 'chip-blip', 'chip-crash'], { 4: 'Tom', 5: 'Clap', 6: 'Blip' })
   ];
-  E.SIMPLE_LANES = ['Kick', 'Snare', 'Hi-hat', 'Clap'];
+  const isObj = o => o && typeof o === 'object' && !Array.isArray(o);
   E.simpleNormalize = function (s) {
-    s = E.fill(s && typeof s === 'object' ? s : {}, E.SIMPLE_DEF);
+    s = isObj(s) ? s : {};
+    if (!Array.isArray(s.ly)) s.ly = [{ inst: s.inst, mel: Array.isArray(s.mel) ? s.mel : [] }];      // one instrument -> layer 1
+    delete s.inst; delete s.mel;
+    if (!s.dv) {                                                                                   // 4 drum lanes -> 8: clap moves to lane 4
+      if (Array.isArray(s.drm)) s.drm = s.drm.map(x => Array.isArray(x) && x[1] === 3 ? [x[0], 4].concat(x.slice(2)) : x);
+      s.dv = 2;
+    }
+    E.fill(s, E.SIMPLE_DEF);
     if (!E.SCALES[s.scale]) s.scale = 'major';
     s.bars = clamp(s.bars | 0, 1, 16); s.beats = clamp(s.beats | 0, 2, 7); s.split = clamp(s.split | 0, 1, 4); s.range = clamp(s.range | 0, 1, 3); s.oct = clamp(s.oct | 0, 2, 6);
     s.bpm = clamp(s.bpm | 0, 40, 220); s.key = clamp(s.key | 0, 0, 11);
-    if (!E.SIMPLE_INST.some(x => x.id === s.inst)) s.inst = 'piano';
     if (!E.SIMPLE_KITS.some(x => x.id === s.kit)) s.kit = 'electronic';
-    if (!Array.isArray(s.mel)) s.mel = []; if (!Array.isArray(s.drm)) s.drm = [];
+    s.ly = s.ly.filter(isObj).slice(0, E.SIMPLE_MAX_LAYERS);
+    if (!s.ly.length) s.ly.push({});
+    for (const L of s.ly) {
+      E.fill(L, E.SIMPLE_LAYER);
+      if (!Array.isArray(L.mel)) L.mel = [];
+      if (!E.SIMPLE_INST.some(x => x.id === L.inst)) L.inst = 'piano';
+      if (L.dbl && !E.SIMPLE_INST.some(x => x.id === L.dbl)) L.dbl = '';
+      L.vol = clamp(+L.vol || 0, 0, 1); L.mute = L.mute ? 1 : 0;
+    }
+    s.cur = clamp(s.cur | 0, 0, s.ly.length - 1);
+    if (!Array.isArray(s.drm)) s.drm = [];
     return s;
   };
+  E.simpleLayer = s => s.ly[s.cur] || s.ly[0];
   E.simpleCols = s => s.bars * s.beats * s.split;
   E.simpleRows = s => E.SCALES[s.scale].s.length * s.range + 1;
   E.simpleMidi = (s, r) => { const sc = E.SCALES[s.scale].s, n = sc.length; return 12 * (s.oct + 1) + s.key + sc[r % n] + 12 * Math.floor(r / n); };
@@ -1931,22 +2059,39 @@ registerProcessor('bl-crush',C);`;
     // swing: 16ths swing in the engine; with beats split in two the off-beat 8ths are pushed late here instead
     const sw8 = s.swing && s.split === 2, at = c => Math.round(c * tpc) + (sw8 && c % 2 ? 8 : 0), len = c => Math.round(tpc) - (sw8 && c % 2 ? 8 : 0);
     const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing && s.split === 4 ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(3) });
-    const inst = E.SIMPLE_INST.find(x => x.id === s.inst), kit = E.SIMPLE_KITS.find(x => x.id === s.kit);
-    const melody = E.addChannel(p, inst.p, { n: inst.n, mix: 1 });
-    const drums = kit.p.map((pid, i) => E.addChannel(p, pid, { n: E.SIMPLE_LANES[i], mix: 2, vol: i === 2 ? 0.7 : 0.8 }));
+    const kit = E.SIMPLE_KITS.find(x => x.id === s.kit), pat = p.pat[0], map = { mel: [], drm: [] };
+    pat.len = steps; pat.n = 'Song';
+    for (const L of s.ly) {                        // each layer is a channel (a doubled layer two), all on mixer track 1
+      const inst = E.SIMPLE_INST.find(x => x.id === L.inst);
+      const melody = E.addChannel(p, inst.p, { n: inst.n, mix: 1, vol: L.vol, mute: L.mute });
+      const notes = L.mel.filter(([c, r]) => c < cols && r < rows).map(([c, r, a]) => { const n = [at(c), len(c), E.simpleMidi(s, r), 100]; if (a && E.ART[a]) n.push(a); return n; }).sort((a, b) => a[0] - b[0]);
+      pat.nt[melody.id] = notes;
+      const ids = [melody.id];
+      if (L.dbl) {
+        const i2 = E.SIMPLE_INST.find(x => x.id === L.dbl), dbl = E.addChannel(p, i2.p, { n: i2.n + ' (double)', mix: 1, vol: L.vol * 0.85, mute: L.mute });
+        pat.nt[dbl.id] = notes.map(n => n.slice()); ids.push(dbl.id);
+      }
+      map.mel.push(ids);
+    }
+    const drums = kit.p.map((pid, i) => E.addChannel(p, pid, { n: kit.ln[i], mix: 2, vol: i === 2 || i === 3 || i === 7 ? 0.7 : 0.8 }));
     p.mix[1].n = 'Melody'; p.mix[2].n = 'Drums';
     if (s.echo) {                                  // one shared reverb (a send bus) keeps it light on slow computers
       p.mix[3].n = 'Echo'; p.mix[3].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 2.4, lc: 200, mix: 1 }) });
       p.mix[1].snd = [3, 0.42]; p.mix[2].snd = [3, 0.14];
     }
     p.mix[2].fx.push({ t: 'comp', on: 1, p: Object.assign(E.fxDefaults('comp'), { th: -16, ra: 3, mk: 2 }) });
-    const pat = p.pat[0]; pat.len = steps; pat.n = 'Song';
-    pat.nt[melody.id] = s.mel.filter(([c, r]) => c < cols && r < rows).map(([c, r]) => [at(c), len(c), E.simpleMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);
     drums.forEach((ch, lane) => {
+      map.drm.push(ch.id);
       const hits = s.drm.filter(([c, l]) => l === lane && c < cols);
-      if (tpc % STEP === 0 && !sw8) { const st = pat.st[ch.id] = new Array(steps).fill(0); for (const [c] of hits) st[Math.round(c * tpc / STEP)] = (c * tpc) % PPQ === 0 ? 112 : 96; }
-      else pat.nt[ch.id] = hits.map(([c]) => [at(c), len(c), 60, (c * tpc) % PPQ === 0 ? 112 : 96]).sort((a, b) => a[0] - b[0]);
+      if (tpc % STEP === 0 && !sw8) {
+        const st = pat.st[ch.id] = new Array(steps).fill(0);
+        for (const [c, , a] of hits) {
+          const i = Math.round(c * tpc / STEP); st[i] = (c * tpc) % PPQ === 0 ? 112 : 96;
+          if (a && E.ART[a]) { pat.sa = pat.sa || {}; (pat.sa[ch.id] = pat.sa[ch.id] || new Array(steps).fill(0))[i] = a; }
+        }
+      } else pat.nt[ch.id] = hits.map(([c, , a]) => { const n = [at(c), len(c), 60, (c * tpc) % PPQ === 0 ? 112 : 96]; if (a && E.ART[a]) n.push(a); return n; }).sort((a, b) => a[0] - b[0]);
     });
+    Object.defineProperty(p, 'smap', { value: map, enumerable: false });     // layer -> channel ids, lane -> channel id (for the UI)
     p.pl.cl = [[pat.id, 0, 0, steps]];
     return p;
   };

@@ -38,7 +38,8 @@ function buildStudio() {
   search.addEventListener('input', () => fillBrowser(search.value));
   search.addEventListener('keydown', e => e.stopPropagation());
   const list = h('div', { class: 'blist' });
-  const browser = h('aside', { id: 'browser' }, h('div', { class: 'bhead' }, h('b', null, 'Sounds'), h('span', { class: 'hint' }, 'click: listen · double-click: load · +: add')), search, list);
+  const kitBtn = h('button', { class: 'btn small bkit', title: 'Add a whole drum kit as channels at once', onclick: e => drumKitMenu(e.clientX, e.clientY) }, '+ New drum kit');
+  const browser = h('aside', { id: 'browser' }, h('div', { class: 'bhead' }, h('b', null, 'Sounds'), h('span', { class: 'hint' }, 'click: listen · double-click: load · +: add')), search, kitBtn, list);
   // ---- tabs + panes
   const tabs = h('nav', { class: 'tabs' }, TABS.map(([id, n, k]) => h('button', { 'data-t': id, title: n + ' (' + k + ' or Alt+' + (TABS.findIndex(t => t[0] === id) + 1) + ')', onclick: () => showTab(id) }, n)));
   const panes = h('div', { class: 'panes' }, TABS.map(([id]) => h('div', { class: 'pane', id: 'pane-' + id })));
@@ -109,9 +110,14 @@ function fillBrowser(q) {
   const user = Store.userPresets();
   const all = user.concat(E.PRESETS);
   const cats = (user.length ? ['User'] : []).concat(E.CATEGORIES);
+  // drums and percussion get their own section at the end, under a heading with the "whole kit" button
+  const isDrum = c => /^Drums|^Percussion/.test(c);
+  cats.sort((a, b) => isDrum(a) - isDrum(b));
+  let sec = false;
   for (const c of cats) {
-    const items = all.filter(p => p.c === c && (!q || p.n.toLowerCase().includes(q) || c.toLowerCase().includes(q)));
+    const items = all.filter(p => p.c === c && (!q || p.n.toLowerCase().includes(q) || c.toLowerCase().includes(q) || (isDrum(c) && ('drums percussion'.includes(q)))));
     if (!items.length) continue;
+    if (isDrum(c) && !sec) { sec = true; list.appendChild(h('div', { class: 'bsec' }, h('span', null, 'Drums & Percussion'), h('button', { class: 'bsec-add', title: 'Add a whole drum kit as channels at once', onclick: e => drumKitMenu(e.clientX, e.clientY) }, '+ Kit'))); }
     const open = q || browserOpen[c];
     const head = h('button', { class: 'bcat' + (open ? ' open' : ''), onclick: () => { browserOpen[c] = !browserOpen[c]; fillBrowser(ST.search.value); } }, h('span', null, c), h('em', null, items.length));
     list.appendChild(head);
@@ -128,6 +134,22 @@ function fillBrowser(q) {
     }
   }
   if (!list.children.length) list.appendChild(h('div', { class: 'empty' }, 'No sounds match.'));
+}
+// a whole kit as channels at once: Simple mode's 8-piece kits, or every sound of a drum category
+function drumKitMenu(x, y) {
+  const cats = E.CATEGORIES.filter(c => /^Drums|^Percussion/.test(c));
+  menu(x, y, [{ t: '8-piece kits', dis: true }].concat(E.SIMPLE_KITS.map(k => ({ t: '   ' + k.n + ' (' + k.ln.join(', ') + ')', f: () => addDrumKit(k.n, k.p.map((p, i) => [p, k.ln[i]])) })),
+    [{ sep: 1 }, { t: 'Every sound of a kit', dis: true }], cats.map(c => { const ps = E.PRESETS.filter(p => p.c === c); return { t: '   ' + c.replace(/^Drums: /, '') + ' (' + ps.length + ' sounds)', f: () => addDrumKit(c.replace(/^Drums: /, ''), ps.map(p => [p.id, p.n])) }; })));
+}
+function addDrumKit(name, list) {
+  let first = null;
+  Hist.edit('Add ' + name + ' kit', () => {
+    const ins = freeInsert(A.p); if (ins > 0) A.p.mix[ins].n = name + ' kit';
+    for (const [pid, n] of list) { const c = newChannel(A.p, pid, { n }); c.mix = ins; if (!first) first = c; }
+    if (first) A.ui.ch = first.id;
+  });
+  toast('Added the ' + name + ' kit: ' + list.length + ' channels, all on one mixer track');
+  markViews(); syncRackRows(true);
 }
 function addChannelFromPreset(pid) {
   let c;

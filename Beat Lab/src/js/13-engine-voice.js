@@ -125,21 +125,28 @@
   const FT = { lp: 'lowpass', hp: 'highpass', bp: 'bandpass', notch: 'notch' };
 
   // ---------------------------------------------------------------- start a voice (dur: seconds, or null = held)
-  E.voiceStart = function (eng, c, midi, vel, t, dur) {
+  // x: articulation (from eng._fire), all optional: { amp: gain x, bright: open the filter, rel: release seconds,
+  //    from: midi to glide from over gt seconds (bend: keep the last note sounding), vib: vibrato, fall: seconds }
+  E.voiceStart = function (eng, c, midi, vel, t, dur, x) {
     const ctx = eng.ctx, s = c.s;
     if (t < ctx.currentTime) t = ctx.currentTime;
     vel = Math.max(0.01, Math.min(1, vel));
-    if (s.k === 'drm') return drumVoice(eng, c, s, midi, vel, t, dur);
+    x = x || {};
+    if (s.k === 'drm') return drumVoice(eng, c, s, midi, vel, t, dur, x);
     // polyphony per channel / mono legato
-    let glideFrom = null;
+    let glideFrom = null, glideT = s.glide;
     const live = c.voices.filter(v => !v.dead && v.end > t);
-    if (s.mono) {
+    if (x.from != null) {                        // slide / bend: start at another pitch and glide to this one
+      glideFrom = x.from; glideT = x.gt;
+      if (!x.bend) for (const v of live) if (v.t0 < t) E.voiceRelease(eng, v, t, 0.03);     // legato: the last note hands over
+    } else if (s.mono) {
       const prev = live[live.length - 1];
       if (prev && (prev.rel == null || prev.rel > t + 0.002)) glideFrom = prev.midi;
       for (const v of live) E.voiceKill(eng, v, t);
     } else if (live.length >= (s.poly || 12)) E.voiceKill(eng, live[0], t);
 
     const v = { c, midi, t0: t, srcs: [], lfoT: [], end: Infinity, rel: null, s };
+    const dets = [];                           // detune params the vibrato and fall act on
     const out = ctx.createGain(); out.gain.value = 0; v.out = out;
     let dest = out;
     const useF = s.f.fc < 17500 || s.f.env !== 0 || s.f.t !== 'lp' || (c.lfoTgt === 'filter');
@@ -165,7 +172,8 @@
       const n = midi + o.oct * 12 + o.semi;
       if (o.w === 'pluck' || o.w.startsWith('m:')) {
         const b = ctx.createBufferSource(); b.buffer = srcBuffer(ctx, s, o.w, Math.round(n));
-        b.detune.value = o.fine + (n - Math.round(n)) * 100;
+        b.detune.value = o.fine + (n - Math.round(n)) * 100; dets.push([b.detune, b.detune.value]);
+        if (glideFrom != null && x.from != null && glideFrom !== midi) { b.detune.setValueAtTime(b.detune.value + (glideFrom - midi) * 100, t); b.detune.linearRampToValueAtTime(b.detune.value, t + Math.max(0.01, glideT)); }
         const g = ctx.createGain(); g.gain.value = o.lvl; b.connect(g); g.connect(dest);
         v.srcs.push(b); v.bufEnd = Math.max(v.bufEnd || 0, t + b.buffer.duration);
         if (s.pe) { b.detune.setValueAtTime(o.fine + s.pe * 100, t); b.detune.setTargetAtTime(o.fine, t, s.pt / 3); }
@@ -187,7 +195,7 @@
         osc.frequency.value = f; osc.detune.value = base;
         if (s.pe) { osc.detune.setValueAtTime(base + s.pe * 100, t); osc.detune.setTargetAtTime(base, t, s.pt / 3); }
         osc.connect(gs[uni > 1 ? u % 2 : 0]);
-        v.srcs.push(osc); carriers.push({ osc, f });
+        v.srcs.push(osc); carriers.push({ osc, f }); dets.push([osc.detune, base]);
         if (c.lfoTgt === 'pitch' && c.lfoG) { c.lfoG.connect(osc.detune); v.lfoT.push(osc.detune); }
       }
     };
@@ -195,13 +203,23 @@
     if (s.sub > 0) addOsc({ w: 'sine', oct: -1, semi: s.o1.semi, fine: 0, lvl: s.sub, uni: 1, det: 0 });
     if (s.nz > 0) addOsc({ w: 'noise', lvl: s.nz });
     if (fmG) for (const cr of carriers) fmG.connect(cr.osc.frequency);
-    if (glideFrom != null && s.glide > 0 && glideFrom !== midi) {
+    if (glideFrom != null && glideT > 0 && glideFrom !== midi) {
       const ratio = Math.pow(2, (glideFrom - midi) / 12);
-      for (const cr of carriers) { cr.osc.frequency.setValueAtTime(cr.f * ratio, t); cr.osc.frequency.exponentialRampToValueAtTime(cr.f, t + s.glide); }
+      for (const cr of carriers) { cr.osc.frequency.setValueAtTime(cr.f * ratio, t); cr.osc.frequency.exponentialRampToValueAtTime(cr.f, t + glideT); }
+    }
+    if (x.vib && dets.length) {                  // vibrato: a sine wobble of the pitch that fades in
+      const lo = ctx.createOscillator(), lg = ctx.createGain();
+      lo.frequency.value = 5.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(38, t + 0.22);
+      lo.connect(lg); for (const [d] of dets) lg.connect(d);
+      v.srcs.push(lo);
+    }
+    if (x.fall && dur != null) {                 // fall: the pitch drops away at the end of the note
+      const ts = t + Math.max(0.01, dur - x.fall);
+      for (const [d, base] of dets) { d.setValueAtTime(base, ts); d.linearRampToValueAtTime(base - 900, ts + x.fall + 0.12); }
     }
     // filter envelope
     if (v.filt) {
-      const F = s.f, fc0 = clampF(F.fc * Math.pow(2, F.kt * (midi - 60) / 12) * Math.pow(2, F.vel * (vel - 1)), ctx);
+      const F = s.f, fc0 = clampF(F.fc * Math.pow(2, F.kt * (midi - 60) / 12) * Math.pow(2, F.vel * (vel - 1)) * (x.bright ? 2.2 : 1), ctx);
       v.fc0 = fc0;
       const fp = v.filt.frequency;
       if (F.env) {
@@ -210,7 +228,7 @@
       } else fp.setValueAtTime(fc0, t);
     }
     // amp envelope
-    const A = s.amp, peak = s.gain * 0.24 * (1 - s.vel + s.vel * Math.pow(vel, 1.3));
+    const A = s.amp, peak = s.gain * 0.24 * (1 - s.vel + s.vel * Math.pow(vel, 1.3)) * (x.amp || 1);
     const g = out.gain;
     g.setValueAtTime(0, t); g.linearRampToValueAtTime(peak, t + Math.max(0.0015, A.a));
     g.setTargetAtTime(peak * A.s, t + Math.max(0.0015, A.a), Math.max(0.005, A.d) / 4);
@@ -222,7 +240,7 @@
     v.natural = natural;
     for (const src of v.srcs) src.start(t, src.__off || 0);
     if (natural < Infinity) { v.end = natural; for (const src of v.srcs) src.stop(natural); }
-    if (dur != null) E.voiceRelease(eng, v, t + Math.max(0.01, dur));
+    if (dur != null) E.voiceRelease(eng, v, t + Math.max(0.01, dur), x.rel);
     else v.live = true;
     return v;
   };
@@ -255,7 +273,7 @@
     try { v.out.disconnect(); } catch (e) {}
   };
 
-  function drumVoice(eng, c, s, midi, vel, t, dur) {
+  function drumVoice(eng, c, s, midi, vel, t, dur, x) {
     const ctx = eng.ctx;
     if (!c.buf || c.bufCtx !== ctx) { c.buf = E.drumBuffer(ctx, s.d); c.bufCtx = ctx; }
     const v = { c, midi, t0: t, srcs: [], lfoT: [], end: Infinity, rel: null, s };
@@ -266,7 +284,7 @@
     }
     const b = ctx.createBufferSource(); b.buffer = c.buf;
     const rate = Math.pow(2, (midi - 60) / 12); b.playbackRate.value = rate;
-    const g = ctx.createGain(); g.gain.value = s.gain * 0.38 * (0.25 + 0.75 * Math.pow(vel, 1.2));
+    const g = ctx.createGain(); g.gain.value = s.gain * 0.38 * (0.25 + 0.75 * Math.pow(vel, 1.2)) * (x.amp || 1);
     b.connect(g); g.connect(c.input);
     v.out = g; v.srcs.push(b); v.natural = t + c.buf.duration / rate; v.end = v.natural;
     b.start(t); b.stop(v.end);
