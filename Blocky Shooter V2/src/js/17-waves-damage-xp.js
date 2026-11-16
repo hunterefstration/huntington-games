@@ -136,7 +136,9 @@ function damageEnemy(enemyGroup, amount, isHeadshot, point, isExplosion = false,
     // multiplayer guest: tell the host (the referee) and show the hit right away so there's no lag
     if (NET.inGame && !NET.host) { netClientHit(enemyGroup, amount, isHeadshot, point, isExplosion, src || (isExplosion ? 'explosive' : playerStats.currentWeapon)); return; }
     if (u.config.armor && u.state !== 'stun' && !isExplosion) amount *= u.config.armor;     // the Juggernaut's plating
-    if (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead) amount *= 0.35;      // 5.0 Shocker: linked zombies take reduced damage until the Shocker dies
+    if (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead) amount *= 0.35;
+    if (u.freezeT > 0) amount *= FROZEN_TAKEN;                   // 5.5: frozen zombies take +50% from everything
+    if (src === 'cryo') chillEnemy(enemyGroup, u);               // 5.5 Cryo Blaster: chill, then freeze      // 5.0 Shocker: linked zombies take reduced damage until the Shocker dies
     const mine = !dmgOwner;              // host applying someone else's hit: no hit marker / numbers here
     if (mine) runStats.damage += Math.min(amount, Math.max(0, u.hp));
     u.hp -= amount;
@@ -184,7 +186,8 @@ function killEnemy(e, selfDestruct = false, headshot = false, src = 'explosive')
         if (headshot) { u.head.visible = false; spawnParticles(new V3(e.position.x, e.position.y + 2.8 * u.config.scale, e.position.z), zLook(u.config).skin, 10, 7, 0.9, 0.2 * u.config.scale, true, { bounce: true, spin: 12, grav: 26 }); }
         corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1, back: headshot || Math.random() < 0.35 });
         if (award && !u.noLoot) dropLoot(u, e.position);
-        if (u.config.ai === 'shocker' && (!NET.inGame || NET.host)) shockerDied(e, u);       // 5.0: frees its linked zombies and dies in an EMP burst
+        if (u.config.ai === 'shocker' && (!NET.inGame || NET.host)) shockerDied(e, u);
+        if (u.config.id === 'bloater' && (!NET.inGame || NET.host)) bloaterBurst(e);      // 5.5: bursts into a poison cloud       // 5.0: frees its linked zombies and dies in an EMP burst
         if (u.config.id === 'splitter' && (!NET.inGame || NET.host)) {   // 3.8: bursts into Mites
             spawnParticles(c, 0xc084fc, 14, 8, 0.7, 0.25, false, { grav: 14 });
             for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.random(); const m = spawnEnemy(enemyTypes.mite, e.position.x + Math.cos(a) * 1.4, e.position.z + Math.sin(a) * 1.4, e.position.y + 0.6, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }
@@ -346,6 +349,7 @@ function fxVisible(pos, maxDist = 90) {
 // Fold a finished run into the lifetime stats (sandbox runs don't count)
 function commitLife() {
     const s = runStats;
+    checkRewards55();             // 5.5: new camos / tracer earned this run
     if (run.mode === 'sandbox' || s.time < 2) { if (Object.keys(CLX.gain).length) saveJSON('blocky21_life', life); return false; }      // 5.4: class XP is always banked
     life.runs++; life.kills += s.kills; life.headshots += s.headshots; life.bosses += s.bosses;
     life.shots += s.shots; life.hits += s.hits; life.damage += Math.round(s.damage); life.time += s.time;

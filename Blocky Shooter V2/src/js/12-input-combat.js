@@ -212,6 +212,8 @@ function weaponTick(dt) {
     if (slashAt >= 0 && gameTime >= slashAt) { slashAt = -1; if (w.melee && currentHp > 0) katanaHits(w); }
     if (w.melee) { if (aimHeld && !aimWas) lunge(w); updateAmmoHUD(); }
     aimWas = aimHeld;
+    if (w.battery) plasmaTick(w, dt);          // 5.5 Plasma Rifle: the cell recharges itself
+    glow55Tick();
     if (w.charge) {
         railTick(w); triggerFresh = false;
         if (railC > 0) { const pc = Math.round(railC * 50) * 2; if (ui.railRing._pc !== pc) { ui.railRing._pc = pc; setStyle(ui.railRing, '--p', String(pc)); } setStyle(ui.railRing, 'opacity', '1'); }
@@ -286,7 +288,8 @@ function fireOnce(w) {
         case 'shotgun': vm.pump = 0.5; setTimeout(() => { if (vmModel && vmModel.id === 'shotgun') { ejectCasing(vmModel, 'shell'); sfx('pump'); } }, 170); break;
         case 'lever': setTimeout(() => { if (vmModel && vmModel.id === 'lever') { vm.pump = 0.5; ejectCasing(vmModel, 'shell'); sfx('rack'); } }, 120); break;
         case 'sniper': vm.bolt = 0; vm.boltEjected = false; break;
-        case 'rpg': case 'crossbow': case 'flamer': case 'tesla': case 'railgun': break;
+        case 'rpg': case 'crossbow': case 'flamer': case 'tesla': case 'railgun': case 'plasma': case 'cryo': case 'seeker': break;
+        case 'drum': vm.slideKick = 1; ejectCasing(vmModel, 'shell'); break;      // 5.5
         case 'glauncher': vm.cylTarget += Math.PI / 3; vm.hammer = 1; break;
         case 'dual': {     // 4.0: the guns take turns - move the flash / muzzle / ejection port to the one firing
             const s = vm.akSide = vm.akSide ? 0 : 1, m = vmModel;     // 1 = the left gun
@@ -298,7 +301,7 @@ function fireOnce(w) {
         }
         default: vm.slideKick = 1; ejectCasing(vmModel);
     }
-    VM.flash.color.setHex(id === 'railgun' ? 0x8ff8ff : id === 'tesla' ? 0xb4c0ff : 0xffffff);
+    VM.flash.color.setHex(id === 'railgun' ? 0x8ff8ff : id === 'tesla' ? 0xb4c0ff : id === 'plasma' ? 0xf5b8ff : id === 'cryo' ? 0xbfe9ff : 0xffffff);
     shake = Math.max(shake, w.recoil * 0.3);
     sfx(id);
     heat += 1;
@@ -306,7 +309,7 @@ function fireOnce(w) {
 
     getMuzzleWorld(_muzzleW);
     camera.getWorldDirection(_fwd);
-    if (!w.flame && !w.tesla) muzzleBurst(_muzzleW, _fwd, w.pellets > 1 ? 0.8 : 1);
+    if (!w.flame && !w.tesla && !w.frost) muzzleBurst(_muzzleW, _fwd, w.pellets > 1 ? 0.8 : 1);
     _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
     _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
     const spread = currentSpread(w);
@@ -314,6 +317,7 @@ function fireOnce(w) {
     if (w.rocket) { fireRocket(w, dmgMul, spread); updateAmmoHUD(); return; }
     if (w.grenade) { fireGrenade(w, dmgMul, spread); updateAmmoHUD(); autoReloadSoon(id, 300); return; }
     if (w.tesla) { fireTesla(w, dmgMul); updateAmmoHUD(); autoReloadSoon(id, 200); return; }
+    if (w.frost) { fireCryo(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0) autoReloadSoon(id, 200); return; }      // 5.5 Cryo Blaster
     if (w.flame) { fireFlame(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, 200); return; }
     const perEnemy = new Map();
     for (let p = 0; p < w.pellets; p++) {
@@ -321,7 +325,7 @@ function fireOnce(w) {
         _dir.copy(_fwd).addScaledVector(_right, Math.cos(a) * r).addScaledVector(_up, Math.sin(a) * r).normalize();
         const end = traceShot(camera.position, _dir, w, perEnemy, dmgMul);
         if (w.rail) railBeamFx(_muzzleW, end, railC);
-        else if (p < 6) spawnTracer(_muzzleW, end, tracerColor(id === 'sniper' ? 0xc4b5fd : (id === 'dmr' ? 0xfde68a : id === 'crossbow' ? 0xb45309 : 0xffe9a8)), id === 'sniper' ? 0.07 : id === 'crossbow' ? 0.035 : 0.022, id === 'sniper' ? 0.2 : id === 'crossbow' ? 0.18 : 0.09);
+        else if (p < 6) spawnTracer(_muzzleW, end, tracerColor(id === 'plasma' ? 0xf0abfc : id === 'sniper' ? 0xc4b5fd : (id === 'dmr' ? 0xfde68a : id === 'crossbow' ? 0xb45309 : 0xffe9a8)), id === 'sniper' ? 0.07 : id === 'crossbow' ? 0.035 : id === 'plasma' ? 0.045 : 0.022, id === 'sniper' ? 0.2 : id === 'crossbow' ? 0.18 : id === 'plasma' ? 0.14 : 0.09);
         if (NET.inGame && p < 3) netRecordShot(_muzzleW, end);
     }
     perEnemy.forEach((rec, enemy) => damageEnemy(enemy, rec.dmg, rec.head, rec.point, false, w.knock ? rec.dir : null, rec.hits));

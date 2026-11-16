@@ -278,6 +278,7 @@ function bossDefeated(cfg) {
     life.bossKills = life.bossKills || {};
     life.bossKills[cfg.id] = (life.bossKills[cfg.id] || 0) + 1;
     toast(`${cfg.name.toUpperCase()} DEFEATED!`, cfg.bar, 2.6);
+    checkRewards55();
     saveJSON('blocky21_life', life);
 }
 
@@ -285,7 +286,7 @@ function bossDefeated(cfg) {
 // Far-away ordinary zombies think less often (every 2nd / 3rd frame, with the time they missed added up), which
 // is invisible at that distance and cuts the AI + collision cost of a big wave. Anything that shoots, casts or is a boss always updates.
 let aiTick = 0;
-const LOD_FREE = { crawler: 1, hound: 1, shocker: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
+const LOD_FREE = { crawler: 1, hound: 1, shocker: 1, zero: 1, ranged: 1, lobber: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
 function updateEnemies(dtFrame) {
     const T = aiTargets();
     aiTick++;
@@ -316,6 +317,8 @@ function updateEnemies(dtFrame) {
         }
 
 
+        if ((u.freezeT > 0 || u.chillT > 0) && frostTick(enemy, u, delta)) continue;     // 5.5 Cryo Blaster: frozen solid (or chilled: see below)
+        if (u.chillT > 0) delta *= cfg.boss ? 0.75 : 0.5;
         const sx0 = enemy.position.x, sz0 = enemy.position.z;   // start-of-frame spot (charge wall check)
         _aiT = pickAITarget(u, enemy, T, delta); pos = _aiT.pos; pFeet = _aiT.feet;
         // sentry decoy: brawlers near a sentry stop chasing you and go smash it instead
@@ -909,6 +912,64 @@ function updateEnemies(dtFrame) {
                         sfx('throw');
                     }
                     if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy, 1, [dx / hd * 14, 6, dz / hd * 14]); }
+                }
+                break;
+            }
+            case 'lobber': {
+                // 5.5 LOBBER: keeps 12-24m away and lobs gore bombs onto the spot you're standing on (an orange circle shows where)
+                if (hd < 12) { mx = -mx; mz = -mz; } else if (hd < 24) wantMove = false;
+                u.aiT -= delta;
+                if (u.state === 'windup') {
+                    wantMove = false; u.stateT -= delta;
+                    if (u.stateT <= 0) {
+                        u.state = 'walk'; u.aiT = 3.4 + Math.random() * 1.6;
+                        const from = bp(2.6), tx = pos.x, tz = pos.z, ty = groundAt(tx, tz, 0, pFeet + 2), T = 1.1 + hd * 0.02;
+                        bossTele(tx, ty, tz, 2.8, T, 0xf97316, null);
+                        bossShot(from, lobVel(from, tx, ty, tz, T, 22), { c: 0x9a3412, s: 1.1, g: 22, life: T + 1, dmg: cfg.damage * ld, boom: 2.8, by: "a Lobber's gore bomb", lit: true });
+                        sfx('throw');
+                    }
+                } else if (u.aiT <= 0 && hd < 34 && u.onGround) { u.state = 'windup'; u.stateT = 0.6; sfx('growl'); }
+                if (inMelee) meleeHit(u, cfg, enemy);
+                break;
+            }
+            case 'frost': {
+                // 5.5 THE WINTER KING: fans of ice shards, a freezing stomp with a shockwave you jump, blizzard circles when enraged
+                u.slamT -= delta; u.aiT -= delta; u.summonT -= delta;
+                if (u.state === 'slam') {
+                    wantMove = false; u.stateT -= delta;
+                    u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.85;
+                    if (u.stateT <= 0) {
+                        u.state = 'walk'; u.slamT = u.phase2 ? 4 : 5.5;
+                        const c = enemy.position;
+                        slam(c, 7.5, 30 * ld, 0x7dd3fc, "the Winter King's stomp");
+                        bossWave(c.x, c.y, c.z, 30, 11, 20 * ld, 0x7dd3fc, "the Winter King's frost wave");
+                        bossHazard(c.x, c.y, c.z, 4.5, 6 * ld, 4, 0x38bdf8, 'freezing ground');
+                    }
+                } else if (u.state === 'aim') {
+                    wantMove = false; u.stateT -= delta;
+                    if (u.stateT <= 0) {
+                        u.state = 'walk'; u.aiT = u.phase2 ? 2.6 : 3.6;
+                        const from = bp(2.8), n = u.phase2 ? 7 : 5, base = Math.atan2(pos.x - from.x, pos.z - from.z), dy = (pos.y - 0.5 - from.y) / Math.max(hd, 1);
+                        for (let i = 0; i < n; i++) {
+                            const a = base + (i - (n - 1) / 2) * 0.13;
+                            bossShot(from, new V3(Math.sin(a) * 28, dy * 28, Math.cos(a) * 28), { c: 0xbae6fd, s: 0.9, life: 2.6, dmg: 13 * ld, by: "the Winter King's ice shard" });
+                        }
+                        sfx('throw');
+                    }
+                } else {
+                    if (u.slamT <= 0 && hd < 9 && u.onGround) { u.state = 'slam'; u.stateT = 1.0; sfx('growl'); }
+                    else if (u.aiT <= 0 && hd > 6 && hd < 55) { u.state = 'aim'; u.stateT = 0.55; }
+                    if (u.phase2 && u.summonT <= 0) {       // the blizzard: ice rains down where you're standing
+                        u.summonT = 9;
+                        bossToast('BLIZZARD! Get out of the blue circles!', '#7dd3fc', 1.8);
+                        for (let i = 0; i < 6; i++) {
+                            const a = Math.random() * Math.PI * 2, r = i ? 2 + Math.random() * 10 : 0;
+                            const x = pos.x + Math.cos(a) * r, z = pos.z + Math.sin(a) * r, y = groundAt(x, z, 0, pFeet + 2);
+                            bossTele(x, y, z, 3, 1.4 + i * 0.2, 0x7dd3fc, () => bossBlast(new V3(x, y + 0.3, z), 3.2, 24 * ld, 0x7dd3fc, 'a blizzard'));
+                        }
+                        if (enemies.length < 40) for (let i = 0; i < 2; i++) bossMinion('sprinter', enemy.position.x, enemy.position.z, enemy.position.y, 4, 9);
+                    }
+                    if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy, 1, [dx / hd * 12, 6, dz / hd * 12]); }
                 }
                 break;
             }

@@ -11,7 +11,19 @@
 //    so they glide instead of teleporting.
 
 
-const INTERP_MS = 100;           // how far "in the past" other things are shown (room for 2-3 updates)
+const INTERP_MS = 100;
+// 5.5: the party protocol version. Weapons, enemies and kill sources are sent as list positions, and 5.5 added to those lists,
+// so a 5.4 and a 5.5 game would misread each other. The host checks the guest's 'hi' and the guest checks the host's 'lobby';
+// a mismatch is refused with a clear message instead of a broken match. Bump it whenever those lists or messages change.
+const NET_PROTO = 55;
+const netVerName = (v) => v ? (v / 10).toFixed(1) : '5.4 or older';
+const netVerMsg = (theirs, host) => `${host ? 'The host is' : 'That player is'} on Blocky Shooter ${netVerName(theirs)} and you are on ${VERSION}. Everyone in a party needs the same version - reload the game (or ask the ${host ? 'host' : 'player'} to) and try again.`;
+function netVersionFail(v) {          // guest: the host runs another version
+    const hp = NET.hostPeer;
+    try { sendRel(hp, { t: 'bye' }); } catch (e) {}
+    setTimeout(() => { try { hp && hp.pc.close(); } catch (e) {} }, 200);
+    netReset(); openMP('join'); NET.joinState = 'error'; NET.joinErr = netVerMsg(v, true); renderMP();
+}           // how far "in the past" other things are shown (room for 2-3 updates)
 const MP_MODES = {
     coop: { name: 'CO-OP', team: 10, desc: 'Survive the waves together - up to 10 players. Everyone has their own cash and armory. Downed players come back next wave.' },
     v1: { name: '1v1', team: 1 }, v2: { name: '2v2', team: 2 }, v3: { name: '3v3', team: 3 }, v4: { name: '4v4', team: 4 }, v5: { name: '5v5', team: 5 },
@@ -24,6 +36,8 @@ const MP_MODES = {
     koth: { name: 'KING OF THE HILL', team: 5, teams: true, rules: true, target: 90, mins: 10, desc: 'Hold the glowing hill: your team scores every second it is the only team inside. The hill moves every minute. First to 90 wins.' },
     lts: { name: 'LAST TEAM STANDING', team: 5, teams: true, rules: true, target: 3, desc: 'No respawns: wipe out the other team to win the round. Dead players watch a teammate. First team to win 3 rounds wins.' },
     infect: { name: 'INFECTION', team: 10, rules: true, mins: 3, desc: 'One player starts infected with a Katana. Anyone they kill joins the infected. Survivors win if anyone is still human after 3 minutes; the infected win if they get everyone.' },
+    // 5.5: one player at a time is the HUNTED (300 HP + a Minigun) and only scores while they hold it
+    hunted: { name: 'HUNTED', team: 10, ffa: true, rules: true, target: 12, mins: 8, desc: 'Free-for-all with a twist: the first kill makes you the HUNTED - 300 HP and a Minigun, marked for everyone. Each kill as the Hunted scores 1; take the Hunted down for 2 and the crown is yours. First to 12 wins.' },
     tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches as an invisible spectator. The last one standing is the champion.' }
 };
 const PVP_TARGET = { v1: 10, v2: 15, v3: 20, v4: 25, v5: 30 };
@@ -262,7 +276,7 @@ async function clientJoinCode(raw, attempt = 0) {
                 const peer = peerFromConn(conn); NET.hostPeer = peer;
                 wirePeer(peer, () => {}, () => netHostGone());
                 NET.on = true; NET.host = false; NET.joinState = 'connected';
-                updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE }); renderMP();
+                updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE, v: NET_PROTO }); renderMP();
                 // matchmaking is done: hang up on the server, the game connection stays
                 setTimeout(() => { try { pj.disconnect(); } catch (e) {} }, 1500);
             });
@@ -347,7 +361,7 @@ function autoTeam(p) {
 function hostLobbyUpdate() {
     if (!NET.host) return;
     const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null, bot: p.bot ? 1 : undefined }));
-    for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
+    for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', v: NET_PROTO, you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
     renderMP();
 }
 function netRemovePlayer(id, why) {
@@ -394,7 +408,7 @@ function clientLinkOpen(peer) {
     for (const q of NET.joinPeers || []) if (q !== peer) { q.gone = true; try { q.pc.close(); } catch (e) {} }
     NET.joinPeers = [];
     NET.on = true; NET.host = false; NET.joinState = 'connected'; NET.joinVia = 'long';
-    updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE }); renderMP();
+    updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE, v: NET_PROTO }); renderMP();
 }
 function clientLinkClosed(peer) {
     if (peer.gone) return;                // hung up on purpose, or already handled ('failed' and the channel closing both land here)
@@ -474,6 +488,12 @@ function hostMessage(p, peer, m) {
     const now = performance.now();
     switch (m.t) {
         case 'hi': {
+            if (m.v !== NET_PROTO) {          // 5.5: another version - refuse it cleanly (a 5.4 guest shows its "party is full" message)
+                sendRel(peer, { t: 'full', why: netVerMsg(m.v, false).replace('That player is', 'This party is').replace('ask the player to', 'ask the host to') });
+                NET.hostMsg = `${String(m.name || 'A player').replace(/[<>]/g, '').slice(0, 16)} could not join: they are on Blocky Shooter ${netVerName(m.v)}, you are on ${VERSION}.`;
+                setTimeout(() => netRemovePlayer(p.id), 400); renderMP();
+                break;
+            }
             const first = p.pending;
             p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false; p.look = cleanLook(m.look);
             // 5.3: the same player coming back after a drop while their old connection hasn't timed out yet: replace the old one
@@ -523,8 +543,9 @@ function clientMessage(m) {
             break;
         }
         case 'lobby': {
+            if (m.v !== NET_PROTO) { netVersionFail(m.v); break; }      // 5.5: the host runs another version
             NET.rejoinN = 0;
-        if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
+        if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE, v: NET_PROTO }); }
             if (GVL.on() && !NET.hostGvn && !NET.hostAsked) { NET.hostAsked = true; NET.hostGvn = GVL.L.newChallenge(); sendRel(NET.hostPeer, { t: 'gvq', n: NET.hostGvn }); }   // and the host proves itself to us
             NET.id = m.you; NET.lobby = { mode: m.mode, map: m.map, diff: m.diff };
             const seen = new Set();
@@ -542,7 +563,7 @@ function clientMessage(m) {
             break;
         }
         case 'plook': { if (m.id !== NET.id) applyPlayerLook(netPlayers.get(m.id), m.look); break; }
-        case 'full': NET.joinState = 'error'; NET.joinErr = 'That party is full or already playing.'; renderMP(); break;
+        case 'full': NET.joinState = 'error'; NET.joinErr = typeof m.why === 'string' ? m.why.slice(0, 300) : 'That party is full or already playing.'; renderMP(); break;
         case 'tb': tourneyApply(m); break;
         case 'mst': modeApply(m); break;          // 5.3 mode state (flags, hill, tags, gun levels, rounds...)
         case 'tm': modeTeamMsg(m); break;         // 5.3 someone changed team (Infection)

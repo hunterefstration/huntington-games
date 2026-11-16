@@ -95,7 +95,8 @@ function updatePlayer(delta) {
     if (sliding) slideT -= delta;
 
 
-    const damping = sliding ? 1.4 : 10;
+    const ice = !sliding && onGround && onIce(pos.x, pos.z, feetY);      // 5.5 Frostbite lake: slow to start, slow to stop
+    const damping = sliding ? 1.4 : ice ? 3.2 : 10;
     velocity.x -= velocity.x * Math.min(1, damping * delta);
     velocity.z -= velocity.z * Math.min(1, damping * delta);
 
@@ -106,7 +107,7 @@ function updatePlayer(delta) {
 
 
     const sprinting = sprintHeld && moveForward && !aimHeld && !isMouseDown && !sliding;
-    const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1 + 0.35 * clsPow() : 1) * (1 + clsSpeed());
+    const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (ice ? 0.32 : 1) * (adrenOn() ? 1 + 0.35 * clsPow() : 1) * (1 + clsSpeed());
     if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
     if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 

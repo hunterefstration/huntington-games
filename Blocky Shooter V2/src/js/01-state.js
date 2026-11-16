@@ -1,9 +1,9 @@
 // ==========================================
-// 1. STATE & CONFIGURATION (Version 5.4)
+// 1. STATE & CONFIGURATION (Version 5.5)
 // ==========================================
 
 
-const VERSION = '5.4';
+const VERSION = '5.5';
 let LOOK_MINE = null;          // 5.2: what you wear (goon-shop skin + avatar + title + rank tier), read from the launcher by 27b-mp-look.js
 const V3 = THREE.Vector3;
 const $ = (id) => document.getElementById(id);
@@ -58,21 +58,29 @@ const weaponsDb = {
     carbine:  { name: 'Burst Carbine', cost: 1800, color: 0x64748b, damage: 15, fireRate: 250, auto: true, burst: 4, burstGap: 46, magSize: 40, reloadTime: 1500, range: 130, pellets: 1, spread: 0.0045, recoil: 0.022, punch: 0.006, zoomFov: 54, hsMult: 1.3, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.19, flash: 0.28, desc: 'Short and light. Hold to fire tight 4-round bursts; the compact frame reloads fast.' },
     burst:    { name: 'Burst Rifle', cost: 2000, color: 0x14b8a6, damage: 18,  fireRate: 290,  auto: true,  burst: 3, burstGap: 55, magSize: 36, reloadTime: 1650, range: 170, pellets: 1, spread: 0.0025, recoil: 0.026, punch: 0.006, zoomFov: 48, hsMult: 1.15, reloadStyle: 'mag', hip: [0.144, -0.162, -0.36], adsDist: 0.12, flash: 0.28, desc: 'Hold to fire 3-round bursts. One burst to the head drops a grunt.' },
     shotgun:  { name: 'Shotgun',     cost: 2200, color: 0xef4444, damage: 30,  fireRate: 600,  auto: false, magSize: 8,   reloadTime: 250,  shellTime: 400, range: 60, pellets: 12, spread: 0.042, recoil: 0.2, punch: 0.05, zoomFov: 62, hsMult: 2, knock: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.46, desc: '12 heavy pellets. Knocks enemies back.' },
+    // 5.5: full-auto drum-fed shotgun - shreds a crowd up close, empties fast
+    drum:     { name: 'Drum Shotgun', cost: 3800, color: 0xbe123c, damage: 15, fireRate: 210, auto: true, magSize: 16, reloadTime: 2600, range: 45, pellets: 8, spread: 0.05, recoil: 0.12, punch: 0.03, zoomFov: 62, hsMult: 1.6, knock: 1, moveMult: 0.95, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.42, desc: 'Full-auto shotgun with a 16-shell drum. Hold the trigger to shred a crowd up close - then find cover for the long reload.' },
     // 5.0: lever-action rifle - hard-hitting .45-70 rounds, one cycled shell at a time
     lever:    { name: 'Lever Rifle', cost: 2600, color: 0xb45309, damage: 64, fireRate: 440, auto: false, magSize: 9, reloadTime: 300, shellTime: 380, range: 190, pellets: 1, spread: 0.0035, recoil: 0.11, punch: 0.032, zoomFov: 46, hsMult: 2.3, pierce: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.38, desc: 'Old-school lever action. Heavy rounds that pass through 1 zombie, loaded one shell at a time.' },
     dmr:      { name: 'Marksman',    cost: 3500, color: 0xc2a36b, damage: 75,  fireRate: 280,  auto: false, magSize: 12,  reloadTime: 2200, range: 260, pellets: 1,  spread: 0.002, recoil: 0.08, punch: 0.022, zoomFov: 30, hsMult: 2.5, pierce: 1, scoped: 'optic', reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.12, flash: 0.32, desc: '4x optic. Punches through 1 enemy.' },
     crossbow: { name: 'Crossbow',    cost: 2800, color: 0x92400e, damage: 150, fireRate: 260,  auto: false, magSize: 1,   reloadTime: 1050, range: 220, pellets: 1,  spread: 0.0025, recoil: 0.09, punch: 0.028, zoomFov: 42, hsMult: 3, pierce: 4, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.18, flash: 0.06, desc: 'Silent bolts that pass through up to 4 zombies. Headshots do triple damage.' },
     lmg:      { name: 'LMG',         cost: 4500, color: 0x84cc16, damage: 28,  fireRate: 92,   auto: true,  magSize: 90,  reloadTime: 3600, range: 150, pellets: 1,  spread: 0.008, bloom: 0.05, recoil: 0.04, punch: 0.008, zoomFov: 55, hsMult: 2, moveMult: 0.85, reloadStyle: 'box', hip: [0.156, -0.168, -0.36], adsDist: 0.2, flash: 0.34, desc: '90-round box. Heavy and hungry.' },
+    // 5.5: plasma bolts from a self-charging cell: no reloads if you fire in bursts, overheats if you empty it
+    plasma:   { name: 'Plasma Rifle', cost: 6200, color: 0xd946ef, damage: 24, fireRate: 110, auto: true, magSize: 36, reloadTime: 1800, range: 140, pellets: 1, spread: 0.007, recoil: 0.03, punch: 0.007, zoomFov: 54, hsMult: 1.5, shieldPierce: true, battery: 14, reloadStyle: 'mag', hip: [0.15, -0.16, -0.37], adsDist: 0.2, flash: 0.32, desc: 'Plasma bolts that burn through riot shields. The cell recharges by itself when you stop firing - empty it and it OVERHEATS for a moment.' },
     // 4.0: drum launcher - bouncing grenades that go off when they touch a zombie, or when the fuse runs out
     glauncher:{ name: 'Grenade Launcher', cost: 4200, color: 0xfacc15, damage: 150, fireRate: 430, auto: false, magSize: 6, reloadTime: 2900, range: 300, pellets: 1, spread: 0.006, recoil: 0.2, punch: 0.05, zoomFov: 55, hsMult: 1, grenade: true, radius: 5.5, fuse: 1.6, reloadStyle: 'revolver', hip: [0.15, -0.16, -0.36], adsDist: 0.2, flash: 0.42, desc: 'Bouncing grenades that blow up when they touch a zombie or after 1.6s. They never hurt you.' },
     flamer:   { name: 'Flamethrower', cost: 5500, color: 0xf97316, damage: 6,  fireRate: 60,   auto: true,  magSize: 150, reloadTime: 2600, range: 13,  pellets: 1,  spread: 0, recoil: 0.006, punch: 0.002, zoomFov: 66, hsMult: 1, flame: true, cone: 0.36, noAds: true, reloadStyle: 'mag', hip: [0.16, -0.17, -0.4], adsDist: 0.3, flash: 0.5, desc: 'A short stream of fire that burns everything in front of you, goes round riot shields and sets zombies alight.' },
+    // 5.5: a freezing spray - slows zombies, then freezes them solid (frozen ones take +50% damage from everything)
+    cryo:     { name: 'Cryo Blaster', cost: 4800, color: 0x7dd3fc, damage: 5,  fireRate: 70,   auto: true,  magSize: 120, reloadTime: 2400, range: 15,  pellets: 1,  spread: 0, recoil: 0.005, punch: 0.002, zoomFov: 66, hsMult: 1, frost: true, cone: 0.34, noAds: true, reloadStyle: 'mag', hip: [0.16, -0.17, -0.4], adsDist: 0.3, flash: 0.3, desc: 'A freezing spray: zombies in the stream slow down, then FREEZE solid for 2s. Frozen zombies take +50% damage from everything. Bosses are only slowed.' },
     // 4.0: chain lightning - each zap locks onto the zombie nearest your crosshair, then jumps on through the crowd
     tesla:    { name: 'Tesla Gun',   cost: 5200, color: 0x818cf8, damage: 26,  fireRate: 210,  auto: true,  magSize: 30,  reloadTime: 2300, range: 30,  pellets: 1,  spread: 0, recoil: 0.022, punch: 0.006, zoomFov: 62, hsMult: 1, tesla: true, chain: 4, jump: 9, reloadStyle: 'mag', hip: [0.15, -0.165, -0.38], adsDist: 0.2, flash: 0.3, desc: 'Chain lightning: each zap jumps on to 4 more zombies (+1 per level) and arcs round shields.' },
     sniper:   { name: 'Sniper',      cost: 5000, color: 0x8b5cf6, damage: 900, fireRate: 1100, auto: false, magSize: 5,   reloadTime: 2300, range: 500, pellets: 1,  spread: 0.012, recoil: 0.25, punch: 0.07, zoomFov: 14, hsMult: 2.5, pierce: 5, shieldPierce: true, scoped: 'sniper', reloadStyle: 'bolt', hip: [0.144, -0.156, -0.336], adsDist: 0.12, flash: 0.46, desc: 'Pierces 5 enemies and shields.' },
     // 4.0: hold to charge, let go to fire. The beam goes through EVERY zombie in a line (and riot shields) at full damage
     railgun:  { name: 'Railgun',     cost: 6500, color: 0x22d3ee, damage: 520, fireRate: 350,  auto: false, magSize: 4,   reloadTime: 2600, range: 400, pellets: 1,  spread: 0.0015, recoil: 0.3, punch: 0.075, zoomFov: 30, hsMult: 3.5, pierce: 999, shieldPierce: true, rail: true, charge: 0.85, scoped: 'optic', reloadStyle: 'mag', hip: [0.144, -0.16, -0.34], adsDist: 0.12, flash: 0.5, desc: 'HOLD to charge, RELEASE to fire. The beam pierces every zombie in a line, shields too.' },
     minigun:  { name: 'Minigun',     cost: 8000, color: 0xfb7185, damage: 16,  fireRate: 45,   auto: true,  magSize: 240, reloadTime: 4200, range: 120, pellets: 1,  spread: 0.02, recoil: 0.02, punch: 0.004, zoomFov: 70, hsMult: 1.8, spinUp: 0.55, moveMult: 0.7, noAds: true, reloadStyle: 'box', hip: [0.168, -0.186, -0.432], adsDist: 0.3, flash: 0.3, desc: 'Hold right-click to pre-spin.' },
-    rpg:      { name: 'RPG',         cost: 6000, color: 0x65a30d, damage: 300, fireRate: 900,  auto: false, magSize: 1,   reloadTime: 1000, range: 400, pellets: 1,  spread: 0.004, recoil: 0.3, punch: 0.06, zoomFov: 50, hsMult: 1, rocket: true, radius: 7, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.55, desc: 'Rocket launcher. Huge splash damage and a lightning-fast reload - keep your distance!' }
+    rpg:      { name: 'RPG',         cost: 6000, color: 0x65a30d, damage: 300, fireRate: 900,  auto: false, magSize: 1,   reloadTime: 1000, range: 400, pellets: 1,  spread: 0.004, recoil: 0.3, punch: 0.06, zoomFov: 50, hsMult: 1, rocket: true, radius: 7, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.55, desc: 'Rocket launcher. Huge splash damage and a lightning-fast reload - keep your distance!' },
+    // 5.5: three homing mini-rockets per pull of the trigger
+    seeker:   { name: 'Seeker Launcher', cost: 7000, color: 0xfb923c, damage: 95, fireRate: 900, auto: false, burst: 3, burstGap: 130, magSize: 9, reloadTime: 2600, range: 300, pellets: 1, spread: 0.02, recoil: 0.12, punch: 0.03, zoomFov: 50, hsMult: 1, rocket: true, seeker: true, radius: 3.4, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.4, desc: 'Fires a salvo of 3 mini-rockets that home in on the enemy nearest your crosshair. Smaller blasts than the RPG, but they hunt down big targets.' }
 };
 Object.entries(weaponsDb).forEach(([id, w]) => { w.id = id; });
 const WEAPON_ORDER = Object.keys(weaponsDb);
@@ -112,7 +120,11 @@ const ATT_FIT = {
     sniper:   { mag: true, grip: [0.0, -0.3] },
     railgun:  { mag: true, grip: [0.001, -0.34] },
     minigun:  { mag: true },
-    rpg:      { scope: [0.127, -0.12] }
+    rpg:      { scope: [0.127, -0.12] },
+    drum:     { scope: [0.095, -0.03], mag: true },
+    plasma:   { scope: [0.083, 0.0], mag: true },
+    cryo:     {},
+    seeker:   { scope: [0.15, -0.12] }
 };
 const attFits = (id, a) => !!(ATT_FIT[id] && ATT_FIT[id][a]);
 const hasAtt = (id, a) => !!(playerStats.atts && playerStats.atts[id] && playerStats.atts[id][a]) && attFits(id, a);
@@ -195,6 +207,11 @@ const enemyTypes = {
     shambler: { id: 'shambler', name: 'Shambler', color: 0x6b7280, hp: 0.6, speed: 0.6, scale: 0.95, reward: 1.5, damage: 5, ai: 'melee', slim: 0.9, eye: 0xd9f99d, minLvl: 6, cap: 6, drops: [0.18, 15, 0.2, 25], intel: 'A slow, half-rotted zombie that drags itself toward you on its own. Weak bite, falls apart in a couple of shots, and often drops health or cash. Easy pickings.' },
     crawler:  { id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
     shocker:  { id: 'shocker',  name: 'Shocker', color: 0x38bdf8, glow: 0x0c4a6e, hp: 1.5, speed: 0.8, scale: 1.05, reward: 3.5, damage: 9, ai: 'shocker', eye: 0x7dd3fc, minLvl: 9, cap: 2, intel: 'An electrified zombie. It arcs a shock shield onto nearby zombies (they take far less damage while linked), and its zap JAMS your gun for a moment. Kill the Shocker first: the link breaks and it dies in an EMP burst.', drops: [0.3, 30, 0.2, 45] },
+    // ---- 5.5: two new zombies and a new boss ----
+    bloater:  { id: 'bloater',  name: 'Bloater', color: 0x84cc16, hp: 2.4, speed: 0.6, scale: 1.4, reward: 3, damage: 14, ai: 'melee', slim: 1.35, eye: 0xd9f99d, minLvl: 7, cap: 3, drops: [0.25, 30, 0.3, 45], intel: 'Swollen with toxic gas. When it dies it bursts into a POISON CLOUD that hurts anyone standing in it for a few seconds. Kill it at range.' },
+    lobber:   { id: 'lobber',   name: 'Lobber', color: 0xa16207, hp: 1.1, speed: 0.75, scale: 1.05, reward: 3, damage: 18, ai: 'lobber', slim: 1.05, eye: 0xfb923c, minLvl: 8, cap: 2, drops: [0.2, 25, 0.25, 40], intel: 'Hangs back and lobs gore bombs at the spot you are standing on. An orange circle shows where it lands - keep moving!' },
+    frost:    { id: 'frost',    name: 'The Winter King', color: 0x93c5fd, hp: 40, speed: 0.5, scale: 2.4, reward: 16, damage: 30, ai: 'frost', eye: 0xe0f2fe, drops: [1, 999, 1, 500], boss: true, glow: 0x0c4a6e, bar: '#7dd3fc', slim: 1.05,
+                title: 'LORD OF THE LONG WINTER', tip: 'Throws fans of ice shards and stamps out freezing shockwaves - JUMP over them. Enraged, it calls down a blizzard: get out of the blue circles.' },
     zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',
                 title: 'THE FIRST TO FALL', tip: 'Spits toxic globs that leave poison pools, sweeps shockwaves you must JUMP, and burrows under you to burst out. Enraged: its toxic nova has a safe hole in the middle.' }
 };
@@ -238,7 +255,7 @@ const DIFFICULTIES = {
 const MODES = {
     classic: { name: 'CLASSIC', color: '#e5e7eb', desc: 'Survive the waves. The Armory opens between waves.' },
     rush:    { name: 'RUSH',    color: '#f97316', desc: 'No breaks - waves roll straight into each other. 1.5x cash and extra supply drops. Shop from the pause menu.' },
-    bossrush: { name: 'BOSS RUSH', color: '#e879f9', desc: 'Every wave is a boss fight - all 8 bosses, one after another, then two at a time. Fewer zombies, 1.5x cash, $2000 to start.' },
+    bossrush: { name: 'BOSS RUSH', color: '#e879f9', desc: 'Every wave is a boss fight - all 9 bosses, one after another, then two at a time. Fewer zombies, 1.5x cash, $2000 to start.' },
     sandbox: { name: 'SANDBOX', color: '#a78bfa', desc: 'Every weapon and gadget unlocked, unlimited cash, and you cannot die. Mess around!' }
 };
 const MAPS = {
@@ -251,11 +268,14 @@ const MAPS = {
     temple:    { name: 'TEMPLE',    size: 60,  desc: 'COMPACT. A stepped pyramid ringed by a raised stone walkway and ruined towers.' },
     sky:       { name: 'SKY ISLANDS', size: 64, void: true, desc: 'COMPACT. Cloud islands high in the sky, joined by cloud paths and rope bridges. There is no floor: fall off the edge and you die - but so do zombies you knock off!' },
     // 4.0
-    mall:      { name: 'MALL',      size: 72,  desc: 'NEW! Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
-    subway:    { name: 'SUBWAY', size: 64, desc: 'NEW! A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
+    mall:      { name: 'MALL',      size: 72,  desc: 'Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
+    subway:    { name: 'SUBWAY', size: 64, desc: 'A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
     biolab:    { name: 'BIOLAB', size: 46, hidden: true, desc: 'Campaign finale arena: a sunken containment pit ringed by catwalks, vents and quarantine pods.' },
     tourney:   { name: 'TOURNAMENT ARENA', size: 34, hidden: true, desc: 'Floodlit duel stadium: a symmetric pit with a central pillar, flank catwalks and cover at three heights, ringed by stands and big screens.' },
-    military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'NEW! Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
+    // 5.5
+    frostbite: { name: 'FROSTBITE', size: 70, desc: 'NEW! A snowed-in research outpost: a frozen lake you slide across, ice caves, a radar dome, a drilling rig and a radio mast with catwalks. Light snow falls.' },
+    carnival:  { name: 'CARNIVAL', size: 66, desc: 'NEW! An abandoned funfair at night: a giant Ferris wheel, a carousel, striped tents, game stalls and a roller-coaster track on stilts you can walk along.' },
+    military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
 };
 // maps with hidden: true are campaign-only arenas (never in the map pickers, random picks or challenges)
 const MAP_IDS = () => Object.keys(MAPS).filter(k => !MAPS[k].hidden);

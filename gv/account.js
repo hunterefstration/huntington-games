@@ -1209,6 +1209,11 @@ const GVLink = (() => {
     { id: 'blhead', g: 'blocky', i: '🎯', n: 'Sharpshooter', d: 'Land 500 headshots.', p: 25, t: function () { return num(BL().headshots) >= 500; } },
     { id: 'blboss', g: 'blocky', i: '👹', n: 'Boss Hunter', d: 'Defeat 10 bosses.', p: 50, t: function () { return num(BL().bosses) >= 10; } },
     { id: 'blcamp', g: 'blocky', i: '📕', n: 'Survivor\'s Story', d: 'Finish 5 Campaign missions.', p: 25, t: function () { return cnt((rd('blocky50_campaign') || {}).done) >= 5; } },
+    // Blocky Shooter 5.5: the new maps, the Cryo Blaster, The Winter King and Hunted mode
+    { id: 'bl55map', g: 'blocky', i: '🎡', n: 'Fresh Tracks', d: 'Play a run on both Frostbite and Carnival.', p: 15, t: function () { var m = BL().maps || {}; return num((m.frostbite || {}).runs) >= 1 && num((m.carnival || {}).runs) >= 1; } },
+    { id: 'bl55ice', g: 'blocky', i: '🧊', n: 'Cold Snap', d: 'Freeze 100 zombies with the Cryo Blaster.', p: 25, t: function () { return num(BL().frozen) >= 100; } },
+    { id: 'bl55king', g: 'blocky', i: '👑', n: 'Winter Is Over', d: 'Defeat The Winter King.', p: 25, t: function () { return num((BL().bossKills || {}).frost) >= 1; } },
+    { id: 'bl55hunt', g: 'blocky', i: '🏹', n: 'Apex Predator', d: 'Win a game of Hunted.', p: 25, t: function () { return num(BL().huntWins) >= 1; } },
     // Neon Dash family
     { id: 'nd1', g: 'neon', i: '⚡', n: 'Neon Runner', d: 'Score 1,000 in Neon Dash.', p: 10, t: function () { return (rd('neonScores') || []).some(function (s) { return num(s && s.val) >= 1000; }); } },
     { id: 'nd2', g: 'neon', i: '🌈', n: 'Neon Legend', d: 'Score 10,000 in Neon Dash.', p: 50, t: function () { return (rd('neonScores') || []).some(function (s) { return num(s && s.val) >= 10000; }); } },

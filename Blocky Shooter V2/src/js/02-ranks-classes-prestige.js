@@ -7,10 +7,10 @@ const UNLOCKS = {
     glove: { brown: 2, tan: 3, skin: 4, dark: 4, blue: 6, red: 7, gold: 15 },
     xhStyle: { dot: 2, circle: 4 },
     xhColor: { '#22d3ee': 2, '#facc15': 3, '#f472b6': 5, '#ef4444': 6 },
-    camo: { desert: 3, forest: 4, arctic: 5, crimson: 7, midnight: 9, toxic: 11, chrome: 13, gold: 16, rainbow: 22, ember: 99, hazard: 99, warden: 99, static: 99, toxin: 99, outbreak: 99 },
-    tracer: { red: 3, green: 4, blue: 6, purple: 8, gold: 12, rainbow: 18 },
+    camo: { desert: 3, forest: 4, arctic: 5, crimson: 7, midnight: 9, toxic: 11, chrome: 13, gold: 16, rainbow: 22, ember: 99, hazard: 99, warden: 99, static: 99, toxin: 99, outbreak: 99, glacier: 99, bigtop: 99, hunter: 99 },
+    tracer: { red: 3, green: 4, blue: 6, purple: 8, gold: 12, rainbow: 18, frost: 99 },
     killfx: { confetti: 5, fire: 7, ice: 9, void: 12, gold: 14 },
-    weapon: { dual: 2, katana: 3, glauncher: 4, tesla: 5, railgun: 6, carbine: 4, lever: 6 }      // 4.0: buyable in the Armory from this rank
+    weapon: { dual: 2, katana: 3, glauncher: 4, tesla: 5, railgun: 6, carbine: 4, lever: 6, drum: 7, cryo: 9, plasma: 12, seeker: 14 }      // 4.0: buyable in the Armory from this rank (5.5: + the four new guns)
 };
 // player upgrades, bought in the Armory (reset every run)
 const PERKS = {
@@ -68,9 +68,10 @@ const CAMOS = {
     chrome: { name: 'CHROME', c: 0xd0d6de, metal: true }, gold: { name: 'GOLD', c: 0xf0b832, metal: true, emissive: 0x6a4300 }, rainbow: { name: 'RAINBOW', rainbow: true },
     ember: { name: 'EMBER', c: 0xc2410c, glow: 0xfb923c }, hazard: { name: 'HAZARD', c: 0xeab308, glow: 0x713f12 }, warden: { name: 'WARDEN', c: 0x3b0764, metal: true, glow: 0xe879f9 },
     static: { name: 'STATIC', c: 0x1e3a5f, metal: true, glow: 0x38bdf8 }, toxin: { name: 'TOXIN', c: 0x365314, glow: 0xa3e635 }, outbreak: { name: 'OUTBREAK', c: 0x7f1d1d, metal: true, glow: 0xfca5a5 },      // 5.0: campaign rewards
-    obsidian: { name: 'OBSIDIAN', c: 0x1a1426, metal: true, glow: 0xfbbf24 }          // 4.0: prestige 1
+    obsidian: { name: 'OBSIDIAN', c: 0x1a1426, metal: true, glow: 0xfbbf24 },         // 4.0: prestige 1
+    glacier: { name: 'GLACIER', c: 0xbfdbfe, metal: true, glow: 0x7dd3fc }, bigtop: { name: 'BIG TOP', c: 0xb91c1c, glow: 0xfde047 }, hunter: { name: 'HUNTER', c: 0x1c1917, metal: true, glow: 0xef4444 }      // 5.5 rewards
 };
-const TRACERS = { default: { name: 'DEFAULT' }, red: { name: 'RED', c: 0xff4040 }, green: { name: 'GREEN', c: 0x4ade80 }, blue: { name: 'BLUE', c: 0x60a5fa }, purple: { name: 'PURPLE', c: 0xc084fc }, gold: { name: 'GOLD', c: 0xfbbf24 }, rainbow: { name: 'RAINBOW', rainbow: true }, starlight: { name: 'STARLIGHT', c: 0xdbe4ff } };
+const TRACERS = { default: { name: 'DEFAULT' }, red: { name: 'RED', c: 0xff4040 }, green: { name: 'GREEN', c: 0x4ade80 }, blue: { name: 'BLUE', c: 0x60a5fa }, purple: { name: 'PURPLE', c: 0xc084fc }, gold: { name: 'GOLD', c: 0xfbbf24 }, rainbow: { name: 'RAINBOW', rainbow: true }, starlight: { name: 'STARLIGHT', c: 0xdbe4ff }, frost: { name: 'FROST', c: 0x9bdcff } };
 const KILLFX = { blocks: { name: 'BLOCKS' }, confetti: { name: 'CONFETTI' }, fire: { name: 'FIRE' }, ice: { name: 'ICE' }, void: { name: 'VOID' }, gold: { name: 'GOLD RUSH' }, stardust: { name: 'STARDUST' } };
 const UNLOCK_KIND_NAMES = { sleeve: 'Sleeves', glove: 'Gloves', xhStyle: 'Crosshair', xhColor: 'Crosshair color', camo: 'Weapon camo', tracer: 'Tracers', killfx: 'Kill effect', weapon: 'Weapon' };
 const XP_MULT = { easy: 0.75, normal: 1, hard: 1.5, nightmare: 2.2 };
@@ -94,8 +95,25 @@ const prestigeLvl = () => clamp(life.prestige | 0, 0, MAX_PRESTIGE);
 const prestigeNeed = (kind, id) => (PRESTIGE_UNLOCKS[kind] && PRESTIGE_UNLOCKS[kind][id]) || 0;
 // after your first prestige everything that unlocks by rank stays unlocked, whatever your rank is now
 const unlockLevel = () => prestigeLvl() > 0 ? MAX_RANK : rankInfo().rank;
-const isUnlocked = (kind, id) => { if (campOwns(kind, id)) return true; const p = prestigeNeed(kind, id); return p ? prestigeLvl() >= p : unlockLevel() >= unlockRank(kind, id); };
-const lockTag = (kind, id) => campSkin(kind, id) ? 'C' : prestigeNeed(kind, id) ? 'P' + prestigeNeed(kind, id) : String(unlockRank(kind, id));      // '12' = rank 12, 'P2' = prestige 2
+// 5.5 rewards for the new content: earned by doing something (not by rank), checked live from your lifetime stats
+const REWARDS55 = {
+    'camo:glacier': { how: 'Defeat The Winter King', ok: () => ((life.bossKills || {}).frost | 0) >= 1 },
+    'camo:bigtop':  { how: 'Reach wave 10 on Carnival', ok: () => ((life.maps.carnival || {}).best | 0) >= 10 },
+    'camo:hunter':  { how: 'Win a game of Hunted', ok: () => (life.huntWins | 0) >= 1 },
+    'tracer:frost': { how: 'Freeze 200 zombies with the Cryo Blaster', ok: () => (life.frozen | 0) >= 200 }
+};
+const reward55 = (kind, id) => REWARDS55[kind + ':' + id] || null;
+function rewardOwns(kind, id) { const r = reward55(kind, id); return !!(r && r.ok()); }
+// tell the player the first time they earn one (quiet = just note what's already earned, e.g. on an old save)
+function checkRewards55(quiet) {
+    const seen = life.rw55 && typeof life.rw55 === 'object' ? life.rw55 : (life.rw55 = {});
+    for (const k in REWARDS55) if (!seen[k] && REWARDS55[k].ok()) {
+        seen[k] = 1;
+        if (!quiet) { const [kind, id] = k.split(':'); toast(`UNLOCKED: ${unlockLabel(kind, id)}`, '#fde047', 3); }
+    }
+}
+const isUnlocked = (kind, id) => { if (campOwns(kind, id) || rewardOwns(kind, id)) return true; const p = prestigeNeed(kind, id); return p ? prestigeLvl() >= p : unlockLevel() >= unlockRank(kind, id); };
+const lockTag = (kind, id) => reward55(kind, id) ? '\u2605' : campSkin(kind, id) ? 'C' : prestigeNeed(kind, id) ? 'P' + prestigeNeed(kind, id) : String(unlockRank(kind, id));      // '12' = rank 12, 'P2' = prestige 2
 const canPrestige = () => rankInfo().rank >= MAX_RANK && prestigeLvl() < MAX_PRESTIGE;
 function doPrestige() {
     if (!canPrestige()) return false;

@@ -49,7 +49,7 @@ function chipRow(label, key, entries, desc, extra = '') {
 }
 function swatchRow(label, key, table) {
     return `<div class="mlabel">${label}</div><div class="flex flex-wrap gap-2">${Object.entries(table).map(([k, c]) => { const lk = menuLocked(key, k);
-        return `<button class="sw${settings[key] === k ? ' on' : ''}${lk ? ' locked' : ''}" title="${k}${lk ? (campSkin(KEY_KIND[key], k) ? ' - campaign reward' : prestigeNeed(KEY_KIND[key], k) ? ' - prestige ' + prestigeNeed(KEY_KIND[key], k) : ' - rank ' + unlockRank(KEY_KIND[key], k)) : ''}" style="background:${typeof c === 'number' ? hexC(c) : c}" data-set="${key}" data-val="${k}"${lk ? ` data-rank="${lockTag(KEY_KIND[key], k)}"` : ''}></button>`; }).join('')}</div>`;
+        return `<button class="sw${settings[key] === k ? ' on' : ''}${lk ? ' locked' : ''}" title="${k}${lk ? (reward55(KEY_KIND[key], k) ? ' - ' + reward55(KEY_KIND[key], k).how : campSkin(KEY_KIND[key], k) ? ' - campaign reward' : prestigeNeed(KEY_KIND[key], k) ? ' - prestige ' + prestigeNeed(KEY_KIND[key], k) : ' - rank ' + unlockRank(KEY_KIND[key], k)) : ''}" style="background:${typeof c === 'number' ? hexC(c) : c}" data-set="${key}" data-val="${k}"${lk ? ` data-rank="${lockTag(KEY_KIND[key], k)}"` : ''}></button>`; }).join('')}</div>`;
 }
 function renderRankBar() {
     const ri = rankInfo(), P = prestigeLvl();
@@ -120,7 +120,7 @@ function renderMenu() {
         }
         h += `</div>`;
     } else if (menuTab === 'bestiary') {
-        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'shambler', 'crawler', 'shocker'];
+        const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'shambler', 'crawler', 'shocker', 'bloater', 'lobber'];
         h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
             return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
         // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
@@ -172,7 +172,8 @@ function prestigePanel() {
 // 4.0: the version line on the menu opens this - the highlights of the whole update
 function whatsNew() {
     const sec = (title, col, items) => `<div class="mlabel" style="color:${col}">${title}</div><ul class="news text-sm text-gray-200">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
-    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.4 - CLASS REWORK</div>` + whatsNew54(sec) +
+    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.5 - FROSTBITE &amp; CARNIVAL</div>` + whatsNew55(sec) +
+        `<div class="text-2xl font-black text-white mt-4">5.4 - CLASS REWORK</div>` + whatsNew54(sec) +
         `<div class="text-2xl font-black text-white mt-4">5.2</div>` +
         sec('FIXED: SCREEN FLASHES', '#fca5a5', ['<b>No more surprise flashbangs.</b> Lightning on the Storm lighting was a double 4x-brightness strobe every 7 to 17 seconds, red/white/green hit and pickup flashes could stack and repeat every frame (damage over time, several hits at once), and a big explosion next to your face could fill the screen with white. Lightning is now one soft pulse at least 14 seconds apart, screen flashes never stack or repeat (one at a time, capped in strength, never white), explosions fade near the camera and only light the scene when you could see them, and a replayed or spammed multiplayer explosion is dropped. New setting: <b>Reduce flashes</b> (on by default).']) +
         sec('GOON SHOP SKINS + AVATARS', '#fde047', ['The <b>skin</b> and <b>avatar</b> you wear in your launcher Profile now show up in the game: your first-person sleeves and gloves take the skin colours and pattern (camo, stripes, check, metal, glow), and everyone in multiplayer sees your skin and avatar (robot, knight, astronaut, ninja, pirate, zombie, alien, cowboy, wizard, samurai) on your player model. The CUSTOMIZE tab shows what you wear. Get more in your launcher Profile (Goon Shop).']) +

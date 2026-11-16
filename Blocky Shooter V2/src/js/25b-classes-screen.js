@@ -82,6 +82,20 @@ $('btn-classes').addEventListener('click', () => { initAudio(); sfx('click'); op
 homeClassesLabel();
 
 // ---------- 5.4 what's new (the menu's WHAT'S NEW tab, and a one-time note on the home menu) ----------
+function whatsNew55(sec) {
+    return sec('TWO NEW MAPS', '#7dd3fc', ['<b>FROSTBITE</b>: a snowed-in research outpost with a <b>frozen lake you slide across</b>, an ice cave tunnel, a radar dome, a drilling rig bridged to a radio mast, and falling snow.',
+            '<b>CARNIVAL</b>: an abandoned funfair at night - a giant Ferris wheel, a carousel, a striped big-top tent, game stalls and a <b>roller-coaster track on stilts</b> you can run along.',
+            'Both work in every mode: waves, Rush, Boss Rush, Sandbox, co-op and every PvP mode.']) +
+        sec('NEW MODE: HUNTED', '#f87171', ['A free-for-all for 2 to 10 players (or you and bots). The first kill makes you the <b>HUNTED</b>: 300 health, a Minigun and a red beam over your head so everyone can find you.',
+            'Only the Hunted scores: 1 point per kill. Take the Hunted down for 2 points and the crown is yours. First to 12 wins.']) +
+        sec('FOUR NEW WEAPONS', '#f0abfc', ['<b>DRUM SHOTGUN</b> (rank 7): full-auto shotgun with a 16-shell drum. <b>CRYO BLASTER</b> (rank 9): a freezing spray - zombies slow down, then <b>freeze solid</b> and take +50% damage.',
+            '<b>PLASMA RIFLE</b> (rank 12): bolts that burn through riot shields, and a cell that <b>recharges itself</b> - empty it and it overheats. <b>SEEKER LAUNCHER</b> (rank 14): salvos of 3 <b>homing</b> mini-rockets.',
+            'All four take upgrades, camos and the attachments that fit them.']) +
+        sec('NEW ZOMBIES + A NEW BOSS', '#a3e635', ['<b>BLOATER</b> (wave 7+): fat and slow, and it bursts into a <b>poison cloud</b> when it dies. <b>LOBBER</b> (wave 8+): hangs back and lobs gore bombs - watch for the orange circle.',
+            'New boss: <b>THE WINTER KING</b> - fans of ice shards, freezing stomps you have to jump, and a blizzard when enraged. Boss Rush now has all 9 bosses.']) +
+        sec('NEW REWARDS', '#fde047', ['Earn the <b>GLACIER</b> camo (defeat The Winter King), <b>BIG TOP</b> camo (wave 10 on Carnival), <b>HUNTER</b> camo (win a game of Hunted) and the <b>FROST</b> tracer (freeze 200 zombies). Four new launcher achievements too.',
+            'Multiplayer: everyone in a party needs 5.5. A player on an older version gets a clear message instead of a broken match.']);
+}
 function whatsNew54(sec) {
     return sec('CLASSES LEVEL UP FOR GOOD', '#fb923c', ['Every class now has its <b>own level, 1 to 30</b>, earned by playing it: kills, waves, objectives, challenges and match results, in every mode including multiplayer and PvP. It is saved with the rest of your save and syncs.',
             'Each level gives a <b>skill point</b>. Spend them in the new <b>CLASSES</b> screen (home menu, the Play tab or the multiplayer lobby) on a <b>15-node skill tree</b> in 3 branches (Ability, Class, Utility), and pick a <b>specialisation</b> at levels 10 and 20 that changes how the ability works. Respec is free.',

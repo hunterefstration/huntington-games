@@ -5,7 +5,7 @@
 // like a person and need no bot code at all.
 const BOT_NAMES = ['Blocko', 'Cubert', 'Pixel', 'Brick', 'Voxel', 'Chunk', 'Tetra', 'Boxy', 'Nugget', 'Dice', 'Cobble', 'Slab', 'Pebble', 'Crate'];
 const BOT_SKILL = { easy: { acc: 0.32, react: 0.8, dmg: 0.5, speed: 0.82 }, normal: { acc: 0.5, react: 0.5, dmg: 0.72, speed: 0.92 }, hard: { acc: 0.7, react: 0.28, dmg: 0.92, speed: 1 } };
-const BOT_GUNS = ['ar', 'smg', 'shotgun', 'burst', 'lmg', 'dmr', 'carbine', 'ar'];
+const BOT_GUNS = ['ar', 'smg', 'shotgun', 'burst', 'lmg', 'dmr', 'carbine', 'plasma', 'drum', 'ar'];
 const botSkill = () => BOT_SKILL[settings.mpBotSkill] ? settings.mpBotSkill : 'normal';
 const isBot = (p) => !!(p && p.bot && typeof p.bot === 'object');
 function botCap() { const m = NET.lobby.mode; return m === 'tourney' ? 8 : lobbyTeams(m) ? Math.min(10, MP_MODES[m].team * 2) : 10; }
@@ -53,7 +53,7 @@ function botRespawn(p, at) {
     const b = p.bot, now = performance.now();
     const s = at || pickSpawn(p.team, p.id);
     b.x = s[0]; b.z = s[1]; b.feet = groundAt(s[0], s[1], 0.3, (s[2] || 0) + 0.5); b.vy = 0; b.onGround = true;
-    b.hp = modeMaxHp(p.team); p.hp = b.hp; p.alive = true; p.spec = false;
+    b.hp = modeMaxHp(p.team, p.id); p.hp = b.hp; p.alive = true; p.spec = false;
     b.w = modeBotWeapon(p); const W0 = weaponsDb[b.w] || weaponsDb.ar; b.ammo = W0.magSize; b.reloadT = 0; b.fireCd = 0.4;
     b.path = null; b.pathT = 0; b.tgt = -1; b.aimT = 0; b.yaw = Math.atan2(b.x, b.z); b.pitch = 0; b.stuckT = 0; b.lx = b.x; b.lz = b.z;
     p.protUntil = now + SPAWN_PROT_MS;
