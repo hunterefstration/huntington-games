@@ -2,7 +2,7 @@
 Current state and the facts you need to change things. What each round did and why: `.claude/HISTORY.md` (grep it, do not read it all).
 
 ## Where things stand
-- Live: **r75** (`latest.json` on `main`). r75: Blocky 5.5, Last Light 1.5, Sovereign 1.4, Mayhem Marathon 1.1 (below). r74: Round 10 (section below). r73: Steel Storm performance.
+- Live: **r76** (`latest.json` on `main`). r76: Beat Lab 1.1 (share codes: grapevine `083-songs.js`, `~songs`, 10 a day; `HGGrapevine.songs`; layers, 8-lane kits, articulations `[tick,len,midi,vel,art]`). r75: content updates. r74: Round 10.
 - r70: admin "Rebuild from leaderboards" (`launcher/js/10-hub/098-rebuild.js`, suite `gv-rebuild`). r69: saves never lost (other-tab
   guard, mass-delete guard, server copies, admin lookup/restore, device backups; Saves tab "Look for older saves"; suite `gv-recover`).
 - 2026-11-14 cleanup: launcher `001-util.js` (`hubShown`, `hubWake`, `setHtml`): hub repaint/poll timers skip work while a game is open or
