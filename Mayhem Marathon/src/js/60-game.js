@@ -22,9 +22,10 @@ function makeShowConfig(humans, opts) {
     return { t: 'show', seed: Math.floor(Math.random() * 1e9), len: opts.length, pts, cs, practice: opts.practice || null, pick: pick.length ? pick : null };
 }
 function beginShow(cfg) {
-    G.show = { seed: cfg.seed, len: cfg.len, pts: cfg.pts, cs: cfg.cs.map(mkContestant), used: [], idx: -1, N0: cfg.cs.length, practice: cfg.practice, results: [], over: false, pick: cfg.pick || null };
+    G.show = { seed: cfg.seed, len: cfg.len, pts: cfg.pts, cs: cfg.cs.map(mkContestant), used: [], idx: -1, N0: cfg.cs.length, practice: cfg.practice, results: [], over: false, pick: cfg.pick || null,
+        tut: !!cfg.tut, tutN: { jump: 0, dive: 0, grab: 0, respawn: 0, pass: 0 } };      // tut (1.2 Training): nothing counts, nobody is knocked out
     G.R = null; G.paused = false;
-    if (G.show.cs.some(isMe)) { save.stats.shows++; writeSave(); }
+    if (G.show.cs.some(isMe) && !G.show.tut) { save.stats.shows++; writeSave(); }
     UI.enterGame();
 }
 function pickRound(S) {
@@ -197,7 +198,7 @@ function hostTick(R, dt) {
         if (R.def.tileDelay) for (const C of R.cs) { if (C.hide || C.done) continue; const c = C.sim ? (C.b.ground ? C.b.gc : null) : (C.gt >= 0 ? W.cs[C.gt] : null); tileStep(R, c, R.def.tileDelay); }
         if (R.def.hostTick) R.def.hostTick(R, dt);
         for (const C of R.cs) if (!C.sim && !C.hide && !C.done && survivalLike(R) && C.vs.y < killYOf(R) - 3) hostOut(C);
-        if (!R.ended && roundShouldEnd(R)) hostEndRound();
+        if (!R.ended && !G.show.tut && roundShouldEnd(R)) hostEndRound();      // (a training round never ends by itself)
     }
     if (R.phase === 'over' && R.overT > 2.6 && !R.resultsShown) { R.resultsShown = true; UI.showResults(R); }
     if (R.phase === 'over' && R.overT > 8.5 && !R.advanced) { R.advanced = true; hostAdvance(); }
@@ -232,10 +233,11 @@ function hostGrabs(R) {
 }
 function hostQualify(C) {
     const R = G.R; if (C.done || R.ended) return;
-    if (!G.show.pts && R.finished.length >= R.q && R.info.kind === 'race') return;
+    if (!G.show.pts && !G.show.tut && R.finished.length >= R.q && R.info.kind === 'race') return;
     R.finished.push(C.id); const e = { k: 'q', id: C.id, n: R.finished.length }; applyEvent(e); netEvent(e);
 }
-function hostOut(C) { const R = G.R; if (C.done || R.ended) return; R.outs.push(C.id); const e = { k: 'out', id: C.id }; applyEvent(e); netEvent(e); }
+function hostOut(C) { const R = G.R; if (C.done || R.ended) return; if (G.show.tut && isMe(C)) { C.cpi = -1; respawnBody(C); return; }      // training: you are never out
+    R.outs.push(C.id); const e = { k: 'out', id: C.id }; applyEvent(e); netEvent(e); }
 function hostCrown(C) { const R = G.R; if (R.crownBy != null || R.ended) return; const e = { k: 'crown', id: C.id }; applyEvent(e); netEvent(e); }
 function roundShouldEnd(R) {
     const S = G.show, kind = R.info.kind, live = R.cs.filter(c => !c.done && !c.hide), timeUp = R.t >= R.info.time;
@@ -294,7 +296,7 @@ function applyRoundEnd(msg) {
     S.results.push({ rid: R.rid, q: msg.q, order: msg.order });
     if (R.def.onEnd) R.def.onEnd(R, msg);
     const me = byId(G.me);
-    if (me && me.inRound) {
+    if (me && me.inRound && !S.tut) {
         const ok = qs.has(me.id), place = msg.order.indexOf(me.id);
         let k = 10 + (ok ? 15 : 0) + (S.pts ? Math.max(0, 8 - place) * 2 : 0), f = 20 + (ok ? 30 : 0);
         const before = unlockedIds();
@@ -386,6 +388,7 @@ function readInput(R) {
     const inp = { mx: fx * f - fz * s, mz: fz * f + fx * s, jump: e.has('Space') || t.jump, dive: e.has('ShiftLeft') || e.has('ShiftRight') || e.has('KeyC') || t.dive,
         grab: k.has('KeyF') || INP.mouseGrab || t.grab, respawn: e.has('KeyR') };
     e.clear(); t.jump = false; t.dive = false;
+    const tn = G.show && G.show.tut && G.show.tutN; if (tn) { if (inp.jump) tn.jump++; if (inp.dive) tn.dive++; if (inp.grab) tn.grab++; if (inp.respawn) tn.respawn++; }
     return inp;
 }
 // ---------- camera ----------

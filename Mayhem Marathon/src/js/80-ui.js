@@ -196,10 +196,11 @@ const UI = {
     enterGame() { UI.show(null); $('#hud').classList.remove('hidden'); $('#s-win').classList.add('hidden'); G.scene = 'round'; },
     roundIntro(R) {
         const S = G.show; UI.show(null); $('#hud').classList.remove('hidden');
-        $('#i-kind').textContent = KIND_LABEL[R.info.kind] + ' · Round ' + (R.idx + 1) + (S.practice ? '' : ' of ' + S.len);
+        $('#i-kind').textContent = KIND_LABEL[R.info.kind] + (S.tut ? ' · Training' : ' · Round ' + (R.idx + 1) + (S.practice ? '' : ' of ' + S.len));
         $('#i-name').textContent = R.info.name; $('#i-desc').textContent = R.info.desc;
         const me = byId(G.me), n = R.cs.length;
         let goal = R.def.goal && !S.pts ? R.def.goal(R, S, n) : S.pts ? 'Points round: everyone plays on!' : R.info.kind === 'race' ? 'The first ' + R.q + ' of ' + n + ' qualify' : R.info.kind === 'survive' ? 'Survive! ' + R.q + ' of ' + n + ' go through' : R.rid === 'tail' ? R.q + ' tails - hold one at the end!' : R.info.kind === 'team' ? R.nTeams + ' teams - the lowest team is out' : 'Winner takes the crown!';
+        if (S.tut) goal = 'Training: nobody is knocked out and nothing counts';
         if (!me || !me.inRound) goal += ' (you are spectating)';
         $('#i-goal').textContent = goal; $('#s-intro').classList.remove('hidden');
         if (me && me.inRound && R.team != null) {}

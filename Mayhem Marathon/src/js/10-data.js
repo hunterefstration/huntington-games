@@ -113,8 +113,9 @@ const ROUND_INFO = {
 };
 const KIND_LABEL = { race: 'Race', survive: 'Survival', team: 'Team', hunt: 'Hunt', final: 'Final' };
 // ---------- version, multiplayer protocol and What's New ----------
-const VERSION = '1.1', PROTO = 2;          // PROTO: rooms only admit players with the same number (see 70-net.js)
+const VERSION = '1.2', PROTO = 2;          // PROTO: rooms only admit players with the same number (see 70-net.js)
 const WHATS_NEW = [
+    'NEW in 1.2: Training! Three hands-on lessons (First steps, Round types, Parties and custom shows) with practice rounds where nobody is knocked out and nothing counts. Find it on the title screen.',
     '7 new rounds (21 in all): the Log Jam and Gust Gauntlet races, Meteor Mayhem and Lava Pillars survival, Turf War (team), Bomb Tag (a new Hunt round) and the Summit Showdown final.',
     'Custom shows: pick exactly which rounds a show can use (solo, or as the host of a room).',
     '22 new things to wear, earned by playing the new rounds: 7 hats, colours, patterns, visors, trails and 3 poses.',

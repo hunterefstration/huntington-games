@@ -65,16 +65,16 @@ function wireInput() {
 }
 function boot() {
     save = loadSave(); writeSave();
-    initGfx(); wireUI(); wireInput();
+    initGfx(); wireUI(); wireInput(); trainBadge();
     G.scene = 'menu'; UI.toTitle();
     $('#boot').classList.add('hidden');
     requestAnimationFrame(frame);
-    if (!save.seenHow) { save.seenHow = true; save.seenVer = VERSION; writeSave(); setTimeout(() => toast('New here? Check "How to play" for the controls.'), 1200); }
+    if (!save.seenHow) { save.seenHow = true; save.seenVer = VERSION; writeSave(); setTimeout(() => { if (!trainOffer()) toast('New here? Check "How to play" for the controls.'); }, 1200); }
     else if (save.seenVer !== VERSION) setTimeout(() => { if (G.screen === 'title') UI.openNew(); }, 700);
     launcherBoot();
 }
 window.__mayhem = {
-    get G() { return G; }, get R() { return G.R; }, get W() { return W; }, get L() { return L; }, get save() { return save; }, NET, ROUNDS, ROUND_INFO, ITEMS, GFX,
+    tut: trainHook(), get G() { return G; }, get R() { return G.R; }, get W() { return W; }, get L() { return L; }, get save() { return save; }, NET, ROUNDS, ROUND_INFO, ITEMS, GFX,
     state() {
         const R = G.R, S = G.show, me = byId(G.me);
         return { screen: G.screen, scene: G.scene, host: G.host, me: G.me,

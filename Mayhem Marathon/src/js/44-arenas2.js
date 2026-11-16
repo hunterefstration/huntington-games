@@ -212,7 +212,7 @@ function onBombPass(R, from, to) {
     const B = byId(to), A = byId(from); if (!B) return;
     sfx('pass', B.vs, 0.9); puff(B.vs.x, B.vs.y + 1.6, B.vs.z, 0xffd23f, 8, 3, 1, 0.5);
     if (isMe(B)) { announce('YOU GOT A BOMB! Pass it on!', 'bad'); shake(0.3); }
-    if (A && isMe(A)) { announce('PASSED IT!', 'good'); save.stats.bombsPassed = (save.stats.bombsPassed || 0) + 1; }
+    if (A && isMe(A)) { announce('PASSED IT!', 'good'); if (G.show && G.show.tut) G.show.tutN.pass++; else save.stats.bombsPassed = (save.stats.bombsPassed || 0) + 1; }
 }
 ROUNDS.bomb = {
     passOnly: true,
