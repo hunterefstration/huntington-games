@@ -33,17 +33,19 @@ function part(x, y, z, vx, vy, vz, size, life, hex, g, drag) {
     partMesh.setColorAt(i, CL.setHex(hex)); partDirty = true;
 }
 function updateParticles(dt) {
-    const a = partMesh.instanceMatrix.array;
+    const a = partMesh.instanceMatrix.array; let hi = 0;
     for (let i = 0; i < NP; i++) {
         const o = i * 16;
         if (PA.life[i] > 0) {
+            hi = i + 1;
             PA.life[i] -= dt; PA.x[i] += PA.vx[i] * dt; PA.y[i] += PA.vy[i] * dt; PA.z[i] += PA.vz[i] * dt; PA.vy[i] -= PA.g[i] * dt;
             const dr = Math.pow(PA.drag[i], dt * 3); PA.vx[i] *= dr; PA.vy[i] *= dr; PA.vz[i] *= dr;
             const s = PA.life[i] > 0 ? PA.size[i] * Math.min(1, PA.life[i] / PA.max[i] * 1.6) : 0;
             a[o] = s; a[o + 5] = s; a[o + 10] = s; a[o + 12] = PA.x[i]; a[o + 13] = PA.y[i]; a[o + 14] = PA.z[i]; a[o + 15] = 1;
         } else if (a[o] !== 0) { a[o] = 0; a[o + 5] = 0; a[o + 10] = 0; }
     }
-    partMesh.instanceMatrix.needsUpdate = true; if (partDirty) { partMesh.instanceColor.needsUpdate = true; partDirty = false; }
+    partMesh.count = hi;      // the GPU draws only up to the last live particle (an empty pool draws nothing)
+    if (hi) partMesh.instanceMatrix.needsUpdate = true; if (partDirty) { partMesh.instanceColor.needsUpdate = true; partDirty = false; }
 }
 const fxN = n => Math.max(1, Math.round(n * Q.parts));
 function fxExplosion(x, y, z, size, noise) {

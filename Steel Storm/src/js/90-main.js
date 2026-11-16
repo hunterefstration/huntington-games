@@ -134,7 +134,7 @@ function advance() {
     return dt;
 }
 // ---------- frame loop ----------
-const FS = { n: 0, sum: 0, max: 0, over: 0, last: performance.now(), rsum: 0 };
+const FS = { n: 0, sum: 0, max: 0, over: 0, last: performance.now(), rsum: 0, sh: 0 };
 const DBG = { noRender: false, autoQ: true };
 let lastFrame = performance.now();
 function frame(now) {
@@ -142,6 +142,7 @@ function frame(now) {
     const rdt = Math.min(.1, (now - lastFrame) / 1000); lastFrame = now;
     if (M) {
         const dt = advance(); updateParticles(dt); updateCamera(dt); updateWorld(dt); updateFlagViz();
+        if (Q.shEvery > 1 && ++FS.sh >= Q.shEvery) { FS.sh = 0; renderer.shadowMap.needsUpdate = true; }      // shadows redrawn every other frame on Medium
         if (!DBG.noRender) { const r0 = performance.now(); renderer.render(scene, camera); FS.rsum += performance.now() - r0; }
         UI.hud(rdt);
         if (ME) { if (ME.alive) engineSet(ME.def.ln === 'a' && !ME.def.heli ? ME.thr : Math.abs(ME.speed) / ME.def.sp, ME.def.ln); else engineStop(); }
@@ -157,11 +158,22 @@ function updateFlagViz() {
     M.flags.forEach((f, i) => { const v = flagViz[i]; if (!v) return; const c = f.st === 'carry' ? EN.get(f.by) : null; v.grp.position.set(f.x, c ? c.y + 3 : GH(f.x, f.z), f.z); v.cloth.rotation.y = Math.sin(simTime * 3 + i) * .3; });
 }
 // drop the graphics quality by itself when the machine cannot keep up
-const AQ = { t: 0, n: 0, sum: 0 };
+const AQ = { t: 0, n: 0, sum: 0, rt: 0, rn: 0, rsum: 0 };
 function autoQuality(now) {
-    const ft = now - FS.last; if (ft > 1000) return; AQ.n++; AQ.sum += ft;
+    const ft = now - FS.last; if (ft > 1000) return; AQ.n++; AQ.sum += ft; AQ.rn++; AQ.rsum += ft;
+    // every 2 s: fewer pixels when slower than ~28 fps, more again when comfortably fast (never above the preset)
+    if (now - AQ.rt > 2000) {
+        if (AQ.rt && AQ.rn >= 4) {
+            const avg = AQ.rsum / AQ.rn, k0 = DRES.k;
+            if (avg > 36 && DRES.k > DRES.min) DRES.k = Math.max(DRES.min, DRES.k - .1);
+            else if (avg < 20 && DRES.k < 1) DRES.k = Math.min(1, DRES.k + .05);
+            if (DRES.k !== k0) { renderer.setPixelRatio(Q.pr * DRES.k * Math.min(window.devicePixelRatio || 1, 1.25)); renderer.setSize(window.innerWidth, window.innerHeight, false); }
+        }
+        AQ.rt = now; AQ.rn = AQ.rsum = 0;
+    }
+    // every 5 s: still slow at the lowest resolution, so the preset drops (it starts again at full resolution)
     if (now - AQ.t > 5000) {
-        if (AQ.t && AQ.n > 20 && AQ.sum / AQ.n > 42 && save.settings.quality !== 'low') { save.settings.quality = save.settings.quality === 'high' ? 'med' : 'low'; applyQuality(); writeSave(); toast('Graphics lowered to ' + save.settings.quality + ' for smoother play'); }
+        if (AQ.t && AQ.n >= 8 && AQ.sum / AQ.n > 40 && DRES.k <= DRES.min && save.settings.quality !== 'low') { DRES.k = 1; save.settings.quality = save.settings.quality === 'high' ? 'med' : 'low'; applyQuality(); writeSave(); toast('Graphics lowered to ' + save.settings.quality + ' for smoother play'); }
         AQ.t = now; AQ.n = AQ.sum = 0;
     }
 }
@@ -241,7 +253,7 @@ window.__steelstorm = {
     grant(o) { if (o.cr) save.credits += o.cr; if (o.rp) addRp(o.rp); if (o.free) save.freeRp += o.free; writeSave(); UI.wallet(); },
     research: { target: setTarget, free: spendFreeRp, canResearch, isResearched }, buy: buyVeh, lineup: lineupToggle, addRp, setTarget, buyVeh,
     press(code, down) { IN.keys[code] = down !== false; }, mouse(btn, down) { IN.mb[btn] = down === false ? 0 : 1; }, look(yaw, pitch) { if (yaw !== undefined) IN.camYaw = yaw; if (pitch !== undefined) IN.camPitch = pitch; },
-    get cam() { return IN; }, get camera() { return camera; }, get renderer() { return renderer; },
+    get cam() { return IN; }, get camera() { return camera; }, get renderer() { return renderer; }, get scene() { return scene; }, get sun() { return sun; },
     teleport(x, y, z, yaw) { if (!ME) return; ME.x = x; ME.z = z; ME.y = y === null || y === undefined ? GH(x, z) : y; if (yaw !== undefined) { ME.yaw = yaw; ME.tur = yaw; IN.camYaw = yaw; } },
     setVeh(id, mm) { if (!ME) return; if (ME.alive) { ME.alive = false; } ME.respT = 0; const ok = respawnMe(id); if (ok && mm !== undefined) { setDef(ME, vdef(id, mm)); spawnEnt(ME); } return ok; },
     damage(id, n, by) { hostDamage(by === undefined ? (ME ? ME.id : 0) : by, id, n, 0, 'w1', true); },
@@ -250,7 +262,7 @@ window.__steelstorm = {
     step(n, dt) { for (let i = 0; i < n; i++) { simStep(dt || .033); updateParticles(dt || .033); } updateFlagViz(); },
     fire(slot) { if (!ME) return false; ME[slot === 'w1' ? 't1' : slot === 'w2' ? 't2' : 't3'] = 0; return weaponFire(ME, slot, PC); },
     aim() { return ME && ME.alive ? aimRay(ME) : null; },
-    perf() { const r = { frames: FS.n, avg: FS.n ? +(FS.sum / FS.n).toFixed(1) : 0, max: +FS.max.toFixed(1), over34: FS.over, render: FS.n ? +(FS.rsum / FS.n).toFixed(1) : 0 }; FS.n = FS.sum = FS.max = FS.over = FS.rsum = 0; return r; },
+    perf() { const r = { frames: FS.n, avg: FS.n ? +(FS.sum / FS.n).toFixed(1) : 0, max: +FS.max.toFixed(1), over34: FS.over, render: FS.n ? +(FS.rsum / FS.n).toFixed(1) : 0, res: DRES.k }; FS.n = FS.sum = FS.max = FS.over = FS.rsum = 0; return r; },
     noRender(v) { DBG.noRender = v !== false; }, autoQ(v) { DBG.autoQ = !!v; },
     setQuality(q) { save.settings.quality = q; applyQuality(); return Q; }, setWeather(k) { return applyWeather(k); },
     renderStats,

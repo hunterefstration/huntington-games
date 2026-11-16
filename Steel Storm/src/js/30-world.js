@@ -62,10 +62,12 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 // rain counts, flash lights, terrain and water shaders, vehicle bump maps
 const QUAL = {
     low: { pr: 0.6, sh: 0, far: 900, parts: 0.45, fogN: 250, fogF: 900, trees: .4, rain: 500, lights: 0, hi: false, shR: 0 },
-    med: { pr: 0.8, sh: 1024, far: 1300, parts: 0.75, fogN: 350, fogF: 1300, trees: .7, rain: 1400, lights: 2, hi: true, shR: 110 },
+    med: { pr: 0.8, sh: 1024, far: 1300, parts: 0.75, fogN: 350, fogF: 1300, trees: .7, rain: 1400, lights: 2, hi: true, shR: 110, shEvery: 2 },
     high: { pr: 1, sh: 2048, far: 1800, parts: 1, fogN: 520, fogF: 1800, trees: 1, rain: 2800, lights: 4, hi: true, shR: 160, soft: true }
 };
 let Q = QUAL.med;
+// dynamic resolution: when frames run slow the picture is drawn at fewer pixels (down to 70% of the preset) before the preset itself drops
+const DRES = { k: 1, min: .7 };
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x8fc8ee);
 scene.fog = new THREE.Fog(0x8fc8ee, 350, 1300);
@@ -168,16 +170,18 @@ function makeTerrainHi() {
             float wSand = 1.0 - smoothstep(1.3, 3.2, hgt + det * 0.8);
             float wRock = smoothstep(0.17, 0.32, slope + max(hgt - 24.0, 0.0) * 0.03);
             float wSnow = smoothstep(30.5, 34.0, hgt + det * 2.5) * (1.0 - smoothstep(0.4, 0.55, slope));
-            vec3 col = mix(grass, texture2D(tSand, wuv * 0.09).rgb, wSand);
-            col = mix(col, texture2D(tRock, wuv * 0.06).rgb, wRock * (1.0 - wSand * 0.6));
-            col = mix(col, texture2D(tSnow, wuv * 0.05).rgb, wSnow);
+            // a texture is read only where it shows (most of the ground is plain grass: 4 reads a pixel instead of 8)
+            vec3 col = grass;
+            if (wSand > 0.002) col = mix(col, texture2D(tSand, wuv * 0.09).rgb, wSand);
+            float wR = wRock * (1.0 - wSand * 0.6); if (wR > 0.002) col = mix(col, texture2D(tRock, wuv * 0.06).rgb, wR);
+            if (wSnow > 0.002) col = mix(col, texture2D(tSnow, wuv * 0.05).rgb, wSnow);
             float road = texture2D(tMask, vTW.xz / 1600.0 + 0.5).r * step(0.6, hgt);
-            col = mix(col, texture2D(tRoad, wuv * 0.08).rgb, road * 0.92);
+            if (road > 0.002) col = mix(col, texture2D(tRoad, wuv * 0.08).rgb, road * 0.92);
             col = mix(col, col * vec3(0.5, 0.72, 0.85), smoothstep(-0.3, -7.0, hgt));
             col *= 0.84 + det * 0.32;
             diffuseColor.rgb *= col;`);
     };
-    m.customProgramCacheKey = () => 'terrain2';
+    m.customProgramCacheKey = () => 'terrain3';
     return m;
 }
 function makeWaterHi() {
@@ -194,12 +198,13 @@ function makeWaterHi() {
 }
 function applyQuality() {
     Q = QUAL[save.settings.quality] || QUAL.med;
-    renderer.setPixelRatio(Q.pr * Math.min(window.devicePixelRatio || 1, 1.25));
+    renderer.setPixelRatio(Q.pr * DRES.k * Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     const changed = applyQuality.q !== Q || !applyQuality.t; applyQuality.q = Q; applyQuality.t = !!terrain;
     $('#ov').width = Math.floor(window.innerWidth * 0.75); $('#ov').height = Math.floor(window.innerHeight * 0.75);
     if (!changed) return;      // a window resize: nothing else to redo
     const on = !!Q.sh;
+    renderer.shadowMap.autoUpdate = !(Q.shEvery > 1); renderer.shadowMap.needsUpdate = true;
     renderer.shadowMap.enabled = on; renderer.shadowMap.type = Q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap; sun.castShadow = on;
     if (on && sun.shadow.mapSize.x !== Q.sh) { sun.shadow.mapSize.set(Q.sh, Q.sh); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
     const sc = sun.shadow.camera; sc.left = sc.bottom = -(Q.shR || 100); sc.right = sc.top = Q.shR || 100; sc.near = 20; sc.far = 900; sc.updateProjectionMatrix();

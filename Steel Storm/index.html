@@ -303,8 +303,9 @@ table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}ta
 </div>
 <div id="s-new" class="scr dim hidden">
   <div class="card wide">
-    <h2>Steel Storm 2.1: what's new</h2>
+    <h2>Steel Storm 2.1.1: what's new</h2>
     <div class="how"><div>
+      <h4>Runs smoother</h4><p>Medium graphics draw about a third faster with the same picture. When a computer still struggles, the game first lowers its resolution a little, then the graphics level, so it stays playable.</p>
       <h4>Every vehicle matters</h4><p>A full rebalance: each tier is a clear step up in hit points, armour and firepower, and every class has its own job (heavy tanks soak hits, light tanks scout, tank destroyers hit hardest, bombers delete ground targets, battleships carry the biggest guns). Big guns now feel big: larger blasts, damage numbers over what you hit, screen shake and a shove on heavy hits.</p>
       <h4>Guided missiles</h4><p>Missiles lead their target and actually hit it. Hold your aim on a target for half a second: yellow brackets close in, then a red LOCK (with a beep) means the missile will guide. Flares still fool heat-seekers some of the time, and lost missiles self-destruct.</p>
       <h4>Smarter bots</h4><p>Bot skill now picks their gear too: Easy bots drive lower tiers with no modules, Normal bots match your tier, Hard bots bring your tier and above with modules, and aim better.</p>
@@ -377,7 +378,7 @@ function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79
 const TEAM_COL = [0x3b9bff, 0xff4d4d, 0x4cd964, 0xffd21f, 0xc77dff, 0xff9d3a, 0x3ae0d0, 0xff6ac1, 0xa0e85a, 0xe8e8e8, 0x7a8cff, 0xd08a5a, 0x5ad0ff, 0xffb0b0, 0x9a9a9a, 0xb0ff6a, 0xffe08a, 0x8affd8];
 const teamCol = t => TEAM_COL[((t | 0) % TEAM_COL.length + TEAM_COL.length) % TEAM_COL.length];
 const teamHex = t => '#' + teamCol(t).toString(16).padStart(6, '0');
-const VERSION = '2.1';
+const VERSION = '2.1.1';
 let toastT = 0;
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2600); }
 
@@ -1387,10 +1388,12 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 // rain counts, flash lights, terrain and water shaders, vehicle bump maps
 const QUAL = {
     low: { pr: 0.6, sh: 0, far: 900, parts: 0.45, fogN: 250, fogF: 900, trees: .4, rain: 500, lights: 0, hi: false, shR: 0 },
-    med: { pr: 0.8, sh: 1024, far: 1300, parts: 0.75, fogN: 350, fogF: 1300, trees: .7, rain: 1400, lights: 2, hi: true, shR: 110 },
+    med: { pr: 0.8, sh: 1024, far: 1300, parts: 0.75, fogN: 350, fogF: 1300, trees: .7, rain: 1400, lights: 2, hi: true, shR: 110, shEvery: 2 },
     high: { pr: 1, sh: 2048, far: 1800, parts: 1, fogN: 520, fogF: 1800, trees: 1, rain: 2800, lights: 4, hi: true, shR: 160, soft: true }
 };
 let Q = QUAL.med;
+// dynamic resolution: when frames run slow the picture is drawn at fewer pixels (down to 70% of the preset) before the preset itself drops
+const DRES = { k: 1, min: .7 };
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x8fc8ee);
 scene.fog = new THREE.Fog(0x8fc8ee, 350, 1300);
@@ -1493,16 +1496,18 @@ function makeTerrainHi() {
             float wSand = 1.0 - smoothstep(1.3, 3.2, hgt + det * 0.8);
             float wRock = smoothstep(0.17, 0.32, slope + max(hgt - 24.0, 0.0) * 0.03);
             float wSnow = smoothstep(30.5, 34.0, hgt + det * 2.5) * (1.0 - smoothstep(0.4, 0.55, slope));
-            vec3 col = mix(grass, texture2D(tSand, wuv * 0.09).rgb, wSand);
-            col = mix(col, texture2D(tRock, wuv * 0.06).rgb, wRock * (1.0 - wSand * 0.6));
-            col = mix(col, texture2D(tSnow, wuv * 0.05).rgb, wSnow);
+            // a texture is read only where it shows (most of the ground is plain grass: 4 reads a pixel instead of 8)
+            vec3 col = grass;
+            if (wSand > 0.002) col = mix(col, texture2D(tSand, wuv * 0.09).rgb, wSand);
+            float wR = wRock * (1.0 - wSand * 0.6); if (wR > 0.002) col = mix(col, texture2D(tRock, wuv * 0.06).rgb, wR);
+            if (wSnow > 0.002) col = mix(col, texture2D(tSnow, wuv * 0.05).rgb, wSnow);
             float road = texture2D(tMask, vTW.xz / 1600.0 + 0.5).r * step(0.6, hgt);
-            col = mix(col, texture2D(tRoad, wuv * 0.08).rgb, road * 0.92);
+            if (road > 0.002) col = mix(col, texture2D(tRoad, wuv * 0.08).rgb, road * 0.92);
             col = mix(col, col * vec3(0.5, 0.72, 0.85), smoothstep(-0.3, -7.0, hgt));
             col *= 0.84 + det * 0.32;
             diffuseColor.rgb *= col;`);
     };
-    m.customProgramCacheKey = () => 'terrain2';
+    m.customProgramCacheKey = () => 'terrain3';
     return m;
 }
 function makeWaterHi() {
@@ -1519,12 +1524,13 @@ function makeWaterHi() {
 }
 function applyQuality() {
     Q = QUAL[save.settings.quality] || QUAL.med;
-    renderer.setPixelRatio(Q.pr * Math.min(window.devicePixelRatio || 1, 1.25));
+    renderer.setPixelRatio(Q.pr * DRES.k * Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     const changed = applyQuality.q !== Q || !applyQuality.t; applyQuality.q = Q; applyQuality.t = !!terrain;
     $('#ov').width = Math.floor(window.innerWidth * 0.75); $('#ov').height = Math.floor(window.innerHeight * 0.75);
     if (!changed) return;      // a window resize: nothing else to redo
     const on = !!Q.sh;
+    renderer.shadowMap.autoUpdate = !(Q.shEvery > 1); renderer.shadowMap.needsUpdate = true;
     renderer.shadowMap.enabled = on; renderer.shadowMap.type = Q.soft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap; sun.castShadow = on;
     if (on && sun.shadow.mapSize.x !== Q.sh) { sun.shadow.mapSize.set(Q.sh, Q.sh); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
     const sc = sun.shadow.camera; sc.left = sc.bottom = -(Q.shR || 100); sc.right = sc.top = Q.shR || 100; sc.near = 20; sc.far = 900; sc.updateProjectionMatrix();
@@ -1725,17 +1731,19 @@ function part(x, y, z, vx, vy, vz, size, life, hex, g, drag) {
     partMesh.setColorAt(i, CL.setHex(hex)); partDirty = true;
 }
 function updateParticles(dt) {
-    const a = partMesh.instanceMatrix.array;
+    const a = partMesh.instanceMatrix.array; let hi = 0;
     for (let i = 0; i < NP; i++) {
         const o = i * 16;
         if (PA.life[i] > 0) {
+            hi = i + 1;
             PA.life[i] -= dt; PA.x[i] += PA.vx[i] * dt; PA.y[i] += PA.vy[i] * dt; PA.z[i] += PA.vz[i] * dt; PA.vy[i] -= PA.g[i] * dt;
             const dr = Math.pow(PA.drag[i], dt * 3); PA.vx[i] *= dr; PA.vy[i] *= dr; PA.vz[i] *= dr;
             const s = PA.life[i] > 0 ? PA.size[i] * Math.min(1, PA.life[i] / PA.max[i] * 1.6) : 0;
             a[o] = s; a[o + 5] = s; a[o + 10] = s; a[o + 12] = PA.x[i]; a[o + 13] = PA.y[i]; a[o + 14] = PA.z[i]; a[o + 15] = 1;
         } else if (a[o] !== 0) { a[o] = 0; a[o + 5] = 0; a[o + 10] = 0; }
     }
-    partMesh.instanceMatrix.needsUpdate = true; if (partDirty) { partMesh.instanceColor.needsUpdate = true; partDirty = false; }
+    partMesh.count = hi;      // the GPU draws only up to the last live particle (an empty pool draws nothing)
+    if (hi) partMesh.instanceMatrix.needsUpdate = true; if (partDirty) { partMesh.instanceColor.needsUpdate = true; partDirty = false; }
 }
 const fxN = n => Math.max(1, Math.round(n * Q.parts));
 function fxExplosion(x, y, z, size, noise) {
@@ -3683,7 +3691,7 @@ function advance() {
     return dt;
 }
 // ---------- frame loop ----------
-const FS = { n: 0, sum: 0, max: 0, over: 0, last: performance.now(), rsum: 0 };
+const FS = { n: 0, sum: 0, max: 0, over: 0, last: performance.now(), rsum: 0, sh: 0 };
 const DBG = { noRender: false, autoQ: true };
 let lastFrame = performance.now();
 function frame(now) {
@@ -3691,6 +3699,7 @@ function frame(now) {
     const rdt = Math.min(.1, (now - lastFrame) / 1000); lastFrame = now;
     if (M) {
         const dt = advance(); updateParticles(dt); updateCamera(dt); updateWorld(dt); updateFlagViz();
+        if (Q.shEvery > 1 && ++FS.sh >= Q.shEvery) { FS.sh = 0; renderer.shadowMap.needsUpdate = true; }      // shadows redrawn every other frame on Medium
         if (!DBG.noRender) { const r0 = performance.now(); renderer.render(scene, camera); FS.rsum += performance.now() - r0; }
         UI.hud(rdt);
         if (ME) { if (ME.alive) engineSet(ME.def.ln === 'a' && !ME.def.heli ? ME.thr : Math.abs(ME.speed) / ME.def.sp, ME.def.ln); else engineStop(); }
@@ -3706,11 +3715,22 @@ function updateFlagViz() {
     M.flags.forEach((f, i) => { const v = flagViz[i]; if (!v) return; const c = f.st === 'carry' ? EN.get(f.by) : null; v.grp.position.set(f.x, c ? c.y + 3 : GH(f.x, f.z), f.z); v.cloth.rotation.y = Math.sin(simTime * 3 + i) * .3; });
 }
 // drop the graphics quality by itself when the machine cannot keep up
-const AQ = { t: 0, n: 0, sum: 0 };
+const AQ = { t: 0, n: 0, sum: 0, rt: 0, rn: 0, rsum: 0 };
 function autoQuality(now) {
-    const ft = now - FS.last; if (ft > 1000) return; AQ.n++; AQ.sum += ft;
+    const ft = now - FS.last; if (ft > 1000) return; AQ.n++; AQ.sum += ft; AQ.rn++; AQ.rsum += ft;
+    // every 2 s: fewer pixels when slower than ~28 fps, more again when comfortably fast (never above the preset)
+    if (now - AQ.rt > 2000) {
+        if (AQ.rt && AQ.rn >= 4) {
+            const avg = AQ.rsum / AQ.rn, k0 = DRES.k;
+            if (avg > 36 && DRES.k > DRES.min) DRES.k = Math.max(DRES.min, DRES.k - .1);
+            else if (avg < 20 && DRES.k < 1) DRES.k = Math.min(1, DRES.k + .05);
+            if (DRES.k !== k0) { renderer.setPixelRatio(Q.pr * DRES.k * Math.min(window.devicePixelRatio || 1, 1.25)); renderer.setSize(window.innerWidth, window.innerHeight, false); }
+        }
+        AQ.rt = now; AQ.rn = AQ.rsum = 0;
+    }
+    // every 5 s: still slow at the lowest resolution, so the preset drops (it starts again at full resolution)
     if (now - AQ.t > 5000) {
-        if (AQ.t && AQ.n > 20 && AQ.sum / AQ.n > 42 && save.settings.quality !== 'low') { save.settings.quality = save.settings.quality === 'high' ? 'med' : 'low'; applyQuality(); writeSave(); toast('Graphics lowered to ' + save.settings.quality + ' for smoother play'); }
+        if (AQ.t && AQ.n >= 8 && AQ.sum / AQ.n > 40 && DRES.k <= DRES.min && save.settings.quality !== 'low') { DRES.k = 1; save.settings.quality = save.settings.quality === 'high' ? 'med' : 'low'; applyQuality(); writeSave(); toast('Graphics lowered to ' + save.settings.quality + ' for smoother play'); }
         AQ.t = now; AQ.n = AQ.sum = 0;
     }
 }
@@ -3790,7 +3810,7 @@ window.__steelstorm = {
     grant(o) { if (o.cr) save.credits += o.cr; if (o.rp) addRp(o.rp); if (o.free) save.freeRp += o.free; writeSave(); UI.wallet(); },
     research: { target: setTarget, free: spendFreeRp, canResearch, isResearched }, buy: buyVeh, lineup: lineupToggle, addRp, setTarget, buyVeh,
     press(code, down) { IN.keys[code] = down !== false; }, mouse(btn, down) { IN.mb[btn] = down === false ? 0 : 1; }, look(yaw, pitch) { if (yaw !== undefined) IN.camYaw = yaw; if (pitch !== undefined) IN.camPitch = pitch; },
-    get cam() { return IN; }, get camera() { return camera; }, get renderer() { return renderer; },
+    get cam() { return IN; }, get camera() { return camera; }, get renderer() { return renderer; }, get scene() { return scene; }, get sun() { return sun; },
     teleport(x, y, z, yaw) { if (!ME) return; ME.x = x; ME.z = z; ME.y = y === null || y === undefined ? GH(x, z) : y; if (yaw !== undefined) { ME.yaw = yaw; ME.tur = yaw; IN.camYaw = yaw; } },
     setVeh(id, mm) { if (!ME) return; if (ME.alive) { ME.alive = false; } ME.respT = 0; const ok = respawnMe(id); if (ok && mm !== undefined) { setDef(ME, vdef(id, mm)); spawnEnt(ME); } return ok; },
     damage(id, n, by) { hostDamage(by === undefined ? (ME ? ME.id : 0) : by, id, n, 0, 'w1', true); },
@@ -3799,7 +3819,7 @@ window.__steelstorm = {
     step(n, dt) { for (let i = 0; i < n; i++) { simStep(dt || .033); updateParticles(dt || .033); } updateFlagViz(); },
     fire(slot) { if (!ME) return false; ME[slot === 'w1' ? 't1' : slot === 'w2' ? 't2' : 't3'] = 0; return weaponFire(ME, slot, PC); },
     aim() { return ME && ME.alive ? aimRay(ME) : null; },
-    perf() { const r = { frames: FS.n, avg: FS.n ? +(FS.sum / FS.n).toFixed(1) : 0, max: +FS.max.toFixed(1), over34: FS.over, render: FS.n ? +(FS.rsum / FS.n).toFixed(1) : 0 }; FS.n = FS.sum = FS.max = FS.over = FS.rsum = 0; return r; },
+    perf() { const r = { frames: FS.n, avg: FS.n ? +(FS.sum / FS.n).toFixed(1) : 0, max: +FS.max.toFixed(1), over34: FS.over, render: FS.n ? +(FS.rsum / FS.n).toFixed(1) : 0, res: DRES.k }; FS.n = FS.sum = FS.max = FS.over = FS.rsum = 0; return r; },
     noRender(v) { DBG.noRender = v !== false; }, autoQ(v) { DBG.autoQ = !!v; },
     setQuality(q) { save.settings.quality = q; applyQuality(); return Q; }, setWeather(k) { return applyWeather(k); },
     renderStats,

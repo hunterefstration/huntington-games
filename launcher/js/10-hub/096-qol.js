@@ -273,7 +273,8 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r72', items: [
+var WHATSNEW = { id: 'r73', items: [
+  ['Steel Storm runs smoother', 'About a third faster on Medium with the same picture. On a slow computer it lowers the resolution a little before dropping the graphics level.'],
   ['Steel Storm 2.1', 'A full rebalance: every vehicle has a job and every tier hits harder. Guided missiles lock on and hit, bots on hard bring better gear, and tanks climb hills without stalling.'],
   ['Nicknames', 'Pick a nickname everyone sees (Profile, the pencil next to your name). Your account name is still there when someone hovers over it.'],
   ['Mayhem Marathon, Sovereign, Neon Dash fixes', 'No more spawning under the map in Tail Grab, no more "InfinityT" money in Sovereign, and impossible Neon Dash scores are gone from the board.'],
