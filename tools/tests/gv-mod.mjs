@@ -78,9 +78,11 @@ try {
   console.log('=== official rooms ===');
   const offic = await appP.evaluate(() => ['main', 'announcements', 'mp-codes', 'music', 'bugs'].filter(id => S.convs.has(id)));
   check('a new player is in every official room from the start', offic.length === 5, JSON.stringify(offic));
-  await say(appP, 'announcements', 'can i post here');
+  await appP.evaluate(() => GV.openConv('announcements')); await sleep(500);
+  check('#announcements shows players no composer', await appP.evaluate(() => getComputedStyle(document.getElementById('compose')).display === 'none' && /Announcements from the Server/.test(document.getElementById('composelock').textContent)));
+  await appP.evaluate(() => S.archive.send({ type: 'chat', convId: 'announcements', msgId: 'try-' + Date.now(), text: 'can i post here' }));
   await sleep(2500);
-  check('#announcements is read-only for players', !(await appO.evaluate(() => { GV.openConv('announcements'); return document.getElementById('log').innerText.includes('can i post here'); })));
+  check('...and the server refuses a player\'s post there', !(await appO.evaluate(() => { GV.openConv('announcements'); return document.getElementById('log').innerText.includes('can i post here'); })));
   await say(appO, 'announcements', 'Big update tonight');
   check('...the owner posts there', !!(await until(() => appP.evaluate(() => { GV.openConv('announcements'); return document.getElementById('log').innerText.includes('Big update tonight'); }), 15000)));
 

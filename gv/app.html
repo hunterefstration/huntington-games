@@ -1330,6 +1330,29 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
 @keyframes shamepulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
 body.bonked{animation:bonkshake .5s}
 @keyframes bonkshake{0%,100%{transform:none}20%{transform:translate(-8px,6px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
+
+/* the sidebar (2026-11-16): chips, folding sections, avatars, pins */
+.schips{display:flex;flex-wrap:wrap;gap:4px;padding:6px 2px 8px;position:sticky;top:0;z-index:2;background:var(--panel, var(--ground))}
+.schip{padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);font:inherit;font-size:11.5px;cursor:pointer}
+.schip:hover{color:var(--text);border-color:var(--line2)}
+.schip.on{background:linear-gradient(90deg,var(--signal),var(--signal2));color:var(--on-signal);border-color:transparent}
+.sect.shead{display:flex;align-items:center;gap:6px;width:100%;background:none;border:0;cursor:pointer;text-align:left;padding:10px 6px 4px}
+.sect.shead:hover{color:var(--text)}
+.sect .caret{width:9px;color:var(--dimmer)}
+.sect .scount{margin-left:2px;color:var(--dimmer)}
+.sect .sextra{margin-left:auto;color:var(--signal);letter-spacing:.06em}
+.citem .cav{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:800;background:var(--raise);color:var(--dim);position:relative}
+.citem .cav.live::after{content:"";position:absolute;right:-1px;bottom:-1px;width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 2px var(--panel, var(--ground))}
+.citem .cico{flex:none;width:20px;text-align:center;font-size:13px}
+.citem .lock{font-size:9px;margin-left:5px;opacity:.6}
+.citem .ago{font-family:var(--mono);font-size:9.5px;color:var(--dimmer)}
+.citem.hasun .nm{color:var(--text);font-weight:700}
+.citem.muted{opacity:.6}
+.citem .pin{opacity:0;font-size:10px;filter:grayscale(1);transition:opacity .12s}
+.citem:hover .pin{opacity:.55}.citem .pin:hover{opacity:1;filter:none}
+.citem .pin.on{opacity:.9;filter:none}
+.smore{display:block;margin:2px 0 4px 28px;padding:2px 0;background:none;border:0;color:var(--dimmer);font:inherit;font-size:11.5px;cursor:pointer}
+.smore:hover{color:var(--signal)}
 </style>
 </head>
 <body>
@@ -2961,165 +2984,150 @@ function paintSidebar(){
   sidebarQueued = true;
   requestAnimationFrame(() => { sidebarQueued = false; paintSidebarNow(); });
 }
+// The sidebar (2026-11-16): filter chips (all, unread, rooms, DMs, friends), then sections that fold and remember it:
+// official rooms (fixed order), pinned, direct messages, rooms, friends (online first), discover (public rooms you are
+// not in). Inside a section: unread first, then the most recent activity this browser has seen, then by name. Long
+// sections show the first few with "show all". Typing in the box filters everything and offers ways to start a chat.
+const OFFICIAL_SIDE = [['announcements', '📣'], ['main', '💬'], ['mp-codes', '🎮'], ['music', '🎵'], ['bugs', '🐞']];
+const SIDE_SHOW = 8;
+const sideKey = k => 'gv:side:' + k + ':' + S.userId;
+const sideGet = (k, d) => { try { const v = JSON.parse(store.getItem(sideKey(k)) || 'null'); return v == null ? d : v; } catch { return d; } };
+const sideSet = (k, v) => { try { store.setItem(sideKey(k), JSON.stringify(v)); } catch {} };
+let RECENT = null;
+function recentOf(id){ if (!RECENT) RECENT = sideGet('recent', {}); return RECENT[id] || 0; }
+let recentSaveT = 0;
+function noteRecent(id, ts){
+  if (!id || !S.userId) return; if (!RECENT) RECENT = sideGet('recent', {});
+  if ((RECENT[id] || 0) >= (ts || 0)) return; RECENT[id] = ts || Date.now();
+  clearTimeout(recentSaveT); recentSaveT = setTimeout(() => sideSet('recent', RECENT), 2000);
+}
+function togglePin(id){ const p = new Set(sideGet('pins', [])); p.has(id) ? p.delete(id) : p.add(id); sideSet('pins', [...p]); paintSidebarNow(); }
 function paintSidebarNow(){
   const el = $('#convs'); el.textContent = '';
   const qRaw = ($('#sideBox')?.value || '').trim();
   const q = qRaw.replace(/^#/, '').toLowerCase();
-  // Rooms sort into public and private; a room inside another room hangs off
-  // its parent rather than being filed alphabetically among strangers.
-  const groups = { pub:[], priv:[], dm:[] };
-  const children = new Map();          // parentId -> [child convs]
-  for (const c of S.convs.values()) {
-    if (c.hidden) continue;                 // a role override took this off your wall
-    if (c.kind === 'dm' && c.id !== S.active && closedDms().has(c.id)) continue;   // you closed it (until they write)
-    if (q && !convTitle(c).replace(/^#/, '').toLowerCase().includes(q)) continue;
-    if (c.kind === 'dm') { groups.dm.push(c); continue; }
-    if (c.parentId) {
-      if (!children.has(c.parentId)) children.set(c.parentId, []);
-      children.get(c.parentId).push(c);
-      continue;
-    }
-    (c.private || c.kind === 'group' ? groups.priv : groups.pub).push(c);
+  const filter = sideGet('filter', 'all'), folded = new Set(sideGet('folded', ['discover'])), more = new Set(sideGet('more', []));
+  const pins = new Set(sideGet('pins', []));
+  // filter chips
+  const chips = document.createElement('div'); chips.className = 'schips';
+  const unreadAll = [...S.convs.values()].reduce((n, c) => n + (c.hidden ? 0 : (c.unread || 0)), 0);
+  for (const [k, label] of [['all', 'All'], ['unread', 'Unread' + (unreadAll ? ' ' + (unreadAll > 99 ? '99+' : unreadAll) : '')], ['rooms', 'Rooms'], ['dms', 'DMs'], ['friends', 'Friends']]) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'schip' + (filter === k ? ' on' : ''); b.dataset.filter = k; b.textContent = label;
+    b.onclick = () => { sideSet('filter', k); paintSidebarNow(); };
+    chips.append(b);
   }
-  // A child whose parent didn't survive the filter still deserves a row.
-  for (const [pid, kids] of children)
-    if (![...groups.pub, ...groups.priv].some(c => c.id === pid))
-      (S.convs.get(pid)?.private ? groups.priv : groups.pub).push(...kids.splice(0));
-
-  // Which parents are unfolded. Folded is the default — a room's inner rooms
-  // are a dropdown, not a permanent column of indentation.
+  el.append(chips);
+  const show = kind => filter === 'all' || filter === 'unread' || (filter === 'rooms' && kind === 'room') || (filter === 'dms' && kind === 'dm') || (filter === 'friends' && kind === 'friend');
+  // sort the conversations into piles
+  const official = [], pinned = [], dms = [], rooms = [];
+  const children = new Map();
+  const isOfficial = id => OFFICIAL_SIDE.some(o => o[0] === id);
+  for (const c of S.convs.values()) {
+    if (c.hidden) continue;
+    if (c.kind === 'dm' && c.id !== S.active && closedDms().has(c.id)) continue;
+    if (q && !convTitle(c).replace(/^#/, '').toLowerCase().includes(q)) continue;
+    if (filter === 'unread' && !(c.unread > 0) && c.id !== S.active) continue;
+    if (c.parentId) { if (!children.has(c.parentId)) children.set(c.parentId, []); children.get(c.parentId).push(c); continue; }
+    if (isOfficial(c.id)) official.push(c);
+    else if (pins.has(c.id)) pinned.push(c);
+    else if (c.kind === 'dm') dms.push(c);
+    else rooms.push(c);
+  }
+  for (const [pid, kids] of children) if (![...official, ...pinned, ...rooms].some(c => c.id === pid)) rooms.push(...kids.splice(0));
+  const order = (a, b) => ((b.unread > 0) - (a.unread > 0)) || (recentOf(b.id) - recentOf(a.id)) || convTitle(a).localeCompare(convTitle(b));
   const expKey = 'gv:expand:' + S.userId;
   let expand; try { expand = new Set(JSON.parse(store.getItem(expKey) || '[]')); } catch { expand = new Set(); }
   const saveExpand = () => { try { store.setItem(expKey, JSON.stringify([...expand])); } catch {} };
+  const ago = t => { if (!t) return ''; const s = (Date.now() - t) / 1000; return s < 60 ? 'now' : s < 3600 ? Math.floor(s / 60) + 'm' : s < 86400 ? Math.floor(s / 3600) + 'h' : Math.floor(s / 86400) + 'd'; };
   const row = (c, sub, o = {}) => {
     const b = document.createElement('button');
-    b.className = 'citem' + (c.id === S.active ? ' on' : '') + (sub ? ' subroom' : ''); b.dataset.conv = c.id;
+    b.className = 'citem' + (c.id === S.active ? ' on' : '') + (sub ? ' subroom' : '') + (c.unread > 0 ? ' hasun' : '') + (c.notify === 'silent' ? ' muted' : ''); b.dataset.conv = c.id;
     const online = c.members.some(m => m.userId !== S.userId && m.online);
     const nm = sub ? c.name : convTitle(c);
     const un = (c.unread || 0) + (o.rolled || 0);
-    b.innerHTML = `<span class="dot${online ? ' live' : ''}"></span><span class="nm">${esc(nm)}</span>` +
-      (o.kids ? `<span class="twist" title="${o.open ? 'fold' : 'show'} the rooms inside">${o.open ? '\u25be' : '\u25b8'} ${o.kids}</span>` : '') +
-      (un > 0 ? `<span class="un">${un > 99 ? '99+' : un}</span>` : '');
+    const ico = o.ico ? `<span class="cico">${o.ico}</span>` : c.kind === 'dm' ? `<span class="cav${online ? ' live' : ''}">${esc((nm.replace(/^@/, '')[0] || '?').toUpperCase())}</span>` : `<span class="dot${online ? ' live' : ''}"></span>`;
+    b.innerHTML = ico + `<span class="nm">${esc(nm)}${c.private || c.kind === 'group' ? '<span class="lock" title="private">🔒</span>' : ''}</span>` +
+      (o.kids ? `<span class="twist" title="${o.open ? 'fold' : 'show'} the rooms inside">${o.open ? '▾' : '▸'} ${o.kids}</span>` : '') +
+      (un > 0 ? `<span class="un">${un > 99 ? '99+' : un}</span>` : (recentOf(c.id) && !sub ? `<span class="ago">${ago(recentOf(c.id))}</span>` : '')) +
+      (o.ico ? '' : `<span class="pin${pins.has(c.id) ? ' on' : ''}" title="${pins.has(c.id) ? 'unpin' : 'pin to the top'}">📌</span>`);
     b.onclick = () => { openConv(c.id); clearFind(); sidebar(false); };
     const tw = b.querySelector('.twist');
-    if (tw) tw.onclick = e => {
-      e.stopPropagation();
-      expand.has(c.id) ? expand.delete(c.id) : expand.add(c.id);
-      saveExpand(); paintSidebarNow();
-    };
+    if (tw) tw.onclick = e => { e.stopPropagation(); expand.has(c.id) ? expand.delete(c.id) : expand.add(c.id); saveExpand(); paintSidebarNow(); };
+    const pn = b.querySelector('.pin'); if (pn) pn.onclick = e => { e.stopPropagation(); togglePin(c.id); };
     el.append(b);
   };
-  const sect = (label, list) => {
+  const head = (key, label, n, extra) => {
+    const h = document.createElement('button'); h.type = 'button'; h.className = 'sect shead' + (folded.has(key) ? ' folded' : ''); h.dataset.sect = key;
+    h.innerHTML = `<span class="caret">${folded.has(key) ? '▸' : '▾'}</span>${esc(label)}<span class="scount">${n}</span>${extra ? `<span class="sextra">${extra}</span>` : ''}`;
+    h.onclick = () => { folded.has(key) ? folded.delete(key) : folded.add(key); sideSet('folded', [...folded]); paintSidebarNow(); };
+    el.append(h); return !folded.has(key) || !!q;
+  };
+  const moreBtn = (key, hidden) => {
+    if (hidden <= 0) return;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'smore'; b.textContent = more.has(key) ? 'show fewer' : `show all (${hidden} more)`;
+    b.onclick = () => { more.has(key) ? more.delete(key) : more.add(key); sideSet('more', [...more]); paintSidebarNow(); };
+    el.append(b);
+  };
+  const convSect = (key, label, list, opts = {}) => {
     if (!list.length) return;
-    const h = document.createElement('div'); h.className = 'sect'; h.textContent = label; el.append(h);
-    list.sort((a, b2) => convTitle(a).localeCompare(convTitle(b2)));
-    for (const c of list) {
-      // Rooms of this room: ones I'm in, then ones I could walk into — behind
-      // a chevron. Searching unfolds everything, because a filter that hides
-      // its own matches is a lie.
+    if (!opts.fixed) list.sort(order);
+    const un = list.reduce((n, c) => n + (c.unread || 0), 0);
+    if (!head(key, label, list.length, un ? `${un} new` : '')) return;
+    const cap = q || more.has(key) || opts.all ? list.length : SIDE_SHOW;
+    for (const c of list.slice(0, Math.max(cap, list.filter(x => x.unread > 0 || x.id === S.active).length))) {
       const mine = (children.get(c.id) || []).sort((a, b2) => a.name.localeCompare(b2.name));
       const offers = (c.subrooms || []).filter(x => !S.convs.has(x.id) && (!q || x.name.toLowerCase().includes(q)));
-      const kids = mine.length + offers.length;
-      const open = kids > 0 && (expand.has(c.id) || !!q);
+      const kids = mine.length + offers.length, open = kids > 0 && (expand.has(c.id) || !!q);
       const rolled = open ? 0 : mine.reduce((n, k) => n + (k.unread || 0), 0);
-      row(c, false, { kids, open, rolled });
+      row(c, false, { kids, open, rolled, ico: opts.icons ? (OFFICIAL_SIDE.find(o => o[0] === c.id) || [])[1] : null });
       if (!open) continue;
       for (const k of mine) row(k, true);
       for (const offered of offers) {
-        const b = document.createElement('button');
-        b.className = 'citem subroom offer';
-        b.innerHTML = `<span class="dot"></span><span class="nm">${esc(offered.name)}</span>` +
-          `<span class="joinhint">join</span>`;
+        const b = document.createElement('button'); b.className = 'citem subroom offer';
+        b.innerHTML = `<span class="dot"></span><span class="nm">${esc(offered.name)}</span><span class="joinhint">join</span>`;
         b.onclick = () => { tell({ type:'join', convId: offered.id }, { transient:true }); sidebar(false); };
         el.append(b);
       }
     }
+    moreBtn(key, list.length - Math.max(cap, 0));
   };
-  sect('public', groups.pub); sect('private', groups.priv);
-  // Friends: your own list, one-way, follows your key. A friend row opens
-  // (or starts) the DM.
-  if (!S.guest && !q && !S.friends.length) {
-    const h = document.createElement('div'); h.className = 'sect'; h.textContent = 'friends'; el.append(h);
-    const d = document.createElement('div'); d.className = 'empty';
-    d.textContent = 'None yet — Friends, up top, to ask somebody.'; el.append(d);
+  if (show('room')) convSect('official', 'Official', official.sort((a, b) => OFFICIAL_SIDE.findIndex(o => o[0] === a.id) - OFFICIAL_SIDE.findIndex(o => o[0] === b.id)), { fixed: true, icons: true, all: true });
+  if (filter !== 'friends') convSect('pinned', 'Pinned', pinned.filter(c => show(c.kind === 'dm' ? 'dm' : 'room')), { all: true });
+  if (show('dm')) convSect('dms', 'Direct messages', dms);
+  if (show('room')) convSect('rooms', 'Rooms', rooms);
+  // friends: online first; a friend row opens (or starts) the DM
+  if (!S.guest && show('friend') && filter !== 'unread') {
+    const fl = S.friends.filter(f => !q || f.name.toLowerCase().includes(q)).sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name));
+    if (!S.friends.length && !q) {
+      if (head('friends', 'Friends', 0)) { const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'None yet: Friends, up top, to ask somebody.'; el.append(d); }
+    } else if (fl.length) {
+      const on = fl.filter(f => f.online).length;
+      if (head('friends', 'Friends', fl.length, on ? `${on} online` : '')) {
+        const cap = q || more.has('friends') ? fl.length : SIDE_SHOW;
+        for (const f of fl.slice(0, cap)) {
+          const b = document.createElement('button'); b.className = 'citem friend';
+          b.innerHTML = `<span class="cav${f.online ? ' live' : ''}">${esc((f.name[0] || '?').toUpperCase())}</span><span class="nm">${esc(f.name)}</span><span class="fheart">♡</span>`;
+          b.onclick = () => { route(f.name, 'dm'); sidebar(false); };
+          el.append(b);
+        }
+        moreBtn('friends', fl.length - cap);
+      }
+    }
   }
-  if (!S.guest && S.friends.length) {
-    const fl = S.friends.filter(f => !q || f.name.toLowerCase().includes(q));
-    if (fl.length) {
-      const h = document.createElement('div'); h.className = 'sect'; h.textContent = 'friends'; el.append(h);
-      for (const f of fl) {
-        const b = document.createElement('button');
-        b.className = 'citem friend';
-        b.innerHTML = `<span class="dot${f.online ? ' live' : ''}"></span>` +
-          `<span class="nm">${esc(f.name)}</span><span class="fheart">\u2661</span>`;
-        b.onclick = () => { route(f.name, 'dm'); sidebar(false); };
+  // discover: every public room you are not in (folded until you open it)
+  const elsewhere = (S.rooms || []).filter(r => !S.convs.has(r.id) && (!q || bare(r.name).toLowerCase().includes(q))).sort((a, b) => b.members - a.members);
+  if (elsewhere.length && show('room') && filter !== 'unread') {
+    if (head('discover', 'Discover rooms', elsewhere.length)) {
+      const cap = q || more.has('discover') ? elsewhere.length : SIDE_SHOW;
+      for (const r of elsewhere.slice(0, cap)) {
+        const b = document.createElement('button'); b.className = 'citem ghost'; b.title = 'Click to walk in';
+        b.innerHTML = `<span class="dot"></span><span class="nm">${esc(r.name)}</span><span class="cnt">${r.members}</span>`;
+        b.onclick = () => { archiveDo({ type:'join', convId:r.id }); sidebar(false); };
         el.append(b);
       }
+      moreBtn('discover', elsewhere.length - cap);
     }
   }
-  sect('dms', groups.dm);
-
-  // The person finder lives under the DMs, because that is where you look when
-  // you want to talk to someone and don't already have a thread with them.
-  if (!qRaw) {
-    const wrap = document.createElement('div'); wrap.className = 'dmfind';
-    const inp = document.createElement('input');
-    inp.placeholder = 'message someone by name…';
-    inp.maxLength = 40; inp.autocomplete = 'off'; inp.spellcheck = false;
-    inp.value = S.dmFind || '';
-    const hits = document.createElement('div'); hits.className = 'dmhits';
-    const paintHits = () => {
-      hits.textContent = '';
-      const t = inp.value.trim();
-      if (!t) return;
-      // People you already share a conversation with, matched loosely.
-      const seen = new Set(), out = [];
-      for (const c of S.convs.values())
-        for (const m of c.members)
-          if (m.userId !== S.userId && !seen.has(m.name) &&
-              m.name.toLowerCase().includes(t.toLowerCase())) { seen.add(m.name); out.push(m); }
-      for (const m of out.slice(0, 6)) {
-        const b = document.createElement('button'); b.className = 'citem';
-        b.innerHTML = `<span class="dot${m.online ? ' live' : ''}"></span><span class="nm">${esc(m.name)}</span>`;
-        b.onclick = () => { S.dmFind = ''; route(m.name, 'dm'); sidebar(false); };
-        hits.append(b);
-      }
-      if (!out.some(m => m.name === t)) {
-        const b = document.createElement('button'); b.className = 'citem act';
-        b.innerHTML = `<span class="verb">dm</span><span class="nm">${esc(t)}</span>`;
-        b.onclick = () => { S.dmFind = ''; route(t, 'dm'); sidebar(false); };
-        hits.append(b);
-      }
-    };
-    inp.addEventListener('input', () => { S.dmFind = inp.value; paintHits(); });
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { const t = inp.value.trim(); if (t) { S.dmFind = ''; route(t, 'dm'); sidebar(false); } }
-      if (e.key === 'Escape') { inp.value = ''; S.dmFind = ''; paintHits(); }
-    });
-    const h = document.createElement('div'); h.className = 'sect'; h.textContent = 'find someone';
-    el.append(h); wrap.append(inp); el.append(wrap, hits);
-    paintHits();
-    if (S.dmFind) setTimeout(() => { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }, 0);
-  }
-
-  // Every public room on this archive, whether or not you are in it. If it
-  // exists, it is in the sidebar — the ones you have not joined sit dimmed
-  // and joining is a click.
-  const elsewhere = (S.rooms || []).filter(r => !S.convs.has(r.id) &&
-    (!q || bare(r.name).toLowerCase().includes(q)));
-  if (elsewhere.length) {
-    const h = document.createElement('div'); h.className = 'sect';
-    h.textContent = 'public rooms · not joined'; el.append(h);
-    for (const r of elsewhere) {
-      const b = document.createElement('button'); b.className = 'citem ghost';
-      b.title = 'Click to walk in';
-      b.innerHTML = `<span class="dot"></span><span class="nm">${esc(r.name)}</span>` +
-        `<span class="cnt">${r.members}</span>`;
-      b.onclick = () => { archiveDo({ type:'join', convId:r.id }); sidebar(false); };
-      el.append(b);
-    }
-  }
-
   if (qRaw) {
     const acts = routeOptions(qRaw).filter(o => o.kind !== 'open');
     if (acts.length) {
@@ -3131,11 +3139,11 @@ function paintSidebarNow(){
         el.append(b);
       }
     }
+  } else if (filter === 'unread' && !unreadAll) {
+    const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'All caught up.'; el.append(d);
   } else if (!S.convs.size) {
-    const d = document.createElement('div'); d.className = 'empty';
-    d.textContent = 'No chats yet — hit + to start one.'; el.append(d);
+    const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'No chats yet: type a name above to start one.'; el.append(d);
   }
-
   const totalUnread = [...S.convs.values()].reduce((n,c) => n + (c.unread||0), 0);
   document.title = (totalUnread && SET.titleBadge && !SET.muteAll ? `(${totalUnread}) ` : '') + 'Grapevine';
 }
@@ -4000,6 +4008,8 @@ function paintComposeLock(){
     if (c.silencedUntil && c.silencedUntil > Date.now())
       msg = c.silencedUntil > 9e12 ? 'You are silenced in this conversation.'
           : 'Silenced here until ' + fmtTime(c.silencedUntil) + '.';
+    else if (c.id === 'announcements' && !S.isAdmin)
+      msg = 'Announcements from the Server and the admins. Talk about them in #main.';
     else if (c.frozen && c.role !== 'owner' && !S.isAdmin && !myCan(c, 'unfrozen'))
       msg = 'Frozen — this room is not taking messages right now.';
     else if (c.kind === 'room' && c.role && !myCan(c, 'post'))
@@ -4049,6 +4059,7 @@ function deliver(m){
   }
   S.seen.add(m.msgId);
   box.set(m.msgId, m);
+  noteRecent(m.convId, m.ts);
   trimBox(m.convId); trimSeen();
   cacheConv(m.convId);
   for (const fn of EMBED_FN) { try { fn(c, m); } catch (e) {} }
@@ -5774,7 +5785,7 @@ function handleArchive(m){
       const box = msgsOf(m.convId);
       // #main starts fresh every day: what this device kept from before the reset goes too
       if (m.since) for (const [id, msg] of box) if (msg.ts < m.since && !S.pending.has(id)) { box.delete(id); S.seen.delete(id); }
-      for (const msg of m.msgs) { box.set(msg.msgId, msg); S.seen.add(msg.msgId); }
+      for (const msg of m.msgs) { box.set(msg.msgId, msg); S.seen.add(msg.msgId); noteRecent(m.convId, msg.ts); }
       trimBox(m.convId); trimSeen();   // a backlog is a bulk insert like any other
       if (m.convId !== S.active) break;
       S.rows.clear(); dropQueued(); $('#log').textContent = '';
