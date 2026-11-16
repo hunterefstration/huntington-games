@@ -1,6 +1,8 @@
 // Mayhem Marathon self-test through the debug hook window.__mayhem. Needs no rig: serves the checkout and fakes the CDN.
 //   NODE_PATH=/opt/node22/lib/node_modules node "Mayhem Marathon/tools/test.mjs"            everything
 //   NODE_PATH=... node "Mayhem Marathon/tools/test.mjs" rounds logs gust                  only these rounds (also: show, perf, save, net)
+//   NODE_PATH=... node "Mayhem Marathon/tools/test.mjs" mp      two real players over HGNet (needs the rig's MQTT broker on :9001:
+//                                                               bash tools/rig/up.sh; MQTT_JS = path of mqtt.min.js)
 // Checks: every round starts and ends with qualifiers/a winner with bots, every spawn point is safe (floor below,
 // nothing solid inside), bots finish/survive at sensible rates, a full show runs to a crown, old saves load,
 // frame time per map, and no script errors.
@@ -10,7 +12,7 @@ import http from 'node:http';
 import path from 'node:path';
 
 const ROOT = new URL('../../', import.meta.url).pathname, TOOLS = process.env.HG_TOOLS || '/tmp/hg-tools';
-const args = process.argv.slice(2), parts = new Set(args.filter(a => ['rounds', 'show', 'perf', 'save', 'net'].includes(a)));
+const args = process.argv.slice(2), parts = new Set(args.filter(a => ['rounds', 'show', 'perf', 'save', 'net', 'mp'].includes(a)));
 const only = args.filter(a => !parts.has(a)); if (!parts.size) ['rounds', 'show', 'perf', 'save', 'net'].forEach(p => parts.add(p));
 const TYPES = { html: 'text/html', js: 'text/javascript', css: 'text/css', json: 'application/json' };
 const server = http.createServer((q, r) => {
@@ -22,13 +24,15 @@ const URL0 = 'http://127.0.0.1:' + server.address().port + '/Mayhem%20Marathon/i
 const browser = await chromium.launch({ args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 let fails = 0; const errs = [];
 const ok = (cond, what, info) => { console.log((cond ? 'PASS  ' : 'FAIL  ') + what + (info ? '  ' + info : '')); if (!cond) fails++; };
-async function open(initSave) {
-  const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+const MQTT_JS = process.env.MQTT_JS || '/home/user/grapevine/relay/mqtt.min.js';
+async function open(initSave, query) {
+  const page = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage();
   page.on('requestfailed', r => errs.push('request failed ' + r.url().slice(0, 140))); page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());            // routes added later win: this one first
   await page.route(/three@0\.160\.0\/(.*)$/, r => { const m = /three@0\.160\.0\/(.*)$/.exec(r.request().url()), f = TOOLS + '/cdn/package/' + m[1].split('?')[0]; fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : r.abort(); });
   if (initSave) await page.addInitScript(s => { if (!sessionStorage.getItem('planted')) { localStorage.setItem('mayhem_save', s); sessionStorage.setItem('planted', '1'); } }, JSON.stringify(initSave));
-  await page.goto(URL0);
+  if (query) await page.route(/mqtt(@[\d.]+)?\/dist\/mqtt\.min\.js/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(MQTT_JS) }));
+  await page.goto(URL0 + (query || ''));
   await page.waitForFunction(() => window.__mayhem, null, { timeout: 30000 }).catch(e => { console.log('the game did not start:', errs.slice(0, 3).join(' | ')); throw e; });
   return page;
 }
@@ -121,6 +125,42 @@ if (parts.has('save')) {
 if (parts.has('net')) {
   const r = await page.evaluate(() => { const M = window.__mayhem; return M.protoCheck ? M.protoCheck() : null; });
   ok(r && r.same === true && r.older !== true && r.none !== true && typeof r.msg === 'string', 'different versions refuse each other with a message', JSON.stringify(r));
+}
+if (parts.has('mp')) {
+  // a host and a guest over the rig's MQTT broker; a 1.0-style guest (no protocol number) must be refused with a message
+  const Q = '?hgrelays=ws://127.0.0.1:9001&hgpeer=off';
+  const A = await open(null, Q), B = await open(null, Q), C = await open(null, Q);
+  const until = async (p, fn, arg, ms = 30000) => { const t0 = Date.now(); for (;;) { const v = await p.evaluate(fn, arg).catch(() => null); if (v) return v; if (Date.now() - t0 > ms) return null; await new Promise(r => setTimeout(r, 300)); } };
+  for (const p of [A, B]) await p.evaluate(() => { const M = window.__mayhem; M.noRender(true); M.autopilot(true); });
+  await A.evaluate(() => { const M = window.__mayhem; Object.assign(M.save.opts, { bots: 4, skill: 1, length: 3, scoring: 'auto', pick: ['bomb', 'turf', 'hill'] }); M.ui.showLobby(); M.host(); });
+  const code = await until(A, () => /^\d{6}$/.test(window.__mayhem.NET.code) && window.__mayhem.NET.code);
+  ok(!!code, 'host opens a room on the rig broker', code || '');
+  await B.evaluate(c => { window.__mayhem.ui.showLobby(); window.__mayhem.join(c); }, code);
+  const joined = await until(B, () => window.__mayhem.NET.myId > 0 && window.__mayhem.NET.roster.length >= 2 && window.__mayhem.NET.roster.length);
+  ok(!!joined, 'a 1.1 guest joins a 1.1 host', 'roster ' + joined);
+  const old = await C.evaluate(async c => {
+    await new Promise(r => { const s = document.createElement('script'); s.src = '../gv/vendor/hgnet.js'; s.onload = r; document.head.appendChild(s); });
+    const net = window.HGNet.create({ game: 'mayhem' });
+    try { await net.join(c, { name: 'Old timer', info: { look: {} } }); return 'joined (bad)'; } catch (e) { return 'refused: ' + e.message; }
+  }, code);
+  ok(/older version/.test(old), 'a 1.0 guest (no protocol number) is refused with a clear message', old);
+  await A.evaluate(() => window.__mayhem.start());
+  const seen = [];
+  for (let k = 0; k < 3; k++) {
+    const ra = await until(A, n => { const s = window.__mayhem.state(); return s.round && s.show.idx === n && s.round.phase === 'play' && s.round.rid; }, k, 60000);
+    const rb = await until(B, n => { const s = window.__mayhem.state(); return s.round && s.show.idx === n && s.round.rid; }, k, 20000);
+    await new Promise(r => setTimeout(r, 12000));
+    const sync = await Promise.all([A, B].map(p => p.evaluate(() => { const R = window.__mayhem.R; if (!R) return {}; return { rid: R.rid, bombs: R.bombs ? [...R.bombs].sort().join() : null, paint: R.paint ? Array.from(R.paint).join('') : null, hold: R.hold ? Object.keys(R.hold).length : null, n: R.cs.filter(c => !c.hide).length }; })));
+    const same = sync[0].rid === sync[1].rid && sync[0].bombs === sync[1].bombs && (!sync[0].paint || sync[0].paint.split('').filter((c, i) => c === sync[1].paint[i]).length >= 130);
+    ok(ra && ra === rb && same, `round ${k + 1} (${ra}) runs on both machines in step`, JSON.stringify(sync.map(x => ({ rid: x.rid, bombs: x.bombs, hold: x.hold, n: x.n, paint: x.paint ? x.paint.slice(0, 24) : undefined }))));
+    const ea = await until(A, () => window.__mayhem.R && window.__mayhem.R.results && window.__mayhem.R.results.order.join(), null, 150000);
+    const eb = await until(B, () => window.__mayhem.R && window.__mayhem.R.results && window.__mayhem.R.results.order.join(), null, 20000);
+    ok(ea && ea === eb, `round ${k + 1} ends with the same results on both`, (ea || '').slice(0, 60));
+    seen.push(ra);
+  }
+  const win = await Promise.all([A, B].map(p => until(p, () => { const s = window.__mayhem.state(); return s.show && s.show.over && String(s.show.winner); }, null, 30000)));
+  ok(win[0] && win[0] === win[1], 'the show ends with the same winner on both', win.join(' / ') + '  rounds ' + seen.join(','));
+  for (const p of [A, B, C]) await p.close();
 }
 const real = errs.filter(e => !/ResizeObserver|Failed to load resource|net::ERR/.test(e));
 ok(!real.length, 'no script errors', real.slice(0, 3).join(' | '));
