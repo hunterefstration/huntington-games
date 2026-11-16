@@ -274,10 +274,9 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r76', items: [
-  ['Beat Lab 1.1: share your songs', 'Share any song with a 6-digit code (or post it in #music), open anyone else\'s with theirs, and download songs as audio or a project file.'],
-  ['More instruments at once', 'Layer up to 4 instruments in Simple mode, play 8-lane drum kits (new Rock, World and Orchestra kits), and add a whole drum kit in one click in Studio.'],
-  ['Play notes your way', 'Articulations for any note: accent, staccato, slide, vibrato, soft, bend up and fall, plus flams and rolls for drums.']
+var WHATSNEW = { id: 'r77', items: [
+  ['Beat Lab: learn it step by step', 'New interactive lessons: Simple mode in a minute, then your first beat, a melody, arranging, mixing and sharing in the Studio. Press Learn in Beat Lab. Turn on ? and point at anything to see what it does.'],
+  ['Your song in a game?', 'The best songs players make in Beat Lab may be picked to play in one of our games. Share yours in #music.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;
