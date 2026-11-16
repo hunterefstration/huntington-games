@@ -67,6 +67,7 @@
        }
        // Script clicks (element.click(), dispatchEvent): never pay; a stream of them is a strike
        function acUntrusted() {
+           if (TUT && TUT.sandbox) return;
            const now = performance.now();
            ac.untrusted.push(now);
            while (ac.untrusted.length && now - ac.untrusted[0] > AC_RULES.untrustedMs) ac.untrusted.shift();
@@ -74,6 +75,8 @@
        }
        // kind: 'mouse' | 'touch' | 'key' | 'golden'. Returns true if this click should pay.
        function acceptClick(e, kind) {
+           // a lesson's practice game (099-training.js): clicks pay there and never count toward strikes
+           if (TUT && TUT.sandbox) return !!e && e.isTrusted === true && !(kind === 'key' && e.repeat);
            if (!e || e.isTrusted !== true) { acUntrusted(); return false; }
            if (kind === 'key' && e.repeat) return false;
            const now = performance.now();
@@ -110,6 +113,7 @@
        }
        // Called once a second while playing: forgive one strike after a clean day with some play
        function acSecond() {
+           if (TUT && TUT.sandbox) return;
            if (ac.strikes <= 0 || acLocked()) return;
            ac.meta.play++;
            if (Date.now() - ac.meta.t >= AC_RULES.decayMs && ac.meta.play >= AC_RULES.decayPlay) {

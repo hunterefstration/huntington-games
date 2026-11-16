@@ -8,6 +8,7 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Brown E Clicker 2.0</title>
    <style><!--@inline css/10-style.css--></style>
+   <style><!--@inline css/20-tutor.css--></style>
    <!-- Tailwind, built ahead of time by tools/tailwind.sh (it used to be compiled in the browser at every start). It comes
         AFTER the game's own styles, where the browser-side compiler put its rules: .hidden must beat e.g. .golden-e { display: flex }. -->
    <style><!--@inline css/05-tailwind.css--></style>
@@ -32,7 +33,8 @@
        <button id="start-btn" class="bg-[#5C4033] hover:bg-[#4A332A] text-white text-2xl font-bold py-4 px-12 rounded-full shadow-lg transition-transform active:scale-95 hover:scale-105 border-4 border-[#8B4513]">
            START
        </button>
-       <div class="mt-8 text-stone-500 text-xs font-bold tracking-widest uppercase">Version 2.0 &middot; <button id="news-btn" class="text-yellow-500 hover:text-yellow-300 underline uppercase tracking-widest font-bold">What's new in 2.0</button></div>
+       <button id="menu-learn" class="mt-4 text-sm font-bold text-amber-300 hover:text-white bg-stone-800 hover:bg-stone-700 border border-amber-700 rounded-full px-4 py-1.5">🎓 How to play</button>
+       <div class="mt-8 text-stone-500 text-xs font-bold tracking-widest uppercase">Version 2.1 &middot; <button id="news-btn" class="text-yellow-500 hover:text-yellow-300 underline uppercase tracking-widest font-bold">What's new in 2.1</button></div>
    </div>
 
 
@@ -290,6 +292,7 @@
                <button id="tb-garden" class="tb-btn" data-tb="garden">🌱</button>
                <button id="tb-market" class="tb-btn" data-tb="market">📈</button>
                <button id="tb-skins" class="tb-btn" data-tb="skins">🎨</button>
+               <button id="tb-learn" class="tb-btn" data-tb="learn">🎓<span id="tb-learn-badge" class="tb-badge">NEW</span></button>
                <button id="tb-settings" class="tb-btn" data-tb="settings">⚙️</button>
            </div>
 

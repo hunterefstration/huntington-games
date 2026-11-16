@@ -42,6 +42,7 @@
        // --- LOCAL STORAGE SAVING ---
        const SAVE_KEY = 'brownEClickerSave' + KEY_SUFFIX; // brownEClickerSave (classic) or brownEClickerSave_rb (Rebalanced beta)
        function saveGame(quiet) {
+           if (TUT && TUT.sandbox) return; // a lesson's practice game (099-training.js) is never saved
            try {
                localStorage.setItem(SAVE_KEY, JSON.stringify(buildSaveData()));
                if (!quiet) showSaveStatus();
@@ -76,7 +77,8 @@
                    skin: m.skin, bg: m.bg, seasons: m.seasons
                },
                garden: typeof saveGarden === 'function' ? saveGarden() : undefined,
-               market: typeof saveMarket === 'function' ? saveMarket() : undefined
+               market: typeof saveMarket === 'function' ? saveMarket() : undefined,
+               tut: tutField(), tutOffer: TUT.offer ? 1 : undefined // lessons done (099-training.js)
            };
        }
 
@@ -113,6 +115,7 @@
                        // Ignore saved clickPower and bps, we recalculate them
                    }
                    loadMeta(data);
+                   tutLoad(data);
                    if (Array.isArray(data.shopItems)) {
                        data.shopItems.forEach((savedItem, index) => {
                            if (!savedItem) return;
@@ -370,7 +373,7 @@
        // --- DEBUG / TEST HOOK ---
        window.__clicker = {
            get state() { return state; },
-           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, AC_RULES, accept: (e, kind) => acceptClick(e, kind),
+           variant: VARIANT, BALANCE, BAL, saveKey: SAVE_KEY, ac, tut: tutHook(), get availableUpgrades() { return availableUpgrades; }, upgradesOwned, treeOwned, AC_RULES, accept: (e, kind) => acceptClick(e, kind),
            click(n) { n = n || 1; for (let i = 0; i < n; i++) clickBigE(null); }, // bypasses the auto-clicker guard (tests only)
            shopItems, UPGRADES, ACHIEVEMENTS, BUILDING, MULTS,
            formatNumber, formatShort,

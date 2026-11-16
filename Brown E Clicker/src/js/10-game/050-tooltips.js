@@ -143,6 +143,7 @@
        }
 
        function showAchievementToast(a) {
+           if (TUT && TUT.sandbox) return; // practice game: its achievements are thrown away
            // Keep at most 3 toasts on screen
            while (toastBox.children.length >= 3) toastBox.removeChild(toastBox.firstChild);
            const t = document.createElement('div');
