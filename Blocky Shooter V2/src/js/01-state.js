@@ -3,7 +3,7 @@
 // ==========================================
 
 
-const VERSION = '5.5';
+const VERSION = '5.6';
 let LOOK_MINE = null;          // 5.2: what you wear (goon-shop skin + avatar + title + rank tier), read from the launcher by 27b-mp-look.js
 const V3 = THREE.Vector3;
 const $ = (id) => document.getElementById(id);

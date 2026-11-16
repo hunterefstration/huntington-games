@@ -357,6 +357,7 @@ function weaponFire(e, slot, c) {
     if (e[T] > 0) return false;
     if (slot !== 'w1' && w.cnt) { const A = slot === 'w2' ? 'a2' : 'a3', R = slot === 'w2' ? 'rel2' : 'rel3'; if (e[A] <= 0) return false; e[A]--; if (e[R] <= 0) e[R] = w.rel / w.cnt; }
     e[T] = w.rl;
+    if (e === ME && M) { const f = M.fired || (M.fired = {}); f[slot] = (f[slot] | 0) + 1; }      // shots by slot (training checks them)
     const out = [], rep = !e.remote && (!M || M.host), n = w.nn || 1, heli = d.heli, tg = c && c.tgt >= 0 ? c.tgt : -1;
     const dirAt = (spr) => {
         const yaw = e.tur + rnd(-1, 1) * spr, pit = e.gun + rnd(-1, 1) * spr, cp = Math.cos(pit);

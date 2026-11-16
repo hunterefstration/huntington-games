@@ -49,7 +49,7 @@ function changeGameState(newState) {
             if (prev !== 'paused' || !vmModel || vmModel.id !== playerStats.currentWeapon) updateGunModel();
             if (vmModel) vmModel.root.visible = true;
             updateHUD(); updateRankHUD();
-            if (!NET.on && !waveActive && intermission <= 0 && !(CAMP.on && !CAMP.waves)) spawnWave();
+            if (!NET.on && !waveActive && intermission <= 0 && !(CAMP.on && !CAMP.waves) && !TUTB.on) spawnWave();      // 5.6: training brings its own zombies
             break;
         case 'shop': {
             ui.shop.classList.remove('hidden');

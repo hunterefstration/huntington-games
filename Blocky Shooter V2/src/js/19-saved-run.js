@@ -142,7 +142,8 @@ function startFreshRun() {
         map: MAPS[settings.map] && rankOK('map', settings.map) ? settings.map : pickRandom(MAP_IDS().filter(k => rankOK('map', k))),
         seed: (Math.random() * 2147483647) | 0          // the saved run rebuilds the exact same arena from this
     };
-    applyTheme(CAMP.on ? CAMP.m.light : THEMES[settings.light] && rankOK('light', settings.light) ? settings.light : pickRandom(Object.keys(THEMES).filter(k => rankOK('light', k))));
+    if (TUTB.run) run = Object.assign(run, TUTB.run);      // 5.6 training: a sandbox practice range (never counts), whatever is unlocked
+    applyTheme(TUTB.run ? 'day' : CAMP.on ? CAMP.m.light : THEMES[settings.light] && rankOK('light', settings.light) ? settings.light : pickRandom(Object.keys(THEMES).filter(k => rankOK('light', k))));
     buildWorld(run.map, run.seed);
     camera.position.set(spawnPt[0], EYE_STAND, spawnPt[1]); feetY = 0; eyeH = EYE_STAND;
     camera.quaternion.identity();

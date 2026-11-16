@@ -5,7 +5,7 @@
 })();</script><!--/HG-->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Steel Storm 2.2</title>
+<title>Steel Storm 2.3</title>
 <style>
 /* ===== base: colours, type, buttons, inputs, modal cards (2.2) ===== */
 :root{--y:#ffd21f;--y2:#ff9d00;--bg:#0a0f1f;--p:#111833;--p2:#1a2448;--pa:rgba(10,15,33,.88);--pb:rgba(16,23,48,.92);--ln:#2d3b72;--tx:#eef2ff;--mut:#93a0c8;--cy:#4fe0ff;--t0:#3b9bff;--t1:#ff4d4d;--ok:#4cd964;--bad:#ff5a5a;--warn:#ffb340;--nav:220px;--top:60px;--hd:"Arial Black",Impact,"Trebuchet MS",sans-serif}
@@ -322,6 +322,54 @@ svg.i{width:20px;height:20px;fill:currentColor;flex:none;vertical-align:middle}
 table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}table.board th{text-align:left;color:var(--mut);font-size:11px;padding-top:6px}table.board td{padding:1px 6px}table.board tr.me td{background:#ffd21f22}
 .bad{color:var(--bad)}
 
+/* ---- Training (88-tutor.js): Beat Lab's lesson look. Spotlight hole + click shields in menus, a compact banner + ring in battle */
+#hgt { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+#hgt .hidden, #hgt-offer .hidden { display: none !important; }
+#hgt .hgt-shield { position: fixed; background: transparent; pointer-events: auto; }
+#hgt.free .hgt-shield, #hgt.coach .hgt-shield { pointer-events: none; display: none; }
+#hgt .hgt-hole { position: fixed; pointer-events: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(8,12,24,.58); transition: left .18s, top .18s, width .18s, height .18s; }
+#hgt.coach .hgt-hole { box-shadow: none; }
+#hgt .hgt-hole::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; border: 3px solid #ffd43b; animation: hgtPulse 1.6s ease-in-out infinite; }
+#hgt .hgt-hole.none::after { display: none; }
+#hgt.coach .hgt-hole.none { box-shadow: none; }
+@keyframes hgtPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.hgt-bubble { position: fixed; width: 330px; max-width: calc(100vw - 16px); background: #fff; color: #1f2430; border-radius: 14px; padding: 12px 14px 10px; box-shadow: 0 14px 44px rgba(0,0,0,.4); border-top: 4px solid #5b5bf7; font: 13px/1.4 system-ui, "Segoe UI", Roboto, Arial, sans-serif; text-align: left; pointer-events: auto; user-select: text; letter-spacing: normal; text-transform: none; }
+#hgt.coach .hgt-bubble { width: 290px; padding: 9px 12px 8px; font-size: 12px; background: #fff; left: 12px; top: 12px; }
+#hgt.coach .hgt-bubble h4 { font-size: 14px; margin: 3px 0 2px; }
+#hgt.coach .hgt-bubble p { margin-bottom: 6px; }
+.hgt-bubble.nudge { animation: hgtNudge .35s; }
+@keyframes hgtNudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.hgt-bubble .hgt-top, .hgt-card .hgt-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b5bf7; }
+.hgt-bubble .hgt-prog, .hgt-card .hgt-prog { color: #8a94a3; white-space: nowrap; }
+.hgt-bubble h4 { margin: 6px 0 4px; font-size: 16px; font-weight: 800; color: #1f2430; font-style: normal; }
+.hgt-bubble p { margin: 0 0 8px; line-height: 1.45; color: #1f2430; }
+.hgt-bubble b, .hgt-card b { color: #111522; }
+.hgt-bubble kbd { display: inline-block; padding: 0 5px; border: 1px solid #c9cfdd; border-bottom-width: 2px; border-radius: 4px; background: #f4f6fb; font: 700 11px system-ui, sans-serif; color: #2b3140; }
+.hgt-bubble .hgt-task { margin: 0 0 8px; padding: 5px 9px; border-radius: 7px; background: #fff7d6; color: #6b5300; font-weight: 700; font-size: 12px; }
+.hgt-bubble .hgt-task.ok { background: #d3f9d8; color: #2b8a3e; }
+.hgt-bubble .hgt-end { display: flex; flex-wrap: wrap; gap: 6px; }
+.hgt-bubble .hgt-end:not(:empty) { margin-bottom: 8px; }
+.hgt-btns { display: flex; align-items: center; gap: 6px; }
+.hgt-sp { flex: 1; }
+.hgt-btn { background: #fff; color: #2b3140; border: 1px solid #c9cfdd; border-radius: 7px; padding: 5px 11px; font: 700 12px system-ui, "Segoe UI", sans-serif; cursor: pointer; margin: 0; text-transform: none; letter-spacing: normal; box-shadow: none; min-width: 0; }
+.hgt-btn:hover { filter: brightness(.96); }
+.hgt-btn.pri { background: #5b5bf7; color: #fff; border-color: #4b4be0; }
+.hgt-btn.ghost { color: #7a8396; }
+.hgt-skip { border: 0; background: none; color: #7a8396; font: 12px system-ui, sans-serif; text-decoration: underline; padding: 3px 2px; cursor: pointer; margin: 0; }
+.hgt-bubble.offer { right: 16px; bottom: 16px; border-top-color: #ffd43b; }
+#hgt-hub { position: fixed; inset: 0; background: rgba(8,12,24,.62); display: flex; align-items: center; justify-content: center; padding: 12px; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif; }
+.hgt-card { width: min(560px, 100%); max-height: calc(100vh - 24px); overflow: auto; background: #fff; color: #1f2430; border-radius: 14px; border-top: 4px solid #5b5bf7; padding: 14px 18px 12px; box-shadow: 0 14px 44px rgba(0,0,0,.45); font-size: 13px; text-align: left; }
+.hgt-card h3 { margin: 6px 0 4px; font-size: 20px; font-weight: 800; color: #1f2430; letter-spacing: normal; text-transform: none; font-style: normal; }
+.hgt-card p { margin: 0 0 10px; color: #3d4455; line-height: 1.45; }
+.hgt-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.hgt-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e7f0; border-radius: 10px; background: #f8f9fd; }
+.hgt-row.done { background: #f0fbf2; border-color: #b9e8c3; }
+.hgt-tick { flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: #e6e8f5; color: #5b5bf7; }
+.hgt-row.done .hgt-tick { background: #2b8a3e; color: #fff; }
+.hgt-meta { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hgt-meta b { font-size: 14px; }
+.hgt-meta span { color: #7a8396; font-size: 12px; }
+
 </style>
 <script type="importmap">
 { "imports": {
@@ -339,7 +387,7 @@ table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}ta
 <div id="menu" class="hidden" data-view="menu">
   <div class="shade"></div>
   <header class="mtop">
-    <div class="brand"><span class="logo">STEEL<b>STORM</b></span><a id="b-new" class="ver" href="#">v2.2 &middot; What's new</a></div>
+    <div class="brand"><span class="logo">STEEL<b>STORM</b></span><a id="b-new" class="ver" href="#">v2.3 &middot; What's new</a></div>
     <div class="wallet">
       <span class="w-pill" title="Credits: buy vehicles"><i class="ic cr"></i><b id="w-cr">0</b></span>
       <span class="w-pill" title="Research points for what you are researching"><i class="ic rp"></i><b id="w-rp">0</b></span>
@@ -355,6 +403,7 @@ table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}ta
     <button data-go="research"><i data-ic="research"></i><span>Research</span><em id="nv-rs" class="hidden"></em></button>
     <div class="nsep"></div>
     <button data-modal="s-settings"><i data-ic="gear"></i><span>Settings</span></button>
+    <button id="b-train"><i data-ic="train"></i><span>Training</span><em id="nv-train" class="hidden"></em></button>
     <button data-modal="s-how"><i data-ic="help"></i><span>How to play</span></button>
   </nav>
   <div id="sc-cap" class="hidden"></div>
@@ -498,8 +547,10 @@ table.board{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}ta
 </div>
 <div id="s-new" class="scr dim hidden">
   <div class="card wide">
-    <div class="card-h"><h2>Steel Storm 2.2: what's new</h2><button class="x" data-close title="Close">&times;</button></div>
+    <div class="card-h"><h2>Steel Storm 2.3: what's new</h2><button class="x" data-close title="Close">&times;</button></div>
     <div class="how"><div>
+      <h4>Training</h4><p>New <b>Training</b> button in the menu: three hands-on lessons where you do each step yourself. <b>Basic training</b> (drive, aim, fire, destroy, capture, respawn), <b>Wings and rotors</b> (planes and helicopters) and <b>Your garage</b> (research, buying, modules, the lineup and multiplayer). The practice battles never count for your stats or the leaderboards.</p>
+      <h4 class="old">Steel Storm 2.2</h4>
       <h4>New menus</h4><p>Everything is one click away: Home, Battle, Multiplayer, Garage and Research down the side. Your vehicle is shown large with clear bars for hit points, armour, speed and firepower, its weapons and its role. Works with the mouse alone and on small screens.</p>
       <h4>Showcase footage</h4><p>Behind the menu your selected vehicle fights a small live battle, played the way an expert would play it: tanks fire on the move, fighters lock missiles, bombers drop on groups, helicopters pop up from cover, warships turn broadside. Pick another vehicle and the footage switches. Too heavy for your computer? Settings turns it off, and it switches itself off if the menu gets slow.</p>
       <h4>Multiplayer</h4><p>A real Multiplayer screen: a list of open games to join, a join-by-code box, and hosting with clear options (mode, map size, length, bots, friendly fire, weather, public or friends only). The party lobby updates live: everyone's vehicle and readiness, teams, host tools (kick, move, shuffle, balance, start), chat, the room code with a copy button, and the connection state (connecting, reconnecting, the host left).</p>
@@ -573,13 +624,13 @@ function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79
 const TEAM_COL = [0x3b9bff, 0xff4d4d, 0x4cd964, 0xffd21f, 0xc77dff, 0xff9d3a, 0x3ae0d0, 0xff6ac1, 0xa0e85a, 0xe8e8e8, 0x7a8cff, 0xd08a5a, 0x5ad0ff, 0xffb0b0, 0x9a9a9a, 0xb0ff6a, 0xffe08a, 0x8affd8];
 const teamCol = t => TEAM_COL[((t | 0) % TEAM_COL.length + TEAM_COL.length) % TEAM_COL.length];
 const teamHex = t => '#' + teamCol(t).toString(16).padStart(6, '0');
-const VERSION = '2.2';
+const VERSION = '2.3';
 let toastT = 0;
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2600); }
 
 // ---------- the save file: localStorage steelstorm_save = {v:2, ...}. Old saves are migrated, never wiped. ----------
 // v2 (Steel Storm 2.0): + mods (researched vehicle modules), + opts (match length, map size, friendly fire, weather),
-// + stats.flags / stats.mvp, + seenNew. The launcher leaderboard reads stats.wins / kills / matches / deaths: keep them.
+// + stats.flags / stats.mvp, + seenNew. 2.3: + tut (training lessons done), + tutOffer. The launcher leaderboard reads stats.wins / kills / matches / deaths: keep them.
 const SAVE_KEY = 'steelstorm_save', SAVE_V = 2;
 let save = null;
 function defaultSave() {
@@ -588,7 +639,8 @@ function defaultSave() {
         lineup: ['g1a', 'a1a', 'n1a'], sel: 0, mode: 'tdm', size: 5, split: 0, bots: 'match', diff: 'normal',
         mods: {}, opts: { len: 10, map: 'normal', ff: 0, wx: 'noon', pub: 1 },
         settings: { quality: 'med', sens: 1, vol: 0.7, invertY: false, show: true },
-        stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0, flags: 0, mvp: 0 }, seenHow: false, seenNew: ''
+        stats: { matches: 0, wins: 0, kills: 0, deaths: 0, caps: 0, flags: 0, mvp: 0 }, seenHow: false, seenNew: '',
+        tut: {}, tutOffer: 0      // 2.3 training: lessons done { basic: 1, air: 1, garage: 1 }, the first-visit offer was shown
     };
 }
 // future versions: add `if (s.v < 2) { ...; s.v = 2; }` steps here, never delete fields
@@ -637,6 +689,7 @@ function fixSave(s) {      // tier I is always owned; drop unknown ids; keep a u
     if (!['low', 'med', 'high'].includes(s.settings.quality)) s.settings.quality = 'med';
     s.settings.show = s.settings.show !== false; o.pub = o.pub === 0 ? 0 : 1;
     if (!['easy', 'normal', 'hard'].includes(s.diff)) s.diff = 'normal';
+    if (!s.tut || typeof s.tut !== 'object' || Array.isArray(s.tut)) s.tut = {};
     s.v = SAVE_V;
     return s;
 }
@@ -2253,6 +2306,7 @@ function weaponFire(e, slot, c) {
     if (e[T] > 0) return false;
     if (slot !== 'w1' && w.cnt) { const A = slot === 'w2' ? 'a2' : 'a3', R = slot === 'w2' ? 'rel2' : 'rel3'; if (e[A] <= 0) return false; e[A]--; if (e[R] <= 0) e[R] = w.rel / w.cnt; }
     e[T] = w.rl;
+    if (e === ME && M) { const f = M.fired || (M.fired = {}); f[slot] = (f[slot] | 0) + 1; }      // shots by slot (training checks them)
     const out = [], rep = !e.remote && (!M || M.host), n = w.nn || 1, heli = d.heli, tg = c && c.tgt >= 0 ? c.tgt : -1;
     const dirAt = (spr) => {
         const yaw = e.tur + rnd(-1, 1) * spr, pit = e.gun + rnd(-1, 1) * spr, cp = Math.cos(pit);
@@ -2748,6 +2802,7 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
     const team = a.team === v.team; if (team && !ffOn()) return;
     if (!a.alive && simTime - (a.dieT || 0) > 3) return;
     if (v.prot > 0) return;
+    if (M.tut && v === ME) dmg *= .35;      // training: the player is tougher
     if (!trusted) {      // a guest's bullet claim: plausible damage, budget, range and aim against where the target was when they saw it
         const w = a.def[slot] || a.def.w1;
         if (!(dmg > 0) || dmg > w.dmg * 40 + 50 || dmg > a.budget + 5) return;
@@ -2889,7 +2944,7 @@ function hostStep(dt) {
     hostCheckEnd();
 }
 function hostCheckEnd() {
-    if (!M || M.over || !M.host) return;
+    if (!M || M.over || !M.host || M.tut) return;      // a training match never ends by itself
     let w = -2; const L = M.limit;
     if (M.mode === 'tdm') { if (M.kills[0] >= L.kills) w = 0; else if (M.kills[1] >= L.kills) w = 1; }
     else if (M.mode === 'conq') { if (M.tickets[0] <= 0) w = 1; else if (M.tickets[1] <= 0) w = 0; }
@@ -3038,12 +3093,14 @@ function meDied(by, w) {      // only crashes are decided locally; everything el
     else { killVisual(e); e.hp = 0; e.respT = 5; toHost({ t: 'died', by, w }); UI.died(EN.get(by), w); }
 }
 function respawnMe(vid) {
-    const d = VBY[vid] ? vdef(vid, modMask(vid)) : null; if (!d || !ME || ME.alive || !M || M.over) return false;
+    const tw = M && M.tut && TRN.want; if (tw) vid = tw;      // training lesson 2 keeps you in its plane / helicopter
+    const d = VBY[vid] ? vdef(vid, tw ? 31 : modMask(vid)) : null; if (!d || !ME || ME.alive || !M || M.over) return false;
     if (d !== ME.def) setDef(ME, d); ME.kdone = false; ME.carry = -1; spawnEnt(ME); M.my.tier = Math.max(M.my.tier, d.t); UI.deployed(); return true;
 }
 // ---------- the end: rewards and results ----------
 function finishMatch(m) {
     if (!M || M.over) return;
+    if (M.tut) { M.over = true; return; }      // training is practice: no rewards, no stats (the leaderboards read save.stats)
     M.over = true; M.state = 'end'; M.winner = m.win; M.mvp = m.mvp; if (!M.host) { M.kills = m.kl; if (M.mode === 'conq') M.tickets = m.tk; if (m.cp) M.caps = m.cp; }
     for (const r of m.stats) { const e = EN.get(r[0]); if (e) { e.kills = r[1]; e.deaths = r[2]; e.score = r[3]; e.dmg = r[4] || e.dmg; e.caps = r[5] || 0; e.flags = r[6] || 0; } }
     const my = M.my;
@@ -3601,6 +3658,7 @@ const SVGP = {
     garage: 'M2 9l10-6.5L22 9v12h-3v-9H5v9H2zM7 14h10v2H7zM7 18h10v2H7z',
     research: 'M9 2h6v2h-1v5.2l6 10c.9 1.5-.2 3.3-1.9 3.3H5.9c-1.7 0-2.8-1.8-1.9-3.3l6-10V4H9zM7.6 16h8.8l-2.6-4.5h-3.6z',
     gear: 'M10 1.5h4l.7 2.8 2.3 1.3 2.7-.9 2 3.5-2.1 2v2.6l2.1 2-2 3.5-2.7-.9-2.3 1.3-.7 2.8h-4l-.7-2.8-2.3-1.3-2.7.9-2-3.5 2.1-2v-2.6l-2.1-2 2-3.5 2.7.9 2.3-1.3zM12 8.6a3.4 3.4 0 1 0 0 6.8a3.4 3.4 0 1 0 0-6.8z',
+    train: 'M12 2l10 4.5-10 4.5L2 6.5zM5.5 9.6l6.5 2.9 6.5-2.9v4.6c0 2.3-2.9 4.3-6.5 4.3s-6.5-2-6.5-4.3zM20.5 7.5h1.6v7.5h-1.6z',
     help: 'M12 1.5a10.5 10.5 0 1 0 0 21a10.5 10.5 0 1 0 0-21zm-1.2 15.5h2.4v2.4h-2.4zM12 5.5c2.4 0 4.2 1.6 4.2 3.7 0 2.7-3.1 2.9-3.1 5.3h-2.3c0-3.4 3.1-3.5 3.1-5.3 0-1-.8-1.6-1.9-1.6s-1.9.6-1.9 1.6H7.8c0-2.1 1.8-3.7 4.2-3.7z'
 };
 const setH = (el, h) => { if (el._h !== h) { el._h = h; el.innerHTML = h; } };      // repaint only what changed (a click on a replaced button is lost)
@@ -4271,6 +4329,386 @@ const Show = {
 };
 function gameReady() { if (!window.__hgReady) { window.__hgReady = 1; try { if (parent !== window && parent.HG_gameReady) setTimeout(() => parent.HG_gameReady(), 80); } catch (e) {} } }      // the launcher's loading screen can go
 
+// ---- 88-tutor.js ----
+// ===== Training (2026-11-16): the coach-mark engine. A copy of Beat Lab's 80-tutor.js look and behaviour, made game-agnostic =====
+// (Steel Storm 88-tutor.js and Blocky Shooter V2 31-tutor.js are the same file; keep them in step.)
+//   Tutor.config({ done(id), mark(id), z })                      where "lessons done" live (the game's own save)
+//   Tutor.define({ id, title, blurb, steps: [step], end: 'finale html', next: lessonId, coach: true|false,
+//                  begin() -> false to refuse (e.g. start a practice match), finish(how) (clean up: leave the practice match),
+//                  alive() -> false once the player left the lesson's world (Quit to menu...) })
+//   step: { title, text (html), el: selector | Element | () => Element | rect | null (what to ring), enter() (on arrival),
+//           base() -> snapshot taken on arrival, wait(base) -> true once the player has done it (polled every 150 ms),
+//           when() -> false skips the step (e.g. no bombs on this plane), coach (override the lesson's mode), at: 'br'|'bl'|'tr'|'tl',
+//           free (no click shield), act: [label, fn] (a helper button in the bubble, e.g. "Self-destruct") }
+//   coach mode (gameplay): no dimming, no click shields, a compact banner in a corner and a pulsing ring; spotlight mode (menus):
+//   the screen dims around the target, clicks outside it nudge the bubble. Esc always leaves the lesson.
+//   Tutor.start(id) / stop(how) / next() / back(); Tutor.active; Tutor.lesson; Tutor.i; Tutor.done(id); Tutor.list;
+//   Tutor.offer({ title, text, les, kicker, time, answer(yes) }); Tutor.hub({ title, intro })
+const Tutor = (() => {
+    const LES = [], S = { les: null, i: 0, dir: 1, base: null, doneAt: 0, iv: 0, sig: '', el: null, hub: null, offer: null };
+    const C = { done: () => false, mark: () => {}, z: 9000, nextKey: '' };      // nextKey: in battle the mouse is captured, so a key does Next
+    const q = s => document.querySelector(s);
+    const cl = (v, a, b) => v < a ? a : v > b ? b : v;
+    function mk(tag, attrs, ...kids) {
+        const e = document.createElement(tag);
+        for (const k in attrs || {}) { const v = attrs[k]; if (v == null || v === false) continue; if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v); else if (k === 'html') e.innerHTML = v; else e.setAttribute(k, v); }
+        for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : String(c));
+        return e;
+    }
+    const btn = (t, cls, f, title) => mk('button', { class: 'hgt-btn' + (cls ? ' ' + cls : ''), type: 'button', title, onclick: e => { e.stopPropagation(); f(); } }, t);
+    const coachOf = st => st && st.coach !== undefined ? !!st.coach : !!(S.les && S.les.coach);
+    const err = e => { try { console.warn('[training]', e); } catch (e2) {} };
+
+    function start(id) {
+        const les = LES.find(l => l.id === id); if (!les) return false;
+        closeHub(); hideOffer();
+        if (S.les) stop('switch');
+        let ok = true; try { if (les.begin) ok = les.begin() !== false; } catch (e) { err(e); ok = false; }
+        if (!ok) return false;
+        S.les = les; S.dir = 1;
+        overlay();
+        go(0);
+        S.iv = setInterval(tick, 150);
+        return true;
+    }
+    function stop(how) {                                         // how: skip | done | left | switch
+        const les = S.les; if (!les) return;
+        clearInterval(S.iv); S.les = null;
+        if (S.el) { S.el.root.remove(); S.el = null; }
+        try { if (les.finish) les.finish(how || 'skip'); } catch (e) { err(e); }
+    }
+    function overlay() {
+        if (S.el) S.el.root.remove();
+        const shield = () => mk('div', { class: 'hgt-shield', onpointerdown: e => { e.preventDefault(); e.stopPropagation(); nudge(); } });
+        const sh = [shield(), shield(), shield(), shield()];
+        const hole = mk('div', { class: 'hgt-hole' });
+        const lesson = mk('span', { class: 'hgt-les' }), prog = mk('span', { class: 'hgt-prog' }), title = mk('h4'), text = mk('p'), task = mk('div', { class: 'hgt-task' });
+        const skip = mk('button', { class: 'hgt-skip', type: 'button', title: 'Leave the lesson (Esc)', onclick: e => { e.stopPropagation(); stop(S.i >= S.les.steps.length ? 'done' : 'skip'); } }, 'Skip lesson');
+        const back = btn('Back', '', () => { S.dir = -1; go(S.i - 1); });
+        const next = btn('Next', 'pri', () => { S.dir = 1; go(S.i + 1); });
+        const extra = mk('div', { class: 'hgt-end' });
+        const bub = mk('div', { class: 'hgt-bubble', role: 'dialog', 'aria-live': 'polite', onpointerdown: e => e.stopPropagation(), onmousedown: e => e.stopPropagation(), onclick: e => e.stopPropagation() },
+            mk('div', { class: 'hgt-top' }, lesson, prog), title, text, task, extra, mk('div', { class: 'hgt-btns' }, skip, mk('span', { class: 'hgt-sp' }), back, next));
+        const root = mk('div', { id: 'hgt', style: 'z-index:' + C.z }, sh, hole, bub);
+        document.body.appendChild(root);
+        S.el = { root, sh, hole, bub, lesson, prog, title, text, task, skip, back, next, extra };
+    }
+    function nudge() { const b = S.el && S.el.bub; if (!b) return; b.classList.remove('nudge'); void b.offsetWidth; b.classList.add('nudge'); }
+    function go(i) {
+        const les = S.les; if (!les || !S.el) return;
+        const n = les.steps.length;
+        // steps that do not apply right now (when() false) are passed over in the direction of travel
+        while (i >= 0 && i < n && les.steps[i].when) { let w = true; try { w = !!les.steps[i].when(); } catch (e) {} if (w) break; i += S.dir < 0 ? -1 : 1; }
+        if (i < 0) { S.dir = 1; return go(0); }
+        if (i > n) return stop('done');
+        S.i = i; S.doneAt = 0; S.sig = '';
+        const E = S.el; E.extra.innerHTML = '';
+        E.lesson.textContent = les.title;
+        if (i === n) {                                            // the finale: the lesson counts as done
+            try { C.mark(les.id); } catch (e) { err(e); }
+            try { if (les.atEnd) les.atEnd(); } catch (e) { err(e); }          // e.g. leave the practice match so the mouse is free
+            const nx = les.next && LES.find(l => l.id === les.next);
+            E.root.classList.remove('coach'); E.root.classList.add('final');
+            E.prog.textContent = 'Done!'; E.title.textContent = 'Lesson complete'; E.text.innerHTML = les.end || 'Nice work!';
+            E.task.className = 'hgt-task hidden';
+            E.extra.append(btn('All lessons', '', () => { stop('done'); setTimeout(() => hub(), 30); }));
+            if (nx) E.extra.append(btn('Next: ' + nx.title, 'pri', () => start(nx.id)));
+            E.skip.textContent = 'Close';
+            E.next.classList.add('hidden'); E.back.classList.remove('hidden');
+            place(true);
+            return;
+        }
+        E.root.classList.remove('final');
+        const st = les.steps[i];
+        try { if (st.enter) st.enter(); } catch (e) { err(e); }
+        S.base = null; try { if (st.base) S.base = st.base(); } catch (e) { err(e); }
+        if (S.base == null) S.base = {};
+        E.root.classList.toggle('coach', coachOf(st));
+        E.prog.textContent = (i + 1) + ' of ' + n;
+        E.title.textContent = st.title || '';
+        E.text.innerHTML = st.text || '';
+        E.skip.textContent = 'Skip lesson';
+        E.back.classList.toggle('hidden', i === 0); E.next.classList.remove('hidden');
+        if (st.act) E.extra.append(btn(st.act[0], '', () => { try { st.act[1](); } catch (e) { err(e); } }));
+        let pre = false;
+        if (st.wait) { try { pre = !!st.wait(S.base); } catch (e) {} }
+        if (st.wait && pre) S.doneAt = -1;                       // already done (e.g. coming Back): no auto-advance, just Next
+        taskUi(st, pre);
+        place(true);
+    }
+    function taskUi(st, done) {
+        const E = S.el, last = S.i === S.les.steps.length - 1;
+        const k = C.nextKey && coachOf(st) ? ' (' + C.nextKey + ')' : '';
+        if (!st.wait) { E.task.className = 'hgt-task hidden'; E.next.textContent = (last ? 'Finish' : 'Next') + k; E.next.className = 'hgt-btn pri'; return; }
+        E.task.className = 'hgt-task' + (done ? ' ok' : '');
+        E.task.textContent = done ? '✓ Nice!' : 'Your turn: do it and the lesson moves on';
+        E.next.textContent = (done ? (last ? 'Finish' : 'Next') : 'Skip step') + k;
+        E.next.className = 'hgt-btn' + (done ? ' pri' : ' ghost');
+    }
+    function tick() {
+        const les = S.les; if (!les) return;
+        if (S.i >= les.steps.length) return;                     // the finale waits for the player
+        let alive = true; try { if (les.alive) alive = les.alive() !== false; } catch (e) {}
+        if (!alive) return stop('left');
+        const st = les.steps[S.i];
+        if (st && st.enter && st.el && !coachOf(st) && !target(st)) { try { st.enter(); } catch (e) {} }     // the player wandered to another view
+        place(false);
+        if (!st || !st.wait || S.doneAt) return;
+        let ok = false; try { ok = !!st.wait(S.base); } catch (e) {}
+        if (!ok) return;
+        S.doneAt = performance.now(); taskUi(st, true);
+        const at = S.i;
+        setTimeout(() => { if (S.les === les && S.i === at) { S.dir = 1; go(at + 1); } }, 800);
+    }
+    function target(st) {
+        let t = st && st.el;
+        try { if (typeof t === 'function') t = t(); } catch (e) { t = null; }
+        if (typeof t === 'string') t = q(t);
+        if (!t) return null;
+        const r = t.getBoundingClientRect ? t.getBoundingClientRect() : t;
+        if (!r || !(r.width > 2) || !(r.height > 2)) return null;
+        const l = Math.max(0, r.left), tp = Math.max(0, r.top), rt = Math.min(innerWidth, r.left + r.width), bt = Math.min(innerHeight, r.top + r.height);
+        return rt - l > 2 && bt - tp > 2 ? { l, t: tp, r: rt, b: bt } : null;
+    }
+    function place(force) {
+        const E = S.el; if (!E || !S.les) return;
+        const st = S.les.steps[S.i], tg = st ? target(st) : null, P = 6, W = innerWidth, H = innerHeight, coach = st && coachOf(st);
+        const bw = E.bub.offsetWidth, bh = E.bub.offsetHeight;
+        const sig = (tg ? [tg.l, tg.t, tg.r, tg.b].map(Math.round).join(',') : '-') + '|' + W + 'x' + H + '|' + bw + 'x' + bh + (st && st.free ? 'f' : '') + (coach ? 'c' : '');
+        if (!force && sig === S.sig) return;
+        S.sig = sig;
+        const box = (el, l, t, w, hh) => { el.style.left = l + 'px'; el.style.top = t + 'px'; el.style.width = Math.max(0, w) + 'px'; el.style.height = Math.max(0, hh) + 'px'; };
+        E.root.classList.toggle('free', !!(st && st.free));
+        if (tg) {
+            const l = Math.max(0, tg.l - P), t = Math.max(0, tg.t - P), r = Math.min(W, tg.r + P), b = Math.min(H, tg.b + P);
+            E.hole.classList.remove('none'); box(E.hole, l, t, r - l, b - t);
+            box(E.sh[0], 0, 0, W, t); box(E.sh[1], 0, b, W, H - b); box(E.sh[2], 0, t, l, b - t); box(E.sh[3], r, t, W - r, b - t);
+        } else {
+            E.hole.classList.add('none'); box(E.hole, W / 2, H / 2, 0, 0);
+            box(E.sh[0], 0, 0, W, H); box(E.sh[1], 0, 0, 0, 0); box(E.sh[2], 0, 0, 0, 0); box(E.sh[3], 0, 0, 0, 0);
+        }
+        if (coach) { E.bub.style.left = ''; E.bub.style.top = ''; return; }      // the banner sits in its corner (CSS)
+        // the bubble: beside the target if it fits (below, above, right, left), else in a corner; never off-screen
+        const M = 12, fit = (x, y) => x >= 8 && y >= 8 && x + bw <= W - 8 && y + bh <= H - 8;
+        let x, y;
+        if (!tg) { x = (W - bw) / 2; y = (H - bh) / 2; }
+        else {
+            const cx = cl((tg.l + tg.r) / 2 - bw / 2, 8, W - bw - 8), cy = cl((tg.t + tg.b) / 2 - bh / 2, 8, H - bh - 8);
+            const opts = [[cx, tg.b + P + M], [cx, tg.t - P - M - bh], [tg.r + P + M, cy], [tg.l - P - M - bw, cy]];
+            const o = opts.find(([a, b]) => fit(a, b));
+            if (o) [x, y] = o;
+            else { const at = (st && st.at) || 'br'; x = at[1] === 'l' ? 16 : W - bw - 16; y = at[0] === 't' ? 16 : H - bh - 16; }
+        }
+        E.bub.style.left = Math.round(cl(x, 8, Math.max(8, W - bw - 8))) + 'px';
+        E.bub.style.top = Math.round(cl(y, 8, Math.max(8, H - bh - 8))) + 'px';
+    }
+    addEventListener('resize', () => { if (S.les) place(true); });
+    document.addEventListener('scroll', () => { if (S.les) place(false); }, true);
+    // Esc always leaves the lesson (or closes the Training list / the offer); the game never sees that Esc
+    addEventListener('keydown', e => {
+        if (C.nextKey && S.les && e.key === C.nextKey && !e.repeat && S.i < S.les.steps.length && coachOf(S.les.steps[S.i])) {
+            const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+            e.preventDefault(); e.stopImmediatePropagation(); S.dir = 1; go(S.i + 1); return;
+        }
+        if (e.key !== 'Escape' && e.code !== 'Escape') return;
+        if (!S.les && !S.hub && !S.offer) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (S.hub) return closeHub();
+        if (S.offer) return hideOffer(false);
+        stop(S.i >= S.les.steps.length ? 'done' : 'skip');
+    }, true);
+
+    // ---- the first-visit offer (once: the game remembers the answer)
+    function offer(o) {
+        hideOffer();
+        const answer = yes => { hideOffer(); try { if (o.answer) o.answer(yes); } catch (e) { err(e); } if (yes) start(o.les); };
+        const card = mk('div', { id: 'hgt-offer', class: 'hgt-bubble offer', style: 'z-index:' + (C.z + 1) },
+            mk('div', { class: 'hgt-top' }, mk('span', { class: 'hgt-les' }, o.kicker || 'Welcome'), mk('span', { class: 'hgt-prog' }, o.time || '2 minutes')),
+            mk('h4', null, o.title), mk('p', null, o.text),
+            mk('div', { class: 'hgt-btns' }, btn('No thanks', '', () => answer(false)), mk('span', { class: 'hgt-sp' }), btn('Yes', 'pri', () => answer(true))));
+        S.offer = { card, answer };
+        document.body.appendChild(card);
+    }
+    function hideOffer(silent) { const o = S.offer; if (!o) return; S.offer = null; o.card.remove(); if (silent === false) try { o.answer(false); } catch (e) {} }
+
+    // ---- the Training list: every lesson with a tick once done
+    function hub(o) {
+        o = o || S.hubOpts || {}; S.hubOpts = o;
+        closeHub();
+        const done = LES.filter(l => C.done(l.id)).length;
+        const rows = mk('div', { class: 'hgt-rows' }, LES.map((l, i) => {
+            const d = C.done(l.id);
+            return mk('div', { class: 'hgt-row' + (d ? ' done' : ''), 'data-l': l.id },
+                mk('span', { class: 'hgt-tick', title: d ? 'Done' : '' }, d ? '✓' : String(i + 1)),
+                mk('div', { class: 'hgt-meta' }, mk('b', null, l.title), mk('span', null, l.blurb + ' · ' + l.steps.length + ' steps')),
+                btn(d ? 'Again' : 'Start', d ? '' : 'pri', () => start(l.id)));
+        }));
+        const card = mk('div', { class: 'hgt-card', role: 'dialog' },
+            mk('div', { class: 'hgt-top' }, mk('span', { class: 'hgt-les' }, 'Training'), mk('span', { class: 'hgt-prog' }, done + ' of ' + LES.length + ' done')),
+            mk('h3', null, o.title || 'Training'),
+            mk('p', null, o.intro || 'Short lessons where you do each step yourself. Esc or "Skip lesson" leaves at any time.'),
+            rows,
+            mk('div', { class: 'hgt-btns' }, mk('span', { class: 'hgt-sp' }), btn('Close', '', closeHub)));
+        const wrap = mk('div', { id: 'hgt-hub', style: 'z-index:' + (C.z + 2), onpointerdown: e => { if (e.target === wrap) closeHub(); e.stopPropagation(); }, onmousedown: e => e.stopPropagation(), onclick: e => e.stopPropagation() }, card);
+        S.hub = wrap;
+        document.body.appendChild(wrap);
+    }
+    function closeHub() { if (S.hub) { S.hub.remove(); S.hub = null; } }
+
+    return {
+        config(o) { Object.assign(C, o); },
+        define(l) { LES.push(l); return l; },
+        start, stop: how => stop(how || 'skip'), next: () => { S.dir = 1; go(S.i + 1); }, back: () => { S.dir = -1; go(S.i - 1); },
+        get active() { return !!S.les; }, get lesson() { return S.les; }, get i() { return S.i; }, get step() { return S.les && S.les.steps[S.i]; },
+        get finale() { return !!S.les && S.i >= S.les.steps.length; }, get stepDone() { return !!S.doneAt; }, get hubOpen() { return !!S.hub; }, get offerOpen() { return !!S.offer; },
+        get el() { return S.el; },
+        done: id => !!C.done(id), list: LES, offer, hideOffer: () => hideOffer(), hub, closeHub, place: () => place(true)
+    };
+})();
+
+// ---- 89-training.js ----
+// ===== 2.3 Training: three lessons on the Tutor engine (88-tutor.js), the Training list (menu), the first-visit offer =====
+// Lessons 1 and 2 run in a solo practice match (M.tut = lesson id): easy enemies only, the player takes 35% damage, the match never
+// ends by itself and finishMatch gives nothing, so save.stats (wins / kills, read by the launcher's leaderboards) never change.
+// Lessons done: save.tut[id] = 1 (steelstorm_save, synced). save.tutOffer: the first-visit offer was shown (once).
+const TRN = { want: null, prev: 'menu' };
+Tutor.config({ done: id => !!(save && save.tut && save.tut[id]), mark: id => { save.tut = save.tut || {}; save.tut[id] = 1; writeSave(); trainBadge(); }, z: 9000, nextKey: 'Enter' });
+const tFired = s => (M && M.fired && M.fired[s]) | 0;
+const tMe = () => !!(M && M.tut && ME);
+// a solo practice match: o = { veh, mm, mode, bots, foes }
+function trainMatch(id, o) {
+    if (M) return false;
+    if (PARTY.code || PARTY.net) { toast('Leave your party first: training is a solo practice match'); return false; }
+    const veh = o.veh || myVeh();
+    const cfg = makeConfig([{ id: 0, name: myName(), veh, mm: o.mm !== undefined ? o.mm : modMask(veh) }], { mode: o.mode, size: 3, bots: o.bots || 'match', diff: 'easy', map: 'small', len: 15, wx: 'noon', ff: 0 });
+    cfg.bots = cfg.bots.filter(b => b.team === 1).slice(0, o.foes || 2);      // a few easy enemies; nobody on your side takes your captures
+    cfg.tut = id;
+    TRN.prev = UIS.screen; TRN.want = o.keep || null;
+    ac(); beginMatch(cfg, 0, true);
+    if (!M) return false;
+    M.tut = id; $('#ps-leave').textContent = 'Leave training';
+    UI.msg('Training: ' + (id === 'air' ? 'Wings and rotors' : 'Basic training'), -1);
+    return true;
+}
+function trainLeave() {
+    TRN.want = null; $('#ps-leave').textContent = 'Leave match';
+    if (M && M.tut) UI.leaveMatch(true);
+    if (!M) UI.go(VIEWS.includes(TRN.prev) ? TRN.prev : 'menu');
+}
+// put the player in another vehicle right now (lesson 2: plane -> helicopter); every module on, it is practice
+function trainSwap(id) {
+    if (!tMe()) return false;
+    TRN.want = id;
+    if (ME.def.id === id && ME.alive) return true;
+    ME.alive = false; ME.respT = 0;
+    $('#s-dead').classList.add('hidden');
+    return respawnMe(id);
+}
+const kb = k => '<kbd>' + k + '</kbd>';
+const moved = b => ME && ME.alive && Math.hypot(ME.x - b.x, ME.z - b.z);
+
+Tutor.define({
+    id: 'basic', title: 'Basic training', blurb: 'Drive, aim, fire, destroy, capture, respawn, the map and the scoreboard', coach: true, next: 'air',
+    begin: () => trainMatch('basic', { veh: 'g1a', mm: 0, mode: 'conq', foes: 2 }),
+    finish: () => trainLeave(), alive: () => !!(M && M.tut === 'basic'), atEnd: () => trainLeave(),
+    end: 'You can drive, shoot, capture and respawn. That is a whole battle! Next, <b>Wings and rotors</b> puts you in a plane and a helicopter.',
+    steps: [
+        { title: 'Drive', text: 'You are in a tank. Click the game to take control of the mouse, then hold ' + kb('W') + ' to drive forward (' + kb('S') + ' backs up). Drive a little way.',
+            base: () => ({ x: ME.x, z: ME.z }), wait: b => moved(b) > 12 },
+        { title: 'Turn', text: 'Hold ' + kb('A') + ' or ' + kb('D') + ' to turn the tank.', base: () => ({ y: ME.yaw }), wait: b => ME.alive && Math.abs(angDiff(b.y, ME.yaw)) > .9 },
+        { title: 'Aim with the mouse', text: 'Move the <b>mouse</b>: the camera and the turret follow it. The crosshair shows where the gun points.', el: '#h-xh',
+            base: () => ({ y: IN.camYaw, p: IN.camPitch }), wait: b => Math.abs(IN.camYaw - b.y) > .7 || Math.abs(IN.camPitch - b.p) > .35 },
+        { title: 'Fire', text: '<b>Left click</b> fires the main gun. It needs a moment to reload between shots. Fire once.', el: '#h-xh', base: () => ({ n: tFired('w1') }), wait: b => tFired('w1') > b.n },
+        { title: 'Zoom', text: 'Roll the <b>mouse wheel</b> to zoom the camera in or out.', base: () => ({ z: IN.zoom }), wait: b => Math.abs(IN.zoom - b.z) > .15 },
+        { title: 'Find an enemy', text: 'Red dots on the <b>minimap</b> are enemies. Head for one, put the crosshair on it and fire until it is destroyed. Your tank is extra tough in training.', el: '#h-map',
+            base: () => ({ k: ME.kills }), wait: b => ME.kills > b.k },
+        { title: 'Capture a point', text: 'This is <b>Conquest</b>: drive into a point\'s circle (A, B or C, on the minimap) and stay inside until it turns blue. Holding more points drains the enemy\'s tickets.', el: '#h-cap',
+            base: () => ({ c: M.my.caps }), wait: b => M.my.caps > b.c },
+        { title: 'Respawn in another vehicle', text: 'When you are destroyed you choose your next vehicle from your lineup. Try it: press ' + kb('K') + ' to self-destruct, pick a <b>different vehicle</b> (keys ' + kb('1') + '-' + kb('5') + ' or click) and press <b>DEPLOY</b>.',
+            act: ['Self-destruct (K)', () => { if (tMe() && ME.alive) meDied(-1, 'crash'); }], key: 'KeyK',
+            base: () => ({ id: ME.def.id, dead: !ME.alive }),
+            wait: b => { if (!ME.alive) b.dead = 1; return !!b.dead && ME.alive && (ME.def.id !== b.id || save.lineup.length < 2); } },
+        { title: 'The minimap', text: 'You are the arrow in the middle of the minimap. <b>Blue</b> is your team, <b>red</b> the enemy, and the letters are the capture points.', el: '#h-map' },
+        { title: 'The scoreboard', text: 'Hold ' + kb('Tab') + ' to see the scoreboard: everyone\'s score, kills and deaths.', wait: () => UIS.board }
+    ]
+});
+Tutor.define({
+    id: 'air', title: 'Wings and rotors', blurb: 'Throttle, steering, guns, bombs, flares; then hover, strafe and lock missiles in a helicopter', coach: true, next: 'garage',
+    begin: () => trainMatch('air', { veh: 'a1b', mm: 31, mode: 'tdm', bots: 'mixed', foes: 3, keep: 'a1b' }),
+    finish: () => trainLeave(), alive: () => !!(M && M.tut === 'air'), atEnd: () => trainLeave(),
+    end: 'You can fly planes and helicopters. Research more of them in the <b>Research</b> tab. Last lesson: <b>Your garage</b>.',
+    steps: [
+        { title: 'Throttle', text: 'You are flying the <b>Mule</b>, an attack plane. ' + kb('W') + ' opens the throttle, ' + kb('S') + ' closes it. Too slow and you stall! Change your throttle.',
+            enter: () => trainSwap('a1b'), base: () => ({ t: ME.thr }), wait: b => ME.alive && Math.abs(ME.thr - b.t) > .15 },
+        { title: 'Steer with the mouse', text: 'The plane flies toward where you point the <b>mouse</b>: up and down to climb or dive, left and right to bank and turn (' + kb('A') + ' ' + kb('D') + ' turn too).',
+            base: () => ({ y: IN.camYaw, p: IN.camPitch }), wait: b => Math.abs(IN.camYaw - b.y) > .8 || Math.abs(IN.camPitch - b.p) > .3 },
+        { title: 'Guns', text: '<b>Left click</b> fires the guns. They aim a little ahead of a target near the crosshair.', el: '#h-xh', base: () => ({ n: tFired('w1') }), wait: b => tFired('w1') > b.n },
+        { title: 'Bombs', text: 'This plane carries <b>bombs</b>. Press ' + kb('B') + ' (or ' + kb('Shift') + ') to drop one. Fly low over ground targets to hit them.', when: () => tMe() && ME.def.w3 && ME.def.w3.k === 'bomb',
+            base: () => ({ n: tFired('w3') }), wait: b => tFired('w3') > b.n },
+        { title: 'Flares', text: 'Press ' + kb('F') + ' to drop <b>flares</b>: they pull enemy missiles away from you. Use them when you hear the lock warning.', when: () => tMe() && ME.def.flares,
+            base: () => ({ n: ME.nFl }), wait: b => ME.nFl < b.n },
+        { title: 'Helicopter time', text: 'Now you are in a <b>Mantis</b> attack helicopter. Helicopters can stop in the air and hide behind hills.', enter: () => trainSwap('a3e') },
+        { title: 'Hover', text: 'Hold ' + kb('E') + ' to climb (' + kb('Q') + ' goes down). ' + kb('W') + ' ' + kb('S') + ' fly forward and back. Climb up and hover.',
+            enter: () => trainSwap('a3e'), base: () => ({ y: ME.y }), wait: b => ME.alive && ME.def.heli && ME.y > b.y + 12 },
+        { title: 'Strafe', text: 'Hold ' + kb('A') + ' or ' + kb('D') + ' to slide sideways (strafe) while the nose follows the mouse.',
+            base: () => ({ n: 0 }), wait: b => (b.n += ME.alive && ME.def.heli && (IN.keys.KeyA || IN.keys.KeyD) ? 1 : 0) > 5 },
+        { title: 'Rockets', text: '<b>Right click</b> fires rockets: great against tanks and boats.', base: () => ({ n: tFired('w2') }), wait: b => tFired('w2') > b.n },
+        { title: 'Missile lock', text: 'Guided missiles need a <b>lock</b>: hold the crosshair on an enemy tank, boat or helicopter for half a second until the red <b>LOCK</b> shows.', el: '#h-xh',
+            wait: () => Cam.mlT >= LOCK_T && Cam.mlId >= 0 },
+        { title: 'Fire the missile', text: 'Press ' + kb('B') + ' while locked: the missile chases the target on its own.', base: () => ({ n: tFired('w3') }), wait: b => tFired('w3') > b.n }
+    ]
+});
+const navBtn = v => () => document.querySelector('#mnav [data-go="' + v + '"]');
+const tGo = v => () => { if (!M && UIS.screen !== v) UI.go(v); };
+Tutor.define({
+    id: 'garage', title: 'Your garage', blurb: 'Vehicle cards, research, buying, the lineup, modules and multiplayer', next: null,
+    begin: () => { if (M) return false; UIS.lobby = false; UI.go('menu'); return true; }, alive: () => !M,
+    end: 'That is everything! Play battles to earn <b>credits</b> and <b>research points</b>, and climb to tier V. Lessons stay in <b>Training</b> if you want them again.',
+    steps: [
+        { title: 'Your vehicle', text: 'This card shows the vehicle you take into battle: its <b>tier</b> (I to V), <b>battle rating</b> (BR), role, and bars for hit points, armour, speed and firepower. Yellow on a bar is what its modules add.', el: '#h-vcard', enter: tGo('menu') },
+        { title: 'Research', text: 'Open the <b>Research</b> tab.', el: navBtn('research'), wait: () => UIS.screen === 'research' },
+        { title: 'The research tree', text: 'Every vehicle in a line needs the one before it. Ground, Air and Naval each have a tree. <b>Click any vehicle</b> in the tree to see its card.', el: '#v-research .rs-wrap', enter: tGo('research'), base: () => ({ r: UIS.rs }), wait: b => UIS.rs !== b.r },
+        { title: 'Pick a research target', text: 'Battles earn <b>research points</b> (RP) for your target. Find a vehicle you can research (it shows RP) and press <b>Research this</b>. Free RP can go to anything.', el: '#rs-info', enter: tGo('research'), at: 'tl',
+            base: () => ({ t: save.target }), wait: b => !!save.target && save.target !== b.t },
+        { title: 'Buy', text: 'When the research is done, the card says <b>Buy for ... credits</b>. Credits come from every battle; win, capture and destroy for more.', el: '#rs-info', enter: tGo('research'), at: 'tl' },
+        { title: 'The garage', text: 'Open the <b>Garage</b>: every vehicle you own.', el: navBtn('garage'), wait: () => UIS.screen === 'garage' },
+        { title: 'Your lineup', text: 'Your <b>lineup</b> holds up to 5 vehicles you can switch between in battle. <b>Add to lineup</b> on a card puts it here; the &times; takes it out.', el: '#g-lineup', enter: tGo('garage') },
+        { title: 'Modules', text: 'Each vehicle you own has 5 <b>modules</b> (engine, armour, guns and more). Research them like vehicles: they install themselves when done.', el: '#g-info', enter: tGo('garage'), at: 'tl' },
+        { title: 'Pick what you spawn in', text: 'Back on <b>Home</b>, the lineup slot marked <b>IN BATTLE</b> is what you spawn in. <b>Click another vehicle</b> in your lineup.', el: '#lineup', enter: tGo('menu'),
+            when: () => save.lineup.length > 1, base: () => ({ s: save.sel }), wait: b => save.sel !== b.s },
+        { title: 'Multiplayer', text: 'Open the <b>Multiplayer</b> tab to play with friends.', el: navBtn('mp'), when: () => !PARTY.code, wait: () => UIS.screen === 'mp' },
+        { title: 'Join a game', text: 'Type a friend\'s <b>6-digit code</b> and press <b>Join</b>, or pick an open game from the list below.', el: '.mp-join', enter: tGo('mp'), when: () => !PARTY.code },
+        { title: 'Host a game', text: 'Or <b>host</b>: pick the mode and options and press <b>HOST GAME</b>. Your code shows in the lobby; friends join with it, bots fill the empty places.', el: '.mp-side .sheet', enter: tGo('mp'), when: () => !PARTY.code }
+    ]
+});
+
+// the menu's Training button says NEW until the player has finished a lesson
+function trainBadge() { const e = $('#nv-train'); if (!e || !save) return; e.textContent = 'NEW'; e.classList.toggle('hidden', Tutor.list.some(l => Tutor.done(l.id))); }
+// a step's helper key (lesson 1: K self-destructs), since the mouse is captured in battle
+addEventListener('keydown', e => { const st = Tutor.active && Tutor.step; if (st && st.key === e.code && st.act && !e.repeat && !typing(e)) st.act[1](); });
+function trainHub() {
+    if (M) return;
+    Tutor.hub({ title: 'Steel Storm training', intro: 'Short lessons where you do each step yourself. Lessons 1 and 2 are practice matches against easy bots: they never count for your stats or the leaderboards. Esc or "Skip lesson" leaves at any time.' });
+}
+// a new player's first visit: offer Basic training once (the answer, or just seeing it, is remembered)
+function trainOffer() {
+    if (!save || save.tutOffer || Tutor.active || M) return false;
+    save.tutOffer = 1; writeSave();
+    Tutor.offer({ kicker: 'Welcome', time: '2 minutes', les: 'basic', title: 'New here? Take Basic training?', text: 'A practice battle against a few easy bots: drive, aim, fire, capture a point and respawn. You do each step yourself.',
+        answer: yes => { if (!yes) toast('Training is in the menu whenever you want it'); trainBadge(); } });
+    return true;
+}
+$('#b-train').onclick = () => { ac(); trainHub(); };
+function trainHook() {
+    return {
+        start: id => Tutor.start(id), stop: how => Tutor.stop(how), next: () => Tutor.next(), back: () => Tutor.back(), hub: () => trainHub(), offer: () => trainOffer(),
+        get active() { return Tutor.active; }, get lesson() { return Tutor.lesson && Tutor.lesson.id; }, get i() { return Tutor.i; }, get title() { return Tutor.step && Tutor.step.title; },
+        get finale() { return Tutor.finale; }, get stepDone() { return Tutor.stepDone; }, get hubOpen() { return Tutor.hubOpen; }, get offerOpen() { return Tutor.offerOpen; },
+        get lessons() { return Tutor.list.map(l => ({ id: l.id, title: l.title, steps: l.steps.length, done: Tutor.done(l.id) })); },
+        get fired() { return M && M.fired; }, get cam() { return Cam; }, get want() { return TRN.want; }, swap: trainSwap
+    };
+}
+
 // ---- 90-main.js ----
 // ============================================================
 // INPUT, CAMERA, THE MAIN LOOP, BOOT, and the debug hook window.__steelstorm
@@ -4504,8 +4942,9 @@ function boot() {
         hgLoad().then(HG => { if (HG && HG.every) HG.every(50, () => { if (document.hidden && M && M.host) advance(); }); });
         setTimeout(launcherBoot, 300);
         $('#boot').classList.add('hidden'); $('#menu').classList.remove('hidden');
-        if (!save.seenHow) { save.seenHow = true; save.seenNew = VERSION; writeSave(); setTimeout(() => { if (!M) UI.open('s-how'); }, 400); }
+        if (!save.seenHow) { save.seenHow = true; save.seenNew = VERSION; writeSave(); setTimeout(() => { if (!M && !trainOffer()) UI.open('s-how'); }, 400); }      // 2.3: a new player is offered Basic training once
         else if (save.seenNew !== VERSION) { save.seenNew = VERSION; writeSave(); setTimeout(() => { if (!M) UI.open('s-new'); }, 400); }
+        trainBadge();
         requestAnimationFrame(frame);
     } catch (e) { $('#boot-s').textContent = 'Could not start: ' + e.message; console.error(e); }
 }
@@ -4558,6 +4997,7 @@ window.__steelstorm = {
     ui: { open: id => UI.open(id), close: id => UI.close(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch(), openLobby: () => UI.openLobby(), closeLobby: () => UI.closeLobby(), go: v => UI.go(v), select: i => selectSlot(i), get view() { return UIS.screen; }, get selDead() { return UIS.selDead; }, pickDead: id => { UIS.selDead = id; UI.paintDead(); }, deploy: () => UI.deploy(), mpFake(list, fr) { UIX.fake = list ? { list, fr } : null; mpRefresh(true); }, mpRefresh: () => mpRefresh(true), conn: () => connState() },
     // the menu showcase (87-showcase.js): info() = { on, run, id, n, frames, shot, kills, hero }, ents() above lists its vehicles while no match runs
     show: { info: () => Show.info(), stop: () => Show.stop(), sync: () => showSync(), request: (id, m) => Show.request(id, m), set off(v) { Show.off = !!v; showSync(); }, get obj() { return Show; } },
+    tut: trainHook(),      // 2.3 training (89-training.js)
     T: { PR, weaponFire, updateProjectiles, stepVehicle, stepSurface, missileLock, playerCtrl, makeConfig, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, syncState, applySync, CLK, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };

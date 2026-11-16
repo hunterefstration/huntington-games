@@ -172,7 +172,10 @@ function prestigePanel() {
 // 4.0: the version line on the menu opens this - the highlights of the whole update
 function whatsNew() {
     const sec = (title, col, items) => `<div class="mlabel" style="color:${col}">${title}</div><ul class="news text-sm text-gray-200">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
-    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.5 - FROSTBITE &amp; CARNIVAL</div>` + whatsNew55(sec) +
+    return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.6 - TRAINING</div>` +
+        sec('TRAINING', '#a5b4fc', ['New <b>TRAINING</b> button on the home screen: three hands-on lessons where you do each step yourself. <b>Boot camp</b> (move, jump, sprint, slide, shoot, aim, reload, switch, grenade, ability, pickups and a few zombies on a practice range), <b>Classes and loadout</b> and <b>Modes and multiplayer</b>.',
+            'The practice range is a sandbox: it never counts for your XP, kills, best waves or the leaderboards, and your saved run is kept.']) +
+        `<div class="text-2xl font-black text-white mt-4">5.5 - FROSTBITE &amp; CARNIVAL</div>` + whatsNew55(sec) +
         `<div class="text-2xl font-black text-white mt-4">5.4 - CLASS REWORK</div>` + whatsNew54(sec) +
         `<div class="text-2xl font-black text-white mt-4">5.2</div>` +
         sec('FIXED: SCREEN FLASHES', '#fca5a5', ['<b>No more surprise flashbangs.</b> Lightning on the Storm lighting was a double 4x-brightness strobe every 7 to 17 seconds, red/white/green hit and pickup flashes could stack and repeat every frame (damage over time, several hits at once), and a big explosion next to your face could fill the screen with white. Lightning is now one soft pulse at least 14 seconds apart, screen flashes never stack or repeat (one at a time, capped in strength, never white), explosions fade near the camera and only light the scene when you could see them, and a replayed or spammed multiplayer explosion is dropped. New setting: <b>Reduce flashes</b> (on by default).']) +

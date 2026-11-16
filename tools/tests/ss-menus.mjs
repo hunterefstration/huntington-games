@@ -21,7 +21,7 @@ async function page(tag, vp) {
   await p.route(/cdn\.jsdelivr\.net\/npm\/three@0\.160\.0\/(.*)/, r => { const f = T + '/cdn/package/' + new URL(r.request().url()).pathname.replace(/^\/npm\/three@0\.160\.0\//, ''); fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : r.abort(); });
   await p.route(/mqtt@[\d.]+\/dist\/mqtt\.min\.js/, r => fs.existsSync(MQTT) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(MQTT) }) : r.abort());
   await p.route(/fonts\.|unpkg|peerjs/, r => r.abort());
-  await p.addInitScript(() => { try { localStorage.setItem('steelstorm_save', JSON.stringify({ v: 2, seenHow: true, seenNew: '2.2', credits: 50000, stats: { matches: 3, wins: 2, kills: 9, deaths: 4, caps: 0 } })); } catch (e) {} });
+  await p.addInitScript(() => { try { localStorage.setItem('steelstorm_save', JSON.stringify({ v: 2, seenHow: true, seenNew: '2.3', credits: 50000, stats: { matches: 3, wins: 2, kills: 9, deaths: 4, caps: 0 } })); } catch (e) {} });
   await p.goto(URL0); await until(() => p.evaluate(() => !!window.__steelstorm), 60000);
   return p;
 }
@@ -30,7 +30,7 @@ const info = p => S(p, () => __steelstorm.show.info());
 
 // ---------- 1. one page: menus, showcase, respawn ----------
 const A = await page('A');
-ok(await S(A, () => __steelstorm.version) === '2.2', 'version 2.2');
+ok(await S(A, () => __steelstorm.version) === '2.3', 'version 2.3');
 ok(await S(A, () => __steelstorm.state) === 'menu', 'starts on the home menu');
 const s0 = await until(async () => { const i = await info(A); return i.on && i.frames > 4 && i; }, 15000);
 ok(!!s0, 'showcase runs on the home menu', s0 && { n: s0.n, shot: s0.shot, hero: s0.hero });

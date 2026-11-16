@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Steel Storm 2.2</title>
+<title>Steel Storm 2.3</title>
 <!--@css-->
 <script type="importmap">
 { "imports": {
@@ -21,7 +21,7 @@
 <div id="menu" class="hidden" data-view="menu">
   <div class="shade"></div>
   <header class="mtop">
-    <div class="brand"><span class="logo">STEEL<b>STORM</b></span><a id="b-new" class="ver" href="#">v2.2 &middot; What's new</a></div>
+    <div class="brand"><span class="logo">STEEL<b>STORM</b></span><a id="b-new" class="ver" href="#">v2.3 &middot; What's new</a></div>
     <div class="wallet">
       <span class="w-pill" title="Credits: buy vehicles"><i class="ic cr"></i><b id="w-cr">0</b></span>
       <span class="w-pill" title="Research points for what you are researching"><i class="ic rp"></i><b id="w-rp">0</b></span>
@@ -37,6 +37,7 @@
     <button data-go="research"><i data-ic="research"></i><span>Research</span><em id="nv-rs" class="hidden"></em></button>
     <div class="nsep"></div>
     <button data-modal="s-settings"><i data-ic="gear"></i><span>Settings</span></button>
+    <button id="b-train"><i data-ic="train"></i><span>Training</span><em id="nv-train" class="hidden"></em></button>
     <button data-modal="s-how"><i data-ic="help"></i><span>How to play</span></button>
   </nav>
   <div id="sc-cap" class="hidden"></div>
@@ -180,8 +181,10 @@
 </div>
 <div id="s-new" class="scr dim hidden">
   <div class="card wide">
-    <div class="card-h"><h2>Steel Storm 2.2: what's new</h2><button class="x" data-close title="Close">&times;</button></div>
+    <div class="card-h"><h2>Steel Storm 2.3: what's new</h2><button class="x" data-close title="Close">&times;</button></div>
     <div class="how"><div>
+      <h4>Training</h4><p>New <b>Training</b> button in the menu: three hands-on lessons where you do each step yourself. <b>Basic training</b> (drive, aim, fire, destroy, capture, respawn), <b>Wings and rotors</b> (planes and helicopters) and <b>Your garage</b> (research, buying, modules, the lineup and multiplayer). The practice battles never count for your stats or the leaderboards.</p>
+      <h4 class="old">Steel Storm 2.2</h4>
       <h4>New menus</h4><p>Everything is one click away: Home, Battle, Multiplayer, Garage and Research down the side. Your vehicle is shown large with clear bars for hit points, armour, speed and firepower, its weapons and its role. Works with the mouse alone and on small screens.</p>
       <h4>Showcase footage</h4><p>Behind the menu your selected vehicle fights a small live battle, played the way an expert would play it: tanks fire on the move, fighters lock missiles, bombers drop on groups, helicopters pop up from cover, warships turn broadside. Pick another vehicle and the footage switches. Too heavy for your computer? Settings turns it off, and it switches itself off if the menu gets slow.</p>
       <h4>Multiplayer</h4><p>A real Multiplayer screen: a list of open games to join, a join-by-code box, and hosting with clear options (mode, map size, length, bots, friendly fire, weather, public or friends only). The party lobby updates live: everyone's vehicle and readiness, teams, host tools (kick, move, shuffle, balance, start), chat, the room code with a copy button, and the connection state (connecting, reconnecting, the host left).</p>

@@ -230,8 +230,9 @@ function boot() {
         hgLoad().then(HG => { if (HG && HG.every) HG.every(50, () => { if (document.hidden && M && M.host) advance(); }); });
         setTimeout(launcherBoot, 300);
         $('#boot').classList.add('hidden'); $('#menu').classList.remove('hidden');
-        if (!save.seenHow) { save.seenHow = true; save.seenNew = VERSION; writeSave(); setTimeout(() => { if (!M) UI.open('s-how'); }, 400); }
+        if (!save.seenHow) { save.seenHow = true; save.seenNew = VERSION; writeSave(); setTimeout(() => { if (!M && !trainOffer()) UI.open('s-how'); }, 400); }      // 2.3: a new player is offered Basic training once
         else if (save.seenNew !== VERSION) { save.seenNew = VERSION; writeSave(); setTimeout(() => { if (!M) UI.open('s-new'); }, 400); }
+        trainBadge();
         requestAnimationFrame(frame);
     } catch (e) { $('#boot-s').textContent = 'Could not start: ' + e.message; console.error(e); }
 }
@@ -284,6 +285,7 @@ window.__steelstorm = {
     ui: { open: id => UI.open(id), close: id => UI.close(id), showMenu: () => UI.showMenu(), paintResearch: () => UI.paintResearch(), openLobby: () => UI.openLobby(), closeLobby: () => UI.closeLobby(), go: v => UI.go(v), select: i => selectSlot(i), get view() { return UIS.screen; }, get selDead() { return UIS.selDead; }, pickDead: id => { UIS.selDead = id; UI.paintDead(); }, deploy: () => UI.deploy(), mpFake(list, fr) { UIX.fake = list ? { list, fr } : null; mpRefresh(true); }, mpRefresh: () => mpRefresh(true), conn: () => connState() },
     // the menu showcase (87-showcase.js): info() = { on, run, id, n, frames, shot, kills, hero }, ents() above lists its vehicles while no match runs
     show: { info: () => Show.info(), stop: () => Show.stop(), sync: () => showSync(), request: (id, m) => Show.request(id, m), set off(v) { Show.off = !!v; showSync(); }, get obj() { return Show; } },
+    tut: trainHook(),      // 2.3 training (89-training.js)
     T: { PR, weaponFire, updateProjectiles, stepVehicle, stepSurface, missileLock, playerCtrl, makeConfig, hasLOS, newEnt, aiNew, spawnEnt, removeEnt, setDef, EN, IN, ballistic, pickSpawn, aiPickTarget, hostDamage, syncState, applySync, CLK, get save() { return save; } },
     compOf, myName, rosterNow, dump() { return JSON.stringify({ n: EN.size, pr: PR.length, t: M && Math.round(M.t) }); }
 };

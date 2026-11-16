@@ -110,6 +110,7 @@ function hostDamage(by, tgId, dmg, pk, slot, trusted) {
     const team = a.team === v.team; if (team && !ffOn()) return;
     if (!a.alive && simTime - (a.dieT || 0) > 3) return;
     if (v.prot > 0) return;
+    if (M.tut && v === ME) dmg *= .35;      // training: the player is tougher
     if (!trusted) {      // a guest's bullet claim: plausible damage, budget, range and aim against where the target was when they saw it
         const w = a.def[slot] || a.def.w1;
         if (!(dmg > 0) || dmg > w.dmg * 40 + 50 || dmg > a.budget + 5) return;
@@ -251,7 +252,7 @@ function hostStep(dt) {
     hostCheckEnd();
 }
 function hostCheckEnd() {
-    if (!M || M.over || !M.host) return;
+    if (!M || M.over || !M.host || M.tut) return;      // a training match never ends by itself
     let w = -2; const L = M.limit;
     if (M.mode === 'tdm') { if (M.kills[0] >= L.kills) w = 0; else if (M.kills[1] >= L.kills) w = 1; }
     else if (M.mode === 'conq') { if (M.tickets[0] <= 0) w = 1; else if (M.tickets[1] <= 0) w = 0; }
@@ -400,12 +401,14 @@ function meDied(by, w) {      // only crashes are decided locally; everything el
     else { killVisual(e); e.hp = 0; e.respT = 5; toHost({ t: 'died', by, w }); UI.died(EN.get(by), w); }
 }
 function respawnMe(vid) {
-    const d = VBY[vid] ? vdef(vid, modMask(vid)) : null; if (!d || !ME || ME.alive || !M || M.over) return false;
+    const tw = M && M.tut && TRN.want; if (tw) vid = tw;      // training lesson 2 keeps you in its plane / helicopter
+    const d = VBY[vid] ? vdef(vid, tw ? 31 : modMask(vid)) : null; if (!d || !ME || ME.alive || !M || M.over) return false;
     if (d !== ME.def) setDef(ME, d); ME.kdone = false; ME.carry = -1; spawnEnt(ME); M.my.tier = Math.max(M.my.tier, d.t); UI.deployed(); return true;
 }
 // ---------- the end: rewards and results ----------
 function finishMatch(m) {
     if (!M || M.over) return;
+    if (M.tut) { M.over = true; return; }      // training is practice: no rewards, no stats (the leaderboards read save.stats)
     M.over = true; M.state = 'end'; M.winner = m.win; M.mvp = m.mvp; if (!M.host) { M.kills = m.kl; if (M.mode === 'conq') M.tickets = m.tk; if (m.cp) M.caps = m.cp; }
     for (const r of m.stats) { const e = EN.get(r[0]); if (e) { e.kills = r[1]; e.deaths = r[2]; e.score = r[3]; e.dmg = r[4] || e.dmg; e.caps = r[5] || 0; e.flags = r[6] || 0; } }
     const my = M.my;
