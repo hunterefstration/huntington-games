@@ -68,9 +68,9 @@ function openProject(p) {
 }
 function newChannel(p, presetId, o) {
   const info = presetById(presetId) || presetById('saw-lead');
-  const id = p.ch.reduce((m, c) => Math.max(m, +c.id || 0), 0) + 1;
-  const c = Object.assign({ id, n: info.n, col: CH_COLS[(id - 1) % CH_COLS.length], p: info.id, s: E.normParams(info.p), mix: 0, vol: 0.8, pan: 0, mute: 0, solo: 0, root: 60 }, o || {});
-  p.ch.push(c);
+  const c = E.addChannel(p, E.presetInfo(info.id) ? info.id : 'saw-lead', o);
+  if (!E.presetInfo(info.id)) { c.p = info.id; c.n = (o && o.n) || info.n; c.s = E.normParams(info.p); }       // a user preset
+  c.col = CH_COLS[(c.id - 1) % CH_COLS.length];
   return c;
 }
 function freeInsert(p) {

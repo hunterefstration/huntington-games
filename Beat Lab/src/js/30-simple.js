@@ -1,6 +1,5 @@
 // ===== Simple mode: a big colourful song grid. Notes are stored by scale degree (row) so changing key or scale moves
 // them with it. It plays through the same engine: simpleToProject() turns the grid into a one-pattern project. =====
-const SIMPLE_DEF = { key: 0, scale: 'major', oct: 4, range: 2, inst: 'piano', kit: 'electronic', bars: 4, beats: 4, split: 2, bpm: 110, echo: 1, swing: 0, mel: [], drm: [] };
 const ICON = {
   piano: '<rect x="3" y="6" width="26" height="20" rx="2"/><path d="M9 6v20M15 6v20M21 6v20" stroke-width="1.5"/><rect x="7" y="6" width="4" height="11" fill="currentColor"/><rect x="13" y="6" width="4" height="11" fill="currentColor"/><rect x="19" y="6" width="4" height="11" fill="currentColor"/>',
   marimba: '<rect x="4" y="8" width="5" height="18" rx="1"/><rect x="11" y="10" width="5" height="14" rx="1"/><rect x="18" y="12" width="5" height="10" rx="1"/><rect x="25" y="14" width="4" height="6" rx="1"/>',
@@ -13,58 +12,11 @@ const ICON = {
   chip: '<rect x="6" y="6" width="20" height="20" rx="2"/><path d="M11 11h4v4h-4zM17 17h4v4h-4zM17 11h4v4h-4z" fill="currentColor"/>',
   bass: '<path d="M8 26c-3-3-2-7 2-8l10-12 3 3-12 10c-1 4-5 5-3 7z"/><path d="M22 4l6 6"/>'
 };
-const SIMPLE_INST = [
-  { id: 'piano', n: 'Piano', p: 'grand-piano' }, { id: 'marimba', n: 'Marimba', p: 'marimba' }, { id: 'guitar', n: 'Guitar', p: 'nylon-guitar' },
-  { id: 'strings', n: 'Strings', p: 'string-ensemble' }, { id: 'flute', n: 'Flute', p: 'flute' }, { id: 'synth', n: 'Synth', p: 'juno-keys' },
-  { id: 'choir', n: 'Choir', p: 'choir-aahs' }, { id: 'bells', n: 'Bells', p: 'glockenspiel' }, { id: 'chip', n: '8-bit', p: 'chip-pulse-25' }, { id: 'bass', n: 'Bass', p: 'finger-bass' }
-];
-const SIMPLE_KITS = [
-  { id: 'electronic', n: 'Electronic', p: ['808-kick', '808-snare', '808-closed-hat', '808-clap'] },
-  { id: 'acoustic', n: 'Acoustic', p: ['acoustic-kick', 'acoustic-snare', 'acoustic-closed-hat', 'acoustic-side-stick'] },
-  { id: 'lofi', n: 'Lo-fi', p: ['lo-fi-kick', 'lo-fi-snare', 'lo-fi-hat', 'lo-fi-rim'] },
-  { id: 'trap', n: 'Trap', p: ['trap-808-kick', 'trap-snare', 'trap-hat', 'trap-clap'] },
-  { id: 'house', n: 'House', p: ['house-kick', 'house-snare', 'house-closed-hat', 'house-clap'] },
-  { id: 'latin', n: 'Bongos', p: ['perc-conga-low', 'perc-conga-high', 'perc-shaker', 'perc-cowbell'] },
-  { id: 'chip', n: '8-bit', p: ['chip-kick', 'chip-snare', 'chip-hat', 'chip-tom'] }
-];
-const LANES = ['Kick', 'Snare', 'Hi-hat', 'Clap'];
+const SIMPLE_INST = E.SIMPLE_INST, SIMPLE_KITS = E.SIMPLE_KITS, LANES = E.SIMPLE_LANES;
 const SIMPLE_SCALES = ['major', 'minor', 'pentatonic', 'minpent', 'blues', 'dorian', 'chromatic'];
-function simpleNormalize(s) {
-  s = E.fill(s && typeof s === 'object' ? s : {}, SIMPLE_DEF);
-  if (!SCALES[s.scale]) s.scale = 'major';
-  s.bars = clamp(s.bars | 0, 1, 16); s.beats = clamp(s.beats | 0, 2, 7); s.split = clamp(s.split | 0, 1, 4); s.range = clamp(s.range | 0, 1, 3); s.oct = clamp(s.oct | 0, 2, 6);
-  s.bpm = clamp(s.bpm | 0, 40, 220);
-  if (!SIMPLE_INST.some(x => x.id === s.inst)) s.inst = 'piano';
-  if (!SIMPLE_KITS.some(x => x.id === s.kit)) s.kit = 'electronic';
-  return s;
-}
-const sCols = s => s.bars * s.beats * s.split;
-const sRows = s => SCALES[s.scale].s.length * s.range + 1;
-const sMidi = (s, r) => { const sc = SCALES[s.scale].s, n = sc.length; return 12 * (s.oct + 1) + s.key + sc[r % n] + 12 * Math.floor(r / n); };
+const simpleNormalize = E.simpleNormalize, sCols = E.simpleCols, sRows = E.simpleRows, sMidi = E.simpleMidi;
+const simpleToProject = (s, name) => E.fromSimple(s, name);
 function newSimpleProject(name) { return { id: uid(), name: name || 'My song', mode: 'simple', simple: simpleNormalize({}), t: Date.now() }; }
-
-function simpleToProject(s, name) {
-  const tpc = PPQ / s.split, steps = s.bars * s.beats * 4;
-  // swing: 16ths swing in the engine; with beats split in two the off-beat 8ths are pushed late here instead
-  const sw8 = s.swing && s.split === 2, at = c => Math.round(c * tpc) + (sw8 && c % 2 ? 8 : 0);
-  const p = E.normalize({ name: name || 'Song', bpm: s.bpm, sig: [s.beats, 4], swing: s.swing && s.split === 4 ? 55 : 0, key: s.key, scale: s.scale, mix: E.newMixer(4) });
-  const inst = SIMPLE_INST.find(x => x.id === s.inst), kit = SIMPLE_KITS.find(x => x.id === s.kit);
-  const melody = newChannel(p, inst.p, { n: inst.n, mix: 1 });
-  const drums = kit.p.map((pid, i) => newChannel(p, pid, { n: LANES[i], mix: 2, vol: i === 2 ? 0.7 : 0.8 }));
-  p.mix[1].n = 'Melody'; p.mix[2].n = 'Drums';
-  if (s.echo) { p.mix[1].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 2.4, mix: 0.3 }) }); p.mix[2].fx.push({ t: 'reverb', on: 1, p: Object.assign(E.fxDefaults('reverb'), { size: 1.2, mix: 0.12 }) }); }
-  p.mix[2].fx.push({ t: 'comp', on: 1, p: Object.assign(E.fxDefaults('comp'), { th: -16, ra: 3, mk: 2 }) });
-  const pat = p.pat[0]; pat.len = steps; pat.n = 'Song';
-  pat.nt[melody.id] = s.mel.filter(([c, r]) => c < sCols(s) && r < sRows(s)).map(([c, r]) => [at(c), Math.round(tpc) - (sw8 && c % 2 ? 8 : 0), sMidi(s, r), 100]).sort((a, b) => a[0] - b[0]);
-  const stepsOk = Number.isInteger(STEP / tpc) || Number.isInteger(tpc / STEP);
-  drums.forEach((ch, lane) => {
-    const hits = s.drm.filter(([c, l]) => l === lane && c < sCols(s));
-    if (tpc % STEP === 0 && stepsOk && !sw8) { const st = pat.st[ch.id] = new Array(steps).fill(0); for (const [c] of hits) st[Math.round(c * tpc / STEP)] = (c * tpc) % PPQ === 0 ? 112 : 96; }
-    else pat.nt[ch.id] = hits.map(([c]) => [at(c), Math.round(tpc) - (sw8 && c % 2 ? 8 : 0), 60, (c * tpc) % PPQ === 0 ? 112 : 96]).sort((a, b) => a[0] - b[0]);
-  });
-  p.pl.cl = [[pat.id, 0, 0, steps]];
-  return p;
-}
 let SP = null;                                     // the engine's copy of the simple song
 function simpleSync() { SP = simpleToProject(A.p.simple, A.p.name); A.eng.load(SP); }
 

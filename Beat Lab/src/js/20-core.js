@@ -6,14 +6,7 @@ const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const noteName = m => NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
 const isBlack = m => [1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12);
-const SCALES = {
-  major: { n: 'Major', s: [0, 2, 4, 5, 7, 9, 11] }, minor: { n: 'Minor', s: [0, 2, 3, 5, 7, 8, 10] },
-  pentatonic: { n: 'Pentatonic', s: [0, 2, 4, 7, 9] }, minpent: { n: 'Minor pentatonic', s: [0, 3, 5, 7, 10] },
-  blues: { n: 'Blues', s: [0, 3, 5, 6, 7, 10] }, dorian: { n: 'Dorian', s: [0, 2, 3, 5, 7, 9, 10] },
-  mixolydian: { n: 'Mixolydian', s: [0, 2, 4, 5, 7, 9, 10] }, harmonic: { n: 'Harmonic minor', s: [0, 2, 3, 5, 7, 8, 11] },
-  phrygian: { n: 'Phrygian', s: [0, 1, 3, 5, 7, 8, 10] }, lydian: { n: 'Lydian', s: [0, 2, 4, 6, 7, 9, 11] },
-  chromatic: { n: 'Chromatic', s: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }
-};
+const SCALES = E.SCALES;
 const inScale = (m, key, scale) => (SCALES[scale] || SCALES.chromatic).s.includes(((m - key) % 12 + 12) % 12);
 const CH_COLS = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#38d9a9', '#4dabf7', '#748ffc', '#da77f2', '#f783ac', '#a9e34b', '#3bc9db', '#ff922b', '#e599f7', '#8ce99a', '#ffe066', '#91a7ff'];
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);

@@ -1,7 +1,10 @@
 // =====================================================================================================================
 // BEAT LAB ENGINE: plays Beat Lab projects with Web Audio. Everything is synthesised (no samples, no network).
-// The engine is the files 10-engine.js .. 15-engine-demos.js. They use no DOM and nothing from the rest of Beat Lab,
+// The engine is the files 10-engine.js .. 16-engine-simple.js. They use no DOM and nothing from the rest of Beat Lab,
 // so another page (the launcher's music player) can paste them in, in name order, and get globalThis.BeatLabEngine.
+// Playing a player's song from the launcher:
+//   const p = BeatLabEngine.fromSave(localStorage.getItem('beatlab_p_' + id));   // simple songs are converted
+//   const eng = BeatLabEngine.create(); eng.audio(); eng.load(p); eng.play({ mode: 'song' });   ... eng.destroy()
 //
 // API (E = BeatLabEngine)
 //   const eng = E.create({ ctx })         a live engine. ctx: an AudioContext (made on the first eng.audio() call if left
@@ -17,6 +20,8 @@
 //   E.toWav(audioBuffer) -> ArrayBuffer (16-bit PCM WAV)
 //   E.songTicks(project), E.patTicks(pattern), E.barTicks(project), E.normalize(project) (fills defaults, migrates)
 //   E.PRESETS [{id, n: name, c: category, p: params}], E.preset(id) -> params, E.DEMOS [{id, n, make() -> project}]
+//   E.fromSave(savedJsonOrObject) -> project, E.fromSimple(simpleSong, name) -> project, E.addChannel(project, presetId)
+//   Saves: one project per localStorage key beatlab_p_<id>; { mode: 'simple', simple: {...} } or a studio project.
 //
 // Project format (version 1, plain JSON; times in ticks, 48 per quarter note):
 //   { v: 1, id, name, bpm, sig: [beats, unit], swing: 0..100, key: 0..11, scale: 'minor',
