@@ -65,16 +65,16 @@
   C = 'Pads';
   syn(C, 'Warm Pad', { o1: o('sawtooth', { uni: 3, det: 12 }), o2: o('sawtooth', { oct: -1, lvl: 0.4 }), f: F(1400, 0.8, 0.7, 0.8, 1.5, 0.5, 1.2), amp: A(0.6, 1, 0.85, 1.2), gain: 0.45, poly: 10 });
   syn(C, 'Glass Pad', { o1: o('glass', { uni: 3, det: 8 }), o2: o('sine', { oct: 1, lvl: 0.3 }), amp: A(0.4, 1, 0.8, 1.5), lfo: LFO('amp', 0.1, 0.3), gain: 0.5, poly: 10 });
-  syn(C, 'Choir Pad', { o1: o('vox', { uni: 3, det: 10 }), vowel: 'a', amp: A(0.5, 1, 0.9, 1.2), gain: 0.45, poly: 10 });
+  syn(C, 'Choir Pad', { o1: o('vox', { uni: 3, det: 10 }), vowel: 'a', amp: A(0.5, 1, 0.9, 1.2), gain: 0.33, poly: 10 });
   syn(C, 'Dark Pad', { o1: o('sawtooth', { uni: 3, det: 14 }), sub: 0.5, f: F(600, 2), lfo: LFO('filter', 0.5, 0.15), amp: A(0.8, 1, 0.9, 1.5), gain: 0.5, poly: 10 });
   syn(C, 'Sweep Pad', { o1: o('sawtooth', { uni: 5, det: 16 }), f: F(900, 4), lfo: LFO('filter', 0.8, 0.1, { sync: '2/1', w: 'triangle' }), amp: A(0.5, 1, 0.9, 1.2), gain: 0.45, poly: 10 });
   syn(C, 'Supersaw Pad', { o1: o('sawtooth', { uni: 7, det: 25 }), f: F(5000, 0.7), amp: A(0.3, 1, 0.9, 1), gain: 0.35, poly: 10 });
   syn(C, 'Synthwave Pad', { o1: o('sawtooth', { uni: 5, det: 15 }), o2: o('pulse25', { lvl: 0.4 }), f: F(2000, 1, 1, 1, 2, 0.5, 1), amp: A(0.4, 1, 0.9, 1.2), gain: 0.4, poly: 10 });
   syn(C, 'Shimmer Pad', { o1: o('triangle', { uni: 5, det: 8 }), o2: o('sine', { oct: 2, lvl: 0.25 }), amp: A(1.2, 1, 0.9, 2), lfo: LFO('amp', 0.15, 0.4), gain: 0.55, poly: 10 });
   syn(C, 'Bell Pad', { o1: o('sine'), o2: o('sawtooth', { uni: 3, lvl: 0.3 }), fm: 2, fmr: 3.5, fmd: 1.5, f: F(2500), amp: A(0.01, 2, 0.6, 1.5), gain: 0.45, poly: 10 });
-  syn(C, 'Lo-fi Tape Pad', { o1: o('warm', { uni: 3, det: 10 }), f: F(1800), lfo: LFO('pitch', 0.15, 0.5), drive: 0.1, amp: A(0.4, 1, 0.9, 1), gain: 0.5, poly: 10 });
+  syn(C, 'Lo-fi Tape Pad', { o1: o('warm', { uni: 3, det: 10 }), f: F(1800), lfo: LFO('pitch', 0.15, 0.5), drive: 0.1, amp: A(0.4, 1, 0.9, 1), gain: 0.38, poly: 10 });
   syn(C, 'Evolving Pad', { o1: o('string', { uni: 3, det: 12 }), o2: o('vox', { lvl: 0.5 }), f: F(1500, 3), lfo: LFO('filter', 0.5, 0.07), amp: A(1, 1, 0.9, 2), gain: 0.4, poly: 10 });
-  syn(C, 'Air Pad', { o1: o('sine', { uni: 3, det: 10 }), nz: 0.12, f: F(1600, 1.2, 0, 0, 0, 0, 0, { t: 'bp' }), amp: A(1, 1, 0.9, 1.5), gain: 0.6, poly: 10 });
+  syn(C, 'Air Pad', { o1: o('sine', { uni: 3, det: 10 }), o2: o('triangle', { oct: 1, lvl: 0.3 }), nz: 0.1, f: F(3500, 0.8), amp: A(1, 1, 0.9, 1.5), lfo: LFO('amp', 0.15, 0.3), gain: 0.75, poly: 10 });
 
   // ------------------------------------------------------------------ Basses
   C = 'Basses';
@@ -149,16 +149,16 @@
 
   // ------------------------------------------------------------------ Guitars
   C = 'Guitars';
-  syn(C, 'Nylon Guitar', { o1: o('pluck'), ks: ks(0.45, 0.45, 3.5, 0.2), f: F(4000), amp: A(0.001, 1, 1, 0.3), gain: 0.9, poly: 12 });
-  syn(C, 'Steel Acoustic', { o1: o('pluck'), o2: o('pluck', { fine: 4, lvl: 0.4 }), ks: ks(0.2, 0.8, 4, 0.12), amp: A(0.001, 1, 1, 0.35), gain: 0.75, poly: 12 });
-  syn(C, 'Clean Electric', { o1: o('pluck'), ks: ks(0.3, 0.6, 4, 0.15), f: F(3500), amp: A(0.001, 1, 1, 0.2), gain: 0.85 });
-  syn(C, 'Muted Guitar', { o1: o('pluck'), ks: ks(0.9, 0.4, 0.5, 0.15), amp: A(0.001, 1, 1, 0.05), gain: 0.95 });
-  syn(C, 'Overdrive Guitar', { o1: o('pluck'), ks: ks(0.15, 0.7, 5, 0.12), f: F(3500), amp: A(0.001, 1, 1, 0.15), drive: 0.55, gain: 0.55 });
-  syn(C, 'Power Chord Guitar', { o1: o('pluck'), o2: o('pluck', { semi: 7, lvl: 0.6 }), ks: ks(0.15, 0.8, 5, 0.1), f: F(2800), amp: A(0.001, 1, 1, 0.12), drive: 0.9, gain: 0.45 });
-  syn(C, 'Funk Guitar', { o1: o('pluck'), ks: ks(0.6, 0.8, 1, 0.1), f: F(1500, 2, 2, 0.001, 0.1, 0.2, 0.1, { t: 'bp' }), amp: A(0.001, 1, 1, 0.06), gain: 1 });
-  syn(C, 'Banjo', { o1: o('pluck'), ks: ks(0.1, 1, 1.8, 0.05), amp: A(0.001, 1, 1, 0.2), gain: 0.8 });
-  syn(C, '12-String Guitar', { o1: o('pluck'), o2: o('pluck', { oct: 1, fine: 3, lvl: 0.5 }), ks: ks(0.25, 0.75, 4, 0.12), amp: A(0.001, 1, 1, 0.3), gain: 0.7 });
-  syn(C, 'Jazz Guitar', { o1: o('pluck'), ks: ks(0.7, 0.25, 3, 0.25), f: F(1800), amp: A(0.001, 1, 1, 0.2), gain: 1 });
+  syn(C, 'Nylon Guitar', { o1: o('pluck'), ks: ks(0.45, 0.45, 3.5, 0.2), f: F(4000), amp: A(0.001, 1, 1, 0.3), gain: 1.17, poly: 12 });
+  syn(C, 'Steel Acoustic', { o1: o('pluck'), o2: o('pluck', { fine: 4, lvl: 0.4 }), ks: ks(0.2, 0.8, 4, 0.12), amp: A(0.001, 1, 1, 0.35), gain: 0.98, poly: 12 });
+  syn(C, 'Clean Electric', { o1: o('pluck'), ks: ks(0.3, 0.6, 4, 0.15), f: F(3500), amp: A(0.001, 1, 1, 0.2), gain: 1.1 });
+  syn(C, 'Muted Guitar', { o1: o('pluck'), ks: ks(0.9, 0.4, 0.5, 0.15), amp: A(0.001, 1, 1, 0.05), gain: 1.23 });
+  syn(C, 'Overdrive Guitar', { o1: o('pluck'), ks: ks(0.15, 0.7, 5, 0.12), f: F(3500), amp: A(0.001, 1, 1, 0.15), drive: 0.55, gain: 0.72 });
+  syn(C, 'Power Chord Guitar', { o1: o('pluck'), o2: o('pluck', { semi: 7, lvl: 0.6 }), ks: ks(0.15, 0.8, 5, 0.1), f: F(2800), amp: A(0.001, 1, 1, 0.12), drive: 0.9, gain: 0.59 });
+  syn(C, 'Funk Guitar', { o1: o('pluck'), ks: ks(0.6, 0.8, 1, 0.1), f: F(1500, 2, 2, 0.001, 0.1, 0.2, 0.1, { t: 'bp' }), amp: A(0.001, 1, 1, 0.06), gain: 1.3 });
+  syn(C, 'Banjo', { o1: o('pluck'), ks: ks(0.1, 1, 1.8, 0.05), amp: A(0.001, 1, 1, 0.2), gain: 1.04 });
+  syn(C, '12-String Guitar', { o1: o('pluck'), o2: o('pluck', { oct: 1, fine: 3, lvl: 0.5 }), ks: ks(0.25, 0.75, 4, 0.12), amp: A(0.001, 1, 1, 0.3), gain: 0.91 });
+  syn(C, 'Jazz Guitar', { o1: o('pluck'), ks: ks(0.7, 0.25, 3, 0.25), f: F(1800), amp: A(0.001, 1, 1, 0.2), gain: 1.3 });
 
   // ------------------------------------------------------------------ Bells & Mallets
   C = 'Bells & Mallets';
@@ -177,7 +177,7 @@
 
   // ------------------------------------------------------------------ Choir & Vox
   C = 'Choir & Vox';
-  syn(C, 'Choir Aahs', { o1: o('vox', { uni: 5, det: 12 }), vowel: 'a', f: F(4000), amp: A(0.35, 0.5, 0.95, 0.8), lfo: LFO('pitch', 0.1, 5), gain: 0.45 });
+  syn(C, 'Choir Aahs', { o1: o('vox', { uni: 5, det: 12 }), vowel: 'a', f: F(4000), amp: A(0.35, 0.5, 0.95, 0.8), lfo: LFO('pitch', 0.1, 5), gain: 0.32 });
   syn(C, 'Choir Oohs', { o1: o('hollow', { uni: 5, det: 12 }), vowel: 'u', amp: A(0.35, 0.5, 0.95, 0.8), lfo: LFO('pitch', 0.1, 5), gain: 0.55 });
   syn(C, 'Female Vox', { o1: o('sawtooth', { uni: 3, det: 8 }), vowel: 'e', amp: A(0.1, 0.3, 0.95, 0.4), lfo: LFO('pitch', 0.2, 5.5), gain: 0.4 });
   syn(C, 'Male Choir', { o1: o('sawtooth', { uni: 5, det: 12 }), vowel: 'o', f: F(3000), amp: A(0.5, 0.5, 0.95, 0.9), lfo: LFO('pitch', 0.08, 4.8), gain: 0.4 });
@@ -185,14 +185,14 @@
   syn(C, 'Talkbox', { o1: o('sawtooth'), o2: o('square', { lvl: 0.4 }), vowel: 'o', f: F(1800, 2, 0, 0, 0, 0, 0, { t: 'bp' }), lfo: LFO('filter', 0.6, 2), amp: A(0.01, 0.3, 0.95, 0.15), mono: 1, glide: 0.05, gain: 0.55 });
   syn(C, 'Whisper Pad', { o1: o('off'), nz: 1, vowel: 'a', amp: A(0.3, 0.5, 0.9, 0.8), gain: 0.7 });
   syn(C, 'Vocal Chop', { o1: o('vox'), vowel: 'a', amp: A(0.005, 0.25, 0, 0.1), gain: 0.6 });
-  syn(C, 'Robot Voice', { o1: o('buzz'), vowel: 'i', amp: A(0.01, 0.2, 0.9, 0.1), gain: 0.4 });
+  syn(C, 'Robot Voice', { o1: o('buzz'), o2: o('square', { lvl: 0.4 }), vowel: 'e', amp: A(0.01, 0.2, 0.9, 0.1), gain: 0.75 });
 
   // ------------------------------------------------------------------ Chiptune
   C = 'Chiptune';
   syn(C, 'Chip Square', { o1: o('square'), amp: A(0.001, 0.1, 0.8, 0.04), vel: 0.3, gain: 0.72 });
   syn(C, 'Chip Pulse 25%', { o1: o('pulse25'), amp: A(0.001, 0.1, 0.8, 0.04), vel: 0.3, gain: 0.81 });
   syn(C, 'Chip Pulse 12%', { o1: o('pulse12'), amp: A(0.001, 0.1, 0.8, 0.04), vel: 0.3, gain: 0.9 });
-  syn(C, 'Chip Triangle Bass', { o1: o('nestri'), amp: A(0.001, 0.1, 1, 0.03), vel: 0, gain: 1.44 });
+  syn(C, 'Chip Triangle Bass', { o1: o('nestri'), amp: A(0.001, 0.1, 1, 0.03), vel: 0, gain: 1.05 });
   syn(C, 'Game Boy Wave', { o1: o('gbwave'), amp: A(0.001, 0.1, 1, 0.04), vel: 0.2, gain: 1.08 });
   syn(C, 'Chip Vibrato Lead', { o1: o('pulse25'), lfo: LFO('pitch', 0.3, 6), amp: A(0.001, 0.1, 0.85, 0.05), gain: 0.81 });
   syn(C, 'Chip Bell', { o1: o('pulse12'), amp: A(0.001, 0.4, 0, 0.1), gain: 0.9 });
@@ -222,7 +222,7 @@
   syn(C, 'Laser Zap', { o1: o('square'), pe: 36, pt: 0.12, amp: A(0.001, 0.25, 0, 0.05), gain: 0.4 });
   syn(C, 'Siren', { o1: o('sawtooth'), lfo: LFO('pitch', 6, 0.6, { w: 'triangle' }), f: F(3000), amp: A(0.05, 0.2, 1, 0.3), gain: 0.4 });
   syn(C, 'Sweep Up', { o1: o('sawtooth', { uni: 5, det: 20 }), pe: -24, pt: 3, f: F(400, 2, 4, 3, 1, 1, 0.5), amp: A(1.5, 1, 1, 0.3), gain: 0.4 });
-  syn(C, 'Wind', { o1: o('off'), nz: 1, f: F(800, 3, 0, 0, 0, 0, 0, { t: 'bp' }), lfo: LFO('filter', 0.8, 0.2), amp: A(1, 1, 1, 1.5), gain: 0.8 });
+  syn(C, 'Wind', { o1: o('off'), nz: 1, f: F(800, 1.4, 0, 0, 0, 0, 0, { t: 'bp' }), lfo: LFO('filter', 0.8, 0.2), amp: A(0.6, 1, 1, 1.5), gain: 1.4 });
   syn(C, 'Sci-fi Blip', { o1: o('sine'), fm: 6, fmr: 1.5, fmd: 0.1, amp: A(0.001, 0.2, 0, 0.05), gain: 0.5 });
   syn(C, 'UFO', { o1: o('sine'), fm: 1, fmr: 1.01, lfo: LFO('pitch', 2, 8), amp: A(0.2, 0.5, 1, 0.5), gain: 0.5 });
   syn(C, 'Reverse Swell', { o1: o('sawtooth', { uni: 3, det: 15 }), f: F(500, 2, 3, 1.5, 0.1, 1, 0.05), amp: A(1.5, 0.01, 1, 0.04), gain: 0.4 });

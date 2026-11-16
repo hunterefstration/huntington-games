@@ -119,7 +119,7 @@ function fillBrowser(q) {
       const row = h('div', { class: 'bitem', draggable: 'true', title: p.n + ' (' + c + ')' },
         h('span', { class: 'bn' }, p.n),
         h('button', { class: 'badd', title: 'Add as a new channel', onclick: e => { e.stopPropagation(); addChannelFromPreset(p.id); } }, '+'));
-      row.addEventListener('click', () => { $$('.bitem.sel', list).forEach(x => x.classList.remove('sel')); row.classList.add('sel'); A.eng.preview(E.normParams(p.p), p.p.k === 'drm' ? 60 : 60, 0.85, 0.7); });
+      row.addEventListener('click', () => { $$('.bitem.sel', list).forEach(x => x.classList.remove('sel')); row.classList.add('sel'); A.eng.preview(E.normParams(p.p), p.p.k === 'drm' ? 60 : ({ Basses: 41, 'Bells & Mallets': 72, Chiptune: 72 }[c] || 60), 0.85, c === 'FX & Risers' ? 2.5 : c === 'Pads' || c === 'Strings' ? 1.2 : 0.7); });
       row.addEventListener('dblclick', () => loadPresetIntoChannel(p.id));
       row.addEventListener('dragstart', e => { e.dataTransfer.setData('text/beatlab-preset', p.id); e.dataTransfer.effectAllowed = 'copy'; });
       if (p.c === 'User') row.addEventListener('contextmenu', e => { e.preventDefault(); menu(e.clientX, e.clientY, [{ t: 'Delete user preset', f: () => { Store.deleteUserPreset(p.id); fillBrowser(ST.search.value); } }]); });
