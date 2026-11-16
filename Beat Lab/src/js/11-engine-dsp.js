@@ -44,7 +44,7 @@
 
   // ------------------------------------------------------------------------------------------ drums
   // d: { type, tune (semitones), dec (decay x), tone 0..1, snap 0..1, drive 0..1, crush 0..1 }
-  D.DRUM_TYPES = ['kick', 'snare', 'clap', 'hat', 'ohat', 'cymbal', 'ride', 'tom', 'rim', 'cowbell', 'clave', 'shaker', 'tamb', 'conga', 'bongo', 'block', 'triangle', 'agogo', 'snap', 'timpani', 'zap', 'impact', 'revcym', 'chipkick', 'chipsnare', 'chiphat', 'vinyl', 'brush'];
+  D.DRUM_TYPES = ['kick', 'snare', 'clap', 'hat', 'ohat', 'cymbal', 'ride', 'tom', 'rim', 'cowbell', 'clave', 'shaker', 'tamb', 'conga', 'bongo', 'block', 'triangle', 'agogo', 'snap', 'timpani', 'zap', 'impact', 'revcym', 'chipkick', 'chipsnare', 'chiphat', 'vinyl', 'brush', 'sroll', 'gong'];
   D.drum = function (d, sr) {
     const r = rng(1234 + (D.DRUM_TYPES.indexOf(d.type) + 1) * 97);
     const T = tun(d.tune), dec = Math.max(0.05, d.dec == null ? 1 : d.dec), tone = d.tone == null ? 0.5 : d.tone, snap = d.snap == null ? 0.5 : d.snap;
@@ -187,6 +187,27 @@
         x = mk(2 * dec); const nz = biquad(noise(x.length, r), 'bp', 3000, 0.5, sr);
         for (let i = 0; i < x.length; i++) x[i] = nz[i] * 0.05 + (r() < 0.0009 ? (r() - 0.5) * 1.6 : 0);
         biquad(x, 'lp', 6000, 0.7, sr); fadeOut(x, 400);
+        break;
+      }
+      case 'sroll': {                             // orchestral snare roll: fast strokes on a rattling snare, swelling then fading
+        const len = 1.1 * dec; x = mk(len + 0.15);
+        const nz = biquad(biquad(noise(x.length, r), 'hp', 1500 + tone * 2000, 0.7, sr), 'lp', 8000 + tone * 4000, 0.7, sr);
+        const rate = 26 + snap * 10;
+        for (let i = 0; i < x.length; i++) {
+          const t = i / sr, ph = (t * rate) % 1, stroke = Math.exp(-ph / 0.18) * (0.75 + 0.25 * Math.sin(t * 7.3));
+          const sw = t < len ? 0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, t / len) * 0.9) : Math.exp(-(t - len) / 0.04);
+          x[i] = nz[i] * (0.35 + stroke * 0.65) * sw;
+        }
+        break;
+      }
+      case 'gong': {                              // tam-tam: low inharmonic partials that bloom and ring
+        const dd = 2.6 * dec; x = mk(Math.min(8, dd * 2.5));
+        const fs = [92, 131, 187, 243, 311, 398, 517].map(f => f * T), ph = fs.map(() => r() * TAU);
+        for (let i = 0; i < x.length; i++) {
+          const t = i / sr, bloom = Math.min(1, t / 0.25); let v = 0;
+          for (let k = 0; k < fs.length; k++) v += Math.sin(ph[k] + TAU * fs[k] * t * (1 + 0.002 * Math.sin(t * 3 + k))) * Math.exp(-t / (dd * (1 - k * 0.09))) * (k < 2 ? 1 : 0.35 + bloom * 0.4);
+          x[i] = v * Math.min(1, t / 0.004);
+        }
         break;
       }
       default: x = mk(0.1);

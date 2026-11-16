@@ -1,12 +1,23 @@
 // ===== Channel rack: one row per instrument channel, a step sequencer for the current pattern =====
 const ROWH = 34;
-const RK = { rows: [], sig: '', velMode: false, cv: null, ov: null, drag: null, cw: 20 };
+const RK = { rows: [], sig: '', velMode: false, cv: null, ov: null, drag: null, cw: 20, art: '' };
+// per-step articulation (pattern.sa[chId][step]); empty lists are dropped so plain patterns stay as they were
+function setStepArt(q, chId, s, a) {
+  if (!a && !(q.sa && q.sa[chId])) return;
+  q.sa = q.sa || {};
+  const sa = q.sa[chId] = q.sa[chId] || new Array(q.len).fill(0);
+  while (sa.length <= s) sa.push(0);
+  sa[s] = a || 0;
+  if (!a && sa.every(x => !x)) { delete q.sa[chId]; if (!Object.keys(q.sa).length) delete q.sa; }
+}
 function buildRack(root) {
   const lenBtns = h('div', { class: 'seg' }, [16, 32, 64].map(n => h('button', { 'data-n': n, title: n + ' steps', onclick: () => Hist.edit('Pattern length', () => { const q = curPat(); q.len = n; for (const k in q.st) { const a = q.st[k]; while (a.length < n) a.push(0); a.length = Math.max(a.length, n); } }) }, String(n))));
   const vel = toggleBtn('Velocity', false, v => { RK.velMode = v; RK.dirty(); }, 'Show and draw how hard each step plays');
   const add = h('button', { class: 'btn small primary', title: 'Add a channel', onclick: e => addMenu(e.clientX, e.clientY) }, '+ Add channel');
-  const tools = h('div', { class: 'ptools' }, h('span', { class: 'lab' }, 'Steps'), lenBtns, vel, add,
-    h('span', { class: 'hint' }, 'Click a step to turn it on · right-click/drag to erase · shift-drag up/down: velocity · double-click a name for its instrument'));
+  const art = select([['', 'Normal']].concat(['acc', 'flam', 'roll', 'soft', 'stac', 'vib', 'slide', 'bend', 'fall'].map(id => [id, E.ART[id].g + ' ' + E.ART[id].n])), '', v => { RK.art = v; if (v) toast(E.ART[v].n + ': click steps to play them this way (click again for normal)', 2000); }, 'small');
+  art.title = 'Step style: pick Accent, Flam, Roll... then click steps';
+  const tools = h('div', { class: 'ptools' }, h('span', { class: 'lab' }, 'Steps'), lenBtns, vel, h('span', { class: 'lab' }, 'Style'), art, add,
+    h('span', { class: 'hint' }, 'Click a step to turn it on · right-click/drag to erase · shift-drag up/down: velocity · Style: accent, flam, roll... · double-click a name for its instrument'));
   const heads = h('div', { class: 'rk-heads' }), cv = h('canvas', { class: 'rk-cv' }), ov = h('canvas', { class: 'rk-ov' });
   const grid = h('div', { class: 'rk-grid' }, cv, ov);
   const drop = h('div', { class: 'rk-drop' }, 'Drop a sound here to add a channel');
@@ -31,7 +42,7 @@ function buildRack(root) {
 }
 function addMenu(x, y) {
   const quick = [['Kick', '808-kick'], ['Snare', '808-snare'], ['Clap', '808-clap'], ['Hi-hat', '808-closed-hat'], ['Open hat', '808-open-hat'], ['Piano', 'grand-piano'], ['Synth lead', 'saw-lead'], ['Pad', 'warm-pad'], ['808 bass', '808-bass'], ['Pluck', 'synth-pluck'], ['Strings', 'string-ensemble']];
-  menu(x, y, quick.map(([n, id]) => ({ t: n, f: () => addChannelFromPreset(id) })).concat([{ sep: 1 }, { t: 'More: pick any sound in the browser on the left', dis: true, f: () => {} }]));
+  menu(x, y, quick.map(([n, id]) => ({ t: n, f: () => addChannelFromPreset(id) })).concat([{ sep: 1 }, { t: 'A whole drum kit...', f: () => drumKitMenu(x, y) }, { sep: 1 }, { t: 'More: pick any sound in the browser on the left', dis: true, f: () => {} }]));
 }
 function rackSig() { return A.p.ch.map(c => [c.id, c.n, c.col, c.mix, c.p].join('|')).join(';') + '#' + A.p.mix.length; }
 // header rows are DOM (knobs); rebuilt only when channels are added/removed/renamed, otherwise values are updated in place
@@ -71,7 +82,7 @@ function routeMenu(x, y, chId) {
 }
 function channelMenu(x, y, chId) {
   const c = chById(chId), i = A.p.ch.indexOf(c);
-  const fill = n => Hist.edit('Fill steps', () => { const q = curPat(), a = q.st[c.id] = new Array(q.len).fill(0); for (let s = 0; s < q.len; s += n) a[s] = 100; delete q.nt[c.id]; });
+  const fill = n => Hist.edit('Fill steps', () => { const q = curPat(), a = q.st[c.id] = new Array(q.len).fill(0); for (let s = 0; s < q.len; s += n) a[s] = 100; delete q.nt[c.id]; if (q.sa) delete q.sa[c.id]; });
   menu(x, y, [
     { t: 'Piano roll', f: () => { A.ui.ch = c.id; showTab('roll'); } },
     { t: 'Instrument', f: () => { A.ui.ch = c.id; showTab('synth'); } },
@@ -79,15 +90,15 @@ function channelMenu(x, y, chId) {
     { t: 'Rename...', f: () => ask('Rename channel', c.n, v => Hist.edit('Rename channel', () => { c.n = v; })) },
     { t: 'Colour...', f: () => colorPick(c.col, col => Hist.edit('Channel colour', () => { c.col = col; })) },
     { t: 'Step note: ' + noteName(c.root) + '...', f: () => stepNoteDialog(c) },
-    { t: 'Clone', f: () => Hist.edit('Clone channel', () => { const n = E.clone(c); n.id = A.p.ch.reduce((m, x) => Math.max(m, x.id), 0) + 1; n.n = c.n + ' 2'; A.p.ch.splice(i + 1, 0, n); for (const q of A.p.pat) { if (q.st[c.id]) q.st[n.id] = q.st[c.id].slice(); if (q.nt[c.id]) q.nt[n.id] = E.clone(q.nt[c.id]); } A.ui.ch = n.id; }) },
+    { t: 'Clone', f: () => Hist.edit('Clone channel', () => { const n = E.clone(c); n.id = A.p.ch.reduce((m, x) => Math.max(m, x.id), 0) + 1; n.n = c.n + ' 2'; A.p.ch.splice(i + 1, 0, n); for (const q of A.p.pat) { if (q.st[c.id]) q.st[n.id] = q.st[c.id].slice(); if (q.sa && q.sa[c.id]) q.sa[n.id] = q.sa[c.id].slice(); if (q.nt[c.id]) q.nt[n.id] = E.clone(q.nt[c.id]); } A.ui.ch = n.id; }) },
     { t: 'Move up', dis: i === 0, f: () => Hist.edit('Move channel', () => { A.p.ch.splice(i, 1); A.p.ch.splice(i - 1, 0, c); }) },
     { t: 'Move down', dis: i === A.p.ch.length - 1, f: () => Hist.edit('Move channel', () => { A.p.ch.splice(i, 1); A.p.ch.splice(i + 1, 0, c); }) },
     { sep: 1 },
     { t: 'Fill every 2 steps', f: () => fill(2) }, { t: 'Fill every 4 steps', f: () => fill(4) }, { t: 'Fill every 8 steps', f: () => fill(8) },
-    { t: 'Clear steps and notes', f: () => Hist.edit('Clear channel', () => { const q = curPat(); delete q.st[c.id]; delete q.nt[c.id]; }) },
+    { t: 'Clear steps and notes', f: () => Hist.edit('Clear channel', () => { const q = curPat(); delete q.st[c.id]; delete q.nt[c.id]; if (q.sa) delete q.sa[c.id]; }) },
     { sep: 1 },
     { t: 'Delete channel', f: () => confirmBox('Delete "' + c.n + '"?', 'Its steps and notes in every pattern go too.', 'Delete', () => Hist.edit('Delete channel', () => {
-      A.p.ch = A.p.ch.filter(x => x !== c); for (const q of A.p.pat) { delete q.st[c.id]; delete q.nt[c.id]; } fixUi();
+      A.p.ch = A.p.ch.filter(x => x !== c); for (const q of A.p.pat) { delete q.st[c.id]; delete q.nt[c.id]; if (q.sa) delete q.sa[c.id]; } fixUi();
     })) }
   ]);
 }
@@ -123,7 +134,7 @@ function drawRack() {
       g.fillStyle = 'rgba(255,255,255,0.35)'; g.font = '10px system-ui, sans-serif'; g.fillText('piano roll →', G.W - 70, y + ROWH - 8);
       return;
     }
-    const st = q.st[c.id] || [];
+    const st = q.st[c.id] || [], sa = (q.sa && q.sa[c.id]) || [];
     for (let s = 0; s < q.len; s++) {
       const x = s * cw + 1, grp = Math.floor(s / beat) % 2, v = st[s] || 0;
       g.fillStyle = grp ? '#3a424c' : '#4a3a3e';
@@ -132,6 +143,12 @@ function drawRack() {
         g.fillStyle = c.col;
         if (RK.velMode) { const hh = (ROWH - 10) * v / 127; roundRect(g, x + 2, y + ROWH - 5 - hh, cw - 5, hh, 2); g.fill(); }
         else { g.globalAlpha = 0.45 + 0.55 * v / 127; roundRect(g, x + 2, y + 5, cw - 5, ROWH - 10, 3); g.fill(); g.globalAlpha = 1; }
+        const a = E.ART[sa[s]];
+        if (a) {
+          g.fillStyle = 'rgba(0,0,0,0.55)'; g.font = '900 ' + Math.min(15, cw * 0.7) + 'px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+          g.fillText(a.g, x + cw / 2 - 0.5, y + ROWH / 2 + 0.5); g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+          g.fillStyle = a.col; g.fillRect(x + 2, y + 5, cw - 5, 3);
+        }
       }
     }
   });
@@ -164,6 +181,8 @@ function rackDown(e) {
   while (st.length < q.len) st.push(0);
   if (e.shiftKey && st[cell.s] > 0) { RK.drag = { mode: 'vel', c, s: cell.s, y0: e.clientY, v0: st[cell.s] }; return; }
   if (RK.velMode && e.button === 0) { RK.drag = { mode: 'velpaint', c }; velPaint(cell); return; }
+  const curArt = q.sa && q.sa[c.id] && q.sa[c.id][cell.s];
+  if (RK.art && e.button === 0) { RK.drag = { mode: 'paint', c, on: true, art: st[cell.s] > 0 && curArt === RK.art ? '' : RK.art, done: new Set() }; paintStep(cell); return; }
   const on = e.button === 2 ? false : !(st[cell.s] > 0);
   RK.drag = { mode: 'paint', c, on, done: new Set() };
   paintStep(cell);
@@ -177,9 +196,11 @@ function velPaint(cell) {
 function paintStep(cell) {
   const d = RK.drag; if (cell.c !== d.c || cell.s < 0 || cell.s >= curPat().len || d.done.has(cell.s)) return;
   d.done.add(cell.s);
-  const st = curPat().st[d.c.id];
+  const q = curPat(), st = q.st[d.c.id];
   st[cell.s] = d.on ? (st[cell.s] > 0 ? st[cell.s] : 100) : 0;
-  if (d.on) A.eng.hit(d.c.id, d.c.root || 60, 0.8, 0.25);
+  if (d.art != null) setStepArt(q, d.c.id, cell.s, d.art);
+  else if (!d.on) setStepArt(q, d.c.id, cell.s, 0);
+  if (d.on) A.eng.hit(d.c.id, d.c.root || 60, 0.8, 0.25, d.art || (q.sa && q.sa[d.c.id] && q.sa[d.c.id][cell.s]) || '');
   changed();
 }
 function rackMove(e) {

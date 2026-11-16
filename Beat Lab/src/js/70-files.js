@@ -1,4 +1,4 @@
-// ===== Projects: open/new/rename/duplicate/delete, demos, import/export (.json), WAV export, help =====
+// ===== Projects: open/new/rename/duplicate/delete, demos, import/export (.json), WAV export, help, share codes, downloads =====
 function openProjectObj(p, keepHist) {
   if (A.playing) stopPlay();
   if (A.p) saveNow();
@@ -37,6 +37,7 @@ function projectsDialog() {
       h('button', { class: 'btn primary', onclick: () => { closeModal(); ask('New Studio project', 'New song', n => { openProjectObj(newStudioProject(n)); Store.save(A.p); }); } }, 'New Studio project'),
       h('button', { class: 'btn', onclick: () => { closeModal(); ask('New simple song', 'My song', n => { openProjectObj(newSimpleProject(n)); Store.save(A.p); }); } }, 'New simple song'),
       h('button', { class: 'btn', onclick: () => file.click() }, 'Import a project file...'), file),
+    codeField(),
     h('h4', null, 'Demo projects'), demos,
     h('h4', null, 'Your projects'), rows,
     h('p', { class: 'hint' }, 'Projects save as you work and sync to your account. Using ' + Math.round(used / 1024) + ' KB of 6 MB.'));
@@ -57,10 +58,11 @@ function importFile(f) {
   rd.readAsText(f);
 }
 // ---- WAV export
-async function exportWav(simple) {
+async function exportWav(simple, stem) {               // stem: 'drums' | 'melody' (only those channels)
   if (A.rendering) return;
   const isSimple = simple || A.p.mode === 'simple';
   let opts = { mode: 'song' }, proj = isSimple ? simpleToProject(A.p.simple, A.p.name) : A.p;
+  if (stem) { proj = stemProject(proj, stem); if (!proj) return toast(stem === 'drums' ? 'This song has no drums yet' : 'This song has only drums', 3000); }
   if (isSimple) opts = { mode: 'pat', pat: 1, loops: 2 };
   else if (!A.p.pl.cl.length) opts = { mode: 'pat', pat: A.ui.pat, loops: 4 };
   const go = async () => {
@@ -71,7 +73,7 @@ async function exportWav(simple) {
       const t0 = performance.now();
       const buf = await E.render(proj, Object.assign({}, opts, { onProgress: f => { $('i', bar).style.width = Math.round(f * 100) + '%'; txt.textContent = 'Rendering... ' + Math.round(f * 100) + '%'; } }));
       const st = E.bufferStats(buf); A.lastRender = st;
-      const wav = E.toWav(buf), fname = safeName(A.p.name) + '.wav', blob = new Blob([wav], { type: 'audio/wav' });
+      const wav = E.toWav(buf), fname = safeName(A.p.name) + (stem ? '_' + stem : '') + '.wav', blob = new Blob([wav], { type: 'audio/wav' });
       closeModal();
       // a click of its own: browsers may refuse a download that comes seconds after the original click
       modal('Your WAV is ready', h('p', null, fname + ': ' + fmtTime(buf.duration) + ', ' + (wav.byteLength / 1048576).toFixed(1) + ' MB, made in ' + ((performance.now() - t0) / 1000).toFixed(1) + ' s.'),
@@ -88,20 +90,102 @@ async function exportWav(simple) {
     setTimeout(go, 30);
   } }]);
 }
+function whatsNew() {
+  return h('div', { class: 'help' },
+    h('ul', null,
+      h('li', null, h('b', null, 'Layers'), ': in Simple mode, "+ Layer" stacks up to 4 instruments, each with its own notes, volume and mute (M). Click a layer to paint in it; the others show faintly in their colours. ⋯ doubles a layer with a second sound or copies its notes to a new layer. Open in Studio gives every layer its own channel.'),
+      h('li', null, h('b', null, 'More drums'), ': 8 drum rows (kick, snare, closed and open hat, clap, tom, percussion, crash) and new kits: Rock, World percussion and Orchestra (timpani, snare roll, cymbals, gong). In the Studio, "+ New drum kit" adds a whole kit at once and the browser has a Drums & Percussion section.'),
+      h('li', null, h('b', null, 'Articulations'), ': play notes differently: Accent (>), Staccato (•), Slide (/), Vibrato (~), Soft (p), Bend up, Fall, Flam and Roll. Simple mode: pick a Brush and click notes. Piano roll: select notes and pick a Style. Channel rack: pick a Style and click steps.'),
+      h('li', null, h('b', null, 'Share and download'), ': Share gives your song a 6-digit code (and can post it in #music); type a friend\'s code into Projects, "Open a code", to get your own copy. Download saves the song as a WAV, just the drums or just the melody, or the project file.')));
+}
 function helpDialog() {
   const body = h('div', { class: 'help' },
+    h('h4', null, 'New in version ' + BL_VERSION), whatsNew(),
     h('h4', null, 'Simple mode'),
-    h('p', null, 'Click squares to add notes, click again to remove them, drag to paint. The top part is the tune (higher rows are higher notes), the bottom rows are drums. Pick an instrument and a drum kit with the big buttons, then press Play. Try "Surprise me!" or a song to start from. When you want more, press "Open in Studio".'),
+    h('p', null, 'Click squares to add notes, click again to remove them, drag to paint. The top part is the tune (higher rows are higher notes), the bottom rows are drums. Pick an instrument and a drum kit with the big buttons, then press Play. Try "Surprise me!" or a song to start from. "+ Layer" adds another instrument on top; the Brush buttons (Accent, Staccato, Slide...) change how the notes you click are played. When you want more, press "Open in Studio".'),
     h('h4', null, 'Studio mode'),
     h('ul', null,
       h('li', null, h('b', null, 'Channel rack'), ': every instrument is a channel. Click the steps to make a beat. Double-click a channel name to edit its sound. Drag a sound from the browser onto a channel to swap it.'),
-      h('li', null, h('b', null, 'Piano roll'), ': draw notes for the selected channel. Drag to move, drag the right end to resize, right-click to delete. Ctrl-drag selects; Ctrl+C / Ctrl+V / Ctrl+D copy, paste and duplicate; arrow keys move (Shift: an octave). The Chord tool stamps whole chords.'),
+      h('li', null, h('b', null, 'Piano roll'), ': draw notes for the selected channel. Drag to move, drag the right end to resize, right-click to delete. Ctrl-drag selects; Ctrl+C / Ctrl+V / Ctrl+D copy, paste and duplicate; arrow keys move (Shift: an octave). The Chord tool stamps whole chords. Style sets the articulation of the selected notes (and of new ones); each note shows its sign.'),
       h('li', null, h('b', null, 'Patterns and Playlist'), ': a pattern is a loop of steps and notes. Put patterns on the playlist to arrange the song. Drag in the ruler to loop a part. Switch between Pattern and Song at the top.'),
       h('li', null, h('b', null, 'Mixer'), ': each channel plays into a mixer track (the number next to its name). Add effects (EQ, compressor, reverb, delay...) to tracks. The master has a limiter so nothing clips.'),
       h('li', null, h('b', null, 'Recording'), ': choose a channel, press the red button (or Ctrl+Enter), and play with your computer keyboard (Z S X D C V... is the lower octave, Q 2 W 3 E... the upper one, [ and ] change octave) or a MIDI keyboard.')),
     h('h4', null, 'Shortcuts'),
     h('p', null, 'Space play/stop · Ctrl+Z undo · Ctrl+Y redo · Ctrl+S save · Delete removes the selection · F5-F9 or Alt+1-5 switch views · Ctrl+mouse wheel zooms, Shift+wheel scrolls sideways, Alt+wheel changes row height. Shift+T opens the chat.'));
-  modal('How Beat Lab works', body, [{ t: 'Got it', primary: true }], { wide: true });
+  modal('How Beat Lab works (version ' + BL_VERSION + ')', body, [{ t: 'Got it', primary: true }], { wide: true });
+}
+
+// ---- sharing with a 6-digit code (2026-11-16). The launcher's account layer stores the song: parent.HGGrapevine.songs
+// { share({ name, data, post }) -> {ok, code, err}, get(code) -> {ok, name, by, at, data, err} }. Missing when Beat Lab
+// runs on its own or the player is signed out: then sharing says so and everything else works.
+const SHARE_MAX = 200 * 1024;
+function songsApi() { try { const g = parent.HGGrapevine; return g && g.songs && typeof g.songs.share === 'function' ? g.songs : null; } catch (e) { return null; } }
+function shareDialog() {
+  const api = songsApi();
+  if (!api) return modal('Share this song', h('div', null, h('p', null, 'Sign in to the launcher to share. Shared songs get a 6-digit code your friends type into Beat Lab to hear (and remix) your song.'), codeField()), [{ t: 'OK' }]);
+  saveNow();
+  const data = JSON.stringify(A.p);
+  const big = data.length > SHARE_MAX;
+  const post = h('input', { type: 'checkbox', id: 'sh-post' });
+  const out = h('div', { class: 'sh-out' });
+  const go = h('button', { class: 'btn primary', onclick: async () => {
+    go.disabled = true; out.innerHTML = ''; out.appendChild(h('p', { class: 'hint' }, 'Sharing...'));
+    let r;
+    try { r = await api.share({ name: A.p.name, data, post: post.checked }); } catch (e) { r = { ok: false, err: e && e.message || 'Could not reach the launcher' }; }
+    out.innerHTML = '';
+    if (!r || !r.ok || !r.code) { go.disabled = false; out.appendChild(h('p', { class: 'sh-err' }, (r && r.err) || 'Sharing did not work. Try again in a minute.')); return; }
+    A.lastShare = r.code;
+    const copy = h('button', { class: 'btn', onclick: () => { try { navigator.clipboard.writeText(r.code); toast('Copied ' + r.code); } catch (e) { toast('Copy it by hand: ' + r.code); } } }, 'Copy');
+    out.append(h('div', { class: 'sh-code', id: 'sh-code' }, r.code), h('div', { class: 'sh-row' }, copy, h('span', { class: 'hint' }, post.checked ? 'Posted in #music too.' : 'Give this code to a friend: they type it into Beat Lab (Projects, "Open a code").')));
+  } }, 'Get a code');
+  modal('Share "' + A.p.name + '"', h('div', null,
+    h('p', null, 'Get a 6-digit code for this song. Anyone with the code can open their own copy (yours stays yours).'),
+    big ? h('p', { class: 'sh-err' }, 'This song is ' + Math.round(data.length / 1024) + ' KB: songs over 200 KB are too big to share. Try fewer patterns or a shorter song.') : null,
+    h('label', { class: 'sh-row' }, post, ' Post it in #music (everyone sees the name and the code)'),
+    h('div', { class: 'sh-row' }, big ? null : go), out,
+    h('h4', null, 'Got a code from a friend?'), codeField()), [{ t: 'Close' }]);
+}
+// "Open a code": a small field; opening loads the song as a NEW project named "<name> (by <player>)"
+function codeField() {
+  const inp = h('input', { type: 'text', class: 'txt sh-in', inputmode: 'numeric', maxlength: 6, placeholder: '123456', 'aria-label': 'Song code' });
+  const btn = h('button', { class: 'btn', onclick: () => openSharedCode(inp.value) }, 'Open');
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') openSharedCode(inp.value); });
+  return h('div', { class: 'sh-row codefield' }, h('span', { class: 'lab' }, 'Open a code'), inp, btn);
+}
+async function openSharedCode(code) {
+  code = String(code || '').replace(/\D/g, '');
+  if (code.length !== 6) return toast('A song code has 6 digits');
+  const api = songsApi();
+  if (!api) return toast('Sign in to the launcher to open shared songs', 3500);
+  let r;
+  try { r = await api.get(code); } catch (e) { r = { ok: false, err: e && e.message }; }
+  if (!r || !r.ok || !r.data) return toast((r && r.err) || 'No song has that code', 3500);
+  let p;
+  try {
+    const o = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+    if (!o || typeof o !== 'object' || !(Array.isArray(o.ch) || o.simple)) throw new Error('not a Beat Lab song');
+    p = o.mode === 'simple' ? { mode: 'simple', simple: o.simple } : Object.assign(E.fromSave(o), { mode: 'studio' });
+  } catch (e) { return toast('That code\'s song could not be opened (' + e.message + ')', 4000); }
+  p.id = uid(); p.name = (r.name || 'Shared song') + (r.by ? ' (by ' + r.by + ')' : '');
+  closeModal(); openProjectObj(p); Store.save(A.p);
+  modal('Opened "' + A.p.name + '"', h('p', null, 'This is your own copy: change it as much as you like. Press Play to hear it.'),
+    [{ t: 'Download...', f: () => { setTimeout(downloadDialog, 30); } }, { t: 'Play', primary: true, f: () => { A.eng.audio(); if (!A.playing) togglePlay(); } }]);
+}
+// ---- downloads: the song as audio, just the drums or the melody, or the project file
+function downloadDialog() {
+  const row = (t, d, f) => h('button', { class: 'dl-opt', onclick: () => { closeModal(); setTimeout(f, 30); } }, h('b', null, t), h('span', null, d));
+  modal('Download "' + A.p.name + '"', h('div', { class: 'dl-list' },
+    row('Song as audio (WAV)', 'A sound file you can play anywhere or put in a video.', () => exportWav(false)),
+    row('Just the drums (WAV)', 'Only the drum and percussion channels.', () => exportWav(false, 'drums')),
+    row('Just the melody (WAV)', 'Everything except the drums.', () => exportWav(false, 'melody')),
+    row('Project file (.json)', 'Open it later in Beat Lab (Projects, "Import") or give it to a friend.', () => exportProject(A.p))), [{ t: 'Close' }]);
+}
+// mute every channel that is not in the stem (drum channels = drum voices)
+function stemProject(proj, stem) {
+  const p = E.clone(proj); let n = 0;
+  const used = id => p.pat.some(q => (q.st[id] || []).some(v => v > 0) || (q.nt[id] || []).length);
+  for (const c of p.ch) { const drum = c.s && c.s.k === 'drm', keep = stem === 'drums' ? drum : !drum; c.solo = 0; if (!keep) c.mute = 1; else if (!c.mute && used(c.id)) n++; }
+  return n ? p : null;
 }
 
 // ---- your song as the launcher's music: the launcher plays the project named in beatlab_launcher on its own pages, with

@@ -254,6 +254,17 @@
   kit('Percussion', 'Perc', [['Conga High', d('conga', 5), 0.7], ['Conga Low', d('conga', 0), 0.7], ['Bongo High', d('bongo', 3), 0.65], ['Bongo Low', d('bongo', -3), 0.65],
     ['Shaker', d('shaker'), 0.4], ['Tambourine', d('tamb'), 0.45], ['Cowbell', d('cowbell', 0, 1, 0.5), 0.5], ['Woodblock', d('block'), 0.6], ['Triangle', d('triangle'), 0.4],
     ['Agogo', d('agogo'), 0.5], ['Claves', d('clave'), 0.5], ['Timpani', d('timpani'), 0.9], ['Finger Snap', d('snap'), 0.6]]);
+  // 2026-11-16: two more kits (Simple mode's Rock and Orchestra), and the drums some kits lacked for 8 Simple lanes
+  kit('Drums: Rock', 'Rock', [['Kick', d('kick', 4, 0.7, 0.75, 0.85, { drive: 0.25 }), 1], ['Snare', d('snare', 4, 1.2, 0.85, 0.9, { drive: 0.2 }), 0.8],
+    ['Closed Hat', d('hat', -1, 1.3, 0.85), 0.4, 1], ['Open Hat', d('ohat', -1, 1.4, 0.85), 0.4, 1], ['Ride', d('ride', -2, 1.4, 0.75), 0.42], ['Crash', d('cymbal', -1, 1.4, 0.85), 0.5],
+    ['Rack Tom', d('tom', 2, 1.1, 0.5, 0.7, { drive: 0.15 }), 0.85], ['Floor Tom', d('tom', -6, 1.3, 0.5, 0.7, { drive: 0.15 }), 0.9], ['Rim', d('rim', 0), 0.6], ['Cowbell', d('cowbell', -1), 0.5]]);
+  kit('Drums: Orchestral', 'Orch', [['Bass Drum', d('kick', -9, 3, 0.15, 0.08), 1], ['Snare', d('snare', 2, 0.9, 0.75, 0.95), 0.75], ['Snare Roll', d('sroll', 0, 1, 0.6, 0.5), 0.6],
+    ['Cymbals', d('cymbal', -2, 1.8, 0.9), 0.55], ['Timpani Low', d('timpani', -5, 1.2), 0.95], ['Timpani High', d('timpani', 2, 1.1), 0.9], ['Gong', d('gong', 0, 1), 0.8],
+    ['Triangle', d('triangle', 0, 1.4), 0.4], ['Suspended Cymbal', d('revcym', 0, 1.2), 0.5]]);
+  kit('Drums: Lo-fi', 'Lo-fi', [['Tom', d('tom', -2, 1, 0.4, 0.5, { crush: 0.5 }), 0.75], ['Crash', d('cymbal', -3, 1, 0.5, 0.5, { crush: 0.5 }), 0.4]]);
+  kit('Drums: Trap', 'Trap', [['Tom', d('tom', -4, 1.6, 0.4, 0.4, { drive: 0.2 }), 0.85], ['Crash', d('cymbal', 1, 1.1, 0.6), 0.45]]);
+  kit('Drums: Chip', 'Chip', [['Clap', d('chipsnare', 5, 0.6), 0.7], ['Blip', d('chipkick', 24, 0.5), 0.6], ['Crash', d('chiphat', -5, 8), 0.4]]);
+  kit('Percussion', 'Perc', [['Rainstick', d('shaker', -5, 6, 0.3, 0.1), 0.35]]);
 
   const slug = s => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const seen = new Set();

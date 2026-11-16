@@ -1,5 +1,6 @@
 // ===== Beat Lab app: shared state and small DOM helpers =====
 const E = BeatLabEngine, PPQ = E.PPQ, STEP = E.STEP;
+const BL_VERSION = '1.1';                         // shown in Help; bump with every change players should hear about
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;

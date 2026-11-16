@@ -2,7 +2,11 @@
 const KW = 58, RULH = 20, VELH = 76;
 const CHORDS = { 'Major': [0, 4, 7], 'Minor': [0, 3, 7], 'Scale triad': 'tri', 'Scale 7th': 'sev', '7': [0, 4, 7, 10], 'Maj7': [0, 4, 7, 11], 'Min7': [0, 3, 7, 10], 'Min9': [0, 3, 7, 10, 14], 'Maj9': [0, 4, 7, 11, 14], 'Add9': [0, 4, 7, 14], 'Sus2': [0, 2, 7], 'Sus4': [0, 5, 7], 'Dim': [0, 3, 6], 'Aug': [0, 4, 8], '6': [0, 4, 7, 9], 'Power': [0, 7, 12], 'Octave': [0, 12] };
 const SNAPS = [['48', '1 beat'], ['24', '1/2 beat'], ['12', '1/4 beat (step)'], ['6', '1/8 beat'], ['3', '1/16 beat'], ['16', '1/3 beat (triplet)'], ['8', '1/6 beat (triplet)'], ['bar', 'Bar'], ['1', 'None']];
-const RL = { ppt: 2, rowH: 14, sx: 0, sy: 0, tool: 'draw', snap: '12', lastLen: 12, sel: new Set(), clip: null, chord: 'Major', inv: 0, lock: false, drag: null, hover: null, init: false };
+// note articulation (n[4]): RL.art is used for new notes; picking one in the toolbar also sets it on the selected notes
+const rollNote = (t, len, m, vel) => RL.art ? [t, len, m, vel, RL.art] : [t, len, m, vel];
+const shiftNote = (n, dt) => { const m = n.slice(); m[0] += dt; return m; };
+function setNoteArt(list, a) { for (const n of list) { n.length = Math.min(n.length, 4); if (a) n[4] = a; } }
+const RL = { art: '', ppt: 2, rowH: 14, sx: 0, sy: 0, tool: 'draw', snap: '12', lastLen: 12, sel: new Set(), clip: null, chord: 'Major', inv: 0, lock: false, drag: null, hover: null, init: false };
 function snapTicks() { return RL.snap === 'bar' ? E.barTicks(A.p) : +RL.snap; }
 function buildRoll(root) {
   const toolBtns = h('div', { class: 'seg tools' }, [['draw', 'Draw', 'Click to add, drag to move, drag the end to resize, right-click to delete'], ['paint', 'Paint', 'Drag to paint a run of notes'], ['select', 'Select', 'Drag a box to select'], ['erase', 'Erase', 'Click or drag over notes to delete them'], ['chord', 'Chord', 'Click to stamp a whole chord']]
@@ -17,13 +21,19 @@ function buildRoll(root) {
   const scale = select(Object.keys(SCALES).map(k => [k, SCALES[k].n]), 'minor', v => Hist.edit('Scale', () => { A.p.scale = v; }), 'small');
   const lock = toggleBtn('Scale lock', false, v => { RL.lock = v; }, 'New and moved notes stay in the scale');
   const ghost = toggleBtn('Ghosts', true, v => { A.set.ghosts = v ? 1 : 0; Store.saveSet(); markViews(); }, 'Show other channels\' notes faintly');
+  const art = select([['', 'Normal']].concat(E.ARTS.map(a => [a.id, a.g + ' ' + a.n])), '', v => {
+    RL.art = v; const ns = rollNotes() || [], sel = ns.filter(n => RL.sel.has(n));
+    if (sel.length) { Hist.edit('Articulation', () => setNoteArt(sel, v)); toast((v ? E.ART[v].n : 'Normal') + ' on ' + sel.length + ' note' + (sel.length > 1 ? 's' : ''), 1200); }
+    else toast('New notes: ' + (v ? E.ART[v].n : 'Normal') + ' (select notes first to change them)', 1600);
+  }, 'small');
+  art.title = 'Articulation: how notes play (accent, staccato, slide, vibrato...). Applies to the selected notes and to new ones';
   const quant = h('button', { class: 'btn small', title: 'Snap the selected notes (or all) to the grid', onclick: quantize }, 'Quantize');
   const zoom = h('div', { class: 'seg' }, h('button', { title: 'Zoom out', onclick: () => rollZoom(0.8) }, '−'), h('button', { title: 'Zoom in', onclick: () => rollZoom(1.25) }, '+'));
-  const tools = h('div', { class: 'ptools' }, chSel, toolBtns, h('span', { class: 'lab' }, 'Snap'), snap, chord, inv, h('span', { class: 'lab' }, 'Scale'), key, scale, lock, ghost, quant, zoom);
+  const tools = h('div', { class: 'ptools' }, chSel, toolBtns, h('span', { class: 'lab' }, 'Snap'), snap, chord, inv, h('span', { class: 'lab' }, 'Scale'), key, scale, lock, ghost, h('span', { class: 'lab' }, 'Style'), art, quant, zoom);
   const cv = h('canvas', { class: 'rl-cv' }), ov = h('canvas', { class: 'rl-ov' });
   const box = h('div', { class: 'rl-box' }, cv, ov);
   root.append(tools, box);
-  Object.assign(RL, { root, cv, ov, box, toolBtns, chSel, key, scale, ghost, lock, snapSel: snap });
+  Object.assign(RL, { root, cv, ov, box, toolBtns, chSel, key, scale, ghost, lock, snapSel: snap, artSel: art });
   cv.addEventListener('pointerdown', rollDown);
   cv.addEventListener('pointermove', rollMove);
   cv.addEventListener('pointerup', rollUp); cv.addEventListener('pointercancel', rollUp);
@@ -100,7 +110,12 @@ function drawRoll() {
     g.fillStyle = col; g.globalAlpha = 0.55 + 0.45 * n[3] / 127;
     roundRect(g, x, y + 1, w, RL.rowH - 2, 3); g.fill(); g.globalAlpha = 1;
     g.strokeStyle = sel ? '#ffffff' : 'rgba(0,0,0,0.55)'; g.lineWidth = sel ? 2 : 1; g.stroke();
-    if (w > 26 && RL.rowH >= 11) { g.fillStyle = 'rgba(0,0,0,0.7)'; g.fillText(noteName(n[2]), x + 4, y + RL.rowH / 2 + 0.5); }
+    const ar = n[4] && E.ART[n[4]];
+    if (w > (ar ? 40 : 26) && RL.rowH >= 11) { g.fillStyle = 'rgba(0,0,0,0.7)'; g.fillText(noteName(n[2]), x + 4, y + RL.rowH / 2 + 0.5); }
+    if (ar) {                                  // articulation marker: a stripe in its colour and its sign at the end
+      g.fillStyle = ar.col; g.fillRect(x + 1, y + 1, w - 1, Math.min(3, RL.rowH / 4));
+      if (w > 9) { g.font = '900 ' + Math.max(9, Math.min(13, RL.rowH - 2)) + 'px system-ui, sans-serif'; g.fillStyle = '#fff'; g.textAlign = 'right'; g.fillText(ar.g, x + w - 2, y + RL.rowH / 2 + 0.5); g.textAlign = 'left'; g.font = '600 10px system-ui, sans-serif'; }
+    }
   }
   // the box being dragged
   const d = RL.drag;
@@ -214,12 +229,12 @@ function rollDown(e) {
   if (RL.tool === 'select' || e.ctrlKey) { RL.sel.clear(); RL.drag = { mode: 'box', x0: p.x, y0: p.y, x1: p.x, y1: p.y }; Hist.cancel(); return; }
   const t = Math.max(0, Math.floor(p.t / snap) * snap);
   if (RL.tool === 'chord') {
-    const made = chordNotes(scaleSnap(p.m)).map(m => [t, RL.lastLen, m, 100]);
+    const made = chordNotes(scaleSnap(p.m)).map(m => rollNote(t, RL.lastLen, m, 100));
     ns.push(...made); RL.sel = new Set(made);
     RL.drag = { mode: 'move', hit: made[0], group: made, orig: made.map(n => n.slice()), t0: p.t, m0: p.m };
     made.forEach(n => A.eng.hit(c.id, n[2], 0.75, 0.4));
   } else {
-    const n = [t, RL.lastLen, scaleSnap(p.m), 100];
+    const n = rollNote(t, RL.lastLen, scaleSnap(p.m), 100);
     ns.push(n); RL.sel = new Set([n]);
     RL.drag = RL.tool === 'paint' ? { mode: 'paint', m: n[2], done: new Set([t]) } : { mode: 'move', hit: n, group: [n], orig: [n.slice()], t0: p.t, m0: p.m, fresh: true };
     audition(n[2]);
@@ -256,7 +271,7 @@ function rollMove(e) {
   }
   if (d.mode === 'paint') {
     const t = Math.max(0, Math.floor(p.t / snap) * snap);
-    if (!d.done.has(t)) { d.done.add(t); if (!ns.some(n => n[0] === t && n[2] === d.m)) { ns.push([t, RL.lastLen, d.m, 100]); changed(); } }
+    if (!d.done.has(t)) { d.done.add(t); if (!ns.some(n => n[0] === t && n[2] === d.m)) { ns.push(rollNote(t, RL.lastLen, d.m, 100)); changed(); } }
     return;
   }
   if (d.mode === 'move') {
@@ -308,7 +323,7 @@ function rollKey(e) {
   if (ctrl && (k === 'c' || k === 'C' || k === 'x' || k === 'X')) {
     if (!sel.length) return true;
     const t0 = Math.min(...sel.map(n => n[0])), end = Math.max(...sel.map(n => n[0] + n[1]));
-    RL.clip = { notes: sel.map(n => [n[0] - t0, n[1], n[2], n[3]]), span: Math.ceil((end - t0) / E.barTicks(A.p)) * E.barTicks(A.p) || E.barTicks(A.p), from: t0 };
+    RL.clip = { notes: sel.map(n => shiftNote(n, -t0)), span: Math.ceil((end - t0) / E.barTicks(A.p)) * E.barTicks(A.p) || E.barTicks(A.p), from: t0 };
     if (k === 'x' || k === 'X') Hist.edit('Cut notes', () => delNotes(sel)); else toast('Copied ' + sel.length + ' notes', 1000);
     return true;
   }
@@ -316,13 +331,13 @@ function rollKey(e) {
     if (!RL.clip) return true;
     const at = sel.length ? Math.ceil(Math.max(...sel.map(n => n[0] + n[1])) / snap) * snap : RL.clip.from;
     let made;
-    Hist.edit('Paste notes', () => { made = RL.clip.notes.map(n => [n[0] + at, n[1], n[2], n[3]]); rollNotes().push(...made); RL.sel = new Set(made); extendPattern(); });
+    Hist.edit('Paste notes', () => { made = RL.clip.notes.map(n => shiftNote(n, at)); rollNotes().push(...made); RL.sel = new Set(made); extendPattern(); });
     return true;
   }
   if (ctrl && (k === 'd' || k === 'D')) {
     if (!sel.length) return true;
     const t0 = Math.min(...sel.map(n => n[0])), end = Math.max(...sel.map(n => n[0] + n[1])), bar = E.barTicks(A.p), span = Math.ceil((end - t0) / bar) * bar || bar;
-    Hist.edit('Duplicate notes', () => { const made = sel.map(n => [n[0] + span, n[1], n[2], n[3]]); rollNotes().push(...made); RL.sel = new Set(made); extendPattern(); });
+    Hist.edit('Duplicate notes', () => { const made = sel.map(n => shiftNote(n, span)); rollNotes().push(...made); RL.sel = new Set(made); extendPattern(); });
     return true;
   }
   if (sel.length && (k === 'ArrowUp' || k === 'ArrowDown')) {

@@ -6,7 +6,8 @@ function buildAppBar() {
   bar.append(h('div', { class: 'logo' }, h('i', { class: 'lg' }), h('span', null, 'Beat', h('b', null, 'Lab'))), name,
     h('button', { class: 'btn small', title: 'Open, start or import a project, or open a demo', onclick: projectsDialog }, 'Projects'),
     h('button', { class: 'btn small', title: 'Save now (Ctrl+S); Beat Lab also saves as you go', onclick: () => { if (saveNow()) toast('Saved'); } }, 'Save'),
-    h('button', { class: 'btn small', title: 'Download this project as a file', onclick: () => exportProject(A.p) }, 'Export'),
+    h('button', { class: 'btn small', title: 'Share this song with a 6-digit code', onclick: () => shareDialog() }, 'Share'),
+    h('button', { class: 'btn small', title: 'Download the song as audio (WAV), just the drums or melody, or the project file', onclick: () => downloadDialog() }, 'Download'),
     h('div', { class: 'spacer' }), seg, h('button', { class: 'btn small', title: 'How it works', onclick: helpDialog }, 'Help'));
   A.appbar = { name, seg };
 }
@@ -18,7 +19,7 @@ function refreshAppBar() {
 function switchMode(target) {
   if (target === A.p.mode) return;
   if (target === 'studio') {
-    const empty = !A.p.simple.mel.length && !A.p.simple.drm.length;
+    const empty = A.p.simple.ly.every(L => !L.mel.length) && !A.p.simple.drm.length;
     if (empty) { const p = newStudioProject('New song'); saveNow(); openProjectObj(p); Store.save(A.p); return; }
     confirmBox('Open in the Studio?', 'Your song becomes a full Studio project (a copy: this simple song stays saved too).', 'Open in Studio', openInStudio);
     return;
@@ -92,6 +93,10 @@ function boot() {
   document.addEventListener('pointerdown', wake, { capture: true });
   document.addEventListener('keydown', wake, { capture: true });
   requestAnimationFrame(frame);
+  if (A.set.ver !== BL_VERSION) {                // a returning player gets What's New once per version
+    if (A.set.seenHelp) setTimeout(() => modal('New in Beat Lab ' + BL_VERSION, whatsNew(), [{ t: 'Help' , f: () => { setTimeout(helpDialog, 30); } }, { t: 'Let\'s go', primary: true }], { wide: true }), 500);
+    A.set.ver = BL_VERSION; Store.saveSet();
+  }
   if (!A.set.seenHelp && A.p.mode === 'simple') { A.set.seenHelp = 1; Store.saveSet(); setTimeout(() => toast('Click the grid to add notes, then press Play. Try "Surprise me!" for a quick start.', 5000), 600); }
 }
 
@@ -110,7 +115,7 @@ window.__beatlab = {
   step(sec) { A.eng.step(sec || 1); return A.eng.stats.notes; },
   counts() {
     const p = A.p, out = { scheduled: A.eng.stats.notes, voices: A.eng.stats.voices };
-    if (p.mode === 'simple') return Object.assign(out, { melody: p.simple.mel.length, drums: p.simple.drm.length, channels: SP ? SP.ch.length : 0 });
+    if (p.mode === 'simple') return Object.assign(out, { melody: p.simple.ly.reduce((n, L) => n + L.mel.length, 0), layers: p.simple.ly.length, drums: p.simple.drm.length, channels: SP ? SP.ch.length : 0 });
     let notes = 0, steps = 0; for (const q of p.pat) { for (const k in q.nt) notes += q.nt[k].length; for (const k in q.st) steps += q.st[k].filter(v => v > 0).length; }
     return Object.assign(out, { channels: p.ch.length, patterns: p.pat.length, notes, steps, clips: p.pl.cl.length, mixerFx: p.mix.reduce((n, m) => n + m.fx.length, 0) });
   },
@@ -119,6 +124,7 @@ window.__beatlab = {
   openInStudio() { openInStudio(); return A.p.mode; },
   tab(t) { showTab(t); },
   async render(o) { const proj = A.p.mode === 'simple' ? simpleToProject(A.p.simple, A.p.name) : A.p; const buf = await E.render(proj, o || (A.p.mode === 'simple' ? { mode: 'pat', pat: 1 } : { mode: 'song' })); return E.bufferStats(buf); },
+  simpleProject() { return SP; }, stemProject,
   presets() { return { total: E.PRESETS.length, categories: E.CATEGORIES.length, drums: E.PRESETS.filter(x => x.p.k === 'drm').length }; }
 };
 boot();
