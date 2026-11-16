@@ -1,5 +1,6 @@
 // Beat Lab browser test: both modes open, demos play, editing, undo/redo, save/load, WAV render, simple -> studio,
-// layers, 8 drum lanes and kits, articulations (rendered with and without), old simple songs, share codes, downloads.
+// layers, 8 drum lanes and kits, articulations (rendered with and without), old simple songs, share codes, downloads,
+// tutorials (every lesson driven step by step, Skip/Esc, first-time offers, players' songs untouched, the ? helper).
 //   NODE_PATH=/opt/node22/lib/node_modules node "Beat Lab/tools/test.mjs" [--shots]
 // Serves the repo itself on a free port (localhost: no licence gate). --shots saves two layout screenshots to /tmp.
 import { chromium } from 'playwright';
@@ -29,6 +30,9 @@ try {
   await page.mouse.click(600, 400);                                        // a user gesture: audio may start
   let st = await ev(() => window.__beatlab.state);
   ok(st.mode === 'simple', 'opens in simple mode for a new player', st.mode);
+  await page.locator('#tut-offer').waitFor({ timeout: 3000 }).catch(() => {});
+  ok(/Simple mode in 1 minute/.test(await page.locator('#tut-offer').innerText().catch(() => '')), 'tutorials: a first-time player is offered "Simple mode in 1 minute"');
+  await page.locator('#tut-offer button', { hasText: 'No thanks' }).click();
   const pr = await ev(() => window.__beatlab.presets());
   ok(pr.total >= 150 && pr.categories >= 15, 'preset library is large and sorted into categories', pr);
 
@@ -65,6 +69,10 @@ try {
   st = await ev(() => window.__beatlab.state);
   c = await ev(() => window.__beatlab.counts());
   ok(st.mode === 'studio' && c.channels === before.channels && c.notes + c.steps === before.melody + before.drums, 'Open in Studio makes a full project with every note', { st: st.mode, c, before });
+  await page.locator('#tut-offer').waitFor({ timeout: 3000 }).catch(() => {});
+  ok(/Take the 2-minute tour\?/.test(await page.locator('#tut-offer').innerText().catch(() => '')), 'tutorials: the first time in the Studio offers the 2-minute tour');
+  await page.locator('#tut-offer button', { hasText: 'No thanks, I know studios' }).click();
+  ok(await ev(() => !document.querySelector('#tut-offer') && window.__beatlab.app.set.seenStudio === 1), 'tutorials: "No thanks" closes the offer and is remembered');
 
   // ==== 2026-11-16: layers, 8 drum lanes and new kits, articulations ====
   // ---- layers: add from the UI, paint in the new one, mute, double, Open in Studio gives a channel per layer
@@ -90,6 +98,8 @@ try {
   await ev(() => window.__beatlab.openInStudio());
   c = await ev(() => ({ st: window.__beatlab.state.mode, ch: window.__beatlab.project.ch.map(x => x.n + (x.mute ? '(m)' : '')) }));
   ok(c.st === 'studio' && c.ch.length === 11 && c.ch.filter(n => /\(m\)/.test(n)).length === 1, 'layers: Open in Studio gives each layer (and the double) its own channel', c.ch.slice(0, 4));
+  await page.waitForTimeout(700);
+  ok(await ev(() => !document.querySelector('#tut-offer')), 'tutorials: the Studio tour is offered only once');
 
   // ---- songs saved before layers (one instrument, 4 drum lanes) migrate and play exactly as before
   const fixture = JSON.parse(fs.readFileSync(path.join(ROOT, 'Beat Lab/tools/simple-v1.json'), 'utf8'));
@@ -417,6 +427,227 @@ try {
   ok(/10 songs today/.test(await page.locator('.sh-err').innerText()), 'share: a refusal (daily limit) is shown');
   await page.locator('.mbox button', { hasText: 'Close' }).click();
   await ev(() => { delete window.HGGrapevine; });
+
+  { // ==== 1.2 (2026-11-16): tutorials. Each lesson is driven by doing what each step asks, through the real UI ====
+  const T = () => ev(() => window.__beatlab.tut.state);
+  const xy = (k, a, b) => ev(([k, a, b]) => window.__beatlab.tut.xy(k, a, b), [k, a, b]);
+  const clickAt = async (k, a, b) => { const p = await xy(k, a, b); await page.mouse.click(p.x, p.y); };
+  const dragFrom = async (p, dx, dy) => { await page.mouse.move(p.x, p.y); await page.mouse.down(); await page.mouse.move(p.x + dx / 2, p.y + dy / 2, { steps: 3 }); await page.mouse.move(p.x + dx, p.y + dy, { steps: 3 }); await page.mouse.up(); };
+  const dragEl = async (loc, dx, dy) => { const b = await loc.boundingBox(); await dragFrom({ x: b.x + b.width / 2, y: b.y + b.height / 2 }, dx, dy); };
+  const bub = t => page.locator('#tut .tut-bubble button', { hasText: t });
+  const next = () => page.locator('#tut .tut-bubble .tut-btns button.primary').click();
+  const fin = () => page.waitForFunction(() => window.__beatlab.tut.state.finale, null, { timeout: 5000 }).catch(() => {});
+  const reach = async (n, name) => {                       // the lesson moves on by itself once the step is done
+    await page.waitForFunction(n => { const s = window.__beatlab.tut.state; return s.active && s.step >= n; }, n, { timeout: 5000 }).catch(() => {});
+    const s = await T(); ok(s.step === n, name, { step: s.step, title: s.title, prog: s.prog });
+  };
+  const savedSongs = () => ev(() => { const o = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('beatlab_p_')) o[k] = localStorage.getItem(k); } return o; });
+  // the player's own song: a Studio project with an edit in its undo history
+  await ev(() => { const b = window.__beatlab; b.newStudio(); b.Hist.edit('Name', () => { b.project.name = 'My own beat'; }); b.save(); });
+  const mine = await ev(() => ({ id: window.__beatlab.project.id, undo: window.__beatlab.state.undo }));
+  const before0 = await savedSongs();
+  const isMine = async name => { const s = await ev(() => ({ id: window.__beatlab.project.id, mode: window.__beatlab.state.mode, undo: window.__beatlab.state.undo, last: window.__beatlab.app.set.last, active: window.__beatlab.tut.state.active })); ok(!s.active && s.id === mine.id && s.mode === 'studio' && s.undo === mine.undo && s.last === mine.id, name, s); };
+
+  // ---- the Learn hub (app bar, both modes) lists six lessons
+  await page.locator('#appbar .learn').click();
+  ok(await page.locator('.learn .lrow').count() === 6 && await page.locator('.learn .lrow.done').count() === 0, 'learn hub: six lessons, none ticked yet');
+  await page.locator('.mbox button', { hasText: 'Close' }).click();
+
+  // ---- lesson 1: Simple mode in 1 minute (started from the hub)
+  await page.locator('#appbar .learn').click();
+  await page.locator('.lrow[data-l="simple1"] button').click();
+  let ts = await T();
+  ok(ts.active && ts.id === 'simple1' && ts.temp && ts.prog === '1 of 9' && await ev(() => window.__beatlab.state.mode) === 'simple', 'simple lesson: starts in its own practice song ("1 of 9")', ts);
+  await next(); await reach(1, 'simple lesson: Next moves on from an explanation');
+  for (let i = 0; i < 6; i++) await clickAt('simple', i * 2, [0, 2, 4, 3, 1, 5][i]);
+  await reach(2, 'simple lesson: painting 6 notes advances');
+  for (const col of [0, 4, 8, 12]) await clickAt('drum', col, 0);
+  await reach(3, 'simple lesson: 4 drum hits advance');
+  await page.locator('.s-insts .ibtn:not(.on)').first().click();
+  await reach(4, 'simple lesson: changing the instrument advances');
+  await page.locator('.s-addl').click();
+  await reach(5, 'simple lesson: + Layer advances');
+  for (const col of [1, 3, 5]) await clickAt('simple', col, 6);
+  await reach(6, 'simple lesson: painting the new layer advances');
+  await page.locator('.abtn', { hasText: 'Accent' }).click();
+  await clickAt('simple', 3, 6);
+  await reach(7, 'simple lesson: the articulation brush advances');
+  await page.locator('#s-play').click();
+  await reach(8, 'simple lesson: Play advances');
+  await page.locator('#simple .s-bottom .btn.primary').click();
+  await fin();
+  ts = await T();
+  ok(ts.finale && ts.done.simple1 === 1 && ts.temp && await ev(() => window.__beatlab.state.mode) === 'studio', 'simple lesson: Open in Studio finishes it, still a practice song, remembered as done', ts);
+  ok(await ev(() => JSON.parse(localStorage.getItem('beatlab_set')).tut.simple1 === 1), 'tutorials: finished lessons are in the synced settings key');
+  await page.locator('#tut .tut-skip').click();                                   // "Back to my song"
+  await isMine('simple lesson: "Back to my song" reopens the player\'s song with its undo history');
+
+  // ---- lesson 2: Studio 1, then straight on to Studio 2 from the finale
+  await ev(() => window.__beatlab.tut.start('studio1'));
+  await next(); await reach(1, 'studio 1: the channel rack explained');
+  for (const s of [0, 4, 8, 12]) await clickAt('rack', 0, s);
+  await reach(2, 'studio 1: 4 kick steps advance');
+  for (const s of [4, 12]) await clickAt('rack', 3, s);
+  await reach(3, 'studio 1: 2 snare steps advance');
+  for (const s of [0, 2, 4, 6, 8, 10]) await clickAt('rack', 2, s);
+  await reach(4, 'studio 1: 6 hat steps advance');
+  await page.keyboard.press('Space');
+  await reach(5, 'studio 1: Space plays and advances');
+  await dragEl(page.locator('.st-bar .dragnum'), 0, -30);
+  await reach(6, 'studio 1: dragging the tempo advances');
+  await page.locator('.st-bar .tbtn.stop').click();
+  await reach(7, 'studio 1: Stop advances');
+  await page.locator('.st-bar button[title="New pattern"]').click();
+  await reach(8, 'studio 1: + pattern advances');
+  await page.locator('.st-bar select.pat').selectOption('1');
+  await fin();
+  ts = await T();
+  const beat = await ev(() => window.__beatlab.counts());
+  ok(ts.finale && ts.done.studio1 === 1 && beat.steps >= 12, 'studio 1: picking Pattern 1 finishes it with a real beat', { ts, steps: beat.steps });
+  await bub('Next: Studio 2').click();
+  ts = await T();
+  ok(ts.active && ts.id === 'studio2' && ts.step === 0 && ts.temp, 'studio 1 -> 2: "Next" starts the next lesson in a fresh practice song', ts);
+  await next(); await reach(1, 'studio 2: the browser explained');
+  await page.locator('#browser .bitem').first().hover();
+  await page.locator('#browser .bitem .badd').first().click();
+  await reach(2, 'studio 2: + on a sound adds a channel and advances');
+  await page.locator('.tabs button[data-t="roll"]').click();
+  await reach(3, 'studio 2: opening the piano roll advances');
+  for (const [t, m] of [[0, 60], [48, 63], [96, 67], [144, 70]]) await clickAt('roll', t, m);
+  await reach(4, 'studio 2: drawing 4 notes advances');
+  await dragFrom(await xy('roll', 10, 60), 50, 0);
+  await reach(5, 'studio 2: dragging a note\'s end longer advances');
+  await clickAt('vel', 0, 40);
+  await reach(6, 'studio 2: lowering a velocity bar advances');
+  await page.locator('#pane-roll .ptools select').filter({ has: page.locator('option[value="dorian"]') }).selectOption('major');
+  await reach(7, 'studio 2: changing the scale advances');
+  await page.locator('#pane-roll button[data-t="chord"]').click();
+  await clickAt('roll', 168, 55);
+  await reach(8, 'studio 2: stamping a chord advances');
+  await page.locator('#pane-roll select[title^="Articulation"]').selectOption('stac');
+  await reach(9, 'studio 2: giving notes a style advances');
+  await page.locator('.st-bar .tbtn.play').click();
+  await fin();
+  const mel = await ev(() => { const p = window.__beatlab.project, c = p.ch[p.ch.length - 1], n = p.pat[0].nt[c.id] || []; return { n: n.length, art: n.filter(x => x[4]).length, scale: p.scale }; });
+  ok((await T()).finale && mel.n >= 7 && mel.art >= 3 && mel.scale === 'major', 'studio 2: playing finishes it; the melody has notes, a chord and styles', mel);
+  await page.keyboard.press('Escape');                                            // Esc on the finale: back to my song
+  await isMine('studio 2: Esc on the last card goes back to the player\'s song');
+
+  // ---- lesson 4: Studio 3, arrange a song
+  await ev(() => window.__beatlab.tut.start('studio3'));
+  await next(); await reach(1, 'studio 3: patterns explained');
+  await page.locator('.tabs button[data-t="playlist"]').click();
+  await reach(2, 'studio 3: opening the playlist advances');
+  const place = page.locator('#pane-playlist select[title="Pattern you place with a click"]');
+  await place.selectOption('1');
+  await clickAt('pl', 0, 0);
+  await reach(3, 'studio 3: placing the Beat clip advances');
+  await place.selectOption('2');
+  await clickAt('pl', 16, 0);
+  await reach(4, 'studio 3: placing the second part advances');
+  const a1 = await xy('pl', 3, 0), a2 = await xy('pl', 3, 1);
+  await dragFrom(a1, 0, a2.y - a1.y);
+  await reach(5, 'studio 3: dragging a clip advances');
+  await page.keyboard.down('Shift'); const c1 = await xy('pl', 19, 0), c2 = await xy('pl', 35, 0); await dragFrom(c1, c2.x - c1.x, 0); await page.keyboard.up('Shift');
+  await reach(6, 'studio 3: shift-dragging a copy advances');
+  await page.locator('.st-bar .seg button[data-m="song"]').click();
+  await reach(7, 'studio 3: Song mode advances');
+  await page.locator('.st-bar .tbtn.play').click();
+  await reach(8, 'studio 3: Play advances');
+  const r1 = await xy('ruler', 0), r2 = await xy('ruler', 32);
+  await dragFrom(r1, r2.x - r1.x, 0);
+  await fin();
+  const arr = await ev(() => ({ cl: window.__beatlab.project.pl.cl.length, loop: window.__beatlab.project.loop }));
+  ok((await T()).finale && arr.cl >= 3 && arr.loop && arr.loop[1] > arr.loop[0], 'studio 3: a loop region finishes it; the song is arranged', arr);
+  await bub('All lessons').click();
+  await page.locator('.learn .lrow').first().waitFor({ timeout: 3000 }).catch(() => {});
+  ok(await page.locator('.learn .lrow.done').count() === 4 && (await ev(() => window.__beatlab.project.id)) === mine.id, 'learn hub: "All lessons" goes back to my song and shows 4 ticks');
+  await page.locator('.lrow[data-l="studio4"] button').click();
+
+  // ---- lesson 5: Studio 4, mix it (started from the hub)
+  ok((await T()).id === 'studio4', 'studio 4: starts from the hub');
+  await page.locator('.tabs button[data-t="mixer"]').click();
+  await reach(1, 'studio 4: opening the mixer advances');
+  await next(); await reach(2, 'studio 4: mixer tracks explained');
+  await next(); await reach(3, 'studio 4: routing explained');
+  await page.keyboard.press('Space');
+  await reach(4, 'studio 4: Space plays and advances');
+  const keys = page.locator('.mx-strip').nth(5);
+  await dragEl(keys.locator('.fader'), 0, 25);
+  await reach(5, 'studio 4: moving the Keys fader advances');
+  await dragEl(keys.locator('.mx-row').last().locator('.dial'), 0, -30);
+  await reach(6, 'studio 4: turning the pan knob advances');
+  await page.locator('.mx-strip').nth(5).locator('.slot.add').click();
+  await page.locator('#ctxmenu button', { hasText: 'Reverb' }).click();
+  await reach(7, 'studio 4: adding a reverb advances');
+  await dragEl(page.locator('.mx-editor .knob .dial').first(), 0, -30);
+  await reach(8, 'studio 4: turning an effect knob advances');
+  await next();
+  const mx = await ev(() => { const m = window.__beatlab.project.mix[5]; return { vol: m.vol, pan: m.pan, fx: m.fx.map(f => f.t) }; });
+  ok((await T()).finale && mx.vol !== 0.8 && mx.pan !== 0 && mx.fx.includes('reverb'), 'studio 4: the limiter card finishes it; the keys are mixed', mx);
+  await page.locator('#tut .tut-skip').click();
+  await isMine('studio 4: back to the player\'s song');
+
+  // ---- lesson 6: Studio 5, finish and share (keeps the practice song when the player presses Save)
+  await ev(() => window.__beatlab.tut.start('studio5'));
+  await page.locator('#appbar .pname').click();
+  await page.locator('.mbox input').fill('Tutorial tune');
+  await page.locator('.mbox input').press('Enter');
+  await reach(1, 'studio 5: renaming the song advances');
+  await page.locator('#appbar button', { hasText: 'Save' }).click();
+  await reach(2, 'studio 5: Save keeps the practice song and advances');
+  const kept = await ev(() => ({ id: window.__beatlab.project.id, name: window.__beatlab.project.name, saved: !!localStorage.getItem('beatlab_p_' + window.__beatlab.project.id), temp: window.__beatlab.tut.state.temp }));
+  ok(kept.saved && !kept.temp && kept.name === 'Tutorial tune', 'studio 5: the kept song is saved as one of the player\'s songs', kept);
+  await page.locator('#appbar button', { hasText: 'Download' }).click();
+  await reach(3, 'studio 5: Download opens the choices and advances');
+  await page.locator('.mbox button', { hasText: 'Close' }).click();
+  await reach(4, 'studio 5: closing the download box advances');
+  await page.locator('#appbar button', { hasText: 'Share' }).click();
+  await reach(5, 'studio 5: Share opens the share box and advances');
+  ok(/Great songs may be picked to play in one of our games: share yours in #music/.test(await page.locator('.mbox').innerText()), 'share: the dialog says songs may be picked for the games');
+  await page.locator('.mbox button', { hasText: 'OK' }).click();
+  await reach(6, 'studio 5: closing the share box advances');
+  await next(); await reach(7, 'studio 5: launcher music explained');
+  ok(/could be in a game/i.test(await page.locator('#tut .tut-bubble').innerText()), 'studio 5: the last step says your song could be in a game');
+  await next();
+  ts = await T();
+  ok(ts.finale && /share yours in #music/.test(await page.locator('#tut .tut-bubble').innerText()), 'studio 5: finishes with the #music message');
+  await page.locator('#tut .tut-skip', { hasText: 'Close' }).click();
+  ok(!(await T()).active && (await ev(() => window.__beatlab.project.id)) === kept.id, 'studio 5: Close stays on the kept song');
+  ts = await T();
+  ok(['simple1', 'studio1', 'studio2', 'studio3', 'studio4', 'studio5'].every(id => ts.done[id] === 1), 'tutorials: all six lessons remembered as done', ts.done);
+  await page.locator('#appbar .learn').click();
+  ok(await page.locator('.learn .lrow.done').count() === 6, 'learn hub: all six ticked');
+  await page.locator('.mbox button', { hasText: 'Close' }).click();
+  await page.locator('#appbar button', { hasText: 'Projects' }).click();
+  ok(/Your song could be in a game/.test(await page.locator('.mbox').innerText()), 'projects screen: says your song could be in a game');
+  await page.locator('.mbox button', { hasText: 'Close' }).click();
+
+  // ---- Skip and Esc leave every lesson at any step, and put the player's song back
+  await ev(id => window.__beatlab.load(localStorage.getItem('beatlab_p_' + id)), mine.id);
+  const ids = (await ev(() => window.__beatlab.tut.lessons())).map(l => [l.id, l.steps]);
+  for (let i = 0; i < ids.length; i++) {
+    const [id, n] = ids[i], k = (i * 3 + 2) % n;
+    await ev(id => window.__beatlab.tut.start(id), id);
+    for (let j = 0; j < k; j++) await ev(() => window.__beatlab.tut.next());
+    if (i % 2) await page.locator('#tut .tut-skip').click(); else await page.keyboard.press('Escape');
+    const s = await ev(() => ({ active: window.__beatlab.tut.state.active, id: window.__beatlab.project.id, overlay: !!document.querySelector('#tut') }));
+    ok(!s.active && !s.overlay && s.id === mine.id, 'tutorials: ' + (i % 2 ? 'Skip' : 'Esc') + ' at step ' + (k + 1) + ' of ' + id + ' leaves and restores the song', s);
+  }
+  const after0 = await savedSongs();
+  const newKeys = Object.keys(after0).filter(k => !(k in before0)), changedKeys = Object.keys(before0).filter(k => after0[k] !== before0[k]);
+  ok(changedKeys.length === 0 && newKeys.length === 1 && newKeys[0] === 'beatlab_p_' + kept.id, 'tutorials: the player\'s saved songs are untouched (only the kept practice song is new)', { changedKeys, newKeys });
+
+  // ---- the "?" helper: point at a Studio panel for a one-line explanation
+  await page.locator('#appbar .qbtn').click();
+  const bb = await page.locator('#browser').boundingBox();
+  await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height - 40);
+  await page.mouse.move(bb.x + bb.width / 2 + 4, bb.y + bb.height - 44);
+  const tip = await page.locator('#tut-tip.show').innerText().catch(() => '');
+  ok(/Sound browser/.test(tip), 'the ? helper explains a panel on hover', tip);
+  await page.locator('#appbar .qbtn').click();
+  ok(await ev(() => !document.querySelector('#tut-tip.show') && !document.body.classList.contains('explain')), 'the ? helper turns off again');
+  }
   ok(errs.length === 0, 'no script errors during the run', errs.slice(0, 5));
   const le = await ev(() => window.__beatlab.lastError);
   ok(!le, 'debug hook reports no last error', le);

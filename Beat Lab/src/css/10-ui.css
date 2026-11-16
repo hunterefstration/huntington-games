@@ -136,7 +136,7 @@ body.playing .tbtn.play .pi { width: 12px; height: 12px; background: #69db7c; }
 .bitem.sel { background: #3b4552; color: #fff; }
 .bitem .bn { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .badd { visibility: hidden; border: 0; background: #e8590c; color: #fff; border-radius: 4px; width: 20px; height: 18px; font-weight: 800; line-height: 1; }
-.bitem:hover .badd { visibility: visible; }
+.bitem:hover .badd, .bitem.sel .badd { visibility: visible; }
 .blist .empty { padding: 12px; color: #7d8794; }
 .st-work { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .tabs { display: flex; gap: 2px; background: #171b1f; padding: 4px 6px 0; flex-shrink: 0; }
@@ -301,3 +301,45 @@ body[data-mode="studio"] #foot { display: block; }
   .s-insts .ibtn { width: 58px; }
   .mx-editor { width: 270px; }
 }
+
+/* ---- tutorials (80-tutor.js): spotlight hole + click shields (under dialogs and menus), speech bubble (over everything) */
+#tut .tut-shield { position: fixed; z-index: 45; background: transparent; }
+#tut.free .tut-shield { pointer-events: none; }
+#tut .tut-hole { position: fixed; z-index: 45; pointer-events: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(8,12,24,.58); transition: left .18s, top .18s, width .18s, height .18s; }
+#tut .tut-hole::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; border: 3px solid #ffd43b; animation: tutPulse 1.6s ease-in-out infinite; }
+#tut .tut-hole.none::after { display: none; }
+@keyframes tutPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.tut-bubble { position: fixed; z-index: 80; width: 330px; max-width: calc(100vw - 16px); background: #fff; color: #1f2430; border-radius: 14px; padding: 12px 14px 10px; box-shadow: 0 14px 44px rgba(0,0,0,.4); border-top: 4px solid #5b5bf7; font-size: 13px; user-select: text; }
+.tut-bubble.nudge { animation: tutNudge .35s; }
+.tut-bubble.under { opacity: .2; pointer-events: none; }
+@keyframes tutNudge { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.tut-bubble .tut-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #5b5bf7; }
+.tut-bubble .tut-prog { color: #8a94a3; white-space: nowrap; }
+.tut-bubble h4 { margin: 6px 0 4px; font-size: 16px; }
+.tut-bubble p { margin: 0 0 8px; line-height: 1.45; }
+.tut-bubble .tut-task { margin: 0 0 8px; padding: 5px 9px; border-radius: 7px; background: #fff7d6; color: #6b5300; font-weight: 700; font-size: 12px; }
+.tut-bubble .tut-task.ok { background: #d3f9d8; color: #2b8a3e; }
+.tut-bubble .tut-end { display: flex; flex-wrap: wrap; gap: 6px; }
+.tut-bubble .tut-end:not(:empty) { margin-bottom: 8px; }
+.tut-bubble .tut-btns { display: flex; align-items: center; gap: 6px; }
+.tut-bubble .sp { flex: 1; }
+.tut-bubble .btn { background: #fff; color: #2b3140; border-color: #c9cfdd; }
+.tut-bubble .btn.primary { background: #5b5bf7; color: #fff; border-color: #4b4be0; }
+.tut-bubble .btn.ghost { color: #7a8396; }
+.tut-bubble .tut-skip { border: 0; background: none; color: #7a8396; font-size: 12px; text-decoration: underline; padding: 3px 2px; }
+.tut-bubble.offer { right: 16px; bottom: 44px; border-top-color: #ffd43b; }
+#appbar .btn.learn { background: #ffd43b; border-color: #e0b400; color: #2b2b00; }
+#appbar .btn.learn:hover { background: #ffe066; }
+#appbar .btn.qbtn { width: 28px; padding-left: 0; padding-right: 0; border-radius: 50%; font-weight: 800; }
+#appbar .btn.qbtn.on { background: #ffd43b; border-color: #e0b400; color: #2b2b00; }
+body[data-mode="simple"] #appbar .qbtn { display: none; }
+.explain [data-help].help-on { outline: 2px dashed #ffd43b; outline-offset: -2px; }
+#tut-tip { position: fixed; z-index: 85; max-width: 320px; padding: 7px 11px; border-radius: 8px; background: #fffbe6; color: #2b2b00; border: 1px solid #e0b400; box-shadow: 0 6px 20px rgba(0,0,0,.35); font-size: 12.5px; font-weight: 600; pointer-events: none; opacity: 0; }
+#tut-tip.show { opacity: 1; }
+.learn .lrows { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.learn .lrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #e3e6ee; border-radius: 10px; }
+.learn .lrow.done { background: #f3fbf4; border-color: #b2f2bb; }
+.learn .ltick { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: #eef0ff; color: #5b5bf7; }
+.learn .lrow.done .ltick { background: #2f9e44; color: #fff; }
+.learn .lmeta { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.mbox .in-game { margin: 0 0 10px; padding: 8px 11px; border-radius: 9px; background: #fff7d6; border: 1px solid #ffe066; color: #5c4700; }

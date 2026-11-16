@@ -316,7 +316,7 @@ function surprise(d) {
 function openInStudio() {
   const s = A.p.simple;
   const p = simpleToProject(s, A.p.name + ' (Studio)');
-  p.id = uid(); p.mode = 'studio';
+  p.id = uid(); p.mode = 'studio'; tutFollow(p);
   openProjectObj(p); Store.save(A.p);
   toast('Opened "' + p.name + '" in the Studio (each layer is a channel). Your simple song is still saved too.', 3500);
 }
