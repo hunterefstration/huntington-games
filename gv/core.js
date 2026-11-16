@@ -200,6 +200,8 @@
       case 'permsAdmin': return rpcDone('permsAdmin', m);
       case 'lbAdmin': return rpcDone('lbAdmin', m);
       case 'nickSet': return rpcDone('nickSet', m);
+      case 'mod': return rpcDone('mod', m);
+      case 'modNotice': case 'modFx': emit(m.type, m); return;      // an admin's warning or mute, or a bonk (the launcher shows them)
       case 'tagSet': return rpcDone('tagSet', m);
       case 'savesNudge': if (st.ready && !sy.running) syncRun().catch(function () {}); return;      // an admin changed this account's saves
       case 'parties': return rpcDone('parties', m);
@@ -771,6 +773,8 @@
       savesRestore: function (name, keys) { return st.ready ? rpc0({ type: 'savesRestore', name: String(name || ''), keys: keys || null }, 'acctLook') : Promise.reject(new Error('Not connected to Grapevine.')); },
       permsAdmin: function (op, name, perms) { return st.ready ? rpc0({ type: 'permsAdmin', op: op, name: name || null, perms: perms || null }, 'permsAdmin') : Promise.reject(new Error('Not connected to Grapevine.')); },
       lbAdmin: function (op, name, prefix) { return st.ready ? rpc0({ type: 'lbAdmin', op: op, name: String(name || ''), prefix: prefix || null }, 'lbAdmin') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      // admins: the moderation tools (op: list, warn, mute, slow, nick, uwu, caps, backwards, mime, pirate, clown, bonk, shame, clear, tempban, ban, unban)
+      mod: function (op, name, o) { o = o || {}; return st.ready ? rpc0({ type: 'mod', op: String(op), name: name ? String(name) : undefined, mins: o.mins, secs: o.secs, text: o.text ? String(o.text) : undefined, announce: !!o.announce }, 'mod') : Promise.reject(new Error('Not connected to Grapevine.')); },
       nickSet: function (nick) { return st.ready ? rpc0({ type: 'nickSet', nick: String(nick || '') }, 'nickSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       tagSet: function (tag, on) { return st.ready ? rpc0({ type: 'tagSet', tag: tag, on: !!on }, 'tagSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },

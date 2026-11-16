@@ -571,3 +571,18 @@ html.gdense .game .galt { margin-top: 6px; padding: 2px 8px; font-size: 11px; }
 .pnickb { margin-left: 6px; padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.3); color: #ddd; font: 600 11px var(--sans); cursor: pointer; vertical-align: middle; } .preal { font-size: 12px; opacity: .7; font-weight: 500; }
 .pacard { border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; margin: 8px 0; } .pagrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 12px; margin: 8px 0; font-size: 13px; } .pagrid label { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; }
 .pafields { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px 14px; max-height: 340px; overflow: auto; margin: 8px 0; padding: 6px; border: 1px solid var(--line2); border-radius: 8px; } .pafields label { display: flex; gap: 8px; align-items: center; justify-content: space-between; font: 12px var(--mono); } .pafields label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .pafields input:not([type]) { width: 130px; }
+
+/* moderation: what a warned / bonked / shamed player sees */
+.pafun .pb{font-size:12.5px}
+.hubmodbox{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;background:rgba(0,0,0,.6)}
+.hubmodcard{max-width:360px;padding:22px 26px;border-radius:16px;background:#151b26;border:1px solid #2a3446;text-align:center;color:#e6edf3;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.hubmodcard .ico{font-size:42px}.hubmodcard b{display:block;font-size:18px;margin:6px 0}.hubmodcard p{margin:0 0 14px;color:#9aa7b8}
+.hubmodcard button{padding:9px 28px;border-radius:10px;border:0;background:#3b82f6;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.hubmodfx{position:fixed;left:50%;top:40%;z-index:100000;transform:translate(-50%,-50%);display:flex;align-items:center;gap:14px;font:900 72px/1 system-ui,sans-serif;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.7);pointer-events:none}
+.hubmodfx.bonk{animation:hbonkpop 1.8s ease-out forwards}.hubmodfx .hammer{display:inline-block;transform-origin:80% 80%;animation:hbonkswing .35s ease-in 2}
+.hubmodfx.shame{color:#fca5a5;animation:hshame .6s ease-in-out 6}
+@keyframes hbonkpop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%)}}
+@keyframes hbonkswing{0%{transform:rotate(-70deg)}100%{transform:rotate(20deg)}}
+@keyframes hshame{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
+body.hubbonked{animation:hbonkshake .5s}
+@keyframes hbonkshake{0%,100%{transform:none}20%{transform:translate(-8px,6px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}

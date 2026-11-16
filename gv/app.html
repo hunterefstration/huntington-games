@@ -1312,6 +1312,24 @@ button.rchip:hover{border-color:var(--text);color:var(--text)}
 .txt.fold{display:block;max-height:10.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
 .foldbtn{display:inline-block;margin:2px 0 0;padding:1px 8px;border:1px solid var(--line);border-radius:999px;background:var(--raise);color:var(--dim, #9aa);font:inherit;font-size:11.5px;cursor:pointer}
 .foldbtn:hover{color:var(--text, #fff)}
+
+/* the Server account and moderation effects */
+.gtag.role-server{background:linear-gradient(90deg,#3b82f6,#8b5cf6);color:#fff}
+.srvav{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#1e293b;color:#93c5fd;font-size:12px;margin-right:5px;vertical-align:-3px}
+.who.srv{cursor:default}
+.offbadge{font-size:9.5px;font-weight:800;letter-spacing:.06em;padding:1px 5px;border-radius:6px;background:rgba(96,165,250,.16);color:#93c5fd;margin-left:6px;vertical-align:1px}
+.modbox{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(0,0,0,.55)}
+.modcard{max-width:340px;padding:22px 24px;border-radius:16px;background:var(--panel);border:1px solid var(--line);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modcard .modico{font-size:40px}.modcard b{display:block;font-size:17px;margin:6px 0}.modcard p{margin:0 0 14px;color:var(--dim, #9aa)}
+.modcard button{padding:8px 26px;border-radius:10px;border:0;background:var(--accent, #60a5fa);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+.modfx{position:fixed;left:50%;top:40%;z-index:9999;transform:translate(-50%,-50%);display:flex;align-items:center;gap:14px;font:900 64px/1 system-ui,sans-serif;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.6);pointer-events:none}
+.modfx-bonk{animation:bonkpop 1.8s ease-out forwards}.modfx-bonk .hammer{display:inline-block;transform-origin:80% 80%;animation:bonkswing .35s ease-in 2}
+.modfx-shame{color:#fca5a5;animation:shamepulse .6s ease-in-out 6}
+@keyframes bonkpop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(1)}}
+@keyframes bonkswing{0%{transform:rotate(-70deg)}100%{transform:rotate(20deg)}}
+@keyframes shamepulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
+body.bonked{animation:bonkshake .5s}
+@keyframes bonkshake{0%,100%{transform:none}20%{transform:translate(-8px,6px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
 </style>
 </head>
 <body>
@@ -5876,6 +5894,8 @@ function handleArchive(m){
     case 'friends': onFriends(m); break;
     case 'profile': paintUserProfile(m); break;
     case 'spin': showWheel(m); break;
+    case 'modNotice': modNotice(m); break;
+    case 'modFx': modFx(m); break;
     case 'cos': cosArrived(m.map); break;
     case 'eco':
       if (m.cat) catalogArrived(m.cat);
@@ -8595,6 +8615,7 @@ function frameHtml(html, c){
 }
 // the name button on a message row (and anywhere else a name is shown that way)
 function decorateWho(btn, uid, name, heart){
+  if (uid === 'server') { btn.innerHTML = '<span class="srvav">⚙</span><span class="wn">Server</span><span class="gtag role-server" title="Messages from the Huntington Games server itself">SERVER</span>'; btn.classList.add('srv'); return; }
   cosNeed(uid);
   const c = COS.get(uid), nk = nickOf(uid);
   const nn = !nk && c && c.nn && c.nn !== name ? c.nn : null;      // their own nickname (yours for them comes first)
@@ -8675,6 +8696,25 @@ function leaveActive(){
   tell({ type:'leave', convId:c.id });
 }
 $('#leaveBtn').onclick = leaveActive;
+
+// ---- moderation the player sees: a warning or a mute in a box they have to dismiss; the funny ones on screen ----
+function modNotice(m){
+  if (window.parent !== window && window.parent.HGGrapevine) return;      // (inside the launcher: the launcher shows it once, over everything)
+  const kinds = { warn: ['⚠️', 'A warning from the admins'], mute: ['🔇', 'You are muted'], slow: ['🐢', 'Slow mode'], fun: ['🎭', 'An admin is having fun with you'], clear: ['✅', 'All clear'] };
+  const [ico, head] = kinds[m.kind] || ['📣', 'From the admins'];
+  if (m.kind === 'fun' || m.kind === 'clear') return toast(ico + ' ' + m.text, m.kind === 'clear' ? 'good' : '', 6000);
+  const box = document.createElement('div'); box.className = 'modbox';
+  box.innerHTML = `<div class="modcard"><div class="modico">${ico}</div><b>${esc(head)}</b><p>${esc(m.text || '')}</p><button type="button">OK</button></div>`;
+  box.querySelector('button').onclick = () => box.remove();
+  document.body.append(box);
+}
+function modFx(m){
+  if (window.parent !== window && window.parent.HGGrapevine) return;
+  const el = document.createElement('div'); el.className = 'modfx modfx-' + (m.fx === 'shame' ? 'shame' : 'bonk');
+  el.innerHTML = m.fx === 'shame' ? '<span>🔔</span><b>SHAME</b><span>🔔</span>' : '<span class="hammer">🔨</span><b>BONK</b>';
+  document.body.append(el); setTimeout(() => el.remove(), m.fx === 'shame' ? 3600 : 1800);
+  if (m.fx === 'bonk') { document.body.classList.add('bonked'); setTimeout(() => document.body.classList.remove('bonked'), 500); }
+}
 </script>
 </body>
 </html>

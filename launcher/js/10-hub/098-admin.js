@@ -42,6 +42,7 @@ function paRender(c) {
     }
     h += '<div id="pa-lookout" class="pnote" style="white-space:pre-wrap;margin:8px 0 0">' + (PA.out || '') + '</div>';
   }
+  if (H('moderate') || H('ban')) h += paModHtml(H);
   if (H('admins')) h += '<h4>Admins and their powers</h4><p class="pnote">Give each admin only what they need. Changes work at once.</p><div id="pa-admins"><button class="pb" data-padm="admins">Show admins</button></div>';
   if (H('reports')) h += '<h4>Reports</h4><div class="prow"><button class="pb" data-padm="reports">Open the reports inbox</button></div>';
   if (H('dbuse')) h += '<h4>Database use</h4><p class="pnote">How much data the database has sent the server since it last started.</p><div class="prow"><button class="pb" data-padm="dbout">Check now</button></div><pre id="pa-dbout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></pre>';
@@ -136,6 +137,7 @@ function paLbTools(name) {
 }
 // ---- clicks ----
 function paClick(d, t) {
+  if (d.padm && d.padm.indexOf('mod:') === 0) { paMod(d.padm.slice(4)); return true; }
   var L = window.HGGrapevine, nm = paName(); PA.name = nm;
   if (d.padm === 'tag') { L.eco.tagSet(d.tag, d.on === '1').then(function (r) { hubToast(r.ok ? (d.on === '1' ? 'You wear the tag now.' : 'Tag taken off.') : r.err); profRender(); }); return true; }
   if (d.padm === 'admins') { L.eco.permsAdmin('list').then(paAdmins); return true; }
@@ -163,3 +165,60 @@ function paClick(d, t) {
   if (d.padm === 'chips') { var n = Math.round(+document.getElementById('pa-n').value || 0); if (!n) return true; L.eco.admin('chips', nm, null, n); hubToast('Gave ' + n + ' casino chips to ' + nm + '.'); return true; }
   return false;
 }
+
+// ---- moderation (2026-11-16): serious tools, funny tools, and who is muted or banned right now ----
+var PA_MOD_FUN = [['clown', '🤡 Clown', 'A clown nose on their name and their messages'], ['uwu', '💕 UwU', 'Their messages come out uwu-ified'], ['caps', '📢 ALL CAPS', 'Everything they say is shouted'],
+  ['backwards', '🔄 Backwards', 'Their messages come out backwards'], ['mime', '🤐 Mime', 'They can only mime'], ['pirate', '🏴‍☠️ Pirate', 'Arr, they talk like a pirate'],
+  ['nick', '🏷️ Rename', 'Their name becomes the text in the reason box for a while'], ['bonk', '🔨 Bonk', 'A big BONK on their screen and in #main'], ['shame', '🔔 Shame', 'The shame bell rings for them in #main']];
+function paModHtml(H) {
+  var mins = [[10, '10 minutes'], [60, '1 hour'], [360, '6 hours'], [1440, '1 day'], [4320, '3 days'], [10080, '7 days']];
+  return '<h4>Moderation</h4><p class="pnote">Type their exact name. The reason is shown to them (and in #main when you tick the box). Saying the n-word bans by itself: 1 day, then 3 days, then 7, then for good (from the second time the Server says so in #main).</p>' +
+    '<div class="prow"><input id="pa-mod-name" maxlength="40" placeholder="Their exact name" autocomplete="off" value="' + profEsc(PA.name || '') + '"><select id="pa-mod-mins">' +
+    mins.map(function (m) { return '<option value="' + m[0] + '"' + (m[0] === 60 ? ' selected' : '') + '>' + m[1] + '</option>'; }).join('') + '</select></div>' +
+    '<div class="prow"><input id="pa-mod-why" maxlength="200" placeholder="Reason (or the new name, for Rename)" autocomplete="off" style="flex:1"><label class="pnote"><input type="checkbox" id="pa-mod-ann"> say it in #main</label></div>' +
+    '<div class="prow">' + (H('moderate') ? '<button class="pb" data-padm="mod:warn">⚠️ Warn</button><button class="pb" data-padm="mod:mute">🔇 Mute</button><button class="pb" data-padm="mod:slow" title="One message every 30 seconds">🐢 Slow mode</button>' : '') +
+    (H('ban') ? '<button class="pb" data-padm="mod:tempban">⏳ Ban for that long</button><button class="pb warn" data-padm="mod:ban">🔨 Ban for good</button><button class="pb ghost" data-padm="mod:unban">Unban</button>' : '') +
+    (H('moderate') ? '<button class="pb ghost" data-padm="mod:clear">Lift effects</button>' : '') + '</div>' +
+    (H('moderate') ? '<p class="pnote" style="margin-top:8px">For fun (they last as long as the time above):</p><div class="prow pafun">' + PA_MOD_FUN.map(function (f) { return '<button class="pb" data-padm="mod:' + f[0] + '" title="' + profEsc(f[2]) + '">' + f[1] + '</button>'; }).join('') + '</div>' : '') +
+    '<div class="prow"><button class="pb ghost" data-padm="mod:list">Who is muted or banned now</button></div><div id="pa-modout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></div>';
+}
+function paMod(op) {
+  var L = window.HGGrapevine, out = document.getElementById('pa-modout'), v = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+  var name = v('pa-mod-name').trim(), why = v('pa-mod-why').trim(), mins = +v('pa-mod-mins') || 60, ann = !!(document.getElementById('pa-mod-ann') || {}).checked;
+  var say = function (t) { if (out) out.textContent = t; };
+  if (op === 'list') {
+    say('Loading...');
+    return L.eco.mod('list').then(function (r) {
+      if (!r.ok) return say(r.err || 'Could not load it.');
+      var fx = r.fx.map(function (x) { var k = []; if (x.e.mute) k.push('muted'); if (x.e.slow) k.push('slow mode'); if (x.e.nick) k.push('renamed "' + x.e.nick.text + '"'); for (var f in (x.e.fx || {})) k.push(f); return x.name + ': ' + k.join(', '); });
+      var bans = r.bans.map(function (b) { return b.name + ': ' + (b.until ? 'banned until ' + new Date(b.until).toLocaleString() : 'banned for good') + (b.reason ? ' (' + b.reason + ')' : ''); });
+      say((fx.length ? 'Effects:\n' + fx.join('\n') : 'Nobody is muted or under an effect.') + '\n\n' + (bans.length ? 'Bans:\n' + bans.join('\n') : 'Nobody is banned.'));
+    });
+  }
+  if (!name) return say('Type their exact name first.');
+  if ((op === 'ban' || op === 'tempban') && !confirm((op === 'ban' ? 'Ban ' + name + ' for good' : 'Ban ' + name + ' for ' + document.getElementById('pa-mod-mins').selectedOptions[0].text) + (why ? ' (' + why + ')' : '') + '?')) return;
+  if (op === 'nick' && !why) return say('Type the new name in the reason box.');
+  say('...');
+  L.eco.mod(op, name, { mins: mins, secs: 30, text: why, announce: ann }).then(function (r) {
+    say(r.ok ? 'Done: ' + ({ warn: 'warned', mute: 'muted', slow: 'slow mode on', tempban: 'banned', ban: 'banned for good', unban: 'unbanned', clear: 'effects lifted', bonk: 'bonked', shame: 'shamed', nick: 'renamed' }[op] || op + ' on') + ' (' + (r.name || name) + ').' : (r.err || 'That did not work.'));
+  }).catch(function (e) { say(String(e && e.message || e)); });
+}
+// what a player sees from the admins, anywhere in the launcher (in a game too)
+function modMount() {
+  var L = window.HGGrapevine; if (!L || modMount.done) return; modMount.done = true;
+  L.on('modNotice', function (m) {
+    var ico = { warn: '⚠️', mute: '🔇', slow: '🐢', fun: '🎭', clear: '✅' }[m.kind] || '📣';
+    if (m.kind === 'fun' || m.kind === 'clear') return hubToast(ico + ' ' + m.text);
+    var box = document.createElement('div'); box.className = 'hubmodbox';
+    box.innerHTML = '<div class="hubmodcard"><div class="ico">' + ico + '</div><b>' + (m.kind === 'warn' ? 'A warning from the admins' : m.kind === 'mute' ? 'You are muted' : 'From the admins') + '</b><p>' + profEsc(m.text || '') + '</p><button type="button">OK</button></div>';
+    box.querySelector('button').onclick = function () { box.remove(); };
+    document.body.appendChild(box);
+  });
+  L.on('modFx', function (m) {
+    var el = document.createElement('div'); el.className = 'hubmodfx ' + (m.fx === 'shame' ? 'shame' : 'bonk');
+    el.innerHTML = m.fx === 'shame' ? '<span>🔔</span><b>SHAME</b><span>🔔</span>' : '<span class="hammer">🔨</span><b>BONK</b>';
+    document.body.appendChild(el); setTimeout(function () { el.remove(); }, m.fx === 'shame' ? 3600 : 1800);
+    if (m.fx === 'bonk') { document.body.classList.add('hubbonked'); setTimeout(function () { document.body.classList.remove('hubbonked'); }, 500); }
+  });
+}
+(function modWait() { if (window.HGGrapevine) modMount(); else setTimeout(modWait, 1000); })();
