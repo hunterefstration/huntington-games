@@ -45,6 +45,9 @@ Current state and the facts you need to change things. What each round did and w
   Tailwind (`tools/tailwind.sh`, must stay after the game's own styles); Element Lab reactions in `data/reactions.tsv`; Sovereign data via
   `node tools/sovereign-data.js`, systems register with SYSTEM_INITS/DAILY/MONTHLY and `ensureSystems()` keeps old saves working.
 - Divergent Project is the one game outside the build: the launcher loads its self-contained `jsbin.html`.
+- **Beat Lab** (music studio): `src/js/10-16-engine-*.js` are a standalone Web Audio engine (API documented at the top of
+  10-engine.js; `BeatLabEngine.fromSave(localStorage beatlab_p_<id>)` plays any saved song, e.g. for the launcher's music
+  player). Saves: one project per `beatlab_p_<id>` key. Debug hook `__beatlab`; test: `node "Beat Lab/tools/test.mjs"`.
 
 ## Rules that matter
 - **Saves**: only keys matching `GAME_KEYS` sync. Sync is a three-way merge (`meta[k].b` base hash; both changed -> more progress wins,
