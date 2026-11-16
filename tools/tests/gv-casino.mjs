@@ -133,7 +133,7 @@ try {
   await until(() => A.evaluate(rn => window.__ev.some(e => (e.ev === 'crashGo' || e.ev === 'crash') && e.r === rn), r.r.round), 12000);
   const out = await cas(A, 'crash', { act: 'cash' }); const boom = await until(() => A.evaluate(rn => window.__ev.find(e => e.ev === 'crash' && e.r === rn), r.r.round), 30000);
   const aft2 = (await cas(A, 'live')).bal.chips;
-  check('cashing out in flight pays the multiplier of that moment (or it had already blown up)', out.ok ? out.r.mult >= 1 && aft2 === b0 - 10 + out.r.win && out.r.mult < boom.c : /blew up/.test(out.err) && aft2 === b0 - 10, JSON.stringify({ out: out.r || out.err, boom: boom && boom.c }));
+  check('cashing out in flight pays the multiplier of that moment (or it had already blown up)', out.ok ? out.r.mult >= 1 && aft2 === b0 - 10 + out.r.win && out.r.mult < boom.c : (/blew up/.test(out.err) || (boom && boom.c <= 1.01 && /no bet in the air/.test(out.err))) && aft2 === b0 - 10, JSON.stringify({ out: out.r || out.err, boom: boom && boom.c }));
   // a duel
   const da = await cas(A, 'duel', { act: 'open', bet: 50 }); b0 = (await cas(A, 'live')).bal.chips; const d0 = (await cas(D, 'live')).bal.chips;
   check('your own duel cannot be taken by you', /yourself/.test((await cas(A, 'duel', { act: 'take', id: da.r.id })).err || ''));
