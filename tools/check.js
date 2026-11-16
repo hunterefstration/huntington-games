@@ -92,6 +92,15 @@ try {
     if (core > acc + 1000 && built.status === 0) notes.push('gv/core.js is newer than gv/account.js: run bash tools/build-gv.sh if you changed it');
   }
 } catch (e) {}
+// --- 5. the loading screen lives in two places: the hub (launcher/boot.css + boot.html, inlined by the build) and loader.html
+//        (the code people paste into jsfiddle). The loader's copy sits between /*@boot.css*/ ... /*@/boot.css*/ and
+//        <!--@boot.html--> ... <!--@/boot.html-->; --fix copies the launcher's version in. ---
+try {
+  const L = path.join(ROOT, 'loader.html'); let ld = read(L);
+  const css = read(path.join(ROOT, 'launcher/boot.css')).trim(), html = read(path.join(ROOT, 'launcher/boot.html')).trim();
+  const want = ld.replace(/\/\*@boot\.css\*\/[\s\S]*?\/\*@\/boot\.css\*\//, '/*@boot.css*/\n' + css + '\n/*@/boot.css*/').replace(/<!--@boot\.html-->[\s\S]*?<!--@\/boot\.html-->/, '<!--@boot.html-->\n' + html + '\n<!--@/boot.html-->');
+  if (want !== ld) { if (FIX) { fs.writeFileSync(L, want); notes.push('loader.html: the loading screen was copied in from launcher/boot.*'); } else problems.push('loader.html carries an old copy of the loading screen (node tools/check.js --fix)'); }
+} catch (e) { problems.push('loader.html: ' + e.message); }
 for (const n of notes) console.log('note  ' + n);
 for (const p of problems) console.log('FAIL  ' + p);
 console.log(problems.length ? `\n${problems.length} problem(s)` : `ok: ${targets.length - (only.length ? targets.length - only.length : 0)} built file(s) match their sources, lists agree`);

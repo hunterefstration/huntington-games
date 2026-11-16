@@ -4,9 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Huntington Games Launcher</title>
+<style>
+html,body{margin:0;height:100%;background:#060912}
+/*@boot.css*/
+/* The loading screen (2026-11-16). The SAME rules and markup live in loader.html (the code people paste into jsfiddle),
+   so the screen is up from the first moment and carries on unchanged into the launcher's own boot screen.
+   tools/check.js keeps the two copies identical: edit launcher/boot.css and launcher/boot.html, then node tools/check.js --fix. */
+#boot{position:fixed;inset:0;z-index:3000;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#060912;color:#e8ecf6;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;transition:opacity .6s ease,transform .6s ease}
+#boot.out{opacity:0;transform:scale(1.04);pointer-events:none}
+#boot .bt-neb{position:absolute;inset:-20%;filter:blur(60px);opacity:.75}
+#boot .bt-neb i{position:absolute;width:46vmax;height:46vmax;border-radius:50%;mix-blend-mode:screen;animation:bt-drift 18s ease-in-out infinite alternate}
+#boot .bt-neb i:nth-child(1){left:8%;top:12%;background:radial-gradient(circle,#6d3df0 0,transparent 62%)}
+#boot .bt-neb i:nth-child(2){right:4%;top:30%;background:radial-gradient(circle,#ff7a2f 0,transparent 60%);animation-duration:22s;animation-delay:-6s}
+#boot .bt-neb i:nth-child(3){left:30%;bottom:0;background:radial-gradient(circle,#14b8a6 0,transparent 60%);animation-duration:26s;animation-delay:-11s}
+#boot .bt-stars{position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 22%,#fff9,transparent),radial-gradient(1px 1px at 72% 14%,#fff8,transparent),radial-gradient(1.5px 1.5px at 84% 68%,#fff7,transparent),radial-gradient(1px 1px at 28% 78%,#fff8,transparent),radial-gradient(1px 1px at 52% 42%,#fff6,transparent),radial-gradient(1.5px 1.5px at 92% 36%,#fff6,transparent),radial-gradient(1px 1px at 6% 58%,#fff7,transparent),radial-gradient(1px 1px at 40% 8%,#fff7,transparent);animation:bt-twinkle 4s ease-in-out infinite alternate}
+#boot .bt-in{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 20px;text-align:center}
+#boot .bt-emb{position:relative;width:132px;height:132px;margin-bottom:26px;animation:bt-rise .9s cubic-bezier(.2,.9,.3,1.2) both}
+#boot .bt-emb svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#boot .bt-hex{fill:rgba(255,255,255,.04);stroke:url(#bt-grad);stroke-width:3.5;stroke-linejoin:round;stroke-dasharray:340;stroke-dashoffset:340;animation:bt-draw 1.4s .15s ease-out forwards;filter:drop-shadow(0 0 10px rgba(167,139,250,.55))}
+#boot .bt-emb b{position:absolute;inset:0;display:grid;place-items:center;font-weight:900;font-size:44px;letter-spacing:-.02em;background:linear-gradient(135deg,#fff 20%,#c4b5fd 55%,#fdba74);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:0;animation:bt-fade .8s .7s ease-out forwards}
+#boot .bt-orb{position:absolute;inset:-18px;animation:bt-spin 9s linear infinite}
+#boot .bt-orb i{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;box-shadow:0 0 10px currentColor;background:currentColor}
+#boot .bt-orb i:nth-child(1){color:#a78bfa;transform:rotate(0deg) translateY(-84px)}
+#boot .bt-orb i:nth-child(2){color:#fb923c;transform:rotate(72deg) translateY(-84px)}
+#boot .bt-orb i:nth-child(3){color:#2dd4bf;transform:rotate(144deg) translateY(-84px)}
+#boot .bt-orb i:nth-child(4){color:#f472b6;transform:rotate(216deg) translateY(-84px)}
+#boot .bt-orb i:nth-child(5){color:#facc15;transform:rotate(288deg) translateY(-84px)}
+#boot .bt-title{font-weight:800;font-size:clamp(20px,4.4vw,40px);letter-spacing:.32em;margin-right:-.32em;white-space:nowrap;animation:bt-title 1.2s .35s cubic-bezier(.2,.8,.2,1) both}
+#boot .bt-bar{position:relative;width:min(300px,70vw);height:4px;margin-top:28px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+#boot .bt-bar span{position:absolute;left:0;top:0;bottom:0;width:calc(var(--p,.08) * 100%);border-radius:4px;background:linear-gradient(90deg,#8b5cf6,#f97316,#14b8a6);background-size:200% 100%;box-shadow:0 0 12px rgba(249,115,22,.6);transition:width .6s cubic-bezier(.2,.8,.2,1);animation:bt-flow 2.4s linear infinite}
+#boot .bt-stage{margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(232,236,246,.55);min-height:14px}
+#boot .bt-tip{margin-top:18px;max-width:420px;min-height:20px;font-size:14px;color:rgba(232,236,246,.8);transition:opacity .4s}
+#boot .bt-tip.dim{opacity:0}
+#boot .bt-welcome{display:none;margin-top:14px;font-size:15px;color:#ddd6fe}
+#boot.first .bt-welcome{display:block;animation:bt-fade .8s 1s both}
+@keyframes bt-drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(6vmax,-4vmax) scale(1.15)}}
+@keyframes bt-twinkle{0%{opacity:.55}100%{opacity:1}}
+@keyframes bt-rise{0%{opacity:0;transform:translateY(16px) scale(.85)}100%{opacity:1;transform:none}}
+@keyframes bt-draw{to{stroke-dashoffset:0}}
+@keyframes bt-fade{to{opacity:1}}
+@keyframes bt-spin{to{transform:rotate(360deg)}}
+@keyframes bt-title{0%{opacity:0;letter-spacing:.9em;margin-right:-.9em}100%{opacity:1}}
+@keyframes bt-flow{0%{background-position:0 0}100%{background-position:200% 0}}
+@media (prefers-reduced-motion:reduce){#boot *{animation-duration:.01s!important;animation-iteration-count:1!important}}
+/*@/boot.css*/
+</style>
 </head>
-<body style="margin:0;background:#0d1117;color:#8b949e;font:16px 'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh">
-<div id="msg">Loading Huntington Games Launcher...</div>
+<body>
+<!--@boot.html-->
+<div id="boot"><div class="bt-neb"><i></i><i></i><i></i></div><div class="bt-stars"></div><div class="bt-in"><div class="bt-emb"><svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="bt-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset=".55" stop-color="#f97316"/><stop offset="1" stop-color="#2dd4bf"/></linearGradient></defs><polygon class="bt-hex" points="60,6 107,33 107,87 60,114 13,87 13,33"/></svg><b>HG</b><span class="bt-orb"><i></i><i></i><i></i><i></i><i></i></span></div><div class="bt-title">HUNTINGTON GAMES</div><div class="bt-bar"><span></span></div><div class="bt-stage" id="msg">Starting</div><div class="bt-tip"></div><div class="bt-welcome">Welcome! Pick a game, make your profile and earn goons.</div></div></div>
+<!--@/boot.html-->
 <script>
 // Huntington Games Launcher. Paste this into the HTML panel at jsfiddle.net or jsbin.com. Official copy: the Launcher tab of the Huntington Games doc.
 // It downloads the newest launcher from GitHub (or the jsDelivr CDN) every time, so this code never needs updating,
@@ -43,17 +90,32 @@ function cachedHub(cb) {
     };
   } catch (e) { cb(null); }
 }
+// the loading screen: progress, what is happening, and a tip (the launcher's own boot screen carries on from here)
+var HG_TIPS = ['Press T in any game to chat without leaving it.', 'Play every day: the daily check-in gives you a goon.', 'Goons buy pets, frames and chat bubbles in the Profile shop.',
+  'Start a party in Multiplayer and your friends join your game in one click.', 'Every game has a leaderboard. Can you get on one?', 'Your saves live in your account: sign in on any device and keep playing.',
+  'Found a bug? Tell us in #bugs-and-ideas or with the Report button.', 'Rare titles shimmer, and you only get them by playing.', 'Make your own songs in Beat Lab and share them in #music.'];
+function hgP(p, stage, tip) {
+  var b = document.getElementById('boot'); if (b) b.style.setProperty('--p', p); window.HG_LOAD_P = p;
+  var m = document.getElementById('msg'); if (m && stage) m.textContent = stage;
+  var t = document.querySelector('#boot .bt-tip'); if (t && tip) { t.textContent = tip; t.className = 'bt-tip'; }
+}
+(function tips() {
+  var t = document.querySelector('#boot .bt-tip'); if (!t) return; var i = Math.floor(Math.random() * HG_TIPS.length);
+  t.textContent = HG_TIPS[i];
+  window.HG_TIP_T = setInterval(function () { if (t.dataset.err) return; t.className = 'bt-tip dim'; setTimeout(function () { i = (i + 1) % HG_TIPS.length; t.textContent = HG_TIPS[i]; t.className = 'bt-tip'; }, 400); }, 3800);
+})();
 (function () {
   var repo = 'hunterefstration/huntington-games';
   var hosts = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0, version = null, booted = false, saved = null, savedDone = false, timer = null;
   function boot(html, ver) {
     if (booted) return; booted = true; clearTimeout(timer);
-    var tag = '<script>window.HG_VERSION = ' + JSON.stringify(ver) + ';<\/script>';
+    clearInterval(window.HG_TIP_T); hgP(.72, 'Starting');
+    var tag = '<script>window.HG_VERSION = ' + JSON.stringify(ver) + '; window.HG_LOAD_P = .72;<\/script>';
     html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
     document.open(); document.write(html); document.close();
   }
   function useSaved() { // no network: run the copy of the launcher saved on an earlier visit
-    if (saved) { document.getElementById('msg').textContent = 'Offline - loading the saved copy...'; boot(saved.text, saved.rel); return true; }
+    if (saved) { hgP(.6, 'Offline: loading the saved copy'); boot(saved.text, saved.rel); return true; }
     return false;
   }
   cachedHub(function (r) { saved = r; savedDone = true; });
@@ -61,10 +123,12 @@ function cachedHub(cb) {
     if (booted) return;
     if (i >= hosts.length) {
       if (useSaved()) return;
-      document.getElementById('msg').innerHTML = 'Could not download the Huntington Games Launcher.<br>cdn.jsdelivr.net may be blocked on this network.';
+      var tp = document.querySelector('#boot .bt-tip'); if (tp) tp.dataset.err = '1';
+      hgP(1, 'Could not download the launcher', 'cdn.jsdelivr.net may be blocked on this network. Wait a minute and reload, or try another network.');
       return;
     }
     var url = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@' + version + '/index.html';
+    hgP(.3 + i * .08, i > 1 ? 'Trying another mirror' : 'Downloading the launcher');
     var ctl = window.AbortController ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 10000);
     fetch(url, ctl ? { signal: ctl.signal } : {}).then(function (r) {
       clearTimeout(t);
@@ -76,6 +140,7 @@ function cachedHub(cb) {
   try { floor = Math.max(1, parseInt(localStorage.getItem('hg_release'), 10) || 1); } catch (e) {}
   // a slow or blocked network should not leave kids waiting when a saved copy exists
   timer = setTimeout(function () { if (!booted) useSaved(); }, 8000);
+  hgP(.12, 'Finding the newest version');
   findLatest(repo, floor, function (n) {
     if (booted) return;
     try { localStorage.setItem('hg_release', n); } catch (e) {}

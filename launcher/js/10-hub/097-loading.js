@@ -1,8 +1,9 @@
 // ---- loading screens --------------------------------------------------------------------------------------------
-// 1. The launcher's own boot screen (#boot in shell.html): stays until the hub is ready, then zooms away. The very
-//    first run ever gets a longer "welcome" version.
-// 2. A loading screen over every game until it has really drawn itself: a little cube runs, hops the spikes and slides
-//    back to where it started, on a loop, with silly status lines. 3D games (GL_SIGNAL) say when they are ready by
+// 1. The launcher's own boot screen (launcher/boot.html + boot.css, the same screen loader.html shows while it downloads
+//    the launcher, so it carries on seamlessly): stays until the hub is ready, then fades away. The very first run ever
+//    gets a longer "welcome" version.
+// 2. A loading screen over every game until it has really drawn itself: the game's picture as a card over its own
+//    blurred colours, a moving bar, what is happening, and tips (for that game and in general) with the odd silly line. 3D games (GL_SIGNAL) say when they are ready by
 //    calling parent.HG_gameReady() after their first frame; the others are "ready" once the page has loaded and is
 //    drawing smoothly (a few quick animation frames in a row). Never more than 45 s either way.
 var GL_SIGNAL = { 'Blocky Shooter V2': 1, Sovereign: 1, 'Steel Storm': 1 };
@@ -10,12 +11,25 @@ var GL_QUIPS = ['Sharpening the spikes', 'Feeding the goons', 'Teaching the bots
   'Waking up the hamsters', 'Reticulating splines', 'Bribing the final boss', 'Counting to infinity (twice)', 'Loading loading screen', 'Finding the any key',
   'Warming up the lasers', 'Blowing on the cartridge', 'Spawning dramatic music', 'Inflating the hitboxes', 'Herding the pixels', 'Charging the flux capacitor',
   'Buffering the vibes', 'Asking the cube nicely', 'Tightening the bolts'];
+var GL_TIPS = ['Press T in any game to chat without leaving it.', 'Play every day: the daily check-in gives you a goon.', 'Goons buy pets, frames and chat bubbles in the Profile shop.',
+  'Start a party in Multiplayer and your friends join your game in one click.', 'Every game has a leaderboard. Can you get on one?', 'Your saves live in your account: sign in on any device and keep playing.',
+  'Found a bug? Tell us in #bugs-and-ideas or with the Report button.', 'Rare titles shimmer, and you only get them by playing.', 'Make your own songs in Beat Lab and share them in #music.'];
+var GL_GAME_TIPS = {
+  'Steel Storm': ['Hold your aim on a target for half a second: a red LOCK means the missile will guide.', 'Mix your lineup: a bomber for tanks, a fighter to clear the sky.', 'Flares (F) fool heat-seeking missiles some of the time.'],
+  'Last Light': ['Every guardian you beat gives you a new move.', 'Moths are hidden off the main path. Look up.', 'Dying is fine. The fastest runs come from learning each room.'],
+  'Blocky Shooter V2': ['Headshots count double.', 'Each class plays differently: try them all in the armory.', 'Prestige resets your rank but keeps your best gear.'],
+  'Sovereign': ['A strong economy wins long games.', 'Defend your capital: losing it costs you the most.'],
+  'Brown E Clicker': ['Golden Es are rare: click them fast.', 'Ascending gives heavenly chips that make every run faster.'],
+  'Beat Lab': ['Space plays and stops. Try a demo song first.', 'Simple mode is a great sketchpad: open your idea in the Studio later.'],
+  'Mayhem Marathon': ['Grab the tail and hold on: the timer is your friend.'],
+  'Market Life 1.9': ['Buy low, sell high, and never put everything in one stock.']
+};
 var GL = { el: null, t0: 0, armed: false, timer: 0, quipT: 0, id: 0 };
 function glEl() {
   if (GL.el) return GL.el;
   var d = document.createElement('div'); d.id = 'gload'; d.hidden = true;
-  d.innerHTML = '<div class="gl-bg"></div><div class="gl-in"><div class="gl-name"></div>' +
-    '<div class="gl-stage"><div class="gl-track"></div><i class="gl-spike s1"></i><i class="gl-spike s2"></i><i class="gl-spike s3"></i><div class="gl-cube"><b></b><b></b></div></div>' +
+  d.innerHTML = '<div class="gl-bg"></div><div class="gl-in"><div class="gl-card"></div><div class="gl-name"></div>' +
+
     '<div class="gl-bar"><span></span></div><div class="gl-stage-txt"></div><div class="gl-quip"></div><div class="gl-err" hidden></div></div>';
   document.getElementById('player').appendChild(d);
   return (GL.el = d);
@@ -33,13 +47,20 @@ function glFail(g, why) {
   box.querySelector('#gl-retry').onclick = function () { window.HG_retryGame(); };
   box.querySelector('#gl-back').onclick = function () { document.getElementById('back').click(); };
 }
-function glQuip() { var q = GL.el && GL.el.querySelector('.gl-quip'); if (q) { q.classList.remove('in'); void q.offsetWidth; q.textContent = GL_QUIPS[Math.floor(Math.random() * GL_QUIPS.length)] + '...'; q.classList.add('in'); } }
+function glQuip() {
+  var q = GL.el && GL.el.querySelector('.gl-quip'); if (!q) return;
+  var own = (GL.game && (GL_GAME_TIPS[GL.game.dir] || GL_GAME_TIPS[GL.game.name])) || [], r = Math.random(), t;
+  if (own.length && r < .5) t = own[Math.floor(Math.random() * own.length)];
+  else if (r < .85) t = GL_TIPS[Math.floor(Math.random() * GL_TIPS.length)];
+  else t = GL_QUIPS[Math.floor(Math.random() * GL_QUIPS.length)] + '...';
+  q.classList.remove('in'); void q.offsetWidth; q.textContent = t; q.classList.add('in');
+}
 function glShow(g) {
   var d = glEl(); GL.id++; GL.armed = false; GL.t0 = Date.now(); GL.game = g;
   d.querySelector('.gl-name').textContent = g.name;
-  var t = g.img ? glThumb(g) : ''; d.querySelector('.gl-bg').style.backgroundImage = t ? 'url("' + t + '")' : '';
+  var t = g.img ? glThumb(g) : ''; d.querySelector('.gl-bg').style.backgroundImage = d.querySelector('.gl-card').style.backgroundImage = t ? 'url("' + t + '")' : '';
   d.style.top = (document.getElementById('ptop').offsetHeight || 41) + 'px'; d.hidden = false; d.classList.remove('out'); d.classList.remove('fail'); d.querySelector('.gl-err').hidden = true; glStage('');
-  glQuip(); clearInterval(GL.quipT); GL.quipT = setInterval(glQuip, 2200);
+  glQuip(); clearInterval(GL.quipT); GL.quipT = setInterval(glQuip, 3600);
   clearTimeout(GL.timer); GL.timer = setTimeout(glHide, 45000);
 }
 function glHide() {
@@ -94,7 +115,17 @@ window.HG_gameReady = function () { if (GL.armed) glHide(); };
   var first = false; try { first = !localStorage.getItem('hgv:booted'); localStorage.setItem('hgv:booted', '1'); } catch (e) {}
   if (first) b.classList.add('first');
   var t0 = (window.HG_BOOT_T0 || Date.now()), min = first ? 2000 : 600;      // (was 2600 / 1300 ms)
-  var go = function () { setTimeout(function () { b.classList.add('out'); setTimeout(function () { b.remove(); }, 700); }, Math.max(0, min - (Date.now() - t0))); };
+  // progress carries on from where loader.html left it (an older pasted loader leaves nothing: start part way)
+  var p = Math.max(.35, Math.min(.85, +window.HG_LOAD_P || 0)), msg = document.getElementById('msg'), tip = b.querySelector('.bt-tip');
+  b.style.setProperty('--p', p); if (msg) msg.textContent = 'Opening the launcher';
+  var creep = setInterval(function () { p = Math.min(.95, p + (.95 - p) * .18); b.style.setProperty('--p', p); }, 300);
+  var ti = Math.floor(Math.random() * GL_TIPS.length); if (tip && !tip.textContent) tip.textContent = GL_TIPS[ti];
+  var tipT = setInterval(function () { if (!tip) return; tip.classList.add('dim'); setTimeout(function () { ti = (ti + 1) % GL_TIPS.length; tip.textContent = GL_TIPS[ti]; tip.classList.remove('dim'); }, 400); }, 3800);
+  var go = function () {
+    if (go.done) return; go.done = true; clearInterval(creep);
+    b.style.setProperty('--p', 1); if (msg) msg.textContent = 'Ready';
+    setTimeout(function () { clearInterval(tipT); b.classList.add('out'); setTimeout(function () { b.remove(); }, 700); }, Math.max(250, min - (Date.now() - t0)));
+  };
   if (document.readyState === 'complete') go(); else addEventListener('load', go);
   setTimeout(function () { if (document.getElementById('boot')) go(); }, 8000);
 })();
