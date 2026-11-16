@@ -147,7 +147,7 @@ function renderShopItems() {
             if (fits.length) addon = `<div class="flex gap-1 mt-2">${fits.map(a => { const A = ATTACH[a], have = hasAtt(id, a), c = A.cost, col = hex(A.color);
                 return `<button ${have || money < c ? 'disabled' : ''} title="${A.name}: ${A.desc}" onclick="window.buyAttachment('${id}','${a}')" class="attb flex-1 py-1 rounded text-[10px] font-black leading-tight border ${have || money >= c ? '' : 'cursor-not-allowed'}" style="border-color:${col}${have ? '' : '88'};color:${have ? '#0b0f14' : col};background:${have ? col : 'rgba(0,0,0,0.25)'}${have || money >= c ? '' : ';opacity:0.45'}">${have ? '\u2713 ' + A.name : `${A.name}<br>$${c}`}</button>`; }).join('')}</div>`;
         }
-        const special = base.melee ? 'Melee \u00b7 lunge' : base.rail ? 'Charge \u00b7 pierces all' : base.tesla ? `Chains ${wpn.chain + 1}` : base.grenade ? 'Bouncing grenades' : base.akimbo ? 'Akimbo'
+        const special = base.frost ? 'Slows \u00b7 freezes' : base.battery ? 'Self-charging' : base.seeker ? 'Homing x3' : base.melee ? 'Melee \u00b7 lunge' : base.rail ? 'Charge \u00b7 pierces all' : base.tesla ? `Chains ${wpn.chain + 1}` : base.grenade ? 'Bouncing grenades' : base.akimbo ? 'Akimbo'
             : base.pierce ? `Pierces ${base.pierce}` : base.burst ? `Auto burst x${base.burst}` : base.spinUp ? 'Spin-up' : base.knock ? 'Knockback' : base.hsMult > 2 ? `Head x${base.hsMult}` : (base.auto ? 'Full auto' : 'Semi auto');
         const ki = ownedList.indexOf(id), keyTxt = ki >= 0 && keyLabel(ki) ? ` \u00b7 Key ${keyLabel(ki)}` : '';
         const rps = (base.burst ? base.burst * 1000 / Math.max(wpn.fireRate, base.burstGap * base.burst) : 1000 / wpn.fireRate).toFixed(1);

@@ -71,6 +71,9 @@ const ZLOOK = {
     hound:    { skin: 0x8a7560, pants: 0x4a3a2c, hair: null, shoe: null, sleeves: 'none', claws: true, noBelly: true, blood: 0x7a1414 },
     crawler:  { skin: 0x8a8a74, pants: 0x3f3a33, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x7a1414 },
     shocker:  { skin: 0x7d8f98, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x1e3a5f, bigEyes: true, blood: 0x7dd3fc },
+    bloater:  { skin: 0x9bb36a, pants: 0x3f4a2a, hair: null, shoe: null, sleeves: 'none', blood: 0xa3e635 },          // 5.5
+    lobber:   { skin: 0x8d7a62, pants: 0x4a3524, hair: 0x2a1f14, shoe: 0x1f1a14, sleeves: 'short', blood: 0x9a3412 },
+    frost:    { skin: 0xa9c7dc, pants: 0x1e3a5f, hair: 0xe0f2fe, shoe: null, sleeves: 'long', armor: 0x60a5fa, claws: true, bigEyes: true, noBelly: true, blood: 0x7dd3fc },
     zero:     { skin: 0x7a8f55, pants: 0x2b3318, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0xa3e635 }
 };
 const zLook = cfg => ZLOOK[cfg.look || cfg.id] || ZLOOK.grunt;
@@ -148,6 +151,16 @@ function bossExtras(id, k, o) {
             push(H, [0.1, 0.34, 0.9, 0, 0.62, 0, 0x7f1d1d], [0.2, 0.1, 0.2, 0, 0.8, 0.0, AM]);
             for (const L of [k.legL, k.legR]) push(L, [0.48, 0.3, 0.2, 0, -0.45, 0.3, OL], [0.1, 0.16, 0.1, 0, -0.45, 0.42, AM]);
             push(k.armL, [0.5, 0.2, 0.5, 0, -0.2, 0, OL], [0.3, 0.7, 0.14, 0.24, -1.0, 0.04, IRON]);
+            break;
+        }
+        case 'frost': {  // 5.5 Winter King: ice crystals on the shoulders and back, an icicle crown, frozen gauntlets
+            const IC = 0xbae6fd, ICD = 0x7dd3fc, GL = 0xe0f2fe;
+            for (const [x, y, z, r] of [[-0.85, 2.9, 0.05, 0.35], [0.85, 2.9, -0.05, -0.35], [-0.45, 2.7, -0.65, 0.2], [0.5, 2.5, -0.7, -0.25], [0, 3.0, -0.75, 0]]) { push(T, [0.3, 0.95, 0.3, x, y, z, ICD, 0, r, r]); k.torsoGlow.push([0.16, 0.75, 0.16, x, y + 0.1, z, GL, 0, r, r]); }
+            push(T, [1.2, 0.25, 0.85, 0, 1.4, 0, ICD], [1.3, 0.3, 0.3, 0, 2.25, -hd - 0.25, IC]);
+            k.torsoGlow.push([0.34, 0.34, 0.05, 0, 2.0, hd + 0.12, GL]);
+            for (let i = 0; i < 7; i++) push(H, [0.12, 0.45 + (i % 2) * 0.35, 0.12, (i - 3) * 0.14, 0.6, (i % 2) * -0.08, i % 2 ? GL : IC, 0, 0, (i - 3) * 0.1]);
+            for (const A of [k.armL, k.armR]) push(A, [0.62, 0.5, 0.62, 0, -1.45, 0, ICD], [0.12, 0.45, 0.12, -0.24, -1.85, 0.24, IC], [0.12, 0.45, 0.12, 0.24, -1.85, 0.24, IC]);
+            k.armLGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, GL]); k.armRGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, GL]);
             break;
         }
         case 'titan': {  // Titan: glowing crystals on shoulders and back, jagged stone crown, boulder knees, cracks
@@ -493,7 +506,7 @@ function enemyKit(cfg) {
         k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
     }
     // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-    const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, shambler: 0.38, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3 }[id] ?? 0.2;
+    const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, shambler: 0.38, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3, bloater: 0.08, lobber: 0.2, frost: 0.12 }[id] ?? 0.2;
     return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
 }
 // 5.0 Zombie Hound: a four-legged dog. The body is the usual hip/torso/head rig tipped flat (hunch 1.5): the torso runs forward,
@@ -981,7 +994,7 @@ const _bubbleGeo = new THREE.IcosahedronGeometry(1, 1);
 function pickEnemyType(level, counts) {
     const r = Math.random();
     let acc = 0;
-    const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['shambler', 0.05], ['shocker', 0.03]];
+    const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['shambler', 0.05], ['shocker', 0.03], ['bloater', 0.04], ['lobber', 0.035]];
     const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
     for (const [id, chance] of table) {
         const t = enemyTypes[id];

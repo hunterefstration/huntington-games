@@ -970,6 +970,97 @@ function buildWeaponModel(id) {
             def = { sight: [0.142, 0.06], muzzle: [0, 0.045, -0.57], eject: [0.03, 0.05, 0.0] };
             break;
         }
+        // ---- 5.5 weapons ----
+        case 'drum': {          // full-auto drum shotgun: boxy receiver, shrouded barrel with a brake, big round drum, folding foregrip
+            X(g, [-0.2, 0.08, 0.16, 0.08, 0.17, 0.065, 0.17, -0.015, -0.2, -0.015], 0.062, body, 0, 0.003);
+            rail(g, -0.18, 0.12, 0.092, 0.024);
+            B(g, 0.064, 0.016, 0.3, accent, 0, 0.035, -0.02);
+            B(g, 0.004, 0.03, 0.07, mt.poly, 0.0315, 0.05, 0.02);                    // ejection port
+            P.bcg = G(g, 0.032, 0.05, 0.02); B(P.bcg, 0.003, 0.018, 0.04, mt.steel, 0, 0, 0);
+            LA(g, [0, -0.62, 0.021, -0.62, 0.023, -0.61, 0.023, -0.2, 0, -0.2], mt.steel, 0, 0.045, 0, 14);        // barrel
+            LA(g, [0, -0.5, 0.036, -0.5, 0.038, -0.49, 0.038, -0.2, 0, -0.2], mt.poly, 0, 0.045, 0, 14);            // shroud
+            for (let i = 0; i < 5; i++) for (const s of [-1, 1]) B(g, 0.004, 0.016, 0.03, mt.metal, s * 0.038, 0.045, -0.24 - i * 0.05);
+            hider(g, 0.026, 0.045, -0.68, 0.06);
+            P.sight = G(g, 0, 0, 0);
+            B(P.sight, 0.03, 0.022, 0.03, mt.metal, 0, 0.104, -0.15); B(P.sight, 0.006, 0.02, 0.006, mt.red, 0, 0.123, -0.15);
+            B(P.sight, 0.036, 0.026, 0.02, mt.metal, 0, 0.106, 0.09); B(P.sight, 0.012, 0.012, 0.022, mt.poly, 0, 0.121, 0.09);
+            P.mag = G(g, 0, 0, 0);
+            const dr = C(P.mag, 0.1, 0.075, mt.metal, 0, -0.1, -0.06, 20); dr.rotation.y = Math.PI / 2;
+            for (const s of [-1, 1]) { const rr = C(P.mag, 0.07, 0.004, accent, s * 0.039, -0.1, -0.06, 18); rr.rotation.y = Math.PI / 2; }
+            B(P.mag, 0.05, 0.03, 0.07, mt.poly, 0, -0.005, -0.06);
+            const tg = gripX(g, 0.1, -0.015, 0.11, 0.03, mt.poly, 0.042, 0.05);
+            trigger(0.04, -0.015);
+            X(g, [0.17, 0.07, 0.46, 0.06, 0.48, -0.06, 0.44, -0.075, 0.3, -0.03, 0.17, -0.015], 0.05, body, 0, 0.003);   // stock
+            B(g, 0.052, 0.14, 0.014, mt.poly, 0, 0.0, 0.485);
+            B(g, 0.03, 0.08, 0.035, mt.poly, 0, -0.025, -0.33);                    // foregrip
+            P.charge = B(g, 0.014, 0.014, 0.03, mt.metal, -0.034, 0.055, -0.1);
+            P.rh = makeArm(g, [0, -0.06, 0.12], ER, 'grip', tg, SW);
+            P.lh = makeArm(g, [0, -0.062, -0.33], EL, 'vgrip', 0, SW);
+            def = { sight: [0.123, 0.09], muzzle: [0, 0.045, -0.68], eject: [0.035, 0.05, 0.02], shell: true };
+            break;
+        }
+        case 'plasma': {        // plasma rifle: sleek bullpup shell, glowing coil strips, emitter rings, a heat-sink cell behind the grip
+            const glow = FX.glow55 = new THREE.MeshStandardMaterial({ color: 0x3b0a45, emissive: 0xe879f9, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.3 });
+            X(g, [-0.3, 0.07, 0.3, 0.075, 0.42, 0.06, 0.46, -0.04, 0.3, -0.03, 0.05, -0.02, -0.3, 0.0], 0.06, body, 0, 0.004);
+            B(g, 0.062, 0.016, 0.42, accent, 0, 0.0, 0.0);
+            for (const s of [-1, 1]) B(g, 0.004, 0.012, 0.38, glow, s * 0.031, 0.045, -0.04);
+            LA(g, [0, -0.62, 0.016, -0.62, 0.016, -0.3, 0, -0.3], mt.steel, 0, 0.035, 0, 12);
+            for (const z of [-0.36, -0.44, -0.52]) C(g, 0.03, 0.016, mt.metal, 0, 0.035, z, 14);
+            for (const z of [-0.4, -0.48]) C(g, 0.026, 0.05, glow, 0, 0.035, z, 12);
+            C(g, 0.012, 0.01, glow, 0, 0.035, -0.625, 10);
+            rail(g, -0.22, 0.2, 0.08, 0.022);
+            P.sight = G(g, 0, 0, 0);
+            B(P.sight, 0.036, 0.012, 0.06, mt.metal, 0, 0.086, 0.0);
+            for (const s of [-1, 1]) B(P.sight, 0.006, 0.046, 0.046, mt.poly, s * 0.02, 0.113, 0.0);
+            B(P.sight, 0.046, 0.006, 0.046, mt.poly, 0, 0.139, 0.0); B(P.sight, 0.034, 0.042, 0.002, mt.glass, 0, 0.113, -0.02);
+            ring(P.sight, 0.008, 0.0008, mt.red, 0, 0.113, -0.019); B(P.sight, 0.0025, 0.0025, 0.001, mt.red, 0, 0.113, -0.019);
+            P.mag = G(g, 0, 0, 0);
+            B(P.mag, 0.042, 0.09, 0.06, mt.metal, 0, -0.06, 0.22); B(P.mag, 0.044, 0.02, 0.044, glow, 0, -0.035, 0.22);
+            const tg = gripX(g, 0.06, -0.02, 0.105, 0.03, mt.poly, 0.04, 0.05);
+            trigger(0.0, -0.02);
+            B(g, 0.06, 0.12, 0.016, mt.poly, 0, 0.005, 0.465);
+            B(g, 0.032, 0.075, 0.035, mt.poly, 0, -0.04, -0.24);
+            P.rh = makeArm(g, [0, -0.065, 0.075], ER, 'grip', tg, SW);
+            P.lh = makeArm(g, [0, -0.072, -0.24], EL, 'vgrip', 0, SW);
+            def = { sight: [0.113, 0.0], muzzle: [0, 0.035, -0.63], eject: [0.035, 0.05, 0.1] };
+            break;
+        }
+        case 'cryo': {          // cryo blaster: insulated body, a glowing coolant tank on top, frost fins round the nozzle
+            const ice = FX.glow55 = new THREE.MeshStandardMaterial({ color: 0x0c4a6e, emissive: 0x7dd3fc, emissiveIntensity: 1.3, roughness: 0.2, metalness: 0.2 });
+            LA(g, [0, -0.3, 0.04, -0.3, 0.045, -0.28, 0.045, 0.14, 0.03, 0.18, 0, 0.18], body, 0, 0.03, 0, 14);
+            for (const z of [-0.2, 0.05]) C(g, 0.048, 0.02, mt.metal, 0, 0.03, z, 14);
+            P.mag = G(g, 0, 0, 0);
+            C(P.mag, 0.036, 0.24, mt.glass, 0, 0.105, -0.04, 14); C(P.mag, 0.027, 0.22, ice, 0, 0.105, -0.04, 12);
+            for (const z of [-0.165, 0.085]) C(P.mag, 0.04, 0.02, mt.metal, 0, 0.105, z, 14);
+            for (const z of [-0.12, 0.04]) B(P.mag, 0.016, 0.03, 0.016, mt.steel, 0, 0.07, z);
+            LA(g, [0, -0.5, 0.03, -0.5, 0.034, -0.48, 0.02, -0.3, 0, -0.3], mt.steel, 0, 0.03, 0, 12);
+            for (const z of [-0.34, -0.39, -0.44]) C(g, 0.044, 0.008, accent, 0, 0.03, z, 14);
+            C(g, 0.022, 0.004, ice, 0, 0.03, -0.502, 12);
+            const tg = gripX(g, 0.1, 0.0, 0.105, 0.03, mt.poly, 0.04, 0.05);
+            trigger(0.04, -0.01);
+            B(g, 0.03, 0.09, 0.035, mt.poly, 0, -0.05, -0.2);
+            B(g, 0.05, 0.1, 0.12, mt.poly, 0, 0.02, 0.24);
+            P.rh = makeArm(g, [0, -0.055, 0.12], ER, 'grip', tg, SW);
+            P.lh = makeArm(g, [0, -0.09, -0.2], EL, 'vgrip', 0, SW);
+            def = { sight: [0.17, 0.1], muzzle: [0, 0.03, -0.5], eject: [0.04, 0.05, 0.0] };
+            break;
+        }
+        case 'seeker': {        // seeker launcher: three tubes in a cluster, a tracking sensor, a rear rocket pack
+            const eye = FX.glow55 = new THREE.MeshStandardMaterial({ color: 0x431407, emissive: 0xfb923c, emissiveIntensity: 1.4, roughness: 0.3, metalness: 0.3 });
+            B(g, 0.12, 0.11, 0.42, body, 0, 0.06, -0.1);
+            for (const [x, y] of [[-0.03, 0.1], [0.03, 0.1], [0, 0.05]]) { C(g, 0.026, 0.5, mt.poly, x, y, -0.33, 12, true); C(g, 0.03, 0.02, accent, x, y, -0.58, 12, true); C(g, 0.015, 0.03, mt.red, x, y, -0.55, 8); }
+            B(g, 0.03, 0.02, 0.04, mt.metal, 0, 0.14, -0.33); C(g, 0.022, 0.02, eye, 0, 0.162, -0.33, 12);
+            B(g, 0.016, 0.04, 0.03, mt.metal, 0, 0.13, 0.06); ring(g, 0.012, 0.003, mt.metal, 0, 0.162, 0.06);
+            P.mag = G(g, 0, 0, 0); B(P.mag, 0.1, 0.06, 0.12, mt.metal, 0, 0.02, 0.14); B(P.mag, 0.104, 0.012, 0.08, accent, 0, 0.05, 0.14);
+            const tg = gripX(g, 0.04, 0.005, 0.11, 0.03, mt.poly, 0.04, 0.05);
+            trigger(-0.02, 0.004);
+            B(g, 0.1, 0.13, 0.03, mt.poly, 0, 0.06, 0.22);
+            B(g, 0.03, 0.09, 0.035, mt.poly, 0, -0.03, -0.25);
+            P.rh = makeArm(g, [0, -0.045, 0.055], ER, 'grip', tg, SW);
+            P.lh = makeArm(g, [0, -0.075, -0.25], EL, 'vgrip', 0, SW);
+            def = { sight: [0.162, 0.06], muzzle: [0, 0.08, -0.6], eject: [0.06, 0.08, 0.05] };
+            break;
+        }
         case 'railgun': {       // twin magnetic rails with a glowing channel that brightens as it charges
             const coil = FX.coil = new THREE.MeshStandardMaterial({ color: 0x083344, emissive: 0x22d3ee, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.4 });
             B(g, 0.07, 0.1, 0.4, body, 0, 0.035, 0.0);                                 // receiver
@@ -1019,7 +1110,12 @@ function buildWeaponModel(id) {
                 dual: { by: 0.057, b0: -0.17, b1: -0.23, w: 0.044, rf: -0.17, rr: 0.05 },
                 glauncher: { by: 0.064, b0: -0.19, b1: -0.53, w: 0.068, stock: 0.41, rf: -0.04, rr: 0.16, noPort: true, noShroud: true, noBrake: true },
                 tesla: { by: 0.045, b0: -0.13, b1: -0.47, w: 0.07, stock: 0.38, rf: -0.15, rr: 0.19, noPort: true, noShroud: true, noBrake: true, noStop: true },
-                railgun: { by: 0.045, b0: -0.19, b1: -0.81, w: 0.07, stock: 0.48, rf: -0.2, rr: 0.2, noPort: true, noShroud: true, noBrake: true } }[id];
+                railgun: { by: 0.045, b0: -0.19, b1: -0.81, w: 0.07, stock: 0.48, rf: -0.2, rr: 0.2, noPort: true, noShroud: true, noBrake: true },
+                // 5.5 weapons
+                drum: { by: 0.045, b0: -0.5, b1: -0.62, w: 0.064, stock: 0.48, rf: -0.2, rr: 0.16 },
+                plasma: { by: 0.035, b0: -0.3, b1: -0.6, w: 0.06, stock: 0.46, rf: -0.3, rr: 0.3, noPort: true, noBrake: true },
+                cryo: { by: 0.03, b0: -0.3, b1: -0.5, w: 0.07, rf: -0.28, rr: 0.16, noPort: true, noShroud: true, noBrake: true, noStop: true },
+                seeker: { by: 0.07, b0: -0.3, b1: -0.58, w: 0.12, rf: -0.3, rr: 0.12, noPort: true, noShroud: true, noBrake: true } }[id];
     const handgun = isHandgun(id);
     // each tier has its own paint scheme (a camo, if you picked one, wins)
     if (camo === CAMOS.stock && L >= 1 && L <= 3) {
@@ -1059,7 +1155,8 @@ function buildWeaponModel(id) {
     }
     const LASER = { pistol: [-0.03, 0.012, -0.11], revolver: [-0.024, 0.04, -0.2], smg: [-0.035, 0.035, -0.27], ar: [-0.038, 0.045, -0.46], burst: [-0.038, 0.0, -0.22], lever: [-0.034, 0.05, -0.45], carbine: [-0.036, 0.045, -0.3],
                     shotgun: [-0.03, 0.05, -0.6], dmr: [-0.036, 0.045, -0.5], lmg: [-0.036, 0.05, -0.52], sniper: [-0.038, 0.035, -0.4], minigun: [-0.08, 0.03, -0.25], rpg: [-0.06, 0.04, -0.3], crossbow: [-0.03, 0.03, -0.3], flamer: [-0.045, 0.0, -0.3],
-                    dual: [-0.03, 0.012, -0.11], glauncher: [-0.05, 0.064, -0.3], tesla: [-0.048, 0.025, -0.1], railgun: [-0.05, 0.012, -0.3] };
+                    dual: [-0.03, 0.012, -0.11], glauncher: [-0.05, 0.064, -0.3], tesla: [-0.048, 0.025, -0.1], railgun: [-0.05, 0.012, -0.3],
+                    drum: [-0.04, 0.045, -0.42], plasma: [-0.04, 0.02, -0.25], cryo: [-0.05, 0.0, -0.2], seeker: [-0.07, 0.05, -0.3] };
     if (L >= 1) {   // TACTICAL: laser sight, handstop, rubber buttpad
         const [lx, ly, lz] = LASER[id];
         B(g, 0.018, 0.024, 0.065, mt.poly, lx - (L >= 2 ? A.w * 0.12 : 0), ly, lz);

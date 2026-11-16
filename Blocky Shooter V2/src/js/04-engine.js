@@ -476,6 +476,8 @@ function applyFloorTint() {
         if (currentMap === 'downtown') m.color.multiplyScalar(0.8);
         if (currentMap === 'mall') m.color.multiplyScalar(0.62);                                   // parking-lot asphalt
         if (currentMap === 'military') m.color.multiply(_tint.setHex(0xc9c09a)).multiplyScalar(0.95);   // dusty ground
+        if (currentMap === 'frostbite') m.color.lerp(_tint.setHex(0xdfe8f2), 0.72);                       // 5.5: snow
+        if (currentMap === 'carnival') m.color.multiply(_tint.setHex(0x9a8a6a)).multiplyScalar(1.1);      // 5.5: trampled grass and dirt
     }
     updateCones();
 }

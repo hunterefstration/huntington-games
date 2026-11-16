@@ -1,9 +1,11 @@
+// (5.5 adds HUNTED: one player at a time is the Hunted - 300 HP, a Minigun, a red beam over their head - and only they score)
 // ---------- 5.3 MORE PVP MODES: Free-for-all, Gun Game, Kill Confirmed, Capture the Flag, King of the Hill, Last Team Standing, Infection ----------
 // The host is the referee for all of them, as for team deathmatch: it sees everyone's position (their snapshots), so it decides
 // pick-ups, captures, hill time, rounds and infections, and sends the state out in one small 'mst' message whenever it changes
 // (and once a second, which also catches up a player who joined late). Guests only draw it.
 const MD = { on: false, mode: '', phase: '', until: 0, gg: {}, tags: [], flags: null, bases: null, hill: null, hills: [], hillIdx: 0, hillAt: 0, holder: -1,
-             round: 0, rs: 0, sendT: 0, tickT: 0, tagSeq: 1, g: null, vis: null, alive: [0, 0] };
+             round: 0, rs: 0, sendT: 0, tickT: 0, tagSeq: 1, g: null, vis: null, alive: [0, 0], hunted: -1, wasMe: false };
+const HUNT_HP = 300;
 const GG_LIST = ['lmg', 'ar', 'burst', 'smg', 'shotgun', 'lever', 'dmr', 'sniper', 'revolver', 'pistol', 'katana'];
 const INF_COLORS = [0x3b82f6, 0x84cc16];
 const LTS_ROUND_S = 150, KC_TAG_S = 30, CTF_RETURN_S = 20, HILL_MOVE_S = 60, HILL_R = 5;
@@ -27,16 +29,17 @@ function modeLateTeam(p) {
     if (isFfaMode()) { let t = 2; for (const q of allPlayers()) if (q !== p) t = Math.max(t, q.team + 1); p.team = t; }
     else if (NET.mode === 'infect') p.team = 1;          // late to the party: you join the horde
 }
-function modeMaxHp(team) { return NET.mode === 'infect' && (team & 1) ? 150 : 100; }
+function modeMaxHp(team, id) { return NET.mode === 'infect' && (team & 1) ? 150 : NET.mode === 'hunted' && id !== undefined && id === MD.hunted ? HUNT_HP : 100; }
 function modeRespawnDelay(team) { return NET.mode === 'lts' ? 1e9 : NET.mode === 'infect' && (team === undefined ? NET.team : team) === 1 ? 2 : 3; }
 function modeCanRespawn(p) { return NET.mode !== 'lts' && !NET.over; }
 function modeHitOk(shooter, target) { return !(MD.on && MD.phase !== 'live'); }
 function modeLoadout(fresh) {
     const m = NET.mode;
-    maxHp = modeMaxHp(NET.team);
+    maxHp = modeMaxHp(NET.team, NET.id);
     let list, cur, sec = ['grenade'];
     if (m === 'gungame') { cur = GG_LIST[Math.min(GG_LIST.length - 1, MD.gg[NET.id] | 0)]; list = [cur]; sec = []; }
     else if (m === 'infect' && NET.team === 1) { list = ['katana']; cur = 'katana'; sec = []; }
+    else if (m === 'hunted' && MD.hunted === NET.id) { list = ['minigun']; cur = 'minigun'; sec = []; }
     else if (m === 'infect') { list = ['pistol', 'smg', 'shotgun', 'ar']; cur = !fresh && list.includes(playerStats.currentWeapon) ? playerStats.currentWeapon : 'ar'; }
     else { list = WEAPON_ORDER.slice(); cur = !fresh && list.includes(playerStats.currentWeapon) ? playerStats.currentWeapon : 'ar'; }
     playerStats.weapons = list; playerStats.currentWeapon = cur;
@@ -47,12 +50,14 @@ function modeBotWeapon(p) {
     if (m === 'gungame') return GG_LIST[Math.min(GG_LIST.length - 1, MD.gg[p.id] | 0)];
     if (m === 'infect') return p.team === 1 ? 'katana' : ['ar', 'shotgun', 'smg'][p.id % 3];
     if (m === 'tourney') return 'ar';
+    if (m === 'hunted' && MD.hunted === p.id) return 'minigun';
     return (p.bot && p.bot.gun) || 'ar';
 }
 // where a bot should head for the objective (null = just hunt enemies)
 function modeBotGoal(p) {
     const m = NET.mode, b = p.bot;
     if (!MD.on) return null;
+    if (m === 'hunted' && MD.hunted >= 0 && MD.hunted !== p.id && p.id % 3) { const h = playerById(MD.hunted), P = h && h.alive ? netPosOf(h) : null; if (P) return P; }      // most bots go after the Hunted
     if (m === 'ctf' && MD.flags) {
         const t = p.team & 1, mine = MD.flags[t], theirs = MD.flags[1 - t];
         if (theirs.s === 'carried' && theirs.by === p.id) return MD.bases[t];                         // run it home
@@ -77,6 +82,7 @@ function modeIntro() {
         case 'ctf': return `CAPTURE THE FLAG - first to ${M.target} captures`;
         case 'koth': return `KING OF THE HILL - hold the hill, first to ${M.target}`;
         case 'lts': return `LAST TEAM STANDING - no respawns, first to ${M.target} rounds`;
+        case 'hunted': return `HUNTED - first kill becomes the Hunted. First to ${M.target} points`;
         case 'infect': return NET.team === 1 ? 'INFECTION - you are INFECTED: get them all!' : 'INFECTION - survive for 3 minutes!';
     }
     return M.name;
@@ -84,7 +90,7 @@ function modeIntro() {
 
 // ----- start / stop -----
 function modeReset() {
-    MD.on = false; MD.mode = ''; MD.phase = ''; MD.gg = {}; MD.tags = []; MD.flags = null; MD.bases = null; MD.hill = null; MD.hills = []; MD.round = 0; MD.rs = 0; MD.holder = -1; MD.until = 0; MD.rsSeen = undefined; MD.myLv = undefined; MD.alive = [0, 0];
+    MD.on = false; MD.mode = ''; MD.phase = ''; MD.gg = {}; MD.tags = []; MD.flags = null; MD.bases = null; MD.hill = null; MD.hills = []; MD.round = 0; MD.rs = 0; MD.holder = -1; MD.until = 0; MD.rsSeen = undefined; MD.myLv = undefined; MD.alive = [0, 0]; MD.hunted = -1; MD.wasMe = false;
     if (MD.g) { scene.remove(MD.g); MD.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); MD.g = null; MD.vis = null; }
 }
 function modeBegin(cfg) {               // everyone, when the match starts (after the map is built)
@@ -151,6 +157,16 @@ function modeHostDeath(v, k, si) {
         for (const f of MD.flags || []) if (f.s === 'carried' && f.by === v.id) ctfDrop(f, netPosOf(v));
         modeSend();
     } else if (m === 'lts') ltsCheck();
+    else if (m === 'hunted') {
+        if (v.id === MD.hunted) {
+            if (k) { k.pts = (k.pts | 0) + 2; huntSet(k, `${k.name} TOOK DOWN THE HUNTED - ${k.name} is the new Hunted!`); }
+            else { MD.hunted = -1; modeSend('The Hunted fell - the next kill takes the crown', '#fca5a5'); }
+        } else if (k) {
+            if (k.id === MD.hunted) { k.pts = (k.pts | 0) + 1; modeSend(); }
+            else if (MD.hunted < 0) huntSet(k, `${k.name} drew first blood and is the HUNTED!`);
+        }
+        if (k && (k.pts | 0) >= NET.target) modeEnd(-1, k.id, `${k.name} WINS WITH ${k.pts} POINTS`);
+    }
     else if (m === 'infect') {
         if ((v.team & 1) === 0) {
             if (k && k.team === 1) k.pts = (k.pts | 0) + 1;
@@ -159,6 +175,11 @@ function modeHostDeath(v, k, si) {
         } else if (k) k.pts = (k.pts | 0) + 1;
         infectCheck();
     }
+}
+function huntSet(p, msg) {             // host: p is the Hunted now
+    MD.hunted = p.id;
+    if (isBot(p) && p.alive) { const b = p.bot; b.hp = HUNT_HP; p.hp = HUNT_HP; b.w = 'minigun'; b.ammo = weaponsDb.minigun.magSize; b.reloadT = 0; }
+    modeSend(msg, '#f87171');
 }
 function modeSetTeam(p, team) {
     p.team = team;
@@ -214,7 +235,7 @@ function modeHostTick(dt) {
             return;
         }
         if (m === 'infect') { const s = allPlayers().filter(p => (p.team & 1) === 0).length; modeEnd(0, undefined, `SURVIVORS WIN - ${s} MADE IT`); return; }
-        if (isFfaMode()) { const lvl = (p) => m === 'gungame' ? MD.gg[p.id] | 0 : p.kills, w = allPlayers().sort((a, b) => lvl(b) - lvl(a) || b.kills - a.kills)[0]; modeEnd(-1, w.id, `TIME! ${w.name} WINS`); return; }
+        if (isFfaMode()) { const lvl = (p) => m === 'gungame' ? MD.gg[p.id] | 0 : m === 'hunted' ? p.pts | 0 : p.kills, w = allPlayers().sort((a, b) => lvl(b) - lvl(a) || b.kills - a.kills)[0]; modeEnd(-1, w.id, `TIME! ${w.name} WINS`); return; }
         const w = NET.score[0] === NET.score[1] ? -1 : NET.score[0] > NET.score[1] ? 0 : 1;
         modeEnd(w, undefined, w < 0 ? `TIME! A DRAW  ${NET.score[0]} - ${NET.score[1]}` : `TIME! ${TEAM_NAMES[w]} TEAM WINS  ${NET.score[0]} - ${NET.score[1]}`);
         return;
@@ -277,12 +298,14 @@ function modeHostTick(dt) {
     } else if (m === 'lts' && MD.phase === 'live') {
         const n = ltsAlive(); if (n[0] !== MD.alive[0] || n[1] !== MD.alive[1]) { MD.alive = n; changed = true; ltsCheck(); }
     } else if (m === 'infect') infectCheck();
+    else if (m === 'hunted' && MD.hunted >= 0 && !playerById(MD.hunted)) { MD.hunted = -1; changed = true; ev = 'The Hunted left - the next kill takes the crown'; evc = '#fca5a5'; }
     if (changed || ev) modeSend(ev, evc);
     else if ((MD.sendT -= 0.1) <= 0) modeSend();
 }
 function modeSnapshot(ev, evc) {
     const m = { t: 'mst', ph: MD.phase, rem: MD.until ? Math.max(0, (MD.until - performance.now()) / 1000) : -1, round: MD.round, rs: MD.rs, alive: MD.alive };
     if (NET.mode === 'gungame') m.gg = MD.gg;
+    if (NET.mode === 'hunted') m.hv = MD.hunted;
     if (MD.tags.length || NET.mode === 'kc') m.tags = MD.tags.map(t => [t.id, r2(t.x), r2(t.y), r2(t.z), t.team]);
     if (MD.flags) { m.flags = MD.flags.map(f => [f.s === 'home' ? 0 : f.s === 'carried' ? 1 : 2, f.by, r2(f.x), r2(f.y), r2(f.z)]); m.bases = MD.bases.map(b => [r2(b.x), r2(b.y), r2(b.z)]); }
     if (MD.hill) m.hill = [r2(MD.hill.x), r2(MD.hill.y), r2(MD.hill.z), MD.hill.r, MD.holder, Math.max(0, HILL_MOVE_S - (performance.now() - MD.hillAt) / 1000)];
@@ -301,6 +324,7 @@ function modeApply(m) {
     if (!MD.on || NET.host) return;
     MD.phase = m.ph; MD.until = m.rem >= 0 ? performance.now() + m.rem * 1000 : 0; MD.round = m.round | 0; MD.alive = m.alive || [0, 0];
     if (m.gg) MD.gg = m.gg;
+    if (m.hv !== undefined) MD.hunted = m.hv | 0;
     if (m.tags) MD.tags = m.tags.map(([id, x, y, z, team]) => ({ id, x, y, z, team }));
     if (m.flags) { MD.flags = m.flags.map(([s, by, x, y, z], t) => ({ t, s: s === 0 ? 'home' : s === 1 ? 'carried' : 'dropped', by, x, y, z })); MD.bases = m.bases.map(([x, y, z]) => ({ x, y, z })); }
     if (m.hill) { MD.hill = { x: m.hill[0], y: m.hill[1], z: m.hill[2], r: m.hill[3] }; MD.holder = m.hill[4]; MD.hillAt = performance.now() - (HILL_MOVE_S - m.hill[5]) * 1000; }
@@ -315,6 +339,17 @@ function modeEffects(m) {
             if (lv > MD.myLv) { toast(`NEXT GUN: ${W(playerStats.currentWeapon).name.toUpperCase()}${lv === GG_LIST.length - 1 ? ' - LAST ONE!' : ''}`, '#fde047', 1.6); sfx('level'); }
         }
         MD.myLv = lv;
+    }
+    // 5.5 hunted: you just became the Hunted (if you're dead right now, your respawn gives you the kit)
+    if (NET.mode === 'hunted') {
+        const me = MD.hunted === NET.id;
+        if (me !== MD.wasMe) {
+            MD.wasMe = me;
+            if (me && !NET.dead) {
+                modeLoadout(); currentHp = maxHp; ammoState.minigun = W('minigun').magSize; cancelReload(); updateGunModel(); updateHUD();
+                toast('YOU ARE THE HUNTED - 300 HP and a Minigun. Every kill scores!', '#f87171', 2.4); sfx('level');
+            }
+        }
     }
     // last team standing: a new round puts everyone back at their spawn with full health
     if (NET.mode === 'lts' && m.rs !== undefined && m.rs !== MD.rsSeen) {
@@ -386,6 +421,17 @@ function modeTick(dt) {           // per frame, everyone
         } else { g.visible = true; g.scale.setScalar(1); g.position.set(f.x, f.y, f.z); g.rotation.y = t * 0.8; }
     });
     for (const o of V.tags.values()) { o.rotation.y = t * 3; o.position.y += Math.sin(t * 3 + o.id) * 0.002; }
+    if (NET.mode === 'hunted') {      // 5.5: a red beam and a spinning crown over the Hunted, for everyone but the Hunted
+        if (!V.hunt) {
+            const g = new THREE.Group();
+            const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 30, 8, 1, true), mdMat(0xef4444, 0.22)); beam.position.y = 17; g.add(beam);
+            const crown = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 6, 16), mdMat(0xfca5a5)); crown.rotation.x = Math.PI / 2; crown.position.y = 2.45; g.add(crown);
+            MD.g.add(g); V.hunt = g;
+        }
+        const h = MD.hunted >= 0 && MD.hunted !== NET.id ? playerById(MD.hunted) : null;
+        V.hunt.visible = !!(h && h.alive && h.av && h.av.g.visible);
+        if (V.hunt.visible) { V.hunt.position.copy(h.av.g.position); V.hunt.rotation.y = t * 2; V.hunt.children[0].material.opacity = 0.16 + 0.1 * Math.sin(t * 5); }
+    }
     if (V.hill) V.hill.children[3].material.opacity = 0.16 + 0.08 * Math.sin(t * 3);
 }
 
@@ -398,7 +444,11 @@ function modeHud() {
     let sc = '', lv = MP_MODES[m].name, line = '', col = '';
     if (isFfaMode()) {
         const all = allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills), lead = all[0];
-        if (m === 'gungame') {
+        if (m === 'hunted') {
+            const hu = MD.hunted >= 0 ? playerById(MD.hunted) : null;
+            sc = `<span>YOU ${me ? me.pts | 0 : 0}</span>${clock}<span class="text-base text-gray-300">first to ${NET.target}</span><span style="color:${hex(lead ? pcol(lead) : 0xffffff)}">${lead ? escHtml(lead.id === NET.id ? 'YOU' : lead.name) + ' ' + (lead.pts | 0) : ''}</span>`;
+            line = MD.hunted === NET.id ? 'YOU ARE THE HUNTED - every kill scores!' : hu ? `HUNTED: ${hu.name} - take them down for 2 points` : 'The first kill makes you the HUNTED';
+        } else if (m === 'gungame') {
             const my = MD.gg[NET.id] | 0, lw = lead ? MD.gg[lead.id] | 0 : 0;
             sc = `<span>GUN ${my + 1}/${GG_LIST.length}</span>${clock}<span style="color:${hex(lead ? pcol(lead) : 0xffffff)}">${lead ? escHtml(lead.id === NET.id ? 'YOU' : lead.name) + ' ' + (lw + 1) : ''}</span>`;
             line = `${W(playerStats.currentWeapon).name}${my < GG_LIST.length - 1 ? ' - next: ' + W(GG_LIST[my + 1]).name : ' - LAST GUN!'}`;
@@ -432,11 +482,12 @@ function modeStatLine(p) {
         case 'ctf': return ` - ${p.pts | 0} PTS`;
         case 'koth': return ` - ${p.pts | 0}s ON THE HILL`;
         case 'infect': return ` - ${p.team === 1 ? 'INFECTED' : 'SURVIVED'}`;
+        case 'hunted': return ` - ${p.pts | 0} PTS${p.id === MD.hunted ? ' (HUNTED)' : ''}`;
     }
     return '';
 }
 function modeBoardHtml() {
-    const col = { ffa: 'KILLS', gungame: 'GUN', kc: 'TAGS', ctf: 'POINTS', koth: 'HILL', lts: 'KILLS', infect: 'POINTS' }[NET.mode] || 'SCORE';
+    const col = { ffa: 'KILLS', gungame: 'GUN', kc: 'TAGS', ctf: 'POINTS', koth: 'HILL', lts: 'KILLS', infect: 'POINTS', hunted: 'POINTS' }[NET.mode] || 'SCORE';
     const val = (p) => NET.mode === 'gungame' ? (MD.gg[p.id] | 0) + 1 : NET.mode === 'ffa' || NET.mode === 'lts' ? p.kills : p.pts | 0;
     const head = `<tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">${col}</td><td class="pr-6">KILLS</td><td class="pr-6">DEATHS</td><td>PING</td></tr>`;
     const rows = (list) => list.sort((a, b) => val(b) - val(a) || b.kills - a.kills).map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.bot ? ' <span class="text-[10px] text-gray-400">BOT</span>' : ''}${p.alive ? '' : ' <span class="text-[10px] text-red-300">DEAD</span>'}</td><td class="pr-6">${val(p)}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td>${pingCell(p)}</td></tr>`).join('');
@@ -462,13 +513,14 @@ function netGhostLoad(p) {
     return true;
 }
 
+hooks55();          // 5.5 test hooks (13b-weapons-55.js)
 // Last Team Standing: click to watch the next teammate
 document.addEventListener('mousedown', () => { if (NET.inGame && NET.dead && NET.mode === 'lts') NET.specIdx = (NET.specIdx | 0) + 1; });
 
 // test hooks (5.3)
 Object.assign(window.__blocky, {
     modes: {
-        MD, GG_LIST, state: () => ({ on: MD.on, mode: MD.mode, phase: MD.phase, gg: MD.gg, tags: MD.tags.length, flags: MD.flags && MD.flags.map(f => f.s + ':' + f.by), hill: MD.hill && [MD.hill.x, MD.hill.z, MD.holder], round: MD.round, score: NET.score.slice(), over: NET.over, team: NET.team, rem: MD.until ? Math.round((MD.until - performance.now()) / 1000) : -1 }),
+        MD, GG_LIST, state: () => ({ on: MD.on, mode: MD.mode, phase: MD.phase, gg: MD.gg, hunted: MD.hunted, tags: MD.tags.length, flags: MD.flags && MD.flags.map(f => f.s + ':' + f.by), hill: MD.hill && [MD.hill.x, MD.hill.z, MD.holder], round: MD.round, score: NET.score.slice(), over: NET.over, team: NET.team, rem: MD.until ? Math.round((MD.until - performance.now()) / 1000) : -1 }),
         players: () => allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, alive: !!p.alive, kills: p.kills, deaths: p.deaths, pts: p.pts | 0, bot: !!p.bot, spec: !!p.spec, vis: p.av ? p.av.g.visible : null, hp: p.hp })),
         addBots: (n) => { let k = 0; for (let i = 0; i < n; i++) if (botAdd()) k++; hostLobbyUpdate(); return k; },
         setMode: (m) => { NET.lobby.mode = m; for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); hostLobbyUpdate(); },

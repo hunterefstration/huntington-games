@@ -446,6 +446,7 @@ function setRainAudio(on) {
     } else if (!on && rainAudio) { try { rainAudio.stop(); } catch (e) {} rainAudio = null; }
 }
 function updateWeather(dt) {
+    updateSnow(dt);              // 5.5 Frostbite
     if (!rainMesh) return;
     const storm = !!theme.rain;
     setRainAudio(storm && currentGameState === 'playing');

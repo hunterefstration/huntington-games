@@ -173,7 +173,8 @@ function updateProjectiles(dt) {
             continue;
         }
         if (p.kind === 'rocket') {
-            p.vel.y -= 2.5 * dt; p.fuse -= dt;
+            if (p.seek) seekerSteer(p, dt); else p.vel.y -= 2.5 * dt;      // 5.5 Seeker rockets home in (and don't drop)
+            p.fuse -= dt;
             let boom = false;
             for (let s = 0; s < 4 && !boom; s++) {
                 p.mesh.position.addScaledVector(p.vel, dt / 4);
@@ -188,7 +189,7 @@ function updateProjectiles(dt) {
             p.mesh.lookAt(_tmp.copy(p.mesh.position).add(p.vel));
             p.trail += dt;
             if (p.trail > 0.012) { p.trail = 0; spawnParticles(p.mesh.position, 0xffb454, 1, 1, 0.18, 0.1); spawnParticles(p.mesh.position, 0x9a9a9a, 1, 0.6, 0.9, 0.22, true, { grav: -0.5, drag: 2 }); }
-            if (boom || p.fuse <= 0) { removeProjectile(p); explode(p.mesh.position.clone(), p.damage, p.radius, { src: 'rpg', color: 0xff8a3c }); }
+            if (boom || p.fuse <= 0) { removeProjectile(p); explode(p.mesh.position.clone(), p.damage, p.radius, { src: p.seek ? 'seeker' : 'rpg', color: p.seek ? 0xffb347 : 0xff8a3c }); }
             continue;
         }
         if (p.kind === 'gl') {        // 4.0 launcher grenade
@@ -474,6 +475,13 @@ function fireRocket(w, dmgMul, spread) {
     mesh.position.copy(_muzzleW).addScaledVector(_dir, 0.4);
     scene.add(mesh);
     const L = w.level || 0;
+    if (w.seeker) {      // 5.5: a small homing rocket that fans out a little, then locks on to whatever is nearest your crosshair
+        mesh.scale.setScalar(0.6);
+        _dir.addScaledVector(_right, (Math.random() - 0.5) * 0.25).addScaledVector(_up, 0.05 + Math.random() * 0.12).normalize();
+        projectiles.push({ kind: 'rocket', mesh, vel: _dir.clone().multiplyScalar(44), fuse: 4, trail: 0, damage: w.damage * dmgMul, radius: w.radius + 0.25 * L, seek: true, arm: 0.12, retry: 0, tgt: seekerPick(camera.position, _fwd) });
+        spawnParticles(_muzzleW, 0xffc266, 4, 5, 0.25, 0.1); shake = Math.max(shake, 0.1); sfx('seeker');
+        return;
+    }
     projectiles.push({ kind: 'rocket', mesh, vel: _dir.clone().multiplyScalar(72), fuse: 5, trail: 0, damage: w.damage * dmgMul, radius: w.radius + 0.4 * L });
     // backblast behind you
     const back = camera.position.clone().addScaledVector(_fwd, -1.2);

@@ -101,7 +101,7 @@ function hostEnemySnapshot(now) {
         dv.setUint8(o + 10, Math.round(r * 256) & 255);
         dv.setUint8(o + 11, Math.round(clamp(u.hp / u.maxHp, 0, 1) * 255));
         dv.setUint8(o + 12, u.tgt ? (u.tgt.id & 255) : 255);
-        dv.setUint8(o + 13, (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead ? 1 : 0) | (u.phase2 ? 2 : 0));
+        dv.setUint8(o + 13, (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead ? 1 : 0) | (u.phase2 ? 2 : 0) | (u.freezeT > 0 ? 4 : u.chillT > 0 ? 8 : 0));      // 5.5: frozen / chilled
     }
     for (const p of netPlayers.values()) sendFast(p.peer, buf);
 }
@@ -159,7 +159,8 @@ function netUpdateEnemies(dt) {
         const sp = Math.hypot(e.position.x - ox, e.position.z - oz) / Math.max(dt, 1e-3);
         const fl = u.net.fl, cfg = u.config;
         u.state = E_STATES[fl & 15] || 'walk'; u.onGround = !!(fl & 16); u.leaping = !!(fl & 32); u.shielded = !!(fl & 128);
-        e.visible = !(u.state === 'cloak' || u.state === 'hidden' || u.state === 'burrow' || u.state === 'erupt');      // cloaked Phantom, Vent Crawler in its vent, Patient Zero underground
+        e.visible = !(u.state === 'cloak' || u.state === 'hidden' || u.state === 'burrow' || u.state === 'erupt');
+        { const fk = u.net.x & 4 ? 2 : u.net.x & 8 ? 1 : 0; if (fk || u.frost) { u.frost = fk; frostLook(u, fk); } }      // 5.5 frozen / chilled tint      // cloaked Phantom, Vent Crawler in its vent, Patient Zero underground
         if (u.state === 'hidden' && cfg.ai === 'crawler' && (u.rattleT = (u.rattleT || 0) - dt) <= 0) {      // the vent rattles for everyone, not just the host
             u.rattleT = 1.4 + Math.random() * 1.6; const hd = Math.hypot(camera.position.x - e.position.x, camera.position.z - e.position.z);
             if (hd < 24) { sfxAt('thud', hd); spawnParticles(_ev0.set(e.position.x, e.position.y + 0.15, e.position.z), 0x9ca3af, 2, 1.5, 0.4, 0.1, true, { grav: 4 }); }
@@ -615,6 +616,7 @@ function pickTeamSpawns(seed) {
 function netShowEnd(m) {
     if (!NET.inGame) return;
     NET.inGame = false; NET.over = true; if (TN.on) { tourneyReset(); }
+    if (m.t === 'end' && NET.mode === 'hunted' && m.wid === NET.id) life.huntWins = (life.huntWins | 0) + 1;      // 5.5
     commitLife();
     const h = document.querySelector('#gameover-overlay h2'), sub = document.querySelector('#gameover-overlay p');
     let title, line;

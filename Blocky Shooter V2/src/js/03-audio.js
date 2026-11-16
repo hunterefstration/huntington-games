@@ -129,6 +129,12 @@ function sfx(name) {
             case 'tesla':    sfxNoise(0.11, 7000, 0.14, 1800); sfxTone('sawtooth', 1900 + Math.random() * 500, 420, 0.09, 0.06); sfxTone('square', 95, 60, 0.07, 0.07); break;
             case 'railgun':  sfxTone('sawtooth', 2600, 70, 0.55, 0.24); sfxNoise(0.6, 9000, 0.3, 300); sfxTone('sine', 110, 30, 0.6, 0.45); sfxTone('triangle', 3200, 2400, 0.4, 0.05, 0.05); break;
             case 'railfull': sfxTone('triangle', 1500, 1800, 0.12, 0.06); break;
+            // 5.5 weapons
+            case 'drum':     sfxNoise(0.26, 1900, 0.42, 160); sfxTone('sawtooth', 120, 36, 0.18, 0.2); break;
+            case 'plasma':   sfxTone('sawtooth', 1300, 240, 0.09, 0.08); sfxTone('sine', 620, 180, 0.08, 0.1); sfxNoise(0.05, 5200, 0.08, 1200); break;
+            case 'cryo':     sfxNoise(0.09, 8200, 0.07, 2600); sfxTone('sine', 1800 + Math.random() * 300, 1400, 0.06, 0.02); break;
+            case 'seeker':   sfxNoise(0.22, 1500, 0.26, 200); sfxTone('sawtooth', 300, 900, 0.18, 0.08); break;
+            case 'freeze':   sfxTone('triangle', 2400, 3200, 0.12, 0.06); sfxTone('triangle', 3000, 2000, 0.18, 0.04, 0.05); sfxNoise(0.15, 7000, 0.08, 3000); break;
         }
     } catch (e) {}
 }

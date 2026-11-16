@@ -592,11 +592,11 @@
 
         // ---- 01-state.js ----
         // ==========================================
-        // 1. STATE & CONFIGURATION (Version 5.4)
+        // 1. STATE & CONFIGURATION (Version 5.5)
         // ==========================================
 
 
-        const VERSION = '5.4';
+        const VERSION = '5.5';
         let LOOK_MINE = null;          // 5.2: what you wear (goon-shop skin + avatar + title + rank tier), read from the launcher by 27b-mp-look.js
         const V3 = THREE.Vector3;
         const $ = (id) => document.getElementById(id);
@@ -651,21 +651,29 @@
             carbine:  { name: 'Burst Carbine', cost: 1800, color: 0x64748b, damage: 15, fireRate: 250, auto: true, burst: 4, burstGap: 46, magSize: 40, reloadTime: 1500, range: 130, pellets: 1, spread: 0.0045, recoil: 0.022, punch: 0.006, zoomFov: 54, hsMult: 1.3, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.19, flash: 0.28, desc: 'Short and light. Hold to fire tight 4-round bursts; the compact frame reloads fast.' },
             burst:    { name: 'Burst Rifle', cost: 2000, color: 0x14b8a6, damage: 18,  fireRate: 290,  auto: true,  burst: 3, burstGap: 55, magSize: 36, reloadTime: 1650, range: 170, pellets: 1, spread: 0.0025, recoil: 0.026, punch: 0.006, zoomFov: 48, hsMult: 1.15, reloadStyle: 'mag', hip: [0.144, -0.162, -0.36], adsDist: 0.12, flash: 0.28, desc: 'Hold to fire 3-round bursts. One burst to the head drops a grunt.' },
             shotgun:  { name: 'Shotgun',     cost: 2200, color: 0xef4444, damage: 30,  fireRate: 600,  auto: false, magSize: 8,   reloadTime: 250,  shellTime: 400, range: 60, pellets: 12, spread: 0.042, recoil: 0.2, punch: 0.05, zoomFov: 62, hsMult: 2, knock: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.46, desc: '12 heavy pellets. Knocks enemies back.' },
+            // 5.5: full-auto drum-fed shotgun - shreds a crowd up close, empties fast
+            drum:     { name: 'Drum Shotgun', cost: 3800, color: 0xbe123c, damage: 15, fireRate: 210, auto: true, magSize: 16, reloadTime: 2600, range: 45, pellets: 8, spread: 0.05, recoil: 0.12, punch: 0.03, zoomFov: 62, hsMult: 1.6, knock: 1, moveMult: 0.95, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.42, desc: 'Full-auto shotgun with a 16-shell drum. Hold the trigger to shred a crowd up close - then find cover for the long reload.' },
             // 5.0: lever-action rifle - hard-hitting .45-70 rounds, one cycled shell at a time
             lever:    { name: 'Lever Rifle', cost: 2600, color: 0xb45309, damage: 64, fireRate: 440, auto: false, magSize: 9, reloadTime: 300, shellTime: 380, range: 190, pellets: 1, spread: 0.0035, recoil: 0.11, punch: 0.032, zoomFov: 46, hsMult: 2.3, pierce: 1, reloadStyle: 'shell', hip: [0.144, -0.156, -0.36], adsDist: 0.2, flash: 0.38, desc: 'Old-school lever action. Heavy rounds that pass through 1 zombie, loaded one shell at a time.' },
             dmr:      { name: 'Marksman',    cost: 3500, color: 0xc2a36b, damage: 75,  fireRate: 280,  auto: false, magSize: 12,  reloadTime: 2200, range: 260, pellets: 1,  spread: 0.002, recoil: 0.08, punch: 0.022, zoomFov: 30, hsMult: 2.5, pierce: 1, scoped: 'optic', reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.12, flash: 0.32, desc: '4x optic. Punches through 1 enemy.' },
             crossbow: { name: 'Crossbow',    cost: 2800, color: 0x92400e, damage: 150, fireRate: 260,  auto: false, magSize: 1,   reloadTime: 1050, range: 220, pellets: 1,  spread: 0.0025, recoil: 0.09, punch: 0.028, zoomFov: 42, hsMult: 3, pierce: 4, reloadStyle: 'mag', hip: [0.144, -0.156, -0.36], adsDist: 0.18, flash: 0.06, desc: 'Silent bolts that pass through up to 4 zombies. Headshots do triple damage.' },
             lmg:      { name: 'LMG',         cost: 4500, color: 0x84cc16, damage: 28,  fireRate: 92,   auto: true,  magSize: 90,  reloadTime: 3600, range: 150, pellets: 1,  spread: 0.008, bloom: 0.05, recoil: 0.04, punch: 0.008, zoomFov: 55, hsMult: 2, moveMult: 0.85, reloadStyle: 'box', hip: [0.156, -0.168, -0.36], adsDist: 0.2, flash: 0.34, desc: '90-round box. Heavy and hungry.' },
+            // 5.5: plasma bolts from a self-charging cell: no reloads if you fire in bursts, overheats if you empty it
+            plasma:   { name: 'Plasma Rifle', cost: 6200, color: 0xd946ef, damage: 24, fireRate: 110, auto: true, magSize: 36, reloadTime: 1800, range: 140, pellets: 1, spread: 0.007, recoil: 0.03, punch: 0.007, zoomFov: 54, hsMult: 1.5, shieldPierce: true, battery: 14, reloadStyle: 'mag', hip: [0.15, -0.16, -0.37], adsDist: 0.2, flash: 0.32, desc: 'Plasma bolts that burn through riot shields. The cell recharges by itself when you stop firing - empty it and it OVERHEATS for a moment.' },
             // 4.0: drum launcher - bouncing grenades that go off when they touch a zombie, or when the fuse runs out
             glauncher:{ name: 'Grenade Launcher', cost: 4200, color: 0xfacc15, damage: 150, fireRate: 430, auto: false, magSize: 6, reloadTime: 2900, range: 300, pellets: 1, spread: 0.006, recoil: 0.2, punch: 0.05, zoomFov: 55, hsMult: 1, grenade: true, radius: 5.5, fuse: 1.6, reloadStyle: 'revolver', hip: [0.15, -0.16, -0.36], adsDist: 0.2, flash: 0.42, desc: 'Bouncing grenades that blow up when they touch a zombie or after 1.6s. They never hurt you.' },
             flamer:   { name: 'Flamethrower', cost: 5500, color: 0xf97316, damage: 6,  fireRate: 60,   auto: true,  magSize: 150, reloadTime: 2600, range: 13,  pellets: 1,  spread: 0, recoil: 0.006, punch: 0.002, zoomFov: 66, hsMult: 1, flame: true, cone: 0.36, noAds: true, reloadStyle: 'mag', hip: [0.16, -0.17, -0.4], adsDist: 0.3, flash: 0.5, desc: 'A short stream of fire that burns everything in front of you, goes round riot shields and sets zombies alight.' },
+            // 5.5: a freezing spray - slows zombies, then freezes them solid (frozen ones take +50% damage from everything)
+            cryo:     { name: 'Cryo Blaster', cost: 4800, color: 0x7dd3fc, damage: 5,  fireRate: 70,   auto: true,  magSize: 120, reloadTime: 2400, range: 15,  pellets: 1,  spread: 0, recoil: 0.005, punch: 0.002, zoomFov: 66, hsMult: 1, frost: true, cone: 0.34, noAds: true, reloadStyle: 'mag', hip: [0.16, -0.17, -0.4], adsDist: 0.3, flash: 0.3, desc: 'A freezing spray: zombies in the stream slow down, then FREEZE solid for 2s. Frozen zombies take +50% damage from everything. Bosses are only slowed.' },
             // 4.0: chain lightning - each zap locks onto the zombie nearest your crosshair, then jumps on through the crowd
             tesla:    { name: 'Tesla Gun',   cost: 5200, color: 0x818cf8, damage: 26,  fireRate: 210,  auto: true,  magSize: 30,  reloadTime: 2300, range: 30,  pellets: 1,  spread: 0, recoil: 0.022, punch: 0.006, zoomFov: 62, hsMult: 1, tesla: true, chain: 4, jump: 9, reloadStyle: 'mag', hip: [0.15, -0.165, -0.38], adsDist: 0.2, flash: 0.3, desc: 'Chain lightning: each zap jumps on to 4 more zombies (+1 per level) and arcs round shields.' },
             sniper:   { name: 'Sniper',      cost: 5000, color: 0x8b5cf6, damage: 900, fireRate: 1100, auto: false, magSize: 5,   reloadTime: 2300, range: 500, pellets: 1,  spread: 0.012, recoil: 0.25, punch: 0.07, zoomFov: 14, hsMult: 2.5, pierce: 5, shieldPierce: true, scoped: 'sniper', reloadStyle: 'bolt', hip: [0.144, -0.156, -0.336], adsDist: 0.12, flash: 0.46, desc: 'Pierces 5 enemies and shields.' },
             // 4.0: hold to charge, let go to fire. The beam goes through EVERY zombie in a line (and riot shields) at full damage
             railgun:  { name: 'Railgun',     cost: 6500, color: 0x22d3ee, damage: 520, fireRate: 350,  auto: false, magSize: 4,   reloadTime: 2600, range: 400, pellets: 1,  spread: 0.0015, recoil: 0.3, punch: 0.075, zoomFov: 30, hsMult: 3.5, pierce: 999, shieldPierce: true, rail: true, charge: 0.85, scoped: 'optic', reloadStyle: 'mag', hip: [0.144, -0.16, -0.34], adsDist: 0.12, flash: 0.5, desc: 'HOLD to charge, RELEASE to fire. The beam pierces every zombie in a line, shields too.' },
             minigun:  { name: 'Minigun',     cost: 8000, color: 0xfb7185, damage: 16,  fireRate: 45,   auto: true,  magSize: 240, reloadTime: 4200, range: 120, pellets: 1,  spread: 0.02, recoil: 0.02, punch: 0.004, zoomFov: 70, hsMult: 1.8, spinUp: 0.55, moveMult: 0.7, noAds: true, reloadStyle: 'box', hip: [0.168, -0.186, -0.432], adsDist: 0.3, flash: 0.3, desc: 'Hold right-click to pre-spin.' },
-            rpg:      { name: 'RPG',         cost: 6000, color: 0x65a30d, damage: 300, fireRate: 900,  auto: false, magSize: 1,   reloadTime: 1000, range: 400, pellets: 1,  spread: 0.004, recoil: 0.3, punch: 0.06, zoomFov: 50, hsMult: 1, rocket: true, radius: 7, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.55, desc: 'Rocket launcher. Huge splash damage and a lightning-fast reload - keep your distance!' }
+            rpg:      { name: 'RPG',         cost: 6000, color: 0x65a30d, damage: 300, fireRate: 900,  auto: false, magSize: 1,   reloadTime: 1000, range: 400, pellets: 1,  spread: 0.004, recoil: 0.3, punch: 0.06, zoomFov: 50, hsMult: 1, rocket: true, radius: 7, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.55, desc: 'Rocket launcher. Huge splash damage and a lightning-fast reload - keep your distance!' },
+            // 5.5: three homing mini-rockets per pull of the trigger
+            seeker:   { name: 'Seeker Launcher', cost: 7000, color: 0xfb923c, damage: 95, fireRate: 900, auto: false, burst: 3, burstGap: 130, magSize: 9, reloadTime: 2600, range: 300, pellets: 1, spread: 0.02, recoil: 0.12, punch: 0.03, zoomFov: 50, hsMult: 1, rocket: true, seeker: true, radius: 3.4, reloadStyle: 'mag', hip: [0.17, -0.13, -0.34], adsDist: 0.16, flash: 0.4, desc: 'Fires a salvo of 3 mini-rockets that home in on the enemy nearest your crosshair. Smaller blasts than the RPG, but they hunt down big targets.' }
         };
         Object.entries(weaponsDb).forEach(([id, w]) => { w.id = id; });
         const WEAPON_ORDER = Object.keys(weaponsDb);
@@ -705,7 +713,11 @@
             sniper:   { mag: true, grip: [0.0, -0.3] },
             railgun:  { mag: true, grip: [0.001, -0.34] },
             minigun:  { mag: true },
-            rpg:      { scope: [0.127, -0.12] }
+            rpg:      { scope: [0.127, -0.12] },
+            drum:     { scope: [0.095, -0.03], mag: true },
+            plasma:   { scope: [0.083, 0.0], mag: true },
+            cryo:     {},
+            seeker:   { scope: [0.15, -0.12] }
         };
         const attFits = (id, a) => !!(ATT_FIT[id] && ATT_FIT[id][a]);
         const hasAtt = (id, a) => !!(playerStats.atts && playerStats.atts[id] && playerStats.atts[id][a]) && attFits(id, a);
@@ -788,6 +800,11 @@
             shambler: { id: 'shambler', name: 'Shambler', color: 0x6b7280, hp: 0.6, speed: 0.6, scale: 0.95, reward: 1.5, damage: 5, ai: 'melee', slim: 0.9, eye: 0xd9f99d, minLvl: 6, cap: 6, drops: [0.18, 15, 0.2, 25], intel: 'A slow, half-rotted zombie that drags itself toward you on its own. Weak bite, falls apart in a couple of shots, and often drops health or cash. Easy pickings.' },
             crawler:  { id: 'crawler',  name: 'Vent Crawler', color: 0x57534e, hp: 0.55, speed: 1.45, scale: 0.72, reward: 2, damage: 11, ai: 'crawler', slim: 0.9, eye: 0xfacc15, minLvl: 5, cap: 4, intel: 'Lies hidden in floor vents and manholes, then bursts out when you walk close and scuttles at you low and fast. Listen for the rattle of a grate.', drops: [0.12, 15, 0.15, 25] },
             shocker:  { id: 'shocker',  name: 'Shocker', color: 0x38bdf8, glow: 0x0c4a6e, hp: 1.5, speed: 0.8, scale: 1.05, reward: 3.5, damage: 9, ai: 'shocker', eye: 0x7dd3fc, minLvl: 9, cap: 2, intel: 'An electrified zombie. It arcs a shock shield onto nearby zombies (they take far less damage while linked), and its zap JAMS your gun for a moment. Kill the Shocker first: the link breaks and it dies in an EMP burst.', drops: [0.3, 30, 0.2, 45] },
+            // ---- 5.5: two new zombies and a new boss ----
+            bloater:  { id: 'bloater',  name: 'Bloater', color: 0x84cc16, hp: 2.4, speed: 0.6, scale: 1.4, reward: 3, damage: 14, ai: 'melee', slim: 1.35, eye: 0xd9f99d, minLvl: 7, cap: 3, drops: [0.25, 30, 0.3, 45], intel: 'Swollen with toxic gas. When it dies it bursts into a POISON CLOUD that hurts anyone standing in it for a few seconds. Kill it at range.' },
+            lobber:   { id: 'lobber',   name: 'Lobber', color: 0xa16207, hp: 1.1, speed: 0.75, scale: 1.05, reward: 3, damage: 18, ai: 'lobber', slim: 1.05, eye: 0xfb923c, minLvl: 8, cap: 2, drops: [0.2, 25, 0.25, 40], intel: 'Hangs back and lobs gore bombs at the spot you are standing on. An orange circle shows where it lands - keep moving!' },
+            frost:    { id: 'frost',    name: 'The Winter King', color: 0x93c5fd, hp: 40, speed: 0.5, scale: 2.4, reward: 16, damage: 30, ai: 'frost', eye: 0xe0f2fe, drops: [1, 999, 1, 500], boss: true, glow: 0x0c4a6e, bar: '#7dd3fc', slim: 1.05,
+                        title: 'LORD OF THE LONG WINTER', tip: 'Throws fans of ice shards and stamps out freezing shockwaves - JUMP over them. Enraged, it calls down a blizzard: get out of the blue circles.' },
             zero:     { id: 'zero',     name: 'Patient Zero', color: 0x3f6212, hp: 58, speed: 0.5, scale: 2.5, reward: 20, damage: 32, ai: 'zero', eye: 0xbef264, drops: [1, 999, 1, 500], boss: true, campOnly: true, glow: 0x1a2e05, bar: '#a3e635',
                         title: 'THE FIRST TO FALL', tip: 'Spits toxic globs that leave poison pools, sweeps shockwaves you must JUMP, and burrows under you to burst out. Enraged: its toxic nova has a safe hole in the middle.' }
         };
@@ -831,7 +848,7 @@
         const MODES = {
             classic: { name: 'CLASSIC', color: '#e5e7eb', desc: 'Survive the waves. The Armory opens between waves.' },
             rush:    { name: 'RUSH',    color: '#f97316', desc: 'No breaks - waves roll straight into each other. 1.5x cash and extra supply drops. Shop from the pause menu.' },
-            bossrush: { name: 'BOSS RUSH', color: '#e879f9', desc: 'Every wave is a boss fight - all 8 bosses, one after another, then two at a time. Fewer zombies, 1.5x cash, $2000 to start.' },
+            bossrush: { name: 'BOSS RUSH', color: '#e879f9', desc: 'Every wave is a boss fight - all 9 bosses, one after another, then two at a time. Fewer zombies, 1.5x cash, $2000 to start.' },
             sandbox: { name: 'SANDBOX', color: '#a78bfa', desc: 'Every weapon and gadget unlocked, unlimited cash, and you cannot die. Mess around!' }
         };
         const MAPS = {
@@ -844,11 +861,14 @@
             temple:    { name: 'TEMPLE',    size: 60,  desc: 'COMPACT. A stepped pyramid ringed by a raised stone walkway and ruined towers.' },
             sky:       { name: 'SKY ISLANDS', size: 64, void: true, desc: 'COMPACT. Cloud islands high in the sky, joined by cloud paths and rope bridges. There is no floor: fall off the edge and you die - but so do zombies you knock off!' },
             // 4.0
-            mall:      { name: 'MALL',      size: 72,  desc: 'NEW! Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
-            subway:    { name: 'SUBWAY', size: 64, desc: 'NEW! A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
+            mall:      { name: 'MALL',      size: 72,  desc: 'Two floors of stores round a food court under a glass skylight. Ride the escalators to the balconies, cross the sky bridges, take the outside stairs to the roof.' },
+            subway:    { name: 'SUBWAY', size: 64, desc: 'A dead metro station at night: platforms, parked trains, a mezzanine, tunnels and floor vents where Vent Crawlers lie in wait.' },
             biolab:    { name: 'BIOLAB', size: 46, hidden: true, desc: 'Campaign finale arena: a sunken containment pit ringed by catwalks, vents and quarantine pods.' },
             tourney:   { name: 'TOURNAMENT ARENA', size: 34, hidden: true, desc: 'Floodlit duel stadium: a symmetric pit with a central pillar, flank catwalks and cover at three heights, ringed by stands and big screens.' },
-            military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'NEW! Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
+            // 5.5
+            frostbite: { name: 'FROSTBITE', size: 70, desc: 'NEW! A snowed-in research outpost: a frozen lake you slide across, ice caves, a radar dome, a drilling rig and a radio mast with catwalks. Light snow falls.' },
+            carnival:  { name: 'CARNIVAL', size: 66, desc: 'NEW! An abandoned funfair at night: a giant Ferris wheel, a carousel, striped tents, game stalls and a roller-coaster track on stilts you can walk along.' },
+            military:  { name: 'MILITARY BASE', chip: 'MILITARY', size: 100, desc: 'Hangars on a runway, watchtowers joined by a catwalk, bunkers, fenced compounds and a helipad. Zombies have to find the gates - you can jump the fences.' }
         };
         // maps with hidden: true are campaign-only arenas (never in the map pickers, random picks or challenges)
         const MAP_IDS = () => Object.keys(MAPS).filter(k => !MAPS[k].hidden);
@@ -875,10 +895,10 @@
             glove: { brown: 2, tan: 3, skin: 4, dark: 4, blue: 6, red: 7, gold: 15 },
             xhStyle: { dot: 2, circle: 4 },
             xhColor: { '#22d3ee': 2, '#facc15': 3, '#f472b6': 5, '#ef4444': 6 },
-            camo: { desert: 3, forest: 4, arctic: 5, crimson: 7, midnight: 9, toxic: 11, chrome: 13, gold: 16, rainbow: 22, ember: 99, hazard: 99, warden: 99, static: 99, toxin: 99, outbreak: 99 },
-            tracer: { red: 3, green: 4, blue: 6, purple: 8, gold: 12, rainbow: 18 },
+            camo: { desert: 3, forest: 4, arctic: 5, crimson: 7, midnight: 9, toxic: 11, chrome: 13, gold: 16, rainbow: 22, ember: 99, hazard: 99, warden: 99, static: 99, toxin: 99, outbreak: 99, glacier: 99, bigtop: 99, hunter: 99 },
+            tracer: { red: 3, green: 4, blue: 6, purple: 8, gold: 12, rainbow: 18, frost: 99 },
             killfx: { confetti: 5, fire: 7, ice: 9, void: 12, gold: 14 },
-            weapon: { dual: 2, katana: 3, glauncher: 4, tesla: 5, railgun: 6, carbine: 4, lever: 6 }      // 4.0: buyable in the Armory from this rank
+            weapon: { dual: 2, katana: 3, glauncher: 4, tesla: 5, railgun: 6, carbine: 4, lever: 6, drum: 7, cryo: 9, plasma: 12, seeker: 14 }      // 4.0: buyable in the Armory from this rank (5.5: + the four new guns)
         };
         // player upgrades, bought in the Armory (reset every run)
         const PERKS = {
@@ -936,9 +956,10 @@
             chrome: { name: 'CHROME', c: 0xd0d6de, metal: true }, gold: { name: 'GOLD', c: 0xf0b832, metal: true, emissive: 0x6a4300 }, rainbow: { name: 'RAINBOW', rainbow: true },
             ember: { name: 'EMBER', c: 0xc2410c, glow: 0xfb923c }, hazard: { name: 'HAZARD', c: 0xeab308, glow: 0x713f12 }, warden: { name: 'WARDEN', c: 0x3b0764, metal: true, glow: 0xe879f9 },
             static: { name: 'STATIC', c: 0x1e3a5f, metal: true, glow: 0x38bdf8 }, toxin: { name: 'TOXIN', c: 0x365314, glow: 0xa3e635 }, outbreak: { name: 'OUTBREAK', c: 0x7f1d1d, metal: true, glow: 0xfca5a5 },      // 5.0: campaign rewards
-            obsidian: { name: 'OBSIDIAN', c: 0x1a1426, metal: true, glow: 0xfbbf24 }          // 4.0: prestige 1
+            obsidian: { name: 'OBSIDIAN', c: 0x1a1426, metal: true, glow: 0xfbbf24 },         // 4.0: prestige 1
+            glacier: { name: 'GLACIER', c: 0xbfdbfe, metal: true, glow: 0x7dd3fc }, bigtop: { name: 'BIG TOP', c: 0xb91c1c, glow: 0xfde047 }, hunter: { name: 'HUNTER', c: 0x1c1917, metal: true, glow: 0xef4444 }      // 5.5 rewards
         };
-        const TRACERS = { default: { name: 'DEFAULT' }, red: { name: 'RED', c: 0xff4040 }, green: { name: 'GREEN', c: 0x4ade80 }, blue: { name: 'BLUE', c: 0x60a5fa }, purple: { name: 'PURPLE', c: 0xc084fc }, gold: { name: 'GOLD', c: 0xfbbf24 }, rainbow: { name: 'RAINBOW', rainbow: true }, starlight: { name: 'STARLIGHT', c: 0xdbe4ff } };
+        const TRACERS = { default: { name: 'DEFAULT' }, red: { name: 'RED', c: 0xff4040 }, green: { name: 'GREEN', c: 0x4ade80 }, blue: { name: 'BLUE', c: 0x60a5fa }, purple: { name: 'PURPLE', c: 0xc084fc }, gold: { name: 'GOLD', c: 0xfbbf24 }, rainbow: { name: 'RAINBOW', rainbow: true }, starlight: { name: 'STARLIGHT', c: 0xdbe4ff }, frost: { name: 'FROST', c: 0x9bdcff } };
         const KILLFX = { blocks: { name: 'BLOCKS' }, confetti: { name: 'CONFETTI' }, fire: { name: 'FIRE' }, ice: { name: 'ICE' }, void: { name: 'VOID' }, gold: { name: 'GOLD RUSH' }, stardust: { name: 'STARDUST' } };
         const UNLOCK_KIND_NAMES = { sleeve: 'Sleeves', glove: 'Gloves', xhStyle: 'Crosshair', xhColor: 'Crosshair color', camo: 'Weapon camo', tracer: 'Tracers', killfx: 'Kill effect', weapon: 'Weapon' };
         const XP_MULT = { easy: 0.75, normal: 1, hard: 1.5, nightmare: 2.2 };
@@ -962,8 +983,25 @@
         const prestigeNeed = (kind, id) => (PRESTIGE_UNLOCKS[kind] && PRESTIGE_UNLOCKS[kind][id]) || 0;
         // after your first prestige everything that unlocks by rank stays unlocked, whatever your rank is now
         const unlockLevel = () => prestigeLvl() > 0 ? MAX_RANK : rankInfo().rank;
-        const isUnlocked = (kind, id) => { if (campOwns(kind, id)) return true; const p = prestigeNeed(kind, id); return p ? prestigeLvl() >= p : unlockLevel() >= unlockRank(kind, id); };
-        const lockTag = (kind, id) => campSkin(kind, id) ? 'C' : prestigeNeed(kind, id) ? 'P' + prestigeNeed(kind, id) : String(unlockRank(kind, id));      // '12' = rank 12, 'P2' = prestige 2
+        // 5.5 rewards for the new content: earned by doing something (not by rank), checked live from your lifetime stats
+        const REWARDS55 = {
+            'camo:glacier': { how: 'Defeat The Winter King', ok: () => ((life.bossKills || {}).frost | 0) >= 1 },
+            'camo:bigtop':  { how: 'Reach wave 10 on Carnival', ok: () => ((life.maps.carnival || {}).best | 0) >= 10 },
+            'camo:hunter':  { how: 'Win a game of Hunted', ok: () => (life.huntWins | 0) >= 1 },
+            'tracer:frost': { how: 'Freeze 200 zombies with the Cryo Blaster', ok: () => (life.frozen | 0) >= 200 }
+        };
+        const reward55 = (kind, id) => REWARDS55[kind + ':' + id] || null;
+        function rewardOwns(kind, id) { const r = reward55(kind, id); return !!(r && r.ok()); }
+        // tell the player the first time they earn one (quiet = just note what's already earned, e.g. on an old save)
+        function checkRewards55(quiet) {
+            const seen = life.rw55 && typeof life.rw55 === 'object' ? life.rw55 : (life.rw55 = {});
+            for (const k in REWARDS55) if (!seen[k] && REWARDS55[k].ok()) {
+                seen[k] = 1;
+                if (!quiet) { const [kind, id] = k.split(':'); toast(`UNLOCKED: ${unlockLabel(kind, id)}`, '#fde047', 3); }
+            }
+        }
+        const isUnlocked = (kind, id) => { if (campOwns(kind, id) || rewardOwns(kind, id)) return true; const p = prestigeNeed(kind, id); return p ? prestigeLvl() >= p : unlockLevel() >= unlockRank(kind, id); };
+        const lockTag = (kind, id) => reward55(kind, id) ? '\u2605' : campSkin(kind, id) ? 'C' : prestigeNeed(kind, id) ? 'P' + prestigeNeed(kind, id) : String(unlockRank(kind, id));      // '12' = rank 12, 'P2' = prestige 2
         const canPrestige = () => rankInfo().rank >= MAX_RANK && prestigeLvl() < MAX_PRESTIGE;
         function doPrestige() {
             if (!canPrestige()) return false;
@@ -1539,6 +1577,12 @@
                     case 'tesla':    sfxNoise(0.11, 7000, 0.14, 1800); sfxTone('sawtooth', 1900 + Math.random() * 500, 420, 0.09, 0.06); sfxTone('square', 95, 60, 0.07, 0.07); break;
                     case 'railgun':  sfxTone('sawtooth', 2600, 70, 0.55, 0.24); sfxNoise(0.6, 9000, 0.3, 300); sfxTone('sine', 110, 30, 0.6, 0.45); sfxTone('triangle', 3200, 2400, 0.4, 0.05, 0.05); break;
                     case 'railfull': sfxTone('triangle', 1500, 1800, 0.12, 0.06); break;
+                    // 5.5 weapons
+                    case 'drum':     sfxNoise(0.26, 1900, 0.42, 160); sfxTone('sawtooth', 120, 36, 0.18, 0.2); break;
+                    case 'plasma':   sfxTone('sawtooth', 1300, 240, 0.09, 0.08); sfxTone('sine', 620, 180, 0.08, 0.1); sfxNoise(0.05, 5200, 0.08, 1200); break;
+                    case 'cryo':     sfxNoise(0.09, 8200, 0.07, 2600); sfxTone('sine', 1800 + Math.random() * 300, 1400, 0.06, 0.02); break;
+                    case 'seeker':   sfxNoise(0.22, 1500, 0.26, 200); sfxTone('sawtooth', 300, 900, 0.18, 0.08); break;
+                    case 'freeze':   sfxTone('triangle', 2400, 3200, 0.12, 0.06); sfxTone('triangle', 3000, 2000, 0.18, 0.04, 0.05); sfxNoise(0.15, 7000, 0.08, 3000); break;
                 }
             } catch (e) {}
         }
@@ -2039,6 +2083,8 @@
                 if (currentMap === 'downtown') m.color.multiplyScalar(0.8);
                 if (currentMap === 'mall') m.color.multiplyScalar(0.62);                                   // parking-lot asphalt
                 if (currentMap === 'military') m.color.multiply(_tint.setHex(0xc9c09a)).multiplyScalar(0.95);   // dusty ground
+                if (currentMap === 'frostbite') m.color.lerp(_tint.setHex(0xdfe8f2), 0.72);                       // 5.5: snow
+                if (currentMap === 'carnival') m.color.multiply(_tint.setHex(0x9a8a6a)).multiplyScalar(1.1);      // 5.5: trampled grass and dirt
             }
             updateCones();
         }
@@ -2080,9 +2126,11 @@
                                accR: 0xb91c1c, accB: 0x1d4ed8, accG: 0x15803d, accY: 0xca8a04, rope: 0xb8955a, rust: 0x8a4a2a, cloud: 0xeef3fa, cloudShade: 0xc3d0e2,
                                // 4.0 maps: mall floors / walls, military greens, painted lines, glass, chain-link and escalator steps
                                tile: 0xd6d0c2, plaster: 0xc9ced6, olive: 0x56613a, khaki: 0x9c8b62, paint: 0xe9e7df, rubber: 0x1b1d22,
-                               glass: 0xa6dcf5, fence: 0xaab2bb, escF: 0x5b6270, escB: 0x5b6270 };
+                               glass: 0xa6dcf5, fence: 0xaab2bb, escF: 0x5b6270, escB: 0x5b6270,
+                               // 5.5 maps: snow and lake ice (Frostbite), tent canvas (Carnival)
+                               snow: 0xe6edf5, ice: 0x9fcfe8, tentR: 0xc8233c, tentY: 0xf0b429 };
         const WORLD_PROPS = { steel: [0.38, 0.65], post: [0.45, 0.6], accR: [0.5, 0.2], accB: [0.5, 0.2], accG: [0.5, 0.2], accY: [0.5, 0.2], bound: [0.9, 0], cloud: [1, 0], cloudShade: [1, 0],
-                              tile: [0.32, 0.05], rubber: [0.9, 0], escF: [0.4, 0.6], escB: [0.4, 0.6] };
+                              tile: [0.32, 0.05], rubber: [0.9, 0], escF: [0.4, 0.6], escB: [0.4, 0.6], snow: [0.95, 0], ice: [0.12, 0.15], tentR: [0.8, 0], tentY: [0.8, 0] };
         const GLOW_COLORS = { glowC: 0x22d3ee, glowP: 0xf472b6, glowL: 0xa3e635, glowY: 0xfbbf24, glowW: 0xffd9a0, glowR: 0xff3b3b, glowB: 0x60a5fa };
         // 4.0: see-through world pieces (no shadows, no outlines). Glass is see-through, the fence is a chain-link pattern.
         const SEE_THRU = { glass: 1, fence: 1 };
@@ -2319,7 +2367,7 @@
             if (worldGroup) { scene.remove(worldGroup); disposeGroup(worldGroup); }
             worldGroup = new THREE.Group();
             scene.add(worldGroup);
-            skyIslands = []; solids = []; worldBlocks = []; lampSpots = []; bridgeRects = []; escalators = []; ventSpots = [];
+            skyIslands = []; solids = []; worldBlocks = []; lampSpots = []; bridgeRects = []; escalators = []; ventSpots = []; iceRects = [];
             ARENA = (MAPS[mapId] && MAPS[mapId].size) || 100; spawnPt = [0, 0];
             VOID = !!(MAPS[mapId] && MAPS[mapId].void); cageOverride = null;
             if (skyMat) skyMat.uniforms.ridge.value = VOID ? 0 : 1;
@@ -2351,7 +2399,7 @@
 
 
             ({ blockyard: mapBlockyard, downtown: mapDowntown, fortress: mapFortress, plains: mapPlains,
-               skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab, tourney: mapTourney }[mapId] || mapBlockyard)();
+               skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab, tourney: mapTourney, frostbite: mapFrostbite, carnival: mapCarnival }[mapId] || mapBlockyard)();
             const cage = buildRamCage(); cageArea = cage;
             if (!VOID) edgeDecor(mapId);
             scatterProps(mapId);
@@ -2682,6 +2730,8 @@
             subway:    [['jersey', 6], ['bench', 4], ['barrel', 6], ['rubble', 10], ['stain', 14], ['sign', 6], ['dumpster', 3], ['cones', 5], ['bone', 4], ['wreck', 2]],
             biolab:    [['barrel', 4], ['crate', 3], ['rubble', 3], ['stain', 12], ['bone', 3]],
             tourney:   [],
+            frostbite: [['rock', 12], ['barrel', 8], ['crate', 8], ['deadTree', 6], ['sign', 5], ['rubble', 6], ['antenna', 2], ['wreck', 2], ['stain', 6]],
+            carnival:  [['barrel', 6], ['crate', 6], ['bench', 8], ['cones', 5], ['sign', 6], ['stain', 10], ['rubble', 6], ['planter', 4], ['cart', 4], ['bone', 3]],
             military:  [['sandbags', 10], ['hedgehog', 8], ['barrel', 10], ['jersey', 8], ['crate', 8], ['rubble', 8], ['stain', 12], ['antenna', 3], ['wreck', 4], ['cones', 4], ['sign', 5]]
         };
         function scatterProps(mapId) {
@@ -3949,6 +3999,211 @@
             m4((sx, sz) => { addBlock(sx * 31, 0, sz * 31, 0.8, 18, 0.8, 'post', false); addBlock(sx * 31, 18, sz * 31, 3, 1.4, 0.5, 'lampHead', false); });
         }
 
+        // ---- 07d-maps-55.js ----
+        // ---------- 5.5 MAPS: FROSTBITE (snowed-in research outpost) and CARNIVAL (abandoned funfair at night) ----------
+        // Built with the same kit as every other map (addBlock / stairTower / ropeBridge / railLine / stairRun ...), so every block
+        // still merges into one mesh per material. Frostbite adds slippery lake ice (iceRects, read by the player physics) and light
+        // snowfall (one Points draw call, only on this map).
+        let iceRects = [];              // [x0, z0, x1, z1] patches of lake ice at ground level (you slide on them)
+        function onIce(x, z, feet) {
+            if (!iceRects.length || feet > 0.3) return false;
+            for (const r of iceRects) if (x > r[0] && x < r[2] && z > r[1] && z < r[3]) return true;
+            return false;
+        }
+        // a snowy pine: trunk, three shrinking tiers of needles with snow on each
+        function snowPine(x, z, big = 1) {
+            const h = (6 + Math.random() * 2) * big;
+            addBlock(x, 0, z, 0.8 * big, h * 0.5, 0.8 * big, 'woodDark');
+            for (let k = 0; k < 3; k++) {
+                const s = (4.4 - k * 1.25) * big, y = h * (0.32 + k * 0.22);
+                addBlock(x, y, z, s, 1.5 * big, s, 'leafDark');
+                addBlock(x, y + 1.5 * big, z, s * 0.82, 0.25, s * 0.82, 'snow', false);
+            }
+        }
+        // a research cabin: walls, a door, lit windows, a snow-covered roof
+        function cabin(x, z, w, d, alongX) {
+            addBlock(x, 0, z, w, 3.6, d, 'plaster');
+            addBlock(x, 3.6, z, w + 0.6, 0.4, d + 0.6, 'snow');
+            addBlock(x, 0, z, w + 0.1, 0.4, d + 0.1, 'concreteDark', false);
+            const fz = alongX ? z + d / 2 + 0.03 : z, fx = alongX ? x : x + w / 2 + 0.03;
+            if (alongX) { addBlock(x - w * 0.25, 0.4, fz, 1.2, 2.2, 0.06, 'rubber', false); addBlock(x + w * 0.2, 1.5, fz, 1.6, 0.9, 0.06, 'glowW', false); }
+            else { addBlock(fx, 0.4, z - d * 0.25, 0.06, 2.2, 1.2, 'rubber', false); addBlock(fx, 1.5, z + d * 0.2, 0.06, 0.9, 1.6, 'glowW', false); }
+        }
+        function mapFrostbite() {
+            spawnPt = [6, 34];
+            iceRects = [];
+            // ---- the frozen lake (west): smooth ice you slide on, cracks that glow faintly, frozen boulders and a sunk boat ----
+            const L = [-56, -22, -12, 22];
+            addBlock((L[0] + L[2]) / 2, 0, (L[1] + L[3]) / 2, L[2] - L[0], 0.04, L[3] - L[1], 'ice', false);
+            iceRects.push(L);
+            for (let i = 0; i < 9; i++) {
+                const x = L[0] + 4 + Math.random() * (L[2] - L[0] - 8), z = L[1] + 3 + Math.random() * (L[3] - L[1] - 6), ax = Math.random() < 0.5;
+                addBlock(x, 0.04, z, ax ? 3 + Math.random() * 5 : 0.12, 0.01, ax ? 0.12 : 3 + Math.random() * 5, 'glowC', false);
+            }
+            for (const [x, z, s, h] of [[-44, -10, 3.2, 2.2], [-30, 12, 2.4, 1.4], [-20, -14, 4, 3], [-48, 14, 2.6, 1.6], [-26, -2, 1.6, 1]]) { addBlock(x, 0, z, s, h, s * 0.8, 'ice'); addBlock(x + 0.3, h, z - 0.2, s * 0.6, 0.3, s * 0.5, 'snow', false); }
+            addBlock(-38, -0.4, 2, 7, 1.4, 2.6, 'woodDark'); addBlock(-38, 1.0, 2, 1.2, 1.2, 1.4, 'wood'); addBlock(-41, 1.0, 2, 0.12, 3.2, 0.12, 'post', false);    // a boat frozen into the lake
+            // ice fishing huts on the lake edge
+            for (const [x, z] of [[-14, -18], [-14, 16]]) { addBlock(x, 0, z, 3, 2.6, 3, 'accR'); addBlock(x, 2.6, z, 3.4, 0.3, 3.4, 'snow'); addBlock(x + 1.53, 0, z, 0.06, 2.1, 1, 'rubber', false); }
+            // ---- ice caves (north): a tunnel of ice you can walk through, lit blue inside, with two side chambers ----
+            const CZ = -52;
+            addBlock(4, 0, CZ - 4.2, 44, 4.6, 1.6, 'ice');
+            addBlock(4, 4.6, CZ, 46, 1.4, 10, 'ice'); addBlock(4, 6.0, CZ, 40, 0.5, 8, 'snow', false);
+            for (let x = -14; x <= 22; x += 6) { addBlock(x, 4.2, CZ - 1.8, 0.3, 0.4, 0.3, 'glowC', false); addBlock(x + 3, 4.0, CZ + 1.6, 0.25, 0.6, 0.25, 'glowC', false); addCeilingLight(x, CZ, 0, 4.5, 5, false, 0.8); }
+            // the south wall has three doorways, so you (and they) can get in
+            for (const [x0, x1] of [[-18, -13], [-11, 4], [8, 18], [22, 26]]) addBlock((x0 + x1) / 2, 0, CZ + 4.2, x1 - x0, 4.6, 1.6, 'ice');
+            for (const [x, z] of [[-24, CZ], [32, CZ]]) { addBlock(x, 0, z, 6, 3.2, 9, 'snow'); addBlock(x, 3.2, z, 4, 1.2, 7, 'snow'); }       // drifts plug the tunnel ends (climbable)
+            // ---- radar dome (north-east): a stepped dome on a two-storey block, stairs up the side, a catwalk round the dome ----
+            const RX = 40, RZ = -26;
+            addBlock(RX, 0, RZ, 14, 6, 14, 'concrete'); addBlock(RX, 6, RZ, 15, 0.3, 15, 'snow', false);
+            for (const [sz, y, h] of [[10, 6, 1.2], [9, 7.2, 1.2], [7.6, 8.4, 1.1], [5.6, 9.5, 1], [3.2, 10.5, 0.8]]) addBlock(RX, y, RZ, sz, h, sz, 'paint');
+            addBlock(RX, 11.3, RZ, 0.3, 2, 0.3, 'post', false); addBlock(RX, 13.3, RZ, 0.4, 0.4, 0.4, 'glowR', false);
+            stairRun(RX - 7 - 12, RZ + 5.5, RX - 7, RZ + 5.5, 0, 6, 3, ['concrete', 'concreteDark']); stairSides(RX - 7 - 12, RZ + 5.5, RX - 7, RZ + 5.5, 0, 6, 3, [-1, 1], 'steel');
+            railLine(RX - 7.3, RZ - 7.3, RX + 7.3, RZ - 7.3, 6, [], 'steel'); railLine(RX + 7.3, RZ - 7.3, RX + 7.3, RZ + 7.3, 6, [], 'steel');
+            addBlock(RX - 7.05, 1.4, RZ, 0.1, 1.2, 4, 'glowW', false);
+            // ---- drilling rig (east): a tall stair tower with a derrick on top, bridged to the radio mast ----
+            stairTower(44, 26, 12, 6, 'olive', 3, 'steel');
+            for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) addBlock(44 + sx * 2.2, 12, 26 + sz * 2.2, 0.3, 9, 0.3, 'accY', false);
+            for (const y of [15, 18, 21]) addBlock(44, y, 26, 4.8, 0.25, 4.8, 'accY', false);
+            addBlock(44, 21, 26, 0.6, 1.4, 0.6, 'glowR', false);
+            addBlock(52, 0, 26, 4, 3, 8, 'accY'); addBlock(52, 3, 26, 3, 1.2, 6, 'steel');            // pump house
+            for (const z of [18, 34]) { addBlock(38, 0, z, 6, 2.2, 2.4, 'rust'); addBlock(38, 2.2, z, 6.2, 0.25, 2.6, 'snow', false); }    // fuel tanks
+            stairTower(14, 30, 12, 4, 'concreteDark', 0, 'steel');
+            ropeBridge(16, 30, 12, 41, 30, 12, { steel: true, width: 2.4 });
+            for (let y = 12; y < 26; y += 2) addBlock(14, y, 30, 1.6 - (y - 12) * 0.08, 0.12, 1.6 - (y - 12) * 0.08, 'post', false);    // the radio mast's lattice
+            for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) addBlock(14 + sx * 0.75, 12, 30 + sz * 0.75, 0.1, 13, 0.1, 'post', false);
+            addBlock(14, 25, 30, 0.5, 0.5, 0.5, 'glowR', false);
+            // ---- the outpost (south / middle): cabins, a garage, crates, snowmobiles, snowdrifts you can step onto ----
+            cabin(-6, 46, 10, 6, true); cabin(18, 50, 8, 6, true); cabin(-30, 44, 6, 9, false);
+            addBlock(30, 0, 48, 10, 4.6, 8, 'olive'); addBlock(30, 4.6, 48, 10.6, 0.4, 8.6, 'snow'); addBlock(30, 0, 43.96, 6, 3.6, 0.1, 'rubber', false);   // garage
+            for (const [x, z, ax] of [[2, 28, true], [-18, 30, false], [26, 6, true]]) {           // snowmobiles
+                addBlock(x, 0, z, ax ? 2.6 : 1.1, 0.7, ax ? 1.1 : 2.6, 'accY'); addBlock(x, 0.7, z, ax ? 1.2 : 0.9, 0.5, ax ? 0.9 : 1.2, 'rubber');
+            }
+            for (const [x, z] of [[8, 14], [-4, 20], [16, -8], [-2, -16], [24, -40], [-8, -34]]) addStructure('crates', x, z, Math.floor(Math.random() * 4));
+            for (const [x, z, w, d] of [[0, 4, 9, 4], [10, -24, 6, 3], [-4, -40, 8, 4], [24, 14, 4, 7], [-36, 34, 8, 4], [52, -2, 5, 8]]) {
+                addBlock(x, 0, z, w, 0.5, d, 'snow'); addBlock(x + 0.3, 0.5, z, w * 0.6, 0.5, d * 0.6, 'snow');
+            }
+            for (const [x, z, h] of [[6, -6, 2.6], [-6, 8, 1.4], [12, 4, 3.2], [-2, -26, 2], [20, -16, 1.2]]) { addBlock(x, 0, z, 1.4, h, 3.4, 'concrete'); addBlock(x, h, z, 1.6, 0.25, 3.6, 'snow', false); }   // concrete barriers
+            // ---- pines all round the edge, a few in the middle ----
+            for (const [x, z] of [[-60, -40], [-50, -58], [-62, 30], [-56, 52], [-44, 60], [60, -56], [62, 48], [56, 60], [-62, -8], [62, 8], [-6, 60], [8, 62], [-24, 58], [-58, -24], [26, 62]]) snowPine(x, z, 0.9 + Math.random() * 0.3);
+            for (const [x, z] of [[-4, 16], [22, 24], [-8, -8]]) snowPine(x, z, 0.75);
+            lampRing([[22, 6, 0.3], [46, 8, 0.6]]);
+        }
+
+        // CARNIVAL: Ferris wheel (north), carousel (middle), big-top tent (east), game stalls (west), roller-coaster track on stilts (south)
+        function stripeWall(x0, z0, x1, z1, y, h, gaps = []) {        // red and white vertical stripes, one solid wall for collision
+            const alongX = Math.abs(z1 - z0) < 0.01, len = alongX ? x1 - x0 : z1 - z0, n = Math.max(1, Math.round(Math.abs(len) / 1.2)), st = len / n;
+            for (let i = 0; i < n; i++) {
+                const t = (i + 0.5) * st, c = alongX ? x0 + t : z0 + t;
+                if (gaps.some(([g, w]) => Math.abs(c - g) < w / 2)) continue;
+                addBlock(alongX ? c : x0, y, alongX ? z0 : c, alongX ? Math.abs(st) : 0.3, h, alongX ? 0.3 : Math.abs(st), i % 2 ? 'paint' : 'tentR');
+            }
+        }
+        function stringLights(x0, y0, z0, x1, y1, z1, n, keys = ['glowY', 'glowP', 'glowC', 'glowL']) {
+            for (let i = 0; i <= n; i++) { const t = i / n, sag = Math.sin(Math.PI * t) * 0.8; addBlock(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - sag, z0 + (z1 - z0) * t, 0.22, 0.22, 0.22, keys[i % keys.length], false); }
+        }
+        function mapCarnival() {
+            spawnPt = [0, 18];
+            // ---- ground: a dirt midway down the middle, paths of boards ----
+            addBlock(0, 0, 0, 14, 0.015, 120, 'sand', false); addBlock(0, 0, -2, 110, 0.015, 10, 'sand', false);
+            // ---- FERRIS WHEEL (north): A-frame legs, a hub, a dotted rim of lights, spokes and gondolas (scenery above head height) ----
+            const FX = 0, FZ = -46, FY = 17, R = 13;
+            for (const s of [-1, 1]) for (const dz of [-1.6, 1.6]) {
+                for (let k = 0; k <= 16; k++) { const t = k / 16; addBlock(FX + s * (6 - 6 * t), t * FY, FZ + dz, 0.7, 1.15, 0.7, 'steel', k < 3); }
+            }
+            addBlock(FX, FY - 0.8, FZ, 1.6, 1.6, 4.2, 'steel', false); addBlock(FX, FY - 0.5, FZ - 2.2, 1, 1, 0.2, 'glowY', false);
+            const NR = 44;
+            for (let i = 0; i < NR; i++) { const a = i / NR * Math.PI * 2; addBlock(FX + Math.cos(a) * R, FY + Math.sin(a) * R - 0.3, FZ, 0.75, 0.6, 0.75, i % 2 ? 'glowY' : 'glowP', false); }
+            for (let k = 0; k < 12; k++) {
+                const a = k / 12 * Math.PI * 2;
+                for (let r = 2; r < R; r += 1.7) addBlock(FX + Math.cos(a) * r, FY + Math.sin(a) * r - 0.15, FZ, 0.3, 0.3, 0.3, 'steel', false);
+                const gx = FX + Math.cos(a) * R, gy = FY + Math.sin(a) * R;
+                if (gy - 2.6 > 2.2) { addBlock(gx, gy - 2.6, FZ, 1.8, 1.6, 2.2, ['accR', 'accB', 'accG', 'accY'][k % 4], false); addBlock(gx, gy - 1.0, FZ, 0.1, 1, 0.1, 'post', false); }
+            }
+            addBlock(FX, 0, FZ + 6, 8, 0.6, 3, 'woodDark'); addBlock(FX, 0, FZ + 4, 6, 1.2, 1, 'accR'); addBlock(FX, 0, FZ + 8.4, 3, 0.3, 2, 'wood');   // boarding platform
+            // ---- CAROUSEL (middle): a round-ish platform, poles with horses, a striped canopy you can't climb onto ----
+            addBlock(0, 0, 0, 12, 0.5, 12, 'woodDark'); addBlock(0, 0, 0, 14.4, 0.5, 6, 'woodDark'); addBlock(0, 0, 0, 6, 0.5, 14.4, 'woodDark');
+            addBlock(0, 0.5, 0, 2.4, 5.2, 2.4, 'accY');
+            for (let k = 0; k < 10; k++) {
+                const a = k / 10 * Math.PI * 2, x = Math.cos(a) * 4.6, z = Math.sin(a) * 4.6, h = 0.9 + (k % 2) * 0.5;
+                addBlock(x, 0.5, z, 0.12, 4.8, 0.12, 'accY', false);
+                addBlock(x, 0.5 + h, z, 0.5, 0.7, 1.4, k % 3 ? 'paint' : 'brickDark', true); addBlock(x, 1.2 + h, z - 0.6, 0.4, 0.6, 0.4, k % 3 ? 'paint' : 'brickDark', false);
+            }
+            for (const [s, y, key] of [[15, 5.7, 'tentR'], [12, 6.3, 'paint'], [9, 6.9, 'tentR'], [5.6, 7.5, 'paint'], [2, 8.1, 'tentY']]) addBlock(0, y, 0, s, 0.6, s, key);
+            for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; addBlock(Math.cos(a) * 7.4, 5.5, Math.sin(a) * 7.4, 0.3, 0.3, 0.3, k % 2 ? 'glowY' : 'glowW', false); }
+            // ---- BIG TOP (east): a striped tent with three doors, tiered roof, a circus ring and stands inside ----
+            const TX = 42, TZ = 8, TW = 22;
+            stripeWall(TX - TW / 2, TZ - TW / 2, TX + TW / 2, TZ - TW / 2, 0, 5, [[TX, 3]]);
+            stripeWall(TX - TW / 2, TZ + TW / 2, TX + TW / 2, TZ + TW / 2, 0, 5, [[TX - 4, 3]]);
+            stripeWall(TX - TW / 2, TZ - TW / 2, TX - TW / 2, TZ + TW / 2, 0, 5, [[TZ, 3.4]]);
+            stripeWall(TX + TW / 2, TZ - TW / 2, TX + TW / 2, TZ + TW / 2, 0, 5, []);
+            for (const [s, y, key] of [[TW + 1, 5, 'tentR'], [TW - 4, 6.2, 'paint'], [TW - 9, 7.4, 'tentR'], [TW - 14, 8.6, 'paint']]) addBlock(TX, y, TZ, s, 1.2, s, key);
+            addBlock(TX, 9.8, TZ, 0.3, 3, 0.3, 'post', false); addBlock(TX + 0.8, 11.8, TZ, 1.4, 0.8, 0.06, 'tentY', false);
+            for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; addBlock(TX + Math.cos(a) * 4, 0, TZ + Math.sin(a) * 4, 1.2, 0.5, 1.2, k % 2 ? 'tentR' : 'paint'); }
+            for (const [x, z] of [[TX + 8, TZ - 6], [TX + 8, TZ + 6], [TX - 7, TZ + 7]]) { addBlock(x, 0, z, 3, 0.5, 4, 'wood'); addBlock(x + 0.5, 0.5, z, 2, 0.5, 4, 'wood'); addBlock(x + 1, 1, z, 1, 0.5, 4, 'wood'); }
+            addCeilingLight(TX, TZ, 0, 4.9, 10, true, 1.4);
+            // ---- GAME STALLS (west): two rows of booths with striped awnings, counters, prize shelves and glowing signs ----
+            for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) {
+                const x = -44 + sx * 7, z = -21 + i * 11, f = -sx;          // f: the way the counter faces (toward the aisle)
+                addBlock(x - f * 1.8, 0, z, 0.4, 3.4, 6, 'wood'); addBlock(x, 0, z - 2.9, 4, 3.4, 0.3, 'wood'); addBlock(x, 0, z + 2.9, 4, 3.4, 0.3, 'wood');
+                addBlock(x + f * 1.6, 0, z, 0.8, 1.1, 5.4, i % 2 ? 'accB' : 'accR');
+                for (let k = 0; k < 4; k++) addBlock(x + f * 2.6, 3.4 - k * 0.12, z - 2.25 + k * 1.5, 1.8, 0.2, 1.5, k % 2 ? 'paint' : 'tentR', false);
+                addBlock(x, 3.4, z, 4.2, 0.25, 6.2, 'woodDark');
+                for (let k = 0; k < 5; k++) addBlock(x - f * 1.3, 1.6 + (k % 2) * 0.7, z - 2 + k, 0.4, 0.4, 0.4, ['glowP', 'glowY', 'glowC', 'glowL', 'glowR'][(k + i) % 5], false);
+                addBlock(x + f * 0.4, 3.9, z, 0.08, 0.8, 3.4, ['glowY', 'glowP', 'glowC', 'glowL'][i], false);
+            }
+            stringLights(-51, 4.6, -26, -51, 4.6, 26, 26); stringLights(-37, 4.6, -26, -37, 4.6, 26, 26);
+            // ---- ROLLER COASTER (south): a track deck 6m up on stilts, all round a loop, ramps at both ends, a parked train ----
+            const Y = 6, Z0 = 32, Z1 = 56, X0 = -52, X1 = 52, D = 3.2;
+            addBlock(0, Y - 0.35, Z0, X1 - X0 + D, 0.35, D, 'steel'); addBlock(0, Y - 0.35, Z1, X1 - X0 + D, 0.35, D, 'steel');
+            addBlock(X0, Y - 0.35, (Z0 + Z1) / 2, D, 0.35, Z1 - Z0 - D, 'steel'); addBlock(X1, Y - 0.35, (Z0 + Z1) / 2, D, 0.35, Z1 - Z0 - D, 'steel');
+            for (const z of [Z0, Z1]) for (const s of [-1, 1]) addBlock(0, Y, z + s * 0.6, X1 - X0 + D, 0.12, 0.14, 'accR', false);      // the rails
+            for (const x of [X0, X1]) for (const s of [-1, 1]) addBlock(x + s * 0.6, Y, (Z0 + Z1) / 2, 0.14, 0.12, Z1 - Z0, 'accR', false);
+            for (let x = X0; x <= X1; x += 8) for (const z of [Z0, Z1]) addBlock(x, 0, z, 0.6, Y - 0.35, 0.6, 'accY');
+            for (let z = Z0 + 8; z < Z1; z += 8) for (const x of [X0, X1]) addBlock(x, 0, z, 0.6, Y - 0.35, 0.6, 'accY');
+            railLine(X0 - D / 2, Z0 + D / 2, X1 + D / 2, Z0 + D / 2, Y, [[-30, 3.4], [30, 3.4]], 'steel'); railLine(X0 + D / 2, Z1 - D / 2, X1 - D / 2, Z1 - D / 2, Y, [], 'steel');
+            railLine(X0 - D / 2, Z1 + D / 2, X1 + D / 2, Z1 + D / 2, Y, [], 'steel');
+            stairRun(-30, Z0 - 13.5, -30, Z0 - D / 2, 0, Y, 3, ['wood', 'woodDark']); stairSides(-30, Z0 - 13.5, -30, Z0 - D / 2, 0, Y, 3, [-1, 1], 'steel');
+            stairRun(30, Z0 - 13.5, 30, Z0 - D / 2, 0, Y, 3, ['wood', 'woodDark']); stairSides(30, Z0 - 13.5, 30, Z0 - D / 2, 0, Y, 3, [-1, 1], 'steel');
+            // the lift hill: a higher hump in the middle of the far side, a short climb you can jump over
+            for (let i = -3; i <= 3; i++) addBlock(i * 2.2, Y, Z1, 2.2, 0.5 * (4 - Math.abs(i)), D, 'steel');
+            for (let k = 0; k < 4; k++) addBlock(-40 + k * 2.4, Y, Z0, 2.2, 1.1, 1.8, ['accB', 'accY', 'accG', 'accR'][k], false);    // the parked train
+            stringLights(X0, Y + 2.2, Z0 - 1.8, X1, Y + 2.2, Z0 - 1.8, 40, ['glowY', 'glowW']);
+            // ---- the midway: ticket booth, food carts, bumper cars, a test-your-strength tower, strings of lights ----
+            addBlock(0, 0, 58, 4, 3, 3, 'tentR'); addBlock(0, 3, 58, 4.6, 0.4, 3.6, 'tentY'); addBlock(0, 1.4, 56.46, 1.6, 0.9, 0.06, 'glowW', false);
+            for (const [x, z, k] of [[-14, 14, 'accR'], [14, -14, 'accB'], [-16, -18, 'accG'], [18, 20, 'tentY']]) { addBlock(x, 0, z, 3.4, 1.8, 2, k); addBlock(x, 1.8, z, 3.8, 0.12, 2.4, 'paint'); for (const s of [-1, 1]) addBlock(x + s * 1.6, 1.9, z, 0.1, 1.2, 0.1, 'post', false); addBlock(x, 3.1, z, 3.8, 0.3, 2.4, k); }
+            addBlock(20, 0, -22, 14, 0.4, 10, 'rubber'); railLine(13, -27, 27, -27, 0.4, [[20, 3]], 'steel'); railLine(13, -17, 27, -17, 0.4, [], 'steel');      // bumper car floor
+            for (const [x, z, k] of [[17, -24, 'accR'], [22, -20, 'accB'], [24, -25, 'accG'], [16, -19, 'accY']]) { addBlock(x, 0.4, z, 1.6, 0.7, 2, k); addBlock(x, 1.1, z + 0.4, 1, 0.4, 0.6, 'rubber'); }
+            addBlock(-22, 0, 28, 1.2, 10, 1.2, 'paint'); addBlock(-22, 10, 28, 1.8, 1.4, 1.8, 'glowR', false); for (let y = 1; y < 10; y += 1.5) addBlock(-22, y, 28.62, 0.8, 0.12, 0.05, 'glowY', false);
+            for (const [x, z] of [[-8, -24], [8, 24], [-26, 0], [26, -2], [-10, 30], [12, -32]]) addStructure('crates', x, z, Math.floor(Math.random() * 4));
+            for (const [x0, z0, x1, z1] of [[-6, -30, -6, 26], [6, -30, 6, 26]]) { for (let z = z0; z <= z1; z += 14) addBlock(x0, 0, z, 0.25, 5.5, 0.25, 'post'); stringLights(x0, 5.4, z0, x1, 5.4, z1, 30); }
+            lampRing([[30, 6, 0.4], [50, 8, 0.2]]);
+        }
+
+        // ---------- light snowfall on Frostbite: one Points cloud that follows the camera, flakes drift down in the shader ----------
+        let snowMesh = null;
+        function updateSnow(dt) {
+            const want = currentMap === 'frostbite' && currentGameState === 'playing';
+            if (!want) { if (snowMesh) snowMesh.visible = false; return; }
+            if (!snowMesh) {
+                const n = 900, pos = new Float32Array(n * 3);
+                for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 60; pos[i * 3 + 1] = Math.random() * 24; pos[i * 3 + 2] = (Math.random() - 0.5) * 60; }
+                const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                const m = new THREE.ShaderMaterial({
+                    uniforms: { uTime: { value: 0 }, uCam: { value: new V3() } }, transparent: true, depthWrite: false,
+                    vertexShader: `uniform float uTime; uniform vec3 uCam; void main() {
+                        vec3 p = position; p.y = mod(p.y - uTime * 1.6, 24.0); p.x += sin(uTime * 0.7 + position.z) * 0.8;
+                        p.xz = mod(p.xz - uCam.xz + 30.0, 60.0) - 30.0 + uCam.xz; p.y += uCam.y - 10.0;
+                        vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_PointSize = clamp(60.0 / -mv.z, 1.5, 6.0); gl_Position = projectionMatrix * mv; }`,
+                    fragmentShader: `void main() { vec2 c = gl_PointCoord - 0.5; float a = 1.0 - smoothstep(0.2, 0.5, length(c)); gl_FragColor = vec4(0.95, 0.97, 1.0, a * 0.85); }`
+                });
+                snowMesh = new THREE.Points(g, m); snowMesh.frustumCulled = false; scene.add(snowMesh);
+            }
+            snowMesh.visible = true;
+            snowMesh.geometry.setDrawRange(0, Q && Q.lite ? 450 : 900);
+            snowMesh.material.uniforms.uTime.value += dt;
+            snowMesh.material.uniforms.uCam.value.copy(camera.position);
+        }
+
         // ---- 08-edges-nav-collision.js ----
         // ---------- EDGES + CORNERS ----------
         // Each map gets a planned border instead of random clutter: a row of themed set pieces lined up along every wall,
@@ -4911,6 +5166,7 @@
             } else if (!on && rainAudio) { try { rainAudio.stop(); } catch (e) {} rainAudio = null; }
         }
         function updateWeather(dt) {
+            updateSnow(dt);              // 5.5 Frostbite
             if (!rainMesh) return;
             const storm = !!theme.rain;
             setRainAudio(storm && currentGameState === 'playing');
@@ -5906,6 +6162,97 @@
                     def = { sight: [0.142, 0.06], muzzle: [0, 0.045, -0.57], eject: [0.03, 0.05, 0.0] };
                     break;
                 }
+                // ---- 5.5 weapons ----
+                case 'drum': {          // full-auto drum shotgun: boxy receiver, shrouded barrel with a brake, big round drum, folding foregrip
+                    X(g, [-0.2, 0.08, 0.16, 0.08, 0.17, 0.065, 0.17, -0.015, -0.2, -0.015], 0.062, body, 0, 0.003);
+                    rail(g, -0.18, 0.12, 0.092, 0.024);
+                    B(g, 0.064, 0.016, 0.3, accent, 0, 0.035, -0.02);
+                    B(g, 0.004, 0.03, 0.07, mt.poly, 0.0315, 0.05, 0.02);                    // ejection port
+                    P.bcg = G(g, 0.032, 0.05, 0.02); B(P.bcg, 0.003, 0.018, 0.04, mt.steel, 0, 0, 0);
+                    LA(g, [0, -0.62, 0.021, -0.62, 0.023, -0.61, 0.023, -0.2, 0, -0.2], mt.steel, 0, 0.045, 0, 14);        // barrel
+                    LA(g, [0, -0.5, 0.036, -0.5, 0.038, -0.49, 0.038, -0.2, 0, -0.2], mt.poly, 0, 0.045, 0, 14);            // shroud
+                    for (let i = 0; i < 5; i++) for (const s of [-1, 1]) B(g, 0.004, 0.016, 0.03, mt.metal, s * 0.038, 0.045, -0.24 - i * 0.05);
+                    hider(g, 0.026, 0.045, -0.68, 0.06);
+                    P.sight = G(g, 0, 0, 0);
+                    B(P.sight, 0.03, 0.022, 0.03, mt.metal, 0, 0.104, -0.15); B(P.sight, 0.006, 0.02, 0.006, mt.red, 0, 0.123, -0.15);
+                    B(P.sight, 0.036, 0.026, 0.02, mt.metal, 0, 0.106, 0.09); B(P.sight, 0.012, 0.012, 0.022, mt.poly, 0, 0.121, 0.09);
+                    P.mag = G(g, 0, 0, 0);
+                    const dr = C(P.mag, 0.1, 0.075, mt.metal, 0, -0.1, -0.06, 20); dr.rotation.y = Math.PI / 2;
+                    for (const s of [-1, 1]) { const rr = C(P.mag, 0.07, 0.004, accent, s * 0.039, -0.1, -0.06, 18); rr.rotation.y = Math.PI / 2; }
+                    B(P.mag, 0.05, 0.03, 0.07, mt.poly, 0, -0.005, -0.06);
+                    const tg = gripX(g, 0.1, -0.015, 0.11, 0.03, mt.poly, 0.042, 0.05);
+                    trigger(0.04, -0.015);
+                    X(g, [0.17, 0.07, 0.46, 0.06, 0.48, -0.06, 0.44, -0.075, 0.3, -0.03, 0.17, -0.015], 0.05, body, 0, 0.003);   // stock
+                    B(g, 0.052, 0.14, 0.014, mt.poly, 0, 0.0, 0.485);
+                    B(g, 0.03, 0.08, 0.035, mt.poly, 0, -0.025, -0.33);                    // foregrip
+                    P.charge = B(g, 0.014, 0.014, 0.03, mt.metal, -0.034, 0.055, -0.1);
+                    P.rh = makeArm(g, [0, -0.06, 0.12], ER, 'grip', tg, SW);
+                    P.lh = makeArm(g, [0, -0.062, -0.33], EL, 'vgrip', 0, SW);
+                    def = { sight: [0.123, 0.09], muzzle: [0, 0.045, -0.68], eject: [0.035, 0.05, 0.02], shell: true };
+                    break;
+                }
+                case 'plasma': {        // plasma rifle: sleek bullpup shell, glowing coil strips, emitter rings, a heat-sink cell behind the grip
+                    const glow = FX.glow55 = new THREE.MeshStandardMaterial({ color: 0x3b0a45, emissive: 0xe879f9, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.3 });
+                    X(g, [-0.3, 0.07, 0.3, 0.075, 0.42, 0.06, 0.46, -0.04, 0.3, -0.03, 0.05, -0.02, -0.3, 0.0], 0.06, body, 0, 0.004);
+                    B(g, 0.062, 0.016, 0.42, accent, 0, 0.0, 0.0);
+                    for (const s of [-1, 1]) B(g, 0.004, 0.012, 0.38, glow, s * 0.031, 0.045, -0.04);
+                    LA(g, [0, -0.62, 0.016, -0.62, 0.016, -0.3, 0, -0.3], mt.steel, 0, 0.035, 0, 12);
+                    for (const z of [-0.36, -0.44, -0.52]) C(g, 0.03, 0.016, mt.metal, 0, 0.035, z, 14);
+                    for (const z of [-0.4, -0.48]) C(g, 0.026, 0.05, glow, 0, 0.035, z, 12);
+                    C(g, 0.012, 0.01, glow, 0, 0.035, -0.625, 10);
+                    rail(g, -0.22, 0.2, 0.08, 0.022);
+                    P.sight = G(g, 0, 0, 0);
+                    B(P.sight, 0.036, 0.012, 0.06, mt.metal, 0, 0.086, 0.0);
+                    for (const s of [-1, 1]) B(P.sight, 0.006, 0.046, 0.046, mt.poly, s * 0.02, 0.113, 0.0);
+                    B(P.sight, 0.046, 0.006, 0.046, mt.poly, 0, 0.139, 0.0); B(P.sight, 0.034, 0.042, 0.002, mt.glass, 0, 0.113, -0.02);
+                    ring(P.sight, 0.008, 0.0008, mt.red, 0, 0.113, -0.019); B(P.sight, 0.0025, 0.0025, 0.001, mt.red, 0, 0.113, -0.019);
+                    P.mag = G(g, 0, 0, 0);
+                    B(P.mag, 0.042, 0.09, 0.06, mt.metal, 0, -0.06, 0.22); B(P.mag, 0.044, 0.02, 0.044, glow, 0, -0.035, 0.22);
+                    const tg = gripX(g, 0.06, -0.02, 0.105, 0.03, mt.poly, 0.04, 0.05);
+                    trigger(0.0, -0.02);
+                    B(g, 0.06, 0.12, 0.016, mt.poly, 0, 0.005, 0.465);
+                    B(g, 0.032, 0.075, 0.035, mt.poly, 0, -0.04, -0.24);
+                    P.rh = makeArm(g, [0, -0.065, 0.075], ER, 'grip', tg, SW);
+                    P.lh = makeArm(g, [0, -0.072, -0.24], EL, 'vgrip', 0, SW);
+                    def = { sight: [0.113, 0.0], muzzle: [0, 0.035, -0.63], eject: [0.035, 0.05, 0.1] };
+                    break;
+                }
+                case 'cryo': {          // cryo blaster: insulated body, a glowing coolant tank on top, frost fins round the nozzle
+                    const ice = FX.glow55 = new THREE.MeshStandardMaterial({ color: 0x0c4a6e, emissive: 0x7dd3fc, emissiveIntensity: 1.3, roughness: 0.2, metalness: 0.2 });
+                    LA(g, [0, -0.3, 0.04, -0.3, 0.045, -0.28, 0.045, 0.14, 0.03, 0.18, 0, 0.18], body, 0, 0.03, 0, 14);
+                    for (const z of [-0.2, 0.05]) C(g, 0.048, 0.02, mt.metal, 0, 0.03, z, 14);
+                    P.mag = G(g, 0, 0, 0);
+                    C(P.mag, 0.036, 0.24, mt.glass, 0, 0.105, -0.04, 14); C(P.mag, 0.027, 0.22, ice, 0, 0.105, -0.04, 12);
+                    for (const z of [-0.165, 0.085]) C(P.mag, 0.04, 0.02, mt.metal, 0, 0.105, z, 14);
+                    for (const z of [-0.12, 0.04]) B(P.mag, 0.016, 0.03, 0.016, mt.steel, 0, 0.07, z);
+                    LA(g, [0, -0.5, 0.03, -0.5, 0.034, -0.48, 0.02, -0.3, 0, -0.3], mt.steel, 0, 0.03, 0, 12);
+                    for (const z of [-0.34, -0.39, -0.44]) C(g, 0.044, 0.008, accent, 0, 0.03, z, 14);
+                    C(g, 0.022, 0.004, ice, 0, 0.03, -0.502, 12);
+                    const tg = gripX(g, 0.1, 0.0, 0.105, 0.03, mt.poly, 0.04, 0.05);
+                    trigger(0.04, -0.01);
+                    B(g, 0.03, 0.09, 0.035, mt.poly, 0, -0.05, -0.2);
+                    B(g, 0.05, 0.1, 0.12, mt.poly, 0, 0.02, 0.24);
+                    P.rh = makeArm(g, [0, -0.055, 0.12], ER, 'grip', tg, SW);
+                    P.lh = makeArm(g, [0, -0.09, -0.2], EL, 'vgrip', 0, SW);
+                    def = { sight: [0.17, 0.1], muzzle: [0, 0.03, -0.5], eject: [0.04, 0.05, 0.0] };
+                    break;
+                }
+                case 'seeker': {        // seeker launcher: three tubes in a cluster, a tracking sensor, a rear rocket pack
+                    const eye = FX.glow55 = new THREE.MeshStandardMaterial({ color: 0x431407, emissive: 0xfb923c, emissiveIntensity: 1.4, roughness: 0.3, metalness: 0.3 });
+                    B(g, 0.12, 0.11, 0.42, body, 0, 0.06, -0.1);
+                    for (const [x, y] of [[-0.03, 0.1], [0.03, 0.1], [0, 0.05]]) { C(g, 0.026, 0.5, mt.poly, x, y, -0.33, 12, true); C(g, 0.03, 0.02, accent, x, y, -0.58, 12, true); C(g, 0.015, 0.03, mt.red, x, y, -0.55, 8); }
+                    B(g, 0.03, 0.02, 0.04, mt.metal, 0, 0.14, -0.33); C(g, 0.022, 0.02, eye, 0, 0.162, -0.33, 12);
+                    B(g, 0.016, 0.04, 0.03, mt.metal, 0, 0.13, 0.06); ring(g, 0.012, 0.003, mt.metal, 0, 0.162, 0.06);
+                    P.mag = G(g, 0, 0, 0); B(P.mag, 0.1, 0.06, 0.12, mt.metal, 0, 0.02, 0.14); B(P.mag, 0.104, 0.012, 0.08, accent, 0, 0.05, 0.14);
+                    const tg = gripX(g, 0.04, 0.005, 0.11, 0.03, mt.poly, 0.04, 0.05);
+                    trigger(-0.02, 0.004);
+                    B(g, 0.1, 0.13, 0.03, mt.poly, 0, 0.06, 0.22);
+                    B(g, 0.03, 0.09, 0.035, mt.poly, 0, -0.03, -0.25);
+                    P.rh = makeArm(g, [0, -0.045, 0.055], ER, 'grip', tg, SW);
+                    P.lh = makeArm(g, [0, -0.075, -0.25], EL, 'vgrip', 0, SW);
+                    def = { sight: [0.162, 0.06], muzzle: [0, 0.08, -0.6], eject: [0.06, 0.08, 0.05] };
+                    break;
+                }
                 case 'railgun': {       // twin magnetic rails with a glowing channel that brightens as it charges
                     const coil = FX.coil = new THREE.MeshStandardMaterial({ color: 0x083344, emissive: 0x22d3ee, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.4 });
                     B(g, 0.07, 0.1, 0.4, body, 0, 0.035, 0.0);                                 // receiver
@@ -5955,7 +6302,12 @@
                         dual: { by: 0.057, b0: -0.17, b1: -0.23, w: 0.044, rf: -0.17, rr: 0.05 },
                         glauncher: { by: 0.064, b0: -0.19, b1: -0.53, w: 0.068, stock: 0.41, rf: -0.04, rr: 0.16, noPort: true, noShroud: true, noBrake: true },
                         tesla: { by: 0.045, b0: -0.13, b1: -0.47, w: 0.07, stock: 0.38, rf: -0.15, rr: 0.19, noPort: true, noShroud: true, noBrake: true, noStop: true },
-                        railgun: { by: 0.045, b0: -0.19, b1: -0.81, w: 0.07, stock: 0.48, rf: -0.2, rr: 0.2, noPort: true, noShroud: true, noBrake: true } }[id];
+                        railgun: { by: 0.045, b0: -0.19, b1: -0.81, w: 0.07, stock: 0.48, rf: -0.2, rr: 0.2, noPort: true, noShroud: true, noBrake: true },
+                        // 5.5 weapons
+                        drum: { by: 0.045, b0: -0.5, b1: -0.62, w: 0.064, stock: 0.48, rf: -0.2, rr: 0.16 },
+                        plasma: { by: 0.035, b0: -0.3, b1: -0.6, w: 0.06, stock: 0.46, rf: -0.3, rr: 0.3, noPort: true, noBrake: true },
+                        cryo: { by: 0.03, b0: -0.3, b1: -0.5, w: 0.07, rf: -0.28, rr: 0.16, noPort: true, noShroud: true, noBrake: true, noStop: true },
+                        seeker: { by: 0.07, b0: -0.3, b1: -0.58, w: 0.12, rf: -0.3, rr: 0.12, noPort: true, noShroud: true, noBrake: true } }[id];
             const handgun = isHandgun(id);
             // each tier has its own paint scheme (a camo, if you picked one, wins)
             if (camo === CAMOS.stock && L >= 1 && L <= 3) {
@@ -5995,7 +6347,8 @@
             }
             const LASER = { pistol: [-0.03, 0.012, -0.11], revolver: [-0.024, 0.04, -0.2], smg: [-0.035, 0.035, -0.27], ar: [-0.038, 0.045, -0.46], burst: [-0.038, 0.0, -0.22], lever: [-0.034, 0.05, -0.45], carbine: [-0.036, 0.045, -0.3],
                             shotgun: [-0.03, 0.05, -0.6], dmr: [-0.036, 0.045, -0.5], lmg: [-0.036, 0.05, -0.52], sniper: [-0.038, 0.035, -0.4], minigun: [-0.08, 0.03, -0.25], rpg: [-0.06, 0.04, -0.3], crossbow: [-0.03, 0.03, -0.3], flamer: [-0.045, 0.0, -0.3],
-                            dual: [-0.03, 0.012, -0.11], glauncher: [-0.05, 0.064, -0.3], tesla: [-0.048, 0.025, -0.1], railgun: [-0.05, 0.012, -0.3] };
+                            dual: [-0.03, 0.012, -0.11], glauncher: [-0.05, 0.064, -0.3], tesla: [-0.048, 0.025, -0.1], railgun: [-0.05, 0.012, -0.3],
+                            drum: [-0.04, 0.045, -0.42], plasma: [-0.04, 0.02, -0.25], cryo: [-0.05, 0.0, -0.2], seeker: [-0.07, 0.05, -0.3] };
             if (L >= 1) {   // TACTICAL: laser sight, handstop, rubber buttpad
                 const [lx, ly, lz] = LASER[id];
                 B(g, 0.018, 0.024, 0.065, mt.poly, lx - (L >= 2 ? A.w * 0.12 : 0), ly, lz);
@@ -6746,6 +7099,8 @@
             if (slashAt >= 0 && gameTime >= slashAt) { slashAt = -1; if (w.melee && currentHp > 0) katanaHits(w); }
             if (w.melee) { if (aimHeld && !aimWas) lunge(w); updateAmmoHUD(); }
             aimWas = aimHeld;
+            if (w.battery) plasmaTick(w, dt);          // 5.5 Plasma Rifle: the cell recharges itself
+            glow55Tick();
             if (w.charge) {
                 railTick(w); triggerFresh = false;
                 if (railC > 0) { const pc = Math.round(railC * 50) * 2; if (ui.railRing._pc !== pc) { ui.railRing._pc = pc; setStyle(ui.railRing, '--p', String(pc)); } setStyle(ui.railRing, 'opacity', '1'); }
@@ -6820,7 +7175,8 @@
                 case 'shotgun': vm.pump = 0.5; setTimeout(() => { if (vmModel && vmModel.id === 'shotgun') { ejectCasing(vmModel, 'shell'); sfx('pump'); } }, 170); break;
                 case 'lever': setTimeout(() => { if (vmModel && vmModel.id === 'lever') { vm.pump = 0.5; ejectCasing(vmModel, 'shell'); sfx('rack'); } }, 120); break;
                 case 'sniper': vm.bolt = 0; vm.boltEjected = false; break;
-                case 'rpg': case 'crossbow': case 'flamer': case 'tesla': case 'railgun': break;
+                case 'rpg': case 'crossbow': case 'flamer': case 'tesla': case 'railgun': case 'plasma': case 'cryo': case 'seeker': break;
+                case 'drum': vm.slideKick = 1; ejectCasing(vmModel, 'shell'); break;      // 5.5
                 case 'glauncher': vm.cylTarget += Math.PI / 3; vm.hammer = 1; break;
                 case 'dual': {     // 4.0: the guns take turns - move the flash / muzzle / ejection port to the one firing
                     const s = vm.akSide = vm.akSide ? 0 : 1, m = vmModel;     // 1 = the left gun
@@ -6832,7 +7188,7 @@
                 }
                 default: vm.slideKick = 1; ejectCasing(vmModel);
             }
-            VM.flash.color.setHex(id === 'railgun' ? 0x8ff8ff : id === 'tesla' ? 0xb4c0ff : 0xffffff);
+            VM.flash.color.setHex(id === 'railgun' ? 0x8ff8ff : id === 'tesla' ? 0xb4c0ff : id === 'plasma' ? 0xf5b8ff : id === 'cryo' ? 0xbfe9ff : 0xffffff);
             shake = Math.max(shake, w.recoil * 0.3);
             sfx(id);
             heat += 1;
@@ -6840,7 +7196,7 @@
 
             getMuzzleWorld(_muzzleW);
             camera.getWorldDirection(_fwd);
-            if (!w.flame && !w.tesla) muzzleBurst(_muzzleW, _fwd, w.pellets > 1 ? 0.8 : 1);
+            if (!w.flame && !w.tesla && !w.frost) muzzleBurst(_muzzleW, _fwd, w.pellets > 1 ? 0.8 : 1);
             _right.set(1, 0, 0).applyQuaternion(camera.quaternion);
             _up.set(0, 1, 0).applyQuaternion(camera.quaternion);
             const spread = currentSpread(w);
@@ -6848,6 +7204,7 @@
             if (w.rocket) { fireRocket(w, dmgMul, spread); updateAmmoHUD(); return; }
             if (w.grenade) { fireGrenade(w, dmgMul, spread); updateAmmoHUD(); autoReloadSoon(id, 300); return; }
             if (w.tesla) { fireTesla(w, dmgMul); updateAmmoHUD(); autoReloadSoon(id, 200); return; }
+            if (w.frost) { fireCryo(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0) autoReloadSoon(id, 200); return; }      // 5.5 Cryo Blaster
             if (w.flame) { fireFlame(w, dmgMul); updateAmmoHUD(); if (ammoState[id] <= 0) setTimeout(() => { if (currentGameState === 'playing' && playerStats.currentWeapon === id && ammoState[id] <= 0) triggerReload(); }, 200); return; }
             const perEnemy = new Map();
             for (let p = 0; p < w.pellets; p++) {
@@ -6855,7 +7212,7 @@
                 _dir.copy(_fwd).addScaledVector(_right, Math.cos(a) * r).addScaledVector(_up, Math.sin(a) * r).normalize();
                 const end = traceShot(camera.position, _dir, w, perEnemy, dmgMul);
                 if (w.rail) railBeamFx(_muzzleW, end, railC);
-                else if (p < 6) spawnTracer(_muzzleW, end, tracerColor(id === 'sniper' ? 0xc4b5fd : (id === 'dmr' ? 0xfde68a : id === 'crossbow' ? 0xb45309 : 0xffe9a8)), id === 'sniper' ? 0.07 : id === 'crossbow' ? 0.035 : 0.022, id === 'sniper' ? 0.2 : id === 'crossbow' ? 0.18 : 0.09);
+                else if (p < 6) spawnTracer(_muzzleW, end, tracerColor(id === 'plasma' ? 0xf0abfc : id === 'sniper' ? 0xc4b5fd : (id === 'dmr' ? 0xfde68a : id === 'crossbow' ? 0xb45309 : 0xffe9a8)), id === 'sniper' ? 0.07 : id === 'crossbow' ? 0.035 : id === 'plasma' ? 0.045 : 0.022, id === 'sniper' ? 0.2 : id === 'crossbow' ? 0.18 : id === 'plasma' ? 0.14 : 0.09);
                 if (NET.inGame && p < 3) netRecordShot(_muzzleW, end);
             }
             perEnemy.forEach((rec, enemy) => damageEnemy(enemy, rec.dmg, rec.head, rec.point, false, w.knock ? rec.dir : null, rec.hits));
@@ -7220,6 +7577,147 @@
         }
 
 
+        // ---- 13b-weapons-55.js ----
+        // ==========  5.5 NEW WEAPONS: Cryo Blaster, Plasma Rifle, Seeker Launcher (the Drum Shotgun needs nothing special)  ==========
+        // ---------- CRYO BLASTER: a short freezing cone. Chilled zombies move at half speed; keep spraying and they FREEZE solid ----------
+        // The chill and the freeze are applied where the damage is applied (damageEnemy with src 'cryo'), so in co-op the host
+        // freezes the zombies a guest sprays, exactly like it applies their bullets.
+        const CRYO_FREEZE_TICKS = 12, CRYO_FREEZE_S = 2, CRYO_CHILL_S = 1.6, FROZEN_TAKEN = 1.5;
+        const _cz = new V3();
+        function fireCryo(w, dmgMul) {
+            const o = camera.position, wall = raySolids(o, _fwd, w.range), reach = wall ? wall.t : w.range, cosA = Math.cos(w.cone);
+            for (let k = 1; k <= 3; k++) {
+                const d = reach * k / 3.5;
+                _cz.copy(_muzzleW).addScaledVector(_fwd, d); _cz.x += (Math.random() - 0.5) * d * 0.22; _cz.y += (Math.random() - 0.5) * d * 0.16; _cz.z += (Math.random() - 0.5) * d * 0.22;
+                spawnParticles(_cz, k % 2 ? 0xe0f2fe : 0x7dd3fc, 1, 1.5 + d * 0.1, 0.35, 0.12 + d * 0.025, false, { grav: -0.5, drag: 2 });
+            }
+            let hit = false;
+            for (const e of enemies.slice()) {
+                const u = e.userData; if (u.dead || u.hidden) continue;
+                _cz.set(e.position.x - o.x, e.position.y + u.totalHeight * 0.5 - o.y, e.position.z - o.z);
+                const d = _cz.length(); if (d > reach + u.radius) continue;
+                _cz.multiplyScalar(1 / (d || 1)); if (_cz.dot(_fwd) < cosA && d > u.radius * 1.5) continue;
+                // your own count of zombies frozen (the host does the real freezing; this is for your stats)
+                if (run.mode !== 'sandbox' && !u.config.boss && !u.config.fixed && !(u.freezeT > 0) && u.frost !== 2 && (u.myChill = (u.myChill | 0) + 1) >= CRYO_FREEZE_TICKS) { u.myChill = 0; life.frozen = (life.frozen | 0) + 1; runStats.frozen = (runStats.frozen | 0) + 1; }
+                damageEnemy(e, w.damage * dmgMul, false, null, false, null, 1, 'cryo');
+                hit = true;
+            }
+            // PvP: the spray hurts enemy players in the cone (no freezing people)
+            if (NET.inGame && NET.pvp) for (const p of netPlayers.values()) {
+                if (!p.av || !p.av.g.visible || p.team === NET.team || !p.alive) continue;
+                const P = p.av.g.position; _cz.set(P.x - o.x, P.y + 1 - o.y, P.z - o.z);
+                const d = _cz.length(); if (d > reach + 0.4) continue;
+                _cz.multiplyScalar(1 / (d || 1)); if (_cz.dot(_fwd) < cosA) continue;
+                netQueuePvpHit(p.id, w.damage * dmgMul * 1.2, false, false, 'cryo'); hit = true;
+            }
+            if (hit) runStats.hits++;
+        }
+        // host / single player: a cryo hit lands on this zombie
+        function chillEnemy(e, u) {
+            if (u.dead || u.config.fixed) return;
+            u.chillT = CRYO_CHILL_S;
+            if (u.config.boss || u.freezeT > 0) return;          // bosses are only slowed
+            if ((u.chillAcc = (u.chillAcc | 0) + 1) >= CRYO_FREEZE_TICKS) {
+                u.chillAcc = 0; u.freezeT = CRYO_FREEZE_S;
+                spawnParticles(new V3(e.position.x, e.position.y + u.totalHeight * 0.5, e.position.z), 0xe0f2fe, 8, 4, 0.6, 0.16, true, { grav: 8 });
+                if (!dmgOwner) sfx('freeze');
+            }
+        }
+        // frozen / chilled tint (kept on top of the hit flash)
+        function frostLook(u, k) {
+            if (u.flash > 0) return;
+            if (k === 2) { u.mat.emissive.setHex(0x9bdcff); u.mat.emissiveIntensity = 0.75; }
+            else if (k === 1) { u.mat.emissive.setHex(0x38bdf8); u.mat.emissiveIntensity = 0.3; }
+            else { u.mat.emissive.setHex(u.baseEmissive); u.mat.emissiveIntensity = u.baseEmissiveI; }
+        }
+        // per enemy, every frame (host / single player). Returns true while it's frozen solid (skip its AI and movement this frame).
+        function frostTick(e, u, delta) {
+            if (u.freezeT > 0) {
+                u.freezeT -= delta; u.frost = 2; frostLook(u, 2);
+                if (u.freezeT <= 0) { u.frost = 0; frostLook(u, 0); spawnParticles(new V3(e.position.x, e.position.y + u.totalHeight * 0.5, e.position.z), 0xbae6fd, 6, 5, 0.5, 0.12, true, { grav: 12 }); }
+                return u.freezeT > 0;
+            }
+            if (u.chillT > 0) { u.chillT -= delta; u.frost = 1; frostLook(u, 1); if (u.chillT <= 0) { u.chillAcc = 0; u.frost = 0; frostLook(u, 0); } }
+            return false;
+        }
+
+        // ---------- 5.5 BLOATER: dies in a poison cloud (host / single player; the cloud goes out to guests like any boss hazard) ----------
+        function bloaterBurst(e) {
+            const c = e.position, y = groundAt(c.x, c.z, 0, c.y + 0.5);
+            spawnParticles(new V3(c.x, c.y + 1.4, c.z), 0xa3e635, 16, 7, 0.8, 0.25, false, { grav: 6 });
+            bossHazard(c.x, y, c.z, 3.6, 9 * lvlDmg(), 5, 0x84cc16, "a Bloater's poison cloud");
+            sfx('pop');
+        }
+
+        // ---------- PLASMA RIFLE: the cell recharges itself when you stop firing; empty it and it overheats (a forced vent) ----------
+        let plasmaAcc = 0;
+        function plasmaTick(w, dt) {
+            const id = w.id;
+            if (isReloading || ammoState[id] >= w.magSize || gameTime - lastShootTime < 0.45) { plasmaAcc = 0; return; }
+            plasmaAcc += w.battery * dt;
+            if (plasmaAcc >= 1) { const n = Math.floor(plasmaAcc); plasmaAcc -= n; ammoState[id] = Math.min(w.magSize, ammoState[id] + n); updateAmmoHUD(); }
+        }
+        // the gun's glowing parts follow the heat (plasma) / pulse (cryo, seeker)
+        function glow55Tick() {
+            const m = vmModel, g = m && m.fx.glow55; if (!g) return;
+            const w = W(m.id);
+            if (w.battery) g.emissiveIntensity = isReloading ? 0.25 + 0.2 * Math.sin(gameTime * 20) : 0.5 + 1.6 * (ammoState[m.id] / w.magSize);
+            else g.emissiveIntensity = 1.1 + 0.35 * Math.sin(gameTime * 4);
+        }
+
+        // ---------- SEEKER LAUNCHER: each mini-rocket picks the target nearest your crosshair and steers onto it ----------
+        const _sk = new V3();
+        function seekerPick(from, dir, maxD = 70) {
+            let best = null, bs = 0.6;          // must be within ~53 degrees of where you aimed
+            for (const e of enemies) {
+                const u = e.userData; if (u.dead || u.hidden || !e.visible) continue;
+                _sk.set(e.position.x - from.x, e.position.y + u.totalHeight * 0.55 - from.y, e.position.z - from.z);
+                const d = _sk.length(); if (d > maxD || d < 1) continue;
+                const s = _sk.dot(dir) / d - d / maxD * 0.15 + (u.config.boss ? 0.1 : 0);
+                if (s > bs) { bs = s; best = { e }; }
+            }
+            if (NET.inGame && NET.pvp) for (const p of netPlayers.values()) {
+                if (!p.av || !p.av.g.visible || p.team === NET.team || !p.alive) continue;
+                const P = p.av.g.position; _sk.set(P.x - from.x, P.y + 1 - from.y, P.z - from.z);
+                const d = _sk.length(); if (d > maxD || d < 1) continue;
+                const s = _sk.dot(dir) / d - d / maxD * 0.15;
+                if (s > bs) { bs = s; best = { p }; }
+            }
+            return best;
+        }
+        function seekerAim(t, out) {
+            if (!t) return null;
+            if (t.e) { const u = t.e.userData; if (u.dead || !t.e.parent) return null; return out.set(t.e.position.x, t.e.position.y + u.totalHeight * 0.55, t.e.position.z); }
+            if (t.p) { if (!t.p.alive || !t.p.av) return null; const P = t.p.av.g.position; return out.set(P.x, P.y + 1, P.z); }
+            return null;
+        }
+        // steer one rocket (called from the projectile loop)
+        function seekerSteer(p, dt) {
+            if (!p.seek) return;
+            p.arm -= dt;
+            if (p.arm > 0) return;                       // flies straight for a moment first, so a salvo fans out
+            const tp = seekerAim(p.tgt, _sk);
+            if (!tp) { if ((p.retry -= dt) <= 0) { p.retry = 0.25; _sk.copy(p.vel).normalize(); p.tgt = seekerPick(p.mesh.position, _sk.clone(), 45); } return; }
+            const sp = p.vel.length();
+            _sk.sub(p.mesh.position).normalize().multiplyScalar(sp);
+            p.vel.lerp(_sk, Math.min(1, 5.5 * dt)).setLength(sp);
+        }
+
+        // ---------- 5.5 test hooks ----------
+        function hooks55() {
+            if (!window.__blocky) return;
+            Object.assign(window.__blocky, { c55: {
+                freeze: (e) => { const u = e.userData; for (let i = 0; i < CRYO_FREEZE_TICKS; i++) damageEnemy(e, 0.01, false, null, false, null, 1, 'cryo'); return { freezeT: u.freezeT, chillT: u.chillT }; },
+                spawn: (id, x, z) => { const y = groundAt(x, z, 0, 50) + 0.1, e = spawnEnemy(enemyTypes[id], x, z, y, waveSpeed(playerStats.level), waveReward(playerStats.level)); e.userData.dropping = false; return e; },
+                enemies: () => enemies.map(e => ({ id: e.userData.config.id, hp: Math.round(e.userData.hp), x: +e.position.x.toFixed(1), z: +e.position.z.toFixed(1), frozen: e.userData.freezeT > 0, chill: e.userData.chillT > 0, state: e.userData.state })),
+                hazards: () => bossFx.filter(f => f.k === 'haz').map(f => ({ r: f.r, dps: f.dps, color: f.color })),
+                shots: () => projectiles.filter(p => p.kind === 'bshot').length, rockets: () => projectiles.filter(p => p.kind === 'rocket').map(p => ({ seek: !!p.seek, tgt: !!p.tgt })),
+                ammo: (id) => ammoState[id], setAmmo: (id, n) => { ammoState[id] = n; }, ice: () => iceRects.slice(), onIce: (x, z, f) => onIce(x, z, f || 0),
+                rewards: () => Object.fromEntries(Object.keys(REWARDS55).map(k => [k, REWARDS55[k].ok()])), unlocked: (kind, id) => isUnlocked(kind, id),
+                life: () => life, proto: NET_PROTO, netMsg: (peer, m) => netMessage(peer, m), verMsg: (v, h) => netVerMsg(v, h), whatsNew: () => whatsNew(), frame: (n, ms = 33) => { for (let i = 0; i < n; i++) frame((prevTime || performance.now()) + ms); prevTime = performance.now(); }
+            } });
+        }
+
         // ---- 14-secondaries-gadgets.js ----
         // ---------- SECONDARIES (Q) ----------
         const _grenadeGeo = new THREE.SphereGeometry(0.18, 10, 10), _shellGeo = new THREE.SphereGeometry(0.16, 10, 10), _orbGeo = new THREE.SphereGeometry(0.28, 8, 8);
@@ -7396,7 +7894,8 @@
                     continue;
                 }
                 if (p.kind === 'rocket') {
-                    p.vel.y -= 2.5 * dt; p.fuse -= dt;
+                    if (p.seek) seekerSteer(p, dt); else p.vel.y -= 2.5 * dt;      // 5.5 Seeker rockets home in (and don't drop)
+                    p.fuse -= dt;
                     let boom = false;
                     for (let s = 0; s < 4 && !boom; s++) {
                         p.mesh.position.addScaledVector(p.vel, dt / 4);
@@ -7411,7 +7910,7 @@
                     p.mesh.lookAt(_tmp.copy(p.mesh.position).add(p.vel));
                     p.trail += dt;
                     if (p.trail > 0.012) { p.trail = 0; spawnParticles(p.mesh.position, 0xffb454, 1, 1, 0.18, 0.1); spawnParticles(p.mesh.position, 0x9a9a9a, 1, 0.6, 0.9, 0.22, true, { grav: -0.5, drag: 2 }); }
-                    if (boom || p.fuse <= 0) { removeProjectile(p); explode(p.mesh.position.clone(), p.damage, p.radius, { src: 'rpg', color: 0xff8a3c }); }
+                    if (boom || p.fuse <= 0) { removeProjectile(p); explode(p.mesh.position.clone(), p.damage, p.radius, { src: p.seek ? 'seeker' : 'rpg', color: p.seek ? 0xffb347 : 0xff8a3c }); }
                     continue;
                 }
                 if (p.kind === 'gl') {        // 4.0 launcher grenade
@@ -7697,6 +8196,13 @@
             mesh.position.copy(_muzzleW).addScaledVector(_dir, 0.4);
             scene.add(mesh);
             const L = w.level || 0;
+            if (w.seeker) {      // 5.5: a small homing rocket that fans out a little, then locks on to whatever is nearest your crosshair
+                mesh.scale.setScalar(0.6);
+                _dir.addScaledVector(_right, (Math.random() - 0.5) * 0.25).addScaledVector(_up, 0.05 + Math.random() * 0.12).normalize();
+                projectiles.push({ kind: 'rocket', mesh, vel: _dir.clone().multiplyScalar(44), fuse: 4, trail: 0, damage: w.damage * dmgMul, radius: w.radius + 0.25 * L, seek: true, arm: 0.12, retry: 0, tgt: seekerPick(camera.position, _fwd) });
+                spawnParticles(_muzzleW, 0xffc266, 4, 5, 0.25, 0.1); shake = Math.max(shake, 0.1); sfx('seeker');
+                return;
+            }
             projectiles.push({ kind: 'rocket', mesh, vel: _dir.clone().multiplyScalar(72), fuse: 5, trail: 0, damage: w.damage * dmgMul, radius: w.radius + 0.4 * L });
             // backblast behind you
             const back = camera.position.clone().addScaledVector(_fwd, -1.2);
@@ -8310,6 +8816,9 @@
             hound:    { skin: 0x8a7560, pants: 0x4a3a2c, hair: null, shoe: null, sleeves: 'none', claws: true, noBelly: true, blood: 0x7a1414 },
             crawler:  { skin: 0x8a8a74, pants: 0x3f3a33, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0x7a1414 },
             shocker:  { skin: 0x7d8f98, pants: 0x1f2937, hair: null, shoe: 0x111111, sleeves: 'long', armor: 0x1e3a5f, bigEyes: true, blood: 0x7dd3fc },
+            bloater:  { skin: 0x9bb36a, pants: 0x3f4a2a, hair: null, shoe: null, sleeves: 'none', blood: 0xa3e635 },          // 5.5
+            lobber:   { skin: 0x8d7a62, pants: 0x4a3524, hair: 0x2a1f14, shoe: 0x1f1a14, sleeves: 'short', blood: 0x9a3412 },
+            frost:    { skin: 0xa9c7dc, pants: 0x1e3a5f, hair: 0xe0f2fe, shoe: null, sleeves: 'long', armor: 0x60a5fa, claws: true, bigEyes: true, noBelly: true, blood: 0x7dd3fc },
             zero:     { skin: 0x7a8f55, pants: 0x2b3318, hair: null, shoe: null, sleeves: 'none', claws: true, bigEyes: true, noBelly: true, blood: 0xa3e635 }
         };
         const zLook = cfg => ZLOOK[cfg.look || cfg.id] || ZLOOK.grunt;
@@ -8387,6 +8896,16 @@
                     push(H, [0.1, 0.34, 0.9, 0, 0.62, 0, 0x7f1d1d], [0.2, 0.1, 0.2, 0, 0.8, 0.0, AM]);
                     for (const L of [k.legL, k.legR]) push(L, [0.48, 0.3, 0.2, 0, -0.45, 0.3, OL], [0.1, 0.16, 0.1, 0, -0.45, 0.42, AM]);
                     push(k.armL, [0.5, 0.2, 0.5, 0, -0.2, 0, OL], [0.3, 0.7, 0.14, 0.24, -1.0, 0.04, IRON]);
+                    break;
+                }
+                case 'frost': {  // 5.5 Winter King: ice crystals on the shoulders and back, an icicle crown, frozen gauntlets
+                    const IC = 0xbae6fd, ICD = 0x7dd3fc, GL = 0xe0f2fe;
+                    for (const [x, y, z, r] of [[-0.85, 2.9, 0.05, 0.35], [0.85, 2.9, -0.05, -0.35], [-0.45, 2.7, -0.65, 0.2], [0.5, 2.5, -0.7, -0.25], [0, 3.0, -0.75, 0]]) { push(T, [0.3, 0.95, 0.3, x, y, z, ICD, 0, r, r]); k.torsoGlow.push([0.16, 0.75, 0.16, x, y + 0.1, z, GL, 0, r, r]); }
+                    push(T, [1.2, 0.25, 0.85, 0, 1.4, 0, ICD], [1.3, 0.3, 0.3, 0, 2.25, -hd - 0.25, IC]);
+                    k.torsoGlow.push([0.34, 0.34, 0.05, 0, 2.0, hd + 0.12, GL]);
+                    for (let i = 0; i < 7; i++) push(H, [0.12, 0.45 + (i % 2) * 0.35, 0.12, (i - 3) * 0.14, 0.6, (i % 2) * -0.08, i % 2 ? GL : IC, 0, 0, (i - 3) * 0.1]);
+                    for (const A of [k.armL, k.armR]) push(A, [0.62, 0.5, 0.62, 0, -1.45, 0, ICD], [0.12, 0.45, 0.12, -0.24, -1.85, 0.24, IC], [0.12, 0.45, 0.12, 0.24, -1.85, 0.24, IC]);
+                    k.armLGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, GL]); k.armRGlow.push([0.04, 0.6, 0.03, 0, -0.8, 0.28, GL]);
                     break;
                 }
                 case 'titan': {  // Titan: glowing crystals on shoulders and back, jagged stone crown, boulder knees, cracks
@@ -8732,7 +9251,7 @@
                 k.headGlow.push([e * 0.7, e * 0.6, 0.03, -0.17, 0.05, 0.38, eye], [e * 1.15, e, 0.035, 0.18, 0.02, 0.382, eye]);
             }
             // how far forward the upper body hunches (the torso, arms and head hang off a hip joint)
-            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, shambler: 0.38, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3 }[id] ?? 0.2;
+            const hunch = { grunt: 0.22, sprinter: 0.34, tank: 0.12, spitter: 0.16, bomber: 0.06, charger: 0.3, leaper: 0.4, shielder: 0.06, marksman: 0.1, medic: 0.18, boss: 0.18, splitter: 0.08, mite: 0.42, screamer: 0.14, jugg: 0.1, brood: 0.3, pyro: 0.14, phantom: 0.26, warlord: 0.06, titan: 0.2, necro: 0.06, acolyte: 0.3, risen: 0.26, shambler: 0.38, hound: 1.5, crawler: 1.15, shocker: 0.12, zero: 0.3, bloater: 0.08, lobber: 0.2, frost: 0.12 }[id] ?? 0.2;
             return (enemyKits[cfg.id] = finishKit(cfg, k, s, sl, { id: cfg.id, hunch, rough: id === 'jugg' || id === 'warlord' ? 0.55 : 0.84, shield, extra, headZ: 0.06 }));
         }
         // 5.0 Zombie Hound: a four-legged dog. The body is the usual hip/torso/head rig tipped flat (hunch 1.5): the torso runs forward,
@@ -9220,7 +9739,7 @@
         function pickEnemyType(level, counts) {
             const r = Math.random();
             let acc = 0;
-            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['shambler', 0.05], ['shocker', 0.03]];
+            const table = [['sprinter', 0.14], ['tank', 0.09], ['charger', 0.08], ['spitter', 0.09], ['leaper', 0.09], ['bomber', 0.07], ['shielder', 0.08], ['marksman', 0.07], ['medic', 0.05], ['splitter', 0.06], ['screamer', 0.03], ['crawler', 0.035], ['shambler', 0.05], ['shocker', 0.03], ['bloater', 0.04], ['lobber', 0.035]];
             const sk = 0.9 * (twist && twist.special || 1);   // 3.8: two new types share the old odds; SPECIALISTS waves double them
             for (const [id, chance] of table) {
                 const t = enemyTypes[id];
@@ -9451,7 +9970,9 @@
             // multiplayer guest: tell the host (the referee) and show the hit right away so there's no lag
             if (NET.inGame && !NET.host) { netClientHit(enemyGroup, amount, isHeadshot, point, isExplosion, src || (isExplosion ? 'explosive' : playerStats.currentWeapon)); return; }
             if (u.config.armor && u.state !== 'stun' && !isExplosion) amount *= u.config.armor;     // the Juggernaut's plating
-            if (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead) amount *= 0.35;      // 5.0 Shocker: linked zombies take reduced damage until the Shocker dies
+            if (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead) amount *= 0.35;
+            if (u.freezeT > 0) amount *= FROZEN_TAKEN;                   // 5.5: frozen zombies take +50% from everything
+            if (src === 'cryo') chillEnemy(enemyGroup, u);               // 5.5 Cryo Blaster: chill, then freeze      // 5.0 Shocker: linked zombies take reduced damage until the Shocker dies
             const mine = !dmgOwner;              // host applying someone else's hit: no hit marker / numbers here
             if (mine) runStats.damage += Math.min(amount, Math.max(0, u.hp));
             u.hp -= amount;
@@ -9499,7 +10020,8 @@
                 if (headshot) { u.head.visible = false; spawnParticles(new V3(e.position.x, e.position.y + 2.8 * u.config.scale, e.position.z), zLook(u.config).skin, 10, 7, 0.9, 0.2 * u.config.scale, true, { bounce: true, spin: 12, grav: 26 }); }
                 corpses.push({ e, t: 0, dir: Math.random() < 0.5 ? 1 : -1, back: headshot || Math.random() < 0.35 });
                 if (award && !u.noLoot) dropLoot(u, e.position);
-                if (u.config.ai === 'shocker' && (!NET.inGame || NET.host)) shockerDied(e, u);       // 5.0: frees its linked zombies and dies in an EMP burst
+                if (u.config.ai === 'shocker' && (!NET.inGame || NET.host)) shockerDied(e, u);
+                if (u.config.id === 'bloater' && (!NET.inGame || NET.host)) bloaterBurst(e);      // 5.5: bursts into a poison cloud       // 5.0: frees its linked zombies and dies in an EMP burst
                 if (u.config.id === 'splitter' && (!NET.inGame || NET.host)) {   // 3.8: bursts into Mites
                     spawnParticles(c, 0xc084fc, 14, 8, 0.7, 0.25, false, { grav: 14 });
                     for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.random(); const m = spawnEnemy(enemyTypes.mite, e.position.x + Math.cos(a) * 1.4, e.position.z + Math.sin(a) * 1.4, e.position.y + 0.6, waveSpeed(playerStats.level), waveReward(playerStats.level)); m.userData.noLoot = true; m.userData.dropping = false; }
@@ -9661,6 +10183,7 @@
         // Fold a finished run into the lifetime stats (sandbox runs don't count)
         function commitLife() {
             const s = runStats;
+            checkRewards55();             // 5.5: new camos / tracer earned this run
             if (run.mode === 'sandbox' || s.time < 2) { if (Object.keys(CLX.gain).length) saveJSON('blocky21_life', life); return false; }      // 5.4: class XP is always banked
             life.runs++; life.kills += s.kills; life.headshots += s.headshots; life.bosses += s.bosses;
             life.shots += s.shots; life.hits += s.hits; life.damage += Math.round(s.damage); life.time += s.time;
@@ -10443,6 +10966,7 @@
             life.bossKills = life.bossKills || {};
             life.bossKills[cfg.id] = (life.bossKills[cfg.id] || 0) + 1;
             toast(`${cfg.name.toUpperCase()} DEFEATED!`, cfg.bar, 2.6);
+            checkRewards55();
             saveJSON('blocky21_life', life);
         }
 
@@ -10450,7 +10974,7 @@
         // Far-away ordinary zombies think less often (every 2nd / 3rd frame, with the time they missed added up), which
         // is invisible at that distance and cuts the AI + collision cost of a big wave. Anything that shoots, casts or is a boss always updates.
         let aiTick = 0;
-        const LOD_FREE = { crawler: 1, hound: 1, shocker: 1, zero: 1, ranged: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
+        const LOD_FREE = { crawler: 1, hound: 1, shocker: 1, zero: 1, ranged: 1, lobber: 1, marksman: 1, medic: 1, necro: 1, warlord: 1, acolyte: 1, egg: 1 };
         function updateEnemies(dtFrame) {
             const T = aiTargets();
             aiTick++;
@@ -10481,6 +11005,8 @@
                 }
 
 
+                if ((u.freezeT > 0 || u.chillT > 0) && frostTick(enemy, u, delta)) continue;     // 5.5 Cryo Blaster: frozen solid (or chilled: see below)
+                if (u.chillT > 0) delta *= cfg.boss ? 0.75 : 0.5;
                 const sx0 = enemy.position.x, sz0 = enemy.position.z;   // start-of-frame spot (charge wall check)
                 _aiT = pickAITarget(u, enemy, T, delta); pos = _aiT.pos; pFeet = _aiT.feet;
                 // sentry decoy: brawlers near a sentry stop chasing you and go smash it instead
@@ -11077,6 +11603,64 @@
                         }
                         break;
                     }
+                    case 'lobber': {
+                        // 5.5 LOBBER: keeps 12-24m away and lobs gore bombs onto the spot you're standing on (an orange circle shows where)
+                        if (hd < 12) { mx = -mx; mz = -mz; } else if (hd < 24) wantMove = false;
+                        u.aiT -= delta;
+                        if (u.state === 'windup') {
+                            wantMove = false; u.stateT -= delta;
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.aiT = 3.4 + Math.random() * 1.6;
+                                const from = bp(2.6), tx = pos.x, tz = pos.z, ty = groundAt(tx, tz, 0, pFeet + 2), T = 1.1 + hd * 0.02;
+                                bossTele(tx, ty, tz, 2.8, T, 0xf97316, null);
+                                bossShot(from, lobVel(from, tx, ty, tz, T, 22), { c: 0x9a3412, s: 1.1, g: 22, life: T + 1, dmg: cfg.damage * ld, boom: 2.8, by: "a Lobber's gore bomb", lit: true });
+                                sfx('throw');
+                            }
+                        } else if (u.aiT <= 0 && hd < 34 && u.onGround) { u.state = 'windup'; u.stateT = 0.6; sfx('growl'); }
+                        if (inMelee) meleeHit(u, cfg, enemy);
+                        break;
+                    }
+                    case 'frost': {
+                        // 5.5 THE WINTER KING: fans of ice shards, a freezing stomp with a shockwave you jump, blizzard circles when enraged
+                        u.slamT -= delta; u.aiT -= delta; u.summonT -= delta;
+                        if (u.state === 'slam') {
+                            wantMove = false; u.stateT -= delta;
+                            u.armL.rotation.x = u.armR.rotation.x = -Math.PI * 0.85;
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.slamT = u.phase2 ? 4 : 5.5;
+                                const c = enemy.position;
+                                slam(c, 7.5, 30 * ld, 0x7dd3fc, "the Winter King's stomp");
+                                bossWave(c.x, c.y, c.z, 30, 11, 20 * ld, 0x7dd3fc, "the Winter King's frost wave");
+                                bossHazard(c.x, c.y, c.z, 4.5, 6 * ld, 4, 0x38bdf8, 'freezing ground');
+                            }
+                        } else if (u.state === 'aim') {
+                            wantMove = false; u.stateT -= delta;
+                            if (u.stateT <= 0) {
+                                u.state = 'walk'; u.aiT = u.phase2 ? 2.6 : 3.6;
+                                const from = bp(2.8), n = u.phase2 ? 7 : 5, base = Math.atan2(pos.x - from.x, pos.z - from.z), dy = (pos.y - 0.5 - from.y) / Math.max(hd, 1);
+                                for (let i = 0; i < n; i++) {
+                                    const a = base + (i - (n - 1) / 2) * 0.13;
+                                    bossShot(from, new V3(Math.sin(a) * 28, dy * 28, Math.cos(a) * 28), { c: 0xbae6fd, s: 0.9, life: 2.6, dmg: 13 * ld, by: "the Winter King's ice shard" });
+                                }
+                                sfx('throw');
+                            }
+                        } else {
+                            if (u.slamT <= 0 && hd < 9 && u.onGround) { u.state = 'slam'; u.stateT = 1.0; sfx('growl'); }
+                            else if (u.aiT <= 0 && hd > 6 && hd < 55) { u.state = 'aim'; u.stateT = 0.55; }
+                            if (u.phase2 && u.summonT <= 0) {       // the blizzard: ice rains down where you're standing
+                                u.summonT = 9;
+                                bossToast('BLIZZARD! Get out of the blue circles!', '#7dd3fc', 1.8);
+                                for (let i = 0; i < 6; i++) {
+                                    const a = Math.random() * Math.PI * 2, r = i ? 2 + Math.random() * 10 : 0;
+                                    const x = pos.x + Math.cos(a) * r, z = pos.z + Math.sin(a) * r, y = groundAt(x, z, 0, pFeet + 2);
+                                    bossTele(x, y, z, 3, 1.4 + i * 0.2, 0x7dd3fc, () => bossBlast(new V3(x, y + 0.3, z), 3.2, 24 * ld, 0x7dd3fc, 'a blizzard'));
+                                }
+                                if (enemies.length < 40) for (let i = 0; i < 2; i++) bossMinion('sprinter', enemy.position.x, enemy.position.z, enemy.position.y, 4, 9);
+                            }
+                            if (inMelee) { if (u.onGround) wantMove = false; meleeHit(u, cfg, enemy, 1, [dx / hd * 12, 6, dz / hd * 12]); }
+                        }
+                        break;
+                    }
                     case 'necro': {
                         // THE NECROMANCER: shielded while its Acolytes live, raises the dead, fires homing skulls
                         u.shielded = false;
@@ -11600,7 +12184,8 @@
             if (sliding) slideT -= delta;
 
 
-            const damping = sliding ? 1.4 : 10;
+            const ice = !sliding && onGround && onIce(pos.x, pos.z, feetY);      // 5.5 Frostbite lake: slow to start, slow to stop
+            const damping = sliding ? 1.4 : ice ? 3.2 : 10;
             velocity.x -= velocity.x * Math.min(1, damping * delta);
             velocity.z -= velocity.z * Math.min(1, damping * delta);
 
@@ -11611,7 +12196,7 @@
 
 
             const sprinting = sprintHeld && moveForward && !aimHeld && !isMouseDown && !sliding;
-            const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (adrenOn() ? 1 + 0.35 * clsPow() : 1) * (1 + clsSpeed());
+            const speed = (sprinting ? 78.0 : 52.0) * (1 + 0.07 * perk('speed')) * (aimHeld && !w.noAds ? 0.6 : 1) * (onGround ? 1 : 0.85) * (w.moveMult || 1) * (sliding ? 0.12 : 1) * (ice ? 0.32 : 1) * (adrenOn() ? 1 + 0.35 * clsPow() : 1) * (1 + clsSpeed());
             if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
             if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
 
@@ -12049,7 +12634,7 @@
                     if (fits.length) addon = `<div class="flex gap-1 mt-2">${fits.map(a => { const A = ATTACH[a], have = hasAtt(id, a), c = A.cost, col = hex(A.color);
                         return `<button ${have || money < c ? 'disabled' : ''} title="${A.name}: ${A.desc}" onclick="window.buyAttachment('${id}','${a}')" class="attb flex-1 py-1 rounded text-[10px] font-black leading-tight border ${have || money >= c ? '' : 'cursor-not-allowed'}" style="border-color:${col}${have ? '' : '88'};color:${have ? '#0b0f14' : col};background:${have ? col : 'rgba(0,0,0,0.25)'}${have || money >= c ? '' : ';opacity:0.45'}">${have ? '\u2713 ' + A.name : `${A.name}<br>$${c}`}</button>`; }).join('')}</div>`;
                 }
-                const special = base.melee ? 'Melee \u00b7 lunge' : base.rail ? 'Charge \u00b7 pierces all' : base.tesla ? `Chains ${wpn.chain + 1}` : base.grenade ? 'Bouncing grenades' : base.akimbo ? 'Akimbo'
+                const special = base.frost ? 'Slows \u00b7 freezes' : base.battery ? 'Self-charging' : base.seeker ? 'Homing x3' : base.melee ? 'Melee \u00b7 lunge' : base.rail ? 'Charge \u00b7 pierces all' : base.tesla ? `Chains ${wpn.chain + 1}` : base.grenade ? 'Bouncing grenades' : base.akimbo ? 'Akimbo'
                     : base.pierce ? `Pierces ${base.pierce}` : base.burst ? `Auto burst x${base.burst}` : base.spinUp ? 'Spin-up' : base.knock ? 'Knockback' : base.hsMult > 2 ? `Head x${base.hsMult}` : (base.auto ? 'Full auto' : 'Semi auto');
                 const ki = ownedList.indexOf(id), keyTxt = ki >= 0 && keyLabel(ki) ? ` \u00b7 Key ${keyLabel(ki)}` : '';
                 const rps = (base.burst ? base.burst * 1000 / Math.max(wpn.fireRate, base.burstGap * base.burst) : 1000 / wpn.fireRate).toFixed(1);
@@ -12306,7 +12891,7 @@
         }
         function swatchRow(label, key, table) {
             return `<div class="mlabel">${label}</div><div class="flex flex-wrap gap-2">${Object.entries(table).map(([k, c]) => { const lk = menuLocked(key, k);
-                return `<button class="sw${settings[key] === k ? ' on' : ''}${lk ? ' locked' : ''}" title="${k}${lk ? (campSkin(KEY_KIND[key], k) ? ' - campaign reward' : prestigeNeed(KEY_KIND[key], k) ? ' - prestige ' + prestigeNeed(KEY_KIND[key], k) : ' - rank ' + unlockRank(KEY_KIND[key], k)) : ''}" style="background:${typeof c === 'number' ? hexC(c) : c}" data-set="${key}" data-val="${k}"${lk ? ` data-rank="${lockTag(KEY_KIND[key], k)}"` : ''}></button>`; }).join('')}</div>`;
+                return `<button class="sw${settings[key] === k ? ' on' : ''}${lk ? ' locked' : ''}" title="${k}${lk ? (reward55(KEY_KIND[key], k) ? ' - ' + reward55(KEY_KIND[key], k).how : campSkin(KEY_KIND[key], k) ? ' - campaign reward' : prestigeNeed(KEY_KIND[key], k) ? ' - prestige ' + prestigeNeed(KEY_KIND[key], k) : ' - rank ' + unlockRank(KEY_KIND[key], k)) : ''}" style="background:${typeof c === 'number' ? hexC(c) : c}" data-set="${key}" data-val="${k}"${lk ? ` data-rank="${lockTag(KEY_KIND[key], k)}"` : ''}></button>`; }).join('')}</div>`;
         }
         function renderRankBar() {
             const ri = rankInfo(), P = prestigeLvl();
@@ -12377,7 +12962,7 @@
                 }
                 h += `</div>`;
             } else if (menuTab === 'bestiary') {
-                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'shambler', 'crawler', 'shocker'];
+                const order = ['grunt', 'sprinter', 'tank', 'charger', 'spitter', 'leaper', 'shielder', 'bomber', 'splitter', 'mite', 'marksman', 'medic', 'screamer', 'shambler', 'crawler', 'shocker', 'bloater', 'lobber'];
                 h += `<div class="flex flex-col gap-2 mt-3">${order.map(id => { const t = enemyTypes[id];
                     return `<div class="bcard"><div class="bswatch" style="background:${hexC(t.color)};border-top:6px solid ${hexC(t.eye || 0xfff4a8)}"></div><div class="flex-1"><div class="flex justify-between items-baseline"><div class="font-black tracking-wide">${t.name.toUpperCase()}</div><div class="text-xs font-bold text-gray-400">${Math.round(ENEMY_BASE_HP * t.hp)} HP \u00b7 ${'from wave ' + (t.minLvl || 1)}</div></div><div class="text-xs text-gray-300 mt-0.5">${t.intel || BESTIARY[id]}</div></div></div>`; }).join('')}</div>`;
                 // 3.9: the bosses - one every 5th wave (the Abomination first, then the rest in a random order), pairs from wave 25
@@ -12429,7 +13014,8 @@
         // 4.0: the version line on the menu opens this - the highlights of the whole update
         function whatsNew() {
             const sec = (title, col, items) => `<div class="mlabel" style="color:${col}">${title}</div><ul class="news text-sm text-gray-200">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
-            return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.4 - CLASS REWORK</div>` + whatsNew54(sec) +
+            return `<div class="text-2xl font-black text-white mt-2">WHAT'S NEW IN 5.5 - FROSTBITE &amp; CARNIVAL</div>` + whatsNew55(sec) +
+                `<div class="text-2xl font-black text-white mt-4">5.4 - CLASS REWORK</div>` + whatsNew54(sec) +
                 `<div class="text-2xl font-black text-white mt-4">5.2</div>` +
                 sec('FIXED: SCREEN FLASHES', '#fca5a5', ['<b>No more surprise flashbangs.</b> Lightning on the Storm lighting was a double 4x-brightness strobe every 7 to 17 seconds, red/white/green hit and pickup flashes could stack and repeat every frame (damage over time, several hits at once), and a big explosion next to your face could fill the screen with white. Lightning is now one soft pulse at least 14 seconds apart, screen flashes never stack or repeat (one at a time, capped in strength, never white), explosions fade near the camera and only light the scene when you could see them, and a replayed or spammed multiplayer explosion is dropped. New setting: <b>Reduce flashes</b> (on by default).']) +
                 sec('GOON SHOP SKINS + AVATARS', '#fde047', ['The <b>skin</b> and <b>avatar</b> you wear in your launcher Profile now show up in the game: your first-person sleeves and gloves take the skin colours and pattern (camo, stripes, check, metal, glow), and everyone in multiplayer sees your skin and avatar (robot, knight, astronaut, ninja, pirate, zombie, alien, cowboy, wizard, samurai) on your player model. The CUSTOMIZE tab shows what you wear. Get more in your launcher Profile (Goon Shop).']) +
@@ -12780,6 +13366,20 @@
         homeClassesLabel();
 
         // ---------- 5.4 what's new (the menu's WHAT'S NEW tab, and a one-time note on the home menu) ----------
+        function whatsNew55(sec) {
+            return sec('TWO NEW MAPS', '#7dd3fc', ['<b>FROSTBITE</b>: a snowed-in research outpost with a <b>frozen lake you slide across</b>, an ice cave tunnel, a radar dome, a drilling rig bridged to a radio mast, and falling snow.',
+                    '<b>CARNIVAL</b>: an abandoned funfair at night - a giant Ferris wheel, a carousel, a striped big-top tent, game stalls and a <b>roller-coaster track on stilts</b> you can run along.',
+                    'Both work in every mode: waves, Rush, Boss Rush, Sandbox, co-op and every PvP mode.']) +
+                sec('NEW MODE: HUNTED', '#f87171', ['A free-for-all for 2 to 10 players (or you and bots). The first kill makes you the <b>HUNTED</b>: 300 health, a Minigun and a red beam over your head so everyone can find you.',
+                    'Only the Hunted scores: 1 point per kill. Take the Hunted down for 2 points and the crown is yours. First to 12 wins.']) +
+                sec('FOUR NEW WEAPONS', '#f0abfc', ['<b>DRUM SHOTGUN</b> (rank 7): full-auto shotgun with a 16-shell drum. <b>CRYO BLASTER</b> (rank 9): a freezing spray - zombies slow down, then <b>freeze solid</b> and take +50% damage.',
+                    '<b>PLASMA RIFLE</b> (rank 12): bolts that burn through riot shields, and a cell that <b>recharges itself</b> - empty it and it overheats. <b>SEEKER LAUNCHER</b> (rank 14): salvos of 3 <b>homing</b> mini-rockets.',
+                    'All four take upgrades, camos and the attachments that fit them.']) +
+                sec('NEW ZOMBIES + A NEW BOSS', '#a3e635', ['<b>BLOATER</b> (wave 7+): fat and slow, and it bursts into a <b>poison cloud</b> when it dies. <b>LOBBER</b> (wave 8+): hangs back and lobs gore bombs - watch for the orange circle.',
+                    'New boss: <b>THE WINTER KING</b> - fans of ice shards, freezing stomps you have to jump, and a blizzard when enraged. Boss Rush now has all 9 bosses.']) +
+                sec('NEW REWARDS', '#fde047', ['Earn the <b>GLACIER</b> camo (defeat The Winter King), <b>BIG TOP</b> camo (wave 10 on Carnival), <b>HUNTER</b> camo (win a game of Hunted) and the <b>FROST</b> tracer (freeze 200 zombies). Four new launcher achievements too.',
+                    'Multiplayer: everyone in a party needs 5.5. A player on an older version gets a clear message instead of a broken match.']);
+        }
         function whatsNew54(sec) {
             return sec('CLASSES LEVEL UP FOR GOOD', '#fb923c', ['Every class now has its <b>own level, 1 to 30</b>, earned by playing it: kills, waves, objectives, challenges and match results, in every mode including multiplayer and PvP. It is saved with the rest of your save and syncs.',
                     'Each level gives a <b>skill point</b>. Spend them in the new <b>CLASSES</b> screen (home menu, the Play tab or the multiplayer lobby) on a <b>15-node skill tree</b> in 3 branches (Ability, Class, Utility), and pick a <b>specialisation</b> at levels 10 and 20 that changes how the ability works. Respec is free.',
@@ -12822,7 +13422,19 @@
         //    so they glide instead of teleporting.
 
 
-        const INTERP_MS = 100;           // how far "in the past" other things are shown (room for 2-3 updates)
+        const INTERP_MS = 100;
+        // 5.5: the party protocol version. Weapons, enemies and kill sources are sent as list positions, and 5.5 added to those lists,
+        // so a 5.4 and a 5.5 game would misread each other. The host checks the guest's 'hi' and the guest checks the host's 'lobby';
+        // a mismatch is refused with a clear message instead of a broken match. Bump it whenever those lists or messages change.
+        const NET_PROTO = 55;
+        const netVerName = (v) => v ? (v / 10).toFixed(1) : '5.4 or older';
+        const netVerMsg = (theirs, host) => `${host ? 'The host is' : 'That player is'} on Blocky Shooter ${netVerName(theirs)} and you are on ${VERSION}. Everyone in a party needs the same version - reload the game (or ask the ${host ? 'host' : 'player'} to) and try again.`;
+        function netVersionFail(v) {          // guest: the host runs another version
+            const hp = NET.hostPeer;
+            try { sendRel(hp, { t: 'bye' }); } catch (e) {}
+            setTimeout(() => { try { hp && hp.pc.close(); } catch (e) {} }, 200);
+            netReset(); openMP('join'); NET.joinState = 'error'; NET.joinErr = netVerMsg(v, true); renderMP();
+        }           // how far "in the past" other things are shown (room for 2-3 updates)
         const MP_MODES = {
             coop: { name: 'CO-OP', team: 10, desc: 'Survive the waves together - up to 10 players. Everyone has their own cash and armory. Downed players come back next wave.' },
             v1: { name: '1v1', team: 1 }, v2: { name: '2v2', team: 2 }, v3: { name: '3v3', team: 3 }, v4: { name: '4v4', team: 4 }, v5: { name: '5v5', team: 5 },
@@ -12835,6 +13447,8 @@
             koth: { name: 'KING OF THE HILL', team: 5, teams: true, rules: true, target: 90, mins: 10, desc: 'Hold the glowing hill: your team scores every second it is the only team inside. The hill moves every minute. First to 90 wins.' },
             lts: { name: 'LAST TEAM STANDING', team: 5, teams: true, rules: true, target: 3, desc: 'No respawns: wipe out the other team to win the round. Dead players watch a teammate. First team to win 3 rounds wins.' },
             infect: { name: 'INFECTION', team: 10, rules: true, mins: 3, desc: 'One player starts infected with a Katana. Anyone they kill joins the infected. Survivors win if anyone is still human after 3 minutes; the infected win if they get everyone.' },
+            // 5.5: one player at a time is the HUNTED (300 HP + a Minigun) and only scores while they hold it
+            hunted: { name: 'HUNTED', team: 10, ffa: true, rules: true, target: 12, mins: 8, desc: 'Free-for-all with a twist: the first kill makes you the HUNTED - 300 HP and a Minigun, marked for everyone. Each kill as the Hunted scores 1; take the Hunted down for 2 and the crown is yours. First to 12 wins.' },
             tourney: { name: 'TOURNAMENT', team: 8, desc: 'A knockout bracket of 1v1 duels for 4 to 8 players on the Tournament Arena. Everyone else watches as an invisible spectator. The last one standing is the champion.' }
         };
         const PVP_TARGET = { v1: 10, v2: 15, v3: 20, v4: 25, v5: 30 };
@@ -13073,7 +13687,7 @@
                         const peer = peerFromConn(conn); NET.hostPeer = peer;
                         wirePeer(peer, () => {}, () => netHostGone());
                         NET.on = true; NET.host = false; NET.joinState = 'connected';
-                        updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE }); renderMP();
+                        updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE, v: NET_PROTO }); renderMP();
                         // matchmaking is done: hang up on the server, the game connection stays
                         setTimeout(() => { try { pj.disconnect(); } catch (e) {} }, 1500);
                     });
@@ -13158,7 +13772,7 @@
         function hostLobbyUpdate() {
             if (!NET.host) return;
             const players = allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, color: p.color, gv: p === NET.me ? GVL.on() : !!p.gv, look: lookOf(p) || null, bot: p.bot ? 1 : undefined }));
-            for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
+            for (const p of netPlayers.values()) sendRel(p.peer, { t: 'lobby', v: NET_PROTO, you: p.id, mode: NET.lobby.mode, map: NET.lobby.map, diff: NET.lobby.diff, players });
             renderMP();
         }
         function netRemovePlayer(id, why) {
@@ -13205,7 +13819,7 @@
             for (const q of NET.joinPeers || []) if (q !== peer) { q.gone = true; try { q.pc.close(); } catch (e) {} }
             NET.joinPeers = [];
             NET.on = true; NET.host = false; NET.joinState = 'connected'; NET.joinVia = 'long';
-            updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE }); renderMP();
+            updateMyLook(); sendRel(peer, { t: 'hi', name: NET.name, look: LOOK_MINE, v: NET_PROTO }); renderMP();
         }
         function clientLinkClosed(peer) {
             if (peer.gone) return;                // hung up on purpose, or already handled ('failed' and the channel closing both land here)
@@ -13285,6 +13899,12 @@
             const now = performance.now();
             switch (m.t) {
                 case 'hi': {
+                    if (m.v !== NET_PROTO) {          // 5.5: another version - refuse it cleanly (a 5.4 guest shows its "party is full" message)
+                        sendRel(peer, { t: 'full', why: netVerMsg(m.v, false).replace('That player is', 'This party is').replace('ask the player to', 'ask the host to') });
+                        NET.hostMsg = `${String(m.name || 'A player').replace(/[<>]/g, '').slice(0, 16)} could not join: they are on Blocky Shooter ${netVerName(m.v)}, you are on ${VERSION}.`;
+                        setTimeout(() => netRemovePlayer(p.id), 400); renderMP();
+                        break;
+                    }
                     const first = p.pending;
                     p.name = String(m.name || 'Player').replace(/[<>]/g, '').slice(0, 16) || 'Player'; p.pending = false; p.look = cleanLook(m.look);
                     // 5.3: the same player coming back after a drop while their old connection hasn't timed out yet: replace the old one
@@ -13334,8 +13954,9 @@
                     break;
                 }
                 case 'lobby': {
+                    if (m.v !== NET_PROTO) { netVersionFail(m.v); break; }      // 5.5: the host runs another version
                     NET.rejoinN = 0;
-                if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE }); }
+                if (!NET.saidHi) { NET.saidHi = true; updateMyLook(); sendRel(NET.hostPeer, { t: 'hi', name: NET.name, look: LOOK_MINE, v: NET_PROTO }); }
                     if (GVL.on() && !NET.hostGvn && !NET.hostAsked) { NET.hostAsked = true; NET.hostGvn = GVL.L.newChallenge(); sendRel(NET.hostPeer, { t: 'gvq', n: NET.hostGvn }); }   // and the host proves itself to us
                     NET.id = m.you; NET.lobby = { mode: m.mode, map: m.map, diff: m.diff };
                     const seen = new Set();
@@ -13353,7 +13974,7 @@
                     break;
                 }
                 case 'plook': { if (m.id !== NET.id) applyPlayerLook(netPlayers.get(m.id), m.look); break; }
-                case 'full': NET.joinState = 'error'; NET.joinErr = 'That party is full or already playing.'; renderMP(); break;
+                case 'full': NET.joinState = 'error'; NET.joinErr = typeof m.why === 'string' ? m.why.slice(0, 300) : 'That party is full or already playing.'; renderMP(); break;
                 case 'tb': tourneyApply(m); break;
                 case 'mst': modeApply(m); break;          // 5.3 mode state (flags, hill, tags, gun levels, rounds...)
                 case 'tm': modeTeamMsg(m); break;         // 5.3 someone changed team (Infection)
@@ -13525,7 +14146,7 @@
                 dv.setUint8(o + 10, Math.round(r * 256) & 255);
                 dv.setUint8(o + 11, Math.round(clamp(u.hp / u.maxHp, 0, 1) * 255));
                 dv.setUint8(o + 12, u.tgt ? (u.tgt.id & 255) : 255);
-                dv.setUint8(o + 13, (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead ? 1 : 0) | (u.phase2 ? 2 : 0));
+                dv.setUint8(o + 13, (u.linkUntil > gameTime && u.linkBy && !u.linkBy.userData.dead ? 1 : 0) | (u.phase2 ? 2 : 0) | (u.freezeT > 0 ? 4 : u.chillT > 0 ? 8 : 0));      // 5.5: frozen / chilled
             }
             for (const p of netPlayers.values()) sendFast(p.peer, buf);
         }
@@ -13583,7 +14204,8 @@
                 const sp = Math.hypot(e.position.x - ox, e.position.z - oz) / Math.max(dt, 1e-3);
                 const fl = u.net.fl, cfg = u.config;
                 u.state = E_STATES[fl & 15] || 'walk'; u.onGround = !!(fl & 16); u.leaping = !!(fl & 32); u.shielded = !!(fl & 128);
-                e.visible = !(u.state === 'cloak' || u.state === 'hidden' || u.state === 'burrow' || u.state === 'erupt');      // cloaked Phantom, Vent Crawler in its vent, Patient Zero underground
+                e.visible = !(u.state === 'cloak' || u.state === 'hidden' || u.state === 'burrow' || u.state === 'erupt');
+                { const fk = u.net.x & 4 ? 2 : u.net.x & 8 ? 1 : 0; if (fk || u.frost) { u.frost = fk; frostLook(u, fk); } }      // 5.5 frozen / chilled tint      // cloaked Phantom, Vent Crawler in its vent, Patient Zero underground
                 if (u.state === 'hidden' && cfg.ai === 'crawler' && (u.rattleT = (u.rattleT || 0) - dt) <= 0) {      // the vent rattles for everyone, not just the host
                     u.rattleT = 1.4 + Math.random() * 1.6; const hd = Math.hypot(camera.position.x - e.position.x, camera.position.z - e.position.z);
                     if (hd < 24) { sfxAt('thud', hd); spawnParticles(_ev0.set(e.position.x, e.position.y + 0.15, e.position.z), 0x9ca3af, 2, 1.5, 0.4, 0.1, true, { grav: 4 }); }
@@ -14039,6 +14661,7 @@
         function netShowEnd(m) {
             if (!NET.inGame) return;
             NET.inGame = false; NET.over = true; if (TN.on) { tourneyReset(); }
+            if (m.t === 'end' && NET.mode === 'hunted' && m.wid === NET.id) life.huntWins = (life.huntWins | 0) + 1;      // 5.5
             commitLife();
             const h = document.querySelector('#gameover-overlay h2'), sub = document.querySelector('#gameover-overlay p');
             let title, line;
@@ -14521,6 +15144,11 @@
                 case 'flamer': return { p: [[0.06, 0.06, 0.4, 0, 0.04, -0.35, G], [0.09, 0.09, 0.05, 0, 0.04, -0.58, A], [0.1, 0.1, 0.34, 0, -0.1, -0.1, A], [0.07, 0.11, 0.2, 0, 0.03, 0, M], [0.04, 0.04, 0.04, 0, 0.04, -0.62, 0xf97316], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D]], fore: [0, -0.02, -0.34], mz: -0.64 };
                 case 'tesla': return { p: [[0.07, 0.1, 0.3, 0, 0.03, -0.1, M], [0.14, 0.14, 0.03, 0, 0.04, -0.3, A], [0.14, 0.14, 0.03, 0, 0.04, -0.38, A], [0.14, 0.14, 0.03, 0, 0.04, -0.46, A], [0.05, 0.05, 0.3, 0, 0.04, -0.35, 0x818cf8], [0.08, 0.08, 0.05, 0, 0.04, -0.6, 0xc7d2fe], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D]], fore: [0, -0.04, -0.3], mz: -0.65 };
                 case 'railgun': return { p: [[0.025, 0.05, 0.7, -0.04, 0.05, -0.45, A], [0.025, 0.05, 0.7, 0.04, 0.05, -0.45, A], [0.08, 0.1, 0.34, 0, 0.03, -0.1, M], [0.03, 0.03, 0.6, 0, 0.06, -0.4, 0x22d3ee], [0.1, 0.1, 0.1, 0, 0.03, -0.35, D], [0.05, 0.11, 0.2, 0, 0, 0.18, D], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D]], fore: [0, -0.04, -0.4], mz: -0.82 };
+                // 5.5 weapons
+                case 'drum': return { p: [[0.065, 0.1, 0.36, 0, 0.03, -0.12, M], [0.04, 0.04, 0.34, 0, 0.05, -0.45, G], [0.08, 0.2, 0.2, 0, -0.1, -0.06, A], [0.05, 0.11, 0.22, 0, 0, 0.18, D], [0.04, 0.09, 0.04, 0, -0.06, -0.33, D], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D]], fore: [0, -0.06, -0.33], mz: -0.66 };
+                case 'plasma': return { p: [[0.06, 0.1, 0.7, 0, 0.03, -0.05, M], [0.02, 0.02, 0.3, 0, 0.04, -0.5, G], [0.055, 0.055, 0.12, 0, 0.04, -0.44, 0xe879f9], [0.064, 0.012, 0.4, 0, 0.06, -0.05, 0xf0abfc], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D], [0.04, 0.08, 0.04, 0, -0.06, -0.24, D]], fore: [0, -0.05, -0.24], mz: -0.64 };
+                case 'cryo': return { p: [[0.09, 0.09, 0.45, 0, 0.03, -0.08, M], [0.07, 0.07, 0.26, 0, 0.13, -0.05, 0x7dd3fc], [0.05, 0.05, 0.22, 0, 0.03, -0.42, G], [0.09, 0.09, 0.03, 0, 0.03, -0.38, A], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D], [0.04, 0.09, 0.04, 0, -0.06, -0.2, D]], fore: [0, -0.06, -0.2], mz: -0.52 };
+                case 'seeker': return { p: [[0.14, 0.13, 0.45, 0, 0.07, -0.12, M], [0.06, 0.06, 0.5, -0.035, 0.11, -0.35, D], [0.06, 0.06, 0.5, 0.035, 0.11, -0.35, D], [0.06, 0.06, 0.5, 0, 0.05, -0.35, D], [0.05, 0.03, 0.05, 0, 0.17, -0.33, 0xfb923c], [0.045, 0.1, 0.05, 0, -0.07, 0.04, D], [0.12, 0.14, 0.04, 0, 0.07, 0.15, A]], fore: [0, -0.04, -0.25], mz: -0.62 };
                 case 'katana': return { p: [[0.035, 0.035, 0.22, 0, 0, 0.02, 0x1f2937], [0.09, 0.09, 0.015, 0, 0, -0.1, 0xd4a017], [0.012, 0.05, 0.8, 0, 0.02, -0.52, 0xe5e7eb], [0.01, 0.02, 0.8, 0, 0.0, -0.52, 0xfda4af]], fore: [0, 0, 0.1], mz: -0.9, melee: true };
                 default: return { p: rifle(0.2, 0.14, 0.2), fore: [0, -0.04, -0.4], mz: -0.64 };
             }
@@ -14647,7 +15275,7 @@
         // like a person and need no bot code at all.
         const BOT_NAMES = ['Blocko', 'Cubert', 'Pixel', 'Brick', 'Voxel', 'Chunk', 'Tetra', 'Boxy', 'Nugget', 'Dice', 'Cobble', 'Slab', 'Pebble', 'Crate'];
         const BOT_SKILL = { easy: { acc: 0.32, react: 0.8, dmg: 0.5, speed: 0.82 }, normal: { acc: 0.5, react: 0.5, dmg: 0.72, speed: 0.92 }, hard: { acc: 0.7, react: 0.28, dmg: 0.92, speed: 1 } };
-        const BOT_GUNS = ['ar', 'smg', 'shotgun', 'burst', 'lmg', 'dmr', 'carbine', 'ar'];
+        const BOT_GUNS = ['ar', 'smg', 'shotgun', 'burst', 'lmg', 'dmr', 'carbine', 'plasma', 'drum', 'ar'];
         const botSkill = () => BOT_SKILL[settings.mpBotSkill] ? settings.mpBotSkill : 'normal';
         const isBot = (p) => !!(p && p.bot && typeof p.bot === 'object');
         function botCap() { const m = NET.lobby.mode; return m === 'tourney' ? 8 : lobbyTeams(m) ? Math.min(10, MP_MODES[m].team * 2) : 10; }
@@ -14695,7 +15323,7 @@
             const b = p.bot, now = performance.now();
             const s = at || pickSpawn(p.team, p.id);
             b.x = s[0]; b.z = s[1]; b.feet = groundAt(s[0], s[1], 0.3, (s[2] || 0) + 0.5); b.vy = 0; b.onGround = true;
-            b.hp = modeMaxHp(p.team); p.hp = b.hp; p.alive = true; p.spec = false;
+            b.hp = modeMaxHp(p.team, p.id); p.hp = b.hp; p.alive = true; p.spec = false;
             b.w = modeBotWeapon(p); const W0 = weaponsDb[b.w] || weaponsDb.ar; b.ammo = W0.magSize; b.reloadT = 0; b.fireCd = 0.4;
             b.path = null; b.pathT = 0; b.tgt = -1; b.aimT = 0; b.yaw = Math.atan2(b.x, b.z); b.pitch = 0; b.stuckT = 0; b.lx = b.x; b.lz = b.z;
             p.protUntil = now + SPAWN_PROT_MS;
@@ -15604,12 +16232,14 @@
         });
 
         // ---- 28d-mp-modes.js ----
+        // (5.5 adds HUNTED: one player at a time is the Hunted - 300 HP, a Minigun, a red beam over their head - and only they score)
         // ---------- 5.3 MORE PVP MODES: Free-for-all, Gun Game, Kill Confirmed, Capture the Flag, King of the Hill, Last Team Standing, Infection ----------
         // The host is the referee for all of them, as for team deathmatch: it sees everyone's position (their snapshots), so it decides
         // pick-ups, captures, hill time, rounds and infections, and sends the state out in one small 'mst' message whenever it changes
         // (and once a second, which also catches up a player who joined late). Guests only draw it.
         const MD = { on: false, mode: '', phase: '', until: 0, gg: {}, tags: [], flags: null, bases: null, hill: null, hills: [], hillIdx: 0, hillAt: 0, holder: -1,
-                     round: 0, rs: 0, sendT: 0, tickT: 0, tagSeq: 1, g: null, vis: null, alive: [0, 0] };
+                     round: 0, rs: 0, sendT: 0, tickT: 0, tagSeq: 1, g: null, vis: null, alive: [0, 0], hunted: -1, wasMe: false };
+        const HUNT_HP = 300;
         const GG_LIST = ['lmg', 'ar', 'burst', 'smg', 'shotgun', 'lever', 'dmr', 'sniper', 'revolver', 'pistol', 'katana'];
         const INF_COLORS = [0x3b82f6, 0x84cc16];
         const LTS_ROUND_S = 150, KC_TAG_S = 30, CTF_RETURN_S = 20, HILL_MOVE_S = 60, HILL_R = 5;
@@ -15633,16 +16263,17 @@
             if (isFfaMode()) { let t = 2; for (const q of allPlayers()) if (q !== p) t = Math.max(t, q.team + 1); p.team = t; }
             else if (NET.mode === 'infect') p.team = 1;          // late to the party: you join the horde
         }
-        function modeMaxHp(team) { return NET.mode === 'infect' && (team & 1) ? 150 : 100; }
+        function modeMaxHp(team, id) { return NET.mode === 'infect' && (team & 1) ? 150 : NET.mode === 'hunted' && id !== undefined && id === MD.hunted ? HUNT_HP : 100; }
         function modeRespawnDelay(team) { return NET.mode === 'lts' ? 1e9 : NET.mode === 'infect' && (team === undefined ? NET.team : team) === 1 ? 2 : 3; }
         function modeCanRespawn(p) { return NET.mode !== 'lts' && !NET.over; }
         function modeHitOk(shooter, target) { return !(MD.on && MD.phase !== 'live'); }
         function modeLoadout(fresh) {
             const m = NET.mode;
-            maxHp = modeMaxHp(NET.team);
+            maxHp = modeMaxHp(NET.team, NET.id);
             let list, cur, sec = ['grenade'];
             if (m === 'gungame') { cur = GG_LIST[Math.min(GG_LIST.length - 1, MD.gg[NET.id] | 0)]; list = [cur]; sec = []; }
             else if (m === 'infect' && NET.team === 1) { list = ['katana']; cur = 'katana'; sec = []; }
+            else if (m === 'hunted' && MD.hunted === NET.id) { list = ['minigun']; cur = 'minigun'; sec = []; }
             else if (m === 'infect') { list = ['pistol', 'smg', 'shotgun', 'ar']; cur = !fresh && list.includes(playerStats.currentWeapon) ? playerStats.currentWeapon : 'ar'; }
             else { list = WEAPON_ORDER.slice(); cur = !fresh && list.includes(playerStats.currentWeapon) ? playerStats.currentWeapon : 'ar'; }
             playerStats.weapons = list; playerStats.currentWeapon = cur;
@@ -15653,12 +16284,14 @@
             if (m === 'gungame') return GG_LIST[Math.min(GG_LIST.length - 1, MD.gg[p.id] | 0)];
             if (m === 'infect') return p.team === 1 ? 'katana' : ['ar', 'shotgun', 'smg'][p.id % 3];
             if (m === 'tourney') return 'ar';
+            if (m === 'hunted' && MD.hunted === p.id) return 'minigun';
             return (p.bot && p.bot.gun) || 'ar';
         }
         // where a bot should head for the objective (null = just hunt enemies)
         function modeBotGoal(p) {
             const m = NET.mode, b = p.bot;
             if (!MD.on) return null;
+            if (m === 'hunted' && MD.hunted >= 0 && MD.hunted !== p.id && p.id % 3) { const h = playerById(MD.hunted), P = h && h.alive ? netPosOf(h) : null; if (P) return P; }      // most bots go after the Hunted
             if (m === 'ctf' && MD.flags) {
                 const t = p.team & 1, mine = MD.flags[t], theirs = MD.flags[1 - t];
                 if (theirs.s === 'carried' && theirs.by === p.id) return MD.bases[t];                         // run it home
@@ -15683,6 +16316,7 @@
                 case 'ctf': return `CAPTURE THE FLAG - first to ${M.target} captures`;
                 case 'koth': return `KING OF THE HILL - hold the hill, first to ${M.target}`;
                 case 'lts': return `LAST TEAM STANDING - no respawns, first to ${M.target} rounds`;
+                case 'hunted': return `HUNTED - first kill becomes the Hunted. First to ${M.target} points`;
                 case 'infect': return NET.team === 1 ? 'INFECTION - you are INFECTED: get them all!' : 'INFECTION - survive for 3 minutes!';
             }
             return M.name;
@@ -15690,7 +16324,7 @@
 
         // ----- start / stop -----
         function modeReset() {
-            MD.on = false; MD.mode = ''; MD.phase = ''; MD.gg = {}; MD.tags = []; MD.flags = null; MD.bases = null; MD.hill = null; MD.hills = []; MD.round = 0; MD.rs = 0; MD.holder = -1; MD.until = 0; MD.rsSeen = undefined; MD.myLv = undefined; MD.alive = [0, 0];
+            MD.on = false; MD.mode = ''; MD.phase = ''; MD.gg = {}; MD.tags = []; MD.flags = null; MD.bases = null; MD.hill = null; MD.hills = []; MD.round = 0; MD.rs = 0; MD.holder = -1; MD.until = 0; MD.rsSeen = undefined; MD.myLv = undefined; MD.alive = [0, 0]; MD.hunted = -1; MD.wasMe = false;
             if (MD.g) { scene.remove(MD.g); MD.g.traverse(o => { if (o.geometry) o.geometry.dispose(); }); MD.g = null; MD.vis = null; }
         }
         function modeBegin(cfg) {               // everyone, when the match starts (after the map is built)
@@ -15757,6 +16391,16 @@
                 for (const f of MD.flags || []) if (f.s === 'carried' && f.by === v.id) ctfDrop(f, netPosOf(v));
                 modeSend();
             } else if (m === 'lts') ltsCheck();
+            else if (m === 'hunted') {
+                if (v.id === MD.hunted) {
+                    if (k) { k.pts = (k.pts | 0) + 2; huntSet(k, `${k.name} TOOK DOWN THE HUNTED - ${k.name} is the new Hunted!`); }
+                    else { MD.hunted = -1; modeSend('The Hunted fell - the next kill takes the crown', '#fca5a5'); }
+                } else if (k) {
+                    if (k.id === MD.hunted) { k.pts = (k.pts | 0) + 1; modeSend(); }
+                    else if (MD.hunted < 0) huntSet(k, `${k.name} drew first blood and is the HUNTED!`);
+                }
+                if (k && (k.pts | 0) >= NET.target) modeEnd(-1, k.id, `${k.name} WINS WITH ${k.pts} POINTS`);
+            }
             else if (m === 'infect') {
                 if ((v.team & 1) === 0) {
                     if (k && k.team === 1) k.pts = (k.pts | 0) + 1;
@@ -15765,6 +16409,11 @@
                 } else if (k) k.pts = (k.pts | 0) + 1;
                 infectCheck();
             }
+        }
+        function huntSet(p, msg) {             // host: p is the Hunted now
+            MD.hunted = p.id;
+            if (isBot(p) && p.alive) { const b = p.bot; b.hp = HUNT_HP; p.hp = HUNT_HP; b.w = 'minigun'; b.ammo = weaponsDb.minigun.magSize; b.reloadT = 0; }
+            modeSend(msg, '#f87171');
         }
         function modeSetTeam(p, team) {
             p.team = team;
@@ -15820,7 +16469,7 @@
                     return;
                 }
                 if (m === 'infect') { const s = allPlayers().filter(p => (p.team & 1) === 0).length; modeEnd(0, undefined, `SURVIVORS WIN - ${s} MADE IT`); return; }
-                if (isFfaMode()) { const lvl = (p) => m === 'gungame' ? MD.gg[p.id] | 0 : p.kills, w = allPlayers().sort((a, b) => lvl(b) - lvl(a) || b.kills - a.kills)[0]; modeEnd(-1, w.id, `TIME! ${w.name} WINS`); return; }
+                if (isFfaMode()) { const lvl = (p) => m === 'gungame' ? MD.gg[p.id] | 0 : m === 'hunted' ? p.pts | 0 : p.kills, w = allPlayers().sort((a, b) => lvl(b) - lvl(a) || b.kills - a.kills)[0]; modeEnd(-1, w.id, `TIME! ${w.name} WINS`); return; }
                 const w = NET.score[0] === NET.score[1] ? -1 : NET.score[0] > NET.score[1] ? 0 : 1;
                 modeEnd(w, undefined, w < 0 ? `TIME! A DRAW  ${NET.score[0]} - ${NET.score[1]}` : `TIME! ${TEAM_NAMES[w]} TEAM WINS  ${NET.score[0]} - ${NET.score[1]}`);
                 return;
@@ -15883,12 +16532,14 @@
             } else if (m === 'lts' && MD.phase === 'live') {
                 const n = ltsAlive(); if (n[0] !== MD.alive[0] || n[1] !== MD.alive[1]) { MD.alive = n; changed = true; ltsCheck(); }
             } else if (m === 'infect') infectCheck();
+            else if (m === 'hunted' && MD.hunted >= 0 && !playerById(MD.hunted)) { MD.hunted = -1; changed = true; ev = 'The Hunted left - the next kill takes the crown'; evc = '#fca5a5'; }
             if (changed || ev) modeSend(ev, evc);
             else if ((MD.sendT -= 0.1) <= 0) modeSend();
         }
         function modeSnapshot(ev, evc) {
             const m = { t: 'mst', ph: MD.phase, rem: MD.until ? Math.max(0, (MD.until - performance.now()) / 1000) : -1, round: MD.round, rs: MD.rs, alive: MD.alive };
             if (NET.mode === 'gungame') m.gg = MD.gg;
+            if (NET.mode === 'hunted') m.hv = MD.hunted;
             if (MD.tags.length || NET.mode === 'kc') m.tags = MD.tags.map(t => [t.id, r2(t.x), r2(t.y), r2(t.z), t.team]);
             if (MD.flags) { m.flags = MD.flags.map(f => [f.s === 'home' ? 0 : f.s === 'carried' ? 1 : 2, f.by, r2(f.x), r2(f.y), r2(f.z)]); m.bases = MD.bases.map(b => [r2(b.x), r2(b.y), r2(b.z)]); }
             if (MD.hill) m.hill = [r2(MD.hill.x), r2(MD.hill.y), r2(MD.hill.z), MD.hill.r, MD.holder, Math.max(0, HILL_MOVE_S - (performance.now() - MD.hillAt) / 1000)];
@@ -15907,6 +16558,7 @@
             if (!MD.on || NET.host) return;
             MD.phase = m.ph; MD.until = m.rem >= 0 ? performance.now() + m.rem * 1000 : 0; MD.round = m.round | 0; MD.alive = m.alive || [0, 0];
             if (m.gg) MD.gg = m.gg;
+            if (m.hv !== undefined) MD.hunted = m.hv | 0;
             if (m.tags) MD.tags = m.tags.map(([id, x, y, z, team]) => ({ id, x, y, z, team }));
             if (m.flags) { MD.flags = m.flags.map(([s, by, x, y, z], t) => ({ t, s: s === 0 ? 'home' : s === 1 ? 'carried' : 'dropped', by, x, y, z })); MD.bases = m.bases.map(([x, y, z]) => ({ x, y, z })); }
             if (m.hill) { MD.hill = { x: m.hill[0], y: m.hill[1], z: m.hill[2], r: m.hill[3] }; MD.holder = m.hill[4]; MD.hillAt = performance.now() - (HILL_MOVE_S - m.hill[5]) * 1000; }
@@ -15921,6 +16573,17 @@
                     if (lv > MD.myLv) { toast(`NEXT GUN: ${W(playerStats.currentWeapon).name.toUpperCase()}${lv === GG_LIST.length - 1 ? ' - LAST ONE!' : ''}`, '#fde047', 1.6); sfx('level'); }
                 }
                 MD.myLv = lv;
+            }
+            // 5.5 hunted: you just became the Hunted (if you're dead right now, your respawn gives you the kit)
+            if (NET.mode === 'hunted') {
+                const me = MD.hunted === NET.id;
+                if (me !== MD.wasMe) {
+                    MD.wasMe = me;
+                    if (me && !NET.dead) {
+                        modeLoadout(); currentHp = maxHp; ammoState.minigun = W('minigun').magSize; cancelReload(); updateGunModel(); updateHUD();
+                        toast('YOU ARE THE HUNTED - 300 HP and a Minigun. Every kill scores!', '#f87171', 2.4); sfx('level');
+                    }
+                }
             }
             // last team standing: a new round puts everyone back at their spawn with full health
             if (NET.mode === 'lts' && m.rs !== undefined && m.rs !== MD.rsSeen) {
@@ -15992,6 +16655,17 @@
                 } else { g.visible = true; g.scale.setScalar(1); g.position.set(f.x, f.y, f.z); g.rotation.y = t * 0.8; }
             });
             for (const o of V.tags.values()) { o.rotation.y = t * 3; o.position.y += Math.sin(t * 3 + o.id) * 0.002; }
+            if (NET.mode === 'hunted') {      // 5.5: a red beam and a spinning crown over the Hunted, for everyone but the Hunted
+                if (!V.hunt) {
+                    const g = new THREE.Group();
+                    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 30, 8, 1, true), mdMat(0xef4444, 0.22)); beam.position.y = 17; g.add(beam);
+                    const crown = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 6, 16), mdMat(0xfca5a5)); crown.rotation.x = Math.PI / 2; crown.position.y = 2.45; g.add(crown);
+                    MD.g.add(g); V.hunt = g;
+                }
+                const h = MD.hunted >= 0 && MD.hunted !== NET.id ? playerById(MD.hunted) : null;
+                V.hunt.visible = !!(h && h.alive && h.av && h.av.g.visible);
+                if (V.hunt.visible) { V.hunt.position.copy(h.av.g.position); V.hunt.rotation.y = t * 2; V.hunt.children[0].material.opacity = 0.16 + 0.1 * Math.sin(t * 5); }
+            }
             if (V.hill) V.hill.children[3].material.opacity = 0.16 + 0.08 * Math.sin(t * 3);
         }
 
@@ -16004,7 +16678,11 @@
             let sc = '', lv = MP_MODES[m].name, line = '', col = '';
             if (isFfaMode()) {
                 const all = allPlayers().sort((a, b) => (b.pts | 0) - (a.pts | 0) || b.kills - a.kills), lead = all[0];
-                if (m === 'gungame') {
+                if (m === 'hunted') {
+                    const hu = MD.hunted >= 0 ? playerById(MD.hunted) : null;
+                    sc = `<span>YOU ${me ? me.pts | 0 : 0}</span>${clock}<span class="text-base text-gray-300">first to ${NET.target}</span><span style="color:${hex(lead ? pcol(lead) : 0xffffff)}">${lead ? escHtml(lead.id === NET.id ? 'YOU' : lead.name) + ' ' + (lead.pts | 0) : ''}</span>`;
+                    line = MD.hunted === NET.id ? 'YOU ARE THE HUNTED - every kill scores!' : hu ? `HUNTED: ${hu.name} - take them down for 2 points` : 'The first kill makes you the HUNTED';
+                } else if (m === 'gungame') {
                     const my = MD.gg[NET.id] | 0, lw = lead ? MD.gg[lead.id] | 0 : 0;
                     sc = `<span>GUN ${my + 1}/${GG_LIST.length}</span>${clock}<span style="color:${hex(lead ? pcol(lead) : 0xffffff)}">${lead ? escHtml(lead.id === NET.id ? 'YOU' : lead.name) + ' ' + (lw + 1) : ''}</span>`;
                     line = `${W(playerStats.currentWeapon).name}${my < GG_LIST.length - 1 ? ' - next: ' + W(GG_LIST[my + 1]).name : ' - LAST GUN!'}`;
@@ -16038,11 +16716,12 @@
                 case 'ctf': return ` - ${p.pts | 0} PTS`;
                 case 'koth': return ` - ${p.pts | 0}s ON THE HILL`;
                 case 'infect': return ` - ${p.team === 1 ? 'INFECTED' : 'SURVIVED'}`;
+                case 'hunted': return ` - ${p.pts | 0} PTS${p.id === MD.hunted ? ' (HUNTED)' : ''}`;
             }
             return '';
         }
         function modeBoardHtml() {
-            const col = { ffa: 'KILLS', gungame: 'GUN', kc: 'TAGS', ctf: 'POINTS', koth: 'HILL', lts: 'KILLS', infect: 'POINTS' }[NET.mode] || 'SCORE';
+            const col = { ffa: 'KILLS', gungame: 'GUN', kc: 'TAGS', ctf: 'POINTS', koth: 'HILL', lts: 'KILLS', infect: 'POINTS', hunted: 'POINTS' }[NET.mode] || 'SCORE';
             const val = (p) => NET.mode === 'gungame' ? (MD.gg[p.id] | 0) + 1 : NET.mode === 'ffa' || NET.mode === 'lts' ? p.kills : p.pts | 0;
             const head = `<tr class="text-xs text-gray-400 tracking-widest"><td class="pr-6">PLAYER</td><td class="pr-6">${col}</td><td class="pr-6">KILLS</td><td class="pr-6">DEATHS</td><td>PING</td></tr>`;
             const rows = (list) => list.sort((a, b) => val(b) - val(a) || b.kills - a.kills).map(p => `<tr class="${p.id === NET.id ? 'bg-white/10' : ''}"><td class="py-1 pr-6 font-black" style="color:${hex(pcol(p))}">${tagHtml(p)}${escHtml(p.name)}${p.id === 0 ? ' <span class="text-[10px] text-amber-300">HOST</span>' : ''}${p.bot ? ' <span class="text-[10px] text-gray-400">BOT</span>' : ''}${p.alive ? '' : ' <span class="text-[10px] text-red-300">DEAD</span>'}</td><td class="pr-6">${val(p)}</td><td class="pr-6">${p.kills}</td><td class="pr-6">${p.deaths}</td><td>${pingCell(p)}</td></tr>`).join('');
@@ -16068,13 +16747,14 @@
             return true;
         }
 
+        hooks55();          // 5.5 test hooks (13b-weapons-55.js)
         // Last Team Standing: click to watch the next teammate
         document.addEventListener('mousedown', () => { if (NET.inGame && NET.dead && NET.mode === 'lts') NET.specIdx = (NET.specIdx | 0) + 1; });
 
         // test hooks (5.3)
         Object.assign(window.__blocky, {
             modes: {
-                MD, GG_LIST, state: () => ({ on: MD.on, mode: MD.mode, phase: MD.phase, gg: MD.gg, tags: MD.tags.length, flags: MD.flags && MD.flags.map(f => f.s + ':' + f.by), hill: MD.hill && [MD.hill.x, MD.hill.z, MD.holder], round: MD.round, score: NET.score.slice(), over: NET.over, team: NET.team, rem: MD.until ? Math.round((MD.until - performance.now()) / 1000) : -1 }),
+                MD, GG_LIST, state: () => ({ on: MD.on, mode: MD.mode, phase: MD.phase, gg: MD.gg, hunted: MD.hunted, tags: MD.tags.length, flags: MD.flags && MD.flags.map(f => f.s + ':' + f.by), hill: MD.hill && [MD.hill.x, MD.hill.z, MD.holder], round: MD.round, score: NET.score.slice(), over: NET.over, team: NET.team, rem: MD.until ? Math.round((MD.until - performance.now()) / 1000) : -1 }),
                 players: () => allPlayers().map(p => ({ id: p.id, name: p.name, team: p.team, alive: !!p.alive, kills: p.kills, deaths: p.deaths, pts: p.pts | 0, bot: !!p.bot, spec: !!p.spec, vis: p.av ? p.av.g.visible : null, hp: p.hp })),
                 addBots: (n) => { let k = 0; for (let i = 0; i < n; i++) if (botAdd()) k++; hostLobbyUpdate(); return k; },
                 setMode: (m) => { NET.lobby.mode = m; for (const p of allPlayers()) p.team = 0; for (const p of allPlayers()) autoTeam(p); hostLobbyUpdate(); },

@@ -8,9 +8,11 @@ const WORLD_COLORS = { concrete: 0x6b7280, concreteDark: 0x4b5563, steel: 0x3341
                        accR: 0xb91c1c, accB: 0x1d4ed8, accG: 0x15803d, accY: 0xca8a04, rope: 0xb8955a, rust: 0x8a4a2a, cloud: 0xeef3fa, cloudShade: 0xc3d0e2,
                        // 4.0 maps: mall floors / walls, military greens, painted lines, glass, chain-link and escalator steps
                        tile: 0xd6d0c2, plaster: 0xc9ced6, olive: 0x56613a, khaki: 0x9c8b62, paint: 0xe9e7df, rubber: 0x1b1d22,
-                       glass: 0xa6dcf5, fence: 0xaab2bb, escF: 0x5b6270, escB: 0x5b6270 };
+                       glass: 0xa6dcf5, fence: 0xaab2bb, escF: 0x5b6270, escB: 0x5b6270,
+                       // 5.5 maps: snow and lake ice (Frostbite), tent canvas (Carnival)
+                       snow: 0xe6edf5, ice: 0x9fcfe8, tentR: 0xc8233c, tentY: 0xf0b429 };
 const WORLD_PROPS = { steel: [0.38, 0.65], post: [0.45, 0.6], accR: [0.5, 0.2], accB: [0.5, 0.2], accG: [0.5, 0.2], accY: [0.5, 0.2], bound: [0.9, 0], cloud: [1, 0], cloudShade: [1, 0],
-                      tile: [0.32, 0.05], rubber: [0.9, 0], escF: [0.4, 0.6], escB: [0.4, 0.6] };
+                      tile: [0.32, 0.05], rubber: [0.9, 0], escF: [0.4, 0.6], escB: [0.4, 0.6], snow: [0.95, 0], ice: [0.12, 0.15], tentR: [0.8, 0], tentY: [0.8, 0] };
 const GLOW_COLORS = { glowC: 0x22d3ee, glowP: 0xf472b6, glowL: 0xa3e635, glowY: 0xfbbf24, glowW: 0xffd9a0, glowR: 0xff3b3b, glowB: 0x60a5fa };
 // 4.0: see-through world pieces (no shadows, no outlines). Glass is see-through, the fence is a chain-link pattern.
 const SEE_THRU = { glass: 1, fence: 1 };
@@ -247,7 +249,7 @@ function buildWorldInner(mapId) {
     if (worldGroup) { scene.remove(worldGroup); disposeGroup(worldGroup); }
     worldGroup = new THREE.Group();
     scene.add(worldGroup);
-    skyIslands = []; solids = []; worldBlocks = []; lampSpots = []; bridgeRects = []; escalators = []; ventSpots = [];
+    skyIslands = []; solids = []; worldBlocks = []; lampSpots = []; bridgeRects = []; escalators = []; ventSpots = []; iceRects = [];
     ARENA = (MAPS[mapId] && MAPS[mapId].size) || 100; spawnPt = [0, 0];
     VOID = !!(MAPS[mapId] && MAPS[mapId].void); cageOverride = null;
     if (skyMat) skyMat.uniforms.ridge.value = VOID ? 0 : 1;
@@ -279,7 +281,7 @@ function buildWorldInner(mapId) {
 
 
     ({ blockyard: mapBlockyard, downtown: mapDowntown, fortress: mapFortress, plains: mapPlains,
-       skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab, tourney: mapTourney }[mapId] || mapBlockyard)();
+       skybridge: mapSkybridge, shipyard: mapShipyard, temple: mapTemple, sky: mapSky, mall: mapMall, military: mapMilitary, subway: mapSubway, biolab: mapBiolab, tourney: mapTourney, frostbite: mapFrostbite, carnival: mapCarnival }[mapId] || mapBlockyard)();
     const cage = buildRamCage(); cageArea = cage;
     if (!VOID) edgeDecor(mapId);
     scatterProps(mapId);
@@ -610,6 +612,8 @@ const PROP_SETS = {
     subway:    [['jersey', 6], ['bench', 4], ['barrel', 6], ['rubble', 10], ['stain', 14], ['sign', 6], ['dumpster', 3], ['cones', 5], ['bone', 4], ['wreck', 2]],
     biolab:    [['barrel', 4], ['crate', 3], ['rubble', 3], ['stain', 12], ['bone', 3]],
     tourney:   [],
+    frostbite: [['rock', 12], ['barrel', 8], ['crate', 8], ['deadTree', 6], ['sign', 5], ['rubble', 6], ['antenna', 2], ['wreck', 2], ['stain', 6]],
+    carnival:  [['barrel', 6], ['crate', 6], ['bench', 8], ['cones', 5], ['sign', 6], ['stain', 10], ['rubble', 6], ['planter', 4], ['cart', 4], ['bone', 3]],
     military:  [['sandbags', 10], ['hedgehog', 8], ['barrel', 10], ['jersey', 8], ['crate', 8], ['rubble', 8], ['stain', 12], ['antenna', 3], ['wreck', 4], ['cones', 4], ['sign', 5]]
 };
 function scatterProps(mapId) {
