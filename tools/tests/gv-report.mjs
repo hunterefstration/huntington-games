@@ -59,7 +59,8 @@ async function createAccount(page, name) {
   await page.click('#gate #gl-fin');
   return key;
 }
-const dlg = P => P.evaluate(() => { const d = document.getElementById('reportdlg'); return d.hidden ? '' : d.innerText.replace(/\s+/g, ' '); });
+// (2026-11-17) an admin's inbox is the Reports section of the Admin menu; a player's dialog is still #reportdlg
+const dlg = P => P.evaluate(() => { const v = document.getElementById('view-admin'), l = document.getElementById('adm-replist'); if (v && !v.hidden && l) return l.innerText.replace(/\s+/g, ' '); const d = document.getElementById('reportdlg'); return d.hidden ? '' : d.innerText.replace(/\s+/g, ' '); });
 try {
   const D = await device(await browser.newContext({ viewport: { width: 1280, height: 800 } }));
   await createAccount(D, 'RepAdmin'); await until(async () => (await status(D)) === 'online', 60000);
@@ -106,11 +107,12 @@ try {
   const inbox = await until(async () => { const t = await dlg(D); return /RepBob/.test(t) ? t : null; }, 8000);
   check('the inbox lists the report: who, about whom, where, why, what', /Player/.test(inbox || '') && /Cheating/.test(inbox) && /RepBob/.test(inbox) && /Tetris/.test(inbox) && /flies through walls/.test(inbox) && /RepAnn/.test(inbox), (inbox || '').slice(0, 300));
   const n0 = await D.evaluate(() => document.querySelectorAll('.rp-item:not(.closed)').length);
-  await D.evaluate(() => { [...document.querySelectorAll('.rp-item')].find(e => /flies through walls/.test(e.textContent)).querySelector('[data-rpa="close"]').click(); });
+  await D.evaluate(() => { [...document.querySelectorAll('.rp-item')].find(e => /flies through walls/.test(e.textContent)).querySelector('[data-adm-send]').click(); });      // (Send with the default: dismiss)
   check('marking one as handled takes it off the open pile', !!(await until(() => D.evaluate(n => document.querySelectorAll('.rp-item:not(.closed)').length === n - 1, n0), 8000)));
   await D.keyboard.press('Escape');
   await D.reload(); await until(async () => (await status(D)) === 'online', 60000);
   await until(() => D.evaluate(() => /Reports/.test(document.getElementById('reportBtn').textContent)), 15000); await D.click('#reportBtn');
+  await until(() => D.evaluate(() => !!document.querySelector('[data-adm-rf="all"]')), 10000); await D.click('[data-adm-rf="all"]');
   check('reports are kept on the server (still there after a reload)', !!(await until(async () => /flies through walls/.test(await dlg(D)), 8000)));
   if (process.env.SHOT) { await D.keyboard.press('Escape'); await A.click('#reportBtn'); await A.click('[data-rpk="player"]'); await A.screenshot({ path: process.env.SHOT }); }
 } catch (e) { console.log('ERROR', e && e.stack || e); failures++; }

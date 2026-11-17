@@ -92,9 +92,7 @@ try {
   });
   console.log('\n=== the admin rebuilds it ===');
   D.on('dialog', d => d.accept());
-  await D.evaluate(() => document.getElementById('tab-prof').click());
-  await until(() => D.evaluate(() => !!document.querySelector('[data-ptab]')), 15000);
-  await D.evaluate(() => { const b = document.querySelector('[data-ptab="admin"]'); if (b) b.click(); });
+  await D.evaluate(() => document.getElementById('tab-admin').click()); await until(() => D.evaluate(() => !!document.querySelector('.adm-nav[data-adm="players"]')), 15000); await D.click('.adm-nav[data-adm="players"]');      // (the Admin menu, 2026-11-17)
   await until(() => D.evaluate(() => !!document.getElementById('pa-look')), 15000);
   await D.fill('#pa-look', 'RebLost'); await D.click('[data-padm="look"]');
   await until(() => D.evaluate(() => !!document.querySelector('[data-padm="rebuild"]')), 15000);

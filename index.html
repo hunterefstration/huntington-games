@@ -3206,7 +3206,7 @@ function qolDecorate() {
 // The page used to be one tall column of big cards, which stopped working past twenty games. Now: a banner, a shelf
 // per kind of game (each scrolls sideways, so a shelf never gets longer), then every game as a small tile. A tile's
 // description shows when you rest on it (qolPeek). NEW_NOW names what this release added or changed.
-var NEW_NOW = ['Steel Storm', 'Blocky Shooter V2', 'Sovereign', 'Mayhem Marathon', 'Brown E Clicker', 'Last Light'];
+var NEW_NOW = ['Casino', 'Brown E Clicker', 'Coffee Shop NEW', 'Market Life 1.9'];
 var FEATURED_PIN = ['Beat Lab'];      // always first in Featured, whatever the release (the owner's ask, 2026-11-16)
 var SHELF_OF = { '3D': 'action', Shooter: 'action', Strategy: 'think', Tycoon: 'think', Sim: 'think', Clicker: 'think', Platformer: 'run', Puzzle: 'run', Arcade: 'run', Party: 'party', Minigame: 'party', Casino: 'party', Sandbox: 'make' };
 var SHELVES = [['fav', '\u2605 Your favourites'], ['new', 'New and updated'], ['mp', 'Play with friends'], ['action', 'Action and shooters'], ['think', 'Strategy, tycoon and idle'], ['run', 'Platformers, puzzles and arcade'], ['party', 'Party games and minigames'], ['make', 'Sandbox and the rest']];
@@ -3390,10 +3390,10 @@ function qolPlayerBar() {
   };
 })();
 // --- what's new: once after an update, on the Games page ---
-var WHATSNEW = { id: 'r78', items: [
-  ['Training in every big game', 'New hands-on lessons in Steel Storm, Blocky Shooter, Sovereign, Mayhem Marathon, Brown E Clicker and Last Light. Look for Training (or How to play) in each game.'],
-  ['Practice is safe', 'Lessons run in a practice game: they never touch your saves, your stats or the leaderboards. Skip any step whenever you like.'],
-  ['Beat Lab: learn it step by step', 'Press Learn in Beat Lab for lessons, or turn on ? and point at anything. The best songs players make may be picked to play in one of our games.']
+var WHATSNEW = { id: 'r79', items: [
+  ['Rules, right here', 'Press 📜 Rules in the top bar for the terms and what you can report: slurs and sexual content, yes; everyday swearing is allowed. When an admin answers your report, you get a note back.'],
+  ['A fairer casino', 'Blackjack now wins about as often as it loses: a tie on 21 wins, a tie on 20 wins half, and 💡 Tip shows the best move. Every other game pays back more too.'],
+  ['Away for 30 minutes?', 'After 30 minutes with no input, play time, goons and idle earnings (Brown E Clicker, Bean & Brew, Market & Life) pause until you come back. Days and times now follow Eastern time.']
 ] };
 function qolNews(force) {
   var box = document.getElementById('whatsnew'); if (!box) return;
@@ -4433,7 +4433,8 @@ reportInbox = function () { ADM.sec = 'reports'; showTab('admin'); };
   var L = window.HGGrapevine; if (!L || !L.on) return setTimeout(wait, 2000);
   admTabShow();
   L.on('eco', function () { admTabShow(); });
-  L.on('reports', function () { if (!document.getElementById('view-admin').hidden) { var n = document.querySelector('.adm-nav[data-adm="reports"]'); if (n) n.innerHTML = '<span>🚩</span>Reports' + (REPORT.open ? ' <span class="rp-n">' + REPORT.open + '</span>' : ''); if (ADM.sec === 'reports' && !document.querySelector('#adm-replist .adm-note:focus, #adm-replist .adm-reason:focus')) admRepLoad(); } });
+  // (only a new-report ping: the list replies come through 'reports' too)
+  L.on('reports', function (m) { if (m && m.ping && !document.getElementById('view-admin').hidden) { var n = document.querySelector('.adm-nav[data-adm="reports"]'); if (n) n.innerHTML = '<span>🚩</span>Reports' + (REPORT.open ? ' <span class="rp-n">' + REPORT.open + '</span>' : ''); if (ADM.sec === 'reports' && !document.querySelector('#adm-replist .adm-note:focus, #adm-replist .adm-reason:focus')) admRepLoad(); } });
 })();
 </script>
 </body>

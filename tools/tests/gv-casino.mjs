@@ -99,6 +99,7 @@ try {
   for (let i = 0; i < 12 && r.ok && !r.r.over; i++) r = await cas(A, 'bj', { act: r.r.view.hands[r.r.view.active].v < 15 ? 'hit' : 'stand' });
   check('blackjack plays to the end and pays what it says', r.ok && r.r.over && r.bal.chips === b0 - r.r.bet + r.r.win, JSON.stringify(r.err || { bet: r.r.bet, win: r.r.win }));
   r = await cas(A, 'bj', { act: 'deal', bet: 20 });
+  if (r.ok && !r.r.over) check('blackjack: a hand in play carries the Tip (the best move)', ['hit', 'stand', 'double', 'split'].includes(r.r.view.tip), JSON.stringify(r.r.view.tip));
   if (r.ok && !r.r.over) { const second = await cas(A, 'slots', { bet: 10 }); check('other games still work during a hand, but not a second turn game', second.ok && /Finish your Blackjack/.test((await cas(A, 'mines', { act: 'start', bet: 10, mines: 3 })).err || '')); while (r.ok && !r.r.over) r = await cas(A, 'bj', { act: 'stand' }); }
   b0 = (await cas(A, 'live')).bal.chips; r = await cas(A, 'vp', { act: 'deal', bet: 10 }); r = await cas(A, 'vp', { act: 'draw', hold: [0, 1] });
   check('video poker deals and draws', r.ok && r.r.over && r.r.view.hand.length === 5 && r.bal.chips === b0 - 10 + r.r.win, JSON.stringify(r.err || r.r.view.rank));
@@ -111,7 +112,7 @@ try {
   console.log('\n=== 3. the house edge of every game (developer simulation, nothing paid) ===');
   check('only developers may simulate', /Developers only/.test((await cas(A, 'sim', { game: 'coin', n: 10 })).err || ''));
   const band = { coin: [0.95, 1.0], dice: [0.96, 1.01], roulette: [0.93, 1.01], slots: [0.90, 0.99], plinko: [0.90, 1.03], wheel: [0.90, 0.99], keno: [0.88, 0.99], baccarat: [0.96, 1.005], craps: [0.96, 1.005], sicbo: [0.94, 1.0], scratch: [0.80, 1.02], crashx: [0.93, 1.0],
-    bj: [0.94, 1.01], vp: [0.80, 1.0], mines: [0.93, 1.0], hilo: [0.92, 1.0], lr: [0.93, 1.01], crash: [0.93, 1.0], race: [0.90, 1.02] };
+    bj: [0.975, 1.005], vp: [0.80, 1.0], mines: [0.93, 1.0], hilo: [0.92, 1.0], lr: [0.93, 1.01], crash: [0.93, 1.0], race: [0.90, 1.02] };
   for (const [g, [lo, hi]] of Object.entries(band)) { r = await cas(D, 'sim', { game: g, n: g === 'slots' || g === 'scratch' || g === 'plinko' ? 200000 : 60000, args: g === 'crashx' ? { target: 2 } : undefined }); check(`${g} returns ${(r.rtp * 100).toFixed(1)}%`, r.ok && r.rtp >= lo && r.rtp <= hi, r.err || ''); }
   console.log('\n=== 4. live tables: two players, one round ===');
   await D.evaluate(() => { window.__ev = []; HGGrapevine.on('casino', m => window.__ev.push(m)); }); await cas(D, 'enter'); await cas(D, 'buy', { goons: 50 });
@@ -139,7 +140,7 @@ try {
   check('your own duel cannot be taken by you', /yourself/.test((await cas(A, 'duel', { act: 'take', id: da.r.id })).err || ''));
   const dt = await cas(D, 'duel', { act: 'take', id: da.r.id }); await A.waitForTimeout(800);
   const a1 = (await cas(A, 'live')).bal.chips, d1 = (await cas(D, 'live')).bal.chips;
-  check('a duel moves the stake from the loser to the winner, less 3%', dt.ok && (dt.r.won ? d1 === d0 - 50 + 97 && a1 === b0 : d1 === d0 - 50 && a1 === b0 + 97), JSON.stringify({ won: dt.r && dt.r.won, a: [b0, a1], d: [d0, d1] }));
+  check('a duel moves the stake from the loser to the winner, less 2%', dt.ok && (dt.r.won ? d1 === d0 - 50 + 98 && a1 === b0 : d1 === d0 - 50 && a1 === b0 + 98), JSON.stringify({ won: dt.r && dt.r.won, a: [b0, a1], d: [d0, d1] }));
   console.log('\n=== 5. boards ===');
   const lb = await A.evaluate(() => HGGrapevine.eco.lbGet('casino:won').then(m => ({ n: m.n, me: m.me && m.me.s, names: m.rows.map(r => r.n) }), e => ({ err: e.message })));
   check('chips won go on a board (developers stay off it)', lb.me > 0 && !lb.names.includes('CasDev'), JSON.stringify(lb));

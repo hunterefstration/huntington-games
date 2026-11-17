@@ -182,5 +182,6 @@ reportInbox = function () { ADM.sec = 'reports'; showTab('admin'); };
   var L = window.HGGrapevine; if (!L || !L.on) return setTimeout(wait, 2000);
   admTabShow();
   L.on('eco', function () { admTabShow(); });
-  L.on('reports', function () { if (!document.getElementById('view-admin').hidden) { var n = document.querySelector('.adm-nav[data-adm="reports"]'); if (n) n.innerHTML = '<span>🚩</span>Reports' + (REPORT.open ? ' <span class="rp-n">' + REPORT.open + '</span>' : ''); if (ADM.sec === 'reports' && !document.querySelector('#adm-replist .adm-note:focus, #adm-replist .adm-reason:focus')) admRepLoad(); } });
+  // (only a new-report ping: the list replies come through 'reports' too)
+  L.on('reports', function (m) { if (m && m.ping && !document.getElementById('view-admin').hidden) { var n = document.querySelector('.adm-nav[data-adm="reports"]'); if (n) n.innerHTML = '<span>🚩</span>Reports' + (REPORT.open ? ' <span class="rp-n">' + REPORT.open + '</span>' : ''); if (ADM.sec === 'reports' && !document.querySelector('#adm-replist .adm-note:focus, #adm-replist .adm-reason:focus')) admRepLoad(); } });
 })();

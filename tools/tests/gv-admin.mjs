@@ -79,9 +79,10 @@ try {
   check('the owner makes someone an admin with one power', r.ok && r.list.some(a => a.name === 'AdmHelper' && a.perms.join() === 'goons'), JSON.stringify(r.list && r.list.map(a => [a.name, a.perms.length])));
   await B.evaluate(() => HGGrapevine.eco.refresh(true)); await until(async () => ((await S(B)).perms || []).length === 1, 10000);
   check('...who has exactly that power', (await S(B)).perms.join() === 'goons');
-  await B.evaluate(() => { document.getElementById('tab-prof').click(); });
-  await until(() => B.evaluate(() => !!document.querySelector('[data-ptab="admin"]')), 10000);
-  await B.click('[data-ptab="admin"]');
+  // (2026-11-17) the admin tools live in the Admin menu (top bar), Players section
+  await until(() => B.evaluate(() => !document.getElementById('tab-admin').hidden), 10000);
+  await B.click('#tab-admin'); await until(() => B.evaluate(() => !!document.querySelector('.adm-nav[data-adm="players"]')), 10000);
+  await B.click('.adm-nav[data-adm="players"]');
   const bUi = await B.evaluate(() => ({ goons: !!document.querySelector('[data-padm="goons"]'), look: !!document.querySelector('[data-padm="look"]'), edit: !!document.querySelector('[data-padm="edit"]'), admins: !!document.querySelector('[data-padm="admins"]') }));
   check('...and sees only that in Admin tools', bUi.goons && !bUi.look && !bUi.edit && !bUi.admins, JSON.stringify(bUi));
   const bLook = await B.evaluate(() => HGGrapevine.eco.acctLook('AdmPlayer').then(x => x.ok ? 'allowed' : 'refused', () => 'refused'));
@@ -99,8 +100,8 @@ try {
   const aUid = await A.evaluate(() => HGGrapevine.me().userId);
   const board = () => D.evaluate(u => HGGrapevine.eco.lbGet('spikes:level').then(m => ((m.rows || []).find(x => x.u === u) || {}).s || 0), aUid);
   check('(the player is on the board with 5)', (await until(async () => (await board()) === 5, 8000)) !== null);
-  await D.evaluate(() => document.getElementById('tab-prof').click()); await until(() => D.evaluate(() => !!document.querySelector('[data-ptab="admin"]')), 10000);
-  await D.click('[data-ptab="admin"]'); await D.fill('#pa-look', 'AdmPlayer'); await D.click('[data-padm="edit"]');
+  await D.evaluate(() => document.getElementById('tab-admin').click()); await until(() => D.evaluate(() => !!document.querySelector('.adm-nav[data-adm="players"]')), 15000); await D.click('.adm-nav[data-adm="players"]');      // (the Admin menu, 2026-11-17)
+  await D.fill('#pa-look', 'AdmPlayer'); await D.click('[data-padm="edit"]');
   await until(() => D.evaluate(() => !!document.getElementById('pa-key')), 10000);
   await D.selectOption('#pa-key', 'spikes100_progress'); await D.click('[data-padm="editopen"]');
   await until(() => D.evaluate(() => !!document.querySelector('#pa-fields label[data-path="unlocked"] input')), 10000);
