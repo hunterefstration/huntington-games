@@ -324,6 +324,7 @@
     function isPaused() { return L.phase !== 'play' || modalOpen || L.speed === 0; }
     function marketTick() {
         if (isPaused()) return;
+        if (afkIdle()) return;   // away for 30 minutes: no days pass until the next input
         simDay();
         updateUI();
     }
