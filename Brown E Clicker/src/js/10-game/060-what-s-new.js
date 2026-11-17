@@ -18,6 +18,7 @@
        NEWS_ITEMS.unshift(IS_RB
            ? ['⚖️', 'Rebalanced (beta)', 'New numbers tested with a simulator: bigger buildings pay back slower, so the game no longer explodes in the first hour. Clicking helps (most at the start) but is not everything. Ascension unlocks at 120 B (about an hour), each chip gives +20% (5th root of the run), the tree is cheaper, upgrades come steadily, challenge goals fit the new pace, the first Final E costs 300 T and each one after it 150x more, and offline earns 20%. Its own save: your Classic save is untouched.']
            : ['⚖️', 'Try Rebalanced (beta)', 'A test version of the game with new, smoother numbers and its own save. Switch on the main menu or in Settings; your Classic save stays safe and you can switch back any time.']);
+       NEWS_ITEMS.unshift(['💤', 'New in 2.2: Away pause', 'After 30 minutes with no input your buildings stop earning until you click or press a key, and away earnings count at most 30 minutes.']);
        NEWS_ITEMS.unshift(['🎓', 'New in 2.1: How to play', 'Three hands-on lessons (Getting started, Growing, Ascending) in a practice game that never touches your save. Find them under 🎓 or on the main menu.']);
        const newsModal = document.getElementById('news-modal');
        document.getElementById('news-btn').addEventListener('click', () => {

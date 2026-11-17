@@ -339,7 +339,7 @@
            START
        </button>
        <button id="menu-learn" class="mt-4 text-sm font-bold text-amber-300 hover:text-white bg-stone-800 hover:bg-stone-700 border border-amber-700 rounded-full px-4 py-1.5">🎓 How to play</button>
-       <div class="mt-8 text-stone-500 text-xs font-bold tracking-widest uppercase">Version 2.1 &middot; <button id="news-btn" class="text-yellow-500 hover:text-yellow-300 underline uppercase tracking-widest font-bold">What's new in 2.1</button></div>
+       <div class="mt-8 text-stone-500 text-xs font-bold tracking-widest uppercase">Version 2.2 &middot; <button id="news-btn" class="text-yellow-500 hover:text-yellow-300 underline uppercase tracking-widest font-bold">What's new in 2.1</button></div>
    </div>
 
 
@@ -2648,6 +2648,7 @@
        NEWS_ITEMS.unshift(IS_RB
            ? ['⚖️', 'Rebalanced (beta)', 'New numbers tested with a simulator: bigger buildings pay back slower, so the game no longer explodes in the first hour. Clicking helps (most at the start) but is not everything. Ascension unlocks at 120 B (about an hour), each chip gives +20% (5th root of the run), the tree is cheaper, upgrades come steadily, challenge goals fit the new pace, the first Final E costs 300 T and each one after it 150x more, and offline earns 20%. Its own save: your Classic save is untouched.']
            : ['⚖️', 'Try Rebalanced (beta)', 'A test version of the game with new, smoother numbers and its own save. Switch on the main menu or in Settings; your Classic save stays safe and you can switch back any time.']);
+       NEWS_ITEMS.unshift(['💤', 'New in 2.2: Away pause', 'After 30 minutes with no input your buildings stop earning until you click or press a key, and away earnings count at most 30 minutes.']);
        NEWS_ITEMS.unshift(['🎓', 'New in 2.1: How to play', 'Three hands-on lessons (Getting started, Growing, Ascending) in a practice game that never touches your save. Find them under 🎓 or on the main menu.']);
        const newsModal = document.getElementById('news-modal');
        document.getElementById('news-btn').addEventListener('click', () => {
@@ -4168,6 +4169,29 @@
            if (e.repeat && (e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest && e.target.closest('button,[role="button"]')) e.preventDefault();
        }, true);
 
+       // --- AFK PAUSE: after 30 minutes with no input, automatic progress stops until the next input ---
+       const AFK_MS = 30 * 60 * 1000;
+       let afkLast = Date.now(), afkBannerEl = null;
+       function afkLimit() { const o = +window.__hgAfkMs; return o > 0 ? o : AFK_MS; }
+       function afkIdle() {
+           const idle = Date.now() - afkLast >= afkLimit();
+           if (idle && !afkBannerEl && document.body) {
+               afkBannerEl = document.createElement('div');
+               afkBannerEl.id = 'hg-afk-banner';
+               afkBannerEl.setAttribute('role', 'status');
+               afkBannerEl.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:99999;max-width:92vw;padding:8px 14px;border-radius:10px;background:#1f2937;color:#fde68a;border:2px solid #f59e0b;font:600 14px/1.3 system-ui,sans-serif;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.4)';
+               afkBannerEl.textContent = 'Away for 30 minutes: progress paused. Click or press a key to carry on.';
+               document.body.appendChild(afkBannerEl);
+           }
+           return idle;
+       }
+       function afkInput(e) {
+           const now = Date.now();
+           if (e && e.type === 'mousemove' && now - afkLast < 1000) return;
+           afkLast = now;
+           if (afkBannerEl) { afkBannerEl.remove(); afkBannerEl = null; }
+       }
+       ['keydown', 'pointerdown', 'mousedown', 'touchstart', 'wheel', 'mousemove'].forEach(t => window.addEventListener(t, afkInput, { passive: true, capture: true }));
        // --- GAME VERSION SWITCH (Classic / Rebalanced beta) --- each version keeps its own save; switching reloads the page
        function switchVariant(toRb) {
            saveGame(true);
@@ -4628,6 +4652,8 @@ const Tutor = (() => {
        let pendingWelcome = null;
        function grantOffline(seconds) {
            if (!(seconds > 0)) return;
+           const realSeconds = seconds;
+           seconds = Math.min(seconds, AFK_MS / 1000); // at most 30 minutes of away time counts
            // Golden E buffs don't last while you're away
            state.buffs.forEach(b => { b.time -= seconds; });
            state.buffs = state.buffs.filter(b => b.time > 0);
@@ -4638,6 +4664,7 @@ const Tutor = (() => {
            if (market.unlocked) marketTick(Math.min(seconds, 30 * MARKET_TICK));
            const off = offlineSettings();
            const counted = Math.min(seconds, off.capHours * 3600);
+           seconds = realSeconds;
            const amount = state.bpsBase * counted * off.eff;
            if (seconds >= 4 * 3600) unlockAchievement('mnap');
            if (amount > 0) {
@@ -4655,7 +4682,7 @@ const Tutor = (() => {
            pendingWelcome = null;
            setText(document.getElementById('welcome-away'), formatTime(w.seconds));
            setText(document.getElementById('welcome-amount'), formatNumber(w.amount));
-           setText(document.getElementById('welcome-detail'), `Your buildings kept working at ${Math.round(w.off.eff * 100)}% speed${w.seconds > w.counted ? ` for the first ${w.off.capHours} hours` : ''}.`);
+           setText(document.getElementById('welcome-detail'), `Your buildings kept working at ${Math.round(w.off.eff * 100)}% speed${w.seconds > w.counted ? ` (at most 30 minutes count)` : ''}.`);
            const tip = !state.upgrades.off1 ? 'Tip: the Night Shift upgrade makes buildings work harder while you\'re away.'
                : !state.upgrades.off3 ? 'Tip: Dream Factory lets away earnings count for up to 24 hours.' : '';
            setText(document.getElementById('welcome-tip'), tip);
@@ -4887,6 +4914,7 @@ const Tutor = (() => {
        let secondTimer = 0;
 
        function gameTick(dt) {
+           if (afkIdle()) return; // away for 30 minutes: no automatic progress until the next input
            // Between runs (in heaven) nothing happens until you begin the next run
            if (state.meta.heaven) { updateDisplay(); return; }
            if (state.bps > 0) {
