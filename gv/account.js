@@ -1110,6 +1110,7 @@ const GVLink = (() => {
       nickSet: function (nick) { return st.ready ? rpc0({ type: 'nickSet', nick: String(nick || '') }, 'nickSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       tagSet: function (tag, on) { return st.ready ? rpc0({ type: 'tagSet', tag: tag, on: !!on }, 'tagSet').then(function (r) { delete st.cos[st.userId]; return r; }) : Promise.reject(new Error('Not connected to Grapevine.')); },
       dbOut: function () { return st.ready ? rpc0({ type: 'dbOut' }, 'dbOut') : Promise.reject(new Error('Not connected to Grapevine.')); },
+      reportResolve: function (id, act, o) { o = o || {}; return st.ready ? rpc0({ type: 'reportAdmin', op: 'resolve', id: String(id), act: String(act || 'dismiss'), mins: o.mins || undefined, reason: o.reason ? String(o.reason).slice(0, 200) : null, note: o.note ? String(o.note).slice(0, 300) : null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },
       reports: function (op, id, note) { return st.ready ? rpc0({ type: 'reportAdmin', op: op || 'list', id: id || null, note: note || null }, 'reports') : Promise.reject(new Error('Not connected to Grapevine.')); },
       // the casino (grapevine 077-casino.js): every bet is a question to the server. Resolves with its answer
       // ({ bal: { chips, goons }, r: result, now }), rejects with the server's words. Live tables arrive as 'casino' events.

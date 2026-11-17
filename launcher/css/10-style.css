@@ -626,3 +626,40 @@ body.hubbonked{animation:hbonkshake .5s}
 .act-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: var(--raise, #0d1117); border: 1px solid var(--line, #2a3140); font-size: 13px; }
 .act-chip i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; } .act-chip b { color: #22c55e; }
 .act-empty { padding: 14px; color: var(--dim); text-align: center; }
+/* ---- the Admin menu (2026-11-17, 100-admin-menu.js) ---- */
+#view-admin { padding: 10px 14px 40px; }
+.adm { display: grid; grid-template-columns: 200px 1fr; gap: 18px; max-width: 1100px; margin: 0 auto; align-items: start; }
+.adm-side { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 4px; background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; padding: 10px; }
+.adm-title { font-weight: 900; letter-spacing: .04em; padding: 4px 8px 8px; color: var(--signal); }
+.adm-nav { display: flex; align-items: center; gap: 9px; text-align: left; background: transparent; border: 0; color: var(--text); font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 9px; cursor: pointer; }
+.adm-nav span:first-child { width: 20px; text-align: center; } .adm-nav:hover { background: var(--raise); } .adm-nav.on { background: var(--signal); color: #111; font-weight: 800; }
+.adm-nav .rp-n { margin-left: auto; }
+.adm-main { background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; padding: 16px 20px 22px; min-height: 420px; }
+.adm-h h2 { margin: 0 0 2px; font-size: 22px; } .adm-h .pnote { margin: 0 0 12px; }
+.adm-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 6px 0 4px; }
+.adm-tile { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; background: var(--raise); border: 1px solid var(--line2); border-radius: 12px; padding: 12px 14px; color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+.adm-tile b { font-size: 26px; line-height: 1; } .adm-tile span { color: var(--dim); font-size: 12.5px; } .adm-tile.hot { border-color: #d9534a; } .adm-tile.hot b { color: #ff7b72; }
+.adm-how { margin: 4px 0 0; padding-left: 18px; color: var(--dim); font-size: 13px; line-height: 1.6; } .adm-how b { color: var(--text); }
+.adm-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; } .adm-seg button { background: transparent; border: 1px solid var(--line2); color: var(--text); border-radius: 999px; padding: 5px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.adm-seg button.on { background: var(--signal); color: #111; border-color: var(--signal); font-weight: 800; } .adm-seg button.ghost { margin-left: auto; }
+.adm-resolve { display: grid; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line2); }
+.adm-resolve select, .adm-resolve input, .adm-resolve textarea { width: 100%; box-sizing: border-box; background: var(--raise); color: var(--text); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 9px; font: inherit; font-size: 13px; resize: vertical; }
+.rp-link { background: none; border: 0; padding: 0; color: var(--signal); text-decoration: underline; font: inherit; font-size: 12px; cursor: pointer; }
+.adm-card { margin: 10px 0 4px; } .adm-pc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .adm-pn { font-size: 17px; margin-right: 4px; }
+.adm-warns { margin-top: 8px; display: grid; gap: 3px; font-size: 13px; }
+@media (max-width: 760px) { .adm { grid-template-columns: 1fr; } .adm-side { position: static; flex-direction: row; flex-wrap: wrap; } .adm-title { width: 100%; } }
+/* ---- Rules (2026-11-17, 099-rules.js) ---- */
+#rulesBtn { background: transparent; border: 1px solid var(--line2); color: var(--text); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 6px; }
+#rulesdlg { position: fixed; inset: 0; z-index: 9500; background: rgba(0,0,0,.66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#rulesdlg[hidden] { display: none; }
+.rl-card { position: relative; width: 720px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line2); border-radius: 16px; padding: 22px 22px 16px; color: var(--text); }
+.rl-card h2 { margin: 0 0 10px; }
+.rl-tabs { display: flex; gap: 6px; margin-bottom: 10px; } .rl-tabs button { background: transparent; border: 1px solid var(--line2); color: var(--text); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13.5px; cursor: pointer; }
+.rl-tabs button.on { background: var(--signal); color: #111; border-color: var(--signal); font-weight: 800; }
+.rl-body { overflow: auto; padding-right: 6px; line-height: 1.5; font-size: 14px; }
+.rl-body h3 { margin: 14px 0 6px; font-size: 15.5px; } .rl-yes { color: #ff8a80; } .rl-no { color: #8fd694; }
+.rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.rl-item { display: flex; gap: 10px; background: var(--raise); border: 1px solid var(--line2); border-radius: 10px; padding: 9px 11px; }
+.rl-item > span { font-size: 20px; } .rl-item b { display: block; font-size: 13.5px; } .rl-item small { color: var(--dim); font-size: 12px; }
+.rl-list { margin: 0; padding-left: 20px; } .rl-list li { margin: 3px 0; } .rl-date { color: var(--dim); font-size: 12.5px; margin: 0; }
+.rp-rules { margin: 4px 0 8px; }

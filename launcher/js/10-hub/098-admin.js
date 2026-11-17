@@ -139,7 +139,8 @@ function paLbTools(name) {
 function paClick(d, t) {
   if (d.padm && d.padm.indexOf('mod:') === 0) { paMod(d.padm.slice(4)); return true; }
   var L = window.HGGrapevine, nm = paName(); PA.name = nm;
-  if (d.padm === 'tag') { L.eco.tagSet(d.tag, d.on === '1').then(function (r) { hubToast(r.ok ? (d.on === '1' ? 'You wear the tag now.' : 'Tag taken off.') : r.err); profRender(); }); return true; }
+  if (d.padm === 'openmenu') { showTab('admin'); return true; }
+  if (d.padm === 'tag') { L.eco.tagSet(d.tag, d.on === '1').then(function (r) { hubToast(r.ok ? (d.on === '1' ? 'You wear the tag now.' : 'Tag taken off.') : r.err); profRender(); if (typeof admRender === 'function') setTimeout(admRender, 600); }); return true; }
   if (d.padm === 'admins') { L.eco.permsAdmin('list').then(paAdmins); return true; }
   if (d.padm === 'psave' || d.padm === 'premove') {
     var a = PA.admins && PA.admins.list[+d.i]; if (!a) return true;
@@ -184,14 +185,14 @@ function paModHtml(H) {
 }
 function paMod(op) {
   var L = window.HGGrapevine, out = document.getElementById('pa-modout'), v = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
-  var name = v('pa-mod-name').trim(), why = v('pa-mod-why').trim(), mins = +v('pa-mod-mins') || 60, ann = !!(document.getElementById('pa-mod-ann') || {}).checked;
+  var name = (v('pa-mod-name') || paName()).trim(), why = v('pa-mod-why').trim(), mins = +v('pa-mod-mins') || 60, ann = !!(document.getElementById('pa-mod-ann') || {}).checked;
   var say = function (t) { if (out) out.textContent = t; };
   if (op === 'list') {
     say('Loading...');
     return L.eco.mod('list').then(function (r) {
       if (!r.ok) return say(r.err || 'Could not load it.');
       var fx = r.fx.map(function (x) { var k = []; if (x.e.mute) k.push('muted'); if (x.e.slow) k.push('slow mode'); if (x.e.nick) k.push('renamed "' + x.e.nick.text + '"'); for (var f in (x.e.fx || {})) k.push(f); return x.name + ': ' + k.join(', '); });
-      var bans = r.bans.map(function (b) { return b.name + ': ' + (b.until ? 'banned until ' + new Date(b.until).toLocaleString() : 'banned for good') + (b.reason ? ' (' + b.reason + ')' : ''); });
+      var bans = r.bans.map(function (b) { return b.name + ': ' + (b.until ? 'banned until ' + hgTime(b.until) : 'banned for good') + (b.reason ? ' (' + b.reason + ')' : ''); });
       say((fx.length ? 'Effects:\n' + fx.join('\n') : 'Nobody is muted or under an effect.') + '\n\n' + (bans.length ? 'Bans:\n' + bans.join('\n') : 'Nobody is banned.'));
     });
   }
@@ -200,17 +201,18 @@ function paMod(op) {
   if (op === 'nick' && !why) return say('Type the new name in the reason box.');
   say('...');
   L.eco.mod(op, name, { mins: mins, secs: 30, text: why, announce: ann }).then(function (r) {
-    say(r.ok ? 'Done: ' + ({ warn: 'warned', mute: 'muted', slow: 'slow mode on', tempban: 'banned', ban: 'banned for good', unban: 'unbanned', clear: 'effects lifted', bonk: 'bonked', shame: 'shamed', nick: 'renamed' }[op] || op + ' on') + ' (' + (r.name || name) + ').' : (r.err || 'That did not work.'));
+    if (r.ok && op !== 'list' && typeof admLook === 'function' && !document.getElementById('view-admin').hidden) admLook();
+    say(r.ok ? 'Done: ' + ({ warn: 'warned' + (r.n ? ' (warning number ' + r.n + ')' : ''), clearwarns: 'warnings cleared', mute: 'muted', slow: 'slow mode on', tempban: 'banned', ban: 'banned for good', unban: 'unbanned', clear: 'effects lifted', bonk: 'bonked', shame: 'shamed', nick: 'renamed' }[op] || op + ' on') + ' (' + (r.name || name) + ').' : (r.err || 'That did not work.'));
   }).catch(function (e) { say(String(e && e.message || e)); });
 }
 // what a player sees from the admins, anywhere in the launcher (in a game too)
 function modMount() {
   var L = window.HGGrapevine; if (!L || modMount.done) return; modMount.done = true;
   L.on('modNotice', function (m) {
-    var ico = { warn: '⚠️', mute: '🔇', slow: '🐢', fun: '🎭', clear: '✅' }[m.kind] || '📣';
+    var ico = { warn: '⚠️', mute: '🔇', slow: '🐢', fun: '🎭', clear: '✅', report: '📨' }[m.kind] || '📣';
     if (m.kind === 'fun' || m.kind === 'clear') return hubToast(ico + ' ' + m.text);
     var box = document.createElement('div'); box.className = 'hubmodbox';
-    box.innerHTML = '<div class="hubmodcard"><div class="ico">' + ico + '</div><b>' + (m.kind === 'warn' ? 'A warning from the admins' : m.kind === 'mute' ? 'You are muted' : 'From the admins') + '</b><p>' + profEsc(m.text || '') + '</p><button type="button">OK</button></div>';
+    box.innerHTML = '<div class="hubmodcard"><div class="ico">' + ico + '</div><b>' + (m.kind === 'warn' ? 'A warning from the admins' + (m.n > 1 ? ' (number ' + m.n + ')' : '') : m.kind === 'mute' ? 'You are muted' : m.kind === 'report' ? 'About your report' : 'From the admins') + '</b><p>' + profEsc(m.text || '') + '</p>' + (m.late && m.at ? '<p class="pnote">Sent ' + hgTime(m.at) + (m.by ? ' by ' + profEsc(m.by) : '') + ', while you were away.</p>' : (m.kind === 'warn' ? '<p class="pnote">Warnings stay on your record. More of them lead to mutes and bans. See &#128220; Rules.</p>' : '')) + '<button type="button">OK</button></div>';
     box.querySelector('button').onclick = function () { box.remove(); };
     document.body.appendChild(box);
   });

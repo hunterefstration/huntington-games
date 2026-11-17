@@ -42,6 +42,8 @@
 .seg .inp{width:76px;padding:4px 6px}
 .acts{display:flex;gap:6px}
 .btn.act{padding:10px 16px;font-size:15px;background:linear-gradient(#3a4a9a,#273274);border-color:#5868c0}
+.btn.act.tip{box-shadow:0 0 0 3px #ffe066,0 0 18px #ffe06699;transform:translateY(-2px)}
+.btn.tipb{padding:10px 12px;font-size:14px;opacity:.75}.btn.tipb.on{opacity:1;border-color:#ffe066;color:#ffe066}
 .btn.act[data-a=stand]{background:linear-gradient(#b8323a,#8a1f26);border-color:#e0646b}
 .btn.act[data-a=double]{background:linear-gradient(#d39c18,#a97506);color:#211;border-color:#f8d97a}
 .btn.act[data-a=split]{background:linear-gradient(#1f9a58,#127041);border-color:#5be39a}

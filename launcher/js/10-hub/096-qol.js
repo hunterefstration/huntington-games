@@ -255,11 +255,11 @@ function qolPlayerBar() {
     try { QOL.cur = null; document.title = title0; qolLogSave(); qolDecorate(); qolShelves(); qolApply(); } catch (e) {}
     return cp.apply(this, arguments);
   };
-  // time counts while the game is open, the page is showing and you touched the game in the last minute
+  // time counts while the game is open, the page is showing and you touched it in the last 30 minutes (hgIdle)
   setInterval(function () {
     if (!QOL.cur || document.hidden || !document.documentElement.classList.contains('playing')) return;
     try { if (typeof feedWatch === 'function') feedWatch(); } catch (e) {}
-    if (typeof FEED !== 'undefined' && Date.now() - FEED.lastInput > 60000) return;
+    if (typeof hgIdle === 'function' && hgIdle()) return;
     var lg = QOL.log[QOL.cur.dir]; if (!lg) return;
     lg.sec = (lg.sec || 0) + 15; lg.last = Date.now();
     if (Math.floor(lg.sec / 15) % 4 === 0) qolLogSave();

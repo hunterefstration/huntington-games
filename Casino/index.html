@@ -219,6 +219,8 @@ body.busy .lockable{pointer-events:none;opacity:.55}
 .seg .inp{width:76px;padding:4px 6px}
 .acts{display:flex;gap:6px}
 .btn.act{padding:10px 16px;font-size:15px;background:linear-gradient(#3a4a9a,#273274);border-color:#5868c0}
+.btn.act.tip{box-shadow:0 0 0 3px #ffe066,0 0 18px #ffe06699;transform:translateY(-2px)}
+.btn.tipb{padding:10px 12px;font-size:14px;opacity:.75}.btn.tipb.on{opacity:1;border-color:#ffe066;color:#ffe066}
 .btn.act[data-a=stand]{background:linear-gradient(#b8323a,#8a1f26);border-color:#e0646b}
 .btn.act[data-a=double]{background:linear-gradient(#d39c18,#a97506);color:#211;border-color:#f8d97a}
 .btn.act[data-a=split]{background:linear-gradient(#1f9a58,#127041);border-color:#5be39a}
@@ -670,7 +672,7 @@ const nextDone = () => new Promise(r => doneWaiters.push(r));
 function makeMock() {
   const fl = Math.floor, R = Math.random, ME = 'You';
   const LR = { cyc: 30000, bet: 22000, pay: 27000 }, CR = { cyc: 30000, bet: 7000, k: 0.00025, cap: 190 };
-  const RACE = { cyc: 45000, bet: 30000, pay: 42000, odds: [2.5, 4, 6, 9, 14, 25], names: ['Thunderhoof', 'Biscuit', 'Midnight Run', 'Sir Trots', 'Lucky Clover', 'Longshot Larry'] };
+  const RACE = { cyc: 45000, bet: 30000, pay: 42000, odds: [2.55, 4.1, 6.1, 9.2, 14.3, 25.5], names: ['Thunderhoof', 'Biscuit', 'Midnight Run', 'Sir Trots', 'Lucky Clover', 'Longshot Larry'] };
   const POT = { cyc: 120000, bet: 115000 };
   const BOTS = ['Pip (bot)', 'Juno (bot)', 'Marlo (bot)', 'Rex (bot)', 'Tilly (bot)', 'Ozzy (bot)'];
   const salt = String(R());
@@ -711,10 +713,10 @@ function makeMock() {
   const PLINKO = {};
   for (const rows of [8, 12, 16]) for (const [risk, lo, hi, pw] of [['low', 0.5, 2.2 + rows * 0.45, 2], ['med', 0.3, rows * rows * 0.22, 3], ['high', 0.2, rows * rows * rows * 0.26, 5]]) {
     const p = []; let c = 1; for (let k = 0; k <= rows; k++) { p.push(c / 2 ** rows); c = c * (rows - k) / (k + 1); }
-    const raw = p.map((_, k) => lo + (hi - lo) * Math.pow(Math.abs(k - rows / 2) / (rows / 2), pw)), ev = raw.reduce((t, m, k) => t + m * p[k], 0), sc = 0.97 / ev;
+    const raw = p.map((_, k) => lo + (hi - lo) * Math.pow(Math.abs(k - rows / 2) / (rows / 2), pw)), ev = raw.reduce((t, m, k) => t + m * p[k], 0), sc = 0.98 / ev;
     PLINKO[rows + risk] = raw.map(m => { const x = m * sc; return x >= 10 ? Math.round(x) : Math.round(x * 100) / 100; });
   }
-  const WHEEL = [].concat(Array(31).fill(0), Array(14).fill(1.2), Array(6).fill(1.5), Array(5).fill(2), Array(2).fill(3), [5, 10]);
+  const WHEEL = [].concat(Array(30).fill(0), Array(15).fill(1.2), Array(6).fill(1.5), Array(5).fill(2), Array(2).fill(3), [5, 10]);
   const KENO = {};
   { const C = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
     for (let n = 1; n <= 10; n++) {
@@ -723,8 +725,8 @@ function makeMock() {
       const ev = raw.reduce((t, m, h) => t + m * p[h], 0), sc = 0.94 / ev; KENO[n] = raw.map(m => { const x = m * sc; return x >= 10 ? Math.round(x) : Math.round(x * 100) / 100; });
     } }
   const SCRATCH = { cost: [10, 50, 200], prizes: [[1000, 0.00004], [250, 0.0006], [50, 0.003], [10, 0.012], [5, 0.03], [2, 0.07], [1, 0.18]], sym: ['🍒', '🍋', '🔔', '⭐', '💎', '7️⃣', '👑', '🍀'] };
-  const VP = [['Royal Flush', 250], ['Straight Flush', 50], ['Four of a Kind', 25], ['Full House', 8], ['Flush', 5], ['Straight', 4], ['Three of a Kind', 3], ['Two Pair', 2], ['Jacks or Better', 1]];
-  const EDGE = { coin: 2, dice: 1, roulette: 2.7, slots: 5, plinko: 3, wheel: 5.5, keno: 6, baccarat: 1.2, craps: 1.4, sicbo: 2.8, scratch: 7, crashx: 3, bj: 1, vp: 3, mines: 3, hilo: 3, lr: 2.7, crash: 3, race: 3.8, pot: 3, duel: 3 };
+  const VP = [['Royal Flush', 250], ['Straight Flush', 50], ['Four of a Kind', 25], ['Full House', 9], ['Flush', 6], ['Straight', 4], ['Three of a Kind', 3], ['Two Pair', 2], ['Jacks or Better', 1]];
+  const EDGE = { coin: 1, dice: 1, roulette: 2.7, slots: 3, plinko: 2, wheel: 3.3, keno: 3, baccarat: 1.2, craps: 1.4, sicbo: 2.8, scratch: 3, crashx: 2, bj: 0.8, vp: 1, mines: 2, hilo: 2, lr: 2.7, crash: 2, race: 1.8, pot: 2, duel: 2 };
   const NAMES = { coin: 'Coin Flip', dice: 'Dice', roulette: 'Roulette', slots: 'Slots', plinko: 'Plinko', wheel: 'Lucky Wheel', keno: 'Keno', baccarat: 'Baccarat', craps: 'Craps', sicbo: 'Sic Bo', scratch: 'Scratch Cards', crashx: 'Rocket', bj: 'Blackjack', vp: 'Video Poker', mines: 'Mines', hilo: 'Hi-Lo', lr: 'Live Roulette', crash: 'Live Rocket', race: 'Horse Racing', pot: 'The Pot', duel: 'Duels' };
   const card = () => ({ r: 1 + fl(R() * 13), s: fl(R() * 4) });
   const bacVal = c => (c.r >= 10 ? 0 : c.r);
@@ -766,18 +768,19 @@ function makeMock() {
       for (let i = 8; i > 0; i--) { const j = fl(R() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
       return { cells, mult: prize, win: bet * prize };
     },
-    crashx(bet, a) { const t = Math.round(Number(a.target) * 100) / 100; if (!(t >= 1.01 && t <= 1000)) return { err: 'Pick a cash-out from 1.01x to 1000x.' }; const c = Math.max(1, fl(97 / (1 - R())) / 100); return { crash: c, target: t, win: c >= t ? fl(bet * t) : 0 }; }
+    crashx(bet, a) { const t = Math.round(Number(a.target) * 100) / 100; if (!(t >= 1.01 && t <= 1000)) return { err: 'Pick a cash-out from 1.01x to 1000x.' }; const c = Math.max(1, fl(98 / (1 - R())) / 100); return { crash: c, target: t, win: c >= t ? fl(bet * t) : 0 }; }
   };
 
   // ----- games with turns -----
   const bjVal = hd => { let t = 0, ac = 0; for (const c of hd) { t += c.r === 1 ? 11 : Math.min(10, c.r); if (c.r === 1) ac++; } while (t > 21 && ac) { t -= 10; ac--; } return t; };
   const bjIsBJ = hd => hd.length === 2 && bjVal(hd) === 21;
-  const bjCan = st => { const hd = st.hands[st.active], c = ['hit', 'stand']; if (hd.cards.length === 2) { c.push('double'); if (st.hands.length === 1 && Math.min(10, hd.cards[0].r) === Math.min(10, hd.cards[1].r)) c.push('split'); } return c; };
+  const bjSoft = hd => { let t = 0, ac = 0; for (const c of hd) { t += c.r === 1 ? 11 : Math.min(10, c.r); if (c.r === 1) ac++; } while (t > 21 && ac) { t -= 10; ac--; } return ac > 0; };
+  const bjCan = st => { const hd = st.hands[st.active], c = ['hit', 'stand'], hv = bjVal(hd.cards); if (hd.cards.length === 2) { if (!bjSoft(hd.cards) && hv >= 9 && hv <= 11) c.push('double'); if (st.hands.length === 1 && Math.min(10, hd.cards[0].r) === Math.min(10, hd.cards[1].r)) c.push('split'); } return c; };
   const bjView = (st, over) => ({ hands: st.hands.map(x => ({ cards: x.cards, bet: x.bet, v: bjVal(x.cards), done: x.done })), active: st.active, dealer: over ? st.dealer : [st.dealer[0]], dv: over ? bjVal(st.dealer) : null, over: !!over, can: over ? [] : bjCan(st) });
   function bjFinish(st) {
-    if (st.hands.some(x => bjVal(x.cards) <= 21 && !x.bj)) while (bjVal(st.dealer) < 17) st.dealer.push(card());
+    if (st.hands.some(x => bjVal(x.cards) <= 21 && !x.bj)) while (bjVal(st.dealer) < 17 || (bjVal(st.dealer) === 17 && bjSoft(st.dealer))) st.dealer.push(card());
     const dv = bjVal(st.dealer), dbj = bjIsBJ(st.dealer); let win = 0;
-    for (const x of st.hands) { const v = bjVal(x.cards); if (x.bj) win += dbj ? x.bet : fl(x.bet * 2.5); else if (v > 21 || dbj) win += 0; else if (dv > 21 || v > dv) win += x.bet * 2; else if (v === dv) win += x.bet; }
+    for (const x of st.hands) { const v = bjVal(x.cards); if (x.bj) win += dbj ? x.bet : x.bet * 2; else if (v > 21 || dbj) win += 0; else if (dv > 21 || v > dv) win += x.bet * 2; else if (v === dv) win += v === 21 ? x.bet * 2 : v === 20 ? fl(x.bet * 1.5) : x.bet; }
     return win;
   }
   function vpRank(hd) {
@@ -789,8 +792,8 @@ function makeMock() {
     return ['Nothing', 0];
   }
   const C25 = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
-  const minesMult = (m, k) => (k ? Math.round(0.97 * C25(25, k) / C25(25 - m, k) * 100) / 100 : 1);
-  const hlOdds = c => ({ hi: (13 - c) / 12, lo: (c - 1) / 12 }), hlPay = st => Math.round(0.97 * st.fair * 100) / 100;
+  const minesMult = (m, k) => (k ? Math.round(0.98 * C25(25, k) / C25(25 - m, k) * 100) / 100 : 1);
+  const hlOdds = c => ({ hi: (13 - c) / 12, lo: (c - 1) / 12 }), hlPay = st => Math.round(0.98 * st.fair * 100) / 100;
   const hlView = (st, x) => Object.assign({ card: st.card, suit: st.suit, n: st.n, mult: st.n ? hlPay(st) : 1, hiX: st.card < 13 ? Math.round(97 * st.fair / hlOdds(st.card).hi) / 100 : 0, loX: st.card > 1 ? Math.round(97 * st.fair / hlOdds(st.card).lo) / 100 : 0 }, x || {});
   const TURN = {
     bj(st, act, a) {
@@ -852,7 +855,7 @@ function makeMock() {
   const BOOK = { lr: new Map(), crash: new Map(), race: new Map(), pot: new Map() }, DONE = new Set(), SAID = new Set(), DUELS = new Map();
   const book = (g, r) => { let m = BOOK[g].get(r); if (!m) BOOK[g].set(r, m = new Map()); return m; };
   const lrNumber = r => fl(hashN('lr|' + r)[0] * 37);
-  const crashPoint = r => Math.min(CR.cap, Math.max(1, fl(97 / (1 - hashN('crash|' + r)[0])) / 100));
+  const crashPoint = r => Math.min(CR.cap, Math.max(1, fl(98 / (1 - hashN('crash|' + r)[0])) / 100));
   const crashAt = (r, t) => Math.round(Math.exp(CR.k * (t - (r * CR.cyc + CR.bet))) * 100) / 100;
   function raceOrder(r) { const hh = hashN('race|' + r, 6), left = RACE.odds.map((o, i) => ({ i, w: 1 / o })), order = []; for (let k = 0; k < 6; k++) { const tot = left.reduce((t, x) => t + x.w, 0); let x = hh[k] * tot, j = 0; while (j < left.length - 1 && x >= left[j].w) { x -= left[j].w; j++; } order.push(left.splice(j, 1)[0].i); } return order; }
   const once = k => { if (SAID.has(k)) return false; SAID.add(k); return true; };
@@ -866,7 +869,7 @@ function makeMock() {
       if (g === 'lr') { stake = b.bets.reduce((t, x) => t + x.a, 0); win = rouletteWin(b.bets, n); }
       else if (g === 'crash') { stake = b.bet; if (b.out) continue; if (b.auto && b.auto <= c) win = fl(b.bet * b.auto); }
       else if (g === 'race') { stake = b.bets.reduce((t, x) => t + x.a, 0); for (const x of b.bets) if (x.h === order[0]) win += fl(x.a * RACE.odds[x.h]); }
-      else if (g === 'pot') { stake = b.bet; win = m.size === 1 ? b.bet : name === winner ? fl(total * 0.97) : 0; }
+      else if (g === 'pot') { stake = b.bet; win = m.size === 1 ? b.bet : name === winner ? fl(total * 0.98) : 0; }
       results.push({ n: name, win: pay(win, g, stake, name), stake });
       if (name === ME) emit({ ev: 'bal', bal: bal() });
     }
@@ -881,7 +884,7 @@ function makeMock() {
   }
   const duelList = () => [...DUELS.values()].map(d => ({ id: d.id, n: d.n, bet: d.bet, at: d.at }));
   function duelResolve(d, takerName) {
-    DUELS.delete(d.id); const takerWins = R() < 0.5, prize = fl(d.bet * 2 * 0.97), winner = takerWins ? takerName : d.n;
+    DUELS.delete(d.id); const takerWins = R() < 0.5, prize = fl(d.bet * 2 * 0.98), winner = takerWins ? takerName : d.n;
     if (d.n === ME || takerName === ME) { if (winner === ME) pay(prize, 'duel', d.bet); else pay(0, 'duel', d.bet); }
     emit({ ev: 'duel', id: d.id, a: d.n, b: takerName, bet: d.bet, winner, prize }); emit({ ev: 'duels', list: duelList() });
     return { takerWins, prize };
@@ -1324,7 +1327,7 @@ function dailySpin() {
 
 // ---------- how it works / the odds ----------
 const HOW = {
-  bj: 'Beat the dealer without going over 21. Blackjack pays 3:2, a win 1:1. Double and split allowed.',
+  bj: 'Beat the dealer without going over 21. A win pays 1:1, a tie on 21 wins and a tie on 20 wins half. Press Tip for the best move.',
   roulette: 'European wheel, one zero. A number pays 36x, dozens and columns 3x, red/black, odd/even, low/high 2x.',
   baccarat: 'Bet on Player (2x), Banker (1.95x) or Tie (9x, and Player/Banker bets come back).',
   craps: 'Pass wins on 7 or 11 and loses on 2, 3, 12; otherwise roll the point again before a 7. Pays 2x. Don\'t Pass is the other side (12 is a push).',
@@ -1338,13 +1341,13 @@ const HOW = {
   mines: 'Open tiles on a 5x5 grid without hitting a mine. Every safe tile raises the multiplier; cash out any time.',
   hilo: 'Guess if the next card is higher or lower. The less likely guess pays more; cash out any time. The same card again is a free redo.',
   dice: 'Pick a number and over or under. The smaller your chance, the bigger the pay (99 / chance).',
-  coin: 'Heads or tails. Pays 1.96x.',
+  coin: 'Heads or tails. Pays 1.98x.',
   crashx: 'Pick a cash-out point; if the rocket reaches it before it blows up, you win that multiple.',
   lr: 'Roulette with everyone: bet during the countdown, the wheel spins for the whole room.',
   crash: 'Board the rocket during the countdown, then cash out before it blows up. Everyone flies together.',
   race: 'Six horses, fixed odds. Back one or more during the countdown and watch the race.',
-  pot: 'Throw chips in the pot; the winner takes 97% of it. Your chance is your share of the pot.',
-  duel: 'Open a duel or take someone\'s: a coin flip for both stakes, the winner gets 97%.'
+  pot: 'Throw chips in the pot; the winner takes 98% of it. Your chance is your share of the pot.',
+  duel: 'Open a duel or take someone\'s: a coin flip for both stakes, the winner gets 98%.'
 };
 function openOdds() {
   clearView(); document.body.classList.remove('at-lobby'); view = { kind: 'odds' };
@@ -1479,18 +1482,21 @@ function chipBook(id, onPaint) {
 }
 
 // ---------- Blackjack ----------
-defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a50', c2: '#0b3d29', blurb: 'Beat the dealer to 21', hint: 'H hit · S stand · D double · P split',
+defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a50', c2: '#0b3d29', blurb: 'Beat the dealer to 21', hint: 'H hit · S stand · D double · P split · T tip',
   mount(opt) {
-    const def = this, F = gameFrame(def, payTable('Blackjack pays', [['Blackjack', '3 : 2 (2.5x back)'], ['Win', '1 : 1 (2x back)'], ['Push', 'stake back'], ['Insurance', 'none']], 'Dealer stands on all 17s. Double on any two cards; split one pair once.'));
+    const def = this, F = gameFrame(def, payTable('Blackjack pays', [['Win or Blackjack', '1 : 1 (2x back)'], ['Tie on 21', 'you win 1 : 1'], ['Tie on 20', 'you win half'], ['Other ties', 'stake back'], ['Insurance', 'none']], 'Dealer hits soft 17. Double on a hard 9, 10 or 11; split one pair once (split aces get one card each). Press Tip to see the best move: played that way you win about as often as you lose.'));
     const dealerRow = h('div', { class: 'crow' }), dv = h('span', { class: 'vbadge' }), hands = h('div', { class: 'hands' }), msg = h('div', { class: 'tmsg' }, 'Place your bet and deal.');
-    F.main.append(h('div', { class: 'felt bjfelt' }, h('div', { class: 'bj-d' }, h('div', { class: 'lbl' }, 'Dealer ', dv), dealerRow), msg, h('div', { class: 'bj-arc' }, 'BLACKJACK PAYS 3 TO 2 · DEALER STANDS ON 17'), hands));
+    F.main.append(h('div', { class: 'felt bjfelt' }, h('div', { class: 'bj-d' }, h('div', { class: 'lbl' }, 'Dealer ', dv), dealerRow), msg, h('div', { class: 'bj-arc' }, 'TIES ON 20 AND 21 GO YOUR WAY · DEALER HITS SOFT 17'), hands));
     let V = null, busyHand = false;
     const btn = (k, t, key) => h('button', { class: 'btn act lockable', 'data-a': k, title: t + ' (' + key + ')', onclick: () => play(k) }, t);
-    const acts = h('div', { class: 'acts' }, btn('hit', 'Hit', 'H'), btn('stand', 'Stand', 'S'), btn('double', 'Double', 'D'), btn('split', 'Split', 'P'));
+    let tipOn = false; try { tipOn = localStorage.getItem('hgcas:bjtip') === '1'; } catch (e) {}
+    const tipB = h('button', { class: 'btn tipb', title: 'Show the best move for this hand (T)', onclick: () => { tipOn = !tipOn; try { localStorage.setItem('hgcas:bjtip', tipOn ? '1' : '0'); } catch (e) {} refresh(); } }, '💡 Tip');
+    const acts = h('div', { class: 'acts' }, btn('hit', 'Hit', 'H'), btn('stand', 'Stand', 'S'), btn('double', 'Double', 'D'), btn('split', 'Split', 'P'), tipB);
     const bar = betBar(def, { label: 'Deal', go: deal, extra: [acts] }); F.bar.append(bar.el);
     function refresh() {
       const inHand = V && !V.over; bar.prim.classList.toggle('hidden', !!inHand); acts.classList.toggle('hidden', !inHand);
-      $$('[data-a]', acts).forEach(b => { b.disabled = !inHand || !V.can.includes(b.dataset.a); });
+      $$('[data-a]', acts).forEach(b => { b.disabled = !inHand || !V.can.includes(b.dataset.a); b.classList.toggle('tip', !!(inHand && tipOn && V.tip === b.dataset.a)); });
+      tipB.classList.toggle('on', tipOn);
     }
     async function syncRow(row, cards, hole) {
       for (let i = 0; i < cards.length; i++) { const el = row.children[i]; if (!el) await dealCard(row, cards[i]); else if (el.classList.contains('down')) await flipUp(el, cards[i]); }
@@ -1538,7 +1544,8 @@ defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a
     function after(rep) {
       const v = rep.r.view; V = v;
       if (!rep.r.over) { releaseBal(); msg.textContent = v.hands.length > 1 ? 'Playing hand ' + (v.active + 1) + ' of 2' : 'Hit, stand' + (v.can.includes('double') ? ', double' : '') + (v.can.includes('split') ? ' or split' : '') + '?'; refresh(); return; }
-      const lines = v.hands.map(hd => { const bj = hd.cards.length === 2 && hd.v === 21 && v.hands.length === 1; return hd.v > 21 ? 'Bust' : bj && !(v.dealer.length === 2 && v.dv === 21) ? 'Blackjack!' : v.dv > 21 ? 'Dealer busts' : hd.v > v.dv ? 'You win' : hd.v === v.dv ? 'Push' : 'Dealer wins'; });
+      const dbj = v.dealer.length === 2 && v.dv === 21;
+      const lines = v.hands.map(hd => { const bj = hd.cards.length === 2 && hd.v === 21 && v.hands.length === 1; return hd.v > 21 ? 'Bust' : bj && dbj ? 'Push' : bj ? 'Blackjack!' : dbj ? 'Dealer blackjack' : v.dv > 21 ? 'Dealer busts' : hd.v > v.dv ? 'You win' : hd.v === v.dv ? (hd.v === 21 ? 'Tie on 21: you win' : hd.v === 20 ? 'Tie on 20: you win half' : 'Push') : 'Dealer wins'; });
       msg.textContent = lines.join(' · '); refresh();
       finish('bj', rep.r.bet, rep.r.win, 'Blackjack', F.main);
     }
@@ -1546,7 +1553,7 @@ defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a
       refresh();
       try { const rep = await call('bj', { act: 'state' }); if (rep.r && rep.r.resume) { bar.bet = rep.r.bet; await show(rep.r.view, true); V = rep.r.view; V.over = false; msg.textContent = 'Your hand is back. Carry on.'; refresh(); } } catch {}
     }
-    return { root: F.root, start, refresh, primary: () => (V && !V.over ? play('stand') : deal()), key: e => { const m = { h: 'hit', s: 'stand', d: 'double', p: 'split' }[e.key.toLowerCase()]; if (m) { play(m); return true; } } };
+    return { root: F.root, start, refresh, primary: () => (V && !V.over ? play('stand') : deal()), key: e => { if (e.key.toLowerCase() === 't') { tipB.click(); return true; } const m = { h: 'hit', s: 'stand', d: 'double', p: 'split' }[e.key.toLowerCase()]; if (m) { play(m); return true; } } };
   } });
 function bjValue(cards) { let t = 0, a = 0; for (const c of cards) { t += c.r === 1 ? 11 : Math.min(10, c.r); if (c.r === 1) a++; } while (t > 21 && a) { t -= 10; a--; } return t; }
 
@@ -2017,10 +2024,10 @@ defGame({ id: 'dice', title: 'Dice', group: 'machine', icon: '💯', c1: '#4c5bd
   } });
 
 // ---------- Coin Flip ----------
-defGame({ id: 'coin', title: 'Coin Flip', group: 'machine', icon: '🪙', c1: '#b8861b', c2: '#3f2c05', blurb: 'Heads or tails, 1.96x', hint: 'H heads · T tails',
+defGame({ id: 'coin', title: 'Coin Flip', group: 'machine', icon: '🪙', c1: '#b8861b', c2: '#3f2c05', blurb: 'Heads or tails, 1.98x', hint: 'H heads · T tails',
   mount() {
     const def = this; let side = store.get('coin:p', 'h');
-    const F = gameFrame(def, payTable('Coin Flip', [['Right call', '1.96x'], ['Wrong call', 'nothing']], 'A fair coin; the house keeps 2%.'));
+    const F = gameFrame(def, payTable('Coin Flip', [['Right call', '1.98x'], ['Wrong call', 'nothing']], 'A fair coin; the house keeps 1%.'));
     const coin = h('div', { class: 'coin' }, h('div', { class: 'cf h' }, h('span', null, '👑'), h('small', null, 'HEADS')), h('div', { class: 'cf t' }, h('span', null, '⭐'), h('small', null, 'TAILS')));
     const hist = h('div', { class: 'chist' });
     const pk = s => h('button', { class: 'btn big cpick lockable', 'data-s': s, onclick: () => { side = s; store.set('coin:p', s); paint(); sfx.click(); } }, s === 'h' ? '👑 Heads' : '⭐ Tails');
@@ -2316,9 +2323,9 @@ defGame({ id: 'pot', title: 'The Pot', group: 'live', icon: '🍯', c1: '#c98a12
       const list = (snap = S.live.pot.players.slice()), sl = slices(list), w = sl.find(s => s.n === m.winner); spinning = true; winner.textContent = '';
       if (w && list.length > 1) { const a = w.a0 + (w.a1 - w.a0) * (0.2 + Math.random() * 0.6); let r1 = -a; while (r1 < rot + 2 * Math.PI * 4) r1 += 2 * Math.PI; const r0 = rot; sfx.spin(); await tween(4200, e => { rot = r0 + (r1 - r0) * e; draw(list); }); }
       spinning = false; draw(list, m.winner);
-      winner.innerHTML = m.winner ? `🏆 <b>${esc(m.winner)}</b> takes <b class="gold">${fmt(Math.floor((m.total || 0) * 0.97))}</b> chips!` : list.length === 1 ? 'Nobody else joined: the stake went back.' : 'Nobody played this pot.';
+      winner.innerHTML = m.winner ? `🏆 <b>${esc(m.winner)}</b> takes <b class="gold">${fmt(Math.floor((m.total || 0) * 0.98))}</b> chips!` : list.length === 1 ? 'Nobody else joined: the stake went back.' : 'Nobody played this pot.';
       side.results(m.results, 'Pot ' + m.r);
-      if (mineR === m.r) { const me = (m.results || []).find(x => isMe(x.n)); const win = me ? me.win : isMe(m.winner) ? Math.floor(m.total * 0.97) : 0; finish('pot', mine, win, isMe(m.winner) ? 'You took the pot!' : 'The pot went to ' + (m.winner || 'nobody'), F.main); mineR = -1; }
+      if (mineR === m.r) { const me = (m.results || []).find(x => isMe(x.n)); const win = me ? me.win : isMe(m.winner) ? Math.floor(m.total * 0.98) : 0; finish('pot', mine, win, isMe(m.winner) ? 'You took the pot!' : 'The pot went to ' + (m.winner || 'nobody'), F.main); mineR = -1; }
     }
     const stop = liveLoop('pot', {
       round(L) { side.players(L.players); },
@@ -2326,7 +2333,7 @@ defGame({ id: 'pot', title: 'The Pot', group: 'live', icon: '🍯', c1: '#c98a12
         const s = secs(p.left), list = L.players, tot = list.reduce((t, x) => t + x.a, 0), me = list.find(x => isMe(x.n));
         if (p.left > 0) clock.set(p.left / L.bet, 'Draw in ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'), p.left < 10000 ? 'hurry' : 'open'); else clock.set(0, 'Drawing… next pot in ' + secs(p.toNext) + 's', 'closed');
         bar.label(p.left > 400 ? 'Add to the pot' : 'Drawing', p.left > 400);
-        info.innerHTML = `<div><small>Players</small><b>${list.length}</b></div><div><small>Your chips</small><b>${me ? fmt(me.a) : 0}</b></div><div><small>Your chance</small><b class="gold">${me && tot ? (me.a / tot * 100).toFixed(1) + '%' : '0%'}</b></div><div><small>Prize now</small><b>${fmt(Math.floor(tot * 0.97))}</b></div>`;
+        info.innerHTML = `<div><small>Players</small><b>${list.length}</b></div><div><small>Your chips</small><b>${me ? fmt(me.a) : 0}</b></div><div><small>Your chance</small><b class="gold">${me && tot ? (me.a / tot * 100).toFixed(1) + '%' : '0%'}</b></div><div><small>Prize now</small><b>${fmt(Math.floor(tot * 0.98))}</b></div>`;
         if (!spinning && !snap) draw(list);
       },
       ev(m, L) {
@@ -2353,7 +2360,7 @@ defGame({ id: 'duel', title: 'Duels', group: 'live', icon: '⚔️', c1: '#5a3aa
       const ds = (S.live && S.live.duels) || []; list.innerHTML = '';
       if (!ds.length) list.append(h('p', { class: 'small' }, 'No open duels. Open one!'));
       ds.slice().sort((a, b) => b.at - a.at).forEach(d => list.append(h('div', { class: 'drow2' + (isMe(d.n) ? ' me' : '') }, h('span', { class: 'dn' }, '⚔️ ', h('b', null, d.n)), h('span', { class: 'num' }, chipEl(d.bet, 's'), ' ' + fmt(d.bet)), h('small', null, ago(d.at)),
-        isMe(d.n) ? h('button', { class: 'btn sm lockable', onclick: () => cancel(d) }, 'Cancel') : h('button', { class: 'btn sm gold lockable', onclick: () => take(d) }, 'Take · win ' + fmt(Math.floor(d.bet * 2 * 0.97))))));
+        isMe(d.n) ? h('button', { class: 'btn sm lockable', onclick: () => cancel(d) }, 'Cancel') : h('button', { class: 'btn sm gold lockable', onclick: () => take(d) }, 'Take · win ' + fmt(Math.floor(d.bet * 2 * 0.98))))));
     }
     function drawRecent() { recent.innerHTML = ''; if (!past.length) recent.append(h('p', { class: 'small' }, 'Finished duels show here.')); past.slice(0, 12).forEach(x => recent.append(h('div', { class: 'lp' + (isMe(x.winner) ? ' me won' : '') }, h('span', null, x.a + ' vs ' + x.b), h('b', null, '🏆 ' + x.winner)))); }
     async function open() { await act(async () => { await call('duel', { act: 'open', bet: bar.bet }); sfx.chip(); toast('Duel opened. Waiting for a challenger…'); await refreshLive(); render(); }); }

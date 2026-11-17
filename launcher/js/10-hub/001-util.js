@@ -14,3 +14,5 @@ function hubWake(f) { HUB_WAKE.push(f); }
 // setHtml(el, html): write innerHTML only when it changed, so a repaint timer does not re-parse the same markup, reload its
 // pictures or drop hover/focus every few seconds. Only for elements whose markup is always written through setHtml.
 function setHtml(el, html) { if (el && el.hgHtml !== html) { el.hgHtml = html; el.innerHTML = html; } }
+// hgTime(ms): a date and time in Eastern time, the launcher's one clock (2026-11-17), e.g. "Nov 17, 3:05 PM ET"
+function hgTime(t) { try { return new Date(t).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; } catch (e) { return new Date(t).toLocaleString(); } }

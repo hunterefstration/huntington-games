@@ -129,7 +129,7 @@ function dailySpin() {
 
 // ---------- how it works / the odds ----------
 const HOW = {
-  bj: 'Beat the dealer without going over 21. Blackjack pays 3:2, a win 1:1. Double and split allowed.',
+  bj: 'Beat the dealer without going over 21. A win pays 1:1, a tie on 21 wins and a tie on 20 wins half. Press Tip for the best move.',
   roulette: 'European wheel, one zero. A number pays 36x, dozens and columns 3x, red/black, odd/even, low/high 2x.',
   baccarat: 'Bet on Player (2x), Banker (1.95x) or Tie (9x, and Player/Banker bets come back).',
   craps: 'Pass wins on 7 or 11 and loses on 2, 3, 12; otherwise roll the point again before a 7. Pays 2x. Don\'t Pass is the other side (12 is a push).',
@@ -143,13 +143,13 @@ const HOW = {
   mines: 'Open tiles on a 5x5 grid without hitting a mine. Every safe tile raises the multiplier; cash out any time.',
   hilo: 'Guess if the next card is higher or lower. The less likely guess pays more; cash out any time. The same card again is a free redo.',
   dice: 'Pick a number and over or under. The smaller your chance, the bigger the pay (99 / chance).',
-  coin: 'Heads or tails. Pays 1.96x.',
+  coin: 'Heads or tails. Pays 1.98x.',
   crashx: 'Pick a cash-out point; if the rocket reaches it before it blows up, you win that multiple.',
   lr: 'Roulette with everyone: bet during the countdown, the wheel spins for the whole room.',
   crash: 'Board the rocket during the countdown, then cash out before it blows up. Everyone flies together.',
   race: 'Six horses, fixed odds. Back one or more during the countdown and watch the race.',
-  pot: 'Throw chips in the pot; the winner takes 97% of it. Your chance is your share of the pot.',
-  duel: 'Open a duel or take someone\'s: a coin flip for both stakes, the winner gets 97%.'
+  pot: 'Throw chips in the pot; the winner takes 98% of it. Your chance is your share of the pot.',
+  duel: 'Open a duel or take someone\'s: a coin flip for both stakes, the winner gets 98%.'
 };
 function openOdds() {
   clearView(); document.body.classList.remove('at-lobby'); view = { kind: 'odds' };

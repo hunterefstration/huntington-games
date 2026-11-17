@@ -30,7 +30,8 @@ function partyActivity() {
   var L = window.HGGrapevine; if (!L || !L.party || !L.online()) return;
   var g = typeof current !== 'undefined' && current && current.game;
   var gid = g ? Object.keys(INVITE_GAMES).filter(function (k) { return INVITE_GAMES[k] === g.dir; })[0] : null;
-  L.party.activity(g ? g.name.replace(/ [\d.]+$/, '') : null, g && gid === PARTY.lastGame ? PARTY.lastCode : null, gid || null);
+  var away = typeof hgIdle === 'function' && hgIdle();      // AFK for 30 minutes: still shown in the game, but no party code, so no multiplayer bonus
+  L.party.activity(g ? g.name.replace(/ [\d.]+$/, '') : null, g && gid === PARTY.lastGame && !away ? PARTY.lastCode : null, gid || null);
 }
 setInterval(partyActivity, 60000);
 function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }

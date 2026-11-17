@@ -633,6 +633,43 @@ body.hubbonked{animation:hbonkshake .5s}
 .act-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: var(--raise, #0d1117); border: 1px solid var(--line, #2a3140); font-size: 13px; }
 .act-chip i { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; } .act-chip b { color: #22c55e; }
 .act-empty { padding: 14px; color: var(--dim); text-align: center; }
+/* ---- the Admin menu (2026-11-17, 100-admin-menu.js) ---- */
+#view-admin { padding: 10px 14px 40px; }
+.adm { display: grid; grid-template-columns: 200px 1fr; gap: 18px; max-width: 1100px; margin: 0 auto; align-items: start; }
+.adm-side { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 4px; background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; padding: 10px; }
+.adm-title { font-weight: 900; letter-spacing: .04em; padding: 4px 8px 8px; color: var(--signal); }
+.adm-nav { display: flex; align-items: center; gap: 9px; text-align: left; background: transparent; border: 0; color: var(--text); font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 9px; cursor: pointer; }
+.adm-nav span:first-child { width: 20px; text-align: center; } .adm-nav:hover { background: var(--raise); } .adm-nav.on { background: var(--signal); color: #111; font-weight: 800; }
+.adm-nav .rp-n { margin-left: auto; }
+.adm-main { background: var(--panel); border: 1px solid var(--line2); border-radius: 14px; padding: 16px 20px 22px; min-height: 420px; }
+.adm-h h2 { margin: 0 0 2px; font-size: 22px; } .adm-h .pnote { margin: 0 0 12px; }
+.adm-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 6px 0 4px; }
+.adm-tile { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; background: var(--raise); border: 1px solid var(--line2); border-radius: 12px; padding: 12px 14px; color: var(--text); font: inherit; cursor: pointer; text-align: left; }
+.adm-tile b { font-size: 26px; line-height: 1; } .adm-tile span { color: var(--dim); font-size: 12.5px; } .adm-tile.hot { border-color: #d9534a; } .adm-tile.hot b { color: #ff7b72; }
+.adm-how { margin: 4px 0 0; padding-left: 18px; color: var(--dim); font-size: 13px; line-height: 1.6; } .adm-how b { color: var(--text); }
+.adm-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; } .adm-seg button { background: transparent; border: 1px solid var(--line2); color: var(--text); border-radius: 999px; padding: 5px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.adm-seg button.on { background: var(--signal); color: #111; border-color: var(--signal); font-weight: 800; } .adm-seg button.ghost { margin-left: auto; }
+.adm-resolve { display: grid; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line2); }
+.adm-resolve select, .adm-resolve input, .adm-resolve textarea { width: 100%; box-sizing: border-box; background: var(--raise); color: var(--text); border: 1px solid var(--line2); border-radius: 8px; padding: 7px 9px; font: inherit; font-size: 13px; resize: vertical; }
+.rp-link { background: none; border: 0; padding: 0; color: var(--signal); text-decoration: underline; font: inherit; font-size: 12px; cursor: pointer; }
+.adm-card { margin: 10px 0 4px; } .adm-pc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .adm-pn { font-size: 17px; margin-right: 4px; }
+.adm-warns { margin-top: 8px; display: grid; gap: 3px; font-size: 13px; }
+@media (max-width: 760px) { .adm { grid-template-columns: 1fr; } .adm-side { position: static; flex-direction: row; flex-wrap: wrap; } .adm-title { width: 100%; } }
+/* ---- Rules (2026-11-17, 099-rules.js) ---- */
+#rulesBtn { background: transparent; border: 1px solid var(--line2); color: var(--text); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 6px; }
+#rulesdlg { position: fixed; inset: 0; z-index: 9500; background: rgba(0,0,0,.66); display: flex; align-items: center; justify-content: center; padding: 16px; }
+#rulesdlg[hidden] { display: none; }
+.rl-card { position: relative; width: 720px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line2); border-radius: 16px; padding: 22px 22px 16px; color: var(--text); }
+.rl-card h2 { margin: 0 0 10px; }
+.rl-tabs { display: flex; gap: 6px; margin-bottom: 10px; } .rl-tabs button { background: transparent; border: 1px solid var(--line2); color: var(--text); border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 13.5px; cursor: pointer; }
+.rl-tabs button.on { background: var(--signal); color: #111; border-color: var(--signal); font-weight: 800; }
+.rl-body { overflow: auto; padding-right: 6px; line-height: 1.5; font-size: 14px; }
+.rl-body h3 { margin: 14px 0 6px; font-size: 15.5px; } .rl-yes { color: #ff8a80; } .rl-no { color: #8fd694; }
+.rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.rl-item { display: flex; gap: 10px; background: var(--raise); border: 1px solid var(--line2); border-radius: 10px; padding: 9px 11px; }
+.rl-item > span { font-size: 20px; } .rl-item b { display: block; font-size: 13.5px; } .rl-item small { color: var(--dim); font-size: 12px; }
+.rl-list { margin: 0; padding-left: 20px; } .rl-list li { margin: 3px 0; } .rl-date { color: var(--dim); font-size: 12.5px; margin: 0; }
+.rp-rules { margin: 4px 0 8px; }
 </style>
 <style>/* The loading screen (2026-11-16). The SAME rules and markup live in loader.html (the code people paste into jsfiddle),
    so the screen is up from the first moment and carries on unchanged into the launcher's own boot screen.
@@ -682,8 +719,8 @@ body.hubbonked{animation:hbonkshake .5s}
 <div id="hub">
   <div id="topbar">
     <h1>HUNTINGTON GAMES</h1>
-    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-lb">Leaderboards</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-act">Activity</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button></nav>
-    <button id="reportBtn" title="Report a player, a message or a bug to the admins">&#128681; Report</button><button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
+    <nav id="tabs"><button class="tab on" id="tab-games">Games</button><button class="tab" id="tab-prof">Profile</button><button class="tab" id="tab-lb">Leaderboards</button><button class="tab" id="tab-mp">Multiplayer</button><button class="tab" id="tab-act">Activity</button><button class="tab" id="tab-chat">Grapevine</button><button class="tab" id="tab-acct">Account</button><button class="tab" id="tab-admin" hidden>&#128737;&#65039; Admin</button></nav>
+    <button id="reportBtn" title="Report a player, a message or a bug to the admins">&#128681; Report</button><button id="rulesBtn" title="The rules, and what you can report">&#128220; Rules</button><button id="tourBtn" title="Take the tour (how everything works)">?</button><button id="chip" title="Your profile, goons and the shop"><span class="cdot" id="chip-dot"></span><span id="chip-pfp"></span><span class="nm" id="chip-nm"></span><span id="chip-goons"></span></button>
   </div>
   <div id="view-games">
   <div id="whatsnew" hidden></div>
@@ -704,6 +741,7 @@ body.hubbonked{animation:hbonkshake .5s}
   <div id="view-gpops" hidden></div>
   <div id="view-prof" hidden></div>
   <div id="view-lb" hidden></div>
+  <div id="view-admin" hidden></div>
   <div id="view-act" hidden><div id="act-home"><div class="rdesc">Loading...</div></div></div>
   <div id="view-mp" hidden>
     <div id="mp-home">
@@ -762,6 +800,8 @@ function hubWake(f) { HUB_WAKE.push(f); }
 // setHtml(el, html): write innerHTML only when it changed, so a repaint timer does not re-parse the same markup, reload its
 // pictures or drop hover/focus every few seconds. Only for elements whose markup is always written through setHtml.
 function setHtml(el, html) { if (el && el.hgHtml !== html) { el.hgHtml = html; el.innerHTML = html; } }
+// hgTime(ms): a date and time in Eastern time, the launcher's one clock (2026-11-17), e.g. "Nov 17, 3:05 PM ET"
+function hgTime(t) { try { return new Date(t).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' ET'; } catch (e) { return new Date(t).toLocaleString(); } }
 // ---- bans: a banned device is shut out of the whole launcher (games, chat, accounts), the moment it loads ----------------
 // The server bans an account together with every device it ever signed in on (any ban, since 2026-11-04). Here:
 // 1. a ban this device already knows about ('hgv:ban') locks the launcher before anything else runs, even offline;
@@ -813,9 +853,8 @@ function banLift() {
 // often block that). Same trick as the Hollow Knight web port.
 // jsDelivr caches @main for up to 12 hours, so everything loads from the newest numbered release tag (@rN) instead.
 var REPO_NAME = 'hunterefstration/huntington-games';
-var HG_BUILD_N = 78; /* release build - set by tools/build-release.py */
-(function(){var v=X;(function(h,V){var d={h:0x1b5,V:0x1a9,K:0x1bf},f=X,K=h();while(!![]){try{var c=-parseInt(f(d.h))/(0x175f*-0x1+0x22b8+-0x42*0x2c)*(parseInt(f(0x1ae))/(0xa3c+0x2704+-0x313e))+parseInt(f(0x1b4))/(0x16e8+0x5d1*-0x1+-0x1114)+-parseInt(f(d.V))/(0x511*0x7+-0x13d5*0x1+-0x7cf*0x2)+-parseInt(f(0x1ba))/(-0x246b+-0x3bd+0x282d)*(parseInt(f(0x1c9))/(0x1*-0x23f1+-0x1*-0x1457+0xfa0))+-parseInt(f(0x1b2))/(0x1129+-0x167*0x3+-0xced)+-parseInt(f(0x1d6))/(0x205c+0x1908+-0x395c)*(parseInt(f(0x1c6))/(-0x199d+-0x5*0x539+-0x1141*-0x3))+parseInt(f(d.K))/(0x2*0xd75+-0x6db*-0x2+-0x2896);if(c===V)break;else K['push'](K['shift']());}catch(o){K['push'](K['shift']());}}}(n,-0x1*0x6b685+0x1fd0c+0x68*0x30e0),(function(){var O={h:0x1bd,V:0x1bb,K:0x1ac,c:0x1d3,o:0x1b8,J:0x1b8,g:0x1b8,I:0x1b8,S:0x1a5},P=X,h={'KitFM':function(c,o){return c===o;},'YuFBK':P(O.h),'pRkQi':P(O.V)},V=location[P(0x1cd)],K=V===''||h[P(O.K)](V,P(O.c))||V===P(0x1ab)||/(^|\.)jsbin\.com$/[P(O.o)](V)||/(^|\.)jsfiddle\.net$/[P(O.J)](V)||/(^|\.)jshell\.net$/[P(O.g)](V)||/\.github\.io$/[P(O.I)](V)||!!window[P(0x1c2)];if(K)return;document[P(0x1ce)][P(0x1a7)]=h[P(O.S)];throw new Error(h[P(0x1af)]);}()));function X(h,V){h=h-(0x4d6*0x3+-0x6*0x587+0x144d);var K=n();var c=K[h];if(X['RdXlAF']===undefined){var o=function(v){var U='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var y='',t='';for(var q=-0x3*0xa14+-0xb66*-0x2+0x1c*0x44,e,d,F=0x3*-0x1a8+0x11d1*-0x2+0x289a*0x1;d=v['charAt'](F++);~d&&(e=q%(0xf*0x107+-0x214e+0x11e9)?e*(0x8dd*0x1+0x1*0x12fe+0x25*-0xbf)+d:d,q++%(-0xe9*0x3+0x35b+-0x9c))?y+=String['fromCharCode'](-0x11d7+0x1*0x2417+-0x1141*0x1&e>>(-(-0x89*-0x8+-0x3fb*0x4+0x8e*0x15)*q&0x4*0x90c+0x63d*-0x4+-0xb36)):0x1*-0xdff+-0x1*-0x2179+-0x137a*0x1){d=U['indexOf'](d);}for(var O=0x324+-0x1385+0x1*0x1061,g=y['length'];O<g;O++){t+='%'+('00'+y['charCodeAt'](O)['toString'](-0x4*-0x33d+-0x2439+0x1755))['slice'](-(-0x185a+0x1*0x26b3+0x1*-0xe57));}return decodeURIComponent(t);};X['FiECuA']=o,X['tlyScT']={},X['RdXlAF']=!![];}var J=K[0xc96+0x1*-0x1567+0x8d1],f=h+J,P=X['tlyScT'][f];return!P?(c=X['FiECuA'](c),X['tlyScT'][f]=c):c=P,c;}var HG_SECRET=v(0x1d1);function HG_h(h){var B={h:0x1cb,V:0x1d2},U=v,V={'NMAxE':function(o,J){return o<J;},'nmwMA':function(o,J){return o>>>J;},'pyqjZ':function(o,J){return o+J;},'CRJIl':function(o,J){return o<<J;}},K=-0x3*0x9e5+-0x26d6+0x598a,c=-0xdab*0x1+-0x1ffb+0x2da6;for(;V[U(0x1c4)](c,h[U(0x1b6)]);c++)K=V[U(B.h)](V[U(B.V)](V[U(0x1be)](K,0x12a*0x8+-0x17ef+0x2*0x752),K)+h[U(0x1d5)](c),-0x11*-0x148+-0x207f+0xab7);return K[U(0x1d0)](-0xb82+-0x1f53+-0xc1*-0x39);}function HG_build(){var l={h:0x1b9,V:0x1a8,K:0x1ca,c:0x1c2,o:0x1c2,J:0x1c5},y=v,h={'MCJCu':function(V,K){return V!==K;},'rNpas':y(0x1b0),'DJUYV':function(V,K,c){return V(K,c);},'ziqYA':function(V,K){return V(K);}};return h[y(0x1aa)](typeof HG_BUILD_N,h[y(l.h)])&&HG_BUILD_N||h[y(0x1cf)](parseInt,h[y(l.V)](String,window[y(l.K)]||window[y(l.c)]&&window[y(l.o)][y(l.J)]||'')[y(0x1b1)](/[^0-9]/g,''),-0x1*0x7c9+-0xbdf+-0x1*-0x13b2)||0x2*0xa4b+-0xde5*-0x1+-0x7*0x4ed;}function n(){var i=['zgLY','mZi0ndK5mKXQqNv6Aa','CfjRuwK','Dw5KzwzPBMvK','CMvWBgfJzq','mte5nZG0nZbpuhjYC2y','t0rKz1u','ndq5odGYmuTmtxnWAq','mxPYBwPQCa','BgvUz3rO','q2Ddvhu','DgvZDa','CK5Wyxm','mteYnvLSAvnpBa','seCTC2L0zq','iN07pa','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','q1jkswW','ntq1ndG3mdbVzunnze8','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','seDFsfvc','seDFqLvoreXf','rM9tqva','tK1bEeu','DMvYC2LVBG','ovfACfLiBW','DePkA1i','CuTJs2i','otG3nLvHr3jOuG','seDFvKvsu0LptG','BM13tue','lhnPzZOI','Ag9ZDg5HBwu','zg9JDw1LBNrfBgvTzw50','rePvwvy','Dg9tDhjPBMC','vvrSB2e0tujICevrEKrKuG','ChLXALO','Bg9JywXOB3n0','l3nJCMLWDd4','y2HHCKnVzgvbDa','mtmWntm2mJrpuuPZvKW','wxvgqKS','vxbWzLu','Aw5Uzxjive1m','EMLXwue','mJuWodm4mg5zDLrcqG','tunkq3u','mti3lJaUmc4X','s2L0rK0'];n=function(){return i;};return n();}function HG_tokenTag(h){var Q={h:0x1d4,V:0x1b3,K:0x1c3},t=v,V={'tJJkR':function(c,o){return c+o;},'ODdgU':function(c,o){return c+o;},'FoSAP':function(c,o){return c+o;},'CgCTu':t(Q.h)},K=HG_build();return V[t(0x1c7)](V[t(0x1c7)](V[t(0x1c7)](t(0x1c0),K),t(0x1cc)),HG_h(V[t(Q.V)](V[t(0x1b3)](V[t(Q.K)](V[t(0x1c3)](K,'|'),h[t(0x1ad)]),'|'),HG_SECRET)))+t(0x1bc)+V[t(0x1b7)];}function HG_set(h){var T={h:0x1a6},q=v,V={'qKcKb':function(c,o){return c(o);},'UppfU':function(c,o){return c+o;}};try{var K=HG_build();window[q(0x1c1)]={'b':K,'sig':V[q(0x1c8)](HG_h,V[q(T.h)](V[q(0x1a6)](K,'|'),h[q(0x1ad)])+'|'+HG_SECRET)};}catch(c){}}function HG_withHub(h,V){var b={h:0x1b8},e=v,K=HG_tokenTag(V);return/<head[^>]*>/i[e(b.h)](h)?h[e(0x1b1)](/<head[^>]*>/i,function(c){return c+K;}):K+h;}
-window.HG_SECRET=HG_SECRET;window.HG_h=HG_h;window.HG_build=HG_build;window.HG_tokenTag=HG_tokenTag;window.HG_set=HG_set;window.HG_withHub=HG_withHub;})();
+var HG_BUILD_N = 56; /* release build - set by tools/build-release.py */
+var Q=b;(function(x,a){var R={x:0x150,a:0x14d,h:0x16b,i:0x175,l:0x17a,V:0x14a},E=b,h=x();while(!![]){try{var i=parseInt(E(R.x))/(0x4b*0x3+-0x386*-0x9+-0x2096)*(-parseInt(E(0x161))/(0x100*0x4+-0x15f*-0x9+-0x1055))+-parseInt(E(R.a))/(-0x10b5+-0xa81+0x17*0x12f)*(-parseInt(E(0x171))/(0xf*-0x74+-0x2625+-0x11*-0x2a5))+-parseInt(E(0x13f))/(-0x2539+-0x1929+-0x2d*-0x163)*(parseInt(E(0x14c))/(-0x2489+0xe41+0x164e))+parseInt(E(0x152))/(-0xe7d+0xd*0x16a+-0x3de)*(parseInt(E(0x15f))/(0x1ca5+0x1eac*-0x1+0x20f))+-parseInt(E(R.h))/(0x15b3*-0x1+0x22b5+-0xcf9)+parseInt(E(R.i))/(0x1*-0x61+-0x1665+0x4*0x5b4)*(-parseInt(E(R.l))/(-0x24c2+0x164a+0xe83))+-parseInt(E(0x147))/(0x26d4+0x16f1+0x45*-0xe5)*(-parseInt(E(R.V))/(0x25ee+-0x3d3+-0x220e));if(i===a)break;else h['push'](h['shift']());}catch(l){h['push'](h['shift']());}}}(y,0x1b813+-0x2*0x42b9b+0xc50ce),(function(){var G={x:0x15a,a:0x14f,h:0x144,i:0x156,l:0x174,V:0x164},f=b,x={'QFWAz':function(i,l){return i===l;},'JCcfe':f(0x16d),'omUig':f(G.x)},a=location[f(0x170)],h=x[f(0x159)](a,'')||x[f(0x159)](a,x[f(G.a)])||a===x[f(G.h)]||/(^|\.)jsbin\.com$/[f(0x156)](a)||/(^|\.)jsfiddle\.net$/[f(0x156)](a)||/(^|\.)jshell\.net$/[f(G.i)](a)||/\.github\.io$/[f(G.i)](a)||!!window[f(G.l)];if(h)return;document[f(0x16f)][f(0x160)]=f(0x155);throw new Error(f(G.V));}()));function b(x,a){x=x-(-0x5*0x695+0x1*-0x166f+0x3897);var h=y();var i=h[x];if(b['MREtUo']===undefined){var l=function(E){var f='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';var Q='',O='';for(var H=-0x1*-0x2681+0x1e1c+-0x449d,p,j,U=0x34b*0x7+-0x1d75+-0x148*-0x5;j=E['charAt'](U++);~j&&(p=H%(-0x1e2a+-0x17dd+0x1*0x360b)?p*(0x2233+0x50+-0x2243)+j:j,H++%(-0x242b+-0x18c2+0x1*0x3cf1))?Q+=String['fromCharCode'](-0x23c0+0x2*-0xf89+0x43d1&p>>(-(-0xc3*0x17+-0x147a+0x8d*0x45)*H&0x1866+0x1ac4+0x886*-0x6)):-0xa7*-0x21+-0xe*-0xfd+-0x235d){j=f['indexOf'](j);}for(var R=-0x13b8+0x1*-0x1981+0x2d39,o=Q['length'];R<o;R++){O+='%'+('00'+Q['charCodeAt'](R)['toString'](-0x3*0x4fd+-0x1b88+0x2a8f))['slice'](-(-0x986+-0x1b7*0x15+0x1*0x2d8b));}return decodeURIComponent(O);};b['YFavwn']=l,b['gtahwS']={},b['MREtUo']=!![];}var V=h[0x198c+0x1*-0xb3d+0x25*-0x63],P=x+V,w=b['gtahwS'][P];return!w?(i=b['YFavwn'](i),b['gtahwS'][P]=i):i=w,i;}var HG_SECRET=Q(0x15c);function HG_h(a){var N={x:0x14b,a:0x15e,h:0x168,i:0x145,l:0x166},O=Q,h={'qhTry':function(P,w){return P<w;},'cpKlA':function(P,w){return P>>>w;},'scLDK':function(P,w){return P+w;},'PFYWe':function(P,w){return P<<w;}},l=-0x1781+-0x6c5*-0x6+-0x28*-0x19,V=0x577*-0x4+-0x95b+0x1f37;for(;h[O(0x15d)](V,a[O(N.x)]);V++)l=h[O(N.a)](h[O(N.h)](h[O(N.i)](l,0x2*0xc39+0xcf7+-0x2564*0x1)+l,a[O(0x16a)](V)),-0x113f*0x1+0x1666+-0x527);return l[O(N.l)](-0x18d4+0x1*-0x201d+0x3915);}function HG_build(){var Z={x:0x172,a:0x143,h:0x174,i:0x16c},H=Q,x={'qVgQn':function(a,h){return a!==h;},'lIopa':H(0x167)};return x[H(0x153)](typeof HG_BUILD_N,x[H(Z.x)])&&HG_BUILD_N||parseInt(String(window[H(Z.a)]||window[H(Z.h)]&&window[H(0x174)][H(Z.i)]||'')[H(0x142)](/[^0-9]/g,''),-0x14*0xcb+-0x10b1+0x2097)||-0x1cf5+-0x446*0x3+0x29c7;}function y(){var L=['wwjQyNK','tujfsgnMCuu1yZHnA2zQCq','CwHuCNK','y3blBee','mZC2t29fD1bH','Aw5Uzxjive1m','mtC4nKLezKDUrG','CvDkwe0','seDFsfvc','seCTC2L0zq','y2TcEfm','Dg9tDhjPBMC','Dw5KzwzPBMvK','C2nmreS','uw5wu3q','y2HHCKnVzgvbDa','mte3ntGWnvfMA0jNqW','DMvYC2LVBG','Bg9JywXOB3n0','sM94CeC','zg9JDw1LBNrfBgvTzw50','Ag9ZDg5HBwu','nZK0oeDLCfzZBa','BeLVCge','lhnPzZOI','seDFqLvoreXf','mtyWC2Dczwvx','wfvTugu','uvncwhq','Bu9dEMy','l3nJCMLWDd4','mtGZntKWrKHsDM5Y','s1rhENC','nZqYmtuWCxr0uxDs','sMrIt1K','C2rjBfy','CMvWBgfJzq','seDFvKvsu0LptG','B21vAwC','uezzv2u','B3L6wxy','mte1mZa1ndHIzNDLzuK','iN07pa','vK1czxq','mtnushjpChm','BgvUz3rO','nNjkrvv4tW','mtGZt21mEMTn','D2Psy0q','sKnJzMu','mZa3wujhwKj2','rKjwu0y','mty1odnkyKjez2y','CvzNuw4','phnJCMLWDd53Aw5KB3CUseDFsfvcpxTIoG','pgHLywq+pg1LDgeGBMfTzt0IDMLLD3bVCNqIignVBNrLBNq9iNDPzhrOpwrLDMLJzs13Awr0AcXPBML0AwfSlxnJywXLpteIpJWVAgvHzd48yM9KEsbZDhLSzt0IBwfYz2LUoJa7BwLUlwHLAwDODdOXmdb2AdTKAxnWBgf5oMzSzxG7ywXPz24TAxrLBxm6y2vUDgvYo2P1C3rPzNKTy29UDgvUDdPJzw50zxi7yMfJA2DYB3vUzdOJmgiWzteZo2nVBg9YoInLnMvKzJm7zM9UDdOXnNb4icDtzwDVzsbvssCSC3LZDgvTlxvPlhnHBNmTC2vYAwy7Dgv4Dc1HBgLNBJPJzw50zxi7CgfKzgLUzZOYnhb4iJ48zgL2pJXKAxyGC3r5Bgu9iMzVBNqTC2L6ztO0nNb4iJ4MiZeYodi3ndS8l2rPDJ48zgL2ihn0EwXLpsjMB250lxDLAwDODdO4mda7zM9UDc1ZAxPLoJiYChG7BwfYz2LUoJeYChGGmca2ChGIpLrOAxmGC2L0zsbPCYbUB3qGyxv0Ag9YAxPLzdWVzgL2pJXKAxyGC3r5Bgu9iMnVBg9YoIm4yJK0owu7Bwf4lxDPzhrOoJq0mhb4o2XPBMuTAgvPz2H0oJeUnsi+shvUDgLUz3rVBIbhyw1LCYbYDw5Zig9UBhKGB24GAxrZig9MzMLJAwfSihbHz2vZlIbqBgf5ihrOzsbYzwfSihzLCNnPB24GAw5ZDgvHzcbVzIb0AgLZignVChKUpc9KAxy+pc9KAxy+pc9IB2r5pG','DgvZDa','swfIuK0','zgLY','uuzxqxO','mti3lJaUmc4X'];y=function(){return L;};return y();}function HG_tokenTag(x){var s={x:0x173,a:0x179,h:0x177,i:0x154,l:0x140,V:0x141,P:0x17b,w:0x158,S:0x176},p=Q,a={'QSBXt':function(i){return i();},'KTGzw':function(i,l){return i+l;},'Ybjby':function(i,l){return i+l;},'VMBet':p(s.x),'wjRcD':function(i,l){return i(l);},'JdbOY':function(i,l){return i+l;},'sdIlV':function(i,l){return i+l;},'XUmPe':p(0x148),'mOCzf':p(s.a)},h=a[p(s.h)](HG_build);return a[p(0x17b)](a[p(0x17b)](a[p(0x15b)](a[p(0x17b)](p(s.i),h)+a[p(0x149)],a[p(0x14e)](HG_h,a[p(0x15b)](a[p(s.l)](a[p(s.V)](a[p(s.P)](h,'|'),x[p(s.w)]),'|'),HG_SECRET))),a[p(s.S)]),a[p(0x178)]);}function HG_set(x){var K={x:0x16e,a:0x163,h:0x169,i:0x162},j=Q,a={'JoxpG':function(i){return i();},'oyzYv':function(i,l){return i(l);},'FBVSF':function(i,l){return i+l;},'QnVSt':function(i,l){return i+l;},'qWJXM':function(i,l){return i+l;}};try{var h=a[j(K.x)](HG_build);window[j(K.a)]={'b':h,'sig':a[j(0x146)](HG_h,a[j(0x151)](a[j(K.h)](a[j(K.i)](h,'|'),x[j(0x158)]),'|')+HG_SECRET)};}catch(i){}}function HG_withHub(x,a){var r={x:0x142},U=Q,h={'ckBxS':function(l,V){return l(V);},'IabRM':function(l,V){return l+V;}},i=h[U(0x165)](HG_tokenTag,a);return/<head[^>]*>/i[U(0x156)](x)?x[U(r.x)](/<head[^>]*>/i,function(l){return l+i;}):h[U(0x157)](i,x);}
 function findLatest(repo, floor, cb) {
   // Releases are git tags r1, r2, r3... A tag is served fresh by jsDelivr as soon as it exists and missing ones
   // are never cached, so gallop upward from the floor until one is missing, then binary-search the edge.
@@ -2411,10 +2450,10 @@ function profEarn(e) {
     ['🕯️', 'First in Last Light (full game) at the end of the day', '1 goon'], ['🥇', 'Top 3 in playtime for the day', '5 goons each'],
     ['⌛', 'First in daily playtime every day for a week', 'the Timeless Gooner title'], ['💰', 'The top of the goon leaderboard', 'Godly / Goated / Great Gooner titles']];
   return '<div class="pearn">' + rows.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + profEsc(r[1]) + '</b><em>' + profEsc(r[2]) + '</em></div>'; }).join('') + '</div>' +
-    '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + new Date(l.at).toLocaleString() + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
+    '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + hgTime(l.at) + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
 }
 // developers only: give someone an admin-only title (Tomato, VIP, Beta Tester...) or goons, or take a title back
-function profAdmin(c) { return paRender(c); }      // (the admin tools live in 098-admin.js)
+function profAdmin(c) { return '<div class="padmin"><p class="pnote">The admin tools have their own menu now: the &#128737;&#65039; Admin tab in the top bar.</p><div class="prow"><button class="pb" data-padm="openmenu">Open the Admin menu</button></div></div>'; }      // (2026-11-17: 100-admin-menu.js)
 // developers only: a picture of their own (squeezed to 96 px)
 function profDevUpload(box) {
   var d = document.createElement('div'); d.className = 'pnote';
@@ -2429,7 +2468,7 @@ function profDevUpload(box) {
   };
 }
 document.addEventListener('click', function (ev) {
-  var b = ev.target.closest && ev.target.closest('#view-prof button, #view-lb button'); if (!b) return;
+  var b = ev.target.closest && ev.target.closest('#view-prof button, #view-lb button, #view-admin button'); if (!b) return;
   var L = window.HGGrapevine, d = b.dataset;
   if (d.ptab) { PROF.tab = d.ptab; PROF.grp = ''; }
   else if (d.pcat) { PROF.cat = d.pcat; PROF.grp = ''; }
@@ -2468,7 +2507,7 @@ document.addEventListener('click', function (ev) {
       if (!r.ok) { lo.textContent = r.err || 'Could not look that up.'; return; }
       if (r.saves) PROF.look = r;
       if (r.restored != null) { lo.textContent = 'Put back ' + r.restored + ' save(s) for ' + r.name + '. They load on their device within a minute (or when they close the game).'; return; }
-      var when = function (t) { return t ? new Date(t).toLocaleString() : '?'; };
+      var when = function (t) { return t ? hgTime(t) : '?'; };
       lo.innerHTML = '<b>' + profEsc(r.name) + '</b> \u00b7 last seen ' + profEsc(when(r.lastSeen)) + '<br>' + profFmt(r.goons, 'int') + ' goons, ' + profFmt(r.chips, 'int') + ' chips, ' + r.owned + ' shop items, ' + r.earned + ' earned<br>' +
         r.saves.length + ' saves (' + Math.round(r.saves.reduce(function (t, x) { return t + (x.bytes || 0); }, 0) / 1024) + ' KB), newest ' + profEsc(when(Math.max.apply(null, r.saves.map(function (x) { return x.at; }).concat([0])))) + '<br>' +
         'On ' + r.boards.length + ' leaderboards' + (r.boards.length ? ': ' + r.boards.slice(0, 12).map(function (b) { return profEsc(b.key) + ' #' + b.pos + ' (' + profFmt(b.s, 'int') + ')'; }).join(', ') : '') + '<br>' +
@@ -2515,7 +2554,12 @@ function hubToast(t) { var el = document.createElement('div'); el.className = 'h
 // - claims: unlocked achievements (gv/ach.js keeps them in 'hgach:v1'), Blocky waves cleared and ranks gained
 // - leaderboards: each game's best numbers, read from its own save (games do not have to report anything)
 // The server checks and caps every claim; this only says what happened.
-var FEED = { lastInput: 0, sent: {}, left: {}, uid: '' };
+var FEED = { lastInput: Date.now(), sent: {}, left: {}, uid: '' };
+// AFK rule (2026-11-17): after 30 minutes with no key, click, tap or mouse movement (in a game or the launcher) you
+// stop progressing: no play time, no goons for playing, no multiplayer bonus. The next input starts it again.
+var HG_IDLE_MS = 30 * 60000;
+function hgIdle() { return Date.now() - FEED.lastInput >= HG_IDLE_MS; }
+(function () { var mk = function () { FEED.lastInput = Date.now(); }; ['keydown', 'pointerdown', 'touchstart', 'wheel'].forEach(function (t) { document.addEventListener(t, mk, { passive: true, capture: true }); }); var n = 0; document.addEventListener('mousemove', function () { if (++n % 20 === 0) mk(); }, { passive: true, capture: true }); })();
 try { localStorage.removeItem('hgv:lbsent'); localStorage.removeItem('hgv:claimed'); } catch (e) {}      // (the old per-device memory: it made a second account, or a refused frame, never send)
 function feedRd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
 function feedNum(v) { v = Number(v); return isFinite(v) ? v : 0; }
@@ -2533,7 +2577,7 @@ setInterval(function () {
   var L = window.HGGrapevine; if (!L || !L.me() || !L.online()) return;
   if (typeof current !== 'undefined' && current && current.game) {
     feedWatch();
-    if (!document.hidden && Date.now() - FEED.lastInput < 65000) L.eco.play(current.game.name, true);
+    if (!document.hidden && !hgIdle()) L.eco.play(current.game.name, true);
   }
 }, 60000);
 function clickerTotal(key) {
@@ -2982,7 +3026,8 @@ function partyActivity() {
   var L = window.HGGrapevine; if (!L || !L.party || !L.online()) return;
   var g = typeof current !== 'undefined' && current && current.game;
   var gid = g ? Object.keys(INVITE_GAMES).filter(function (k) { return INVITE_GAMES[k] === g.dir; })[0] : null;
-  L.party.activity(g ? g.name.replace(/ [\d.]+$/, '') : null, g && gid === PARTY.lastGame ? PARTY.lastCode : null, gid || null);
+  var away = typeof hgIdle === 'function' && hgIdle();      // AFK for 30 minutes: still shown in the game, but no party code, so no multiplayer bonus
+  L.party.activity(g ? g.name.replace(/ [\d.]+$/, '') : null, g && gid === PARTY.lastGame && !away ? PARTY.lastCode : null, gid || null);
 }
 setInterval(partyActivity, 60000);
 function partyGameName(id) { var g = id === 'hub' ? null : inviteGame(id); return id === 'hub' ? 'Hub room' : g ? g.name.replace(/ [\d.]+$/, '') : id; }
@@ -3326,11 +3371,11 @@ function qolPlayerBar() {
     try { QOL.cur = null; document.title = title0; qolLogSave(); qolDecorate(); qolShelves(); qolApply(); } catch (e) {}
     return cp.apply(this, arguments);
   };
-  // time counts while the game is open, the page is showing and you touched the game in the last minute
+  // time counts while the game is open, the page is showing and you touched it in the last 30 minutes (hgIdle)
   setInterval(function () {
     if (!QOL.cur || document.hidden || !document.documentElement.classList.contains('playing')) return;
     try { if (typeof feedWatch === 'function') feedWatch(); } catch (e) {}
-    if (typeof FEED !== 'undefined' && Date.now() - FEED.lastInput > 60000) return;
+    if (typeof hgIdle === 'function' && hgIdle()) return;
     var lg = QOL.log[QOL.cur.dir]; if (!lg) return;
     lg.sec = (lg.sec || 0) + 15; lg.last = Date.now();
     if (Math.floor(lg.sec / 15) % 4 === 0) qolLogSave();
@@ -3610,7 +3655,7 @@ function actPaint() {
   var d = ACT.data, box = document.getElementById('act-home'); if (!d || !box) return;
   var today = d.perDay.filter(function (x) { return x.d === d.today; })[0] || { players: 0, minutes: 0, peak: 0 };
   var tile = function (n, label, sub) { return '<div class="act-tile"><b>' + n + '</b><span>' + label + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</div>'; };
-  var h = '<div class="act-head"><h2>Activity</h2><div class="rdesc">Live numbers from everyone playing Huntington Games.</div></div>' +
+  var h = '<div class="act-head"><h2>Activity</h2><div class="rdesc">Live numbers from everyone playing Huntington Games. Days run midnight to midnight, Eastern time.</div></div>' +
     '<div class="act-tiles">' + tile(d.online, 'online now') + tile(today.players, 'played today') + tile(actFmtMin(today.minutes), 'played today', 'all games together') + tile(today.peak, 'most online at once today') + '</div>';
   // most played: horizontal bars, one hue, values written at the end of each bar
   var games = ACT.span === 'week' ? d.week : d.month, top = games.slice(0, 12), max = Math.max(1, top.reduce(function (m, g) { return Math.max(m, g.minutes); }, 0));
@@ -3783,7 +3828,8 @@ function paLbTools(name) {
 function paClick(d, t) {
   if (d.padm && d.padm.indexOf('mod:') === 0) { paMod(d.padm.slice(4)); return true; }
   var L = window.HGGrapevine, nm = paName(); PA.name = nm;
-  if (d.padm === 'tag') { L.eco.tagSet(d.tag, d.on === '1').then(function (r) { hubToast(r.ok ? (d.on === '1' ? 'You wear the tag now.' : 'Tag taken off.') : r.err); profRender(); }); return true; }
+  if (d.padm === 'openmenu') { showTab('admin'); return true; }
+  if (d.padm === 'tag') { L.eco.tagSet(d.tag, d.on === '1').then(function (r) { hubToast(r.ok ? (d.on === '1' ? 'You wear the tag now.' : 'Tag taken off.') : r.err); profRender(); if (typeof admRender === 'function') setTimeout(admRender, 600); }); return true; }
   if (d.padm === 'admins') { L.eco.permsAdmin('list').then(paAdmins); return true; }
   if (d.padm === 'psave' || d.padm === 'premove') {
     var a = PA.admins && PA.admins.list[+d.i]; if (!a) return true;
@@ -3828,14 +3874,14 @@ function paModHtml(H) {
 }
 function paMod(op) {
   var L = window.HGGrapevine, out = document.getElementById('pa-modout'), v = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
-  var name = v('pa-mod-name').trim(), why = v('pa-mod-why').trim(), mins = +v('pa-mod-mins') || 60, ann = !!(document.getElementById('pa-mod-ann') || {}).checked;
+  var name = (v('pa-mod-name') || paName()).trim(), why = v('pa-mod-why').trim(), mins = +v('pa-mod-mins') || 60, ann = !!(document.getElementById('pa-mod-ann') || {}).checked;
   var say = function (t) { if (out) out.textContent = t; };
   if (op === 'list') {
     say('Loading...');
     return L.eco.mod('list').then(function (r) {
       if (!r.ok) return say(r.err || 'Could not load it.');
       var fx = r.fx.map(function (x) { var k = []; if (x.e.mute) k.push('muted'); if (x.e.slow) k.push('slow mode'); if (x.e.nick) k.push('renamed "' + x.e.nick.text + '"'); for (var f in (x.e.fx || {})) k.push(f); return x.name + ': ' + k.join(', '); });
-      var bans = r.bans.map(function (b) { return b.name + ': ' + (b.until ? 'banned until ' + new Date(b.until).toLocaleString() : 'banned for good') + (b.reason ? ' (' + b.reason + ')' : ''); });
+      var bans = r.bans.map(function (b) { return b.name + ': ' + (b.until ? 'banned until ' + hgTime(b.until) : 'banned for good') + (b.reason ? ' (' + b.reason + ')' : ''); });
       say((fx.length ? 'Effects:\n' + fx.join('\n') : 'Nobody is muted or under an effect.') + '\n\n' + (bans.length ? 'Bans:\n' + bans.join('\n') : 'Nobody is banned.'));
     });
   }
@@ -3844,17 +3890,18 @@ function paMod(op) {
   if (op === 'nick' && !why) return say('Type the new name in the reason box.');
   say('...');
   L.eco.mod(op, name, { mins: mins, secs: 30, text: why, announce: ann }).then(function (r) {
-    say(r.ok ? 'Done: ' + ({ warn: 'warned', mute: 'muted', slow: 'slow mode on', tempban: 'banned', ban: 'banned for good', unban: 'unbanned', clear: 'effects lifted', bonk: 'bonked', shame: 'shamed', nick: 'renamed' }[op] || op + ' on') + ' (' + (r.name || name) + ').' : (r.err || 'That did not work.'));
+    if (r.ok && op !== 'list' && typeof admLook === 'function' && !document.getElementById('view-admin').hidden) admLook();
+    say(r.ok ? 'Done: ' + ({ warn: 'warned' + (r.n ? ' (warning number ' + r.n + ')' : ''), clearwarns: 'warnings cleared', mute: 'muted', slow: 'slow mode on', tempban: 'banned', ban: 'banned for good', unban: 'unbanned', clear: 'effects lifted', bonk: 'bonked', shame: 'shamed', nick: 'renamed' }[op] || op + ' on') + ' (' + (r.name || name) + ').' : (r.err || 'That did not work.'));
   }).catch(function (e) { say(String(e && e.message || e)); });
 }
 // what a player sees from the admins, anywhere in the launcher (in a game too)
 function modMount() {
   var L = window.HGGrapevine; if (!L || modMount.done) return; modMount.done = true;
   L.on('modNotice', function (m) {
-    var ico = { warn: '⚠️', mute: '🔇', slow: '🐢', fun: '🎭', clear: '✅' }[m.kind] || '📣';
+    var ico = { warn: '⚠️', mute: '🔇', slow: '🐢', fun: '🎭', clear: '✅', report: '📨' }[m.kind] || '📣';
     if (m.kind === 'fun' || m.kind === 'clear') return hubToast(ico + ' ' + m.text);
     var box = document.createElement('div'); box.className = 'hubmodbox';
-    box.innerHTML = '<div class="hubmodcard"><div class="ico">' + ico + '</div><b>' + (m.kind === 'warn' ? 'A warning from the admins' : m.kind === 'mute' ? 'You are muted' : 'From the admins') + '</b><p>' + profEsc(m.text || '') + '</p><button type="button">OK</button></div>';
+    box.innerHTML = '<div class="hubmodcard"><div class="ico">' + ico + '</div><b>' + (m.kind === 'warn' ? 'A warning from the admins' + (m.n > 1 ? ' (number ' + m.n + ')' : '') : m.kind === 'mute' ? 'You are muted' : m.kind === 'report' ? 'About your report' : 'From the admins') + '</b><p>' + profEsc(m.text || '') + '</p>' + (m.late && m.at ? '<p class="pnote">Sent ' + hgTime(m.at) + (m.by ? ' by ' + profEsc(m.by) : '') + ', while you were away.</p>' : (m.kind === 'warn' ? '<p class="pnote">Warnings stay on your record. More of them lead to mutes and bans. See &#128220; Rules.</p>' : '')) + '<button type="button">OK</button></div>';
     box.querySelector('button').onclick = function () { box.remove(); };
     document.body.appendChild(box);
   });
@@ -4033,8 +4080,9 @@ function rbRun(name, look, out, apply) {
 // admins read what was really sent). Admins see the same button with a count, and it opens their inbox (also under
 // Profile, Admin tools). Reports go to the server (grapevine 078-reports.js); nothing is sent anywhere else.
 var REPORT = { kind: '', pre: null, open: 0, why: '' };
-var REPORT_WHY = { player: [['cheat', 'Cheating'], ['bully', 'Bullying or harassment'], ['language', 'Bad language'], ['name', 'Bad name or picture'], ['spam', 'Spam'], ['threat', 'Threats or scary stuff'], ['other', 'Something else']],
-  message: [['bully', 'Bullying or harassment'], ['language', 'Bad language'], ['spam', 'Spam'], ['threat', 'Threats or scary stuff'], ['other', 'Something else']] };
+// (2026-11-17) what you can report, as in the rules: slurs and sexual content yes, everyday swearing no (see Rules)
+var REPORT_WHY = { player: [['slur', 'Slurs or hate'], ['sexual', 'Sexual content'], ['bully', 'Bullying or harassment'], ['threat', 'Threats or scary stuff'], ['cheat', 'Cheating'], ['name', 'Bad name or picture'], ['alt', 'Alt account (ban dodging)'], ['spam', 'Spam'], ['other', 'Something else']],
+  message: [['slur', 'Slurs or hate'], ['sexual', 'Sexual content'], ['bully', 'Bullying or harassment'], ['threat', 'Threats or scary stuff'], ['spam', 'Spam'], ['other', 'Something else']] };
 function repEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function reportClose() { var d = document.getElementById('reportdlg'); d.hidden = true; d.innerHTML = ''; try { if (document.documentElement.classList.contains('playing')) frame.contentWindow.focus(); } catch (e) {} }
 function reportOpen(pre) {
@@ -4048,7 +4096,7 @@ function reportOpen(pre) {
 function reportPaint(done) {
   var d = document.getElementById('reportdlg'), k = REPORT.kind, pre = REPORT.pre, h = '<div class="rp-card" role="dialog" aria-modal="true" aria-label="Report"><button class="rp-x" data-rp="x" title="Close">&times;</button>';
   if (done) {
-    h += '<h2>&#9989; Sent. Thank you.</h2><p>An admin will look at it. You will not get in trouble for reporting something honestly.</p>' +
+    h += '<h2>&#9989; Sent. Thank you.</h2><p>An admin will look at it, and you will get a note back when they answer. You will not get in trouble for reporting something honestly.</p>' +
       (k === 'player' || k === 'message' ? '<p class="rp-dim">Tip: you can also block someone in Grapevine (press their name) so you stop seeing them.</p>' : '') + '<div class="rp-row"><button class="rp-btn" data-rp="x">Done</button></div>';
   } else if (!k) {
     h += '<h2>&#128681; What do you want to report?</h2><p class="rp-dim">It goes to the admins. Only they see it.</p><div class="rp-kinds">' +
@@ -4063,6 +4111,7 @@ function reportPaint(done) {
     if (k === 'message') h += '<div class="rp-quote"><b>' + repEsc(pre.who || 'Someone') + '</b> ' + repEsc(String(pre.snip || '').slice(0, 200)) + '</div>';
     if (k === 'player') h += '<label>Who? <span class="rp-dim">(their exact name)</span><input id="rp-who" maxlength="64" autocomplete="off" spellcheck="false" list="rp-names" value="' + repEsc(pre.who || '') + '"></label><datalist id="rp-names">' + reportNames().map(function (n) { return '<option value="' + repEsc(n) + '">'; }).join('') + '</datalist>';
     if (k === 'bug' || k === 'player') h += '<label>Which game? <span class="rp-dim">(if it was in one)</span><select id="rp-game"><option value="">Not in a game / the launcher itself</option>' + GAMES.map(function (g) { return '<option' + (pre.game === g.name ? ' selected' : '') + '>' + repEsc(g.name) + '</option>'; }).join('') + '</select></label>';
+    if (k === 'player' || k === 'message') h += '<p class="rp-dim rp-rules">Slurs and sexual content: report them. Everyday swearing is allowed. <button class="rp-link" data-rp="rules">What can I report?</button></p>';
     if (REPORT_WHY[k]) h += '<div class="rp-lbl">Why?</div><div class="rp-whys">' + REPORT_WHY[k].map(function (w) { return '<button class="rp-why' + (REPORT.why === w[0] ? ' on' : '') + '" data-rpw="' + w[0] + '">' + w[1] + '</button>'; }).join('') + '</div>';
     h += '<label>' + (k === 'bug' ? 'What went wrong? What were you doing?' : k === 'other' ? 'What should the admins know?' : 'What happened? <span class="rp-dim">(optional, but it helps)</span>') + '<textarea id="rp-text" maxlength="800" rows="4" placeholder="' + (k === 'bug' ? 'e.g. On level 3 I fell through the floor after jumping on the spring.' : 'A few words is enough.') + '">' + repEsc(REPORT.text || '') + '</textarea></label>' +
       '<div id="rp-err" class="rp-err"></div><div class="rp-row"><button class="rp-btn ghost" data-rpk="">Back</button><button class="rp-btn send" data-rp="send">Send report</button></div>';
@@ -4093,6 +4142,7 @@ document.getElementById('reportdlg').addEventListener('click', function (e) {
   var b = t.closest && t.closest('[data-rp],[data-rpk],[data-rpw],[data-rpa]'); if (!b) return;
   var tx = d.querySelector('#rp-text'); if (tx) REPORT.text = tx.value;
   if (b.dataset.rp === 'x') return reportClose();
+  if (b.dataset.rp === 'rules') { reportClose(); return rulesOpen('report'); }
   if (b.dataset.rp === 'chat') { reportClose(); if (document.documentElement.classList.contains('playing')) return; showTab('chat'); return; }
   if (b.dataset.rp === 'send') return reportSend();
   if (b.dataset.rp === 'new') { REPORT.kind = ''; return reportPaint(); }
@@ -4115,7 +4165,7 @@ function reportInboxPaint(m) {
   l.className = ''; l.innerHTML = m.list.length ? m.list.map(function (r) {
     return '<div class="rp-item' + (r.state === 'open' ? '' : ' closed') + '"><div class="rp-top"><b>' + (KIND[r.kind] || r.kind) + '</b> <span class="rp-tag">' + repEsc(r.whyText || r.why) + '</span>' +
       (r.who ? ' about <b>' + repEsc(r.who.n) + '</b>' + (r.who.u ? '' : ' <span class="rp-dim">(no such account)</span>') + (r.times > 1 ? ' <span class="rp-tag hot">' + r.times + ' reports</span>' : '') : '') +
-      (r.game ? ' in <i>' + repEsc(r.game) + '</i>' : '') + '<span class="rp-when">' + new Date(r.at).toLocaleString() + ' by ' + repEsc(r.by.n) + '</span></div>' +
+      (r.game ? ' in <i>' + repEsc(r.game) + '</i>' : '') + '<span class="rp-when">' + hgTime(r.at) + ' by ' + repEsc(r.by.n) + '</span></div>' +
       (r.msg ? '<div class="rp-quote">' + repEsc(r.msg.text) + '</div>' : '') + (r.text ? '<div class="rp-text">' + repEsc(r.text) + '</div>' : '') +
       (r.note ? '<div class="rp-note">Note: ' + repEsc(r.note) + '</div>' : '') +
       '<div class="rp-acts">' + (r.state === 'open' ? '<button class="rp-btn small" data-rpa="close" data-id="' + r.id + '">Mark as handled</button>' : '<span class="rp-dim">Handled' + (r.closedBy ? ' by ' + repEsc(r.closedBy) : '') + '</span> <button class="rp-btn small ghost" data-rpa="reopen" data-id="' + r.id + '">Reopen</button>') +
@@ -4139,6 +4189,251 @@ document.getElementById('preport').onclick = function () { reportOpen({}); };
   var asked = false;
   L.on('reports', function (m) { REPORT.open = m.open || 0; reportBadge(); if (m.open && typeof window.HG_notify === 'function' && !REPORT.said) { REPORT.said = 1; setTimeout(function () { REPORT.said = 0; }, 60000); window.HG_notify({ kind: 'report', title: 'New report', text: 'Someone sent the admins a report. Press Reports to read it.' }); } });
   L.on('eco', function () { var e = L.eco.state(); reportBadge(); if (e && e.dev && !asked && L.online()) { asked = true; L.eco.reports('list').then(function (m) { REPORT.open = (m && m.open) || 0; reportBadge(); }, function () { asked = false; }); } });
+})();
+
+// ===== Rules (2026-11-17): the Terms of Service and "what you can report", inside the launcher =====
+// The 📜 Rules button in the top bar (and the link in the report dialog) opens this. The terms are the same text as the
+// TOS tab of the Huntington Games document; when one changes, change the other (and the date).
+var RULES = { tab: 'report' };
+var RULES_DATE = 'November 17, 2026';
+var RULES_TOS = [
+  ['', ['These terms apply to the Huntington Games Launcher, every game it opens, and all of the code, art, sounds, levels and text in the Huntington Games document. By copying, running or playing any of it, you agree to these terms. If you do not agree, do not use the games.']],
+  ['1. Ownership', ['Huntington Games and its creators own all of the games, the Launcher, and everything in them, including the code, art, sounds, levels, names and ideas.', 'Neon Drift: Shadow Reign and Neon Dash were made by Levi and belong to Levi. These terms cover them too.', 'Bean And Brew Original and Market Life were made by Robbie and belong to Robbie. These terms cover them too.', 'Being allowed to play does not make you an owner of anything, and it does not give you any rights beyond the ones listed in section 2.']],
+  ['2. What you are allowed to do', ['Play every game for free, for your own fun.', 'Copy the code from the Launcher tab and paste it into jsfiddle.net or jsbin.com, as shown in the How to Set Up the Launcher tab.', 'Save your own fiddle or bin that holds the unchanged Launcher code, and bookmark it for yourself.', 'Share the link to the document so other people can set up the Launcher themselves.', 'Use the features built into the games and the Launcher, such as offline copies made with the Download offline copy button, multiplayer codes, level editor share codes and save codes.', 'Take screenshots, record videos or stream yourself playing, as long as you say the games are from Huntington Games.', 'Send ideas and bug reports through the Feedback doc linked in the Information tab, or with the 🚩 Report button.']],
+  ['3. What you are not allowed to do', ['Post, upload or host any game, the Launcher, or any part of their code anywhere else. That includes other websites, Google Sites, other Google Docs or Drive files, GitHub, Replit, CodePen, unblocked games sites, group chats and file sharing services. The only official copy is in the document.', 'Give the code to anyone. Share the link to the document instead.', 'Change, edit, remix, "remaster", translate or add to our code or games, or release anything made from them. This applies even if you give credit and even if you changed a lot of it. (This can be changed if given permission by the creator of the ORIGINAL game.)', 'Say that any of our games, levels, art or code are yours, or remove or change the Huntington Games name or credits.', 'Sell, trade or charge for our games or code, or put them behind ads, paywalls or logins that are not ours.', 'Cheat in multiplayer with edited code or tools, or interfere with other players\' games, saves or connections.', 'Use a loophole to get around these rules. If section 2 does not clearly allow something, it is not allowed unless you ask first and get permission.']],
+  ['4. Copies from other people', ['Only the code in the document is official. Code from anyone else, or from any other site, is unofficial.', 'Unofficial copies may be outdated, broken, or changed to include harmful code. Do not run them.', 'If you see our games on another site, or someone claiming them as their own, please report it.']],
+  ['5. Playing fairly', ['Use player names and messages that are appropriate for school.', 'Only share multiplayer codes with people you want to play with.', 'Follow your school\'s rules for school devices. These terms do not give you permission to break them.', 'If you are caught hacking, you will be banned.', 'One account per person. Alternate accounts (alts) are not allowed and will be banned.', 'Admins can warn, mute or ban you for breaking these rules. Warnings stay on your record, and more of them lead to mutes and bans.']],
+  ['6. Your data', ['Your progress and settings are saved in your own browser. If you make a Grapevine account, your account name, chat messages and cloud saves are kept on the Huntington Games server, so you can chat and keep your progress on other devices. We never ask for your real name, email or password from another site.', 'Clearing your browsing data erases progress that is not saved to an account.', 'The Launcher downloads the games from GitHub and the jsDelivr network, which may keep normal web request logs.', 'Multiplayer connects players through public connection services. As in any online game, the players you connect with and those services can see your network (IP) address.']],
+  ['7. Enforcement', ['If these terms are broken, Huntington Games may shut down the copies involved, change or remove access to any game or account, and ask websites to take down copies that are not allowed.']],
+  ['8. No guarantees', ['The games are free and provided as they are, and they may have bugs.', 'Games, features and saves may change or be removed at any time.', 'Huntington Games is not responsible for lost progress, or for anything caused by unofficial copies.']],
+  ['9. Changes to these terms', ['These terms can change at any time. The newest version is always the one in the TOS tab of the document (and here), and the date at the top shows when it last changed.', 'Using the games after a change means you accept the new terms.']],
+  ['10. Downfall', ['We are sponsoring Downfall (owned by Robbie and Levi). If you are caught stealing code from Downfall you will be banned, and rules apply to any affiliated projects.', 'Ultimate Game Storage is fair play as it was made by another person with the same source doc.']],
+  ['11. Grapevine and chat', ['Do not say the n-word. It bans you automatically: 1 day, then 3 days, then 7 days, then for good.', 'No slurs, hate speech or sexual content, in messages, names or pictures.', 'Everyday swearing is allowed.', 'No bullying, harassment, threats or spam.', 'No alt accounts. One Grapevine account per person: alts are banned, and so is the main account behind them.', 'Not sure whether something is allowed? Ask an admin or use the Feedback doc before you do it.']]
+];
+var RULES_REPORT = {
+  yes: [['🚫', 'Slurs or hate', 'Slurs of any kind, the n-word, hate against someone for who they are.'], ['🔞', 'Sexual content', 'Sexual messages, names, pictures or jokes.'], ['😠', 'Bullying or harassment', 'Picking on someone, again and again, or getting others to.'], ['⚠️', 'Threats', 'Threatening to hurt someone, or anything scary.'],
+    ['🕹️', 'Cheating', 'Hacked or edited games in multiplayer, messing with other players.'], ['👥', 'Alt accounts', 'A second account, especially to get around a ban.'], ['📛', 'Bad names or pictures', 'A name or profile picture that breaks these rules.'], ['📢', 'Spam', 'Flooding a chat with the same thing.'], ['🐞', 'Bugs', 'Anything broken, stuck or unfair in a game or the launcher.']],
+  no: [['🤬', 'Everyday swearing', 'Normal swear words are allowed. Reporting them does nothing.'], ['😤', 'Trash talk in a game', '"Get good", "ez" and friendly teasing, as long as it is not bullying.'], ['🏆', 'Losing', 'Someone beat you fairly, or will not play with you.']]
+};
+function rulesEsc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function rulesOpen(tab) {
+  if (tab) RULES.tab = tab;
+  var d = document.getElementById('rulesdlg');
+  if (!d) { d = document.createElement('div'); d.id = 'rulesdlg'; document.body.appendChild(d); d.addEventListener('click', rulesClick); }
+  d.hidden = false; rulesPaint();
+}
+function rulesClose() { var d = document.getElementById('rulesdlg'); if (d) { d.hidden = true; d.innerHTML = ''; } }
+function rulesPaint() {
+  var d = document.getElementById('rulesdlg'), t = RULES.tab, h = '<div class="rl-card" role="dialog" aria-modal="true" aria-label="Rules"><button class="rp-x" data-rl="x" title="Close">&times;</button><h2>📜 Rules</h2>' +
+    '<div class="rl-tabs"><button data-rl-tab="report" class="' + (t === 'report' ? 'on' : '') + '">What you can report</button><button data-rl-tab="tos" class="' + (t === 'tos' ? 'on' : '') + '">Terms of Service</button></div><div class="rl-body">';
+  if (t === 'report') {
+    var row = function (x) { return '<div class="rl-item"><span>' + x[0] + '</span><div><b>' + rulesEsc(x[1]) + '</b><small>' + rulesEsc(x[2]) + '</small></div></div>'; };
+    h += '<h3 class="rl-yes">Report these</h3><div class="rl-grid">' + RULES_REPORT.yes.map(row).join('') + '</div>' +
+      '<h3 class="rl-no">Not against the rules</h3><div class="rl-grid">' + RULES_REPORT.no.map(row).join('') + '</div>' +
+      '<h3>What happens next</h3><ul class="rl-list"><li>Only the admins see your report. You will not get in trouble for reporting something honestly.</li><li>An admin reads it and decides: a warning, a mute, a ban, or no action.</li><li>You get a note back when they answer, even if you are offline (you see it next time you sign in).</li><li>Reporting people on purpose when they did nothing wrong can get <i>you</i> a warning.</li></ul>' +
+      '<div class="rp-row"><button class="rp-btn" data-rl="report">🚩 Make a report</button></div>';
+  } else {
+    h += '<p class="rl-date">Last updated: ' + RULES_DATE + '</p>' + RULES_TOS.map(function (s) {
+      return (s[0] ? '<h3>' + rulesEsc(s[0]) + '</h3>' : '') + (s[0] ? '<ul class="rl-list">' + s[1].map(function (p) { return '<li>' + rulesEsc(p) + '</li>'; }).join('') + '</ul>' : '<p>' + rulesEsc(s[1][0]) + '</p>');
+    }).join('');
+  }
+  d.innerHTML = h + '</div></div>';
+}
+function rulesClick(e) {
+  var b = e.target.closest && e.target.closest('[data-rl], [data-rl-tab]');
+  if (!b) { if (e.target.id === 'rulesdlg') rulesClose(); return; }
+  if (b.dataset.rlTab) { RULES.tab = b.dataset.rlTab; rulesPaint(); var bd = document.querySelector('#rulesdlg .rl-body'); if (bd) bd.scrollTop = 0; }
+  else if (b.dataset.rl === 'x') rulesClose();
+  else if (b.dataset.rl === 'report') { rulesClose(); reportOpen({}); }
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { var d = document.getElementById('rulesdlg'); if (d && !d.hidden) rulesClose(); } });
+document.getElementById('rulesBtn').onclick = function () { rulesOpen(); };
+window.HG_rules = rulesOpen;
+
+// ===== The Admin menu (2026-11-17): everything an admin or the owner can do, in one place, from the top bar =====
+// The 🛡️ Admin tab shows only for accounts with admin powers. Sections, left to right in the order you need them:
+//   Overview (your powers, your tag, what needs you)  ·  Reports (answer them: act or dismiss, with a note to the reporter)
+//   Players (one player: warnings, mutes, bans, then their progress, goons and titles)  ·  Muted & banned  ·  Admins  ·  Server
+// Every power is still checked by the server; this only draws what you may use. The buttons reuse the admin tools in
+// 098-admin.js (data-padm), so the profile click handler (040) serves them here too.
+var ADM = { sec: 'home', reps: null, repFilter: 'open', info: null };
+var ADM_SECS = [['home', '🏠', 'Overview'], ['reports', '🚩', 'Reports'], ['players', '🧑', 'Players'], ['bans', '🔇', 'Muted & banned'], ['admins', '🛡️', 'Admins'], ['server', '🖥️', 'Server']];
+function admPerms() { var L = window.HGGrapevine, e = L && L.eco && L.eco.state(); return { e: e || {}, P: (e && e.perms) || [], owner: !!(e && e.owner) }; }
+function admIs() { var p = admPerms(); return p.owner || p.P.length > 0; }
+function admH(p) { return admPerms().P.indexOf(p) >= 0; }
+function admTabShow() { var t = document.getElementById('tab-admin'); if (t) t.hidden = !admIs(); }
+function admSecOk(k) {
+  if (k === 'reports') return admH('reports');
+  if (k === 'players') return admH('moderate') || admH('ban') || admH('accounts') || admH('progress') || admH('leaderboards') || admH('goons') || admH('titles') || admH('reports');
+  if (k === 'bans') return admH('moderate') || admH('ban');
+  if (k === 'admins') return admH('admins');
+  if (k === 'server') return admH('dbuse');
+  return true;
+}
+function admRender() {
+  var box = document.getElementById('view-admin'); if (!box || box.hidden) return;
+  var L = window.HGGrapevine, c = L && L.eco && L.eco.catalog();
+  if (!L || !L.me || !L.me() || !admIs()) { box.innerHTML = '<div class="pempty">Only admins can open this.</div>'; return; }
+  if (!c) { box.innerHTML = '<div class="pempty">Loading...</div>'; L.eco.refresh(true); return; }
+  if (!admSecOk(ADM.sec)) ADM.sec = 'home';
+  var nav = ADM_SECS.filter(function (s) { return admSecOk(s[0]); }).map(function (s) {
+    var n = s[0] === 'reports' && REPORT.open ? ' <span class="rp-n">' + REPORT.open + '</span>' : '';
+    return '<button class="adm-nav' + (ADM.sec === s[0] ? ' on' : '') + '" data-adm="' + s[0] + '"><span>' + s[1] + '</span>' + s[2] + n + '</button>';
+  }).join('');
+  box.innerHTML = '<div class="adm"><aside class="adm-side"><div class="adm-title">🛡️ Admin</div>' + nav + '</aside><section class="adm-main padmin" id="adm-main">' + admSection(ADM.sec, c) + '</section></div>';
+  admAfter(ADM.sec);
+}
+function admHead(t, sub) { return '<div class="adm-h"><h2>' + t + '</h2>' + (sub ? '<p class="pnote">' + sub + '</p>' : '') + '</div>'; }
+function admSection(k, c) {
+  var p = admPerms(), e = p.e;
+  if (k === 'home') {
+    var names = { reports: 'reports', moderate: 'warn and mute', ban: 'bans', announce: 'announcements', inspect: 'console', peek: 'read any chat', rooms: 'rooms', titles: 'titles', goons: 'goons', accounts: 'accounts', progress: 'progress', leaderboards: 'leaderboards', shop: 'free shop', dbuse: 'database use', admins: 'manage admins' };
+    var me = window.HGGrapevine.me(), mine = (window.HGGrapevine.eco.cos([me.userId]) || {})[me.userId] || {}, tg = mine.tg || [], tag = p.owner ? 'owner' : 'admin', on = tg.indexOf(tag) >= 0;
+    var tiles = [];
+    if (admH('reports')) tiles.push('<button class="adm-tile' + (REPORT.open ? ' hot' : '') + '" data-adm="reports"><b>' + (REPORT.open || 0) + '</b><span>open report' + (REPORT.open === 1 ? '' : 's') + '</span></button>');
+    if (admSecOk('players')) tiles.push('<button class="adm-tile" data-adm="players"><b>🔎</b><span>look up a player</span></button>');
+    if (admSecOk('bans')) tiles.push('<button class="adm-tile" data-adm="bans"><b>🔇</b><span>muted &amp; banned now</span></button>');
+    tiles.push('<button class="adm-tile" data-adm-go="act"><b>📈</b><span>player activity</span></button>');
+    return admHead('Overview', p.owner ? 'You are the owner: you have every power.' : 'Your powers: ' + (p.P.map(function (x) { return names[x] || x; }).join(', ') || 'none') + '. The owner decides these.') +
+      '<div class="adm-tiles">' + tiles.join('') + '</div>' +
+      '<h4>Your tag</h4><p class="pnote">An <b>' + (p.owner ? '★ OWNER' : 'ADMIN') + '</b> tag next to your name everywhere (chat, profile, leaderboards). Nobody can fake it. Wear it only when you want to.</p>' +
+      '<div class="prow"><button class="pb' + (on ? ' on' : '') + '" data-padm="tag" data-tag="' + tag + '" data-on="' + (on ? 0 : 1) + '">' + (on ? 'Wearing it: take it off' : 'Wear the ' + (p.owner ? 'Owner' : 'Admin') + ' tag') + '</button></div>' +
+      '<h4>How it works</h4><ul class="adm-how"><li><b>Reports</b>: read what was sent, then warn, mute, ban or dismiss. The person who reported it gets your note.</li>' +
+      '<li><b>Warnings</b> are kept on the player\'s record. They see one the moment you send it, or the next time they sign in.</li>' +
+      '<li>The <b>n-word</b> bans by itself: 1 day, then 3, then 7, then for good. Everyday swearing is allowed (see 📜 Rules).</li></ul>';
+  }
+  if (k === 'reports') {
+    var f = ADM.repFilter;
+    return admHead('Reports', 'Newest first. Pick what to do, write a note for the person who reported it (they see it), and press Send.') +
+      '<div class="adm-seg">' + [['open', 'Open'], ['closed', 'Handled'], ['all', 'All']].map(function (x) { return '<button data-adm-rf="' + x[0] + '" class="' + (f === x[0] ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') +
+      '<button data-rp-new="1" class="ghost">Make a report myself</button></div><div id="adm-replist" class="rp-dim">Loading...</div>';
+  }
+  if (k === 'players') {
+    var H = admH, mins = [[10, '10 minutes'], [60, '1 hour'], [360, '6 hours'], [1440, '1 day'], [4320, '3 days'], [10080, '7 days']];
+    var h = admHead('Players', 'Type their exact account name and press Look up. Then use the tools below on them.') +
+      '<div class="prow"><input id="pa-look" maxlength="40" placeholder="Their exact name" autocomplete="off" value="' + profEsc(PA.name || '') + '" style="flex:1;min-width:180px"><button class="pb" data-adm-look="1">Look up</button></div>' +
+      '<div id="adm-card" class="adm-card">' + admCard() + '</div>';
+    if (H('moderate') || H('ban')) {
+      h += '<h4>Warn, mute or ban</h4><p class="pnote">The reason is shown to them (and in #main when you tick the box).</p>' +
+        '<div class="prow"><select id="pa-mod-mins">' + mins.map(function (m) { return '<option value="' + m[0] + '"' + (m[0] === 60 ? ' selected' : '') + '>' + m[1] + '</option>'; }).join('') + '</select>' +
+        '<input id="pa-mod-why" maxlength="200" placeholder="Reason (or the new name, for Rename)" autocomplete="off" style="flex:1;min-width:180px"><label class="pnote"><input type="checkbox" id="pa-mod-ann"> say it in #main</label></div>' +
+        '<div class="prow">' + (H('moderate') ? '<button class="pb" data-padm="mod:warn">⚠️ Warn</button><button class="pb" data-padm="mod:mute">🔇 Mute</button><button class="pb" data-padm="mod:slow" title="One message every 30 seconds">🐢 Slow mode</button>' : '') +
+        (H('ban') ? '<button class="pb" data-padm="mod:tempban">⏳ Ban for that long</button><button class="pb warn" data-padm="mod:ban">🔨 Ban for good</button><button class="pb ghost" data-padm="mod:unban">Unban</button>' : '') +
+        (H('moderate') ? '<button class="pb ghost" data-padm="mod:clear">Lift effects</button><button class="pb ghost" data-padm="mod:clearwarns">Clear warnings</button>' : '') + '</div>' +
+        (H('moderate') ? '<p class="pnote" style="margin-top:8px">For fun (they last as long as the time above):</p><div class="prow pafun">' + PA_MOD_FUN.map(function (fx) { return '<button class="pb" data-padm="mod:' + fx[0] + '" title="' + profEsc(fx[2]) + '">' + fx[1] + '</button>'; }).join('') + '</div>' : '') +
+        '<div id="pa-modout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></div>';
+    }
+    var pt = H('accounts') || H('progress') || H('leaderboards') || H('goons') || H('titles');
+    if (pt) {
+      h += '<h4>Account and progress</h4><div class="prow">' + (H('accounts') ? '<button class="pb" data-padm="look">Saves, goons and boards</button>' : '') +
+        (H('progress') ? '<button class="pb" data-padm="edit">Edit progress</button>' : '') + (H('leaderboards') ? '<button class="pb" data-padm="lbtools">Leaderboards</button>' : '') + '</div>';
+      if (H('goons')) h += '<div class="prow"><input id="pa-n" type="number" min="-100000" max="1000000" value="5" style="width:110px"><button class="pb" data-padm="goons">Give goons</button><button class="pb" data-padm="chips">Give casino chips</button></div>';
+      if (H('titles')) {
+        var titles = c.items.filter(function (i) { return i.k === 'title' && (i.x === 'Given by an admin' || i.ra); });
+        h += '<div class="prow"><select id="pa-title">' + titles.map(function (t) { return '<option value="' + profEsc(t.id) + '">' + profEsc(t.n) + (t.ra ? ' (earned in a game)' : '') + '</option>'; }).join('') + '</select>' +
+          '<button class="pb" data-padm="give">Give title</button><button class="pb ghost" data-padm="take">Take it back</button></div>' +
+          '<div class="prow"><input id="pa-ctext" maxlength="24" placeholder="A custom title, e.g. Pizza Lord" autocomplete="off"><button class="pb" data-padm="custom">Give custom title</button></div>';
+      }
+      h += '<div id="pa-lookout" class="pnote" style="white-space:pre-wrap;margin:8px 0 0">' + (PA.out || '') + '</div>';
+    }
+    return h;
+  }
+  if (k === 'bans') return admHead('Muted & banned', 'Who is under an effect or banned right now. To change one, look them up under Players.') + '<div class="prow"><button class="pb ghost" data-padm="mod:list">Refresh</button></div><div id="pa-modout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0">Loading...</div>';
+  if (k === 'admins') return admHead('Admins', 'Give each admin only what they need. Changes work at once.') + '<div id="pa-admins">Loading...</div>';
+  if (k === 'server') return admHead('Server', 'How much data the database has sent the server since it last started (the free plan allows about 5 GB a month).') + '<div class="prow"><button class="pb" data-padm="dbout">Check now</button><button class="pb ghost" data-adm-go="act">Player activity</button></div><pre id="pa-dbout" class="pnote" style="white-space:pre-wrap;margin:6px 0 0"></pre>';
+  return '';
+}
+// the player card: warnings, effects, ban and reports, from the server (smod 'info')
+function admCard() {
+  var r = ADM.info; if (!r) return '<p class="pnote">Nobody looked up yet.</p>';
+  if (!r.ok) return '<p class="pnote">' + profEsc(r.err || 'Could not look that up.') + '</p>';
+  var fx = [], e = r.fx || {}; if (e.mute) fx.push('muted until ' + hgTime(e.mute)); if (e.slow) fx.push('slow mode'); if (e.nick) fx.push('renamed "' + profEsc(e.nick.text) + '"'); for (var k in (e.fx || {})) fx.push(k);
+  return '<div class="adm-pc"><b class="adm-pn">' + profEsc(r.name) + '</b>' +
+    '<span class="rp-tag' + (r.count ? ' hot' : '') + '">' + r.count + ' warning' + (r.count === 1 ? '' : 's') + '</span>' +
+    '<span class="rp-tag">' + r.reports + ' report' + (r.reports === 1 ? '' : 's') + ' about them</span>' +
+    (r.ban ? '<span class="rp-tag hot">' + (r.ban.until ? 'banned until ' + hgTime(r.ban.until) : 'banned for good') + '</span>' : '') +
+    (fx.length ? '<span class="rp-tag">' + fx.join(', ') + '</span>' : '') + '</div>' +
+    (r.warns && r.warns.length ? '<div class="adm-warns">' + r.warns.map(function (w) { return '<div>⚠️ <b>' + profEsc(w.why) + '</b> <span class="rp-dim">' + hgTime(w.at) + ' by ' + profEsc(w.by) + '</span></div>'; }).join('') + '</div>' : '');
+}
+function admLook() {
+  var nm = paName(), L = window.HGGrapevine; PA.name = nm; if (!nm) return hubToast('Type their name first.');
+  var card = document.getElementById('adm-card'); if (card) card.innerHTML = '<p class="pnote">Asking...</p>';
+  L.eco.mod('info', nm).then(function (r) { ADM.info = r; var c2 = document.getElementById('adm-card'); if (c2) c2.innerHTML = admCard(); }, function (er) { ADM.info = { ok: false, err: String(er && er.message || er) }; var c2 = document.getElementById('adm-card'); if (c2) c2.innerHTML = admCard(); });
+}
+function admAfter(k) {
+  var L = window.HGGrapevine;
+  if (k === 'reports') admRepLoad();
+  else if (k === 'bans') paMod('list');
+  else if (k === 'admins') L.eco.permsAdmin('list').then(paAdmins);
+}
+// ----- reports, answered here -----
+function admRepLoad() { window.HGGrapevine.eco.reports('list').then(function (m) { if (m && m.list) { ADM.reps = m; REPORT.open = m.open || 0; reportBadge(); } admRepPaint(); }, function () { var l = document.getElementById('adm-replist'); if (l) l.textContent = 'Could not load the reports.'; }); }
+var ADM_ACTS = [['dismiss', 'Dismiss (no action)', ''], ['warn', '⚠️ Warn them', 'moderate'], ['mute60', '🔇 Mute 1 hour', 'moderate'], ['mute1440', '🔇 Mute 1 day', 'moderate'], ['tempban1440', '⏳ Ban 1 day', 'ban'], ['tempban4320', '⏳ Ban 3 days', 'ban'], ['tempban10080', '⏳ Ban 7 days', 'ban'], ['ban', '🔨 Ban for good', 'ban']];
+function admRepPaint() {
+  var l = document.getElementById('adm-replist'), m = ADM.reps; if (!l || !m) return;
+  var KIND = { player: '🧑 Player', message: '💬 Message', bug: '🐞 Bug', other: '❓ Other' }, f = ADM.repFilter;
+  var list = m.list.filter(function (r) { return f === 'all' || (f === 'open' ? r.state === 'open' : r.state !== 'open'); });
+  l.className = '';
+  l.innerHTML = list.length ? list.map(function (r) {
+    var acts = ADM_ACTS.filter(function (a) { return (!a[2] || admH(a[2])) && (a[0] === 'dismiss' || (r.who && r.who.u)); });
+    return '<div class="rp-item' + (r.state === 'open' ? '' : ' closed') + '" data-rid="' + r.id + '"><div class="rp-top"><b>' + (KIND[r.kind] || r.kind) + '</b> <span class="rp-tag">' + repEsc(r.whyText || r.why) + '</span>' +
+      (r.who ? ' about <b>' + repEsc(r.who.n) + '</b>' + (r.who.u ? ' <button class="rp-link" data-adm-who="' + repEsc(r.who.n) + '">look up</button>' : ' <span class="rp-dim">(no such account)</span>') + (r.times > 1 ? ' <span class="rp-tag hot">' + r.times + ' reports</span>' : '') + (r.warns ? ' <span class="rp-tag hot">' + r.warns + ' warning' + (r.warns === 1 ? '' : 's') + '</span>' : '') : '') +
+      (r.game ? ' in <i>' + repEsc(r.game) + '</i>' : '') + '<span class="rp-when">' + hgTime(r.at) + ' by ' + repEsc(r.by.n) + '</span></div>' +
+      (r.msg ? '<div class="rp-quote">' + repEsc(r.msg.text) + '</div>' : '') + (r.text ? '<div class="rp-text">' + repEsc(r.text) + '</div>' : '') +
+      (r.note ? '<div class="rp-note">Admin note: ' + repEsc(r.note) + '</div>' : '') +
+      (r.state === 'open'
+        ? '<div class="adm-resolve"><select class="adm-act">' + acts.map(function (a) { return '<option value="' + a[0] + '">' + a[1] + '</option>'; }).join('') + '</select>' +
+          '<input class="adm-reason" maxlength="200" placeholder="Reason they see (default: ' + repEsc(r.whyText || 'breaking the rules') + ')">' +
+          '<textarea class="adm-note" maxlength="300" rows="2" placeholder="Note to ' + repEsc(r.by.n) + ' (optional, they see it)"></textarea>' +
+          '<div class="prow"><button class="pb" data-adm-send="' + r.id + '">Send</button><button class="pb ghost" data-rpa="note" data-id="' + r.id + '">Note for admins</button></div></div>'
+        : '<div class="rp-acts"><span class="rp-dim">' + (r.did ? repEsc(r.did[0].toUpperCase() + r.did.slice(1)) : 'Handled') + (r.closedBy ? ' by ' + repEsc(r.closedBy) : '') + (r.closedAt ? ', ' + hgTime(r.closedAt) : '') + '</span>' +
+          (r.reply ? ' <span class="rp-note">Told the reporter: ' + repEsc(r.reply) + '</span>' : '') + ' <button class="rp-btn small ghost" data-rpa="reopen" data-id="' + r.id + '">Reopen</button></div>') +
+      '</div>';
+  }).join('') : '<p class="rp-dim">' + (f === 'open' ? 'No open reports. Nice and quiet.' : 'Nothing here.') + '</p>';
+}
+function admSend(id) {
+  var it = document.querySelector('.rp-item[data-rid="' + id + '"]'); if (!it) return;
+  var v = it.querySelector('.adm-act').value, reason = it.querySelector('.adm-reason').value.trim(), note = it.querySelector('.adm-note').value.trim();
+  var act = v.replace(/\d+$/, ''), mins = +(v.match(/\d+$/) || [0])[0] || undefined, r = (ADM.reps.list.filter(function (x) { return x.id === id; })[0]) || {};
+  if ((act === 'ban' || act === 'tempban') && !confirm((act === 'ban' ? 'Ban ' + (r.who && r.who.n) + ' for good?' : 'Ban ' + (r.who && r.who.n) + ' for ' + it.querySelector('.adm-act').selectedOptions[0].text.replace(/^\W+Ban /, '') + '?'))) return;
+  var b = it.querySelector('[data-adm-send]'); b.disabled = true; b.textContent = 'Sending...';
+  window.HGGrapevine.eco.reportResolve(id, act, { mins: mins, reason: reason, note: note }).then(function (m) {
+    if (m && m.ok === false) { b.disabled = false; b.textContent = 'Send'; return hubToast(m.err || 'That did not work.'); }
+    hubToast(act === 'dismiss' ? 'Dismissed. ' + (r.by ? r.by.n : 'The reporter') + ' gets your note.' : 'Done. ' + (r.by ? r.by.n : 'The reporter') + ' is told.');
+    admRepLoad();
+  }, function (er) { b.disabled = false; b.textContent = 'Send'; hubToast(String(er && er.message || er)); });
+}
+// ----- wiring -----
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest && ev.target.closest('#view-admin [data-adm], #view-admin [data-adm-rf], #view-admin [data-adm-look], #view-admin [data-adm-who], #view-admin [data-adm-send], #view-admin [data-adm-go], #view-admin [data-rp-new], #view-admin [data-rpa]');
+  if (!b) return; var d = b.dataset;
+  if (d.adm) { ADM.sec = d.adm; admRender(); }
+  else if (d.admRf) { ADM.repFilter = d.admRf; [].forEach.call(document.querySelectorAll('[data-adm-rf]'), function (x) { x.classList.toggle('on', x === b); }); admRepPaint(); }
+  else if (d.admLook) admLook();
+  else if (d.admWho) { PA.name = d.admWho; ADM.sec = 'players'; admRender(); admLook(); }
+  else if (d.admSend) admSend(d.admSend);
+  else if (d.admGo) showTab(d.admGo);
+  else if (d.rpNew) reportOpen({});
+  else if (d.rpa) { var note = null; if (d.rpa === 'note') { note = prompt('Note for the other admins (the reporter does not see this):'); if (note == null) return; } window.HGGrapevine.eco.reports(d.rpa, d.id, note).then(function () { admRepLoad(); }, function () {}); }
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.id === 'pa-look' && !document.getElementById('view-admin').hidden) admLook(); });
+document.getElementById('tab-admin').addEventListener('click', function () { showTab('admin'); });
+(function () {
+  var st = showTab;
+  showTab = function (which) {
+    var r = st.apply(this, arguments), v = document.getElementById('view-admin'), t = document.getElementById('tab-admin');
+    v.hidden = which !== 'admin'; t.className = 'tab' + (which === 'admin' ? ' on' : '');
+    if (which === 'admin') { document.getElementById('view-games').hidden = true; loadGV().then(function () { profMount(); admRender(); }, function () {}); }
+    return r;
+  };
+})();
+// admins: the report flag opens the Reports section
+reportInbox = function () { ADM.sec = 'reports'; showTab('admin'); };
+(function wait() {
+  var L = window.HGGrapevine; if (!L || !L.on) return setTimeout(wait, 2000);
+  admTabShow();
+  L.on('eco', function () { admTabShow(); });
+  L.on('reports', function () { if (!document.getElementById('view-admin').hidden) { var n = document.querySelector('.adm-nav[data-adm="reports"]'); if (n) n.innerHTML = '<span>🚩</span>Reports' + (REPORT.open ? ' <span class="rp-n">' + REPORT.open + '</span>' : ''); if (ADM.sec === 'reports' && !document.querySelector('#adm-replist .adm-note:focus, #adm-replist .adm-reason:focus')) admRepLoad(); } });
 })();
 </script>
 </body>

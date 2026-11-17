@@ -229,9 +229,9 @@ defGame({ id: 'pot', title: 'The Pot', group: 'live', icon: '🍯', c1: '#c98a12
       const list = (snap = S.live.pot.players.slice()), sl = slices(list), w = sl.find(s => s.n === m.winner); spinning = true; winner.textContent = '';
       if (w && list.length > 1) { const a = w.a0 + (w.a1 - w.a0) * (0.2 + Math.random() * 0.6); let r1 = -a; while (r1 < rot + 2 * Math.PI * 4) r1 += 2 * Math.PI; const r0 = rot; sfx.spin(); await tween(4200, e => { rot = r0 + (r1 - r0) * e; draw(list); }); }
       spinning = false; draw(list, m.winner);
-      winner.innerHTML = m.winner ? `🏆 <b>${esc(m.winner)}</b> takes <b class="gold">${fmt(Math.floor((m.total || 0) * 0.97))}</b> chips!` : list.length === 1 ? 'Nobody else joined: the stake went back.' : 'Nobody played this pot.';
+      winner.innerHTML = m.winner ? `🏆 <b>${esc(m.winner)}</b> takes <b class="gold">${fmt(Math.floor((m.total || 0) * 0.98))}</b> chips!` : list.length === 1 ? 'Nobody else joined: the stake went back.' : 'Nobody played this pot.';
       side.results(m.results, 'Pot ' + m.r);
-      if (mineR === m.r) { const me = (m.results || []).find(x => isMe(x.n)); const win = me ? me.win : isMe(m.winner) ? Math.floor(m.total * 0.97) : 0; finish('pot', mine, win, isMe(m.winner) ? 'You took the pot!' : 'The pot went to ' + (m.winner || 'nobody'), F.main); mineR = -1; }
+      if (mineR === m.r) { const me = (m.results || []).find(x => isMe(x.n)); const win = me ? me.win : isMe(m.winner) ? Math.floor(m.total * 0.98) : 0; finish('pot', mine, win, isMe(m.winner) ? 'You took the pot!' : 'The pot went to ' + (m.winner || 'nobody'), F.main); mineR = -1; }
     }
     const stop = liveLoop('pot', {
       round(L) { side.players(L.players); },
@@ -239,7 +239,7 @@ defGame({ id: 'pot', title: 'The Pot', group: 'live', icon: '🍯', c1: '#c98a12
         const s = secs(p.left), list = L.players, tot = list.reduce((t, x) => t + x.a, 0), me = list.find(x => isMe(x.n));
         if (p.left > 0) clock.set(p.left / L.bet, 'Draw in ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'), p.left < 10000 ? 'hurry' : 'open'); else clock.set(0, 'Drawing… next pot in ' + secs(p.toNext) + 's', 'closed');
         bar.label(p.left > 400 ? 'Add to the pot' : 'Drawing', p.left > 400);
-        info.innerHTML = `<div><small>Players</small><b>${list.length}</b></div><div><small>Your chips</small><b>${me ? fmt(me.a) : 0}</b></div><div><small>Your chance</small><b class="gold">${me && tot ? (me.a / tot * 100).toFixed(1) + '%' : '0%'}</b></div><div><small>Prize now</small><b>${fmt(Math.floor(tot * 0.97))}</b></div>`;
+        info.innerHTML = `<div><small>Players</small><b>${list.length}</b></div><div><small>Your chips</small><b>${me ? fmt(me.a) : 0}</b></div><div><small>Your chance</small><b class="gold">${me && tot ? (me.a / tot * 100).toFixed(1) + '%' : '0%'}</b></div><div><small>Prize now</small><b>${fmt(Math.floor(tot * 0.98))}</b></div>`;
         if (!spinning && !snap) draw(list);
       },
       ev(m, L) {
@@ -266,7 +266,7 @@ defGame({ id: 'duel', title: 'Duels', group: 'live', icon: '⚔️', c1: '#5a3aa
       const ds = (S.live && S.live.duels) || []; list.innerHTML = '';
       if (!ds.length) list.append(h('p', { class: 'small' }, 'No open duels. Open one!'));
       ds.slice().sort((a, b) => b.at - a.at).forEach(d => list.append(h('div', { class: 'drow2' + (isMe(d.n) ? ' me' : '') }, h('span', { class: 'dn' }, '⚔️ ', h('b', null, d.n)), h('span', { class: 'num' }, chipEl(d.bet, 's'), ' ' + fmt(d.bet)), h('small', null, ago(d.at)),
-        isMe(d.n) ? h('button', { class: 'btn sm lockable', onclick: () => cancel(d) }, 'Cancel') : h('button', { class: 'btn sm gold lockable', onclick: () => take(d) }, 'Take · win ' + fmt(Math.floor(d.bet * 2 * 0.97))))));
+        isMe(d.n) ? h('button', { class: 'btn sm lockable', onclick: () => cancel(d) }, 'Cancel') : h('button', { class: 'btn sm gold lockable', onclick: () => take(d) }, 'Take · win ' + fmt(Math.floor(d.bet * 2 * 0.98))))));
     }
     function drawRecent() { recent.innerHTML = ''; if (!past.length) recent.append(h('p', { class: 'small' }, 'Finished duels show here.')); past.slice(0, 12).forEach(x => recent.append(h('div', { class: 'lp' + (isMe(x.winner) ? ' me won' : '') }, h('span', null, x.a + ' vs ' + x.b), h('b', null, '🏆 ' + x.winner)))); }
     async function open() { await act(async () => { await call('duel', { act: 'open', bet: bar.bet }); sfx.chip(); toast('Duel opened. Waiting for a challenger…'); await refreshLive(); render(); }); }

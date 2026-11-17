@@ -99,18 +99,21 @@ function chipBook(id, onPaint) {
 }
 
 // ---------- Blackjack ----------
-defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a50', c2: '#0b3d29', blurb: 'Beat the dealer to 21', hint: 'H hit · S stand · D double · P split',
+defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a50', c2: '#0b3d29', blurb: 'Beat the dealer to 21', hint: 'H hit · S stand · D double · P split · T tip',
   mount(opt) {
-    const def = this, F = gameFrame(def, payTable('Blackjack pays', [['Blackjack', '3 : 2 (2.5x back)'], ['Win', '1 : 1 (2x back)'], ['Push', 'stake back'], ['Insurance', 'none']], 'Dealer stands on all 17s. Double on any two cards; split one pair once.'));
+    const def = this, F = gameFrame(def, payTable('Blackjack pays', [['Win or Blackjack', '1 : 1 (2x back)'], ['Tie on 21', 'you win 1 : 1'], ['Tie on 20', 'you win half'], ['Other ties', 'stake back'], ['Insurance', 'none']], 'Dealer hits soft 17. Double on a hard 9, 10 or 11; split one pair once (split aces get one card each). Press Tip to see the best move: played that way you win about as often as you lose.'));
     const dealerRow = h('div', { class: 'crow' }), dv = h('span', { class: 'vbadge' }), hands = h('div', { class: 'hands' }), msg = h('div', { class: 'tmsg' }, 'Place your bet and deal.');
-    F.main.append(h('div', { class: 'felt bjfelt' }, h('div', { class: 'bj-d' }, h('div', { class: 'lbl' }, 'Dealer ', dv), dealerRow), msg, h('div', { class: 'bj-arc' }, 'BLACKJACK PAYS 3 TO 2 · DEALER STANDS ON 17'), hands));
+    F.main.append(h('div', { class: 'felt bjfelt' }, h('div', { class: 'bj-d' }, h('div', { class: 'lbl' }, 'Dealer ', dv), dealerRow), msg, h('div', { class: 'bj-arc' }, 'TIES ON 20 AND 21 GO YOUR WAY · DEALER HITS SOFT 17'), hands));
     let V = null, busyHand = false;
     const btn = (k, t, key) => h('button', { class: 'btn act lockable', 'data-a': k, title: t + ' (' + key + ')', onclick: () => play(k) }, t);
-    const acts = h('div', { class: 'acts' }, btn('hit', 'Hit', 'H'), btn('stand', 'Stand', 'S'), btn('double', 'Double', 'D'), btn('split', 'Split', 'P'));
+    let tipOn = false; try { tipOn = localStorage.getItem('hgcas:bjtip') === '1'; } catch (e) {}
+    const tipB = h('button', { class: 'btn tipb', title: 'Show the best move for this hand (T)', onclick: () => { tipOn = !tipOn; try { localStorage.setItem('hgcas:bjtip', tipOn ? '1' : '0'); } catch (e) {} refresh(); } }, '💡 Tip');
+    const acts = h('div', { class: 'acts' }, btn('hit', 'Hit', 'H'), btn('stand', 'Stand', 'S'), btn('double', 'Double', 'D'), btn('split', 'Split', 'P'), tipB);
     const bar = betBar(def, { label: 'Deal', go: deal, extra: [acts] }); F.bar.append(bar.el);
     function refresh() {
       const inHand = V && !V.over; bar.prim.classList.toggle('hidden', !!inHand); acts.classList.toggle('hidden', !inHand);
-      $$('[data-a]', acts).forEach(b => { b.disabled = !inHand || !V.can.includes(b.dataset.a); });
+      $$('[data-a]', acts).forEach(b => { b.disabled = !inHand || !V.can.includes(b.dataset.a); b.classList.toggle('tip', !!(inHand && tipOn && V.tip === b.dataset.a)); });
+      tipB.classList.toggle('on', tipOn);
     }
     async function syncRow(row, cards, hole) {
       for (let i = 0; i < cards.length; i++) { const el = row.children[i]; if (!el) await dealCard(row, cards[i]); else if (el.classList.contains('down')) await flipUp(el, cards[i]); }
@@ -158,7 +161,8 @@ defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a
     function after(rep) {
       const v = rep.r.view; V = v;
       if (!rep.r.over) { releaseBal(); msg.textContent = v.hands.length > 1 ? 'Playing hand ' + (v.active + 1) + ' of 2' : 'Hit, stand' + (v.can.includes('double') ? ', double' : '') + (v.can.includes('split') ? ' or split' : '') + '?'; refresh(); return; }
-      const lines = v.hands.map(hd => { const bj = hd.cards.length === 2 && hd.v === 21 && v.hands.length === 1; return hd.v > 21 ? 'Bust' : bj && !(v.dealer.length === 2 && v.dv === 21) ? 'Blackjack!' : v.dv > 21 ? 'Dealer busts' : hd.v > v.dv ? 'You win' : hd.v === v.dv ? 'Push' : 'Dealer wins'; });
+      const dbj = v.dealer.length === 2 && v.dv === 21;
+      const lines = v.hands.map(hd => { const bj = hd.cards.length === 2 && hd.v === 21 && v.hands.length === 1; return hd.v > 21 ? 'Bust' : bj && dbj ? 'Push' : bj ? 'Blackjack!' : dbj ? 'Dealer blackjack' : v.dv > 21 ? 'Dealer busts' : hd.v > v.dv ? 'You win' : hd.v === v.dv ? (hd.v === 21 ? 'Tie on 21: you win' : hd.v === 20 ? 'Tie on 20: you win half' : 'Push') : 'Dealer wins'; });
       msg.textContent = lines.join(' · '); refresh();
       finish('bj', rep.r.bet, rep.r.win, 'Blackjack', F.main);
     }
@@ -166,7 +170,7 @@ defGame({ id: 'bj', title: 'Blackjack', group: 'table', icon: '🃏', c1: '#1b7a
       refresh();
       try { const rep = await call('bj', { act: 'state' }); if (rep.r && rep.r.resume) { bar.bet = rep.r.bet; await show(rep.r.view, true); V = rep.r.view; V.over = false; msg.textContent = 'Your hand is back. Carry on.'; refresh(); } } catch {}
     }
-    return { root: F.root, start, refresh, primary: () => (V && !V.over ? play('stand') : deal()), key: e => { const m = { h: 'hit', s: 'stand', d: 'double', p: 'split' }[e.key.toLowerCase()]; if (m) { play(m); return true; } } };
+    return { root: F.root, start, refresh, primary: () => (V && !V.over ? play('stand') : deal()), key: e => { if (e.key.toLowerCase() === 't') { tipB.click(); return true; } const m = { h: 'hit', s: 'stand', d: 'double', p: 'split' }[e.key.toLowerCase()]; if (m) { play(m); return true; } } };
   } });
 function bjValue(cards) { let t = 0, a = 0; for (const c of cards) { t += c.r === 1 ? 11 : Math.min(10, c.r); if (c.r === 1) a++; } while (t > 21 && a) { t -= 10; a--; } return t; }
 

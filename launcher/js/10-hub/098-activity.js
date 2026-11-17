@@ -17,7 +17,7 @@ function actPaint() {
   var d = ACT.data, box = document.getElementById('act-home'); if (!d || !box) return;
   var today = d.perDay.filter(function (x) { return x.d === d.today; })[0] || { players: 0, minutes: 0, peak: 0 };
   var tile = function (n, label, sub) { return '<div class="act-tile"><b>' + n + '</b><span>' + label + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</div>'; };
-  var h = '<div class="act-head"><h2>Activity</h2><div class="rdesc">Live numbers from everyone playing Huntington Games.</div></div>' +
+  var h = '<div class="act-head"><h2>Activity</h2><div class="rdesc">Live numbers from everyone playing Huntington Games. Days run midnight to midnight, Eastern time.</div></div>' +
     '<div class="act-tiles">' + tile(d.online, 'online now') + tile(today.players, 'played today') + tile(actFmtMin(today.minutes), 'played today', 'all games together') + tile(today.peak, 'most online at once today') + '</div>';
   // most played: horizontal bars, one hue, values written at the end of each bar
   var games = ACT.span === 'week' ? d.week : d.month, top = games.slice(0, 12), max = Math.max(1, top.reduce(function (m, g) { return Math.max(m, g.minutes); }, 0));

@@ -3,7 +3,7 @@
 function makeMock() {
   const fl = Math.floor, R = Math.random, ME = 'You';
   const LR = { cyc: 30000, bet: 22000, pay: 27000 }, CR = { cyc: 30000, bet: 7000, k: 0.00025, cap: 190 };
-  const RACE = { cyc: 45000, bet: 30000, pay: 42000, odds: [2.5, 4, 6, 9, 14, 25], names: ['Thunderhoof', 'Biscuit', 'Midnight Run', 'Sir Trots', 'Lucky Clover', 'Longshot Larry'] };
+  const RACE = { cyc: 45000, bet: 30000, pay: 42000, odds: [2.55, 4.1, 6.1, 9.2, 14.3, 25.5], names: ['Thunderhoof', 'Biscuit', 'Midnight Run', 'Sir Trots', 'Lucky Clover', 'Longshot Larry'] };
   const POT = { cyc: 120000, bet: 115000 };
   const BOTS = ['Pip (bot)', 'Juno (bot)', 'Marlo (bot)', 'Rex (bot)', 'Tilly (bot)', 'Ozzy (bot)'];
   const salt = String(R());
@@ -44,10 +44,10 @@ function makeMock() {
   const PLINKO = {};
   for (const rows of [8, 12, 16]) for (const [risk, lo, hi, pw] of [['low', 0.5, 2.2 + rows * 0.45, 2], ['med', 0.3, rows * rows * 0.22, 3], ['high', 0.2, rows * rows * rows * 0.26, 5]]) {
     const p = []; let c = 1; for (let k = 0; k <= rows; k++) { p.push(c / 2 ** rows); c = c * (rows - k) / (k + 1); }
-    const raw = p.map((_, k) => lo + (hi - lo) * Math.pow(Math.abs(k - rows / 2) / (rows / 2), pw)), ev = raw.reduce((t, m, k) => t + m * p[k], 0), sc = 0.97 / ev;
+    const raw = p.map((_, k) => lo + (hi - lo) * Math.pow(Math.abs(k - rows / 2) / (rows / 2), pw)), ev = raw.reduce((t, m, k) => t + m * p[k], 0), sc = 0.98 / ev;
     PLINKO[rows + risk] = raw.map(m => { const x = m * sc; return x >= 10 ? Math.round(x) : Math.round(x * 100) / 100; });
   }
-  const WHEEL = [].concat(Array(31).fill(0), Array(14).fill(1.2), Array(6).fill(1.5), Array(5).fill(2), Array(2).fill(3), [5, 10]);
+  const WHEEL = [].concat(Array(30).fill(0), Array(15).fill(1.2), Array(6).fill(1.5), Array(5).fill(2), Array(2).fill(3), [5, 10]);
   const KENO = {};
   { const C = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
     for (let n = 1; n <= 10; n++) {
@@ -56,8 +56,8 @@ function makeMock() {
       const ev = raw.reduce((t, m, h) => t + m * p[h], 0), sc = 0.94 / ev; KENO[n] = raw.map(m => { const x = m * sc; return x >= 10 ? Math.round(x) : Math.round(x * 100) / 100; });
     } }
   const SCRATCH = { cost: [10, 50, 200], prizes: [[1000, 0.00004], [250, 0.0006], [50, 0.003], [10, 0.012], [5, 0.03], [2, 0.07], [1, 0.18]], sym: ['🍒', '🍋', '🔔', '⭐', '💎', '7️⃣', '👑', '🍀'] };
-  const VP = [['Royal Flush', 250], ['Straight Flush', 50], ['Four of a Kind', 25], ['Full House', 8], ['Flush', 5], ['Straight', 4], ['Three of a Kind', 3], ['Two Pair', 2], ['Jacks or Better', 1]];
-  const EDGE = { coin: 2, dice: 1, roulette: 2.7, slots: 5, plinko: 3, wheel: 5.5, keno: 6, baccarat: 1.2, craps: 1.4, sicbo: 2.8, scratch: 7, crashx: 3, bj: 1, vp: 3, mines: 3, hilo: 3, lr: 2.7, crash: 3, race: 3.8, pot: 3, duel: 3 };
+  const VP = [['Royal Flush', 250], ['Straight Flush', 50], ['Four of a Kind', 25], ['Full House', 9], ['Flush', 6], ['Straight', 4], ['Three of a Kind', 3], ['Two Pair', 2], ['Jacks or Better', 1]];
+  const EDGE = { coin: 1, dice: 1, roulette: 2.7, slots: 3, plinko: 2, wheel: 3.3, keno: 3, baccarat: 1.2, craps: 1.4, sicbo: 2.8, scratch: 3, crashx: 2, bj: 0.8, vp: 1, mines: 2, hilo: 2, lr: 2.7, crash: 2, race: 1.8, pot: 2, duel: 2 };
   const NAMES = { coin: 'Coin Flip', dice: 'Dice', roulette: 'Roulette', slots: 'Slots', plinko: 'Plinko', wheel: 'Lucky Wheel', keno: 'Keno', baccarat: 'Baccarat', craps: 'Craps', sicbo: 'Sic Bo', scratch: 'Scratch Cards', crashx: 'Rocket', bj: 'Blackjack', vp: 'Video Poker', mines: 'Mines', hilo: 'Hi-Lo', lr: 'Live Roulette', crash: 'Live Rocket', race: 'Horse Racing', pot: 'The Pot', duel: 'Duels' };
   const card = () => ({ r: 1 + fl(R() * 13), s: fl(R() * 4) });
   const bacVal = c => (c.r >= 10 ? 0 : c.r);
@@ -99,18 +99,19 @@ function makeMock() {
       for (let i = 8; i > 0; i--) { const j = fl(R() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
       return { cells, mult: prize, win: bet * prize };
     },
-    crashx(bet, a) { const t = Math.round(Number(a.target) * 100) / 100; if (!(t >= 1.01 && t <= 1000)) return { err: 'Pick a cash-out from 1.01x to 1000x.' }; const c = Math.max(1, fl(97 / (1 - R())) / 100); return { crash: c, target: t, win: c >= t ? fl(bet * t) : 0 }; }
+    crashx(bet, a) { const t = Math.round(Number(a.target) * 100) / 100; if (!(t >= 1.01 && t <= 1000)) return { err: 'Pick a cash-out from 1.01x to 1000x.' }; const c = Math.max(1, fl(98 / (1 - R())) / 100); return { crash: c, target: t, win: c >= t ? fl(bet * t) : 0 }; }
   };
 
   // ----- games with turns -----
   const bjVal = hd => { let t = 0, ac = 0; for (const c of hd) { t += c.r === 1 ? 11 : Math.min(10, c.r); if (c.r === 1) ac++; } while (t > 21 && ac) { t -= 10; ac--; } return t; };
   const bjIsBJ = hd => hd.length === 2 && bjVal(hd) === 21;
-  const bjCan = st => { const hd = st.hands[st.active], c = ['hit', 'stand']; if (hd.cards.length === 2) { c.push('double'); if (st.hands.length === 1 && Math.min(10, hd.cards[0].r) === Math.min(10, hd.cards[1].r)) c.push('split'); } return c; };
+  const bjSoft = hd => { let t = 0, ac = 0; for (const c of hd) { t += c.r === 1 ? 11 : Math.min(10, c.r); if (c.r === 1) ac++; } while (t > 21 && ac) { t -= 10; ac--; } return ac > 0; };
+  const bjCan = st => { const hd = st.hands[st.active], c = ['hit', 'stand'], hv = bjVal(hd.cards); if (hd.cards.length === 2) { if (!bjSoft(hd.cards) && hv >= 9 && hv <= 11) c.push('double'); if (st.hands.length === 1 && Math.min(10, hd.cards[0].r) === Math.min(10, hd.cards[1].r)) c.push('split'); } return c; };
   const bjView = (st, over) => ({ hands: st.hands.map(x => ({ cards: x.cards, bet: x.bet, v: bjVal(x.cards), done: x.done })), active: st.active, dealer: over ? st.dealer : [st.dealer[0]], dv: over ? bjVal(st.dealer) : null, over: !!over, can: over ? [] : bjCan(st) });
   function bjFinish(st) {
-    if (st.hands.some(x => bjVal(x.cards) <= 21 && !x.bj)) while (bjVal(st.dealer) < 17) st.dealer.push(card());
+    if (st.hands.some(x => bjVal(x.cards) <= 21 && !x.bj)) while (bjVal(st.dealer) < 17 || (bjVal(st.dealer) === 17 && bjSoft(st.dealer))) st.dealer.push(card());
     const dv = bjVal(st.dealer), dbj = bjIsBJ(st.dealer); let win = 0;
-    for (const x of st.hands) { const v = bjVal(x.cards); if (x.bj) win += dbj ? x.bet : fl(x.bet * 2.5); else if (v > 21 || dbj) win += 0; else if (dv > 21 || v > dv) win += x.bet * 2; else if (v === dv) win += x.bet; }
+    for (const x of st.hands) { const v = bjVal(x.cards); if (x.bj) win += dbj ? x.bet : x.bet * 2; else if (v > 21 || dbj) win += 0; else if (dv > 21 || v > dv) win += x.bet * 2; else if (v === dv) win += v === 21 ? x.bet * 2 : v === 20 ? fl(x.bet * 1.5) : x.bet; }
     return win;
   }
   function vpRank(hd) {
@@ -122,8 +123,8 @@ function makeMock() {
     return ['Nothing', 0];
   }
   const C25 = (n, k) => { let r = 1; for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; };
-  const minesMult = (m, k) => (k ? Math.round(0.97 * C25(25, k) / C25(25 - m, k) * 100) / 100 : 1);
-  const hlOdds = c => ({ hi: (13 - c) / 12, lo: (c - 1) / 12 }), hlPay = st => Math.round(0.97 * st.fair * 100) / 100;
+  const minesMult = (m, k) => (k ? Math.round(0.98 * C25(25, k) / C25(25 - m, k) * 100) / 100 : 1);
+  const hlOdds = c => ({ hi: (13 - c) / 12, lo: (c - 1) / 12 }), hlPay = st => Math.round(0.98 * st.fair * 100) / 100;
   const hlView = (st, x) => Object.assign({ card: st.card, suit: st.suit, n: st.n, mult: st.n ? hlPay(st) : 1, hiX: st.card < 13 ? Math.round(97 * st.fair / hlOdds(st.card).hi) / 100 : 0, loX: st.card > 1 ? Math.round(97 * st.fair / hlOdds(st.card).lo) / 100 : 0 }, x || {});
   const TURN = {
     bj(st, act, a) {
@@ -185,7 +186,7 @@ function makeMock() {
   const BOOK = { lr: new Map(), crash: new Map(), race: new Map(), pot: new Map() }, DONE = new Set(), SAID = new Set(), DUELS = new Map();
   const book = (g, r) => { let m = BOOK[g].get(r); if (!m) BOOK[g].set(r, m = new Map()); return m; };
   const lrNumber = r => fl(hashN('lr|' + r)[0] * 37);
-  const crashPoint = r => Math.min(CR.cap, Math.max(1, fl(97 / (1 - hashN('crash|' + r)[0])) / 100));
+  const crashPoint = r => Math.min(CR.cap, Math.max(1, fl(98 / (1 - hashN('crash|' + r)[0])) / 100));
   const crashAt = (r, t) => Math.round(Math.exp(CR.k * (t - (r * CR.cyc + CR.bet))) * 100) / 100;
   function raceOrder(r) { const hh = hashN('race|' + r, 6), left = RACE.odds.map((o, i) => ({ i, w: 1 / o })), order = []; for (let k = 0; k < 6; k++) { const tot = left.reduce((t, x) => t + x.w, 0); let x = hh[k] * tot, j = 0; while (j < left.length - 1 && x >= left[j].w) { x -= left[j].w; j++; } order.push(left.splice(j, 1)[0].i); } return order; }
   const once = k => { if (SAID.has(k)) return false; SAID.add(k); return true; };
@@ -199,7 +200,7 @@ function makeMock() {
       if (g === 'lr') { stake = b.bets.reduce((t, x) => t + x.a, 0); win = rouletteWin(b.bets, n); }
       else if (g === 'crash') { stake = b.bet; if (b.out) continue; if (b.auto && b.auto <= c) win = fl(b.bet * b.auto); }
       else if (g === 'race') { stake = b.bets.reduce((t, x) => t + x.a, 0); for (const x of b.bets) if (x.h === order[0]) win += fl(x.a * RACE.odds[x.h]); }
-      else if (g === 'pot') { stake = b.bet; win = m.size === 1 ? b.bet : name === winner ? fl(total * 0.97) : 0; }
+      else if (g === 'pot') { stake = b.bet; win = m.size === 1 ? b.bet : name === winner ? fl(total * 0.98) : 0; }
       results.push({ n: name, win: pay(win, g, stake, name), stake });
       if (name === ME) emit({ ev: 'bal', bal: bal() });
     }
@@ -214,7 +215,7 @@ function makeMock() {
   }
   const duelList = () => [...DUELS.values()].map(d => ({ id: d.id, n: d.n, bet: d.bet, at: d.at }));
   function duelResolve(d, takerName) {
-    DUELS.delete(d.id); const takerWins = R() < 0.5, prize = fl(d.bet * 2 * 0.97), winner = takerWins ? takerName : d.n;
+    DUELS.delete(d.id); const takerWins = R() < 0.5, prize = fl(d.bet * 2 * 0.98), winner = takerWins ? takerName : d.n;
     if (d.n === ME || takerName === ME) { if (winner === ME) pay(prize, 'duel', d.bet); else pay(0, 'duel', d.bet); }
     emit({ ev: 'duel', id: d.id, a: d.n, b: takerName, bet: d.bet, winner, prize }); emit({ ev: 'duels', list: duelList() });
     return { takerWins, prize };

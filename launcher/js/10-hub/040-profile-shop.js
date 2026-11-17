@@ -230,10 +230,10 @@ function profEarn(e) {
     ['🕯️', 'First in Last Light (full game) at the end of the day', '1 goon'], ['🥇', 'Top 3 in playtime for the day', '5 goons each'],
     ['⌛', 'First in daily playtime every day for a week', 'the Timeless Gooner title'], ['💰', 'The top of the goon leaderboard', 'Godly / Goated / Great Gooner titles']];
   return '<div class="pearn">' + rows.map(function (r) { return '<div><span>' + r[0] + '</span><b>' + profEsc(r[1]) + '</b><em>' + profEsc(r[2]) + '</em></div>'; }).join('') + '</div>' +
-    '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + new Date(l.at).toLocaleString() + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
+    '<div class="plog"><h4>Recent</h4>' + ((e.log || []).slice().reverse().map(function (l) { return '<div><b class="' + (l.n < 0 ? 'neg' : '') + '">' + (l.n > 0 ? '+' : '') + l.n + '</b> ' + profEsc(l.why) + ' <i>' + hgTime(l.at) + '</i></div>'; }).join('') || '<div class="pempty">Nothing yet.</div>') + '</div>';
 }
 // developers only: give someone an admin-only title (Tomato, VIP, Beta Tester...) or goons, or take a title back
-function profAdmin(c) { return paRender(c); }      // (the admin tools live in 098-admin.js)
+function profAdmin(c) { return '<div class="padmin"><p class="pnote">The admin tools have their own menu now: the &#128737;&#65039; Admin tab in the top bar.</p><div class="prow"><button class="pb" data-padm="openmenu">Open the Admin menu</button></div></div>'; }      // (2026-11-17: 100-admin-menu.js)
 // developers only: a picture of their own (squeezed to 96 px)
 function profDevUpload(box) {
   var d = document.createElement('div'); d.className = 'pnote';
@@ -248,7 +248,7 @@ function profDevUpload(box) {
   };
 }
 document.addEventListener('click', function (ev) {
-  var b = ev.target.closest && ev.target.closest('#view-prof button, #view-lb button'); if (!b) return;
+  var b = ev.target.closest && ev.target.closest('#view-prof button, #view-lb button, #view-admin button'); if (!b) return;
   var L = window.HGGrapevine, d = b.dataset;
   if (d.ptab) { PROF.tab = d.ptab; PROF.grp = ''; }
   else if (d.pcat) { PROF.cat = d.pcat; PROF.grp = ''; }
@@ -287,7 +287,7 @@ document.addEventListener('click', function (ev) {
       if (!r.ok) { lo.textContent = r.err || 'Could not look that up.'; return; }
       if (r.saves) PROF.look = r;
       if (r.restored != null) { lo.textContent = 'Put back ' + r.restored + ' save(s) for ' + r.name + '. They load on their device within a minute (or when they close the game).'; return; }
-      var when = function (t) { return t ? new Date(t).toLocaleString() : '?'; };
+      var when = function (t) { return t ? hgTime(t) : '?'; };
       lo.innerHTML = '<b>' + profEsc(r.name) + '</b> \u00b7 last seen ' + profEsc(when(r.lastSeen)) + '<br>' + profFmt(r.goons, 'int') + ' goons, ' + profFmt(r.chips, 'int') + ' chips, ' + r.owned + ' shop items, ' + r.earned + ' earned<br>' +
         r.saves.length + ' saves (' + Math.round(r.saves.reduce(function (t, x) { return t + (x.bytes || 0); }, 0) / 1024) + ' KB), newest ' + profEsc(when(Math.max.apply(null, r.saves.map(function (x) { return x.at; }).concat([0])))) + '<br>' +
         'On ' + r.boards.length + ' leaderboards' + (r.boards.length ? ': ' + r.boards.slice(0, 12).map(function (b) { return profEsc(b.key) + ' #' + b.pos + ' (' + profFmt(b.s, 'int') + ')'; }).join(', ') : '') + '<br>' +

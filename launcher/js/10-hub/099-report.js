@@ -5,8 +5,9 @@
 // admins read what was really sent). Admins see the same button with a count, and it opens their inbox (also under
 // Profile, Admin tools). Reports go to the server (grapevine 078-reports.js); nothing is sent anywhere else.
 var REPORT = { kind: '', pre: null, open: 0, why: '' };
-var REPORT_WHY = { player: [['cheat', 'Cheating'], ['bully', 'Bullying or harassment'], ['language', 'Bad language'], ['name', 'Bad name or picture'], ['spam', 'Spam'], ['threat', 'Threats or scary stuff'], ['other', 'Something else']],
-  message: [['bully', 'Bullying or harassment'], ['language', 'Bad language'], ['spam', 'Spam'], ['threat', 'Threats or scary stuff'], ['other', 'Something else']] };
+// (2026-11-17) what you can report, as in the rules: slurs and sexual content yes, everyday swearing no (see Rules)
+var REPORT_WHY = { player: [['slur', 'Slurs or hate'], ['sexual', 'Sexual content'], ['bully', 'Bullying or harassment'], ['threat', 'Threats or scary stuff'], ['cheat', 'Cheating'], ['name', 'Bad name or picture'], ['alt', 'Alt account (ban dodging)'], ['spam', 'Spam'], ['other', 'Something else']],
+  message: [['slur', 'Slurs or hate'], ['sexual', 'Sexual content'], ['bully', 'Bullying or harassment'], ['threat', 'Threats or scary stuff'], ['spam', 'Spam'], ['other', 'Something else']] };
 function repEsc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 function reportClose() { var d = document.getElementById('reportdlg'); d.hidden = true; d.innerHTML = ''; try { if (document.documentElement.classList.contains('playing')) frame.contentWindow.focus(); } catch (e) {} }
 function reportOpen(pre) {
@@ -20,7 +21,7 @@ function reportOpen(pre) {
 function reportPaint(done) {
   var d = document.getElementById('reportdlg'), k = REPORT.kind, pre = REPORT.pre, h = '<div class="rp-card" role="dialog" aria-modal="true" aria-label="Report"><button class="rp-x" data-rp="x" title="Close">&times;</button>';
   if (done) {
-    h += '<h2>&#9989; Sent. Thank you.</h2><p>An admin will look at it. You will not get in trouble for reporting something honestly.</p>' +
+    h += '<h2>&#9989; Sent. Thank you.</h2><p>An admin will look at it, and you will get a note back when they answer. You will not get in trouble for reporting something honestly.</p>' +
       (k === 'player' || k === 'message' ? '<p class="rp-dim">Tip: you can also block someone in Grapevine (press their name) so you stop seeing them.</p>' : '') + '<div class="rp-row"><button class="rp-btn" data-rp="x">Done</button></div>';
   } else if (!k) {
     h += '<h2>&#128681; What do you want to report?</h2><p class="rp-dim">It goes to the admins. Only they see it.</p><div class="rp-kinds">' +
@@ -35,6 +36,7 @@ function reportPaint(done) {
     if (k === 'message') h += '<div class="rp-quote"><b>' + repEsc(pre.who || 'Someone') + '</b> ' + repEsc(String(pre.snip || '').slice(0, 200)) + '</div>';
     if (k === 'player') h += '<label>Who? <span class="rp-dim">(their exact name)</span><input id="rp-who" maxlength="64" autocomplete="off" spellcheck="false" list="rp-names" value="' + repEsc(pre.who || '') + '"></label><datalist id="rp-names">' + reportNames().map(function (n) { return '<option value="' + repEsc(n) + '">'; }).join('') + '</datalist>';
     if (k === 'bug' || k === 'player') h += '<label>Which game? <span class="rp-dim">(if it was in one)</span><select id="rp-game"><option value="">Not in a game / the launcher itself</option>' + GAMES.map(function (g) { return '<option' + (pre.game === g.name ? ' selected' : '') + '>' + repEsc(g.name) + '</option>'; }).join('') + '</select></label>';
+    if (k === 'player' || k === 'message') h += '<p class="rp-dim rp-rules">Slurs and sexual content: report them. Everyday swearing is allowed. <button class="rp-link" data-rp="rules">What can I report?</button></p>';
     if (REPORT_WHY[k]) h += '<div class="rp-lbl">Why?</div><div class="rp-whys">' + REPORT_WHY[k].map(function (w) { return '<button class="rp-why' + (REPORT.why === w[0] ? ' on' : '') + '" data-rpw="' + w[0] + '">' + w[1] + '</button>'; }).join('') + '</div>';
     h += '<label>' + (k === 'bug' ? 'What went wrong? What were you doing?' : k === 'other' ? 'What should the admins know?' : 'What happened? <span class="rp-dim">(optional, but it helps)</span>') + '<textarea id="rp-text" maxlength="800" rows="4" placeholder="' + (k === 'bug' ? 'e.g. On level 3 I fell through the floor after jumping on the spring.' : 'A few words is enough.') + '">' + repEsc(REPORT.text || '') + '</textarea></label>' +
       '<div id="rp-err" class="rp-err"></div><div class="rp-row"><button class="rp-btn ghost" data-rpk="">Back</button><button class="rp-btn send" data-rp="send">Send report</button></div>';
@@ -65,6 +67,7 @@ document.getElementById('reportdlg').addEventListener('click', function (e) {
   var b = t.closest && t.closest('[data-rp],[data-rpk],[data-rpw],[data-rpa]'); if (!b) return;
   var tx = d.querySelector('#rp-text'); if (tx) REPORT.text = tx.value;
   if (b.dataset.rp === 'x') return reportClose();
+  if (b.dataset.rp === 'rules') { reportClose(); return rulesOpen('report'); }
   if (b.dataset.rp === 'chat') { reportClose(); if (document.documentElement.classList.contains('playing')) return; showTab('chat'); return; }
   if (b.dataset.rp === 'send') return reportSend();
   if (b.dataset.rp === 'new') { REPORT.kind = ''; return reportPaint(); }
@@ -87,7 +90,7 @@ function reportInboxPaint(m) {
   l.className = ''; l.innerHTML = m.list.length ? m.list.map(function (r) {
     return '<div class="rp-item' + (r.state === 'open' ? '' : ' closed') + '"><div class="rp-top"><b>' + (KIND[r.kind] || r.kind) + '</b> <span class="rp-tag">' + repEsc(r.whyText || r.why) + '</span>' +
       (r.who ? ' about <b>' + repEsc(r.who.n) + '</b>' + (r.who.u ? '' : ' <span class="rp-dim">(no such account)</span>') + (r.times > 1 ? ' <span class="rp-tag hot">' + r.times + ' reports</span>' : '') : '') +
-      (r.game ? ' in <i>' + repEsc(r.game) + '</i>' : '') + '<span class="rp-when">' + new Date(r.at).toLocaleString() + ' by ' + repEsc(r.by.n) + '</span></div>' +
+      (r.game ? ' in <i>' + repEsc(r.game) + '</i>' : '') + '<span class="rp-when">' + hgTime(r.at) + ' by ' + repEsc(r.by.n) + '</span></div>' +
       (r.msg ? '<div class="rp-quote">' + repEsc(r.msg.text) + '</div>' : '') + (r.text ? '<div class="rp-text">' + repEsc(r.text) + '</div>' : '') +
       (r.note ? '<div class="rp-note">Note: ' + repEsc(r.note) + '</div>' : '') +
       '<div class="rp-acts">' + (r.state === 'open' ? '<button class="rp-btn small" data-rpa="close" data-id="' + r.id + '">Mark as handled</button>' : '<span class="rp-dim">Handled' + (r.closedBy ? ' by ' + repEsc(r.closedBy) : '') + '</span> <button class="rp-btn small ghost" data-rpa="reopen" data-id="' + r.id + '">Reopen</button>') +

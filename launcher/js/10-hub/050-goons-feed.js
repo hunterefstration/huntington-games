@@ -4,7 +4,12 @@
 // - claims: unlocked achievements (gv/ach.js keeps them in 'hgach:v1'), Blocky waves cleared and ranks gained
 // - leaderboards: each game's best numbers, read from its own save (games do not have to report anything)
 // The server checks and caps every claim; this only says what happened.
-var FEED = { lastInput: 0, sent: {}, left: {}, uid: '' };
+var FEED = { lastInput: Date.now(), sent: {}, left: {}, uid: '' };
+// AFK rule (2026-11-17): after 30 minutes with no key, click, tap or mouse movement (in a game or the launcher) you
+// stop progressing: no play time, no goons for playing, no multiplayer bonus. The next input starts it again.
+var HG_IDLE_MS = 30 * 60000;
+function hgIdle() { return Date.now() - FEED.lastInput >= HG_IDLE_MS; }
+(function () { var mk = function () { FEED.lastInput = Date.now(); }; ['keydown', 'pointerdown', 'touchstart', 'wheel'].forEach(function (t) { document.addEventListener(t, mk, { passive: true, capture: true }); }); var n = 0; document.addEventListener('mousemove', function () { if (++n % 20 === 0) mk(); }, { passive: true, capture: true }); })();
 try { localStorage.removeItem('hgv:lbsent'); localStorage.removeItem('hgv:claimed'); } catch (e) {}      // (the old per-device memory: it made a second account, or a refused frame, never send)
 function feedRd(k) { try { var v = localStorage.getItem(k); if (v == null) return null; try { return JSON.parse(v); } catch (e) { return v; } } catch (e) { return null; } }
 function feedNum(v) { v = Number(v); return isFinite(v) ? v : 0; }
@@ -22,7 +27,7 @@ setInterval(function () {
   var L = window.HGGrapevine; if (!L || !L.me() || !L.online()) return;
   if (typeof current !== 'undefined' && current && current.game) {
     feedWatch();
-    if (!document.hidden && Date.now() - FEED.lastInput < 65000) L.eco.play(current.game.name, true);
+    if (!document.hidden && !hgIdle()) L.eco.play(current.game.name, true);
   }
 }, 60000);
 function clickerTotal(key) {

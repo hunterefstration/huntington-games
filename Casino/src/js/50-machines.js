@@ -320,10 +320,10 @@ defGame({ id: 'dice', title: 'Dice', group: 'machine', icon: '💯', c1: '#4c5bd
   } });
 
 // ---------- Coin Flip ----------
-defGame({ id: 'coin', title: 'Coin Flip', group: 'machine', icon: '🪙', c1: '#b8861b', c2: '#3f2c05', blurb: 'Heads or tails, 1.96x', hint: 'H heads · T tails',
+defGame({ id: 'coin', title: 'Coin Flip', group: 'machine', icon: '🪙', c1: '#b8861b', c2: '#3f2c05', blurb: 'Heads or tails, 1.98x', hint: 'H heads · T tails',
   mount() {
     const def = this; let side = store.get('coin:p', 'h');
-    const F = gameFrame(def, payTable('Coin Flip', [['Right call', '1.96x'], ['Wrong call', 'nothing']], 'A fair coin; the house keeps 2%.'));
+    const F = gameFrame(def, payTable('Coin Flip', [['Right call', '1.98x'], ['Wrong call', 'nothing']], 'A fair coin; the house keeps 1%.'));
     const coin = h('div', { class: 'coin' }, h('div', { class: 'cf h' }, h('span', null, '👑'), h('small', null, 'HEADS')), h('div', { class: 'cf t' }, h('span', null, '⭐'), h('small', null, 'TAILS')));
     const hist = h('div', { class: 'chist' });
     const pk = s => h('button', { class: 'btn big cpick lockable', 'data-s': s, onclick: () => { side = s; store.set('coin:p', s); paint(); sfx.click(); } }, s === 'h' ? '👑 Heads' : '⭐ Tails');
