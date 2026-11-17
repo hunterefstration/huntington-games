@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#221810">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Crect width=%2724%27 height=%2724%27 rx=%275%27 fill=%27%23f5a524%27/%3E%3Cg fill=%27none%27 stroke=%27%233a1d05%27 stroke-width=%271.8%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M16 9h1a3 3 0 0 1 0 6h-1%27/%3E%3Cpath d=%27M5 9h11v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z%27/%3E%3Cpath d=%27M8 5v1.5M11 5v1.5%27/%3E%3C/g%3E%3C/svg%3E">
-<title>Bean &amp; Brew Tycoon 2.1</title>
+<title>Bean &amp; Brew Tycoon 2.2</title>
 <style>
 :root{
   --bg:#150f0b;--bg2:#1d1510;--panel:#271c15;--panel2:#33261c;--panel3:#41311f;--line:#4d3b2b;--line2:#6a5139;
@@ -664,7 +664,7 @@ body.lowfx .toast{animation:none!important}
         <button class="btn" data-act="dlg" data-d="settings"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg> Settings</button>
       </div>
     </div>
-    <div class="ver">Version 2.1 - Local Specials</div>
+    <div class="ver">Version 2.2 - Local Specials</div>
   </div>
 </div>
 
@@ -2922,7 +2922,7 @@ function frTick() {
 }
 // Estimated earnings while the game was closed: fully automated shops (barista + cashier + restocker or manager) and franchises earn.
 function applyAway(seconds) {
-  const mins = Math.min(seconds, 2 * 3600) / 60;
+  const mins = Math.min(seconds, AFK_MS / 1000) / 60;   // at most 30 minutes of away time count
   let total = 0, shops = 0;
   state.locations.forEach(l => {
     const has = r => l.staff.some(s => s.role === r);
@@ -4547,7 +4547,7 @@ function dlgSettings() {
 function dlgAway() {
   const a = rt.away || { seconds: 0, money: 0, shops: 0 };
   return {
-    title: 'Welcome back!', html: '<div class="celebrate"><div class="ico">' + icon('coin') + '</div><div class="big">' + (a.money ? '+' + money(a.money) : 'Nothing earned') + '</div></div><p style="text-align:center">You were away for <b>' + fmtTime(a.seconds) + '</b>.' + (a.money - (a.fr || 0) > 0 ? ' Your fully staffed shops (' + a.shops + ') kept serving coffee while you were gone.' : ' Shops only earn while you are away when they have a Barista, a Cashier and a Restocker or Manager.') + (a.fr ? ' Your ' + a.frN + ' franchise' + (a.frN > 1 ? 's' : '') + ' earned ' + money(a.fr) + '.' : '') + '</p><div class="dfoot" style="justify-content:center"><button class="btn primary" data-act="close">Let us go!</button></div>'
+    title: 'Welcome back!', html: '<div class="celebrate"><div class="ico">' + icon('coin') + '</div><div class="big">' + (a.money ? '+' + money(a.money) : 'Nothing earned') + '</div></div><p style="text-align:center">You were away for <b>' + fmtTime(a.seconds) + '</b> (at most 30 minutes count).' + (a.money - (a.fr || 0) > 0 ? ' Your fully staffed shops (' + a.shops + ') kept serving coffee while you were gone.' : ' Shops only earn while you are away when they have a Barista, a Cashier and a Restocker or Manager.') + (a.fr ? ' Your ' + a.frN + ' franchise' + (a.frN > 1 ? 's' : '') + ' earned ' + money(a.fr) + '.' : '') + '</p><div class="dfoot" style="justify-content:center"><button class="btn primary" data-act="close">Let us go!</button></div>'
   };
 }
 function dlgRank() {
@@ -4827,6 +4827,29 @@ function dlgEvent() {
   return { title: 'Something is happening!', html: html };
 }
 
+  // --- AFK PAUSE: after 30 minutes with no input, automatic progress stops until the next input ---
+  const AFK_MS = 30 * 60 * 1000;
+  let afkLast = Date.now(), afkBannerEl = null;
+  function afkLimit() { const o = +window.__hgAfkMs; return o > 0 ? o : AFK_MS; }
+  function afkIdle() {
+      const idle = Date.now() - afkLast >= afkLimit();
+      if (idle && !afkBannerEl && document.body) {
+          afkBannerEl = document.createElement('div');
+          afkBannerEl.id = 'hg-afk-banner';
+          afkBannerEl.setAttribute('role', 'status');
+          afkBannerEl.style.cssText = 'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:99999;max-width:92vw;padding:8px 14px;border-radius:10px;background:#1f2937;color:#fde68a;border:2px solid #f59e0b;font:600 14px/1.3 system-ui,sans-serif;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.4)';
+          afkBannerEl.textContent = 'Away for 30 minutes: progress paused. Click or press a key to carry on.';
+          document.body.appendChild(afkBannerEl);
+      }
+      return idle;
+  }
+  function afkInput(e) {
+      const now = Date.now();
+      if (e && e.type === 'mousemove' && now - afkLast < 1000) return;
+      afkLast = now;
+      if (afkBannerEl) { afkBannerEl.remove(); afkBannerEl = null; }
+  }
+  ['keydown', 'pointerdown', 'mousedown', 'touchstart', 'wheel', 'mousemove'].forEach(t => window.addEventListener(t, afkInput, { passive: true, capture: true }));
 // ----- save tools -----
 function exportCode() {
   if (!running || !state) {                       // from the main menu: export whatever is stored
@@ -5152,6 +5175,7 @@ function simStep() {
   let dt = now - lastSim; lastSim = now;
   if (!running || !state) return;
   if (dt > 45000 && !paused) { acc = 0; wakeUp(dt / 1000); return; }
+  if (afkIdle()) { acc = 0; return; }   // away for 30 minutes: the shop stops until the next input
   if (!paused) {
     acc += Math.min(dt, 15000) * speed;
     let n = 0;

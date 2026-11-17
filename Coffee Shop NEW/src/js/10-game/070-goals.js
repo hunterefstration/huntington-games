@@ -199,7 +199,7 @@ function frTick() {
 }
 // Estimated earnings while the game was closed: fully automated shops (barista + cashier + restocker or manager) and franchises earn.
 function applyAway(seconds) {
-  const mins = Math.min(seconds, 2 * 3600) / 60;
+  const mins = Math.min(seconds, AFK_MS / 1000) / 60;   // at most 30 minutes of away time count
   let total = 0, shops = 0;
   state.locations.forEach(l => {
     const has = r => l.staff.some(s => s.role === r);

@@ -323,6 +323,7 @@ function simStep() {
   let dt = now - lastSim; lastSim = now;
   if (!running || !state) return;
   if (dt > 45000 && !paused) { acc = 0; wakeUp(dt / 1000); return; }
+  if (afkIdle()) { acc = 0; return; }   // away for 30 minutes: the shop stops until the next input
   if (!paused) {
     acc += Math.min(dt, 15000) * speed;
     let n = 0;

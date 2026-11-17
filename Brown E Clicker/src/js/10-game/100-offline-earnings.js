@@ -2,6 +2,8 @@
        let pendingWelcome = null;
        function grantOffline(seconds) {
            if (!(seconds > 0)) return;
+           const realSeconds = seconds;
+           seconds = Math.min(seconds, AFK_MS / 1000); // at most 30 minutes of away time counts
            // Golden E buffs don't last while you're away
            state.buffs.forEach(b => { b.time -= seconds; });
            state.buffs = state.buffs.filter(b => b.time > 0);
@@ -12,6 +14,7 @@
            if (market.unlocked) marketTick(Math.min(seconds, 30 * MARKET_TICK));
            const off = offlineSettings();
            const counted = Math.min(seconds, off.capHours * 3600);
+           seconds = realSeconds;
            const amount = state.bpsBase * counted * off.eff;
            if (seconds >= 4 * 3600) unlockAchievement('mnap');
            if (amount > 0) {
@@ -29,7 +32,7 @@
            pendingWelcome = null;
            setText(document.getElementById('welcome-away'), formatTime(w.seconds));
            setText(document.getElementById('welcome-amount'), formatNumber(w.amount));
-           setText(document.getElementById('welcome-detail'), `Your buildings kept working at ${Math.round(w.off.eff * 100)}% speed${w.seconds > w.counted ? ` for the first ${w.off.capHours} hours` : ''}.`);
+           setText(document.getElementById('welcome-detail'), `Your buildings kept working at ${Math.round(w.off.eff * 100)}% speed${w.seconds > w.counted ? ` (at most 30 minutes count)` : ''}.`);
            const tip = !state.upgrades.off1 ? 'Tip: the Night Shift upgrade makes buildings work harder while you\'re away.'
                : !state.upgrades.off3 ? 'Tip: Dream Factory lets away earnings count for up to 24 hours.' : '';
            setText(document.getElementById('welcome-tip'), tip);
@@ -261,6 +264,7 @@
        let secondTimer = 0;
 
        function gameTick(dt) {
+           if (afkIdle()) return; // away for 30 minutes: no automatic progress until the next input
            // Between runs (in heaven) nothing happens until you begin the next run
            if (state.meta.heaven) { updateDisplay(); return; }
            if (state.bps > 0) {

@@ -127,7 +127,7 @@ function dlgSettings() {
 function dlgAway() {
   const a = rt.away || { seconds: 0, money: 0, shops: 0 };
   return {
-    title: 'Welcome back!', html: '<div class="celebrate"><div class="ico">' + icon('coin') + '</div><div class="big">' + (a.money ? '+' + money(a.money) : 'Nothing earned') + '</div></div><p style="text-align:center">You were away for <b>' + fmtTime(a.seconds) + '</b>.' + (a.money - (a.fr || 0) > 0 ? ' Your fully staffed shops (' + a.shops + ') kept serving coffee while you were gone.' : ' Shops only earn while you are away when they have a Barista, a Cashier and a Restocker or Manager.') + (a.fr ? ' Your ' + a.frN + ' franchise' + (a.frN > 1 ? 's' : '') + ' earned ' + money(a.fr) + '.' : '') + '</p><div class="dfoot" style="justify-content:center"><button class="btn primary" data-act="close">Let us go!</button></div>'
+    title: 'Welcome back!', html: '<div class="celebrate"><div class="ico">' + icon('coin') + '</div><div class="big">' + (a.money ? '+' + money(a.money) : 'Nothing earned') + '</div></div><p style="text-align:center">You were away for <b>' + fmtTime(a.seconds) + '</b> (at most 30 minutes count).' + (a.money - (a.fr || 0) > 0 ? ' Your fully staffed shops (' + a.shops + ') kept serving coffee while you were gone.' : ' Shops only earn while you are away when they have a Barista, a Cashier and a Restocker or Manager.') + (a.fr ? ' Your ' + a.frN + ' franchise' + (a.frN > 1 ? 's' : '') + ' earned ' + money(a.fr) + '.' : '') + '</p><div class="dfoot" style="justify-content:center"><button class="btn primary" data-act="close">Let us go!</button></div>'
   };
 }
 function dlgRank() {
