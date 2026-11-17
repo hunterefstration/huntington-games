@@ -2845,7 +2845,8 @@ function toast(text, kind = '', ms = 3200){
   el.append(dot, t, n, bar);
   el.onclick = () => dropToast(el);
   box.append(el);
-  while (box.children.length > TOAST_MAX) dropToast(box.firstElementChild, true);
+  // (2026-11-17) remove the oldest outright: dropToast skips one that is already fading, which looped forever (a frozen tab)
+  while (box.children.length > TOAST_MAX) { const f = box.firstElementChild; clearTimeout(f._t); f.remove(); }
   el._t = setTimeout(() => dropToast(el), ms);
   return el;
 }
