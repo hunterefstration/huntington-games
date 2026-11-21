@@ -22,7 +22,7 @@ function createRenderer(opts) {
         },
         getContext() { return gl; },
         getPixelRatio() { return pixelRatio; },
-        setPixelRatio(v) { if (v === undefined || v === pixelRatio) return; pixelRatio = v; this.setSize(cssW, cssH, false); },
+        setPixelRatio(v) { if (v === undefined || v === pixelRatio) return; pixelRatio = v; E.pixelRatio = v; this.setSize(cssW, cssH, false); },
         getSize(target) { if (target && target.set) return target.set(cssW, cssH); return { width: cssW, height: cssH }; },
         getDrawingBufferSize(target) { if (target && target.set) return target.set(canvas.width, canvas.height); return { width: canvas.width, height: canvas.height }; },
         setSize(w, h, updateStyle) {
@@ -63,17 +63,22 @@ function createRenderer(opts) {
     return R;
 }
 
-// Which renderer should this game use? '?r=three' / '?r=hg' in the address decides for one visit; a failed
-// start is remembered per game (so the next visit goes straight to three.js); otherwise HG3D when it can run.
+// Which renderer should this game use? '?r=three' / '?r=hg' in the address decides for one visit; the player's own
+// choice and a failed start are remembered per game ON THIS DEVICE ('hgdev_' keys do not sync: a Chromebook and a
+// gaming PC should not share the answer); otherwise HG3D when it can run.
 function pick(game, fallbackDefault) {
     let q = null; try { const m = /[?&]r=(three|hg)\b/.exec(location.search); if (m) q = m[1]; } catch (e) { }
     if (q === 'three') return 'three';
     if (typeof WebGL2RenderingContext === 'undefined') return 'three';
     if (q === 'hg') return 'hg';
-    try { if (localStorage.getItem('hgq:r:' + game) === 'three') return 'three'; } catch (e) { }
+    try { if (localStorage.getItem('hgdev_r_' + game) === 'three') return 'three'; } catch (e) { }
     return fallbackDefault || 'hg';
 }
 // HG3D could not draw this game here: remember it and start again on three.js (once)
 function bail(game, why) {
-    try { console.warn('[HG3D] falling back to three.js: ' + why); localStorage.setItem('hgq:r:' + game, 'three'); if (!/[?&]r=hg\b/.test(location.search) && !sessionStorage.getItem('hgq:bailed')) { sessionStorage.setItem('hgq:bailed', '1'); location.reload(); } } catch (e) { }
+    try { console.warn('[HG3D] falling back to three.js: ' + why); localStorage.setItem('hgdev_r_' + game, 'three'); if (!/[?&]r=hg\b/.test(location.search) && !sessionStorage.getItem('hgdev_bailed')) { sessionStorage.setItem('hgdev_bailed', '1'); location.reload(); } } catch (e) { }
 }
+
+// the player's choice in a game's settings: 'three' (classic) or anything else for the default
+function choose(game, r) { try { if (r === 'three') localStorage.setItem('hgdev_r_' + game, 'three'); else localStorage.removeItem('hgdev_r_' + game); } catch (e) { } }
+function chosen(game) { try { return localStorage.getItem('hgdev_r_' + game) === 'three' ? 'three' : 'hg'; } catch (e) { return 'hg'; } }

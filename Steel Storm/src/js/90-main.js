@@ -143,7 +143,7 @@ function frame(now) {
     if (M) {
         const dt = advance(); updateParticles(dt); updateCamera(dt); updateWorld(dt); updateFlagViz();
         if (Q.shEvery > 1 && ++FS.sh >= Q.shEvery) { FS.sh = 0; renderer.shadowMap.needsUpdate = true; }      // shadows redrawn every other frame on Medium
-        if (!DBG.noRender) { const r0 = performance.now(); renderer.render(scene, camera); FS.rsum += performance.now() - r0; }
+        if (!DBG.noRender) { const r0 = performance.now(); renderer.render(scene, camera); FS.rsum += performance.now() - r0; hgCheck(); }
         UI.hud(rdt);
         if (ME) { if (ME.alive) engineSet(ME.def.ln === 'a' && !ME.def.heli ? ME.thr : Math.abs(ME.speed) / ME.def.sp, ME.def.ln); else engineStop(); }
         if (DBG.autoQ && !DBG.noRender) autoQuality(now);
@@ -235,6 +235,13 @@ function boot() {
         trainBadge();
         requestAnimationFrame(frame);
     } catch (e) { $('#boot-s').textContent = 'Could not start: ' + e.message; console.error(e); }
+}
+// Settings > speed test: the same team battle every time, timed for 20 s with whichever engine is drawing now.
+// Test once with each engine (switch, reopen the game, test again) and the card compares the two.
+function speedTestRun() {
+    const veh = myVeh(), cfg = makeConfig([{ id: 0, name: myName(), veh, mm: modMask(veh) }], { mode: 'tdm', wx: 'noon' }); beginMatch(cfg, 0, true);
+    const keep = DBG.autoQ; DBG.autoQ = false;
+    HG3D.speedTest({ game: 'steelstorm', renderer: HGR ? 'hg' : 'three', gl: renderer.getContext(), seconds: 20, onDone: () => { DBG.autoQ = keep; UI.leaveMatch(true); afterMatch(); HG3D.benchCard('steelstorm', 'Steel Storm speed test'); } });
 }
 // ---------- debug hook for tests ----------
 function renderStats(n) {      // render n frames now and report the cost and renderer.info

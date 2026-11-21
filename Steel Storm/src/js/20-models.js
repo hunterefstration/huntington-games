@@ -126,6 +126,8 @@ const flagSet = s => { const o = {}; String(s || '').split(/\s+/).forEach(k => {
 // ---------- materials ----------
 function vehMat(map) {
     const m = new THREE.MeshPhongMaterial({ vertexColors: true, map, bumpMap: TEX.bump, bumpScale: 1.2, shininess: 26, specular: 0x2a2a2a });
+    // HG3D: the camo texture shows only where the vertex colour's alpha says so (same rule as the three.js patch below)
+    m.userData.hg = { customMap: true, fAlbedo: '#ifdef USE_MAP\n#ifdef USE_COLOR_ALPHA\n alb *= mix(vec3(1.0), tx.rgb, vAlpha);\n#else\n alb *= tx.rgb; alpha *= tx.a;\n#endif\n#endif' };
     m.onBeforeCompile = sh => {
         sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', '#ifdef USE_MAP\n vec4 sampledDiffuseColor = texture2D( map, vMapUv );\n #ifdef USE_COLOR_ALPHA\n diffuseColor.rgb *= mix(vec3(1.0), sampledDiffuseColor.rgb, vColor.a);\n #else\n diffuseColor *= sampledDiffuseColor;\n #endif\n#endif')
             .replace('#include <color_fragment>', '#if defined( USE_COLOR_ALPHA ) || defined( USE_COLOR )\n diffuseColor.rgb *= vColor.rgb;\n#endif');

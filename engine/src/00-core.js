@@ -95,7 +95,7 @@ function createEngine(canvas, attrs) {
     const E = {
         gl, canvas, gen: 1, lost: false, failed: null,
         programs: new Map(), nextProgId: 1, nextHookId: 1,
-        S: null, ubo: null, uboData: new Float32Array(132), white: null, shadow: null,
+        S: null, ubo: null, uboData: new Float32Array(U_FLOATS), pixelRatio: 1, spriteGeo: null, white: null, shadow: null,
         stats: { calls: 0, tris: 0, geometries: 0, textures: 0, programs: 0 },
         aniso: null, maxAniso: 1, floatLinear: false
     };

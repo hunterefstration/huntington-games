@@ -288,6 +288,7 @@ Object.assign(UI, {
         $$('#st-q button').forEach(b => b.classList.toggle('on', b.dataset.q === S.quality));
         const on = S.show && !Show.off; $$('#st-show button').forEach(b => b.classList.toggle('on', (b.dataset.show === '1') === on));
         $$('#st-inv button').forEach(b => b.classList.toggle('on', (b.dataset.inv === '1') === !!S.invertY));
+        $$('#st-eng button').forEach(b => b.classList.toggle('on', b.dataset.eng === HG3D.chosen('steelstorm')));
         $('#st-sens').value = S.sens; $('#st-vol').value = S.vol; $('#st-sensv').textContent = (+S.sens).toFixed(2); $('#st-volv').textContent = Math.round(S.vol * 100) + '%';
     }
 });
@@ -322,6 +323,8 @@ function bindMenu() {
         }
         const q = e.target.closest('[data-q]'); if (q) { save.settings.quality = q.dataset.q; writeSave(); applyQuality(); UI.paintSettings(); return; }
         const sh = e.target.closest('[data-show]'); if (sh) { save.settings.show = sh.dataset.show === '1'; if (save.settings.show) { Show.off = false; Show.perf.t = 0; } writeSave(); UI.paintSettings(); showSync(); return; }
+        const en = e.target.closest('[data-eng]'); if (en) { HG3D.choose('steelstorm', en.dataset.eng); UI.paintSettings(); return; }
+        if (e.target.closest('[data-speed]')) { UI.close('s-settings'); speedTestRun(); return; }
         const iv = e.target.closest('[data-inv]'); if (iv) { save.settings.invertY = iv.dataset.inv === '1'; writeSave(); UI.paintSettings(); return; }
     });
     $('#b-play').onclick = () => { ac(); if (PARTY.code) { UI.openLobby(); return; } startPlay(); if (M) Cam.lock(); };

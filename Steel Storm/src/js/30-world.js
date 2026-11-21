@@ -54,7 +54,10 @@ function pushOutOfBuildings(e, r) {
     }
 }
 
-const renderer = new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: false, powerPreference: 'high-performance' });
+// the HG3D engine draws the game where it can (address ?r=three keeps three.js' own renderer; so does a failed start)
+const HGR = HG3D.pick('steelstorm') === 'hg' ? HG3D.createRenderer({ canvas: $('#gl'), antialias: false, powerPreference: 'high-performance' }) : null;
+const renderer = HGR || new THREE.WebGLRenderer({ canvas: $('#gl'), antialias: false, powerPreference: 'high-performance' });
+function hgCheck() { if (HGR && HGR.failed && !hgCheck.done) { hgCheck.done = true; HG3D.bail('steelstorm', HGR.failed); } }
 renderer.setClearColor(0x8fc8ee);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -86,7 +89,7 @@ let WXK = 'noon', W0 = WX.noon;
 const skyU = { top: { value: new THREE.Vector3() }, hor: { value: new THREE.Vector3() }, sunDir: { value: new THREE.Vector3(.35, .86, .25) }, sunCol: { value: new THREE.Vector3(1, 1, 1) } };
 const sRGB3 = (h, v) => (v || new THREE.Vector3()).set((h >> 16 & 255) / 255, (h >> 8 & 255) / 255, (h & 255) / 255);
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12), new THREE.ShaderMaterial({
-    uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false, userData: { hg: { sky: true } },      // HG3D draws it last: only the pixels nothing covered
     vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); gl_Position.z = gl_Position.w * 0.9999; }',
     fragmentShader: 'uniform vec3 top, hor, sunDir, sunCol; varying vec3 vD; void main(){ float h = clamp(vD.y, -0.2, 1.0); vec3 c = mix(hor, top, pow(max(h, 0.0), 0.55)); float s = max(dot(normalize(vD), normalize(sunDir)), 0.0); c += sunCol * (pow(s, 600.0) * 1.6 + pow(s, 14.0) * 0.22); gl_FragColor = vec4(c, 1.0); }'
 }));
@@ -158,8 +161,39 @@ function initTerrainTextures() {
 }
 const terrainLo = new THREE.MeshLambertMaterial({ vertexColors: true });
 let terrainHi = null, waterHi = null, waterLo = null, waterU = { uTime: { value: 0 }, uSky: { value: new THREE.Color(0xbfdcf2) } };
+// the same ground and water for the HG3D engine, written against its hook points (the three.js patches below stay for ?r=three)
+const HG_TERRAIN = `
+            vec2 wuv = vTW.xz; float hgt = vTW.y, slope = 1.0 - clamp(vTN.y, 0.0, 1.0);
+            float det = texture(tRock, wuv * 0.55).r;
+            vec3 grass = mix(texture(tGrass, wuv * 0.11).rgb, texture(tGrass, wuv * 0.017).rgb * vec3(1.1, 1.05, 0.8), 0.4);
+            float wSand = 1.0 - smoothstep(1.3, 3.2, hgt + det * 0.8);
+            float wRock = smoothstep(0.17, 0.32, slope + max(hgt - 24.0, 0.0) * 0.03);
+            float wSnow = smoothstep(30.5, 34.0, hgt + det * 2.5) * (1.0 - smoothstep(0.4, 0.55, slope));
+            vec3 col = grass;
+            if (wSand > 0.002) col = mix(col, texture(tSand, wuv * 0.09).rgb, wSand);
+            float wR = wRock * (1.0 - wSand * 0.6); if (wR > 0.002) col = mix(col, texture(tRock, wuv * 0.06).rgb, wR);
+            if (wSnow > 0.002) col = mix(col, texture(tSnow, wuv * 0.05).rgb, wSnow);
+            float road = texture(tMask, vTW.xz / 1600.0 + 0.5).r * step(0.6, hgt);
+            if (road > 0.002) col = mix(col, texture(tRoad, wuv * 0.08).rgb, road * 0.92);
+            col = mix(col, col * vec3(0.5, 0.72, 0.85), smoothstep(-0.3, -7.0, hgt));
+            col *= 0.84 + det * 0.32;
+            alb *= col;`;
+const HG_WATER = `
+            { vec2 nuv = vec2(vWW.x, -vWW.z) * 0.015 + uWOff;
+              vec3 mN = normalize(texture(tWN, nuv).xyz * 2.0 - 1.0 + texture(tWN, nuv * 0.37 + vec2(uTime * 0.011, -uTime * 0.007)).xyz * 2.0 - 1.0); mN.xy *= 0.28;
+              vec3 Nw = normalize(vec3(mN.x, mN.z, -mN.y)), V = normalize(uCamPos.xyz - vWW), H = normalize(V + uSunDir[0].xyz);
+              float ndl = max(dot(Nw, uSunDir[0].xyz), 0.0);
+              vec3 amb = mix(uHemiGround.rgb, uHemiSky.rgb, dot(Nw, uHemiDir.xyz) * 0.5 + 0.5) + uAmbient.rgb;
+            #ifdef PIXEL_PL
+              amb += hgPoint(Nw, vWW);
+            #endif
+              c = alb * (amb + uSunCol[0].rgb * ndl) + uSpecCol * (uSpec.y * pow(max(dot(Nw, H), 0.0), uSpec.x) * ndl) * uSunCol[0].rgb;
+              float fres = pow(1.0 - clamp(dot(V, Nw), 0.0, 1.0), 3.0);
+              c = mix(c, uSky, fres * 0.6); alpha = mix(alpha, 1.0, fres * 0.8); }`;
 function makeTerrainHi() {
     const m = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    m.userData.hg = { vDecl: 'out vec3 vTW; out vec3 vTN;', vMain: 'vTW = wp; vTN = N;', fDecl: 'uniform sampler2D tGrass, tSand, tRock, tSnow, tRoad, tMask; in vec3 vTW; in vec3 vTN;', fAlbedo: HG_TERRAIN,
+        uniforms: { tGrass: { value: TT.grass }, tSand: { value: TT.sand }, tRock: { value: TT.rock }, tSnow: { value: TT.snow }, tRoad: { value: TT.road }, tMask: { value: TT.mask } } };
     m.onBeforeCompile = sh => {
         Object.assign(sh.uniforms, { tGrass: { value: TT.grass }, tSand: { value: TT.sand }, tRock: { value: TT.rock }, tSnow: { value: TT.snow }, tRoad: { value: TT.road }, tMask: { value: TT.mask } });
         sh.vertexShader = 'varying vec3 vTW; varying vec3 vTN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vTW = (modelMatrix * vec4(transformed, 1.0)).xyz; vTN = normalize(mat3(modelMatrix) * objectNormal);');
@@ -187,6 +221,8 @@ function makeTerrainHi() {
 function makeWaterHi() {
     const m = new THREE.MeshPhongMaterial({ color: 0x2f7fb0, normalMap: TT.waterN, normalScale: new THREE.Vector2(.28, .28), shininess: 90, specular: 0x9aa4ad, transparent: true, opacity: .82, depthWrite: false });
     TT.waterN.repeat.set(90, 90);
+    m.userData.hg = { vDecl: 'out vec3 vWW;', vMain: 'vWW = wp;', fDecl: 'uniform sampler2D tWN; uniform float uTime; uniform vec3 uSky; uniform vec2 uWOff; in vec3 vWW;', fFinal: HG_WATER,
+        uniforms: { tWN: { value: TT.waterN }, uWOff: { value: TT.waterN.offset }, uTime: waterU.uTime, uSky: waterU.uSky } };
     m.onBeforeCompile = sh => {
         Object.assign(sh.uniforms, waterU);
         sh.fragmentShader = 'uniform float uTime; uniform vec3 uSky;\n' + sh.fragmentShader

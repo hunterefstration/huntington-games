@@ -7,9 +7,11 @@ const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..'), SRC = path.join(ROOT, 'engine', 'src'), OUT = path.join(ROOT, 'engine', 'hg3d.js');
 // game folder -> where its copy of the engine lives (edit engine/src, never the copies)
 const TARGETS = {
-    'Mayhem Marathon': 'src/js/05-hg3d.js'
+    'Mayhem Marathon': 'src/js/05-hg3d.js',
+    'Steel Storm': 'src/js/05-hg3d.js'
 };
-const EXPORTS = 'VERSION, createRenderer, pick, bail, M4';
+const EXPORTS = 'VERSION, createRenderer, pick, bail, choose, chosen, M4, governor, meter, speedTest, benchCard, benchResults, '
+    + 'color, attr, geometry, material, texture, node, mesh, instanced, light, camera, fog, geo';
 const CHECK = process.argv.includes('--check');
 
 const files = fs.readdirSync(SRC).filter(f => f.endsWith('.js')).sort();

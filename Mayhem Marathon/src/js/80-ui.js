@@ -180,7 +180,7 @@ const UI = {
     },
     openSettings(from) {
         UI.back = from || G.screen; UI.show('#s-set'); const s = save.settings;
-        segPaint('#s-q', s.quality); $('#s-mus').value = s.music; $('#s-sfx').value = s.sfx; $('#s-mute').checked = s.mute; $('#s-sens').value = s.sens; $('#s-inv').checked = s.invertY; $('#s-names').checked = s.names;
+        segPaint('#s-q', s.quality); segPaint('#s-eng', HG3D.chosen('mayhem')); $('#s-mus').value = s.music; $('#s-sfx').value = s.sfx; $('#s-mute').checked = s.mute; $('#s-sens').value = s.sens; $('#s-inv').checked = s.invertY; $('#s-names').checked = s.names;
         UI.paintSettings();
     },
     paintSettings() { const s = save.settings; $('#s-musv').textContent = Math.round(s.music * 100) + '%'; $('#s-sfxv').textContent = Math.round(s.sfx * 100) + '%'; $('#s-sensv').textContent = s.sens.toFixed(1) + 'x'; },
@@ -256,6 +256,12 @@ function startSolo() {
     const o = save.opts, cfg = makeShowConfig([{ id: 0, name: myName(), look: save.look }], { bots: 15, skill: o.skill, length: o.length, scoring: 'knockout', pick: o.pick });
     G.host = true; G.me = 0; beginShow(cfg); hostStartRound();
 }
+// Settings > speed test: the same busy race every time, timed for 20 s with whichever engine is drawing now.
+// Test once with each engine (switch, reopen the game, test again) and the card compares the two.
+function speedTestRun() {
+    startPractice('spin', 15, 1); G.autopilot = true;
+    HG3D.speedTest({ game: 'mayhem', renderer: GFX.hg ? 'hg' : 'three', gl: GFX.renderer.getContext(), seconds: 20, onDone: () => { G.autopilot = false; UI.toTitle(); HG3D.benchCard('mayhem', 'Mayhem Marathon speed test'); } });
+}
 function startPractice(rid, bots, skill) {
     netReset(); ac();
     const cfg = makeShowConfig([{ id: 0, name: myName(), look: save.look }], { bots: bots == null ? 15 : bots, skill: skill == null ? save.opts.skill : skill, length: 1, scoring: 'knockout', practice: rid });
@@ -315,6 +321,8 @@ function wireUI() {
     $('#w-tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; sfx('click'); MENU.cat = b.dataset.c; MENU.tryLook = null; UI.paintWard(); });
     $('#w-grid').addEventListener('click', e => { const b = e.target.closest('.it'); if (b) UI.wardClick(b.dataset.id); });
     seg('#s-q', v => { save.settings.quality = v; writeSave(); segPaint('#s-q', v); applyQuality(); });
+    seg('#s-eng', v => { HG3D.choose('mayhem', v); segPaint('#s-eng', v); });
+    seg('#s-speed', () => speedTestRun());
     const rng = (sel, key) => $(sel).addEventListener('input', e => { save.settings[key] = +e.target.value; writeSave(); applyVolume(); UI.paintSettings(); });
     rng('#s-mus', 'music'); rng('#s-sfx', 'sfx'); rng('#s-sens', 'sens');
     $('#s-mute').addEventListener('change', e => { save.settings.mute = e.target.checked; writeSave(); applyVolume(); });

@@ -2,7 +2,9 @@
 //
 //   node tools/bench/bench3d.mjs <game|all> [options]
 //     games:      mayhem steel frontline blocky sovereign
-//     --mode      cpu | fill | both      cpu  = hardware GL + main thread slowed 6x (a CPU-bound Chromebook)
+//     --mode      cpu | gpu | fill | both (cpu+fill) | all
+//                                        gpu  = this PC's real graphics chip drawing an 8K picture (pixel-bound, real hardware)
+//                                        cpu  = hardware GL + main thread slowed 6x (a CPU-bound Chromebook)
 //                                        fill = software GL (SwiftShader): pixel cost dominates
 //     --r         three | hg | ab | base three/hg = one renderer, ab = both interleaved + gate verdict,
 //                                        base = the game as it is (no ?r=), with its render share
@@ -75,12 +77,22 @@ const GAMES = {
     },
     steel: {
         dir: 'Steel Storm', ready: () => !!window.__steelstorm, renderer: () => window.__steelstorm.renderer,
-        dbg: () => window.__steelstorm.state + ' ents=' + window.__steelstorm.ents().length + ' q=' + window.__steelstorm.save.settings.quality,
+        dbg: () => (window.__steelstorm.renderer.isHG3D ? 'HG3D ' : 'three ') + window.__steelstorm.state + ' ents=' + window.__steelstorm.ents().length + ' q=' + window.__steelstorm.save.settings.quality,
         info: () => { const i = window.__steelstorm.renderer.info.render; return { calls: i.calls, tris: i.triangles }; },
         scenarios: {
             'tdm-low': { desc: 'Team battle with bots, Low (where auto quality ends up)', setup: async () => { const H = window.__steelstorm; H.autoQ(false); H.setQuality('low'); H.startMatch({ mode: 'tdm', wx: Object.keys(H.WX)[0] }); H.autoQ(false); } },
+            'view': { desc: 'a chosen view: --arg quality,weather,town|shore,yaw', setup: async a => {
+                const H = window.__steelstorm, p = String(a || 'med,noon,town,0').split(','); H.autoQ(false); H.setQuality(p[0]); H.startMatch({ mode: 'tdm', wx: p[1] }); H.autoQ(false);
+                let x = 0, z = 0;
+                if (p[2] === 'shore') { let best = 1e9; for (let i = -700; i <= 700; i += 20) for (let j = -700; j <= 700; j += 20) { const h = H.H(i, j); if (h > 1.5 && h < 4 && H.H(i + 40, j) < -1.5) { const d = Math.hypot(i, j); if (d < best) { best = d; x = i; z = j; } } } }
+                else { const b = H.BLD[Math.floor(H.BLD.length / 2)]; x = b.x0 - 22; z = b.z0 - 22; }
+                H.teleport(x, null, z, +p[3] || 0); H.look(+p[3] || 0, 0.12);
+            } },
+            'lobby': { desc: 'the 3D lobby behind the menu (showcase off)', setup: async () => { const H = window.__steelstorm; H.autoQ(false); H.show.off = true; },
+                view: () => ({ scene: window.__steelstorm.Lobby.scene, camera: window.__steelstorm.Lobby.cam, renderer: window.__steelstorm.renderer }) },
             'tdm-med': { desc: 'Team battle with bots, Medium (the default)', setup: async () => { const H = window.__steelstorm; H.autoQ(false); H.setQuality('med'); H.startMatch({ mode: 'tdm', wx: Object.keys(H.WX)[0] }); H.autoQ(false); } }
-        }, settle: 4000
+        }, settle: 4000,
+        view: () => ({ scene: window.__steelstorm.scene, camera: window.__steelstorm.camera, renderer: window.__steelstorm.renderer })
     },
     frontline: {
         dir: 'Frontline', query: 'debug', ready: () => !!window.__fl, renderer: () => window.__fl.renderer,
@@ -114,9 +126,14 @@ const GAMES = {
 
 const LAUNCH = {
     cpu: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'],
-    fill: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+    fill: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+    // gpu: this PC's real graphics chip, made pixel-bound by an 8K picture and no CPU slowdown. Unlike software GL
+    // (where vertices cost as much as pixels) this is how a real chip spends its time: the closest stand-in here for
+    // the pixel cost on a Chromebook's integrated graphics.
+    gpu: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist']
 };
-const COMMON = ['--enable-precise-memory-info', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required', '--mute-audio'];
+const BIG = { width: 7680, height: 4320 };
+const COMMON = ['--js-flags=--expose-gc', '--enable-precise-memory-info', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--autoplay-policy=no-user-gesture-required', '--mute-audio'];
 const UA = 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 const cdn = new Map();
 
@@ -126,7 +143,7 @@ const f1 = n => (Math.round(n * 10) / 10).toFixed(1);
 
 async function measure(browser, base, key, scnName, mode, r) {
     const G = GAMES[key], scn = G.scenarios[scnName];
-    const ctx = await browser.newContext({ viewport: VIEW, deviceScaleFactor: 1, userAgent: UA });
+    const ctx = await browser.newContext({ viewport: mode === 'gpu' ? BIG : VIEW, deviceScaleFactor: 1, userAgent: UA });
     const page = await ctx.newPage(), errs = [];
     page.on('pageerror', e => errs.push(e.message.slice(0, 160)));
     await page.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, route => route.abort());
@@ -166,7 +183,7 @@ async function measure(browser, base, key, scnName, mode, r) {
     await wait(120);
     const info = await page.evaluate(G.info).catch(() => ({}));
     const dbg = G.dbg ? await page.evaluate(G.dbg).catch(e => 'dbg failed: ' + String(e.message).slice(0, 80)) : '';
-    const heap = await page.evaluate(() => performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0);
+    const heap = await page.evaluate(() => { if (typeof gc === 'function') { gc(); gc(); } return performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0; });     // after a full collection: what is really held
     const berrs = await page.evaluate(() => window.__bench.errs.slice(0, 3));
     await ctx.close();
     const total = frames.map(f => f[0] + f[2]), work = frames.map(f => f[0]), sub = frames.map(f => f[1]), gpu = frames.map(f => f[2]);
@@ -234,7 +251,7 @@ async function sameState(browser, base, key, scnName, arg, out) {
         if (redrawSrc) (0, eval)('(' + redrawSrc + ')')();
         const v = (0, eval)('(' + viewSrc + ')')(), T = await import('three'), R = v.renderer, gl = R.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
         if (!R.isHG3D) return { err: 'this page is not running HG3D' };
-        R.render(v.scene, v.camera); const a = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, a);
+        R.shadowMap.needsUpdate = true; R.render(v.scene, v.camera); const a = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, a);
         const c2 = document.createElement('canvas'), r2 = new T.WebGLRenderer({ canvas: c2, antialias: false, preserveDrawingBuffer: true });
         r2.setPixelRatio(1); r2.setSize(w, h, false); r2.outputColorSpace = R.outputColorSpace; r2.toneMapping = R.toneMapping; r2.toneMappingExposure = R.toneMappingExposure;
         r2.shadowMap.enabled = R.shadowMap.enabled; r2.shadowMap.type = R.shadowMap.type; if (v.clear !== undefined) r2.setClearColor(v.clear);
@@ -251,7 +268,7 @@ async function sameState(browser, base, key, scnName, arg, out) {
         }
         r2.dispose();
         return { mean: sum / n, big: big / n * 100, three: mb.map(x => Math.round(x / n)), hg: ma.map(x => Math.round(x / n)), failed: R.failed };
-    }, [G.view.toString(), G.redraw ? G.redraw.toString() : null, !!out]);
+    }, [(scn.view || G.view).toString(), G.redraw ? G.redraw.toString() : null, !!out]);
     if (out) await page.screenshot({ path: out });
     const dbg = G.dbg ? await page.evaluate(G.dbg).catch(() => '?') : '';
     console.log((arg || scnName).toString().padEnd(12) + (res.err ? res.err : 'difference ' + res.mean.toFixed(2) + ' of 255, ' + res.big.toFixed(2) + '% of pixels clearly off; average colour three ' + res.three.join(',') + ' / HG3D ' + res.hg.join(',')) + '  [' + dbg + ']' + (res.failed ? '  FAILED: ' + res.failed : '') + (msgs.length ? '  MESSAGES: ' + [...new Set(msgs)].slice(0, 5).join(' || ') : ''));
@@ -281,7 +298,7 @@ if (flag('same', false)) {          // --same [f.png]  [--arg a+b+c]: the strict
     await browser.close(); server.close(); process.exit(0);
 }
 const rows = [], keys = which === 'all' ? Object.keys(GAMES) : which.split(',');
-const modes = MODE === 'both' ? ['cpu', 'fill'] : [MODE];
+const modes = MODE === 'both' ? ['cpu', 'fill'] : MODE === 'all' ? ['cpu', 'gpu', 'fill'] : MODE.split(',');
 let failed = false;
 for (const mode of modes) {
     const browser = await chromium.launch({ headless: !HEADED, args: LAUNCH[mode].concat(COMMON) });

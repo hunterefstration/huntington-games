@@ -1,22 +1,51 @@
 // ============================================================
-// Shaders. Lighting is worked out per VERTEX (hemisphere + up to two suns + up to four point lights);
-// the fragment shader only multiplies, takes at most one texture sample and one or four shadow taps,
-// then tone-maps, encodes sRGB and fogs in the same pass. Programs are a few hundred bytes of GLSL each
-// (three.js' are 30-60 KB), so they compile fast and there are few of them.
+// Shaders. Lighting is worked out per VERTEX (hemisphere + up to two suns); where nothing needs doing per
+// pixel the finished, tone-mapped, sRGB colour leaves the vertex shader and the fragment shader only fogs.
+// Otherwise the fragment shader multiplies, takes at most one texture sample and one or four hardware-filtered
+// shadow taps. Programs are a few hundred bytes of GLSL each (three.js' are 30-60 KB), so they compile fast.
 // ============================================================
 // the per-frame uniform block: written once per render() call, shared by every engine program
 const UBO_GLSL = `layout(std140) uniform HGFrame {
- mat4 uViewProj; mat4 uView; mat4 uShadowMat;
+ mat4 uViewProj; mat4 uView; mat4 uShadowMat; mat4 uProj;
  vec4 uCamPos; vec4 uHemiSky; vec4 uHemiGround; vec4 uHemiDir; vec4 uAmbient;
  vec4 uSunDir[2]; vec4 uSunCol[2];
  vec4 uFogColor; vec4 uFogParams; vec4 uShadowParams; vec4 uOut;
- vec4 uPLPos[4]; vec4 uPLCol[4];
+ vec4 uPLPos[8]; vec4 uPLCol[8];
 };
 `;
-const U_VIEWPROJ = 0, U_VIEW = 16, U_SHADOWMAT = 32, U_CAMPOS = 48, U_HEMISKY = 52, U_HEMIGROUND = 56, U_HEMIDIR = 60, U_AMBIENT = 64, U_SUNDIR = 68, U_SUNCOL = 76, U_FOGCOLOR = 84, U_FOGPARAMS = 88, U_SHADOWPARAMS = 92, U_OUT = 96, U_PLPOS = 100, U_PLCOL = 116;
+const U_VIEWPROJ = 0, U_VIEW = 16, U_SHADOWMAT = 32, U_PROJ = 48, U_CAMPOS = 64, U_HEMISKY = 68, U_HEMIGROUND = 72, U_HEMIDIR = 76, U_AMBIENT = 80, U_SUNDIR = 84, U_SUNCOL = 92,
+    U_FOGCOLOR = 100, U_FOGPARAMS = 104, U_SHADOWPARAMS = 108, U_OUT = 112, U_PLPOS = 116, U_PLCOL = 148, U_FLOATS = 180, MAX_PL = 8;
 const BUILTIN_ATTR = { position: 0, normal: 1, uv: 2, color: 3, instanceMatrix: 4, instanceColor: 8 };
 const BUILTIN_UNI = { modelMatrix: 1, modelViewMatrix: 1, projectionMatrix: 1, viewMatrix: 1, normalMatrix: 1, cameraPosition: 1, isOrthographic: 1, uMat: 1, uUvT: 1, map: 1, uShadowMap: 1, uDepthVP: 1 };
-
+const MAT_GLSL = `uniform vec4 uMat[4];
+#define uDiffuse uMat[0]
+#define uEmissive uMat[1].rgb
+#define uAlphaTest uMat[1].a
+#define uSpec uMat[2]
+#define uSpecCol uMat[3].rgb
+`;
+const HEAD_GLSL = `#define texture2D texture
+#ifdef FLAT
+#define HGV flat
+#else
+#define HGV
+#endif
+`;
+// point lights (three.js' physically based falloff): used per vertex, or per pixel when a light is in the scene
+const PL_GLSL = `
+vec3 hgPoint(vec3 N, vec3 wp){
+ vec3 acc = vec3(0.0);
+#if NUM_PL > 0
+ for (int i = 0; i < NUM_PL; i++) {
+  vec3 L = uPLPos[i].xyz - wp; float d = max(length(L), 0.0001); L /= d;
+  float att = 1.0 / max(pow(d, uPLCol[i].w), 0.01);
+  if (uPLPos[i].w > 0.0) { float q = d / uPLPos[i].w; q *= q; q *= q; float s = clamp(1.0 - q, 0.0, 1.0); att *= s * s; }
+  acc += uPLCol[i].rgb * (att * max(dot(N, L), 0.0));
+ }
+#endif
+ return acc;
+}
+`;
 const ENCODE_GLSL = `
 vec3 hgEncode(vec3 c){
 #ifdef TONEMAP_ACES
@@ -40,16 +69,18 @@ float hgFog(float d){
 #endif
 }
 `;
+const defs = f => f.defines.map(d => '#define ' + d).join('\n');
 
-// f: { defines: ['USE_COLOR', ...], colorType: 'vec3'|'vec4', numSun, numPL, hook }
+// f: { defines: [...], colorType: 'vec3'|'vec4', numSun, numPL, hook }
+// hook (material.userData.hg): { vDecl, vPos, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, sky }
 function litVertex(f) {
     const h = f.hook || {};
     return `#version 300 es
 precision highp float; precision highp int;
-${f.defines.map(d => '#define ' + d).join('\n')}
+${defs(f)}
 #define NUM_SUN ${f.numSun}
 #define NUM_PL ${f.numPL}
-${UBO_GLSL}
+${HEAD_GLSL}${UBO_GLSL}
 layout(location=0) in vec3 position;
 #ifndef UNLIT
 layout(location=1) in vec3 normal;
@@ -67,48 +98,42 @@ layout(location=4) in mat4 instanceMatrix;
 layout(location=8) in vec3 instanceColor;
 #endif
 uniform mat4 modelMatrix;
-uniform vec4 uMat[4];
-#define uDiffuse uMat[0]
-#define uEmissive uMat[1].rgb
-#define uAlphaTest uMat[1].a
-#define uSpec uMat[2]
-#define uSpecCol uMat[3].rgb
-out vec3 vAlb; out float vDepth;
+${MAT_GLSL}
+HGV out vec3 vAlb; out float vDepth;
 #ifdef VFINAL
 ${ENCODE_GLSL}
 #ifdef DOUBLE_SIDED
-out vec3 vBack;
+HGV out vec3 vBack;
 #endif
 #endif
 #ifdef USE_COLOR_ALPHA
 out float vAlpha;
 #endif
 #ifndef UNLIT
-out vec3 vLa; out vec3 vLs; out vec3 vEm;
+HGV out vec3 vLa; HGV out vec3 vLs; HGV out vec3 vEm;
 #ifdef DOUBLE_SIDED
-out vec3 vLaB; out vec3 vLsB;
+HGV out vec3 vLaB; HGV out vec3 vLsB;
 #endif
 #ifdef SPEC_VERTEX
-out vec3 vSp;
+HGV out vec3 vSp;
+#endif
+#ifdef NEED_NW
+HGV out vec3 vN; out vec3 vWp;
 #endif
 #ifdef SPEC_PIXEL
-out vec3 vN; out vec3 vWp; out vec3 vF;
+HGV out vec3 vF;
 #endif
 #ifdef SHADOW
 out vec3 vSh;
 #endif
+${PL_GLSL}
 vec3 hgAmbient(vec3 N, vec3 wp){
  vec3 la = mix(uHemiGround.rgb, uHemiSky.rgb, dot(N, uHemiDir.xyz) * 0.5 + 0.5) + uAmbient.rgb;
 #if NUM_SUN > 1
  la += uSunCol[1].rgb * max(dot(N, uSunDir[1].xyz), 0.0);
 #endif
-#if NUM_PL > 0
- for (int i = 0; i < NUM_PL; i++) {
-  vec3 L = uPLPos[i].xyz - wp; float d = max(length(L), 0.0001); L /= d;
-  float att = 1.0 / max(pow(d, uPLCol[i].w), 0.01);
-  if (uPLPos[i].w > 0.0) { float q = d / uPLPos[i].w; q *= q; q *= q; float s = clamp(1.0 - q, 0.0, 1.0); att *= s * s; }
-  la += uPLCol[i].rgb * (att * max(dot(N, L), 0.0));
- }
+#ifdef VERTEX_PL
+ la += hgPoint(N, wp);
 #endif
  return la;
 }
@@ -171,8 +196,11 @@ ${h.vPos || ''}
  vSp = vec3(0.0);
 #endif
 #endif
+#ifdef NEED_NW
+ vN = N; vWp = wp;
+#endif
 #ifdef SPEC_PIXEL
- vN = N; vWp = wp; vF = F;
+ vF = F;
 #endif
 #ifdef SHADOW
  vSh = (uShadowMat * vec4(wp + N * uShadowParams.y, 1.0)).xyz;
@@ -197,38 +225,40 @@ function litFragment(f) {
     const h = f.hook || {};
     return `#version 300 es
 precision highp float; precision highp int; precision highp sampler2DShadow;
-${f.defines.map(d => '#define ' + d).join('\n')}
+${defs(f)}
 #define NUM_SUN ${f.numSun}
-${UBO_GLSL}
-uniform vec4 uMat[4];
-#define uDiffuse uMat[0]
-#define uEmissive uMat[1].rgb
-#define uAlphaTest uMat[1].a
-#define uSpec uMat[2]
-#define uSpecCol uMat[3].rgb
+#define NUM_PL ${f.numPL}
+${HEAD_GLSL}${UBO_GLSL}
+${MAT_GLSL}
 #ifdef USE_MAP
 in vec2 vUv; uniform sampler2D map;
 #endif
-in vec3 vAlb; in float vDepth;
+HGV in vec3 vAlb; in float vDepth;
 #ifdef USE_COLOR_ALPHA
 in float vAlpha;
 #endif
 #if defined(VFINAL) && defined(DOUBLE_SIDED)
-in vec3 vBack;
+HGV in vec3 vBack;
 #endif
 #if !defined(UNLIT) && !defined(VFINAL)
-in vec3 vLa; in vec3 vLs; in vec3 vEm;
+HGV in vec3 vLa; HGV in vec3 vLs; HGV in vec3 vEm;
 #ifdef DOUBLE_SIDED
-in vec3 vLaB; in vec3 vLsB;
+HGV in vec3 vLaB; HGV in vec3 vLsB;
 #endif
 #ifdef SPEC_VERTEX
-in vec3 vSp;
+HGV in vec3 vSp;
+#endif
+#ifdef NEED_NW
+HGV in vec3 vN; in vec3 vWp;
 #endif
 #ifdef SPEC_PIXEL
-in vec3 vN; in vec3 vWp; in vec3 vF;
+HGV in vec3 vF;
 #endif
 #ifdef SHADOW
 in vec3 vSh; uniform sampler2DShadow uShadowMap;
+#endif
+#ifdef PIXEL_PL
+${PL_GLSL}
 #endif
 #endif
 out vec4 fragColor;
@@ -236,11 +266,14 @@ ${ENCODE_GLSL}
 ${h.fDecl || ''}
 void main(){
  vec3 alb = vAlb; float alpha = uDiffuse.a;
-#ifdef USE_COLOR_ALPHA
+#if defined(USE_COLOR_ALPHA) && !defined(CUSTOM_MAP)
  alpha *= vAlpha;
 #endif
 #ifdef USE_MAP
- vec4 tx = texture(map, vUv); alb *= tx.rgb; alpha *= tx.a;
+ vec4 tx = texture(map, vUv);
+#ifndef CUSTOM_MAP
+ alb *= tx.rgb; alpha *= tx.a;
+#endif
 #endif
 ${h.fAlbedo || ''}
 #ifdef ALPHATEST
@@ -272,6 +305,13 @@ ${h.fAlbedo || ''}
 #else
  vec3 la = vLa; vec3 ls = vLs;
 #endif
+#ifdef PIXEL_PL
+#ifdef DOUBLE_SIDED
+ la += hgPoint(gl_FrontFacing ? normalize(vN) : -normalize(vN), vWp);
+#else
+ la += hgPoint(normalize(vN), vWp);
+#endif
+#endif
  vec3 c = alb * (la + ls * sh) + vEm;
 #ifdef SPEC_VERTEX
  c += vSp * sh;
@@ -293,6 +333,86 @@ ${h.fFinal || ''}
  fragColor = vec4(c, alpha);
 }`;
 }
+
+// ---- point clouds (PointsMaterial) and camera-facing sprites (SpriteMaterial) ----
+function pointsVertex(f) {
+    return `#version 300 es
+precision highp float; precision highp int;
+${defs(f)}
+${UBO_GLSL}
+layout(location=0) in vec3 position;
+#ifdef USE_COLOR
+layout(location=3) in vec3 color;
+#endif
+uniform mat4 modelMatrix; uniform vec4 uMat[4];
+out vec3 vAlb; out float vDepth;
+void main(){
+ vec4 wp4 = modelMatrix * vec4(position, 1.0); vec4 mv = uView * wp4; vDepth = -mv.z; gl_Position = uViewProj * wp4;
+ gl_PointSize = uMat[1].y > 0.0 ? uMat[1].x * (uMat[1].y / max(-mv.z, 0.0001)) : uMat[1].x;
+ vAlb = uMat[0].rgb;
+#ifdef USE_COLOR
+ vAlb *= color;
+#endif
+}`;
+}
+function spriteVertex(f) {
+    return `#version 300 es
+precision highp float; precision highp int;
+${defs(f)}
+${UBO_GLSL}
+layout(location=0) in vec3 position; layout(location=2) in vec2 uv;
+uniform mat4 modelMatrix; uniform vec4 uMat[4]; uniform mat3 uUvT;
+out vec3 vAlb; out float vDepth; out vec2 vUv;
+void main(){
+ vUv = (uUvT * vec3(uv, 1.0)).xy;
+ vec4 mv = uView * (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0));
+ vec2 sc = vec2(length(modelMatrix[0].xyz), length(modelMatrix[1].xyz));
+ if (uMat[1].w < 0.5) sc *= -mv.z;
+ vec2 al = (position.xy - (uMat[1].xy - vec2(0.5))) * sc; float sn = sin(uMat[1].z), cs = cos(uMat[1].z);
+ mv.xy += vec2(cs * al.x - sn * al.y, sn * al.x + cs * al.y);
+ vDepth = -mv.z; gl_Position = uProj * mv; vAlb = uMat[0].rgb;
+}`;
+}
+function flatFragment(f, points) {
+    return `#version 300 es
+precision highp float; precision highp int;
+${defs(f)}
+${UBO_GLSL}
+uniform vec4 uMat[4];
+in vec3 vAlb; in float vDepth;
+#ifdef USE_MAP
+uniform sampler2D map;
+${points ? '' : 'in vec2 vUv;'}
+#endif
+out vec4 fragColor;
+${ENCODE_GLSL}
+void main(){
+ vec3 c = vAlb; float alpha = uMat[0].a;
+#ifdef USE_MAP
+ vec4 tx = texture(map, ${points ? 'vec2(gl_PointCoord.x, 1.0 - gl_PointCoord.y)' : 'vUv'}); c *= tx.rgb; alpha *= tx.a;
+#endif
+#ifdef ALPHATEST
+ if (alpha < uMat[2].x) discard;
+#endif
+ c = hgEncode(c);
+#ifdef FOG
+ c = mix(c, uFogColor.rgb, hgFog(vDepth));
+#endif
+ fragColor = vec4(c, alpha);
+}`;
+}
+// a texture as the scene background: one screen-covering triangle, no vertex buffers
+const BG_VS = `#version 300 es
+out vec2 vUv;
+void main(){ vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); vUv = p; gl_Position = vec4(p * 2.0 - 1.0, 1.0, 1.0); }`;
+const bgFragment = (tone, srgb) => `#version 300 es
+precision highp float; precision highp int;
+${tone ? '#define TONEMAP_ACES' : ''}
+${srgb ? '#define SRGB_OUT' : ''}
+${UBO_GLSL}
+uniform sampler2D map; in vec2 vUv; out vec4 fragColor;
+${ENCODE_GLSL}
+void main(){ fragColor = vec4(hgEncode(texture(map, vUv).rgb), 1.0); }`;
 const DEPTH_VS = inst => `#version 300 es
 precision highp float;
 layout(location=0) in vec3 position;

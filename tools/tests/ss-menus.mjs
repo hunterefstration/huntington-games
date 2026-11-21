@@ -18,7 +18,7 @@ async function page(tag, vp) {
   const p = await ctx.newPage();
   p.on('pageerror', e => { errors.push(tag + ': ' + e.message); console.log('  [pageerror ' + tag + ']', e.message.slice(0, 200)); });
   p.on('console', m => { if (m.type() === 'error' && !/favicon|ERR_|net::|WebSocket|Failed to load resource/.test(m.text())) { errors.push(tag + ': ' + m.text()); console.log('  [console ' + tag + ']', m.text().slice(0, 200)); } });
-  await p.route(/cdn\.jsdelivr\.net\/npm\/three@0\.160\.0\/(.*)/, r => { const f = T + '/cdn/package/' + new URL(r.request().url()).pathname.replace(/^\/npm\/three@0\.160\.0\//, ''); fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : r.abort(); });
+  await p.route(/cdn\.jsdelivr\.net\/npm\/three@0\.160\.0\/(.*)/, r => { const f = T + '/cdn/package/' + new URL(r.request().url()).pathname.replace(/^\/npm\/three@0\.160\.0\//, ''); fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : process.env.HG_LIVE_CDN ? r.continue() : r.abort(); });      // HG_LIVE_CDN=1: no local three.js copy (Windows), use the real CDN
   await p.route(/mqtt@[\d.]+\/dist\/mqtt\.min\.js/, r => fs.existsSync(MQTT) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(MQTT) }) : r.abort());
   await p.route(/fonts\.|unpkg|peerjs/, r => r.abort());
   await p.addInitScript(() => { try { localStorage.setItem('steelstorm_save', JSON.stringify({ v: 2, seenHow: true, seenNew: '2.3', credits: 50000, stats: { matches: 3, wins: 2, kills: 9, deaths: 4, caps: 0 } })); } catch (e) {} });
