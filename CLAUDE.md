@@ -51,6 +51,9 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
   `--use-gl=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. No internet: route three@0.160.0
   to `/tmp/hg-tools/cdn/package/`, Tailwind to `/tmp/hg-tools/node_modules/tailwindcss-cdn/tailwindcss.js`.
 - Serve locally with `python3 -m http.server <port>`; `localhost` skips the licence gate.
+- Playing without the launcher: `node tools/play.mjs` (or double-click `Play Huntington Games.cmd`) serves the folder on
+  http://localhost:8090/ with a plain games menu (`tools/play.html`, filled from the launcher's GAMES list): no account,
+  no codes. Test: `node tools/tests/play.mjs` (every game opens from the menu, no licence screen).
 
 ## Releasing
 - `tools/release.sh ship <N> "<message>"` does the whole release from the work branch (clean tree, check.js, licence

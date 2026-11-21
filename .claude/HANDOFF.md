@@ -11,6 +11,16 @@ Current state and the facts you need to change things. What each round did and w
 - Back up unreleased work to `wip/content-wave` without touching HEAD or `main`:
   `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
 
+## Playing on localhost (2026-11-21, branch `engine/hg3d`)
+- The launcher's account ("recovery key") system is off and the public page is the r80 shut-down page, so the way to play now is local:
+  `Play Huntington Games.cmd` (or `node tools/play.mjs [port] [--no-open]`) starts a server on 127.0.0.1:8090 and opens
+  http://localhost:8090/. `/` is a plain menu (`tools/play.html`: cards, search, tag chips, "Jump back in"), filled at each request from the
+  launcher's `GAMES` + `EXPERIMENTAL` lists; a game opens in a fresh iframe under a small bar (All games / Full screen / own tab).
+- Games skip the licence gate on `localhost`. Saves are the browser's localStorage for `localhost:8090`: another port or browser starts fresh,
+  which is why a busy port is an error. The built launcher itself still runs locally but stops at the Grapevine sign-in, so it is not used.
+- Not there: accounts, leaderboards, launcher chat, saves from the old site. The 3D games still fetch three.js from jsDelivr.
+- Test: `node tools/tests/play.mjs` (`HG_LIVE_CDN=1` on this PC).
+
 ## HG3D engine (branch `engine/hg3d`, 2026-11-21: NOT released, nothing pushed; `main` is still the r80 shut-down page)
 - **What**: our own WebGL2 renderer for 4 GB Chromebooks. `engine/src/*.js` -> `engine/hg3d.js` (`const HG3D`); `node tools/build-engine.js`
   builds it and copies it into each game in its `TARGETS` list (`check.js` keeps the copies in step, `--fix` rebuilds). A game keeps making
