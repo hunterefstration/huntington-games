@@ -11,7 +11,10 @@ const QUALITY = {
 };
 function initGfx() {
     const canvas = $('#gl'), q = save.settings.quality;
-    const r = new THREE.WebGLRenderer({ canvas, antialias: q === 'high', powerPreference: 'high-performance' });
+    // the HG3D engine draws the game where it can (address ?r=three keeps three.js' own renderer; so does a failed start)
+    let r = HG3D.pick('mayhem') === 'hg' ? HG3D.createRenderer({ canvas, antialias: q === 'high', powerPreference: 'high-performance' }) : null;
+    GFX.hg = !!r;
+    if (!r) r = new THREE.WebGLRenderer({ canvas, antialias: q === 'high', powerPreference: 'high-performance' });
     r.outputColorSpace = THREE.SRGBColorSpace; r.shadowMap.type = THREE.PCFSoftShadowMap;
     GFX.renderer = r;
     const s = GFX.scene = new THREE.Scene();
@@ -47,7 +50,7 @@ function applyQuality() {
 // ---------- sky dome with soft procedural clouds ----------
 function buildSky() {
     const mat = new THREE.ShaderMaterial({
-        side: THREE.BackSide, depthWrite: false, fog: false,
+        side: THREE.BackSide, depthWrite: false, fog: false, userData: { hg: { sky: true } },      // HG3D draws it last: only the pixels nothing covered
         uniforms: { uTime: { value: 0 }, uClouds: { value: 1 }, uSun: { value: new THREE.Vector3(0.45, 0.6, 0.3).normalize() } },
         vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); vec4 p = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * p; gl_Position.z = gl_Position.w; }',
         fragmentShader: `varying vec3 vDir; uniform float uTime; uniform float uClouds; uniform vec3 uSun;
@@ -183,6 +186,9 @@ float patMask(vec3 p, float k){
 }`;
 function tumMat(withPattern) {
     const m = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.05 });
+    // the same pattern for the HG3D engine (its own hook points; the three.js patch below is for the three renderer)
+    if (withPattern) m.userData.hg = { vDecl: 'in vec3 iCol2; in float iPat; out vec3 vCol2; out float vPat; out vec3 vObj;', vMain: 'vCol2 = iCol2; vPat = iPat; vObj = position;',
+        fDecl: 'in vec3 vCol2; in float vPat; in vec3 vObj;' + PAT_GLSL, fAlbedo: 'alb = mix(alb, vCol2, patMask(vObj, vPat));' };
     if (withPattern) m.onBeforeCompile = sh => {
         sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 iCol2; attribute float iPat; varying vec3 vCol2; varying float vPat; varying vec3 vObj;')
             .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCol2 = iCol2; vPat = iPat; vObj = position;');
@@ -372,4 +378,5 @@ function render() {
     GFX.sky.position.copy(GFX.cam.position);
     r.info.autoReset = false; r.info.reset(); r.render(GFX.scene, GFX.cam);
     GFX.info.calls = r.info.render.calls; GFX.info.tris = r.info.render.triangles; GFX.info.ms = performance.now() - t0;
+    if (GFX.hg && r.failed && !GFX.bailed) { GFX.bailed = true; HG3D.bail('mayhem', r.failed); }
 }

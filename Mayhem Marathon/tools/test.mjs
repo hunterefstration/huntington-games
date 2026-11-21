@@ -10,8 +10,9 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('../../', import.meta.url).pathname, TOOLS = process.env.HG_TOOLS || '/tmp/hg-tools';
+const ROOT = fileURLToPath(new URL('../../', import.meta.url)), TOOLS = process.env.HG_TOOLS || '/tmp/hg-tools';
 const args = process.argv.slice(2), parts = new Set(args.filter(a => ['rounds', 'show', 'perf', 'save', 'net', 'mp'].includes(a)));
 const only = args.filter(a => !parts.has(a)); if (!parts.size) ['rounds', 'show', 'perf', 'save', 'net'].forEach(p => parts.add(p));
 const TYPES = { html: 'text/html', js: 'text/javascript', css: 'text/css', json: 'application/json' };
@@ -29,7 +30,7 @@ async function open(initSave, query) {
   const page = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage();
   page.on('requestfailed', r => errs.push('request failed ' + r.url().slice(0, 140))); page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());            // routes added later win: this one first
-  await page.route(/three@0\.160\.0\/(.*)$/, r => { const m = /three@0\.160\.0\/(.*)$/.exec(r.request().url()), f = TOOLS + '/cdn/package/' + m[1].split('?')[0]; fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : r.abort(); });
+  await page.route(/three@0\.160\.0\/(.*)$/, r => { const m = /three@0\.160\.0\/(.*)$/.exec(r.request().url()), f = TOOLS + '/cdn/package/' + m[1].split('?')[0]; fs.existsSync(f) ? r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(f) }) : process.env.HG_LIVE_CDN ? r.continue() : r.abort(); });      // HG_LIVE_CDN=1: no local three.js copy (Windows), use the real CDN
   if (initSave) await page.addInitScript(s => { if (!sessionStorage.getItem('planted')) { localStorage.setItem('mayhem_save', s); sessionStorage.setItem('planted', '1'); } }, JSON.stringify(initSave));
   if (query) await page.route(/mqtt(@[\d.]+)?\/dist\/mqtt\.min\.js/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(MQTT_JS) }));
   await page.goto(URL0 + (query || ''));

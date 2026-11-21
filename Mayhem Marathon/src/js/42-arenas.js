@@ -146,6 +146,7 @@ ROUNDS.fruit = {
         const at = getFruitAtlas(), geo = new THREE.PlaneGeometry(2.8, 2.8).rotateX(-PI / 2);
         geo.setAttribute('iFr', new THREE.InstancedBufferAttribute(new Float32Array(25), 1));
         const mat = new THREE.MeshBasicMaterial({ map: at.tex });
+        mat.userData.hg = { vDecl: 'in float iFr;', vMain: 'vUv.x = (vUv.x + iFr) / 7.0;' };       // the same atlas pick for the HG3D engine
         mat.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float iFr;').replace('#include <uv_vertex>', '#include <uv_vertex>\nvMapUv.x = (vMapUv.x + iFr) / 7.0;'); };
         const im = new THREE.InstancedMesh(geo, mat, 25); L.group.add(im); L.plates = im;
         spawnRing(5, 0); L.killY = -6; L.center = [0, 0];

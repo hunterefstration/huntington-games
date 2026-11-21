@@ -67,6 +67,19 @@ try {
     if (fs.existsSync(f) && read(f) !== read(path.join(sh, a))) problems.push(`${g}: ${b} differs from Minigames/_shared/${a} (edit the shared file, then: bash Minigames/build.sh)`);
   }
 } catch (e) {}
+// --- 3a. the HG3D engine: engine/hg3d.js and every game's copy must be what engine/src builds to ---
+try {
+  if (fs.existsSync(path.join(ROOT, 'engine/src'))) {
+    const be = path.join(__dirname, 'build-engine.js'), r = cp.spawnSync(process.execPath, [be, '--check'], { encoding: 'utf8' });
+    if (r.status !== 0) {
+      if (FIX) {
+        const w = cp.spawnSync(process.execPath, [be], { encoding: 'utf8' });
+        for (const m of String(w.stdout).matchAll(/^wrote (.+)\/src\/js\/.*hg3d\.js$/gm)) cp.spawnSync(process.execPath, [path.join(__dirname, 'build-game.js'), m[1], '--check']);
+        notes.push('HG3D engine: engine/hg3d.js and the games\' copies were rebuilt from engine/src');
+      } else problems.push('HG3D engine: ' + String(r.stderr).trim().split('\n').join('; ') + ' (edit engine/src, then: node tools/build-engine.js, then build the games that use it)');
+    }
+  }
+} catch (e) { problems.push('engine check failed: ' + e.message); }
 // --- 3b. Brown E Clicker's Tailwind CSS is built ahead of time: is it what the sources ask for? ---
 try {
   const tw = path.join(process.env.HG_TOOLS || '/tmp/hg-tools', 'node_modules/tailwindcss/package.json'), bd = path.join(ROOT, 'Brown E Clicker');
