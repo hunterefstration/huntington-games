@@ -11,6 +11,29 @@ Current state and the facts you need to change things. What each round did and w
 - Back up unreleased work to `wip/content-wave` without touching HEAD or `main`:
   `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
 
+## Next big thing: realistic shooter + Steel Storm upgrade (plan agreed 2026-11-21, nothing built yet)
+- Owner's decisions: **Chromebook first** (4 GB, integrated graphics must run it smoothly); art from **Blender through the Blender MCP**
+  plus **free-licence libraries** (Poly Haven, ambientCG, Quaternius need no account; Mixamo needs the owner's free Adobe login, he signs in
+  himself in the Browser pane). He offered to set up further tools on request.
+- Blender MCP: `uvx mcp-for-blender`, add-on listening on 127.0.0.1:9876 (answered `get_scene_info`). Registered for this folder and
+  `Claude Work` on 2026-11-21 (`claude mcp add blender -- uvx mcp-for-blender`): a session started after that has the Blender tools,
+  with Blender open and the add-on connected.
+- The approach: do the expensive lighting offline in Blender (lightmaps, ambient occlusion, light probes, baked reflections), ship real models
+  with 3 detail levels and texture sheets, mocap animation with GPU skinning (Blocky's matrix-texture trick), cheap atmosphere/effects/sound.
+  HG3D needs: an asset loader (binary models, compressed textures), lightmaps + probes, skinned animation, detail levels + culling, streaming,
+  a memory budget. Starting Chromebook budgets to tune on the real device: ~100 MB textures, ~150 draw calls, ~150k triangles in view,
+  30 FPS floor / 60 target. Games stop being one HTML file: assets ship beside them (fine on localhost).
+- New shooter: Blocky's game (waves, classes, bosses, Hunted, campaign, multiplayer) with a realistic look; working title "Holdout"
+  (owner has not picked the name). Steel Storm: real vehicle models, sculpted terrain with baked light, then systems in this order:
+  armour and ballistics with module damage, vehicle physics and flight model, spotting and sound, combined-arms objectives, smarter bots.
+- Order: (1) proof slice: one small map + one gun + one enemy, and one tank on one terrain tile, must look right and hold 30+ FPS on the
+  owner's real Chromebook before any content at scale; (2) engine features + one-command Blender-to-game pipeline; (3) shooter content;
+  (4) Steel Storm.
+- **Blocky port to HG3D (owner: "finish it after the plan")**: unfinished, on branch `engine/hg3d-blocky` (one WIP commit, never run to the
+  end). Scope: the lite levels only (Low, Auto tiers 2-3: Lambert, no reflections, no shadows); three.js keeps the others. Next step there:
+  `node tools/bench/bench3d.mjs blocky --scn look --same f.png --arg 3`, fix the picture, run its tests, then the speed gate. Still open:
+  Auto's "try one tier better" would bounce between renderers across starts; and a note in Settings when a level needs the other renderer.
+
 ## Playing on localhost (2026-11-21, branch `engine/hg3d`)
 - The launcher's account ("recovery key") system is off and the public page is the r80 shut-down page, so the way to play now is local:
   `Play Huntington Games.cmd` (or `node tools/play.mjs [port] [--no-open]`) starts a server on 127.0.0.1:8090 and opens
