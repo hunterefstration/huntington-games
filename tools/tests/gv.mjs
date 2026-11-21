@@ -12,7 +12,7 @@ const ARCHIVE = process.env.RIG_ARCHIVE || 'rig-archive-a';
 const MQTT = process.env.MQTT_JS || '/home/user/grapevine/relay/mqtt.min.js';
 const PEERJS = process.env.PEERJS_JS || '/home/user/grapevine/node_modules/peerjs/dist/peerjs.min.js';
 const TOOLS = process.env.HG_TOOLS || '/tmp/hg-tools';
-const ROOT = new URL('../../', import.meta.url).pathname;
+const ROOT = (await import('node:url')).fileURLToPath(new URL('../../', import.meta.url));
 let failures = 0;
 const check = (name, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${extra ? '  — ' + extra : ''}`); if (!ok) failures++; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
