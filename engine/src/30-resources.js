@@ -64,7 +64,7 @@ function textureFor(E, t) {
     const img = t.image; if (!img || img.width === 0 || img.complete === false) return E.white;
     const gl = E.gl;
     if (r === undefined || r.gen !== E.gen) { r = t.__hg = { gen: E.gen, tex: gl.createTexture(), version: -1 }; E.stats.textures++; }
-    bindTex(E, 0, gl.TEXTURE_2D, r.tex);
+    bindForUpload(E, r.tex);
     const isData = !!(img.data && img.width !== undefined && !(img instanceof Element)), type3 = t.type || 1009, fmt3 = t.format || 1023, srgb = t.colorSpace === 'srgb';
     let type = gl.UNSIGNED_BYTE, fmt = gl.RGBA, ifmt = srgb ? gl.SRGB8_ALPHA8 : gl.RGBA8, isFloat = false;
     if (type3 === 1015) { type = gl.FLOAT; isFloat = true; } else if (type3 === 1016) { type = gl.HALF_FLOAT; isFloat = true; }
@@ -93,7 +93,7 @@ function shadowTarget(E, size) {
     const gl = E.gl; let s = E.shadow;
     if (s && s.size === size) return s;
     if (s) { gl.deleteTexture(s.tex); gl.deleteFramebuffer(s.fbo); }
-    const tex = gl.createTexture(); bindTex(E, 1, gl.TEXTURE_2D, tex);
+    const tex = gl.createTexture(); bindForUpload(E, tex);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT24, size, size);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);

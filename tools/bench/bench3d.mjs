@@ -96,14 +96,24 @@ const GAMES = {
     },
     frontline: {
         dir: 'Frontline', query: 'debug', ready: () => !!window.__fl, renderer: () => window.__fl.renderer,
-        dbg: () => { const H = window.__fl; return H.W ? 'units=' + H.W.units.length + ' gfx=' + H.SET.gfx + ' lvl=' + H.SET.level + ' weak=' + H.GPU.weak + ' sh=' + H.SET.shadows : 'no world'; },
+        dbg: () => { const H = window.__fl; return (H.renderer && H.renderer.isHG3D ? 'HG3D ' : 'three ') + (H.W ? 'units=' + H.W.units.length + ' gfx=' + H.SET.gfx + ' weak=' + H.GPU.weak + ' sh=' + H.SET.shadows + ' mode=' + H.snapshot().mode : 'no world'); },
         info: () => { const r = window.__fl.renderer, i = r.info && r.info.render; return i ? { calls: i.calls, tris: i.triangles, units: window.__fl.W ? window.__fl.W.units.length : 0 } : {}; },
         scenarios: {
-            'battle': { desc: 'Skirmish with 120 extra units fighting, Auto graphics', setup: async () => {
-                const H = window.__fl; H.startGame(H.skToCfg ? H.skToCfg(H.defaultSK()) : null, {}); const t0 = Date.now(); while (!(H.W && H.W.units && H.W.M) && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 200));
-                const W = H.W, types = Object.keys(H.UT).slice(0, 6); for (let i = 0; i < 120; i++) { try { H.spawn(types[i % types.length], i % 2, W.M.w * (0.42 + 0.16 * Math.random()), W.M.d * (0.42 + 0.16 * Math.random())); } catch (e) { } }
+            // --arg gfx[,fog]: gfx = auto (what a Chromebook gets: its "weak GPU" rule picks Low) | low | med | high
+            'battle': { desc: 'A battle: 2 armies of 60 extra units at the middle flag, fog of war on', setup: async a => {
+                const H = window.__fl, p = String(a || 'auto').split(','); if (p[0] !== 'auto') { H.SET.gfx = p[0]; }
+                H.startGame({ map: 'greenfield', players: [{ name: 'Bench', kind: 'human', team: 0, color: 0x3fa0ff }, { name: 'Enemy', kind: 'ai', team: 1, color: 0xff5050, ai: { pers: 'hale', diff: 'normal' } }], tickets: 9999, supplies: 99999, fog: p[1] !== 'nofog', speed: 1, maxPop: 400, sandbox: true }, {});
+                const t0 = Date.now(); while (!(H.W && H.W.pts && H.W.pts.length && H.snapshot().mode === 'game') && Date.now() - t0 < 25000) await new Promise(r => setTimeout(r, 200));
+                const W = H.W, pt = W.pts[Math.floor(W.pts.length / 2)], types = Object.keys(H.UT).slice(0, 6); let n = 0;
+                for (let i = 0; i < 120; i++) { try { H.spawn(types[i % types.length], i % 2, pt.x + (i % 2 ? 14 : -14) + (Math.random() - 0.5) * 22, pt.z + (Math.random() - 0.5) * 30); n++; } catch (e) { } }
+                H.cam.x = H.cam.tx = pt.x; H.cam.z = H.cam.tz = pt.z;
+                if (p[2] === 'shadow') {        // what a stronger computer gets (a "weak GPU" device never turns shadows on)
+                    H.renderer.shadowMap.enabled = true;
+                    H.scene.traverse(o => { if (o.isDirectionalLight) { o.castShadow = true; o.shadow.mapSize.set(1024, 1024); o.shadow.camera.near = 20; o.shadow.camera.far = 300; o.shadow.bias = -0.0006; o.shadow.normalBias = 0.4; } if (o.isMesh && !o.isInstancedMesh && o.geometry.index && o.material.vertexColors) o.receiveShadow = true; if (o.material) o.material.needsUpdate = true; });
+                }
             } }
-        }, settle: 4000
+        }, settle: 5000,
+        view: () => ({ scene: window.__fl.scene, camera: window.__fl.camera, renderer: window.__fl.renderer })
     },
     blocky: {
         dir: 'Blocky Shooter V2', ready: () => !!(window.__blocky && window.__blocky.state), renderer: () => window.__blocky.renderer,

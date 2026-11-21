@@ -72,7 +72,9 @@ float hgFog(float d){
 const defs = f => f.defines.map(d => '#define ' + d).join('\n');
 
 // f: { defines: [...], colorType: 'vec3'|'vec4', numSun, numPL, hook }
-// hook (material.userData.hg): { vDecl, vPos, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, sky }
+// hook (material.userData.hg): { vDecl, vPos, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky }
+//   vAlbedo changes the base colour "alb" in the VERTEX shader (cheap: the fast vertex-finished path stays on);
+//   fAlbedo / fFinal change "alb" / the lit colour "c" per pixel
 function litVertex(f) {
     const h = f.hook || {};
     return `#version 300 es
@@ -158,6 +160,7 @@ ${h.vPos || ''}
 #ifdef USE_INSTANCING_COLOR
  alb *= instanceColor;
 #endif
+${h.vAlbedo || ''}
 #ifdef USE_UV
  vUv = (uUvT * vec3(uv, 1.0)).xy;
 #endif

@@ -29,7 +29,7 @@ function materialInfo(E, mat) {
     if (mi !== undefined && mi.v === mat.version) return mi;
     mi = mat.__hgm = { v: mat.version, kind: -1, hook: null, hookId: 0, sky: false, spec: 0, shin: 1, specScale: 0, metal: 0, rawId: 0, transparent: false, blend: 0, depthTest: 1, depthWrite: 1, depthFunc: 0x0203, cull: 1, poly: 0, pf: 0, pu: 0 };
     const ud = mat.userData && mat.userData.hg;
-    if (ud) { mi.sky = !!ud.sky; if (ud.vDecl || ud.vPos || ud.vMain || ud.fDecl || ud.fAlbedo || ud.fFinal || ud.customMap || ud.vertexLights) { mi.hook = ud; if (!ud.__id) ud.__id = E.nextHookId++; mi.hookId = ud.__id; } }
+    if (ud) { mi.sky = !!ud.sky; if (ud.vDecl || ud.vPos || ud.vAlbedo || ud.vMain || ud.fDecl || ud.fAlbedo || ud.fFinal || ud.customMap || ud.vertexLights) { mi.hook = ud; if (!ud.__id) ud.__id = E.nextHookId++; mi.hookId = ud.__id; } }
     if (mat.isShaderMaterial) {
         mi.kind = K_RAW; const src = mat.vertexShader + '\u0000' + mat.fragmentShader + '\u0000' + JSON.stringify(mat.defines || {}) + (mat.vertexColors ? 'c' : '');
         if (!E.rawIds) E.rawIds = new Map(); let id = E.rawIds.get(src); if (id === undefined) { id = E.rawIds.size + 1; E.rawIds.set(src, id); } mi.rawId = id;
@@ -267,7 +267,9 @@ function drawBackground(E, tex) {
     useProgram(E, P); setBlend(E, 0); setDepth(E, 0, 0, gl.LEQUAL); setCull(E, 0); setPoly(E, 0, 0, 0);
     bindTex(E, 0, gl.TEXTURE_2D, textureFor(E, tex)); bindVAO(E, null); gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
-function sortOpaque(a, n) { for (let i = 1; i < n; i++) { const x = a[i], k = x.key; let j = i - 1; while (j >= 0 && a[j].key > k) { a[j + 1] = a[j]; j--; } a[j + 1] = x; } }
+// opaque order = three.js' own (renderOrder, then material in creation order, then near to far): games were tuned around
+// it, e.g. the ground is made before the backdrop and so hides most of it before it is shaded
+function sortOpaque(a, n) { for (let i = 1; i < n; i++) { const x = a[i], k = x.key, z = x.z; let j = i - 1; while (j >= 0 && (a[j].key > k || (a[j].key === k && a[j].z > z))) { a[j + 1] = a[j]; j--; } a[j + 1] = x; } }
 function sortTransparent(a, n) { for (let i = 1; i < n; i++) { const x = a[i]; let j = i - 1; while (j >= 0 && (a[j].ro > x.ro || (a[j].ro === x.ro && a[j].z < x.z))) { a[j + 1] = a[j]; j--; } a[j + 1] = x; } }
 
 // R is the renderer facade (50-facade.js): it carries the settings a three.js game expects to set
@@ -291,10 +293,11 @@ function renderScene(E, R, scene, camera) {
     const view = camera.matrixWorldInverse.elements; L.no = L.nt = L.ns = 0;
     for (let i = 0; i < L.n; i++) {
         const o = L.objs[i]; L.objs[i] = null; const it = prepItem(E, o); if (it === null) continue;
-        const mi = it.mi; refreshState(mi, it.mat); it.ro = o.renderOrder || 0;
+        const mi = it.mi, e = o.matrixWorld.elements; refreshState(mi, it.mat); it.ro = o.renderOrder || 0;
+        it.z = -(view[2] * e[12] + view[6] * e[13] + view[10] * e[14] + view[14]);
         if (mi.sky) L.sky[L.ns++] = it;
-        else if (mi.transparent) { const e = o.matrixWorld.elements; it.z = -(view[2] * e[12] + view[6] * e[13] + view[10] * e[14] + view[14]); L.transp[L.nt++] = it; }
-        else { it.key = (it.ro + 512) * 4194304 + it.prog.id * 2048 + ((it.mat.id || 0) & 2047); L.opaque[L.no++] = it; }
+        else if (mi.transparent) L.transp[L.nt++] = it;
+        else { it.key = (it.ro + 512) * 4194304 + ((it.mat.id || 0) & 4194303); L.opaque[L.no++] = it; }
     }
     sortOpaque(L.opaque, L.no); sortTransparent(L.transp, L.nt);
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);

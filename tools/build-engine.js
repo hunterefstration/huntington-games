@@ -9,6 +9,9 @@ const ROOT = path.resolve(__dirname, '..'), SRC = path.join(ROOT, 'engine', 'src
 const TARGETS = {
     'Mayhem Marathon': 'src/js/05-hg3d.js',
     'Steel Storm': 'src/js/05-hg3d.js'
+    // Frontline was ported and measured (2026-11): 22% faster median frames with a slowed CPU, but its slow frames (the
+    // ones with a 20 Hz simulation tick) and its pixel cost did not improve, so it stays on three.js. Its port is kept on
+    // branch engine/hg3d-frontline (there this list also has  'Frontline': 'src/js/10-game/005-hg3d.js').
 };
 const EXPORTS = 'VERSION, createRenderer, pick, bail, choose, chosen, M4, governor, meter, speedTest, benchCard, benchResults, '
     + 'color, attr, geometry, material, texture, node, mesh, instanced, light, camera, fog, geo';

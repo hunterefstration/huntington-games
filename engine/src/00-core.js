@@ -122,6 +122,12 @@ function bindTex(E, unit, target, tex) {
     if (S.unit !== unit) { S.unit = unit; gl.activeTexture(gl.TEXTURE0 + unit); }
     S.tex[unit] = tex; gl.bindTexture(target, tex);
 }
+// for uploads: make unit 0 the ACTIVE unit with this texture on it (bindTex alone may leave another unit active)
+function bindForUpload(E, tex) {
+    const S = E.S, gl = E.gl;
+    if (S.unit !== 0) { S.unit = 0; gl.activeTexture(gl.TEXTURE0); }
+    if (S.tex[0] !== tex) { S.tex[0] = tex; gl.bindTexture(gl.TEXTURE_2D, tex); }
+}
 function setBlend(E, mode) {         // 0 none, 1 normal, 2 additive, 3 subtractive, 4 multiply (three's numbers)
     const S = E.S, gl = E.gl; if (S.blend === mode) return; S.blend = mode;
     if (mode === 0) { gl.disable(gl.BLEND); return; }
