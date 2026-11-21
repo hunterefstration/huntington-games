@@ -94,7 +94,9 @@ function linToSrgb(c) { return c <= 0 ? 0 : c < 0.0031308 ? c * 12.92 : c >= 1 ?
 function createEngine(canvas, attrs) {
     if (typeof WebGL2RenderingContext === 'undefined') return null;
     let gl = null;
-    try { gl = canvas.getContext('webgl2', Object.assign({ antialias: false, alpha: false, depth: true, stencil: false, premultipliedAlpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }, attrs || {})); } catch (e) { gl = null; }
+    // alpha is always on, as in three.js: an opaque drawing buffer costs the browser an extra full-screen step on some
+    // graphics stacks. The picture stays opaque because opaque materials write alpha 1 and the clear alpha is 1.
+    try { gl = canvas.getContext('webgl2', Object.assign({ antialias: false, depth: true, stencil: false, premultipliedAlpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }, attrs || {}, { alpha: true })); } catch (e) { gl = null; }
     if (!gl) return null;
     const E = {
         gl, canvas, gen: 1, lost: false, failed: null,
@@ -495,7 +497,7 @@ ${h.fFinal || ''}
 #ifdef FOG
  c = mix(c, uFogColor.rgb, hgFog(vDepth));
 #endif
- fragColor = vec4(c, alpha);
+ fragColor = vec4(c, max(alpha, uMat[3].a));     // uMat[3].a is 1 for an opaque material: its pixels stay solid whatever its texture's alpha
 }`;
 }
 
@@ -563,7 +565,7 @@ void main(){
 #ifdef FOG
  c = mix(c, uFogColor.rgb, hgFog(vDepth));
 #endif
- fragColor = vec4(c, alpha);
+ fragColor = vec4(c, max(alpha, uMat[3].a));     // uMat[3].a is 1 for an opaque material: its pixels stay solid whatever its texture's alpha
 }`;
 }
 // a texture as the scene background: one screen-covering triangle, no vertex buffers
@@ -1057,6 +1059,7 @@ function drawItem(E, it, camera, skyPass) {
             u[8] = mi.shin; u[9] = mi.specScale; u[10] = mi.metal; u[11] = 0;
             if (sp) { u[12] = sp.r; u[13] = sp.g; u[14] = sp.b; } else { u[12] = u[13] = u[14] = 0.04; }
         }
+        u[15] = mi.transparent ? 0 : 1;
         gl.uniform4fv(loc.mat, u);          // one call for the whole material
         const map = mat.map;
         if (map && P.u.map) { bindTex(E, 0, gl.TEXTURE_2D, textureFor(E, map)); if (loc.uvT !== null) { if (map.matrixAutoUpdate === true && map.updateMatrix) map.updateMatrix(); gl.uniformMatrix3fv(loc.uvT, false, map.matrix ? map.matrix.elements : TMP.id3); } }
@@ -1127,7 +1130,7 @@ function createRenderer(opts) {
     const E = createEngine(canvas, { antialias: !!opts.antialias, alpha: !!opts.alpha, stencil: !!opts.stencil, depth: opts.depth !== false, powerPreference: opts.powerPreference || 'high-performance', preserveDrawingBuffer: !!opts.preserveDrawingBuffer });
     if (!E) return null;
     E.L = newLists(); E.lights = newLights(); E.env = { fog: 0, nSun: 0, nPL: 0, shadow: 0, soft: 0, tone: 0, srgb: 0 }; E.envCode = 0; E.frame = 0; E.time = 0;
-    const gl = E.gl, clear = { r: 0, g: 0, b: 0, a: 1 };
+    const gl = E.gl, clear = { r: 0, g: 0, b: 0, a: opts.alpha ? 0 : 1 };
     let pixelRatio = 1, cssW = canvas.width, cssH = canvas.height;
     const R = {
         isHG3D: true, engine: E, domElement: canvas,
@@ -1240,8 +1243,11 @@ function governor(o) {
         }
     };
     G.stop = () => { G.on = false; };
+    G.start = () => { if (!G.on) { G.on = true; G._last = 0; G._acc = 0; G._n = 0; requestAnimationFrame(tick); } };
     G.reset = () => { G.cpuBound = false; G._slow = G._fast = G._probe = G._hold = 0; set(1); };
-    if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(tick);
+    // '?gov=0' in the address switches it off (benchmarks compare renderers at the same resolution)
+    let off = false; try { off = /[?&]gov=0\b/.test(location.search); } catch (e) { }
+    if (off || typeof requestAnimationFrame === 'undefined') G.on = false; else requestAnimationFrame(tick);
     return G;
 }
 

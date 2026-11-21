@@ -333,7 +333,7 @@ ${h.fFinal || ''}
 #ifdef FOG
  c = mix(c, uFogColor.rgb, hgFog(vDepth));
 #endif
- fragColor = vec4(c, alpha);
+ fragColor = vec4(c, max(alpha, uMat[3].a));     // uMat[3].a is 1 for an opaque material: its pixels stay solid whatever its texture's alpha
 }`;
 }
 
@@ -401,7 +401,7 @@ void main(){
 #ifdef FOG
  c = mix(c, uFogColor.rgb, hgFog(vDepth));
 #endif
- fragColor = vec4(c, alpha);
+ fragColor = vec4(c, max(alpha, uMat[3].a));     // uMat[3].a is 1 for an opaque material: its pixels stay solid whatever its texture's alpha
 }`;
 }
 // a texture as the scene background: one screen-covering triangle, no vertex buffers

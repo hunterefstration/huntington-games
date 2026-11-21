@@ -34,6 +34,22 @@ async function open(url, init) {
 // average colour and how many different colours a grid of pixel samples has (a blank or one-colour picture fails)
 const sample = gl => { const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(4), seen = new Set(); let r = 0, g = 0, b = 0, n = 0; for (let y = 0; y < 12; y++) for (let x = 0; x < 16; x++) { gl.readPixels(Math.floor((x + 0.5) * w / 16), Math.floor((y + 0.5) * h / 12), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); r += px[0]; g += px[1]; b += px[2]; n++; seen.add((px[0] >> 3) << 10 | (px[1] >> 3) << 5 | (px[2] >> 3)); } return { avg: [Math.round(r / n), Math.round(g / n), Math.round(b / n)], colours: seen.size }; };
 
+if (want('governor')) {
+    // the governor's decisions, driven by a fake clock (no browser): a device where a smaller picture buys frames, one
+    // where it does not (the processor is the limit), and one that gets headroom back later
+    const src = fs.readFileSync(path.join(ROOT, 'engine/hg3d.js'), 'utf8');
+    const run = (fpsAt, secs) => {
+        let cb = null, t = 0;
+        const HG = new Function('requestAnimationFrame', 'document', 'location', src + '\nreturn HG3D;')(f => { cb = f; }, { hidden: false }, { search: '' });
+        let told = 0; const g = HG.governor({ min: 0.7, onCpuBound: () => told++ });
+        while (t < secs * 1000 && cb) { const f = cb; cb = null; t += 1000 / fpsAt(g.scale, t / 1000); f(t); }
+        return { scale: g.scale, told };
+    };
+    const a = run(s => 38 + (1 - s) * 60, 20), b = run(() => 38, 20), c = run((s, t) => t < 8 ? 38 + (1 - s) * 60 : 60, 45);
+    ok(a.scale < 1 && a.scale >= 0.7 && a.told === 0, 'governor: a smaller picture helps -> it settles on one', 'scale=' + a.scale);
+    ok(b.scale === 1 && b.told === 1, 'governor: a smaller picture does not help -> full sharpness back, game told the processor is the limit', 'scale=' + b.scale + ' told=' + b.told);
+    ok(c.scale === 1 && c.told === 0, 'governor: with headroom again it climbs back to the full picture', 'scale=' + c.scale);
+}
 if (want('demo')) {
     const { page, ctx, msgs } = await open('engine/demo.html?n=800');
     await page.waitForFunction(() => window.__hgdemo && window.__hgdemo.R.info.render.frame > 20, null, { timeout: 30000 }).catch(() => { });
@@ -41,6 +57,13 @@ if (want('demo')) {
     ok(r && !r.failed && !msgs.length, 'demo: the engine starts with no error or warning', r ? (r.failed || msgs.join(' | ')) : 'no demo');
     ok(r && r.colours >= 12 && r.calls >= 5 && r.calls <= 12 && r.tris > 9000, 'demo: a lit, coloured scene in a handful of draw calls', r && `colours=${r.colours} calls=${r.calls} tris=${r.tris} avg=${r.avg}`);
     ok(r && r.three === false, 'demo: no three.js on the page');
+    // a lost graphics context (it happens on a 4 GB device under memory pressure): once it is back the engine rebuilds its programs, buffers and textures by itself
+    const back = await page.evaluate(async src => {
+        const D = window.__hgdemo, gl = D.R.getContext(), ext = gl.getExtension('WEBGL_lose_context'); if (!ext) return { skip: true };
+        ext.loseContext(); await new Promise(res => setTimeout(res, 300)); const lostSeen = gl.isContextLost(); ext.restoreContext(); await new Promise(res => setTimeout(res, 900));
+        D.R.render(D.scene, D.cam); return Object.assign((0, eval)('(' + src + ')')(gl), { failed: D.failed, lost: gl.isContextLost(), lostSeen, calls: D.R.info.render.calls });
+    }, sample.toString());
+    ok(back && (back.skip || (back.lostSeen && !back.lost && !back.failed && back.colours >= 12 && back.calls >= 5)), 'demo: draws again after the graphics context was lost and restored', JSON.stringify(back).slice(0, 160));
     await ctx.close();
 }
 for (const G of GAMES) {

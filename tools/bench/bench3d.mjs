@@ -38,7 +38,8 @@ function pageInit(seed) {
     B.reseed = v => { s = v >>> 0; };
     B.flush = () => {
         if (B.ts < 0) return;
-        if (B.skip > 0) B.skip--; else B.frames.push([B.cur, B.sub, B.gpu]);
+        if (B.poll) B.poll();
+        if (B.skip > 0) { B.skip--; if (B.tq) B.tq.length = 0; } else B.frames.push([B.cur, B.sub, B.gpu]);
         B.cur = B.sub = B.gpu = 0;
         if (B.on && B.frames.length >= B.want) { B.on = false; B.ts = -1; const d = B.done; B.done = null; d && d(B.frames); }
     };
@@ -54,7 +55,15 @@ function pageInit(seed) {
     });
     B.wrap = r => {         // time renderer.render (three's WebGLRenderer or the HG3D facade: same call)
         if (!r || r.__benchWrapped) return; r.__benchWrapped = true; B.r = r; const orig = r.render;
-        r.render = function () { const t = performance.now(); let out; if (!B.noRender) out = orig.apply(this, arguments); B.sub += performance.now() - t; B.rendered = true; return out; };
+        // GPU timer queries (when the browser offers them): the time the graphics chip itself spent on this render call,
+        // free of the browser's own compositing, which is what makes the plain "gpu" wait noisy at high resolutions
+        const gl = r.getContext(), ext = gl && gl.getExtension('EXT_disjoint_timer_query_webgl2'); B.tq = []; let pending = [], busy = false;
+        B.poll = () => { if (!ext) return; for (let i = pending.length - 1; i >= 0; i--) { const q = pending[i]; if (gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) { if (!gl.getParameter(ext.GPU_DISJOINT_EXT)) B.tq.push(gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6); gl.deleteQuery(q); pending.splice(i, 1); } } };
+        r.render = function () {
+            const t = performance.now(); let out, q = null;
+            if (!B.noRender) { if (ext && B.on && !busy && pending.length < 8) { q = gl.createQuery(); gl.beginQuery(ext.TIME_ELAPSED_EXT, q); busy = true; } out = orig.apply(this, arguments); if (q) { gl.endQuery(ext.TIME_ELAPSED_EXT); busy = false; pending.push(q); } }
+            B.sub += performance.now() - t; B.rendered = true; return out;
+        };
     };
     B.run = (frames, skip) => new Promise(res => { B.frames = []; B.want = frames; B.skip = skip; B.cur = B.sub = B.gpu = 0; B.ts = -1; B.done = res; B.on = true; });
 }
@@ -126,11 +135,17 @@ const GAMES = {
     },
     sovereign: {
         dir: 'Sovereign', ready: () => !!(window.__sov && window.__sov.ready), renderer: () => window.__sov.Globe.renderer,
-        dbg: () => { const i = window.__sov.info(); return i.screen + ' lod=' + i.lod + ' alt=' + (+i.alt).toFixed(2) + ' level=' + i.level; },
+        dbg: () => { const i = window.__sov.info(); return (window.__sov.Globe.renderer.isHG3D ? 'HG3D ' : 'three ') + i.screen + ' lod=' + i.lod + ' alt=' + (+i.alt).toFixed(2) + ' level=' + i.level; },
         info: () => { const i = window.__sov.Globe.renderer.info.render; return { calls: i.calls, tris: i.triangles }; },
         scenarios: {
-            'spin': { desc: 'Globe turning (a draw every frame)', setup: async () => { const S = window.__sov, tick = () => { S.Cam.lon = ((S.Cam.lon || 0) + 0.25) % 360; S.Globe.dirty = true; requestAnimationFrame(tick); }; requestAnimationFrame(tick); } }
-        }, settle: 3000
+            // a running game (cities, ships, planes drawn), the camera flying between Europe and North America: a draw every frame
+            'tour': { desc: 'A game in progress, camera flying low between two continents; --arg low|medium|high', setup: async a => {
+                const S = window.__sov; S.Sim.start('standard'); S.Perf.set(a || 'medium'); let k = 0;
+                const hop = () => { k++; S.flyTo(k % 2 ? 12 : -96, k % 2 ? 50 : 38, k % 2 ? 0.3 : 0.7, 2.6); }; hop(); setInterval(hop, 2700);
+            } },
+            'spin': { desc: 'Title screen globe turning (a draw every frame)', setup: async () => { const S = window.__sov, tick = () => { S.Cam.lon = ((S.Cam.lon || 0) + 0.25) % 360; S.Globe.dirty = true; requestAnimationFrame(tick); }; requestAnimationFrame(tick); } }
+        }, settle: 4000,
+        view: () => ({ scene: window.__sov.Globe.scene, camera: window.__sov.Globe.camera, renderer: window.__sov.Globe.renderer, clear: 0x050912 })
     }
 };
 
@@ -163,7 +178,7 @@ async function measure(browser, base, key, scnName, mode, r) {
     });
     await page.addInitScript(pageInit, 12345);
     if (scn.store) await page.addInitScript(o => { for (const k in o) localStorage.setItem(k, o[k]); }, scn.store);
-    const q = [G.query, r && r !== 'base' ? 'r=' + r : ''].filter(Boolean).join('&');
+    const q = [G.query, r && r !== 'base' ? 'r=' + r : '', 'gov=0'].filter(Boolean).join('&');       // gov=0: no automatic resolution scaling while timing
     const t0 = Date.now();
     await page.goto(base + encodeURIComponent(G.dir) + '/index.html' + (q ? '?' + q : ''));
     await page.waitForFunction(G.ready, null, { timeout: 90000 });
@@ -197,7 +212,8 @@ async function measure(browser, base, key, scnName, mode, r) {
     const berrs = await page.evaluate(() => window.__bench.errs.slice(0, 3));
     await ctx.close();
     const total = frames.map(f => f[0] + f[2]), work = frames.map(f => f[0]), sub = frames.map(f => f[1]), gpu = frames.map(f => f[2]);
-    const row = { game: key, scn: scnName, mode, r: r || 'base', total: med(total), p95: pct(total, 0.95), work: med(work), sub: med(sub), gpu: med(gpu), share: 0, logic: off ? med(off.map(f => f[0])) : null, glCalls, dbg, calls: info.calls, tris: info.tris, heap, loadMs, gl: glName, errs: errs.concat(berrs).slice(0, 3) };
+    const tq = await page.evaluate(() => (window.__bench.tq || []).slice()).catch(() => []);
+    const row = { tq: tq.length > 20 ? med(tq) : null, game: key, scn: scnName, mode, r: r || 'base', total: med(total), p95: pct(total, 0.95), work: med(work), sub: med(sub), gpu: med(gpu), share: 0, logic: off ? med(off.map(f => f[0])) : null, glCalls, dbg, calls: info.calls, tris: info.tris, heap, loadMs, gl: glName, errs: errs.concat(berrs).slice(0, 3) };
     row.share = row.total ? (row.sub + row.gpu) / row.total : 0;
     return row;
 }
@@ -315,7 +331,7 @@ for (const mode of modes) {
     for (const key of keys) {
         const G = GAMES[key]; if (!G) { console.log('unknown game ' + key); continue; }
         for (const scnName of Object.keys(G.scenarios)) {
-            if (ONLY && ONLY !== scnName) continue;
+            if (ONLY && !String(ONLY).split(',').includes(scnName)) continue;
             try {
                 if (RSEL === 'ab') {
                     const acc = { three: [], hg: [] };
@@ -323,7 +339,9 @@ for (const mode of modes) {
                     const m = (r, k) => med(acc[r].map(x => x[k])), dT = 1 - m('hg', 'total') / m('three', 'total'), dP = 1 - m('hg', 'p95') / m('three', 'p95'), dH = m('hg', 'heap') - m('three', 'heap');
                     const verdict = { game: key, scn: scnName, mode, verdict: true, three: m('three', 'total'), hg: m('hg', 'total'), three95: m('three', 'p95'), hg95: m('hg', 'p95'), gain: dT, gain95: dP, heapDelta: dH };
                     rows.push(verdict);
-                    console.log(`  => ${key} ${scnName} ${mode}: median ${f1(verdict.three)} -> ${f1(verdict.hg)} ms (${Math.round(dT * 100)}% faster), p95 ${f1(verdict.three95)} -> ${f1(verdict.hg95)} ms (${Math.round(dP * 100)}% faster), heap ${dH >= 0 ? '+' : ''}${f1(dH)} MB`);
+                    const tA = m('three', 'tq'), tB = m('hg', 'tq'), tqTxt = acc.three.every(x => x.tq != null) && acc.hg.every(x => x.tq != null) && tA > 0 ? `, GPU timer ${tA.toFixed(2)} -> ${tB.toFixed(2)} ms (${Math.round((1 - tB / tA) * 100)}% less)` : '';
+                    verdict.tqThree = tA; verdict.tqHg = tB;
+                    console.log(`  => ${key} ${scnName} ${mode}: median ${f1(verdict.three)} -> ${f1(verdict.hg)} ms (${Math.round(dT * 100)}% faster), p95 ${f1(verdict.three95)} -> ${f1(verdict.hg95)} ms (${Math.round(dP * 100)}% faster), heap ${dH >= 0 ? '+' : ''}${f1(dH)} MB` + tqTxt);
                 } else for (let i = 0; i < RUNS; i++) { const row = await measure(browser, base, key, scnName, mode, RSEL); rows.push(row); show(row); }
             } catch (e) { failed = true; console.log(`${key} ${scnName} ${mode}: FAILED ${String(e.message).split('\n')[0].slice(0, 200)}`); }
         }

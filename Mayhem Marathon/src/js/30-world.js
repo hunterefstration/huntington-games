@@ -27,10 +27,13 @@ function initGfx() {
     buildSky(); buildSea(); buildStadium();
     initTumblers(); initParticles();
     applyQuality(); onResize(); addEventListener('resize', onResize);
+    // HG3D only: when a round runs under 50 FPS the governor draws a slightly smaller picture (never under 70%), and
+    // puts the sharpness back if that did not help (a slow processor, not the graphics chip) or once there is headroom
+    if (GFX.hg) GFX.gov = HG3D.governor({ min: 0.7, apply: onResize, paused: () => !G.R || G.paused || G.manual || G.noRender });
 }
 function onResize() {
     const w = innerWidth, h = innerHeight, q = QUALITY[GFX.q];
-    GFX.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q.ratio)); GFX.renderer.setSize(w, h, false);
+    GFX.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q.ratio) * (GFX.gov ? GFX.gov.scale : 1)); GFX.renderer.setSize(w, h, false);
     GFX.cam.aspect = w / h; GFX.cam.updateProjectionMatrix();
 }
 function applyQuality() {

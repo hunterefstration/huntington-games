@@ -90,7 +90,9 @@ function linToSrgb(c) { return c <= 0 ? 0 : c < 0.0031308 ? c * 12.92 : c >= 1 ?
 function createEngine(canvas, attrs) {
     if (typeof WebGL2RenderingContext === 'undefined') return null;
     let gl = null;
-    try { gl = canvas.getContext('webgl2', Object.assign({ antialias: false, alpha: false, depth: true, stencil: false, premultipliedAlpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }, attrs || {})); } catch (e) { gl = null; }
+    // alpha is always on, as in three.js: an opaque drawing buffer costs the browser an extra full-screen step on some
+    // graphics stacks. The picture stays opaque because opaque materials write alpha 1 and the clear alpha is 1.
+    try { gl = canvas.getContext('webgl2', Object.assign({ antialias: false, depth: true, stencil: false, premultipliedAlpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }, attrs || {}, { alpha: true })); } catch (e) { gl = null; }
     if (!gl) return null;
     const E = {
         gl, canvas, gen: 1, lost: false, failed: null,

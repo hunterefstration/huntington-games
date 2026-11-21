@@ -260,7 +260,8 @@ function startSolo() {
 // Test once with each engine (switch, reopen the game, test again) and the card compares the two.
 function speedTestRun() {
     startPractice('spin', 15, 1); G.autopilot = true;
-    HG3D.speedTest({ game: 'mayhem', renderer: GFX.hg ? 'hg' : 'three', gl: GFX.renderer.getContext(), seconds: 20, onDone: () => { G.autopilot = false; UI.toTitle(); HG3D.benchCard('mayhem', 'Mayhem Marathon speed test'); } });
+    if (GFX.gov) { GFX.gov.stop(); GFX.gov.reset(); }       // both engines are timed at the full picture size
+    HG3D.speedTest({ game: 'mayhem', renderer: GFX.hg ? 'hg' : 'three', gl: GFX.renderer.getContext(), seconds: 20, onDone: () => { G.autopilot = false; if (GFX.gov) GFX.gov.start(); UI.toTitle(); HG3D.benchCard('mayhem', 'Mayhem Marathon speed test'); } });
 }
 function startPractice(rid, bots, skill) {
     netReset(); ac();

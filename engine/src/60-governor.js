@@ -36,7 +36,10 @@ function governor(o) {
         }
     };
     G.stop = () => { G.on = false; };
+    G.start = () => { if (!G.on) { G.on = true; G._last = 0; G._acc = 0; G._n = 0; requestAnimationFrame(tick); } };
     G.reset = () => { G.cpuBound = false; G._slow = G._fast = G._probe = G._hold = 0; set(1); };
-    if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(tick);
+    // '?gov=0' in the address switches it off (benchmarks compare renderers at the same resolution)
+    let off = false; try { off = /[?&]gov=0\b/.test(location.search); } catch (e) { }
+    if (off || typeof requestAnimationFrame === 'undefined') G.on = false; else requestAnimationFrame(tick);
     return G;
 }

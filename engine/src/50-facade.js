@@ -9,7 +9,7 @@ function createRenderer(opts) {
     const E = createEngine(canvas, { antialias: !!opts.antialias, alpha: !!opts.alpha, stencil: !!opts.stencil, depth: opts.depth !== false, powerPreference: opts.powerPreference || 'high-performance', preserveDrawingBuffer: !!opts.preserveDrawingBuffer });
     if (!E) return null;
     E.L = newLists(); E.lights = newLights(); E.env = { fog: 0, nSun: 0, nPL: 0, shadow: 0, soft: 0, tone: 0, srgb: 0 }; E.envCode = 0; E.frame = 0; E.time = 0;
-    const gl = E.gl, clear = { r: 0, g: 0, b: 0, a: 1 };
+    const gl = E.gl, clear = { r: 0, g: 0, b: 0, a: opts.alpha ? 0 : 1 };
     let pixelRatio = 1, cssW = canvas.width, cssH = canvas.height;
     const R = {
         isHG3D: true, engine: E, domElement: canvas,

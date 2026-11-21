@@ -254,6 +254,7 @@ function drawItem(E, it, camera, skyPass) {
             u[8] = mi.shin; u[9] = mi.specScale; u[10] = mi.metal; u[11] = 0;
             if (sp) { u[12] = sp.r; u[13] = sp.g; u[14] = sp.b; } else { u[12] = u[13] = u[14] = 0.04; }
         }
+        u[15] = mi.transparent ? 0 : 1;
         gl.uniform4fv(loc.mat, u);          // one call for the whole material
         const map = mat.map;
         if (map && P.u.map) { bindTex(E, 0, gl.TEXTURE_2D, textureFor(E, map)); if (loc.uvT !== null) { if (map.matrixAutoUpdate === true && map.updateMatrix) map.updateMatrix(); gl.uniformMatrix3fv(loc.uvT, false, map.matrix ? map.matrix.elements : TMP.id3); } }

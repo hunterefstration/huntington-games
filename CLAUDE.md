@@ -29,6 +29,10 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
   Grapevine: edit `grapevine/src/`, then `node tools/build.mjs --check` there (see grapevine/CLAUDE.md), then `bash tools/sync-grapevine.sh` here.
   `gv/account.js` is built from `gv/core.js`, `ach.js`, `ui.js`: `bash tools/build-gv.sh`.
 - Minigames share one lobby: edit `Minigames/_shared/mg.js|mg.css`, then `bash Minigames/build.sh`.
+- The HG3D engine (our renderer; Mayhem Marathon and Steel Storm draw with it, three.js is their fallback): edit `engine/src/`,
+  then `node tools/build-engine.js` (it copies `engine/hg3d.js` into each game's `src/js/05-hg3d.js`: never edit the copies)
+  and rebuild those games. A game's `onBeforeCompile` patch needs its twin in `material.userData.hg` (HANDOFF, HG3D engine).
+  Test with `node tools/tests/hg3d.mjs`; compare with three.js with `node tools/bench/bench3d.mjs` (speed, and `--same` for the picture).
 
 ## Checking and testing (use these, do not reinvent them)
 - `node tools/check.js` (2 s): every built file matches its sources, every launcher game is in the release list and has

@@ -11,6 +11,44 @@ Current state and the facts you need to change things. What each round did and w
 - Back up unreleased work to `wip/content-wave` without touching HEAD or `main`:
   `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
 
+## HG3D engine (branch `engine/hg3d`, 2026-11-21: NOT released, nothing pushed; `main` is still the r80 shut-down page)
+- **What**: our own WebGL2 renderer for 4 GB Chromebooks. `engine/src/*.js` -> `engine/hg3d.js` (`const HG3D`); `node tools/build-engine.js`
+  builds it and copies it into each game in its `TARGETS` list (`check.js` keeps the copies in step, `--fix` rebuilds). A game keeps making
+  three.js objects (math, geometry, Mesh / InstancedMesh, lights); only the renderer object changes:
+  `HG3D.pick('<game>') === 'hg' ? HG3D.createRenderer({ canvas }) : null`, else `new THREE.WebGLRenderer`. Same calls afterwards
+  (`render`, `setSize`, `setPixelRatio`, `shadowMap`, `info`, `getContext`, `clear`).
+- **Why it is faster**: lighting per vertex (the finished colour leaves the vertex shader when nothing is needed per pixel), one uniform
+  block per frame and one `uniform4fv` per material, instance buffers uploaded only when changed and only their live part, the shadow map
+  read with hardware comparison (4 taps; three uses 9-17), the sky drawn last, no scene-graph work beyond one flat walk. About 40% fewer GL calls.
+- **A game's `onBeforeCompile` patches do not run under HG3D.** Each has a twin in `material.userData.hg = { vDecl, vPos, vAlbedo, vMain, fDecl,
+  fAlbedo, fFinal, uniforms, customMap, sky }` (hook points: top of `engine/src/20-shaders.js`). Mayhem: `tumMat`, the fruit plates. Steel Storm:
+  `HG_TERRAIN`, `HG_WATER`, `vehMat`. Change both when a patched shader changes. A `ShaderMaterial` runs unchanged.
+- **Which renderer**: `?r=three` / `?r=hg` for one visit; Settings > Graphics engine (New / Classic) is kept per device in `hgdev_r_<game>`
+  (`hgdev_` keys do not sync; never `hgq:`, those do). If HG3D cannot start (no WebGL2, a shader fails) `HG3D.bail` reloads the game on three.js.
+- **Gate** (decided before measuring): median AND 95th-percentile frame time at least 20% lower in one run type, no worse in the others, same picture.
+  Run types: cpu = main thread slowed 6x, gpu = an 8K picture on this PC's real GPU (pixel-bound), fill = software GL (SwiftShader).
+  - **Mayhem Marathon: adopted.** cpu Medium 13.0 -> 7.6 ms (42%), Low 6.1 -> 4.2 (31%); gpu 18% / 5%; fill 32% / 20%. Picture 0.1-0.6 of 255 off
+    three.js in all 21 rounds. Also gets `HG3D.governor` (picture size down to 70% under 50 FPS, back up when that does not help).
+  - **Steel Storm: adopted.** cpu Low 7.3 -> 5.3 ms (27%), Medium 13.8 -> 8.8 (36%); gpu 2-7% (equal); fill 2-7%. Picture 0.07-1.0 of 255
+    across Low/Medium/High x four weathers x town/shore and the 3D lobby. Vehicle bump maps are not drawn (Medium/High only, barely visible).
+  - **Frontline: not adopted** (untouched). Median 22% faster on cpu but its slow frames (20 Hz sim ticks) only 3-16%, gpu equal. The working
+    port is on branch `engine/hg3d-frontline`.
+  - **Sovereign: not adopted** (untouched). Pixel-identical but 11% on cpu, nothing on gpu: its time is its own globe shaders and the sim.
+  - **Blocky Shooter V2: not ported yet.** Biggest likely win (rendering is 70-75% of its cpu frame at its Chromebook tiers) and the biggest
+    job: environment-map reflections for the gun (Standard + PMREM even on lite tiers), six `onBeforeCompile` patches (`worldLighting`, enemy
+    glow / flash, matrix-texture zombies, smoke), two scenes per frame, layers, bloom tiers that must stay on three.js.
+- **Tests**: `node tools/tests/hg3d.mjs` (governor logic, the no-three.js demo `engine/demo.html`, lost-context recovery, both games on both
+  renderers, the speed test, the fallback). On this Windows PC there is no local three.js copy and no Python: `HG_LIVE_CDN=1` lets the tests use
+  the real CDN (also `Mayhem Marathon/tools/test.mjs`, and `tools/tests/ss-menus.mjs http://127.0.0.1:8090 --solo` with `node tools/bench/serve.mjs 8090`).
+- **Bench**: `node tools/bench/bench3d.mjs <game|all> --r ab --mode cpu,gpu,fill [--scn a,b] [--arg x]` (old vs new, interleaved, 3 runs).
+  `--same [png] --scn <s> --arg a+b` draws the SAME paused scene with both renderers in one page and compares the pixels: the look check.
+  A battle scene's camera wanders, so judge pixel cost (gpu) on fixed views (`steel --scn view --arg low,noon,town,0`).
+- **Before any release**: check on a real Chromebook. In each adopted game, Settings > Speed test (20 s, times each frame including the wait for
+  the graphics chip); run it once per engine (switch engine, reopen the game, run again) and the card shows both. If the new engine does not
+  win there, set that game back (remove it from `TARGETS`, drop its `05-hg3d.js`, keep its three.js path).
+- Also in the engine, unused by the games so far: a native API (`HG3D.node / mesh / instanced / geo / material / light / camera`) for a future
+  game with no three.js download (three.module.js is 1.2 MB; the engine is 96 KB).
+
 ## Round 10 (r74, 2026-11-16): Beat Lab, Steel Storm 2.2 menus, multiplayer, game chat, Grapevine sidebar, moderation, activity
 - **Beat Lab** (new game, `Beat Lab/src/`): Simple song grid + FL-style Studio on a DOM-free engine (`src/js/10-16-engine-*.js`,
   API at the top of `10-engine.js`). `tools/check.js --fix` joins the engine into `Beat Lab/engine.js`, which the launcher's music

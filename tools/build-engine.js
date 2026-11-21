@@ -9,6 +9,8 @@ const ROOT = path.resolve(__dirname, '..'), SRC = path.join(ROOT, 'engine', 'src
 const TARGETS = {
     'Mayhem Marathon': 'src/js/05-hg3d.js',
     'Steel Storm': 'src/js/05-hg3d.js'
+    // Sovereign was ported and measured (2026-11): pixel-identical, but only 11% faster with a slowed CPU and no faster on
+    // pixels (its time goes to its own globe shaders and its simulation, which a renderer cannot change). Stays on three.js.
     // Frontline was ported and measured (2026-11): 22% faster median frames with a slowed CPU, but its slow frames (the
     // ones with a 20 Hz simulation tick) and its pixel cost did not improve, so it stays on three.js. Its port is kept on
     // branch engine/hg3d-frontline (there this list also has  'Frontline': 'src/js/10-game/005-hg3d.js').
