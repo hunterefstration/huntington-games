@@ -1,4 +1,4 @@
-# Handoff (updated 2026-11-16)
+# Handoff (updated 2026-11-21)
 Current state and the facts you need to change things. What each round did and why: `.claude/HISTORY.md` (grep it, do not read it all).
 
 ## Where things stand
@@ -11,7 +11,7 @@ Current state and the facts you need to change things. What each round did and w
 - Back up unreleased work to `wip/content-wave` without touching HEAD or `main`:
   `GIT_INDEX_FILE=/tmp/wip-index sh -c 'git read-tree HEAD && git add -A && T=$(git write-tree) && P=$(git ls-remote origin refs/heads/wip/content-wave | cut -f1) && C=$(git commit-tree $T -p HEAD ${P:+-p $P} -m "WIP snapshot") && git push -q -f origin $C:refs/heads/wip/content-wave'`
 
-## Next big thing: realistic shooter + Steel Storm upgrade (plan agreed 2026-11-21, nothing built yet)
+## Next big thing: realistic shooter + Steel Storm upgrade (plan agreed 2026-11-21; step 1, the proof slice, is built: next section)
 - Owner's decisions: **Chromebook first** (4 GB, integrated graphics must run it smoothly); art from **Blender through the Blender MCP**
   plus **free-licence libraries** (Poly Haven, ambientCG, Quaternius need no account; Mixamo needs the owner's free Adobe login, he signs in
   himself in the Browser pane). He offered to set up further tools on request.
@@ -33,6 +33,126 @@ Current state and the facts you need to change things. What each round did and w
   end). Scope: the lite levels only (Low, Auto tiers 2-3: Lambert, no reflections, no shadows); three.js keeps the others. Next step there:
   `node tools/bench/bench3d.mjs blocky --scn look --same f.png --arg 3`, fix the picture, run its tests, then the speed gate. Still open:
   Auto's "try one tier better" would bounce between renderers across starts; and a note in Settings when a level needs the other renderer.
+
+## ASHFALL (the realistic shooter; started the night of 2026-11-21 on branch `engine/hg3d`, NOT on main, NOT in the launcher yet)
+- **The owner's words (2026-11-21, after the proof slice ran at 60 FPS on his Chromebook)**: "Build out the games tonight... They should
+  feel as 'hype' as possible from launch, in comparison to blocky shooter. Maybe have an intro for the first time you start the game, with
+  a typewriter effect text undertale style: Are you there? / We made it...? / Mission B. Shooter was a success, it seems... / We move /
+  not to Blocky Shooter 2 / but / to / ASHFALL [game logo]... as impressive as possible for any first impression... Focus on Ashfall...
+  then Steel Storm Remastered... we do need multiplayer support like in blocky shooter as well. All of the good features without shitty
+  fluff (there wasn't much but STILL) and too huge of a weapon shop. Still most of it but not all. Also we need aim with e because
+  chromebook users use a trackpad." One subagent at a time while the main session also works ("Stick to the agent rule").
+- **Where**: `Ashfall/` (`src/shell.html`, `src/css/10-style.css`, `src/js/*.js` joined into one module, `assets/`). Build:
+  `node tools/build-game.js Ashfall`. Engine copy: `Ashfall/src/js/05-hg3d.js` (a `tools/build-engine.js` target). Open:
+  `http://localhost:8090/Ashfall/index.html` (banner at the top of the play menu). `?menu=1` skips the opening, `?go=yard` starts a run,
+  `?intro=1` replays the opening, `?stats=1` or F3 shows numbers. Debug hook `window.__ash`.
+- **Files**: `10-core` (page, renderer, input incl. E-to-aim, synthesised sound + a step-sequencer music, the loop), `15-save` (key
+  `ashfall_save`, `v` + fill-in migration; ranks from XP), `20-world` (a map: collision, flows, sparks/smoke/tracers/casings/shadows,
+  ash and embers, the menu fly-by), `30-weapons` (WEAPONS numbers, `Gun`: the viewmodel, fire/reload/aim/melee/switch), `40-enemies`
+  (FOES kinds as tint+size+behaviour on the one rigged figure, `Foes`), `50-holdout` (`Game`: waves, cash, classes, perks, grenades,
+  pickups, HUD, also the deathmatch rules), `60-ui` (opening, menu, panels, supply crate, pause, results), `70-net` (multiplayer).
+- **What it is**: HOLDOUT = waves (walker, runner, brute, spitter, cinder; THE FURNACE boss every 5th wave), cash from kills with a combo
+  multiplier, the SUPPLY CRATE between waves (B): weapons, 3 upgrade levels per weapon, armour, medkit, grenades, 6 perks x 3 levels; all
+  of it for this run only. Kept between runs: rank (XP), which unlocks weapons and classes, bests, settings. 4 classes with an X ability
+  (Assault, Medic, Heavy, Recon). Carry two main guns + a sidearm (1/2/3, Q, wheel). E toggles aim (or hold: a setting), right button
+  also aims; V strike, G grenade. No jumping, no campaign, no Hunted, no tournament yet (Blocky has them).
+- **Weapons**: numbers in `WEAPONS` (30-weapons.js). A weapon is offered only when its model exists: `assets/w_<id>.hgm` (skin
+  "viewmodel", pieces vm_arms + vm_gun, clips vm_idle/fire/reload/draw/run/melee) and an entry in `assets/weapons.json` (eye, sight,
+  muzzle, eject, seat...), both written by `tools/blender/make_weapons.py` (`art/ashfall/weapons.blend`, not in git; log:
+  `art/ashfall/WEAPONS.md`). A minigun's barrels must spin inside its fire clip (60 degrees a loop): bone matrices are baked.
+- **Multiplayer** (70-net.js; Blocky's design, own code): PeerJS (`cdn.jsdelivr.net/npm/peerjs@1.5.4`), 6-digit code = peer id
+  `ashfall-v1-<code>`, host is referee, two pipes (PeerJS's reliable channel + a negotiated id-50 unreliable one), JSON messages.
+  SQUAD HOLDOUT (4): host simulates the ashen, guests draw snapshots (15 Hz players, 7.5 Hz ashen) and report hits (`h`), host sends
+  damage (`d`), kills (`k`), wave/clear/over. DEATHMATCH (6, bots fill): shooter decides the hit (`ph`), the one hit owns their health
+  (`pd`, `dead`), host keeps score and ends the match. Other players are drawn with the hooded enemy figure in a team colour until a
+  soldier model exists. Not done: late join, host leaving mid-match (guests go to the menu), hidden-tab ticker, launcher party hooks
+  (`HG_partyOpen`...), team modes.
+- **Tests**: `node tools/tests/ashfall.mjs [solo] [ui] [mp] [loader]` (mp uses the real PeerJS server: internet needed; `loader --live`
+  = the real CDN). Pictures of any state: `node tools/tests/ashfall-shot.mjs "go=yard" out.png "js"`.
+- **Test builds**: the owner's Google Doc code (Proof Slice/loader.html) loads the newest `proofN` tag; from build 3 the slice's page
+  hands over to Ashfall (inline script in `Proof Slice/src/shell.html`, `?proof=1` keeps the slice). Build 3 = `b7fac73` (2026-11-22).
+- **Before a release** (not done): launcher GAMES entry + `tools/build-release.py` GAMES + `hub/ashfall.jpg`; the hub must tell a game
+  run from a blob where its files are (`window.HG_BASE`, as the test loader does); `ashfall_` in `GAME_KEYS` (gv/core.js, then
+  `bash tools/build-gv.sh`); a leaderboard feed if wanted (`Save.data.stats.best`, `xp`).
+- **Gotchas found**: the Bash tool eats backslashes inside heredocs (write patch scripts with the Write tool); closing the supply crate
+  re-locks the mouse and the late echo of the unlock used to pause the game (`App.lockAt`); one map per visit (the engine cannot yet
+  free a map's memory: add `asset.dispose()` before a second map).
+
+## Proof slice (step 1 of the plan above; built 2026-11-21 on branch `engine/hg3d`, waiting for the owner's Chromebook)
+- **What**: `Proof Slice/` (`src/` + `assets/`), drawn by HG3D alone (no three.js download). Menu: **the Yard** (`20-yard.js`: a 40 m walled
+  yard with a brick building, a first-person carbine, a hooded infected figure in waves) and **the Range** (`30-tank.js`: a tank, hull >
+  turret > barrel with a far model, on a 200 m terrain tile), plus a 20 s **speed test** for each (the slice plays itself; the result table
+  stays on the menu, `hgdev_proof` in localStorage). Verdict wanted: **30 FPS at the slowest** on the real Chromebook.
+- **Open it**: http://localhost:8090/Proof%20Slice/index.html (link at the bottom of the play menu). On a Chromebook in the same network:
+  `node tools/play.mjs --lan` (or `Play Huntington Games.cmd --lan`) prints the address to type (Windows asks once to allow the network).
+- On any Chromebook, the Launcher way: `Proof Slice/loader.html` is pasted into jsfiddle/jsbin (the owner's copy is the Google Doc
+  "Proof Slice: Chromebook speed test code"). It finds the newest git tag `proofN` on jsDelivr, writes that build's
+  `Proof Slice/index.html` into the page and sets `HG_BASE` (where the assets are) and `HG_PROOF` (the build number).
+  Build 1 = tag `proof1` = the WIP snapshot commit `b243b76` on `wip/content-wave` (2026-11-21). Build 2 = tag `proof2` = `1fda730` (arms and hands, aim down sight, tank aiming). A new test build: rebuild, make the
+  WIP snapshot commit as above, and push it to `refs/tags/proof<N+1>` as well; the pasted code never changes. The menu's grey
+  "Report:" line (build, FPS, picture size, graphics chip) is what the owner sends back. Keep the loader free of `//` comments
+  (it is copied out of a doc). Test: `node tools/tests/proof.mjs loader` (fake CDN), `loader --live` (the real one).
+  `?stats=0` hides the numbers, F3 toggles them, `?exp=1.2` brightens, `?aniso=1` turns the sharper-ground filter off (try it if slow), `?go=yard&demo=1` starts the self-playing round.
+- **How it looks real cheaply**: all light is worked out in Blender (Cycles) and baked: the static world is `colour picture x light picture`
+  (second UV set), nothing per pixel but two texture reads, tone mapping and fog. Moving things (gun, figures, tank) are lit per vertex by
+  a sun + sky pair for shape and scaled by **the baked light where they stand** (a grid baked 1 m above the ground: ambient colour + how much
+  sun reaches the spot), so a figure walking into the building's shadow goes dark with it. Figures drop a blob at their feet and a long
+  one away from the sun (only where the sun reaches). Sky = the Blender world rendered all the way round; the sun glow sits where the
+  baked shadows say the sun is.
+- **Engine pieces added** (`engine/src/85-assets.js`, exports `load, loadTexture, place, skyDome`): `HG3D.load(url)` reads an `.hgm`
+  (JSON + raw arrays; pictures beside it as WebP, decoded off the main thread, the decoded copy dropped once on the GPU and fetched again
+  after a lost context); `asset.scene` (static world), `asset.objects.<name>` (parts with `.local`/`.rest`; `HG3D.place(node, matrix)`
+  walks parents), `asset.crowd(name, max)` (GPU-skinned figures: bone matrices in a float texture, one row per frame, two bones per vertex,
+  one instanced draw per detail level, per-instance frame + light), `asset.probe(x, z, out)`, `asset.view(...)` for the raw grids.
+  Shader hooks gained `vNormal` and `key` (same key = one program for many materials). `renderer.info.memory.textureBytes` counts picture
+  memory. Fixed: a texture uploaded in the middle of a draw left itself on unit 0 for that one draw (a hook's texture showed as the colour
+  map for one frame).
+- **Blender -> game, one command**: `node tools/export-art.mjs [yard] [range]` runs Blender headless on `art/proof/*.blend` with the
+  `*.export.json` beside it (`tools/blender/hg_export.py`; its header lists every option). It writes the `.hgm`, converts pictures, bakes
+  the light grid, renders the sky, and builds the **collision map** (per 25 cm column: which heights are solid; the Yard's walking, bullets
+  and enemy paths all read it) or the **height maps** (ground, and tops of what stands on it; the tank reads both).
+  Art contract: collections by name; world meshes carry UV layers `UVMap` (tiling colour) + `Lightmap` (unique) and a baked float EXR
+  (diffuse direct + indirect, no colour); an object can name its own EXR in the custom property `hg_lightmap`; final materials are
+  Principled + ONE image; `emissive_*` materials are drawn full-bright; figures: one mesh + `<name>_lod1/2`, an armature, actions by name.
+  Blender gotcha that cost an hour: whatever is hidden in the viewport when the file is saved is not evaluated headless (objects come out
+  at the origin); the exporter un-hides everything in memory first.
+- **Art sources are NOT in git** (`.gitignore`: `art/**/*.blend`, `art/**/tex/`, caches; one light EXR is 38 MB and git history is forever):
+  they are in this folder only (OneDrive). The exported `Proof Slice/assets/` and the `*.export.json` are meant to be committed.
+  Decide where sources live (Git LFS, another repo, as now) before content at scale. A session in a fresh clone can run and test the
+  slice but cannot re-export.
+- **Art made so far** (all modelled and baked in Blender through the MCP, nothing downloaded: the add-on's asset libraries were off):
+  `art/proof/shooter.blend` (map 25k triangles in 8 materials, one 2048 light picture; gun 3.7k; figure 3.9k / 1.5k / 0.5k, 19 bones,
+  idle / walk / attack / die), `art/proof/range.blend` (terrain 33k triangles with colour x light in one 2048 picture and a grey detail
+  picture on top, a far backdrop ring, 21 prop groups 13k, tank 8.4k / 3.4k with a 2048 atlas shipped at 1024). Known weak: the figure is smooth ("onesie"), its
+  walk has 5 key poses and no blending between clips (Mixamo mocap is the plan, the owner signs in); no hands on the gun; the yard has no
+  decals; lossy WebP on light pictures.
+- **Measured here** (not a Chromebook): Yard 16 draw calls, 87k triangles at most with 24 figures, 67 MB of pictures; Range 15 draw
+  calls, 57k triangles, 56 MB; the processor's share with the main thread slowed 6x is about 1 ms a frame in both. So the open question on the Chromebook is pixels only (the governor
+  shrinks the picture down to 60% by itself).
+- **Tests**: `node tools/tests/proof.mjs [yard] [tank] [speed] [cpu]` (no rig, no internet; `gpu` when named: pixel cost at 8K on this
+  PC's chip; `--shot=x.png` saves pictures). Budgets asserted: 150 draws, 150k triangles, 100 MB.
+- **Blender state to know**: the tank scene was built with Blender run from the command line, because `read_factory_settings` in the
+  live Blender switches the MCP add-on off (do not call it there: clear the scene by hand instead). If the live window still shows an
+  early, empty `range.blend`, close it WITHOUT saving, reopen the file, and re-enable the add-on (Preferences > Add-ons).
+- **Owner's Chromebook result (build 1, 2026-11-21)**: AMD Radeon R3 (Stoney Ridge), 4 GB, 2 cores, 1366x599: Yard 59.8 average /
+  59.5 slowest, Range 60 / 59.5, about 11.5 ms of work a frame, picture at 100%. Speed is settled. His complaints were about the game,
+  not the speed: no arms or hands on the gun ("realistic and animated with the gun"), and tank aiming with no up/down control.
+- **After that feedback (2026-11-21, same branch)**:
+  - *Tank aiming* (30-tank.js): the mouse turns a line of sight (yaw AND pitch); `tankAim` finds where it meets the ground or a target;
+    `tankLay` turns the turret (`TD.slew`) and lifts the gun (`TD.lift`, limits `elevMin..elevMax`) to the ballistic angle that lands a
+    shell there, worked out in the hull's own leaning space; `tankFall` predicts the landing of the gun as it points now and the HUD
+    ring (`#gunmark`: amber = still turning, green = laid, red dashed = the gun cannot dip/rise that far) shows it. Right button or
+    Shift = the gunner's sight (15 degree view). Five steel targets (`Tank.targets`) stand at ringed distances; HUD shows HITS, RANGE, GUN angle.
+  - *Arms and gun* (20-yard.js): one skinned model "viewmodel" (`"together": true` in the export config = its meshes `vm_arms` + `vm_gun`
+    are pieces of one model, not detail levels), built by `tools/blender/make_viewmodel.py` (re-runnable; the .blend is not in git),
+    clips `vm_idle`, `vm_fire`, `vm_reload`, `vm_draw`, `vm_run`. The game picks the clip (`vmPlay`), fades between clips and between
+    frames (`vmPose`; the shader blends two poses: `aAnim` = frame, flash, second frame, blend; `asset.frame2`). Reload time comes from
+    the clip's length. An asset file with no "viewmodel" still shows the bare gun parts.
+  - *Gun handling*: right button aims down the sight (the gun comes to the eye, view narrows, the sight's dot shows; `Yard.sight` is found
+    from the highest vertices of the gun), spread grows with fast fire and movement and shrinks when aiming, casings fly out (one
+    instanced draw). `node tools/tests/proof-shot.mjs yard out.png "js"` takes a picture of any state (used to check the hold pose).
+- **Not built yet** (step 2): GPU-compressed textures (needs a transcoder or per-chip files), streaming, bullet decals, Poly Haven /
+  Mixamo art (the owner switches the libraries on in the Blender add-on, or signs in).
 
 ## Playing on localhost (2026-11-21, branch `engine/hg3d`)
 - The launcher's account ("recovery key") system is off and the public page is the r80 shut-down page, so the way to play now is local:
