@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proof Slice</title>
+<style>
+html,body{margin:0;height:100%;background:#0d1016;color:#dfe5f0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+#boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
+#boot b{font-size:22px;letter-spacing:.22em;margin-right:-.22em}
+#bar{width:240px;max-width:70vw;height:4px;background:#252c3b;border-radius:2px;overflow:hidden}
+#bar i{display:block;height:100%;width:8%;background:#f0a23c;transition:width .35s}
+#tip{max-width:440px;color:#8591a8;font-size:13px;min-height:2.6em}
+</style>
+</head>
+<body>
+<div id="boot"><b>PROOF SLICE</b><div id="bar"><i></i></div><div id="msg">Starting</div><div id="tip">Huntington Games test build: the Yard and the Range.</div></div>
+<script>
+// Huntington Games: Proof Slice test loader. Paste this into the HTML panel at jsfiddle.net or jsbin.com and press Run.
+// It works like the Launcher code: it finds the newest test build on the jsDelivr CDN every time (git tags proof1,
+// proof2, ...), so this code never needs updating. The slice has no account and no saves; it is only for the speed test.
+(function () {
+  var repo = 'hunterefstration/huntington-games', page = 'Proof%20Slice/';
+  var hosts = ['cdn', 'fastly', 'gcore', 'testingcf'], i = 0, n = 1, booted = false;
+  function show(p, stage, tip) {
+    var b = document.querySelector('#bar i'); if (b) b.style.width = Math.round(p * 100) + '%';
+    var m = document.getElementById('msg'); if (m && stage) m.textContent = stage;
+    var t = document.getElementById('tip'); if (t && tip) t.textContent = tip;
+  }
+  // a tag is served by jsDelivr as soon as it exists and a missing one is never cached: gallop up from the last one
+  // seen until one is missing, then search the gap
+  function findLatest(floor, cb) {
+    function exists(k) { return fetch('https://cdn.jsdelivr.net/gh/' + repo + '@proof' + k + '/latest.json').then(function (r) { return r.ok; }).catch(function () { return false; }); }
+    var lo = floor, step = 1;
+    function bisect(a, b) { if (b - a <= 1) return cb(a); var m = (a + b) >> 1; exists(m).then(function (ok) { if (ok) bisect(m, b); else bisect(a, m); }); }
+    function gallop() { exists(lo + step).then(function (ok) { if (ok) { lo += step; step *= 2; gallop(); } else bisect(lo, lo + step); }); }
+    gallop();
+  }
+  function boot(html, base) {
+    if (booted) return; booted = true; show(.9, 'Starting');
+    // the slice loads its models and pictures from the same place the page came from
+    var tag = '<script>window.HG_BASE = ' + JSON.stringify(base) + '; window.HG_PROOF = ' + n + ';<\/script>';
+    html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
+    document.open(); document.write(html); document.close();
+  }
+  function next() {
+    if (booted) return;
+    if (i >= hosts.length) return show(1, 'Could not download the test build', 'cdn.jsdelivr.net may be blocked on this network. Wait a minute and press Run again, or try another network.');
+    var base = 'https://' + hosts[i++] + '.jsdelivr.net/gh/' + repo + '@proof' + n + '/' + page;
+    show(.3 + i * .1, i > 1 ? 'Trying another mirror' : 'Downloading test build ' + n);
+    var ctl = window.AbortController ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 12000);
+    fetch(base + 'index.html', ctl ? { signal: ctl.signal } : {}).then(function (r) {
+      clearTimeout(t); if (!r.ok) throw new Error('HTTP ' + r.status); return r.text();
+    }).then(function (html) { boot(html, base); }).catch(next);
+  }
+  var floor = 1;
+  try { floor = Math.max(1, parseInt(localStorage.getItem('hg_proof_build'), 10) || 1); } catch (e) {}
+  show(.12, 'Finding the newest test build');
+  findLatest(floor, function (k) { n = k; try { localStorage.setItem('hg_proof_build', k); } catch (e) {} next(); });
+})();
+</script>
+</body>
+</html>

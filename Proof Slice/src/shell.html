@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Proof Slice</title>
+<!--@css-->
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="vig" class="hidden"></div>
+<div id="hud" class="hidden">
+  <div id="cross"></div>
+  <div id="hit"></div>
+  <div id="hurt"></div>
+  <div id="hud-bl"><div id="hp"><i></i></div><div id="hp-n">100</div></div>
+  <div id="hud-br"><span id="ammo">30</span><small> / 30</small></div>
+  <div id="hud-top"></div>
+  <div id="msg"></div>
+</div>
+<div id="stats" class="hidden"></div>
+<div id="menu">
+  <div class="card">
+    <h1>Proof Slice</h1>
+    <p>The realistic look, tested small: light worked out in Blender, real models, animated figures. It has to look right and hold 30 FPS on a Chromebook before anything bigger is built.</p>
+    <div class="row">
+      <button data-go="yard"><b>The Yard</b><span>one map, one gun, one enemy</span></button>
+      <button data-go="tank"><b>The Range</b><span>one tank, one terrain tile</span></button>
+    </div>
+    <div class="row small">
+      <button data-test="yard">Speed test: Yard</button>
+      <button data-test="tank">Speed test: Range</button>
+      <button id="fs">Full screen</button>
+    </div>
+    <div id="results"></div>
+    <div id="report"></div>
+    <p class="keys">Yard: WASD move, mouse aim, click fire, R reload, Shift run. Range: WASD drive, mouse aims the turret, click fires. Esc: back here. F3: numbers. For a fair speed test, go full screen first.</p>
+    <div id="load"></div>
+  </div>
+</div>
+<!--@js-->
+</body>
+</html>

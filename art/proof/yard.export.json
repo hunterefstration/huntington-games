@@ -1,0 +1,12 @@
+{
+  "blend": "shooter.blend",
+  "out": "../../Proof Slice/assets/yard",
+  "world": { "collections": ["map"], "lightmap": "tex/map_light.exr", "lmSize": 2048 },
+  "parts": ["gun", "gun_mag", "gun_hands"],
+  "skins": [{ "name": "enemy", "rig": "enemy_rig", "lods": ["enemy", "enemy_lod1", "enemy_lod2"],
+              "clips": { "idle": { "loop": true }, "walk": { "loop": true }, "attack": {}, "die": {} } }],
+  "grid": { "cell": 0.25 },
+  "probes": { "cell": 1.0, "height": 1.0, "samples": 96 },
+  "sky": { "width": 1024 },
+  "maxTexture": 1024
+}

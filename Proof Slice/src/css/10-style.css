@@ -1,0 +1,39 @@
+html, body { margin: 0; height: 100%; background: #0b0d12; color: #e9edf5; font: 15px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif; overflow: hidden; user-select: none; }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+#menu { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8, 10, 16, .78); z-index: 10; padding: 16px; }
+#menu .card { max-width: 620px; width: 100%; background: #151923; border: 1px solid #2a3142; border-radius: 14px; padding: 22px 26px; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+#menu h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: .5px; }
+#menu p { margin: 0 0 14px; color: #aeb7c8; }
+#menu .row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+#menu button { flex: 1 1 200px; font: inherit; color: #fff; background: #2b6cff; border: 0; border-radius: 10px; padding: 12px 14px; cursor: pointer; text-align: left; }
+#menu button:hover { background: #4a83ff; }
+#menu button:disabled { opacity: .45; cursor: default; }
+#menu button b { display: block; font-size: 17px; }
+#menu button span { font-size: 13px; opacity: .85; }
+#menu .small button { background: #252c3b; border: 1px solid #39435a; padding: 8px 12px; font-size: 14px; }
+#menu .small button:hover { background: #30394d; }
+#menu .keys { font-size: 13px; color: #8591a8; margin: 6px 0 0; }
+#results { font-size: 13.5px; color: #cfd6e4; }
+#report { font: 12px/1.4 ui-monospace, Consolas, monospace; color: #8591a8; user-select: all; -webkit-user-select: all; word-break: break-word; margin: 0 0 8px; }
+#results table { border-collapse: collapse; margin: 4px 0 10px; }
+#results td { padding: 2px 14px 2px 0; }
+#results .ok { color: #6fdc8c; font-weight: 700; }
+#results .bad { color: #ff8a7a; font-weight: 700; }
+#load { font-size: 13px; color: #ffd27a; min-height: 18px; margin-top: 8px; }
+#stats { position: fixed; right: 8px; top: 8px; z-index: 6; font: 12px/1.35 ui-monospace, Consolas, monospace; background: rgba(0, 0, 0, .55); padding: 6px 9px; border-radius: 6px; white-space: pre; text-align: right; pointer-events: none; }
+#hud { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+#cross { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; opacity: .85;
+  background: linear-gradient(#fff, #fff) 50% 0 / 2px 7px no-repeat, linear-gradient(#fff, #fff) 50% 100% / 2px 7px no-repeat, linear-gradient(#fff, #fff) 0 50% / 7px 2px no-repeat, linear-gradient(#fff, #fff) 100% 50% / 7px 2px no-repeat; }
+#hit { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; opacity: 0; transform: rotate(45deg);
+  background: linear-gradient(#ffd9d0, #ffd9d0) 50% 0 / 2px 9px no-repeat, linear-gradient(#ffd9d0, #ffd9d0) 50% 100% / 2px 9px no-repeat, linear-gradient(#ffd9d0, #ffd9d0) 0 50% / 9px 2px no-repeat, linear-gradient(#ffd9d0, #ffd9d0) 100% 50% / 9px 2px no-repeat; }
+#hurt { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at center, rgba(160, 0, 0, 0) 45%, rgba(160, 0, 0, .7) 100%); }
+#hud-bl { position: absolute; left: 22px; bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-shadow: 0 1px 3px #000; }
+#hp { width: 180px; height: 10px; background: rgba(0, 0, 0, .5); border-radius: 5px; overflow: hidden; }
+#hp i { display: block; height: 100%; width: 100%; background: #e9edf5; }
+#hud-br { position: absolute; right: 24px; bottom: 16px; font-weight: 800; font-size: 30px; text-shadow: 0 1px 3px #000; }
+#hud-br small { font-size: 15px; opacity: .75; font-weight: 600; }
+#hud-top { position: absolute; left: 0; right: 0; top: 12px; text-align: center; font-weight: 700; letter-spacing: 1px; text-shadow: 0 1px 3px #000; }
+#msg { position: absolute; left: 0; right: 0; top: 34%; text-align: center; font-size: 24px; font-weight: 800; text-shadow: 0 2px 6px #000; }
+#hud[data-mode="tank"] #hud-bl, #hud[data-mode="tank"] #hud-br { display: none; }
+#vig { position: fixed; inset: 0; z-index: 4; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 58%, rgba(0, 0, 0, .34) 100%); }
