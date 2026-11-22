@@ -1,0 +1,197 @@
+// Ashfall test. Needs no rig. Parts: solo, ui (no internet needed), mp (two browsers through the real PeerJS matchmaking
+// server and WebRTC: needs internet; named, or run with everything).
+//   node tools/tests/ashfall.mjs            solo + ui + mp
+//   node tools/tests/ashfall.mjs solo ui    only these (solo, ui, mp, loader; "loader --live" = the real CDN, after a test build is published)
+// Checks: a run starts and draws within the Chromebook budgets; the gun fires, reloads, aims with E; waves come, pay and
+// end; the supply crate sells; a run ends with a result and is saved; the opening types its lines and shows the name;
+// the menu and its panels open; two players find each other with a code, see each other and the same ashen, and a
+// deathmatch with bots keeps score.
+import { chromium } from 'playwright';
+import { startServer } from '../bench/serve.mjs';
+
+const args = process.argv.slice(2), parts = args.filter(a => !a.startsWith('--')), want = p => !parts.length || parts.includes(p);
+const BUDGET = { calls: 150, tris: 150000, mb: 100 };
+const { server, base } = await startServer(0);
+const browser = await chromium.launch({ args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', '--mute-audio'] });
+let fails = 0; const ok = (c, what, info) => { console.log((c ? 'PASS  ' : 'FAIL  ') + what + (info !== undefined && info !== '' ? '  ' + info : '')); if (!c) fails++; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function open(query, size) {
+    const ctx = await browser.newContext({ viewport: size || { width: 960, height: 540 } }), page = await ctx.newPage(), msgs = [];
+    page.on('pageerror', e => msgs.push('error: ' + e.message.slice(0, 200))); page.on('console', m => { if (/\[HG3D\]/.test(m.text()) || (m.type() === 'error' && !/Failed to load resource/.test(m.text()))) msgs.push(m.text().slice(0, 240)); });
+    await page.goto(base + '/Ashfall/index.html?gov=0&' + (query || ''), { waitUntil: 'load' });
+    await page.waitForFunction(() => !!window.__ash, null, { timeout: 15000 });
+    return { ctx, page, msgs };
+}
+const errs = page => page.evaluate(() => window.__ash.App.errors.slice(0, 3).join(' | '));
+
+if (want('solo')) {
+    const { ctx, page, msgs } = await open('go=yard');
+    const started = await page.waitForFunction(() => window.__ash.started !== undefined, null, { timeout: 60000 }).then(() => page.evaluate(() => window.__ash.started), () => false);
+    ok(started, 'solo: a run loads and starts', started ? '' : await errs(page));
+    if (started) {
+        const s = await page.evaluate(() => {
+            const H = window.__ash, G = H.Game, P = G.P, out = {}; H.App.locked = true; let calls = 0, tris = 0;
+            const go = (dt, n) => { for (let i = 0; i < n; i++) { P.hp = P.max; H.step(dt, 1); } };          // nothing may kill the player while the gun is tried out
+            // through the first break into wave 1 with a full yard
+            for (let i = 0; i < 400; i++) { H.step(1 / 30, 1); calls = Math.max(calls, H.App.calls); tris = Math.max(tris, H.App.tris); P.hp = P.max; }
+            out.calls = calls; out.tris = tris; out.mb = H.R.info.memory.textureBytes / 1048576; out.wave = G.wave; out.foes = H.Foes.list.length; out.gun = H.Gun.cur && H.Gun.cur.id; out.clips = Object.keys(H.Gun.cur.clips).sort().join(',');
+            // the picture is not blank
+            const gl = H.R.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(w * h * 4); H.step(1e-4, 1); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px); const seen = new Set(); for (let i = 0; i < px.length; i += 4 * 97) seen.add((px[i] >> 3) << 10 | (px[i + 1] >> 3) << 5 | px[i + 2] >> 3); out.colours = seen.size;
+            // fire: ammo goes down, a casing flies; aim with E: the view narrows; reload: the clip plays and the magazine fills
+            const a0 = H.Gun.S.ammo; H.mouse.down = true; go(1 / 60, 20); H.mouse.down = false; out.fired = a0 - H.Gun.S.ammo; out.brass = H.World.brass.count;
+            dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' })); dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE' })); go(1 / 30, 20); out.ads = P.ads; out.fov = H.World.camera.fov;
+            dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' })); dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE' })); go(1 / 30, 20); out.adsOff = P.ads;
+            H.hit.KeyR = true; go(1 / 30, 2); out.reloading = P.vm.cur; go(1 / 30, 90); out.ammo = H.Gun.S.ammo; out.mag = H.Gun.W.mag;
+            // kill everything of this wave by hand: cash, kills, the wave clears and the crate opens
+            let guard = 0; while (G.phase === 'fight' && guard++ < 400) { for (const e of H.Foes.list.slice()) if (e.state !== 'die') H.Foes.damage(e, 9999, true, G, 0); P.hp = P.max; H.step(1 / 30, 3); }
+            out.phase = G.phase; out.cash = G.cash; out.kills = G.kills;
+            H.hit.KeyB = true; H.step(1 / 30, 1); out.shop = G.shopOpen && !document.getElementById('shop').classList.contains('hidden');
+            const c0 = G.cash; G.cash = 5000; document.querySelector('[data-tab=gear]').click(); document.querySelector('[data-buy=armor]').click(); out.armor = P.armor; out.paid = 5000 - G.cash;
+            document.querySelector('[data-tab=perks]').click(); document.querySelector('[data-buy="perk:vital"]').click(); out.maxHp = P.max;
+            document.querySelector('[data-tab=ups]').click(); document.querySelector('[data-buy="up:carbine"]').click(); out.lvl = H.Gun.state.carbine.lvl; out.mag2 = H.Gun.stats('carbine').mag;
+            document.querySelector('[data-do=shopx]').click(); out.shopShut = !G.shopOpen; G.cash = c0;
+            return out;
+        });
+        ok(s.wave >= 1 && s.foes > 0 && s.gun === 'carbine', 'solo: the first wave comes', 'wave ' + s.wave + ', ' + s.foes + ' ashen');
+        ok(s.colours > 40, 'solo: the picture is not blank', s.colours + ' colours');
+        ok(s.calls > 0 && s.calls <= BUDGET.calls, 'solo: draw calls within budget', s.calls + ' of ' + BUDGET.calls);
+        ok(s.tris > 0 && s.tris <= BUDGET.tris, 'solo: triangles within budget', Math.round(s.tris) + ' of ' + BUDGET.tris);
+        ok(s.mb <= BUDGET.mb, 'solo: picture memory within budget', s.mb.toFixed(0) + ' MB of ' + BUDGET.mb);
+        ok(/vm_draw/.test(s.clips) && /vm_fire/.test(s.clips) && /vm_reload/.test(s.clips), 'solo: the gun has its clips', s.clips);
+        ok(s.fired >= 2 && s.brass >= 1, 'solo: the gun fires and throws casings', s.fired + ' rounds, ' + s.brass + ' casings');
+        ok(s.ads > 0.9 && s.fov < 60 && s.adsOff < 0.1, 'solo: E aims down the sight and E again lowers it', 'aim ' + s.ads.toFixed(2) + ', view ' + s.fov.toFixed(0) + ' degrees');
+        ok(s.reloading === 'vm_reload' && s.ammo === s.mag, 'solo: R reloads', s.ammo + ' of ' + s.mag);
+        ok(s.phase === 'break' && s.cash > 0 && s.kills > 0, 'solo: a cleared wave pays', '$' + s.cash + ', ' + s.kills + ' kills');
+        ok(s.shop && s.armor === 50 && s.paid === 400 && s.maxHp === 125 && s.lvl === 1 && s.mag2 > 30 && s.shopShut, 'solo: the supply crate sells armour, perks and upgrades', 'armour ' + s.armor + ', max health ' + s.maxHp + ', magazine ' + s.mag2);
+        const end = await page.evaluate(async () => {
+            const H = window.__ash, G = H.Game, P = G.P, xp0 = H.Save.data.xp; G.hurt(0, 9999, P.x + 1, P.z, null); const dead = P.dead, over = G.over;
+            H.step(1 / 30, 120); await new Promise(r => setTimeout(r, 500));
+            const shown = !document.getElementById('results').classList.contains('hidden'), saved = JSON.parse(localStorage.getItem('ashfall_save') || '{}');
+            return { dead, over, shown, xp: H.Save.data.xp - xp0, savedXp: saved.xp, best: saved.stats && saved.stats.best.yard_normal, text: document.getElementById('results').textContent.slice(0, 60) };
+        });
+        ok(end.dead && end.over && end.shown, 'solo: going down ends the run with a result', end.text);
+        ok(end.xp > 0 && end.savedXp > 0 && end.best >= 1, 'solo: the run is saved (rank experience, best wave)', '+' + end.xp + ' XP, best wave ' + end.best);
+        const again = await page.evaluate(() => { const H = window.__ash; document.querySelector('[data-do=again]').click(); H.App.locked = true; H.step(1 / 30, 30); return { wave: H.Game.wave, hp: H.Game.P.hp, over: H.Game.over, cash: H.Game.cash }; });
+        ok(!again.over && again.hp === 100 && again.cash === 0, 'solo: GO AGAIN starts a fresh run');
+    }
+    ok(!msgs.length, 'solo: quiet console', msgs.slice(0, 3).join(' | '));
+    await ctx.close();
+}
+
+if (want('ui')) {
+    const { ctx, page, msgs } = await open('');
+    await page.keyboard.press('KeyA'); await sleep(2600);
+    const typed = await page.evaluate(() => document.getElementById('intro-text').textContent);
+    ok(/^Are you there/.test(typed), 'ui: a first visit types the opening', JSON.stringify(typed.slice(0, 24)));
+    await page.keyboard.down('Space'); await sleep(900); await page.keyboard.up('Space'); await sleep(1400);
+    const name = await page.evaluate(() => ({ cls: document.getElementById('intro').className, logo: !!document.querySelector('#intro svg.logo'), seen: JSON.parse(localStorage.getItem('ashfall_save')).intro }));
+    ok(/name/.test(name.cls) && name.logo && name.seen, 'ui: holding Space skips to the name, and the opening is remembered');
+    await sleep(700); await page.keyboard.press('Enter'); await sleep(600);
+    const menu = await page.evaluate(() => ({ screen: window.__ash.App.screen, shown: !document.getElementById('menu').classList.contains('hidden'), items: document.querySelectorAll('#menu-nav button').length }));
+    ok(menu.screen === 'menu' && menu.shown && menu.items === 4, 'ui: then the main menu');
+    const panels = await page.evaluate(async () => {
+        const out = {}, H = window.__ash, sleep = ms => new Promise(r => setTimeout(r, ms));
+        for (const a of ['play', 'armory', 'settings', 'mp']) { document.querySelector('[data-act=' + a + ']').click(); out[a] = document.getElementById('panel-body').textContent.length; if (a === 'settings') { const r = document.querySelector('[data-set=sens]'); r.value = 1.5; r.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-seg=aimToggle][data-v=false]').click(); out.sens = H.Save.data.settings.sens; out.hold = H.Save.data.settings.aimToggle; } document.getElementById('panel-x').click(); }
+        for (let i = 0; i < 80 && !H.World.loaded; i++) await sleep(250); out.map = H.World.loaded; H.step(1 / 30, 3); out.calls = H.App.calls;
+        return out;
+    });
+    ok(panels.play > 100 && panels.armory > 100 && panels.settings > 100 && panels.mp > 50, 'ui: every panel opens');
+    ok(panels.sens === 1.5 && panels.hold === false, 'ui: settings are kept');
+    ok(panels.map && panels.calls > 3, 'ui: the map turns behind the menu', panels.calls + ' draws');
+    ok(!msgs.length, 'ui: quiet console', msgs.slice(0, 3).join(' | '));
+    await ctx.close();
+}
+
+if (want('mp')) {
+    const A = await open('menu=1'), B = await open('menu=1');
+    const ev = (p, f, a) => p.page.evaluate(f, a), until = (p, f, ms) => p.page.waitForFunction(f, null, { timeout: ms || 30000 }).then(() => true, () => false);
+    await until(A, () => window.__ash.World.loaded, 60000); await until(B, () => window.__ash.World.loaded, 60000);
+    await ev(A, () => { const H = window.__ash; H.Save.data.name = 'Hosty'; H.Net.hostGame(); });
+    const hosted = await until(A, () => window.__ash.Net.state === 'lobby' && window.__ash.Net.code.length === 6, 30000), code = await ev(A, () => window.__ash.Net.code);
+    ok(hosted, 'mp: a party opens with a 6-digit code', hosted ? code : await ev(A, () => window.__ash.Net.err || window.__ash.Net.state));
+    if (hosted) {
+        await ev(B, c => { const H = window.__ash; H.Save.data.name = 'Guesty'; H.Net.join(c); }, code);
+        const joined = await until(A, () => window.__ash.Net.roster.length === 2, 40000) && await until(B, () => window.__ash.Net.state === 'lobby' && window.__ash.Net.me.id === 'p1', 10000);
+        ok(joined, 'mp: a second player joins with the code', joined ? await ev(B, () => window.__ash.Net.roster.map(r => r.name).join(' + ')) : await ev(B, () => window.__ash.Net.err || window.__ash.Net.state));
+        if (joined) {
+            // ---- squad holdout
+            await ev(A, () => { const H = window.__ash; H.Net.cfg.mode = 'coop'; H.Net.lobby(); H.Net.startMatch(); });
+            const both = await until(A, () => window.__ash.App.game && window.__ash.Game.net, 60000) && await until(B, () => window.__ash.App.game && window.__ash.Game.net, 60000);
+            ok(both, 'mp: the host starts and both are in the match');
+            if (both) {
+                const run = (p, n) => ev(p, n => { const H = window.__ash; H.App.locked = true; H.App.paused = false; for (let i = 0; i < n; i++) { H.Game.P.hp = H.Game.P.max; H.step(1 / 30, 1); } }, n);
+                for (let i = 0; i < 26; i++) { await run(A, 12); await run(B, 12); await sleep(60); }
+                const a = await ev(A, () => { const H = window.__ash, G = H.Game; return { wave: G.wave, foes: H.Foes.list.length, n: G.players.length, ox: G.players[1].x, oz: G.players[1].z, me: [G.P.x, G.P.z] }; });
+                const b = await ev(B, () => { const H = window.__ash, G = H.Game; return { wave: G.wave, foes: H.Foes.list.length, n: G.players.length, ox: G.players[1].x, oz: G.players[1].z, me: [G.P.x, G.P.z], host: G.net.host, tags: Object.keys(H.Net.tags).length }; });
+                ok(a.n === 2 && b.n === 2 && Math.hypot(a.ox - b.me[0], a.oz - b.me[1]) < 1.5 && Math.hypot(b.ox - a.me[0], b.oz - a.me[1]) < 1.5, 'mp: each sees where the other stands', 'off by ' + Math.hypot(a.ox - b.me[0], a.oz - b.me[1]).toFixed(2) + ' m');
+                ok(a.wave >= 1 && b.wave === a.wave && a.foes > 0 && b.foes > 0 && !b.host, 'mp: the guest sees the host\'s wave and ashen', 'wave ' + b.wave + ', ' + a.foes + ' on the host, ' + b.foes + ' on the guest');
+                // the guest shoots one: the host takes the health off and tells everyone when it dies
+                const tgt = await ev(B, () => { const H = window.__ash, e = H.Foes.list.find(x => x.state !== 'die'); if (!e) return 0; H.Game.hitFoe(e, 9999, true, 0); return e.id; });
+                for (let i = 0; i < 8; i++) { await run(B, 4); await run(A, 4); await sleep(60); }
+                const killed = await ev(A, id => { const e = window.__ash.Foes.list.find(x => x.id === id); return !e || e.state === 'die'; }, tgt), paid = await ev(B, () => ({ kills: window.__ash.Game.kills, cash: window.__ash.Game.cash }));
+                ok(tgt && killed && paid.kills === 1 && paid.cash > 0, 'mp: a guest\'s kill lands on the host and pays the guest', '$' + paid.cash);
+                // an ashen hurts the guest through the host
+                await ev(A, () => { const H = window.__ash; H.Game.hurt(1, 30, 0, 0, null); });
+                await sleep(300); const hp = await ev(B, () => { const H = window.__ash, P = H.Game.P; const v = P.hp; return v; });
+                ok(hp < 100, 'mp: the host\'s ashen hurt the guest', 'health ' + Math.round(hp));
+                // ---- back to the party, then a deathmatch with bots
+                await ev(A, () => { const H = window.__ash; H.Game.net = null; H.Game.stop(); H.UI.menu(); H.Net.state = 'lobby'; H.Net.cfg.mode = 'dm'; H.Net.cfg.bots = 2; H.Net.cfg.goal = 10; H.Net.lobby(); });
+                await ev(B, () => { const H = window.__ash; H.Game.net = null; H.Game.stop(); H.UI.menu(); H.Net.state = 'lobby'; });
+                await sleep(400); await ev(A, () => window.__ash.Net.startMatch());
+                const dm = await until(A, () => window.__ash.App.game && window.__ash.Game.mode === 'dm', 60000) && await until(B, () => window.__ash.App.game && window.__ash.Game.mode === 'dm', 60000);
+                ok(dm, 'mp: a deathmatch starts for both');
+                if (dm) {
+                    const st0 = await ev(A, () => window.__ash.Game.players.filter(p => p.bot).map(p => [p.x, p.z]));
+                    for (let i = 0; i < 40; i++) { await run(A, 15); await run(B, 15); await sleep(40); }
+                    const d = await ev(A, () => { const H = window.__ash, G = H.Game; return { n: G.players.length, bots: G.players.filter(p => p.bot).map(p => [p.x, p.z]), score: H.Net.roster.reduce((s, r) => s + r.kills + r.deaths, 0), t: G.matchT }; });
+                    const moved = d.bots.reduce((s, b, i) => s + Math.hypot(b[0] - st0[i][0], b[1] - st0[i][1]), 0);
+                    ok(d.n === 4 && moved > 3, 'mp: bots fill in and move', d.n + ' players, bots moved ' + moved.toFixed(0) + ' m');
+                    // the guest hits the host: the host's health goes down; then finishes them: the score counts it for the guest
+                    await ev(A, () => { const P = window.__ash.Game.P; P.safe = 0; P.hp = 100; P.dead = false; });
+                    await ev(B, () => { const H = window.__ash, G = H.Game; H.Net.hitPlayer(G.players.find(p => p.id === 'H'), 40, false, 'carbine'); });
+                    await sleep(500); const hh = await ev(A, () => window.__ash.Game.P.hp);          // (run() would top the health up again)
+                    ok(hh < 100, 'mp: one player\'s shot hurts another', 'host health ' + Math.round(hh));
+                    await ev(A, () => { window.__ash.Game.P.safe = 0; }); await ev(B, () => { const H = window.__ash, G = H.Game; H.Net.hitPlayer(G.players.find(p => p.id === 'H'), 500, true, 'carbine'); });
+                    await sleep(500); await run(A, 2); await sleep(400); await run(B, 2);
+                    const sc = await ev(B, () => { const H = window.__ash, me = H.Net.roster.find(r => r.id === H.Net.me.id); return { kills: me.kills, mine: H.Game.kills, board: document.getElementById('scores').textContent.length }; });
+                    ok(sc.kills >= 1 && sc.mine >= 1 && sc.board > 20, 'mp: the kill is on the scoreboard', sc.kills + ' kill(s)');
+                    const back = await ev(A, () => { const H = window.__ash; for (let i = 0; i < 120; i++) H.step(1 / 30, 1); return { dead: H.Game.P.dead, hp: H.Game.P.hp }; });
+                    ok(!back.dead && back.hp === 100, 'mp: the one killed comes back');
+                }
+            }
+        }
+    }
+    ok(!A.msgs.length && !B.msgs.length, 'mp: quiet consoles', A.msgs.concat(B.msgs).slice(0, 3).join(' | '));
+    await A.ctx.close(); await B.ctx.close();
+}
+
+// the code in the owner's Google Doc (Proof Slice/loader.html) pasted into a page somewhere else: the newest test build is
+// found on the CDN, and from build 3 its page hands over to Ashfall, which loads its models from the CDN too.
+// The CDN is played by this checkout (builds proof1..proof3 exist); --live uses the real one.
+if (parts.includes('loader') || (!parts.length && !args.includes('--live'))) {
+    const fs = await import('node:fs'), path = await import('node:path'), { fileURLToPath } = await import('node:url'), ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..'), live = args.includes('--live');
+    const ctx = await browser.newContext({ viewport: { width: 960, height: 540 } }), page = await ctx.newPage(), msgs = [];
+    page.on('pageerror', e => msgs.push('error: ' + e.message.slice(0, 200))); page.on('console', m => { if (/\[HG3D\]/.test(m.text()) || (m.type() === 'error' && !/Failed to load resource/.test(m.text()))) msgs.push(m.text().slice(0, 240)); });
+    await page.route('https://fiddle.test/**', r => r.fulfill({ status: 200, contentType: 'text/html', body: fs.readFileSync(path.join(ROOT, 'Proof Slice/loader.html')) }));
+    if (!live) await page.route(/^https:\/\/\w+\.jsdelivr\.net\/gh\//, r => {
+        const u = new URL(r.request().url()), m = /^\/gh\/hunterefstration\/huntington-games@proof(\d+)\/(.*)$/.exec(decodeURIComponent(u.pathname)), H = { 'access-control-allow-origin': '*' };
+        if (!m || +m[1] > 3) return r.fulfill({ status: 404, body: 'no such tag', headers: H });
+        const file = path.join(ROOT, m[2]); if (!fs.existsSync(file)) return r.fulfill({ status: 404, body: 'not found', headers: H });
+        r.fulfill({ status: 200, body: fs.readFileSync(file), headers: Object.assign(H, { 'content-type': /\.html$/.test(file) ? 'text/html' : /\.json$/.test(file) ? 'application/json' : /\.webp$/.test(file) ? 'image/webp' : 'application/octet-stream' }) });
+    });
+    await page.goto('https://fiddle.test/show', { waitUntil: 'load' });
+    const up = await page.waitForFunction(() => !!window.__ash, null, { timeout: 30000 }).then(() => true, () => false);
+    ok(up, 'loader: the pasted test code ends up in Ashfall');
+    if (up) {
+        const v = await page.evaluate(() => ({ build: window.HG_PROOF, base: window.HG_BASE, at: location.host, screen: window.__ash.App.screen, slice: !!window.__proof }));
+        ok(v.build >= 3 && /Ashfall\/$/.test(v.base) && v.at === 'fiddle.test' && !v.slice, 'loader: Ashfall knows where its files are', 'build ' + v.build + ', ' + v.base.slice(-40));
+        const run = await page.evaluate(async () => { const H = window.__ash; const good = await H.UI.play({ map: 'yard', diff: 'normal', cls: 'assault' }); H.App.locked = true; H.step(1 / 30, 30); return { good, calls: H.App.calls, gun: H.Gun.cur && H.Gun.cur.id, made: H.Weapons.list().length, errors: H.App.errors.slice(0, 3) }; });
+        ok(run.good && run.calls > 5 && run.gun === 'carbine' && !run.errors.length, 'loader: a run starts with everything loaded from the CDN', run.calls + ' draws, ' + run.made + ' weapons made ' + run.errors.join(' | '));
+    }
+    ok(!msgs.length, 'loader: no script error', msgs.slice(0, 3).join(' | '));
+    await ctx.close();
+}
+
+await browser.close(); server.close();
+console.log(fails ? fails + ' FAILED' : 'ashfall: all passed');
+process.exit(fails ? 1 : 0);

@@ -17,7 +17,7 @@ function createRenderer(opts) {
         shadowMap: { enabled: false, type: 1, autoUpdate: true, needsUpdate: false },
         capabilities: { isWebGL2: true, getMaxAnisotropy: () => E.maxAniso, maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE), precision: 'highp' },
         info: {
-            autoReset: true, render: { calls: 0, triangles: 0, frame: 0, lines: 0, points: 0 }, memory: { geometries: 0, textures: 0 }, programs: [],
+            autoReset: true, render: { calls: 0, triangles: 0, frame: 0, lines: 0, points: 0 }, memory: { geometries: 0, textures: 0, textureBytes: 0 }, programs: [],
             reset() { E.stats.calls = 0; E.stats.tris = 0; this.render.calls = 0; this.render.triangles = 0; }
         },
         getContext() { return gl; },
@@ -53,7 +53,7 @@ function createRenderer(opts) {
         render(scene, camera) {
             if (this.info.autoReset) this.info.reset();
             renderScene(E, this, scene, camera);
-            const i = this.info; i.render.calls = E.stats.calls; i.render.triangles = E.stats.tris; i.render.frame = E.frame; i.memory.geometries = E.stats.geometries; i.memory.textures = E.stats.textures;
+            const i = this.info; i.render.calls = E.stats.calls; i.render.triangles = E.stats.tris; i.render.frame = E.frame; i.memory.geometries = E.stats.geometries; i.memory.textures = E.stats.textures; i.memory.textureBytes = E.stats.texBytes;
             if (i.programs.length !== E.stats.programs) i.programs.length = E.stats.programs;
         },
         get failed() { return E.failed; },
