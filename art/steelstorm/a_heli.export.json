@@ -1,0 +1,13 @@
+{
+ "blend": "aircraft.blend",
+ "out": "../../Steel Storm Remastered/assets/a_heli",
+ "parts": [
+  "heli_hull",
+  "heli_turret",
+  "heli_barrel",
+  "heli_hull_lod1",
+  "heli_turret_lod1",
+  "heli_barrel_lod1"
+ ],
+ "maxTexture": 1024
+}
