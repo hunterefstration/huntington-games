@@ -1,0 +1,39 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_knife",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "knife_rig",
+   "lods": [
+    "knife_arms",
+    "knife_gun"
+   ],
+   "together": true,
+   "as": {
+    "knife_arms": "vm_arms",
+    "knife_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "knife_vm_idle",
+     "loop": true
+    },
+    "vm_draw": {
+     "action": "knife_vm_draw"
+    },
+    "vm_run": {
+     "action": "knife_vm_run",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "knife_vm_fire"
+    },
+    "vm_fire2": {
+     "action": "knife_vm_fire2"
+    }
+   }
+  }
+ ]
+}

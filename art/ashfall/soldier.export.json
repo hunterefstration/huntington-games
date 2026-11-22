@@ -1,0 +1,38 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/soldier",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "soldier",
+   "rig": "soldier_rig",
+   "lods": [
+    "soldier",
+    "soldier_lod1",
+    "soldier_lod2"
+   ],
+   "as": {
+    "soldier": "soldier",
+    "soldier_lod1": "soldier_lod1",
+    "soldier_lod2": "soldier_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "soldier_idle",
+     "loop": true
+    },
+    "run": {
+     "action": "soldier_run",
+     "loop": true
+    },
+    "fire": {
+     "action": "soldier_fire",
+     "loop": true
+    },
+    "die": {
+     "action": "soldier_die"
+    }
+   }
+  }
+ ]
+}
