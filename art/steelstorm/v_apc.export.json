@@ -1,0 +1,13 @@
+{
+ "blend": "vehicles.blend",
+ "out": "../../Steel Storm Remastered/assets/v_apc",
+ "parts": [
+  "apc_hull",
+  "apc_turret",
+  "apc_barrel",
+  "apc_hull_lod1",
+  "apc_turret_lod1",
+  "apc_barrel_lod1"
+ ],
+ "maxTexture": 1024
+}
