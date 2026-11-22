@@ -61,9 +61,10 @@ function textureFor(E, t) {
     if (!t) return E.white;
     let r = t.__hg;
     if (r !== undefined && r.gen === E.gen && r.version === t.version) return r.tex;
-    const img = t.image; if (!img || img.width === 0 || img.complete === false) return E.white;
+    const img = t.image; if (!img || img.width === 0 || img.complete === false) { if (!img && t.restore) t.restore(); return E.white; }
     const gl = E.gl;
     if (r === undefined || r.gen !== E.gen) { r = t.__hg = { gen: E.gen, tex: gl.createTexture(), version: -1 }; E.stats.textures++; }
+    const prev0 = E.S.tex[0];          // an upload borrows unit 0: whatever a draw had already put there is put back below
     bindForUpload(E, r.tex);
     const isData = !!(img.data && img.width !== undefined && !(img instanceof Element)), type3 = t.type || 1009, fmt3 = t.format || 1023, srgb = t.colorSpace === 'srgb';
     let type = gl.UNSIGNED_BYTE, fmt = gl.RGBA, ifmt = srgb ? gl.SRGB8_ALPHA8 : gl.RGBA8, isFloat = false;
@@ -84,7 +85,10 @@ function textureFor(E, t) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minGL); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, mag);
     if (E.aniso && mip && t.anisotropy > 1) gl.texParameterf(gl.TEXTURE_2D, E.aniso.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(t.anisotropy, E.maxAniso));
     if (mip) gl.generateMipmap(gl.TEXTURE_2D);
+    { const b = img.width * img.height * (type3 === 1015 ? 16 : type3 === 1016 ? 8 : 4) * (mip ? 4 / 3 : 1); E.stats.texBytes += b - (r.bytes || 0); r.bytes = b; }
     r.version = t.version;
+    if (prev0 && prev0 !== r.tex) { gl.bindTexture(gl.TEXTURE_2D, prev0); E.S.tex[0] = prev0; }
+    if (t.releaseImage === true && img.close) { img.close(); t.image = null; }        // the decoded picture is not kept twice (4 GB machines); t.restore() fetches it again
     return r.tex;
 }
 
