@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_rpg",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "rpg_rig",
+   "lods": [
+    "rpg_arms",
+    "rpg_gun"
+   ],
+   "together": true,
+   "as": {
+    "rpg_arms": "vm_arms",
+    "rpg_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "rpg_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "rpg_vm_fire"
+    },
+    "vm_draw": {
+     "action": "rpg_vm_draw"
+    },
+    "vm_run": {
+     "action": "rpg_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "rpg_vm_melee"
+    },
+    "vm_reload": {
+     "action": "rpg_vm_reload"
+    }
+   }
+  }
+ ]
+}

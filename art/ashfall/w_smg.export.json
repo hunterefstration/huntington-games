@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_smg",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "smg_rig",
+   "lods": [
+    "smg_arms",
+    "smg_gun"
+   ],
+   "together": true,
+   "as": {
+    "smg_arms": "vm_arms",
+    "smg_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "smg_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "smg_vm_fire"
+    },
+    "vm_draw": {
+     "action": "smg_vm_draw"
+    },
+    "vm_run": {
+     "action": "smg_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "smg_vm_melee"
+    },
+    "vm_reload": {
+     "action": "smg_vm_reload"
+    }
+   }
+  }
+ ]
+}
