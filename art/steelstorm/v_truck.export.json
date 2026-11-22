@@ -1,9 +1,0 @@
-{
- "blend": "vehicles.blend",
- "out": "../../Steel Storm Remastered/assets/v_truck",
- "parts": [
-  "truck_hull",
-  "truck_hull_lod1"
- ],
- "maxTexture": 512
-}
