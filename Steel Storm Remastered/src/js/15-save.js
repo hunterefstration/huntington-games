@@ -1,0 +1,14 @@
+// ============================================================
+// What is kept between visits: one key, 'steelstorm_remaster' (the launcher syncs keys that start with 'steelstorm_').
+// v counts the shape: a newer game fills in what an older save lacks, it never wipes one.
+// ============================================================
+const Save = { KEY: 'steelstorm_remaster', data: null,
+    fresh() { return { v: 1, settings: { sens: 1, adsSens: 1, fov: 58, sfx: 0.8, music: 0.5, aimToggle: true, quality: 'auto', shake: true }, stats: { games: 0, kills: 0, bestWave: 0, bestScore: 0, shots: 0, hits: 0 } }; },
+    load() {
+        let d = null; try { d = JSON.parse(localStorage.getItem(this.KEY) || 'null'); } catch (e) { }
+        const f = this.fresh(); if (!d || typeof d !== 'object') d = f;
+        for (const k in f) { if (d[k] === undefined) d[k] = f[k]; else if (f[k] && typeof f[k] === 'object') for (const j in f[k]) if (d[k][j] === undefined) d[k][j] = f[k][j]; }
+        this.data = d; return d;
+    },
+    store() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { } } };
+Save.load();
