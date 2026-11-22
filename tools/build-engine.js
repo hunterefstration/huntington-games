@@ -8,7 +8,8 @@ const ROOT = path.resolve(__dirname, '..'), SRC = path.join(ROOT, 'engine', 'src
 // game folder -> where its copy of the engine lives (edit engine/src, never the copies)
 const TARGETS = {
     'Mayhem Marathon': 'src/js/05-hg3d.js',
-    'Steel Storm': 'src/js/05-hg3d.js'
+    'Steel Storm': 'src/js/05-hg3d.js',
+    'Proof Slice': 'src/js/05-hg3d.js'        // native scenes only: no three.js at all
     // Sovereign was ported and measured (2026-11): pixel-identical, but only 11% faster with a slowed CPU and no faster on
     // pixels (its time goes to its own globe shaders and its simulation, which a renderer cannot change). Stays on three.js.
     // Frontline was ported and measured (2026-11): 22% faster median frames with a slowed CPU, but its slow frames (the
@@ -16,7 +17,8 @@ const TARGETS = {
     // branch engine/hg3d-frontline (there this list also has  'Frontline': 'src/js/10-game/005-hg3d.js').
 };
 const EXPORTS = 'VERSION, createRenderer, pick, bail, choose, chosen, M4, governor, meter, speedTest, benchCard, benchResults, '
-    + 'color, attr, geometry, material, texture, node, mesh, instanced, light, camera, fog, geo';
+    + 'color, attr, geometry, material, texture, node, mesh, instanced, light, camera, fog, geo, '
+    + 'load, loadTexture, place, skyDome';
 const CHECK = process.argv.includes('--check');
 
 const files = fs.readdirSync(SRC).filter(f => f.endsWith('.js')).sort();
