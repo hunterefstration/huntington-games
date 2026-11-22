@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // Play the games on this computer: no launcher account, no codes.
-//   node tools/play.mjs [port] [--no-open]        (Windows: double-click "Play Huntington Games.cmd")
+//   node tools/play.mjs [port] [--no-open] [--lan]   (Windows: double-click "Play Huntington Games.cmd")
 // Serves this folder on http://localhost:8090/ with a games menu at / (tools/play.html, filled with the launcher's own
 // GAMES list so the two never drift apart). On localhost a game skips its licence gate, so each one opens straight
-// from its folder. Only this computer can reach the server (it listens on 127.0.0.1).
+// from its folder. Only this computer can reach the server (it listens on 127.0.0.1), unless --lan is given:
+// then other devices on the same network can open it too (for trying a test build on a real Chromebook; the released
+// games still show their licence screen there, only localhost skips it).
 // Saves live in the browser for exactly this address: the same browser and the same port keep them, which is why a
 // busy port is an error here instead of quietly moving to another one.
 import http from 'node:http';
@@ -11,9 +13,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import os from 'node:os';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const args = process.argv.slice(2), PORT = +(args.find(a => /^\d+$/.test(a)) || process.env.HG_PLAY_PORT || 8090), OPEN = !args.includes('--no-open');
+const args = process.argv.slice(2), PORT = +(args.find(a => /^\d+$/.test(a)) || process.env.HG_PLAY_PORT || 8090), OPEN = !args.includes('--no-open'), LAN = args.includes('--lan');
 const TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript', mjs: 'text/javascript', css: 'text/css', json: 'application/json', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
     svg: 'image/svg+xml', ico: 'image/x-icon', mp3: 'audio/mpeg', ogg: 'audio/ogg', wav: 'audio/wav', woff: 'font/woff', woff2: 'font/woff2', txt: 'text/plain; charset=utf-8', wasm: 'application/wasm' };
 
@@ -31,7 +34,7 @@ function menuPage() {
     const tpl = fs.readFileSync(path.join(ROOT, 'tools/play.html'), 'utf8'), json = JSON.stringify(gameLists()).replace(/</g, '\\u003c');
     return tpl.replace(/\/\*HG_GAMES\*\/[\s\S]*?\/\*END\*\//, () => json);
 }
-export function startPlayServer(port = PORT) {
+export function startPlayServer(port = PORT, lan = false) {
     const server = http.createServer((q, r) => {
         let rel; try { rel = decodeURIComponent(q.url.split('?')[0]); } catch (e) { r.writeHead(400); return r.end('bad address'); }
         if (rel === '/__hg_play') { r.writeHead(200, { 'content-type': 'application/json' }); return r.end('{"hgPlay":true}'); }
@@ -47,7 +50,7 @@ export function startPlayServer(port = PORT) {
             r.writeHead(200, { 'content-type': TYPES[f.split('.').pop().toLowerCase()] || 'application/octet-stream', 'cache-control': 'no-cache' }); r.end(b);
         });
     });
-    return new Promise((res, rej) => { server.once('error', rej); server.listen(port, '127.0.0.1', () => { const p = server.address().port; res({ server, port: p, url: 'http://localhost:' + p + '/' }); }); });
+    return new Promise((res, rej) => { server.once('error', rej); server.listen(port, lan ? '0.0.0.0' : '127.0.0.1', () => { const p = server.address().port; res({ server, port: p, url: 'http://localhost:' + p + '/' }); }); });
 }
 function openBrowser(url) {
     try {
@@ -59,8 +62,9 @@ function openBrowser(url) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
     const url = 'http://localhost:' + PORT + '/';
     try {
-        await startPlayServer(PORT);
+        await startPlayServer(PORT, LAN);
         const n = gameLists(); console.log('\n  Huntington Games is running on this computer.\n\n    ' + url + '\n\n  ' + (n.games.length + n.more.length) + ' games. Keep this window open while you play; close it (or press Ctrl+C) to stop.\n');
+        if (LAN) { const ips = Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => i.address); console.log('  Other devices on this network (a Chromebook):\n' + ips.map(ip => '    http://' + ip + ':' + PORT + '/Proof%20Slice/index.html').join('\n') + '\n'); }
         if (OPEN) openBrowser(url);
     } catch (e) {
         if (e && e.code === 'EADDRINUSE') {

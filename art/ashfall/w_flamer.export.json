@@ -1,0 +1,43 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_flamer",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "flamer_rig",
+   "lods": [
+    "flamer_arms",
+    "flamer_gun"
+   ],
+   "together": true,
+   "as": {
+    "flamer_arms": "vm_arms",
+    "flamer_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "flamer_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "flamer_vm_fire",
+     "loop": true
+    },
+    "vm_draw": {
+     "action": "flamer_vm_draw"
+    },
+    "vm_run": {
+     "action": "flamer_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "flamer_vm_melee"
+    },
+    "vm_reload": {
+     "action": "flamer_vm_reload"
+    }
+   }
+  }
+ ]
+}
