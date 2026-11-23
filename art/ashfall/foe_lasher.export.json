@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_lasher",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "lasher_rig",
+   "lods": [
+    "lasher",
+    "lasher_lod1",
+    "lasher_lod2"
+   ],
+   "as": {
+    "lasher": "enemy",
+    "lasher_lod1": "enemy_lod1",
+    "lasher_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "lasher_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "lasher_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "lasher_attack"
+    },
+    "die": {
+     "action": "lasher_die"
+    }
+   }
+  }
+ ]
+}
