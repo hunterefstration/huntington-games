@@ -72,6 +72,9 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
   there needs that script run (check.js notices). No game may load `cdn.tailwindcss.com` any more.
 - Database egress is billed (free plan: 5 GB a month, ~7 MB an hour). Never read a list or a row per message, per sync, per
   connect or on a timer without caching it; check with `bash tools/rig/test.sh gv-egress` (see HANDOFF, Database egress).
+- On the owner's Windows PC a hidden (headless) Chromium that locks the pointer really traps his mouse in a box at the top
+  left of the screen. Ashfall, Steel Storm Remastered and Proof Slice skip the lock when `navigator.webdriver` is set
+  (`lock()` in each `10-core.js`); a test of any other game that clicks into play must stub `requestPointerLock` first.
 - Rate limits: launcher traffic classes are `soft` (refused, never punished). Pace bursts on the client (`paced`, `rpc`).
 
 Current state and next steps: `.claude/HANDOFF.md`.
