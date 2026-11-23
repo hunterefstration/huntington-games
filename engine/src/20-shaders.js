@@ -72,7 +72,9 @@ float hgFog(float d){
 const defs = f => f.defines.map(d => '#define ' + d).join('\n');
 
 // f: { defines: [...], colorType: 'vec3'|'vec4', numSun, numPL, hook }
-// hook (material.userData.hg): { vDecl, vPos, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky }
+// hook (material.userData.hg): { vDecl, vPos, vNormal, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky, key }
+//   vPos moves the model-space position "p4", vNormal the model-space normal "n" (skinning uses both);
+//   key: hooks with the same key share one program (each material still sends its own uniforms)
 //   vAlbedo changes the base colour "alb" in the VERTEX shader (cheap: the fast vertex-finished path stays on);
 //   fAlbedo / fFinal change "alb" / the lit colour "c" per pixel
 function litVertex(f) {
@@ -172,6 +174,7 @@ ${h.vAlbedo || ''}
 #endif
 #else
  vec3 n = normal;
+${h.vNormal || ''}
 #ifdef USE_INSTANCING
  { mat3 im = mat3(instanceMatrix); n /= max(vec3(dot(im[0], im[0]), dot(im[1], im[1]), dot(im[2], im[2])), vec3(1e-12)); n = im * n; }
 #endif
