@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_lobber",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "lobber_rig",
+   "lods": [
+    "lobber",
+    "lobber_lod1",
+    "lobber_lod2"
+   ],
+   "as": {
+    "lobber": "enemy",
+    "lobber_lod1": "enemy_lod1",
+    "lobber_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "lobber_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "lobber_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "lobber_attack"
+    },
+    "die": {
+     "action": "lobber_die"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+ "blend": "vehicles.blend",
+ "out": "../../Steel Storm Remastered/assets/v_spaa",
+ "parts": [
+  "spaa_hull",
+  "spaa_turret",
+  "spaa_barrel",
+  "spaa_hull_lod1",
+  "spaa_turret_lod1",
+  "spaa_barrel_lod1"
+ ],
+ "maxTexture": 1024
+}
