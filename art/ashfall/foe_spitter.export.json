@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_spitter",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "spitter_rig",
+   "lods": [
+    "spitter",
+    "spitter_lod1",
+    "spitter_lod2"
+   ],
+   "as": {
+    "spitter": "enemy",
+    "spitter_lod1": "enemy_lod1",
+    "spitter_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "spitter_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "spitter_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "spitter_attack"
+    },
+    "die": {
+     "action": "spitter_die"
+    }
+   }
+  }
+ ]
+}

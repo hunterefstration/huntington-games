@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_chiller",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "chiller_rig",
+   "lods": [
+    "chiller",
+    "chiller_lod1",
+    "chiller_lod2"
+   ],
+   "as": {
+    "chiller": "enemy",
+    "chiller_lod1": "enemy_lod1",
+    "chiller_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "chiller_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "chiller_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "chiller_attack"
+    },
+    "die": {
+     "action": "chiller_die"
+    }
+   }
+  }
+ ]
+}
