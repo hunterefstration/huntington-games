@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_bloater",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "bloater_rig",
+   "lods": [
+    "bloater",
+    "bloater_lod1",
+    "bloater_lod2"
+   ],
+   "as": {
+    "bloater": "enemy",
+    "bloater_lod1": "enemy_lod1",
+    "bloater_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "bloater_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "bloater_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "bloater_attack"
+    },
+    "die": {
+     "action": "bloater_die"
+    }
+   }
+  }
+ ]
+}

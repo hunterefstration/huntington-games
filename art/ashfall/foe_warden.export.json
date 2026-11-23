@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_warden",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "warden_rig",
+   "lods": [
+    "warden",
+    "warden_lod1",
+    "warden_lod2"
+   ],
+   "as": {
+    "warden": "enemy",
+    "warden_lod1": "enemy_lod1",
+    "warden_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "warden_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "warden_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "warden_attack"
+    },
+    "die": {
+     "action": "warden_die"
+    }
+   }
+  }
+ ]
+}
