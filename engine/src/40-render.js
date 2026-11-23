@@ -29,7 +29,7 @@ function materialInfo(E, mat) {
     if (mi !== undefined && mi.v === mat.version) return mi;
     mi = mat.__hgm = { v: mat.version, kind: -1, hook: null, hookId: 0, sky: false, spec: 0, shin: 1, specScale: 0, metal: 0, rawId: 0, transparent: false, blend: 0, depthTest: 1, depthWrite: 1, depthFunc: 0x0203, cull: 1, poly: 0, pf: 0, pu: 0 };
     const ud = mat.userData && mat.userData.hg;
-    if (ud) { mi.sky = !!ud.sky; if (ud.vDecl || ud.vPos || ud.vAlbedo || ud.vMain || ud.fDecl || ud.fAlbedo || ud.fFinal || ud.customMap || ud.vertexLights) { mi.hook = ud; if (!ud.__id) ud.__id = E.nextHookId++; mi.hookId = ud.__id; } }
+    if (ud) { mi.sky = !!ud.sky; if (ud.vDecl || ud.vPos || ud.vNormal || ud.vAlbedo || ud.vMain || ud.fDecl || ud.fAlbedo || ud.fFinal || ud.customMap || ud.vertexLights) { mi.hook = ud; if (!ud.__id) { if (ud.key) { const hk = E.hookKeys || (E.hookKeys = {}); ud.__id = hk[ud.key] || (hk[ud.key] = E.nextHookId++); } else ud.__id = E.nextHookId++; } mi.hookId = ud.__id; } }
     if (mat.isShaderMaterial) {
         mi.kind = K_RAW; const src = mat.vertexShader + '\u0000' + mat.fragmentShader + '\u0000' + JSON.stringify(mat.defines || {}) + (mat.vertexColors ? 'c' : '');
         if (!E.rawIds) E.rawIds = new Map(); let id = E.rawIds.get(src); if (id === undefined) { id = E.rawIds.size + 1; E.rawIds.set(src, id); } mi.rawId = id;
