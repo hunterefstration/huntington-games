@@ -1,0 +1,23 @@
+{
+ "blend": "subway.blend",
+ "out": "../../Ashfall/assets/subway",
+ "world": {
+  "collections": [
+   "map"
+  ],
+  "lightmap": "tex/subway_light.exr",
+  "lmSize": 2048
+ },
+ "grid": {
+  "cell": 0.25
+ },
+ "probes": {
+  "cell": 1.0,
+  "height": 1.0,
+  "samples": 96
+ },
+ "sky": {
+  "width": 1024
+ },
+ "maxTexture": 1024
+}
