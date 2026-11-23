@@ -98,11 +98,11 @@ function createEngine(canvas, attrs) {
         gl, canvas, gen: 1, lost: false, failed: null,
         programs: new Map(), nextProgId: 1, nextHookId: 1,
         S: null, ubo: null, uboData: new Float32Array(U_FLOATS), pixelRatio: 1, spriteGeo: null, white: null, shadow: null,
-        stats: { calls: 0, tris: 0, geometries: 0, textures: 0, programs: 0 },
+        stats: { calls: 0, tris: 0, geometries: 0, textures: 0, programs: 0, texBytes: 0 },
         aniso: null, maxAniso: 1, floatLinear: false
     };
     canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); E.lost = true; }, false);
-    canvas.addEventListener('webglcontextrestored', () => { E.gen++; E.programs.clear(); E.shadow = null; E.white = null; E.ubo = null; E.stats.geometries = E.stats.textures = E.stats.programs = 0; E.lost = false; initGL(E); }, false);
+    canvas.addEventListener('webglcontextrestored', () => { E.gen++; E.programs.clear(); E.shadow = null; E.white = null; E.ubo = null; E.stats.geometries = E.stats.textures = E.stats.programs = E.stats.texBytes = 0; E.lost = false; initGL(E); }, false);
     initGL(E);
     return E;
 }
