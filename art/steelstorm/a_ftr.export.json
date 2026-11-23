@@ -1,9 +1,0 @@
-{
- "blend": "aircraft.blend",
- "out": "../../Steel Storm Remastered/assets/a_ftr",
- "parts": [
-  "ftr_hull",
-  "ftr_hull_lod1"
- ],
- "maxTexture": 1024
-}
