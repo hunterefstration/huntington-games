@@ -1,8 +1,0 @@
-{
- "blend": "air.blend",
- "out": "../../../Steel Storm Rebuilt/assets/v_a3d",
- "parts": [
-  "a3d_body"
- ],
- "maxTexture": 512
-}
