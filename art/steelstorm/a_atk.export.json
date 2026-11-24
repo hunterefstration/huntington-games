@@ -1,0 +1,9 @@
+{
+ "blend": "aircraft.blend",
+ "out": "../../Steel Storm Remastered/assets/a_atk",
+ "parts": [
+  "atk_hull",
+  "atk_hull_lod1"
+ ],
+ "maxTexture": 1024
+}

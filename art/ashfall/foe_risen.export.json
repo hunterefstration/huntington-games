@@ -1,0 +1,40 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_risen",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "risen_rig",
+   "lods": [
+    "risen",
+    "risen_lod1",
+    "risen_lod2"
+   ],
+   "as": {
+    "risen": "enemy",
+    "risen_lod1": "enemy_lod1",
+    "risen_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "risen_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "risen_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "risen_attack"
+    },
+    "die": {
+     "action": "risen_die"
+    },
+    "rise": {
+     "action": "risen_rise"
+    }
+   }
+  }
+ ]
+}

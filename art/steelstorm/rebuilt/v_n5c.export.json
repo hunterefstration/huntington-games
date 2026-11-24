@@ -1,0 +1,13 @@
+{
+ "blend": "naval.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_n5c",
+ "parts": [
+  "n5c_body",
+  "n5c_tur0",
+  "n5c_tur1",
+  "n5c_tur2",
+  "n5c_tur3",
+  "n5c_kitb"
+ ],
+ "maxTexture": 512
+}
