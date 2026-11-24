@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_stalker",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "stalker_rig",
+   "lods": [
+    "stalker",
+    "stalker_lod1",
+    "stalker_lod2"
+   ],
+   "as": {
+    "stalker": "enemy",
+    "stalker_lod1": "enemy_lod1",
+    "stalker_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "stalker_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "stalker_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "stalker_attack"
+    },
+    "die": {
+     "action": "stalker_die"
+    }
+   }
+  }
+ ]
+}

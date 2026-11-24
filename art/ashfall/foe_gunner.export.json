@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_gunner",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "gunner_rig",
+   "lods": [
+    "gunner",
+    "gunner_lod1",
+    "gunner_lod2"
+   ],
+   "as": {
+    "gunner": "enemy",
+    "gunner_lod1": "enemy_lod1",
+    "gunner_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "gunner_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "gunner_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "gunner_attack"
+    },
+    "die": {
+     "action": "gunner_die"
+    }
+   }
+  }
+ ]
+}
