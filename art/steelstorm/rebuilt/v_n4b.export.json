@@ -1,0 +1,13 @@
+{
+ "blend": "naval.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_n4b",
+ "parts": [
+  "n4b_body",
+  "n4b_tur0",
+  "n4b_tur1",
+  "n4b_tur2",
+  "n4b_tur3",
+  "n4b_kitb"
+ ],
+ "maxTexture": 512
+}
