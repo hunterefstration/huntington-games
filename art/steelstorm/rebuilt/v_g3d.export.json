@@ -1,0 +1,13 @@
+{
+ "blend": "ground.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_g3d",
+ "parts": [
+  "g3d_body",
+  "g3d_track",
+  "g3d_tur",
+  "g3d_gun",
+  "g3d_kitb",
+  "g3d_kitt"
+ ],
+ "maxTexture": 512
+}
