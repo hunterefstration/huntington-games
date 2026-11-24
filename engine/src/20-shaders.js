@@ -55,6 +55,7 @@ vec3 hgEncode(vec3 c){
  c = mat3(1.60475,-0.10208,-0.00327, -0.53108,1.10813,-0.07276, -0.07367,-0.00605,1.07602) * c;
 #endif
  c = clamp(c, 0.0, 1.0);
+ if (uOut.y != 0.0 || uOut.z != 0.0) { float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = mix(vec3(l), c, 1.0 + uOut.y); c = clamp((c - 0.18) * (1.0 + uOut.z) + 0.18, 0.0, 1.0); }
 #ifdef SRGB_OUT
  vec3 s1 = sqrt(c), s2 = sqrt(s1), s3 = sqrt(s2);
  c = 0.662002687 * s1 + 0.684122060 * s2 - 0.323583601 * s3 - 0.0225411470 * c;
@@ -72,7 +73,9 @@ float hgFog(float d){
 const defs = f => f.defines.map(d => '#define ' + d).join('\n');
 
 // f: { defines: [...], colorType: 'vec3'|'vec4', numSun, numPL, hook }
-// hook (material.userData.hg): { vDecl, vPos, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky }
+// hook (material.userData.hg): { vDecl, vPos, vNormal, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky, key }
+//   vPos moves the model-space position "p4", vNormal the model-space normal "n" (skinning uses both);
+//   key: hooks with the same key share one program (each material still sends its own uniforms)
 //   vAlbedo changes the base colour "alb" in the VERTEX shader (cheap: the fast vertex-finished path stays on);
 //   fAlbedo / fFinal change "alb" / the lit colour "c" per pixel
 function litVertex(f) {
@@ -172,6 +175,7 @@ ${h.vAlbedo || ''}
 #endif
 #else
  vec3 n = normal;
+${h.vNormal || ''}
 #ifdef USE_INSTANCING
  { mat3 im = mat3(instanceMatrix); n /= max(vec3(dot(im[0], im[0]), dot(im[1], im[1]), dot(im[2], im[2])), vec3(1e-12)); n = im * n; }
 #endif
