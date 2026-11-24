@@ -1,0 +1,13 @@
+{
+ "blend": "ground.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_g2f",
+ "parts": [
+  "g2f_body",
+  "g2f_track",
+  "g2f_tur",
+  "g2f_gun",
+  "g2f_kitb",
+  "g2f_kitt"
+ ],
+ "maxTexture": 512
+}
