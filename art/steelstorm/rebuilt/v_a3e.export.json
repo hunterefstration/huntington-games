@@ -1,0 +1,10 @@
+{
+ "blend": "air.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_a3e",
+ "parts": [
+  "a3e_body",
+  "a3e_prop0",
+  "a3e_prop1"
+ ],
+ "maxTexture": 512
+}

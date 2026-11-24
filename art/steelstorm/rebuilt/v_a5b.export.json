@@ -1,0 +1,8 @@
+{
+ "blend": "air.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_a5b",
+ "parts": [
+  "a5b_body"
+ ],
+ "maxTexture": 512
+}

@@ -1,0 +1,9 @@
+{
+ "blend": "naval.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_n5d",
+ "parts": [
+  "n5d_body",
+  "n5d_kitb"
+ ],
+ "maxTexture": 512
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Nightline</title>
+<!--@css-->
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="veil"></div>
+
+<div id="menu" class="hidden">
+  <div id="m-top"><div class="nl-logo">NIGHT<b>LINE</b></div><div id="m-rec"></div></div>
+  <div id="m-main">
+    <div id="m-left">
+      <button class="go" data-act="race"><b>RACE</b><small id="go-sub"></small></button>
+      <button class="alt" data-act="trial"><b>TIME TRIAL</b><small>alone on the circuit, against your best lap</small></button>
+      <div class="rows">
+        <div class="row" id="row-circuit"><span>CIRCUIT</span><div class="seg" id="seg-circuit"></div></div>
+        <div class="row"><span>DRIVERS</span><div class="seg" id="seg-level"></div></div>
+        <div class="row"><span>LAPS</span><div class="seg" id="seg-laps"></div></div>
+      </div>
+      <div id="m-links"><button data-act="settings">SETTINGS</button><button data-act="how">HOW TO DRIVE</button></div>
+    </div>
+    <div id="m-car">
+      <div id="car-head"></div>
+      <div id="car-bars"></div>
+      <div id="car-paint"></div>
+      <div id="car-pick"></div>
+    </div>
+  </div>
+  <div id="m-foot"></div>
+</div>
+
+<div id="panel" class="hidden"><div id="panel-box"><div id="panel-head"><h2 id="panel-title"></h2><button id="panel-x">BACK <kbd>Esc</kbd></button></div><div id="panel-body"></div></div></div>
+<div id="loading" class="hidden"><div class="nl-logo big">NIGHT<b>LINE</b></div><div id="load-map"></div><div id="load-bar"><i></i></div></div>
+
+<div id="hud" class="hidden">
+  <div id="h-pos"><b id="h-place">1</b><span id="h-of">/8</span><small>POSITION</small></div>
+  <div id="h-lap"><b id="h-lapn">1</b><span id="h-lapof">/3</span><small>LAP</small></div>
+  <div id="h-time"><div><small>TIME</small><b id="h-t">0:00.000</b></div><div><small>BEST</small><b id="h-best">-:--.---</b></div><div><small>LAST</small><b id="h-last">-:--.---</b></div></div>
+  <div id="h-speed"><div id="h-rev"><i></i></div><b id="h-kmh">0</b><span id="h-unit">KM/H</span><em id="h-gear">1</em></div>
+  <canvas id="h-map" width="170" height="170"></canvas>
+  <div id="h-board"></div>
+  <div id="h-lights" class="hidden"><i></i><i></i><i></i></div>
+  <div id="h-msg"></div>
+  <div id="h-wrong" class="hidden">WRONG WAY</div>
+  <div id="h-keys"></div>
+</div>
+<div id="pause" class="hidden"><div class="box"><h2>PAUSED</h2><button data-act="resume">RESUME</button><button data-act="restart">START AGAIN</button><button data-act="psettings">SETTINGS</button><button data-act="quit">LEAVE THE RACE</button></div></div>
+<div id="results" class="hidden"></div>
+<div id="stats" class="hidden"></div>
+<div id="fatal" class="hidden"></div>
+<!--@js-->
+</body>
+</html>
