@@ -38,17 +38,20 @@ if (want('governor')) {
     // the governor's decisions, driven by a fake clock (no browser): a device where a smaller picture buys frames, one
     // where it does not (the processor is the limit), and one that gets headroom back later
     const src = fs.readFileSync(path.join(ROOT, 'engine/hg3d.js'), 'utf8');
-    const run = (fpsAt, secs) => {
+    let first = 1; const run = (fpsAt, secs, min, start) => {
         let cb = null, t = 0;
         const HG = new Function('requestAnimationFrame', 'document', 'location', src + '\nreturn HG3D;')(f => { cb = f; }, { hidden: false }, { search: '' });
-        let told = 0; const g = HG.governor({ min: 0.7, onCpuBound: () => told++ });
+        let told = 0; const g = HG.governor({ min: min || 0.7, start, onCpuBound: () => told++ }); first = g.scale;
         while (t < secs * 1000 && cb) { const f = cb; cb = null; t += 1000 / fpsAt(g.scale, t / 1000); f(t); }
-        return { scale: g.scale, told };
+        return { scale: g.scale, told, first };
     };
     const a = run(s => 38 + (1 - s) * 60, 20), b = run(() => 38, 20), c = run((s, t) => t < 8 ? 38 + (1 - s) * 60 : 60, 45);
     ok(a.scale < 1 && a.scale >= 0.7 && a.told === 0, 'governor: a smaller picture helps -> it settles on one', 'scale=' + a.scale);
     ok(b.scale === 1 && b.told === 1, 'governor: a smaller picture does not help -> full sharpness back, game told the processor is the limit', 'scale=' + b.scale + ' told=' + b.told);
     ok(c.scale === 1 && c.told === 0, 'governor: with headroom again it climbs back to the full picture', 'scale=' + c.scale);
+    const d = run(s => 20 + (1 - s) * 80, 9, 0.5), e = run(s => 20 + (1 - s) * 80, 1.5, 0.5, 0.6);
+    ok(d.scale <= 0.6, 'governor: far too slow -> it takes double steps (the right size inside nine seconds)', 'scale=' + d.scale);
+    ok(e.first === 0.6 && e.scale === 0.6, 'governor: it starts at the size this device settled on last time', 'first=' + e.first);
 }
 if (want('demo')) {
     const { page, ctx, msgs } = await open('engine/demo.html?n=800');
