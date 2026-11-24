@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_lever",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "lever_rig",
+   "lods": [
+    "lever_arms",
+    "lever_gun"
+   ],
+   "together": true,
+   "as": {
+    "lever_arms": "vm_arms",
+    "lever_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "lever_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "lever_vm_fire"
+    },
+    "vm_draw": {
+     "action": "lever_vm_draw"
+    },
+    "vm_run": {
+     "action": "lever_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "lever_vm_melee"
+    },
+    "vm_reload": {
+     "action": "lever_vm_reload"
+    }
+   }
+  }
+ ]
+}

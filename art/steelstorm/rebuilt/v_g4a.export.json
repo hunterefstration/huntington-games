@@ -1,0 +1,13 @@
+{
+ "blend": "ground.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_g4a",
+ "parts": [
+  "g4a_body",
+  "g4a_track",
+  "g4a_tur",
+  "g4a_gun",
+  "g4a_kitb",
+  "g4a_kitt"
+ ],
+ "maxTexture": 512
+}
