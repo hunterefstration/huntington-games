@@ -29,7 +29,7 @@ function materialInfo(E, mat) {
     if (mi !== undefined && mi.v === mat.version) return mi;
     mi = mat.__hgm = { v: mat.version, kind: -1, hook: null, hookId: 0, sky: false, spec: 0, shin: 1, specScale: 0, metal: 0, rawId: 0, transparent: false, blend: 0, depthTest: 1, depthWrite: 1, depthFunc: 0x0203, cull: 1, poly: 0, pf: 0, pu: 0 };
     const ud = mat.userData && mat.userData.hg;
-    if (ud) { mi.sky = !!ud.sky; if (ud.vDecl || ud.vPos || ud.vAlbedo || ud.vMain || ud.fDecl || ud.fAlbedo || ud.fFinal || ud.customMap || ud.vertexLights) { mi.hook = ud; if (!ud.__id) ud.__id = E.nextHookId++; mi.hookId = ud.__id; } }
+    if (ud) { mi.sky = !!ud.sky; if (ud.vDecl || ud.vPos || ud.vNormal || ud.vAlbedo || ud.vMain || ud.fDecl || ud.fAlbedo || ud.fFinal || ud.customMap || ud.vertexLights) { mi.hook = ud; if (!ud.__id) { if (ud.key) { const hk = E.hookKeys || (E.hookKeys = {}); ud.__id = hk[ud.key] || (hk[ud.key] = E.nextHookId++); } else ud.__id = E.nextHookId++; } mi.hookId = ud.__id; } }
     if (mat.isShaderMaterial) {
         mi.kind = K_RAW; const src = mat.vertexShader + '\u0000' + mat.fragmentShader + '\u0000' + JSON.stringify(mat.defines || {}) + (mat.vertexColors ? 'c' : '');
         if (!E.rawIds) E.rawIds = new Map(); let id = E.rawIds.get(src); if (id === undefined) { id = E.rawIds.size + 1; E.rawIds.set(src, id); } mi.rawId = id;
@@ -187,7 +187,9 @@ function fillFrame(E, scene, camera, R) {
         d[U_FOGCOLOR] = s ? linToSrgb(c.r) : c.r; d[U_FOGCOLOR + 1] = s ? linToSrgb(c.g) : c.g; d[U_FOGCOLOR + 2] = s ? linToSrgb(c.b) : c.b;
         d[U_FOGPARAMS] = fog.near || 0; d[U_FOGPARAMS + 1] = 1 / Math.max(1e-6, (fog.far || 1) - (fog.near || 0)); d[U_FOGPARAMS + 2] = fog.density || 0;
     }
-    d[U_OUT] = R.toneMappingExposure;
+    // the time-of-day tint: gradeLo [r, g, b] multiplies the dark parts of the finished picture, gradeHi the bright parts (night: blue shadows; sunset: purple shadows under orange light). Both unset: nothing changes.
+    { const lo = R.gradeLo, hi = R.gradeHi, on = lo && hi ? 1 : 0; d[U_TINTLO] = on ? lo[0] : 1; d[U_TINTLO + 1] = on ? lo[1] : 1; d[U_TINTLO + 2] = on ? lo[2] : 1; d[U_TINTLO + 3] = on; d[U_TINTHI] = on ? hi[0] : 1; d[U_TINTHI + 1] = on ? hi[1] : 1; d[U_TINTHI + 2] = on ? hi[2] : 1; d[U_TINTHI + 3] = 0; }
+    d[U_OUT] = R.toneMappingExposure; d[U_OUT + 1] = R.gradeSaturation || 0; d[U_OUT + 2] = R.gradeContrast || 0;      // the grade: more (or less) colour and contrast in the finished picture; 0 and 0 change nothing
 }
 
 // ---------- the sun's shadow map ----------
