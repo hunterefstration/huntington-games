@@ -10,11 +10,12 @@ const UBO_GLSL = `layout(std140) uniform HGFrame {
  vec4 uCamPos; vec4 uHemiSky; vec4 uHemiGround; vec4 uHemiDir; vec4 uAmbient;
  vec4 uSunDir[2]; vec4 uSunCol[2];
  vec4 uFogColor; vec4 uFogParams; vec4 uShadowParams; vec4 uOut;
+ vec4 uTintLo; vec4 uTintHi;
  vec4 uPLPos[8]; vec4 uPLCol[8];
 };
 `;
 const U_VIEWPROJ = 0, U_VIEW = 16, U_SHADOWMAT = 32, U_PROJ = 48, U_CAMPOS = 64, U_HEMISKY = 68, U_HEMIGROUND = 72, U_HEMIDIR = 76, U_AMBIENT = 80, U_SUNDIR = 84, U_SUNCOL = 92,
-    U_FOGCOLOR = 100, U_FOGPARAMS = 104, U_SHADOWPARAMS = 108, U_OUT = 112, U_PLPOS = 116, U_PLCOL = 148, U_FLOATS = 180, MAX_PL = 8;
+    U_FOGCOLOR = 100, U_FOGPARAMS = 104, U_SHADOWPARAMS = 108, U_OUT = 112, U_TINTLO = 116, U_TINTHI = 120, U_PLPOS = 124, U_PLCOL = 156, U_FLOATS = 188, MAX_PL = 8;
 const BUILTIN_ATTR = { position: 0, normal: 1, uv: 2, color: 3, instanceMatrix: 4, instanceColor: 8 };
 const BUILTIN_UNI = { modelMatrix: 1, modelViewMatrix: 1, projectionMatrix: 1, viewMatrix: 1, normalMatrix: 1, cameraPosition: 1, isOrthographic: 1, uMat: 1, uUvT: 1, map: 1, uShadowMap: 1, uDepthVP: 1 };
 const MAT_GLSL = `uniform vec4 uMat[4];
@@ -55,6 +56,8 @@ vec3 hgEncode(vec3 c){
  c = mat3(1.60475,-0.10208,-0.00327, -0.53108,1.10813,-0.07276, -0.07367,-0.00605,1.07602) * c;
 #endif
  c = clamp(c, 0.0, 1.0);
+ if (uOut.y != 0.0 || uOut.z != 0.0) { float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = mix(vec3(l), c, 1.0 + uOut.y); c = clamp((c - 0.18) * (1.0 + uOut.z) + 0.18, 0.0, 1.0); }
+ if (uTintLo.a != 0.0) { float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = clamp(c * mix(uTintLo.rgb, uTintHi.rgb, smoothstep(0.02, 0.62, l)), 0.0, 1.0); }
 #ifdef SRGB_OUT
  vec3 s1 = sqrt(c), s2 = sqrt(s1), s3 = sqrt(s2);
  c = 0.662002687 * s1 + 0.684122060 * s2 - 0.323583601 * s3 - 0.0225411470 * c;
@@ -72,7 +75,9 @@ float hgFog(float d){
 const defs = f => f.defines.map(d => '#define ' + d).join('\n');
 
 // f: { defines: [...], colorType: 'vec3'|'vec4', numSun, numPL, hook }
-// hook (material.userData.hg): { vDecl, vPos, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky }
+// hook (material.userData.hg): { vDecl, vPos, vNormal, vAlbedo, vMain, fDecl, fAlbedo, fFinal, uniforms, customMap, vertexLights, sky, key }
+//   vPos moves the model-space position "p4", vNormal the model-space normal "n" (skinning uses both);
+//   key: hooks with the same key share one program (each material still sends its own uniforms)
 //   vAlbedo changes the base colour "alb" in the VERTEX shader (cheap: the fast vertex-finished path stays on);
 //   fAlbedo / fFinal change "alb" / the lit colour "c" per pixel
 function litVertex(f) {
@@ -172,6 +177,7 @@ ${h.vAlbedo || ''}
 #endif
 #else
  vec3 n = normal;
+${h.vNormal || ''}
 #ifdef USE_INSTANCING
  { mat3 im = mat3(instanceMatrix); n /= max(vec3(dot(im[0], im[0]), dot(im[1], im[1]), dot(im[2], im[2])), vec3(1e-12)); n = im * n; }
 #endif
