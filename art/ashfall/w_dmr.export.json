@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_dmr",
+ "maxTexture": 2048,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "dmr_rig",
+   "lods": [
+    "dmr_arms",
+    "dmr_gun"
+   ],
+   "together": true,
+   "as": {
+    "dmr_arms": "vm_arms",
+    "dmr_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "dmr_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "dmr_vm_fire"
+    },
+    "vm_draw": {
+     "action": "dmr_vm_draw"
+    },
+    "vm_run": {
+     "action": "dmr_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "dmr_vm_melee"
+    },
+    "vm_reload": {
+     "action": "dmr_vm_reload"
+    }
+   }
+  }
+ ]
+}

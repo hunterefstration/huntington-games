@@ -1,0 +1,138 @@
+/* ===== THE REMASTER'S LOOK over the old game's pages (the owner, 2026-11-24: "one game with the ui and maps of new steel
+   storm, mechanics of old"). Everything the pages DO is the old game's (80-ui.js, 82-menu.js); this sheet only says how
+   they look, after the first remaster's: a steel bar along the top with the tabs in it and a hazard stripe under it,
+   square dark plates with an amber edge, amber block buttons, wide capitals, hangar doors that part on the menu. ===== */
+:root{--y:#e8a020;--y2:#c9820f;--bg:#0a0b0e;--p:#14171b;--p2:#1d2227;--pa:rgba(14,17,20,.93);--pb:rgba(14,17,20,.95);--ln:rgba(255,255,255,.13);--tx:#ecebe6;--mut:#979da3;--cy:#8fd0ff;--nav:0px;--top:58px;--hd:"Arial Black",Roboto,Arial,sans-serif}
+html,body{font-family:Roboto,"Segoe UI",Arial,sans-serif}
+#menu *,.card,.card *,.scr .sheet,.scr .sheet *,#toast,#boot *{border-radius:0!important}
+
+/* the doors (the loading page): they part on the menu, and close again while another battlefield is fetched */
+#boot{background:none;overflow:hidden}
+#boot .door{position:absolute;left:0;right:0;height:50.2%;background:repeating-linear-gradient(90deg,#252a30 0 146px,#171a1e 146px 150px);box-shadow:inset 0 0 120px rgba(0,0,0,.75);transition:transform 1.1s cubic-bezier(.65,0,.3,1)}
+#boot .door.a{top:0;border-bottom:12px solid;border-image:repeating-linear-gradient(-45deg,#e8a020 0 16px,#15171a 16px 32px) 12}
+#boot .door.b{bottom:0;border-top:12px solid;border-image:repeating-linear-gradient(-45deg,#e8a020 0 16px,#15171a 16px 32px) 12}
+#boot.open{pointer-events:none}#boot.open .door.a{transform:translateY(-101%)}#boot.open .door.b{transform:translateY(101%)}
+#boot .bt,#boot-s{position:relative;z-index:2;transition:opacity .25s}#boot.open .bt,#boot.open #boot-s{opacity:0}
+#boot .bt{font:italic 900 clamp(40px,8vw,110px)/1 var(--hd);letter-spacing:.01em;transform:skewX(-7deg);text-shadow:none;color:transparent;background:linear-gradient(180deg,#f6f9fb 0%,#a4b4c3 44%,#4d5964 54%,#c5d0da 78%,#e8a020 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 .04em 0 rgba(0,0,0,.7))}
+#boot .bt em{display:block;width:max-content;margin:.5em auto 0;font:800 .17em/1 Roboto,Arial,sans-serif;letter-spacing:.75em;color:#15171a;-webkit-text-fill-color:#15171a;background:var(--y);padding:.45em .3em .45em 1em;transform:skewX(-7deg)}
+#boot-s{margin-top:26px;font:700 12px Roboto,Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;color:#cfd6dc}
+
+/* the bar along the top */
+#menu .shade{background:linear-gradient(0deg,rgba(8,9,11,.86),rgba(8,9,11,0) 38%),linear-gradient(180deg,rgba(8,9,11,.55),rgba(8,9,11,0) 24%)}
+#menu[data-view=research] .shade,#menu[data-view=mp] .shade,#menu[data-view=battle] .shade{background:rgba(8,9,11,.68)}
+.mtop{background:linear-gradient(180deg,#1d2227,#101317);border-bottom:1px solid var(--ln);box-shadow:0 6px 26px rgba(0,0,0,.55);padding:0 20px;gap:16px;z-index:3}
+.mtop::after{content:'';position:absolute;left:0;right:0;bottom:-5px;height:4px;background:repeating-linear-gradient(-45deg,var(--y) 0 10px,#15171a 10px 20px);opacity:.85}
+.brand{display:contents}
+.logo{font:italic 900 23px/1 var(--hd);letter-spacing:.01em;transform:skewX(-7deg);text-shadow:none;color:transparent;background:linear-gradient(180deg,#f6f9fb 0%,#a4b4c3 44%,#4d5964 54%,#c5d0da 78%,#e8a020 100%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 1px 0 rgba(0,0,0,.7));flex:none}
+.logo b{color:transparent;margin-left:.3em}.logo small{display:none}
+.ver{order:5;margin-left:auto;border:1px solid var(--ln);font:700 10px/1 Roboto,Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;padding:6px 9px;color:var(--mut)}
+.mtop .wallet{order:6;margin-left:0;display:flex;gap:14px}
+.w-pill{background:none;border:0;padding:0;gap:6px;font:900 17px/1 var(--hd)}
+.ic{width:8px;height:18px}.ic.cr{background:#ffd27a}.ic.rp{background:#8fd0ff}.ic.fr{background:#c9a2ff}
+.me{order:7;background:rgba(0,0,0,.35);border:1px solid var(--ln);padding:1px 4px 1px 8px}#menu .me input{width:118px;font:700 13px Roboto,Arial,sans-serif;letter-spacing:.04em;padding:6px 4px}
+.mnav{top:0;left:212px;right:auto;bottom:auto;height:var(--top);width:auto;flex-direction:row;padding:0;gap:0;overflow:visible;z-index:4}
+.mnav button{height:100%;border-left:0;border-bottom:3px solid transparent;padding:0 clamp(6px,1.05vw,15px);gap:0;font:800 clamp(10px,.98vw,13px)/55px Roboto,Arial,sans-serif;letter-spacing:.17em;color:#9aa3ab;white-space:nowrap}
+.mnav button i[data-ic],.mnav button svg{display:none}
+.mnav button:hover{background:none;color:#fff}
+.mnav button.on{background:linear-gradient(0deg,rgba(232,160,32,.2),rgba(232,160,32,0));border-bottom-color:var(--y);color:#fff}
+.mnav em{position:absolute;top:5px;right:0;margin:0;font:800 8px/1 Roboto,Arial,sans-serif;letter-spacing:.12em;background:var(--y);color:#15171a;padding:2px 4px}
+.nsep{display:none}
+@media (max-width:1560px){.ver{display:none}.mtop .wallet{margin-left:auto}}
+@media (max-width:1280px){.mtop .wallet{margin-left:auto}#menu .me input{width:84px}.mnav{left:196px}.logo{font-size:21px}}
+@media (max-width:1060px){.me{display:none}}
+
+/* pages */
+.view{top:calc(var(--top) + 6px);left:0;padding:16px 24px 14px}
+#sc-cap{left:auto;right:24px;justify-content:flex-end;text-align:right;top:calc(var(--top) + 20px);font-family:Roboto,Arial,sans-serif;letter-spacing:.04em}
+#sc-cap .sc-live{background:var(--y);color:#15171a;letter-spacing:.2em}
+.sheet,.vpanel,.card{background:rgba(14,17,20,.93);border:1px solid var(--ln);border-left:3px solid var(--y);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.sheet h3,.card h2,.card h3,.vk-head h2{font-family:var(--hd);letter-spacing:.06em;text-transform:uppercase}
+.vk-head small,.dock-h,.th,.bh{letter-spacing:.24em}
+.tierb{background:rgba(255,255,255,.08)}
+.sbar{height:6px;background:rgba(255,255,255,.14);box-shadow:none}.sbar i{background:#f2efe8}.sbar u{background:var(--y)}
+.tag{letter-spacing:.14em}
+#v-home{grid-template-columns:minmax(290px,370px) 1fr}
+#h-vcard{grid-column:1;grid-row:1;align-self:end}
+.dock-h{font:800 10.5px Roboto,Arial,sans-serif;color:var(--y)}.dock-h small{font:12px Roboto,Arial,sans-serif;letter-spacing:.04em}
+.slot{background:rgba(14,17,20,.9);border:1px solid var(--ln);border-left:3px solid rgba(255,255,255,.2)}
+.slot:hover{border-color:rgba(255,255,255,.45)}
+.slot.sel{border-color:var(--y);background:rgba(232,160,32,.16);box-shadow:none}
+.slot.empty{background:rgba(14,17,20,.55);border-style:dashed}
+.playbox{width:min(330px,34vw);gap:9px}
+.play{background:var(--y);color:#15171a;border:0;font:900 26px/1 var(--hd);letter-spacing:.12em;padding:20px 24px;cursor:pointer;text-shadow:none;box-shadow:0 12px 34px rgba(0,0,0,.5)}
+.play:hover{background:#ffd27a;filter:none;transform:none}
+.mode-pill{background:rgba(14,17,20,.9);border:1px solid rgba(255,255,255,.22);text-align:center}.mode-pill b{font:800 13px Roboto,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase}.mode-pill small{letter-spacing:.06em}
+.mcard{background:rgba(255,255,255,.04);border:1px solid var(--ln);border-left:3px solid rgba(255,255,255,.2)}
+.mcard.on{border-color:var(--y);background:rgba(232,160,32,.16)}
+.vc{background:rgba(255,255,255,.04);border:1px solid var(--ln)}.vc:hover{border-color:rgba(255,255,255,.4)}.vc.sel{border-color:var(--y);background:rgba(232,160,32,.16)}
+.mp-g,.lp,.dv,.mod{background:rgba(255,255,255,.04);border-color:var(--ln)}
+.tcol.t0,.tcol{background:rgba(14,17,20,.9)}
+
+/* buttons, switches, fields */
+.btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.24);color:var(--tx);font:800 12.5px Roboto,Arial,sans-serif;letter-spacing:.13em;text-transform:uppercase;padding:10px 16px}
+.btn:hover{filter:none;background:rgba(255,255,255,.12);border-color:#fff}.btn:disabled{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.12)}
+.btn.small{font-size:11px;letter-spacing:.1em;padding:6px 10px}
+.btn.big{font:900 19px/1 var(--hd);letter-spacing:.12em;padding:16px 26px}
+.btn.primary{background:var(--y);border-color:var(--y);color:#15171a;font-weight:900}.btn.primary:hover{background:#ffd27a;border-color:#ffd27a}
+.btn.danger{background:rgba(255,90,74,.14);border-color:#ff5a4a}.btn.ghost{background:rgba(0,0,0,.45);border-color:rgba(255,255,255,.2)}
+.seg{background:rgba(0,0,0,.4);border:1px solid var(--ln);padding:0;gap:0}
+.seg button{font:700 11.5px Roboto,Arial,sans-serif;letter-spacing:.09em;text-transform:uppercase;padding:7px 10px}
+.seg button.on{background:var(--y);color:#15171a}
+kbd{background:#1d2227;border-color:#5b646d;color:#e9edf0;font-family:Roboto,Arial,sans-serif}
+input:not([type=range]):not([type=checkbox]){background:#0c0e11;border-color:rgba(255,255,255,.22);font-family:Roboto,Arial,sans-serif}
+#toast{background:rgba(14,17,20,.96);border:1px solid var(--ln);border-left:3px solid var(--y);letter-spacing:.04em}
+
+/* in the battle */
+#h-score .tm{background:rgba(14,17,20,.86);border-radius:0;font-family:var(--hd);padding:5px 16px 3px}#h-score small{font:700 9.5px Roboto,Arial,sans-serif;letter-spacing:.26em}
+#h-score .tt{font:900 16px var(--hd);letter-spacing:.06em}
+#h-feed div{background:rgba(14,17,20,.8);border-radius:0;border-right:3px solid var(--y);letter-spacing:.03em}
+#h-map{border-radius:0!important;border:1px solid rgba(255,255,255,.3)!important;box-shadow:0 0 0 3px rgba(14,17,20,.85),0 10px 30px rgba(0,0,0,.5)}
+#h-veh .nm{font:900 15px var(--hd);letter-spacing:.08em;text-transform:uppercase}
+.hp{height:12px;border-radius:0;border:0;background:rgba(255,255,255,.16)}.hp i{background:#f2efe8}.hp.low i{background:#ff5a4a}.hp b{line-height:12px;color:#15171a;text-shadow:none;font-size:10px;letter-spacing:.1em}
+#h-hint{background:rgba(14,17,20,.86);border:1px solid var(--ln);border-left:3px solid var(--y);border-radius:0;color:#dfe3e6}
+#h-board{background:rgba(14,17,20,.95);border:1px solid var(--ln);border-left:3px solid var(--y);border-radius:0}#h-board tr.me td{background:rgba(232,160,32,.2)}
+#h-banner{background:rgba(14,17,20,.9);border:0;border-top:3px solid var(--y);border-bottom:3px solid var(--y);border-radius:0;font-family:var(--hd);letter-spacing:.12em;text-transform:uppercase}
+
+/* the training cards and coach bubbles */
+.hgt-bubble,.hgt-card{background:rgba(14,17,20,.96)!important;color:var(--tx)!important;border:1px solid var(--ln)!important;border-left:3px solid var(--y)!important;border-top:0!important;border-radius:0!important;box-shadow:0 18px 50px rgba(0,0,0,.6)!important;font-family:Roboto,Arial,sans-serif!important}
+.hgt-bubble h4,.hgt-card h3{color:#fff!important;font-family:var(--hd)!important;letter-spacing:.05em;text-transform:uppercase}
+.hgt-bubble p,.hgt-card p{color:#b9c0c6!important}.hgt-bubble b,.hgt-card b{color:var(--y)!important}
+.hgt-bubble .hgt-top,.hgt-card .hgt-top{color:var(--y)!important;letter-spacing:.24em}.hgt-bubble .hgt-prog,.hgt-card .hgt-prog{color:var(--mut)!important}
+.hgt-btn{border-radius:0!important;background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.24)!important;color:var(--tx)!important;font:800 12px Roboto,Arial,sans-serif!important;letter-spacing:.13em;text-transform:uppercase}
+.hgt-btn.pri{background:var(--y)!important;border-color:var(--y)!important;color:#15171a!important}
+.hgt-row{border-radius:0!important;background:rgba(255,255,255,.04)!important;border-color:var(--ln)!important;color:var(--tx)!important}.hgt-bubble kbd{border-radius:0!important}
+.tabs{background:rgba(0,0,0,.4);border:1px solid var(--ln);padding:0;gap:0}
+.tabs button{font:800 11.5px Roboto,Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#9aa3ab;padding:7px 14px}
+.tabs button.on{background:var(--y);color:#15171a;box-shadow:none}
+
+/* 2026-11-24, the owner: "bad overlapping ui". The first-visit card sat on TO BATTLE: it hangs under the top bar, in the middle.
+   The key help sat in the corner the test page's own badge covers: it is lifted clear. The corner map and the vehicle plate stand a little higher. */
+.hgt-bubble.offer{right:auto;bottom:auto;left:50%;top:74px;transform:translateX(-50%)}
+#h-hint{bottom:58px}
+#h-map{bottom:18px}#h-veh{bottom:20px;left:214px}
+
+/* ===== the opening (83-intro.js) and the REMASTERED plate ===== */
+#boot-s.press{animation:inPulse 1.4s infinite;letter-spacing:.42em}
+#intro{position:fixed;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.25),rgba(0,0,0,.78))}
+#intro.hidden{display:none}
+#intro-text{position:relative;width:min(92vw,1250px);text-align:center}
+.sslogo{text-align:center;line-height:1;user-select:none}
+.sslogo>div{display:flex;justify-content:center;font:italic 900 var(--fs,28px)/1 'Arial Black',Roboto,Arial,sans-serif;letter-spacing:.01em;transform:skewX(-7deg);white-space:nowrap}
+.sslogo span{background:linear-gradient(180deg,#f6f9fb 0%,#a4b4c3 44%,#4d5964 54%,#c5d0da 78%,#e8a020 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 .04em 0 rgba(0,0,0,.7))}
+.sslogo i{width:.32em}
+.sslogo em{display:inline-block;font:800 calc(var(--fs,28px)*.17)/1 Roboto,Arial,sans-serif;font-style:normal;letter-spacing:.75em;color:#15171a;background:var(--y);padding:.45em .3em .45em 1em;margin-top:.55em;transform:skewX(-14deg)}
+.sslogo.big{--fs:clamp(40px,9.6vw,150px)}
+.sslogo.big span{opacity:0;transform:translateY(-.5em) scale(1.9)}.sslogo.big span.in{opacity:1;transform:none;transition:transform .13s cubic-bezier(.2,1.9,.4,1),opacity .04s}
+.sslogo.big em{opacity:0;transform:skewX(-14deg) translateX(-60px);transition:all .22s}.sslogo.big.done em{opacity:1;transform:skewX(-14deg)}
+.lamps{display:flex;justify-content:center;gap:30px;margin-top:3.4vw}
+.lamps span{font:700 12px Roboto,Arial,sans-serif;letter-spacing:.32em;color:#5b646d;padding-left:19px;position:relative}
+.lamps span::before{content:'';position:absolute;left:0;top:50%;width:9px;height:9px;margin-top:-5px;border-radius:50%;background:#2b3137}
+.lamps span.on{color:#e3e9ee}.lamps span.on::before{background:#7dff9a;box-shadow:0 0 12px #7dff9a}
+#intro .go{font:700 13px/1 Roboto,Arial,sans-serif;letter-spacing:.35em;color:#fff;margin-top:5vw;opacity:0}
+#intro .go.in{animation:inRise .6s both,inPulse 1.6s .7s infinite}
+#intro.shake{animation:inShake .45s}
+@keyframes inPulse{50%{opacity:.35}}
+@keyframes inRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes inShake{10%{transform:translate(-9px,6px)}25%{transform:translate(8px,-7px)}40%{transform:translate(-6px,-4px)}55%{transform:translate(5px,5px)}70%{transform:translate(-3px,2px)}85%{transform:translate(2px,-1px)}100%{transform:none}}
+/* the menu's name plate says what this is */
+.brand .logo .rm{display:inline-block;margin-left:.7em;font:800 .36em/1 Roboto,Arial,sans-serif;font-style:normal;letter-spacing:.5em;color:#15171a;background:var(--y);padding:.5em .25em .5em .75em;transform:skewX(-14deg);vertical-align:middle}
