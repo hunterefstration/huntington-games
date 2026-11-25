@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_brute.blend",
+ "out": "../../Ashfall/assets/foe_brute",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "brute_rig",
+   "lods": [
+    "brute",
+    "brute_lod1",
+    "brute_lod2"
+   ],
+   "as": {
+    "brute": "enemy",
+    "brute_lod1": "enemy_lod1",
+    "brute_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "brute_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "brute_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "brute_attack"
+    },
+    "die": {
+     "action": "brute_die"
+    }
+   }
+  }
+ ]
+}

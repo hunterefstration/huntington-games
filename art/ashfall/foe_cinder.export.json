@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_cinder.blend",
+ "out": "../../Ashfall/assets/foe_cinder",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "cinder_rig",
+   "lods": [
+    "cinder",
+    "cinder_lod1",
+    "cinder_lod2"
+   ],
+   "as": {
+    "cinder": "enemy",
+    "cinder_lod1": "enemy_lod1",
+    "cinder_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "cinder_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "cinder_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "cinder_attack"
+    },
+    "die": {
+     "action": "cinder_die"
+    }
+   }
+  }
+ ]
+}

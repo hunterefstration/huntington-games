@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_walker.blend",
+ "out": "../../Ashfall/assets/foe_walker",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "walker_rig",
+   "lods": [
+    "walker",
+    "walker_lod1",
+    "walker_lod2"
+   ],
+   "as": {
+    "walker": "enemy",
+    "walker_lod1": "enemy_lod1",
+    "walker_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "walker_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "walker_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "walker_attack"
+    },
+    "die": {
+     "action": "walker_die"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_shocker",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "shocker_rig",
+   "lods": [
+    "shocker",
+    "shocker_lod1",
+    "shocker_lod2"
+   ],
+   "as": {
+    "shocker": "enemy",
+    "shocker_lod1": "enemy_lod1",
+    "shocker_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "shocker_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "shocker_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "shocker_attack"
+    },
+    "die": {
+     "action": "shocker_die"
+    }
+   }
+  }
+ ]
+}

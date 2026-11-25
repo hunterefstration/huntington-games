@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_runner.blend",
+ "out": "../../Ashfall/assets/foe_runner",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "runner_rig",
+   "lods": [
+    "runner",
+    "runner_lod1",
+    "runner_lod2"
+   ],
+   "as": {
+    "runner": "enemy",
+    "runner_lod1": "enemy_lod1",
+    "runner_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "runner_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "runner_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "runner_attack"
+    },
+    "die": {
+     "action": "runner_die"
+    }
+   }
+  }
+ ]
+}
