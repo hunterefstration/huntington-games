@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_charger.blend",
+ "out": "../../Ashfall/assets/foe_charger",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "charger_rig",
+   "lods": [
+    "charger",
+    "charger_lod1",
+    "charger_lod2"
+   ],
+   "as": {
+    "charger": "enemy",
+    "charger_lod1": "enemy_lod1",
+    "charger_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "charger_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "charger_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "charger_attack"
+    },
+    "die": {
+     "action": "charger_die"
+    }
+   }
+  }
+ ]
+}

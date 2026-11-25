@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_furnace.blend",
+ "out": "../../Ashfall/assets/foe_furnace",
+ "maxTexture": 1024,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "furnace_rig",
+   "lods": [
+    "furnace",
+    "furnace_lod1",
+    "furnace_lod2"
+   ],
+   "as": {
+    "furnace": "enemy",
+    "furnace_lod1": "enemy_lod1",
+    "furnace_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "furnace_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "furnace_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "furnace_attack"
+    },
+    "die": {
+     "action": "furnace_die"
+    }
+   }
+  }
+ ]
+}

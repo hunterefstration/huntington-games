@@ -38,17 +38,20 @@ if (want('governor')) {
     // the governor's decisions, driven by a fake clock (no browser): a device where a smaller picture buys frames, one
     // where it does not (the processor is the limit), and one that gets headroom back later
     const src = fs.readFileSync(path.join(ROOT, 'engine/hg3d.js'), 'utf8');
-    const run = (fpsAt, secs) => {
+    let first = 1; const run = (fpsAt, secs, min, start) => {
         let cb = null, t = 0;
         const HG = new Function('requestAnimationFrame', 'document', 'location', src + '\nreturn HG3D;')(f => { cb = f; }, { hidden: false }, { search: '' });
-        let told = 0; const g = HG.governor({ min: 0.7, onCpuBound: () => told++ });
+        let told = 0; const g = HG.governor({ min: min || 0.7, start, onCpuBound: () => told++ }); first = g.scale;
         while (t < secs * 1000 && cb) { const f = cb; cb = null; t += 1000 / fpsAt(g.scale, t / 1000); f(t); }
-        return { scale: g.scale, told };
+        return { scale: g.scale, told, first };
     };
     const a = run(s => 38 + (1 - s) * 60, 20), b = run(() => 38, 20), c = run((s, t) => t < 8 ? 38 + (1 - s) * 60 : 60, 45);
     ok(a.scale < 1 && a.scale >= 0.7 && a.told === 0, 'governor: a smaller picture helps -> it settles on one', 'scale=' + a.scale);
     ok(b.scale === 1 && b.told === 1, 'governor: a smaller picture does not help -> full sharpness back, game told the processor is the limit', 'scale=' + b.scale + ' told=' + b.told);
     ok(c.scale === 1 && c.told === 0, 'governor: with headroom again it climbs back to the full picture', 'scale=' + c.scale);
+    const d = run(s => 20 + (1 - s) * 80, 9, 0.5), e = run(s => 20 + (1 - s) * 80, 1.5, 0.5, 0.6);
+    ok(d.scale <= 0.6, 'governor: far too slow -> it takes double steps (the right size inside nine seconds)', 'scale=' + d.scale);
+    ok(e.first === 0.6 && e.scale === 0.6, 'governor: it starts at the size this device settled on last time', 'first=' + e.first);
 }
 if (want('demo')) {
     const { page, ctx, msgs } = await open('engine/demo.html?n=800');
@@ -57,13 +60,23 @@ if (want('demo')) {
     ok(r && !r.failed && !msgs.length, 'demo: the engine starts with no error or warning', r ? (r.failed || msgs.join(' | ')) : 'no demo');
     ok(r && r.colours >= 12 && r.calls >= 5 && r.calls <= 12 && r.tris > 9000, 'demo: a lit, coloured scene in a handful of draw calls', r && `colours=${r.colours} calls=${r.calls} tris=${r.tris} avg=${r.avg}`);
     ok(r && r.three === false, 'demo: no three.js on the page');
+    // glow (55-bloom.js): the bright parts of the finished picture spread; asking for none does nothing; the next plain frame is as before
+    const glow = await page.evaluate(src => {
+        const D = window.__hgdemo, gl = D.R.getContext(), S = (0, eval)('(' + src + ')'), lum = () => { const v = S(gl).avg; return Array.isArray(v) ? v[0] + v[1] + v[2] : +v; };
+        D.R.render(D.scene, D.cam); const a = lum(); D.R.render(D.scene, D.cam); const did = D.R.bloom({ strength: 1.5, threshold: 0.2, knee: 0.1 }), b = lum(), err = gl.getError();
+        D.R.render(D.scene, D.cam); const c = lum(); const off = D.R.bloom({ strength: 0 }), d = lum();
+        D.R.render(D.scene, D.cam); D.R.bloom({ strength: 1.5, threshold: 0.2, knee: 0.1 }); const again = lum();
+        return { did, off, a, b, c, d, again, err, failed: D.failed };
+    }, sample.toString());
+    ok(glow.did === true && glow.b > glow.a * 1.03 && glow.err === 0 && !glow.failed, 'demo: glow brightens the picture round its bright parts, with no graphics error', JSON.stringify(glow));
+    ok(glow.off === false && Math.abs(glow.c - glow.a) <= glow.a * 0.01 && glow.d === glow.c && Math.abs(glow.again - glow.b) <= glow.b * 0.01, 'demo: a frame without glow is as it was before, and glow gives the same result each time', JSON.stringify(glow));
     // a lost graphics context (it happens on a 4 GB device under memory pressure): once it is back the engine rebuilds its programs, buffers and textures by itself
     const back = await page.evaluate(async src => {
         const D = window.__hgdemo, gl = D.R.getContext(), ext = gl.getExtension('WEBGL_lose_context'); if (!ext) return { skip: true };
         ext.loseContext(); await new Promise(res => setTimeout(res, 300)); const lostSeen = gl.isContextLost(); ext.restoreContext(); await new Promise(res => setTimeout(res, 900));
-        D.R.render(D.scene, D.cam); return Object.assign((0, eval)('(' + src + ')')(gl), { failed: D.failed, lost: gl.isContextLost(), lostSeen, calls: D.R.info.render.calls });
+        D.R.render(D.scene, D.cam); const glowBack = D.R.bloom({ strength: 1 }) === true && gl.getError() === 0; D.R.render(D.scene, D.cam); return Object.assign((0, eval)('(' + src + ')')(gl), { failed: D.failed, lost: gl.isContextLost(), lostSeen, calls: D.R.info.render.calls, glowBack });
     }, sample.toString());
-    ok(back && (back.skip || (back.lostSeen && !back.lost && !back.failed && back.colours >= 12 && back.calls >= 5)), 'demo: draws again after the graphics context was lost and restored', JSON.stringify(back).slice(0, 160));
+    ok(back && (back.skip || (back.lostSeen && !back.lost && !back.failed && back.colours >= 12 && back.calls >= 5 && back.glowBack)), 'demo: draws again, glow too, after the graphics context was lost and restored', JSON.stringify(back).slice(0, 160));
     await ctx.close();
 }
 for (const G of GAMES) {

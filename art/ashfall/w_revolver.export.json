@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_revolver",
+ "maxTexture": 2048,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "revolver_rig",
+   "lods": [
+    "revolver_arms",
+    "revolver_gun"
+   ],
+   "together": true,
+   "as": {
+    "revolver_arms": "vm_arms",
+    "revolver_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "revolver_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "revolver_vm_fire"
+    },
+    "vm_draw": {
+     "action": "revolver_vm_draw"
+    },
+    "vm_run": {
+     "action": "revolver_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "revolver_vm_melee"
+    },
+    "vm_reload": {
+     "action": "revolver_vm_reload"
+    }
+   }
+  }
+ ]
+}

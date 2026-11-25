@@ -1,0 +1,9 @@
+{
+ "blend": "air.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_a2d",
+ "parts": [
+  "a2d_body",
+  "a2d_prop0"
+ ],
+ "maxTexture": 1024
+}

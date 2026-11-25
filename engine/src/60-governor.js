@@ -5,11 +5,15 @@
 // it puts the sharpness back and tells the game instead (onCpuBound), so the game can cut things that cost
 // processor time. Plenty of headroom for a while -> it steps the scale back up. The game applies the scale
 // itself (apply(scale) -> usually renderer.setPixelRatio(base * scale)), so its own quality rules stay in charge.
+// Far too slow (under 72% of the target) -> the step is twice as big, so a weak machine is playable in seconds.
+// o.start: the scale to begin at (a game hands back what this device settled on last time, so a run does not
+// begin with ten slow seconds); the governor still climbs from there when there is headroom.
 // ============================================================
 function governor(o) {
     o = o || {};
     const G = { scale: 1, on: true, cpuBound: false, fps: 60, min: o.min || 0.6, target: o.target || 50, good: o.good || 57.5, _acc: 0, _n: 0, _last: 0, _slow: 0, _fast: 0, _probe: 0, _probeFps: 0, _hold: 0 };
     const set = s => { s = Math.max(G.min, Math.min(1, Math.round(s * 100) / 100)); if (s !== G.scale) { G.scale = s; if (o.apply) o.apply(s); } };
+    const down = fps => set(G.scale - (fps < G.target * 0.72 ? 0.2 : 0.1));
     const tick = ts => {
         if (!G.on) return;
         requestAnimationFrame(tick);
@@ -24,10 +28,10 @@ function governor(o) {
             G._fast = 0;
             if (++G._slow < 2) return; G._slow = 0;
             if (G.cpuBound || G.scale <= G.min) { if (!G.cpuBound && o.onSlow) o.onSlow(fps); return; }
-            if (G._probe === 0) { G._probeFps = fps; G._probe = 1; set(G.scale - 0.1); }
-            else if (fps > G._probeFps * 1.06) { G._probeFps = fps; G._probe = 1; set(G.scale - 0.1); }        // a smaller picture helped: keep going
+            if (G._probe === 0) { G._probeFps = fps; G._probe = 1; down(fps); }
+            else if (fps > G._probeFps * 1.06) { G._probeFps = fps; G._probe = 1; down(fps); }        // a smaller picture helped: keep going
             else if (++G._probe > 2) { G.cpuBound = true; G._probe = 0; set(Math.min(1, G.scale + 0.2)); if (o.onCpuBound) o.onCpuBound(fps); }
-            else set(G.scale - 0.1);
+            else down(fps);
             G._hold = 1;
         } else {
             G._slow = 0; G._probe = 0;
@@ -40,6 +44,7 @@ function governor(o) {
     G.reset = () => { G.cpuBound = false; G._slow = G._fast = G._probe = G._hold = 0; set(1); };
     // '?gov=0' in the address switches it off (benchmarks compare renderers at the same resolution)
     let off = false; try { off = /[?&]gov=0\b/.test(location.search); } catch (e) { }
+    if (!off && o.start > 0 && o.start < 1) set(o.start);
     if (off || typeof requestAnimationFrame === 'undefined') G.on = false; else requestAnimationFrame(tick);
     return G;
 }
