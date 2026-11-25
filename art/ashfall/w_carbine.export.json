@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_carbine",
+ "maxTexture": 2048,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "carbine_rig",
+   "lods": [
+    "carbine_arms",
+    "carbine_gun"
+   ],
+   "together": true,
+   "as": {
+    "carbine_arms": "vm_arms",
+    "carbine_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "carbine_vm_idle",
+     "loop": true
+    },
+    "vm_reload": {
+     "action": "carbine_vm_reload"
+    },
+    "vm_draw": {
+     "action": "carbine_vm_draw"
+    },
+    "vm_run": {
+     "action": "carbine_vm_run",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "carbine_vm_fire"
+    },
+    "vm_melee": {
+     "action": "carbine_vm_melee"
+    }
+   }
+  }
+ ]
+}

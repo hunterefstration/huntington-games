@@ -1,0 +1,55 @@
+{
+ "out": "../../Steel Storm Remastered/assets/city",
+ "world": {
+  "collections": [
+   "terrain"
+  ],
+  "lightmap": "tex/city_light.exr",
+  "lmSize": 2048,
+  "gain": {
+   "ground_detail": 2
+  },
+  "plain": [
+   "ground_detail"
+  ]
+ },
+ "parts": [
+  "tank_hull",
+  "tank_turret",
+  "tank_barrel",
+  "tank_hull_lod1",
+  "tank_turret_lod1",
+  "tank_barrel_lod1",
+  "light_hull",
+  "light_turret",
+  "light_barrel",
+  "light_hull_lod1",
+  "light_turret_lod1",
+  "light_barrel_lod1",
+  "heavy_hull",
+  "heavy_turret",
+  "heavy_barrel",
+  "heavy_hull_lod1",
+  "heavy_turret_lod1",
+  "heavy_barrel_lod1"
+ ],
+ "heights": {
+  "cell": 1.0,
+  "ground": [
+   "terrain"
+  ]
+ },
+ "probes": {
+  "cell": 2.0,
+  "height": 1.5,
+  "samples": 96,
+  "follow": true
+ },
+ "sky": {
+  "width": 1024
+ },
+ "maxTexture": 1024,
+ "area": [
+  "terrain"
+ ]
+}

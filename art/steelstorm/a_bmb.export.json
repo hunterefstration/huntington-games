@@ -1,0 +1,9 @@
+{
+ "blend": "aircraft.blend",
+ "out": "../../Steel Storm Remastered/assets/a_bmb",
+ "parts": [
+  "bmb_hull",
+  "bmb_hull_lod1"
+ ],
+ "maxTexture": 1024
+}
