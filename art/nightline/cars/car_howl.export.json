@@ -1,0 +1,14 @@
+{
+ "blend": "car_howl.blend",
+ "out": "../../../Nightline/assets/car_howl",
+ "parts": [
+  "body",
+  "lamp_head",
+  "lamp_tail",
+  "wheel_fl",
+  "wheel_fr",
+  "wheel_rl",
+  "wheel_rr"
+ ],
+ "maxTexture": 64
+}

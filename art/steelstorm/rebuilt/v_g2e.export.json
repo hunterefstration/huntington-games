@@ -1,0 +1,13 @@
+{
+ "blend": "ground.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_g2e",
+ "parts": [
+  "g2e_body",
+  "g2e_track",
+  "g2e_tur",
+  "g2e_gun",
+  "g2e_kitb",
+  "g2e_kitt"
+ ],
+ "maxTexture": 1024
+}
