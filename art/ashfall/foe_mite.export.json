@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_mite.blend",
+ "out": "../../Ashfall/assets/foe_mite",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "mite_rig",
+   "lods": [
+    "mite",
+    "mite_lod1",
+    "mite_lod2"
+   ],
+   "as": {
+    "mite": "enemy",
+    "mite_lod1": "enemy_lod1",
+    "mite_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "mite_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "mite_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "mite_attack"
+    },
+    "die": {
+     "action": "mite_die"
+    }
+   }
+  }
+ ]
+}

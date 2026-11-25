@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_leaper.blend",
+ "out": "../../Ashfall/assets/foe_leaper",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "leaper_rig",
+   "lods": [
+    "leaper",
+    "leaper_lod1",
+    "leaper_lod2"
+   ],
+   "as": {
+    "leaper": "enemy",
+    "leaper_lod1": "enemy_lod1",
+    "leaper_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "leaper_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "leaper_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "leaper_attack"
+    },
+    "die": {
+     "action": "leaper_die"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "blend": "gen/foe_howler.blend",
+ "out": "../../Ashfall/assets/foe_howler",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "howler_rig",
+   "lods": [
+    "howler",
+    "howler_lod1",
+    "howler_lod2"
+   ],
+   "as": {
+    "howler": "enemy",
+    "howler_lod1": "enemy_lod1",
+    "howler_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "howler_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "howler_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "howler_attack"
+    },
+    "die": {
+     "action": "howler_die"
+    }
+   }
+  }
+ ]
+}
