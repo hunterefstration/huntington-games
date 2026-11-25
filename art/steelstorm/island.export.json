@@ -1,0 +1,29 @@
+{
+ "out": "../../Steel Storm Rebuilt/assets/island",
+ "world": {
+  "collections": [
+   "terrain"
+  ],
+  "lightmap": "tex/island_light.exr",
+  "lmSize": 2048,
+  "gain": {
+   "ground_detail": 2
+  },
+  "plain": [
+   "ground_detail"
+  ]
+ },
+ "heights": {
+  "cell": 2.0,
+  "ground": [
+   "terrain"
+  ]
+ },
+ "sky": {
+  "width": 1024
+ },
+ "maxTexture": 2048,
+ "area": [
+  "terrain"
+ ]
+}

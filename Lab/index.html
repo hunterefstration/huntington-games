@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huntington Lab</title>
+<style>
+html, body { margin: 0; height: 100%; background: #0b0e14; color: #dfe5f0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { background: radial-gradient(1200px 700px at 50% 30%, #1a2233 0%, #0b0e14 70%); }
+#lab { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; overflow: auto; }
+.card { width: min(760px, 94vw); background: rgba(13, 17, 26, .92); border: 1px solid #263044; border-top: 3px solid #5ee0c6; box-shadow: 0 24px 70px rgba(0, 0, 0, .55); padding: 22px 26px 20px; }
+.brand { font: 900 30px/1 "Arial Black", Roboto, sans-serif; letter-spacing: .14em; } .brand b { color: #5ee0c6; }
+.sub { color: #8591a8; font-size: 12px; letter-spacing: .22em; text-transform: uppercase; margin: 6px 0 16px; }
+p { margin: 0 0 10px; color: #aab4c8; } p.bad { color: #ff9a8a; } p.good { color: #9fe0b0; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+input { flex: 1; min-width: 220px; background: #080b11; color: #fff; border: 1px solid #33405a; padding: 11px 12px; font: 15px monospace; outline: none; } input:focus { border-color: #5ee0c6; }
+button { background: #5ee0c6; color: #06211c; border: 0; padding: 11px 20px; font: 800 13px/1 system-ui, sans-serif; letter-spacing: .14em; cursor: pointer; } button:hover { filter: brightness(1.1); } button:disabled { opacity: .5; cursor: default; }
+button.ghost { background: none; color: #8591a8; border: 1px solid #33405a; font-weight: 600; }
+#games { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px; }
+.game { position: relative; height: 190px; border: 1px solid #33405a; background: #101623 center / cover no-repeat; cursor: pointer; padding: 0; text-align: left; color: #fff; overflow: hidden; }
+.game:hover { border-color: #5ee0c6; } .game span { position: absolute; left: 0; right: 0; bottom: 0; padding: 34px 14px 12px; background: linear-gradient(transparent, rgba(4, 7, 12, .92)); }
+.game b { display: block; font: 900 19px/1.1 "Arial Black", Roboto, sans-serif; letter-spacing: .08em; } .game small { display: block; color: #b8c2d6; font: 400 12.5px/1.35 system-ui, sans-serif; letter-spacing: 0; margin-top: 4px; text-transform: none; }
+.foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; color: #6f7b92; font-size: 12px; }
+#ticket label { display: block; color: #8591a8; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; margin: 10px 0 5px; }
+select, textarea { width: 100%; box-sizing: border-box; background: #080b11; color: #fff; border: 1px solid #33405a; padding: 10px 12px; font: 14px/1.45 system-ui, sans-serif; outline: none; } select:focus, textarea:focus { border-color: #5ee0c6; }
+textarea { height: 150px; resize: vertical; display: block; }
+[hidden] { display: none !important; }
+@media (max-width: 560px) { #games { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="lab"><div class="card">
+  <div class="brand">HUNTINGTON <b>LAB</b></div>
+  <div class="sub" id="sub">experimental builds</div>
+  <div id="gate">
+    <p id="say">Checking who you are...</p>
+    <div class="row" id="form" hidden>
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Your Grapevine key">
+      <button id="go">SIGN IN</button>
+    </div>
+  </div>
+  <div id="games" hidden></div>
+  <div id="ticket" hidden>
+    <p id="tsay"></p>
+    <label for="tgame">About</label><select id="tgame"></select>
+    <label for="ttext">What should be done</label><textarea id="ttext" maxlength="760" placeholder="What is wrong, or what you want built. One thing per ticket works best."></textarea>
+    <div class="row" style="margin-top:12px"><button id="tsend">SEND TICKET</button><button class="ghost" id="tback">BACK TO THE GAMES</button></div>
+  </div>
+  <div class="foot"><span id="who"></span><span class="row"><button class="ghost" id="tk" hidden>SUBMIT A TICKET</button><button class="ghost" id="other" hidden>USE ANOTHER KEY</button></span></div>
+</div></div>
+<script>
+/* HUNTINGTON LAB: the experimental launcher. Only the games that are still being built (Ashfall, and Steel Storm Remastered, which lives in the folder "Steel Storm Rebuilt"),
+   and only for the owner and the admins of Grapevine: you sign in with your Grapevine key, the Grapevine server says
+   what that account may do, and the games are shown if it is the owner's or an admin's.
+   HONEST LIMIT: this is a door, not a vault. The games' files sit on a public CDN like everything else here, so somebody
+   who knows the address of a build could still load it without this page. Nothing secret may be put in these builds.
+   The sign-in runs the launcher's own Grapevine code (gv/account.js) inside a hidden frame, and the frame is thrown
+   away as soon as the answer is in, so no connection and no save syncing is left running under a game.
+   On localhost there is no sign-in (as with the licence gate): add ?gate=1 to try it there.
+   TICKETS: SUBMIT A TICKET sends what you write to Grapevine as a report (kind 'bug', game 'Lab: ...'), signed in as you, so the
+   server stamps who it is from. On the owner's PC tools/tickets.mjs reads them every hour and the owner's are worked on. */
+(function () {
+  var BASE = window.HG_BASE || new URL('./', location.href).href, ROOT = BASE.replace(/Lab\/$/, ''), BUILD = +window.HG_PROOF || 0;
+  var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && !/[?&]gate=1/.test(location.search);
+  var MQTT_URL = 'https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js', MQTT_SRI = 'sha384-u4uqeACkFcoKl57rBQJHVGDd1pqhW4w8X3WjTu1ZksPdxoLqdt34jpoNkJisE25W';      /* the same file and check the launcher uses */
+  var GAMES = [
+    { dir: 'Ashfall', name: 'ASHFALL', pic: 'hub/ashfall.jpg', blurb: 'First-person holdout: waves, operations, ten kinds of match.' },
+    { dir: 'Steel%20Storm%20Rebuilt', name: 'STEEL STORM REMASTERED', pic: 'hub/steelstormr.jpg', blurb: 'Tanks and aircraft: the vehicles and battles of the old game, on the maps and menus of the remaster.' },
+    { dir: 'Nightline', name: 'HIGHBEAM', pic: 'hub/nightline.jpg', blurb: 'Street racing at night: twenty cars in a garage of your own, three circuits, wet roads full of light.' }
+  ];
+  function $(id) { return document.getElementById(id); }
+  function say(text, cls) { var p = $('say'); p.textContent = text; p.className = cls || ''; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  $('sub').textContent = 'experimental builds' + (BUILD ? '  ·  build ' + BUILD : '');
+
+  /* ask Grapevine who this is. key = a key just typed, or nothing to use the one this browser already holds (the launcher's). */
+  function check(key, job) {      /* job(GV, who): something to do while signed in, before the frame is thrown away (a ticket) */
+    var f = document.createElement('iframe'); f.style.display = 'none'; f.setAttribute('aria-hidden', 'true'); document.body.appendChild(f);
+    var w = f.contentWindow, d = w.document, gone = false;
+    function drop() { if (gone) return; gone = true; try { f.remove(); } catch (e) { } }
+    function load(src, sri) { return new Promise(function (res, rej) { var s = d.createElement('script'); s.src = src; if (sri) { s.integrity = sri; s.crossOrigin = 'anonymous'; } s.onload = function () { res(); }; s.onerror = function () { rej(new Error('Could not download part of the sign-in (' + src.split('/').pop() + '). The network may be blocking it.')); }; (d.head || d.documentElement).appendChild(s); }); }
+    return load(MQTT_URL, MQTT_SRI).then(function () { return load(ROOT + 'gv/account.js'); }).then(function () {
+      var GV = w.HGGrapevine; if (!GV) throw new Error('The Grapevine code did not start.');
+      return new Promise(function (res, rej) {
+        var done = false, t = setTimeout(function () { fin(null, new Error('Grapevine did not answer in time. Try again in a minute.')); }, 50000);
+        function fin(v, e) { if (done) return; done = true; clearTimeout(t); drop(); if (e) rej(e); else res(v); }
+        function role() {
+          var e = GV.eco && GV.eco.state(), me = GV.me(); if (!e || !me || role.ran) return; role.ran = true;
+          var r = { name: me.name, owner: !!e.owner, admin: !!(e.perms && e.perms.length) }; if (!job) return fin(r);
+          Promise.resolve().then(function () { return job(GV, r); }).then(function (v) { fin(v); }, function (x) { fin(null, x || new Error('That did not send.')); });
+        }
+        GV.on('eco', role);
+        Promise.resolve(key ? GV.signIn(key) : GV.resume()).then(function (r) {
+          if (!r) { var e = new Error('no key'); e.code = 'no-key'; return fin(null, e); }
+          role();                                /* the server sends what the account may do right after the welcome */
+        }, function (e) { fin(null, e || new Error('Sign-in failed.')); });
+      });
+    }).catch(function (e) { drop(); throw e; });
+  }
+  function why(e) {
+    var c = e && e.code;
+    if (c === 'bad-key' || c === 'no-account') return 'That key does not belong to a Grapevine account.';
+    if (c === 'banned') return 'That account is banned.';
+    return (e && e.message) || 'Sign-in failed.';
+  }
+  function askKey(text, cls) { say(text, cls); $('form').hidden = false; $('games').hidden = true; $('ticket').hidden = true; $('tk').hidden = true; $('other').hidden = true; $('go').disabled = false; $('key').disabled = false; try { $('key').focus(); } catch (e) { } }
+  function decide(r) {
+    if (r.owner || r.admin) return show(r);
+    $('who').textContent = 'Signed in as ' + r.name;
+    askKey(r.name + ' is signed in, but the Lab is only for the owner and the admins of Grapevine.', 'bad');
+  }
+  function show(r) {
+    $('gate').hidden = true; $('games').hidden = false; $('other').hidden = LOCAL; $('tk').hidden = false;
+    $('tgame').innerHTML = ['The Lab, or anything else'].concat(GAMES.map(function (g) { return g.name; })).map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('');
+    $('who').textContent = r ? 'Signed in as ' + r.name + (r.owner ? '  (owner)' : '  (admin)') : 'On this computer: no sign-in';
+    $('games').innerHTML = GAMES.map(function (g, i) { return '<button class="game" data-game="' + i + '" style="background-image:url(' + esc(ROOT + g.pic) + ')"><span><b>' + g.name + '</b><small>' + esc(g.blurb) + '</small></span></button>'; }).join('');
+  }
+  function open(g) {
+    var to = ROOT + g.dir + '/'; $('games').hidden = true; $('gate').hidden = false; $('form').hidden = true; say('Loading ' + g.name + '...');
+    fetch(to + 'index.html').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(function (html) {
+      var tag = '<script>window.HG_BASE = ' + JSON.stringify(to) + '; window.HG_PROOF = ' + BUILD + '; window.HG_LAB = 1;<\/script>';
+      html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, function (m) { return m + tag; }) : tag + html;
+      document.open(); document.write(html); document.close();
+    }).catch(function (e) { $('games').hidden = false; $('gate').hidden = true; alertLine('Could not load ' + g.name + ' (' + e.message + '). Try again.'); });
+  }
+  function alertLine(t) { $('who').textContent = t; }
+  /* tickets */
+  function tsay(t, cls) { var p = $('tsay'); p.textContent = t; p.className = cls || ''; }
+  function ticket(on) {
+    $('ticket').hidden = !on; $('games').hidden = on; $('tk').hidden = on;
+    if (on) { tsay('Write what should be fixed or built. Tickets are read every hour and worked on from there.'); try { $('ttext').focus(); } catch (e) { } }
+  }
+  function sendTicket() {
+    var text = $('ttext').value.replace(/\s+/g, ' ').trim(), about = $('tgame').value;
+    if (text.length < 5) return tsay('Say what should be done in a few words.', 'bad');
+    $('tsend').disabled = true; tsay('Sending...');
+    check('', function (GV) {
+      var n = 0, r = { kind: 'bug', why: 'other', game: ('Lab: ' + about + (BUILD ? ' (build ' + BUILD + ')' : '')).slice(0, 60), text: text };
+      function go() { return GV.eco.report(r).catch(function (e) { if (++n < 4 && /Not connected/.test((e && e.message) || '')) return new Promise(function (res) { setTimeout(res, 1500); }).then(go); throw e; }); }
+      return go();
+    }).then(function () { $('ttext').value = ''; $('tsend').disabled = false; tsay('Sent. It will be picked up within the hour.', 'good'); }, function (e) {
+      $('tsend').disabled = false;
+      tsay(e && e.code === 'no-key' ? 'Not sent: tickets go through Grapevine and no key is saved in this browser. Open the Lab from its own page and sign in first.' : 'Not sent: ' + why(e), 'bad');
+    });
+  }
+  $('tk').addEventListener('click', function () { ticket(true); });
+  $('tback').addEventListener('click', function () { ticket(false); });
+  $('tsend').addEventListener('click', sendTicket);
+  function signIn() {
+    var k = $('key').value.trim(); if (k.length < 32) return say('That is too short to be a Grapevine key.', 'bad');
+    $('go').disabled = true; $('key').disabled = true; say('Signing in...');
+    check(k).then(function (r) { $('key').value = ''; decide(r); }, function (e) { $('key').value = ''; askKey(why(e), 'bad'); });
+  }
+  $('go').addEventListener('click', signIn);
+  $('key').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
+  $('other').addEventListener('click', function () { $('gate').hidden = false; askKey('Paste the Grapevine key of the owner or of an admin.'); });
+  $('games').addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-game]'); if (b) open(GAMES[+b.dataset.game]); });
+
+  if (LOCAL) show(null);
+  else check('').then(decide, function (e) { askKey(e && e.code === 'no-key' ? 'Sign in with the Grapevine key of the owner or of an admin.' : why(e), e && e.code === 'no-key' ? '' : 'bad'); });
+})();
+</script>
+</body>
+</html>
