@@ -1,0 +1,42 @@
+{
+ "blend": "weapons.blend",
+ "out": "../../Ashfall/assets/w_gl",
+ "maxTexture": 2048,
+ "skins": [
+  {
+   "name": "viewmodel",
+   "rig": "gl_rig",
+   "lods": [
+    "gl_arms",
+    "gl_gun"
+   ],
+   "together": true,
+   "as": {
+    "gl_arms": "vm_arms",
+    "gl_gun": "vm_gun"
+   },
+   "clips": {
+    "vm_idle": {
+     "action": "gl_vm_idle",
+     "loop": true
+    },
+    "vm_fire": {
+     "action": "gl_vm_fire"
+    },
+    "vm_draw": {
+     "action": "gl_vm_draw"
+    },
+    "vm_run": {
+     "action": "gl_vm_run",
+     "loop": true
+    },
+    "vm_melee": {
+     "action": "gl_vm_melee"
+    },
+    "vm_reload": {
+     "action": "gl_vm_reload"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+{
+ "blend": "ridge.blend",
+ "out": "../../Nightline/assets/ridge",
+ "world": {
+  "collections": [
+   "map"
+  ],
+  "lightmap": "tex/ridge_light.exr",
+  "lmSize": 4096,
+  "lmRange": 8
+ },
+ "sky": {
+  "width": 2048
+ },
+ "maxTexture": 2048
+}

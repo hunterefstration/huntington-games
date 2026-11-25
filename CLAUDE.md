@@ -28,6 +28,23 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
 - The launcher hub too: edit `launcher/` (shell.html, css/, js/10-hub/ pieces), then `node tools/build-game.js . --src launcher --check`.
   Grapevine: edit `grapevine/src/`, then `node tools/build.mjs --check` there (see grapevine/CLAUDE.md), then `bash tools/sync-grapevine.sh` here.
   `gv/account.js` is built from `gv/core.js`, `ach.js`, `ui.js`: `bash tools/build-gv.sh`.
+- STEEL STORM REMASTERED is the folder `Steel Storm Rebuilt/` (the old game's code on Blender models and new battlefields; no
+  ships; own save `steelstormr_save`). The folder `Steel Storm Remastered/` is an abandoned first attempt, unlisted. Models:
+  `node tools/ss-parts.mjs` (measurements), `tools/blender/make_ss_*.py`, `node tools/ss-check-model.mjs`, `node tools/ss-check-kit.mjs`.
+  Its battlefield is ONE ISLAND in an open sea (`assets/island.hgm`, `tools/blender/make_ss_island.py`, export `node tools/export-art.mjs island`),
+  drawn by HG3D under the old game; the sea and the border are code (`src/js/29-tiles.js`). Its menus wear the first remaster's look
+  (`src/css/50-remaster.css`). `?tiles=0` (and three.js) uses the old game's own four grounds. The owner's bar for it: as realistic as possible.
+  Tests: `tools/tests/ssx.mjs [grounds tiles battle models save]` and `live --build=N --repo=owner/name`, `tools/tests/light.mjs`,
+  pictures and pixel probes with `tools/tests/ssx-shot.mjs`.
+- ASHFALL is the zombie shooter (Blocky Shooter's successor): no crystals, no growth. Its maps and figures are built with `plain`
+  (`blender -b art/ashfall/<map>.blend -P tools/blender/make_<map>.py -- plain`): without `plain` a script grows the crystals back.
+- HIGHBEAM is the racing game's name on screen; its folder, save key, debug hook and tests still say NIGHTLINE (do not rename them).
+  Handling is tuned by measurement: `node tools/tests/nl-feel.mjs`. P on its menu is a TEMPORARY admin unlock (remove or gate at release).
+- NIGHTLINE (`Nightline/`, racing, HG3D only): a circuit is numbers (`art/nightline/tracks.json` -> `node tools/race-track.mjs` ->
+  `src/js/13-trackdata.js`, never edited by hand) and its scenery is one baked file (`tools/blender/make_nl_<quay|skyway|ridge>.py`,
+  export only by name: `node tools/export-art.mjs quay`). The twenty cars: `tools/blender/make_nl_cars.py` (writes `src/js/27-fleetdata.js`
+  and one export description a car; `preview=1` for pictures). Tests: `tools/tests/nightline.mjs [track car race save garage draw circuits]`,
+  pictures `tools/tests/nl-shot.mjs` (`circuit=skyway` in the query).
 - Minigames share one lobby: edit `Minigames/_shared/mg.js|mg.css`, then `bash Minigames/build.sh`.
 - The HG3D engine (our renderer; Mayhem Marathon and Steel Storm draw with it, three.js is their fallback): edit `engine/src/`,
   then `node tools/build-engine.js` (it copies `engine/hg3d.js` into each game's `src/js/05-hg3d.js`: never edit the copies)
@@ -51,6 +68,8 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
   `--use-gl=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. No internet: route three@0.160.0
   to `/tmp/hg-tools/cdn/package/`, Tailwind to `/tmp/hg-tools/node_modules/tailwindcss-cdn/tailwindcss.js`.
 - Serve locally with `python3 -m http.server <port>`; `localhost` skips the licence gate.
+- Lab tickets: the owner writes them in the Lab, the scheduled task `lab-tickets` reads them hourly with `node tools/tickets.mjs`
+  (HANDOFF, LAB TICKETS). A long job in a chat session takes the lock first: `node tools/tickets.mjs lock "what"`, then `unlock`.
 - Playing without the launcher: `node tools/play.mjs` (or double-click `Play Huntington Games.cmd`) serves the folder on
   http://localhost:8090/ with a plain games menu (`tools/play.html`, filled from the launcher's GAMES list): no account,
   no codes. Test: `node tools/tests/play.mjs` (every game opens from the menu, no licence screen).
@@ -72,6 +91,14 @@ Launcher (`loader.html` pasted into jsfiddle/jsbin, which loads the hub `index.h
   there needs that script run (check.js notices). No game may load `cdn.tailwindcss.com` any more.
 - Database egress is billed (free plan: 5 GB a month, ~7 MB an hour). Never read a list or a row per message, per sync, per
   connect or on a timer without caching it; check with `bash tools/rig/test.sh gv-egress` (see HANDOFF, Database egress).
+- On the owner's Windows PC a hidden (headless) Chromium that locks the pointer really traps his mouse in a box at the top
+  left of the screen. Ashfall, Steel Storm Remastered and Proof Slice skip the lock when `navigator.webdriver` is set
+  (`lock()` in each `10-core.js`); a test of any other game that clicks into play must stub `requestPointerLock` first.
+- A copy of a released game's folder carries that game's licence block in its `index.html` (`build-game.js` keeps it), and the
+  copy then says "unauthorized copy" everywhere but localhost, where every test runs. A new game made from a copy: delete its
+  `index.html` and build it from the sources. `tools/tests/ssx.mjs live` runs from a non-local host for this reason.
+- `node tools/export-art.mjs` with no name exports EVERY art description and overwrites hand-repainted pictures (Ashfall's
+  skies). Always name the description; tell every art helper so in its brief.
 - Rate limits: launcher traffic classes are `soft` (refused, never punished). Pace bursts on the client (`paced`, `rpc`).
 
 Current state and next steps: `.claude/HANDOFF.md`.
