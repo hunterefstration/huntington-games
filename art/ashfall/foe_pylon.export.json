@@ -1,0 +1,38 @@
+{
+ "blend": "figures.blend",
+ "out": "../../Ashfall/assets/foe_pylon",
+ "maxTexture": 512,
+ "skins": [
+  {
+   "name": "enemy",
+   "rig": "pylon_rig",
+   "lods": [
+    "pylon",
+    "pylon_lod1",
+    "pylon_lod2"
+   ],
+   "as": {
+    "pylon": "enemy",
+    "pylon_lod1": "enemy_lod1",
+    "pylon_lod2": "enemy_lod2"
+   },
+   "clips": {
+    "idle": {
+     "action": "pylon_idle",
+     "loop": true
+    },
+    "walk": {
+     "action": "pylon_walk",
+     "loop": true
+    },
+    "attack": {
+     "action": "pylon_attack",
+     "loop": true
+    },
+    "die": {
+     "action": "pylon_die"
+    }
+   }
+  }
+ ]
+}

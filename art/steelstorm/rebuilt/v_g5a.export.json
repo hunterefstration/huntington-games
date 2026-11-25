@@ -1,0 +1,13 @@
+{
+ "blend": "ground.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_g5a",
+ "parts": [
+  "g5a_body",
+  "g5a_track",
+  "g5a_tur",
+  "g5a_gun",
+  "g5a_kitb",
+  "g5a_kitt"
+ ],
+ "maxTexture": 1024
+}

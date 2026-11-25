@@ -1,0 +1,10 @@
+{
+ "blend": "air.blend",
+ "out": "../../../Steel Storm Rebuilt/assets/v_a5d",
+ "parts": [
+  "a5d_body",
+  "a5d_prop0",
+  "a5d_prop1"
+ ],
+ "maxTexture": 1024
+}
